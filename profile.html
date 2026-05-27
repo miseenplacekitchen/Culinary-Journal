@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile — The Culinary Journal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // Apply saved theme BEFORE first paint (prevents flash)
+    (function(){
+      try {
+        var t = localStorage.getItem('tcj_theme');
+        if (t && t !== 'midnight-slate') {
+          document.documentElement.setAttribute('data-pending-theme', t);
+        }
+      } catch(_) {}
+    })();
+  </script>
+  <style>
+    .page-bg { background-color: #0f0f0f; }
+
+    /* ── LOADING + ERROR ── */
+    .loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 64px);
+      gap: 14px;
+      padding: 24px;
+    }
+    .loader-spin {
+      width: 28px; height: 28px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-text {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--text-mid);
+    }
+    .err-box {
+      max-width: 520px;
+      text-align: center;
+      padding: 28px 24px;
+      background: rgba(220,80,80,0.08);
+      border: 0.5px solid rgba(220,80,80,0.35);
+      border-radius: 14px;
+    }
+    .err-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+    .err-detail {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.6;
+      margin-bottom: 18px;
+      white-space: pre-wrap;
+      text-align: left;
+    }
+    .err-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── PROFILE WRAP ── */
+    .profile-wrap {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+      width: 100%;
+    }
+    .profile-header { margin-bottom: 32px; }
+    .profile-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 38px;
+      font-weight: 700;
+      color: var(--text-high);
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+    .profile-subtitle {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--text-mid);
+    }
+
+    .pcard {
+      background: rgba(255,255,255,0.03);
+      border: 0.5px solid var(--border);
+      border-radius: 18px;
+      padding: 32px;
+      margin-bottom: 22px;
+    }
+    .pcard-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-high);
+      margin-bottom: 6px;
+    }
+    .pcard-desc {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--text-mid);
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+
+    .acct-id {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 22px;
+      margin-bottom: 22px;
+      border-bottom: 0.5px solid var(--border);
+    }
+    .acct-avatar {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent) 0%, #8a6a28 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .acct-meta-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text-high);
+      margin-bottom: 2px;
+    }
+    .acct-meta-since {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      color: var(--text-low);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .pfield { margin-bottom: 16px; }
+    .plabel {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .pinput {
+      width: 100%;
+      padding: 11px 14px;
+      background: rgba(255,255,255,0.05);
+      border: 0.5px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--text-high);
+      outline: none;
+      transition: all 0.2s;
+      box-sizing: border-box;
+    }
+    .pinput:focus { border-color: rgba(196,151,59,0.5); background: rgba(255,255,255,0.07); }
+    .pinput:disabled { opacity: 0.55; cursor: not-allowed; background: rgba(255,255,255,0.025); }
+    .pinput.error { border-color: rgba(220,80,80,0.6); }
+    .phint { font-family: 'DM Sans', sans-serif; font-size: 11px; color: rgba(255,255,255,0.25); margin-top: 5px; }
+    .perror {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      color: #e07070;
+      margin-top: 5px;
+      display: none;
+    }
+
+    .pbtn {
+      padding: 11px 22px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pbtn:hover { filter: brightness(0.9); transform: translateY(-1px); }
+    .pbtn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .pmsg {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      margin-bottom: 16px;
+      display: none;
+      line-height: 1.5;
+    }
+    .pmsg-error   { background: rgba(220,80,80,0.1); border: 0.5px solid rgba(220,80,80,0.3); color: #e07070; }
+    .pmsg-success { background: rgba(80,180,80,0.1); border: 0.5px solid rgba(80,180,80,0.3); color: #70c070; }
+
+    .pwd-wrap { position: relative; }
+    .pwd-toggle-btn {
+      position: absolute; right: 10px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none;
+      color: rgba(255,255,255,0.55);
+      cursor: pointer; padding: 6px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+    .pwd-toggle-btn:hover { color: var(--accent); background: rgba(255,255,255,0.06); }
+    .str-bar { flex: 1; height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; transition: background 0.3s; }
+    .str-bar.weak   { background: #e05555; }
+    .str-bar.fair   { background: #e09955; }
+    .str-bar.good   { background: #e0cc55; }
+    .str-bar.strong { background: #55cc77; }
+    .pwd-rule { font-family: 'DM Sans', sans-serif; font-size: 11px; color: rgba(255,255,255,0.3); padding: 2px 0; }
+    .pwd-rule.pass { color: #55cc77; }
+
+    .theme-group { margin-bottom: 26px; }
+    .theme-group:last-child { margin-bottom: 0; }
+    .theme-group-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      color: var(--text-low);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      margin-bottom: 12px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .theme-group-label::after { content: ''; flex: 1; height: 0.5px; background: var(--border); }
+    .theme-group-tag {
+      font-size: 9px; padding: 2px 7px; border-radius: 10px;
+      background: rgba(196,151,59,0.12); color: var(--accent);
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .theme-card {
+      position: relative;
+      background: rgba(255,255,255,0.04);
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      overflow: hidden;
+    }
+    .theme-card:hover { border-color: var(--accent-border); transform: translateY(-2px); }
+    .theme-card.active { border-color: var(--accent); background: var(--accent-glow); }
+    .theme-card.locked { opacity: 0.45; cursor: not-allowed; }
+    .theme-card.locked:hover { transform: none; border-color: var(--border); }
+    .theme-swatches { display: flex; gap: 4px; margin-bottom: 10px; }
+    .theme-swatch { flex: 1; height: 22px; border-radius: 4px; border: 0.5px solid rgba(255,255,255,0.08); }
+    .theme-name { font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 600; color: var(--text-high); margin-bottom: 2px; }
+    .theme-sub { font-family: 'DM Sans', sans-serif; font-size: 10px; color: var(--text-low); }
+    .theme-active-tick {
+      position: absolute; top: 10px; right: 10px;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      display: none; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700;
+    }
+    .theme-card.active .theme-active-tick { display: flex; }
+
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      padding: 12px 18px;
+      background: rgba(80,180,80,0.95); color: #fff;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      opacity: 0; transform: translateY(8px);
+      transition: all 0.25s ease;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.err { background: rgba(220,80,80,0.95); }
+
+    .nav-user-pill {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: var(--text-mid);
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 20px;
+      border: 0.5px solid var(--border);
+    }
+    .nav-user-pill span { color: var(--accent); }
+
+    @media (max-width: 640px) {
+      .profile-wrap { padding: 32px 16px 48px; }
+      .profile-title { font-size: 30px; }
+      .pcard { padding: 22px; border-radius: 14px; }
+      .acct-id { gap: 12px; }
+      .acct-avatar { width: 48px; height: 48px; font-size: 18px; }
+      .theme-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .nav-user-pill { display: none; }
+    }
+
+    /* ═══════════════════════════════════════════════════
+       THEME OVERRIDES — 7 working previews
+    ═══════════════════════════════════════════════════ */
+    body.theme-midnight-black {
+      --overlay-dark:  rgba(0,0,0,0.96);
+      --overlay-mid:   rgba(0,0,0,0.82);
+      --overlay-light: rgba(0,0,0,0.92);
+      --nav-bg:        rgba(0,0,0,0.78);
+      --card-bg:       rgba(255,255,255,0.025);
+      background: #000;
+    }
+    body.theme-midnight-black .page-bg { background-color: #000; }
+    body.theme-dark-forest {
+      --accent: #6b8e5a;
+      --accent-border: rgba(107,142,90,0.4);
+      --accent-glow: rgba(107,142,90,0.14);
+      --overlay-dark: rgba(12,22,16,0.92);
+      --overlay-mid: rgba(8,18,12,0.72);
+      --overlay-light: rgba(6,14,10,0.85);
+      background: #0b1410;
+    }
+    body.theme-dark-forest .page-bg { background-color: #0b1410; }
+    body.theme-cream-gold {
+      --accent: #b8860b;
+      --accent-border: rgba(184,134,11,0.45);
+      --accent-glow: rgba(184,134,11,0.10);
+      --text-high: rgba(40,30,18,0.95);
+      --text-mid: rgba(40,30,18,0.62);
+      --text-low: rgba(40,30,18,0.4);
+      --text-ghost: rgba(40,30,18,0.06);
+      --border: rgba(40,30,18,0.12);
+      --overlay-dark: rgba(252,245,225,0.94);
+      --overlay-mid: rgba(248,238,210,0.88);
+      --overlay-light: rgba(245,232,200,0.92);
+      --nav-bg: rgba(252,245,225,0.85);
+      --tab-bg: rgba(248,238,210,0.7);
+      --card-bg: rgba(40,30,18,0.04);
+      --feature-bg: rgba(248,238,210,0.6);
+      --footer-bg: rgba(245,232,200,0.7);
+      background: #fdf6e3;
+    }
+    body.theme-cream-gold .page-bg { background-color: #fdf6e3; }
+    body.theme-pure-white {
+      --accent: #9b7028;
+      --accent-border: rgba(155,112,40,0.4);
+      --accent-glow: rgba(155,112,40,0.08);
+      --text-high: rgba(20,20,20,0.95);
+      --text-mid: rgba(20,20,20,0.6);
+      --text-low: rgba(20,20,20,0.38);
+      --text-ghost: rgba(20,20,20,0.05);
+      --border: rgba(20,20,20,0.1);
+      --overlay-dark: rgba(255,255,255,0.96);
+      --overlay-mid: rgba(250,250,250,0.9);
+      --overlay-light: rgba(248,248,248,0.94);
+      --nav-bg: rgba(255,255,255,0.85);
+      --tab-bg: rgba(250,250,250,0.7);
+      --card-bg: rgba(0,0,0,0.025);
+      --feature-bg: rgba(250,250,250,0.6);
+      --footer-bg: rgba(248,248,248,0.7);
+      background: #ffffff;
+    }
+    body.theme-pure-white .page-bg { background-color: #ffffff; }
+    body.theme-spring-blossom {
+      --accent: #c47b8f;
+      --accent-border: rgba(196,123,143,0.45);
+      --accent-glow: rgba(196,123,143,0.12);
+      --text-high: rgba(60,30,40,0.95);
+      --text-mid: rgba(60,30,40,0.6);
+      --text-low: rgba(60,30,40,0.38);
+      --text-ghost: rgba(60,30,40,0.05);
+      --border: rgba(60,30,40,0.12);
+      --overlay-dark: rgba(253,238,242,0.94);
+      --overlay-mid: rgba(250,228,235,0.88);
+      --overlay-light: rgba(248,220,228,0.92);
+      --nav-bg: rgba(253,238,242,0.85);
+      --tab-bg: rgba(250,228,235,0.7);
+      --card-bg: rgba(60,30,40,0.04);
+      --feature-bg: rgba(250,228,235,0.6);
+      --footer-bg: rgba(248,220,228,0.7);
+      background: #fdeef2;
+    }
+    body.theme-spring-blossom .page-bg { background-color: #fdeef2; }
+    body.theme-autumn-harvest {
+      --accent: #d97c3c;
+      --accent-border: rgba(217,124,60,0.45);
+      --accent-glow: rgba(217,124,60,0.14);
+      --overlay-dark: rgba(28,16,8,0.92);
+      --overlay-mid: rgba(38,22,12,0.78);
+      --overlay-light: rgba(32,18,10,0.86);
+      --card-bg: rgba(217,124,60,0.05);
+      background: #1a0e08;
+    }
+    body.theme-autumn-harvest .page-bg { background-color: #1a0e08; }
+
+    /* ── DARK (remaining 4) ─────────────────────────── */
+    body.theme-dark-bordeaux {
+      --accent: #c05060;
+      --accent-border: rgba(192,80,96,0.45);
+      --accent-glow: rgba(192,80,96,0.14);
+      --overlay-dark: rgba(26,10,14,0.94);
+      --overlay-mid: rgba(26,10,14,0.78);
+      --overlay-light: rgba(26,10,14,0.88);
+      background: #1a0a0e;
+    }
+    body.theme-dark-bordeaux .page-bg { background-color: #1a0a0e; }
+
+    body.theme-dark-navy {
+      --accent: #70a0d0;
+      --accent-border: rgba(112,160,208,0.45);
+      --accent-glow: rgba(112,160,208,0.14);
+      --overlay-dark: rgba(8,17,30,0.94);
+      --overlay-mid: rgba(8,17,30,0.78);
+      --overlay-light: rgba(8,17,30,0.88);
+      background: #08111e;
+    }
+    body.theme-dark-navy .page-bg { background-color: #08111e; }
+
+    body.theme-dark-chocolate {
+      --accent: #c08868;
+      --accent-border: rgba(192,136,104,0.45);
+      --accent-glow: rgba(192,136,104,0.14);
+      --overlay-dark: rgba(24,14,8,0.94);
+      --overlay-mid: rgba(24,14,8,0.78);
+      --overlay-light: rgba(24,14,8,0.88);
+      background: #180e08;
+    }
+    body.theme-dark-chocolate .page-bg { background-color: #180e08; }
+
+    body.theme-dark-obsidian {
+      --accent: #9888c0;
+      --accent-border: rgba(152,136,192,0.45);
+      --accent-glow: rgba(152,136,192,0.14);
+      --overlay-dark: rgba(10,10,20,0.94);
+      --overlay-mid: rgba(10,10,20,0.78);
+      --overlay-light: rgba(10,10,20,0.88);
+      background: #0a0a14;
+    }
+    body.theme-dark-obsidian .page-bg { background-color: #0a0a14; }
+
+    /* ── LIGHT (remaining 5) ────────────────────────── */
+    body.theme-soft-linen {
+      --accent: #a08868;
+      --accent-border: rgba(160,136,104,0.45);
+      --accent-glow: rgba(160,136,104,0.10);
+      --text-high: rgba(42,36,24,0.95); --text-mid: rgba(42,36,24,0.6);
+      --text-low: rgba(42,36,24,0.4); --text-ghost: rgba(42,36,24,0.06);
+      --border: rgba(42,36,24,0.12);
+      --overlay-dark: rgba(245,240,232,0.94); --overlay-mid: rgba(245,240,232,0.88);
+      --overlay-light: rgba(245,240,232,0.92);
+      --nav-bg: rgba(245,240,232,0.85); --tab-bg: rgba(245,240,232,0.70);
+      --card-bg: rgba(42,36,24,0.04);
+      --feature-bg: rgba(245,240,232,0.60); --footer-bg: rgba(245,240,232,0.70);
+      background: #f5f0e8;
+    }
+    body.theme-soft-linen .page-bg { background-color: #f5f0e8; }
+
+    body.theme-sage-cream {
+      --accent: #8a9d7a;
+      --accent-border: rgba(138,157,122,0.45);
+      --accent-glow: rgba(138,157,122,0.10);
+      --text-high: rgba(42,46,34,0.95); --text-mid: rgba(42,46,34,0.6);
+      --text-low: rgba(42,46,34,0.4); --text-ghost: rgba(42,46,34,0.06);
+      --border: rgba(42,46,34,0.12);
+      --overlay-dark: rgba(244,241,232,0.94); --overlay-mid: rgba(244,241,232,0.88);
+      --overlay-light: rgba(244,241,232,0.92);
+      --nav-bg: rgba(244,241,232,0.85); --tab-bg: rgba(244,241,232,0.70);
+      --card-bg: rgba(42,46,34,0.04);
+      --feature-bg: rgba(244,241,232,0.60); --footer-bg: rgba(244,241,232,0.70);
+      background: #f4f1e8;
+    }
+    body.theme-sage-cream .page-bg { background-color: #f4f1e8; }
+
+    body.theme-blush-rose {
+      --accent: #c47b8f;
+      --accent-border: rgba(196,123,143,0.45);
+      --accent-glow: rgba(196,123,143,0.10);
+      --text-high: rgba(58,32,40,0.95); --text-mid: rgba(58,32,40,0.6);
+      --text-low: rgba(58,32,40,0.4); --text-ghost: rgba(58,32,40,0.06);
+      --border: rgba(58,32,40,0.12);
+      --overlay-dark: rgba(251,234,229,0.94); --overlay-mid: rgba(251,234,229,0.88);
+      --overlay-light: rgba(251,234,229,0.92);
+      --nav-bg: rgba(251,234,229,0.85); --tab-bg: rgba(251,234,229,0.70);
+      --card-bg: rgba(58,32,40,0.04);
+      --feature-bg: rgba(251,234,229,0.60); --footer-bg: rgba(251,234,229,0.70);
+      background: #fbeae5;
+    }
+    body.theme-blush-rose .page-bg { background-color: #fbeae5; }
+
+    body.theme-silver-morning {
+      --accent: #7a8898;
+      --accent-border: rgba(122,136,152,0.45);
+      --accent-glow: rgba(122,136,152,0.10);
+      --text-high: rgba(26,32,40,0.95); --text-mid: rgba(26,32,40,0.6);
+      --text-low: rgba(26,32,40,0.4); --text-ghost: rgba(26,32,40,0.06);
+      --border: rgba(26,32,40,0.12);
+      --overlay-dark: rgba(240,242,245,0.94); --overlay-mid: rgba(240,242,245,0.88);
+      --overlay-light: rgba(240,242,245,0.92);
+      --nav-bg: rgba(240,242,245,0.85); --tab-bg: rgba(240,242,245,0.70);
+      --card-bg: rgba(26,32,40,0.04);
+      --feature-bg: rgba(240,242,245,0.60); --footer-bg: rgba(240,242,245,0.70);
+      background: #f0f2f5;
+    }
+    body.theme-silver-morning .page-bg { background-color: #f0f2f5; }
+
+    body.theme-lemon-fresh {
+      --accent: #c8a838;
+      --accent-border: rgba(200,168,56,0.45);
+      --accent-glow: rgba(200,168,56,0.10);
+      --text-high: rgba(46,40,24,0.95); --text-mid: rgba(46,40,24,0.6);
+      --text-low: rgba(46,40,24,0.4); --text-ghost: rgba(46,40,24,0.06);
+      --border: rgba(46,40,24,0.12);
+      --overlay-dark: rgba(253,251,232,0.94); --overlay-mid: rgba(253,251,232,0.88);
+      --overlay-light: rgba(253,251,232,0.92);
+      --nav-bg: rgba(253,251,232,0.85); --tab-bg: rgba(253,251,232,0.70);
+      --card-bg: rgba(46,40,24,0.04);
+      --feature-bg: rgba(253,251,232,0.60); --footer-bg: rgba(253,251,232,0.70);
+      background: #fdfbe8;
+    }
+    body.theme-lemon-fresh .page-bg { background-color: #fdfbe8; }
+
+    /* ── SEASONAL (remaining 2) ─────────────────────── */
+    body.theme-summer-citrus {
+      --accent: #e08820;
+      --accent-border: rgba(224,136,32,0.45);
+      --accent-glow: rgba(224,136,32,0.10);
+      --text-high: rgba(58,42,16,0.95); --text-mid: rgba(58,42,16,0.6);
+      --text-low: rgba(58,42,16,0.4); --text-ghost: rgba(58,42,16,0.06);
+      --border: rgba(58,42,16,0.12);
+      --overlay-dark: rgba(255,248,224,0.94); --overlay-mid: rgba(255,248,224,0.88);
+      --overlay-light: rgba(255,248,224,0.92);
+      --nav-bg: rgba(255,248,224,0.85); --tab-bg: rgba(255,248,224,0.70);
+      --card-bg: rgba(58,42,16,0.04);
+      --feature-bg: rgba(255,248,224,0.60); --footer-bg: rgba(255,248,224,0.70);
+      background: #fff8e0;
+    }
+    body.theme-summer-citrus .page-bg { background-color: #fff8e0; }
+
+    body.theme-winter-frost {
+      --accent: #6890b0;
+      --accent-border: rgba(104,144,176,0.45);
+      --accent-glow: rgba(104,144,176,0.10);
+      --text-high: rgba(26,40,48,0.95); --text-mid: rgba(26,40,48,0.6);
+      --text-low: rgba(26,40,48,0.4); --text-ghost: rgba(26,40,48,0.06);
+      --border: rgba(26,40,48,0.12);
+      --overlay-dark: rgba(232,240,245,0.94); --overlay-mid: rgba(232,240,245,0.88);
+      --overlay-light: rgba(232,240,245,0.92);
+      --nav-bg: rgba(232,240,245,0.85); --tab-bg: rgba(232,240,245,0.70);
+      --card-bg: rgba(26,40,48,0.04);
+      --feature-bg: rgba(232,240,245,0.60); --footer-bg: rgba(232,240,245,0.70);
+      background: #e8f0f5;
+    }
+    body.theme-winter-frost .page-bg { background-color: #e8f0f5; }
+
+    /* ── FESTIVE (6) ──────────────────────────────── */
+    body.theme-christmas {
+      --accent: #c83838;
+      --accent-border: rgba(200,56,56,0.45);
+      --accent-glow: rgba(200,56,56,0.14);
+      --overlay-dark: rgba(26,10,10,0.94); --overlay-mid: rgba(26,10,10,0.78);
+      --overlay-light: rgba(26,10,10,0.88);
+      background: #1a0a0a;
+    }
+    body.theme-christmas .page-bg { background-color: #1a0a0a; }
+
+    body.theme-diwali {
+      --accent: #e8a020;
+      --accent-border: rgba(232,160,32,0.45);
+      --accent-glow: rgba(232,160,32,0.14);
+      --overlay-dark: rgba(31,10,5,0.94); --overlay-mid: rgba(31,10,5,0.78);
+      --overlay-light: rgba(31,10,5,0.88);
+      background: #1f0a05;
+    }
+    body.theme-diwali .page-bg { background-color: #1f0a05; }
+
+    body.theme-ramadan {
+      --accent: #80a8c0;
+      --accent-border: rgba(128,168,192,0.45);
+      --accent-glow: rgba(128,168,192,0.14);
+      --overlay-dark: rgba(10,20,24,0.94); --overlay-mid: rgba(10,20,24,0.78);
+      --overlay-light: rgba(10,20,24,0.88);
+      background: #0a1418;
+    }
+    body.theme-ramadan .page-bg { background-color: #0a1418; }
+
+    body.theme-new-year {
+      --accent: #d4af37;
+      --accent-border: rgba(212,175,55,0.45);
+      --accent-glow: rgba(212,175,55,0.14);
+      --overlay-dark: rgba(0,8,20,0.94); --overlay-mid: rgba(0,8,20,0.78);
+      --overlay-light: rgba(0,8,20,0.88);
+      background: #000814;
+    }
+    body.theme-new-year .page-bg { background-color: #000814; }
+
+    body.theme-onam {
+      --accent: #e08020;
+      --accent-border: rgba(224,128,32,0.45);
+      --accent-glow: rgba(224,128,32,0.10);
+      --text-high: rgba(50,30,12,0.95); --text-mid: rgba(50,30,12,0.6);
+      --text-low: rgba(50,30,12,0.4); --text-ghost: rgba(50,30,12,0.06);
+      --border: rgba(50,30,12,0.12);
+      --overlay-dark: rgba(255,245,224,0.94); --overlay-mid: rgba(255,245,224,0.88);
+      --overlay-light: rgba(255,245,224,0.92);
+      --nav-bg: rgba(255,245,224,0.85); --tab-bg: rgba(255,245,224,0.70);
+      --card-bg: rgba(50,30,12,0.04);
+      --feature-bg: rgba(255,245,224,0.60); --footer-bg: rgba(255,245,224,0.70);
+      background: #fff5e0;
+    }
+    body.theme-onam .page-bg { background-color: #fff5e0; }
+
+    body.theme-easter {
+      --accent: #b884b0;
+      --accent-border: rgba(184,132,176,0.45);
+      --accent-glow: rgba(184,132,176,0.10);
+      --text-high: rgba(50,36,50,0.95); --text-mid: rgba(50,36,50,0.6);
+      --text-low: rgba(50,36,50,0.4); --text-ghost: rgba(50,36,50,0.06);
+      --border: rgba(50,36,50,0.12);
+      --overlay-dark: rgba(251,242,232,0.94); --overlay-mid: rgba(251,242,232,0.88);
+      --overlay-light: rgba(251,242,232,0.92);
+      --nav-bg: rgba(251,242,232,0.85); --tab-bg: rgba(251,242,232,0.70);
+      --card-bg: rgba(50,36,50,0.04);
+      --feature-bg: rgba(251,242,232,0.60); --footer-bg: rgba(251,242,232,0.70);
+      background: #fbf2e8;
+    }
+    body.theme-easter .page-bg { background-color: #fbf2e8; }
+
+    /* ── SPECIAL (6) ──────────────────────────────── */
+    body.theme-wedding-white {
+      --accent: #c0a060;
+      --accent-border: rgba(192,160,96,0.45);
+      --accent-glow: rgba(192,160,96,0.10);
+      --text-high: rgba(26,26,26,0.95); --text-mid: rgba(26,26,26,0.6);
+      --text-low: rgba(26,26,26,0.4); --text-ghost: rgba(26,26,26,0.06);
+      --border: rgba(26,26,26,0.12);
+      --overlay-dark: rgba(255,255,255,0.94); --overlay-mid: rgba(250,250,250,0.88);
+      --overlay-light: rgba(255,255,255,0.92);
+      --nav-bg: rgba(255,255,255,0.85); --tab-bg: rgba(250,250,250,0.70);
+      --card-bg: rgba(26,26,26,0.04);
+      --feature-bg: rgba(250,250,250,0.60); --footer-bg: rgba(255,255,255,0.70);
+      background: #ffffff;
+    }
+    body.theme-wedding-white .page-bg { background-color: #ffffff; }
+
+    body.theme-birthday-cake {
+      --accent: #e878a8;
+      --accent-border: rgba(232,120,168,0.45);
+      --accent-glow: rgba(232,120,168,0.10);
+      --text-high: rgba(90,48,80,0.95); --text-mid: rgba(90,48,80,0.6);
+      --text-low: rgba(90,48,80,0.4); --text-ghost: rgba(90,48,80,0.06);
+      --border: rgba(90,48,80,0.12);
+      --overlay-dark: rgba(255,240,248,0.94); --overlay-mid: rgba(255,240,248,0.88);
+      --overlay-light: rgba(255,240,248,0.92);
+      --nav-bg: rgba(255,240,248,0.85); --tab-bg: rgba(255,240,248,0.70);
+      --card-bg: rgba(90,48,80,0.04);
+      --feature-bg: rgba(255,240,248,0.60); --footer-bg: rgba(255,240,248,0.70);
+      background: #fff0f8;
+    }
+    body.theme-birthday-cake .page-bg { background-color: #fff0f8; }
+
+    body.theme-baby-shower {
+      --accent: #6090a8;
+      --accent-border: rgba(96,144,168,0.45);
+      --accent-glow: rgba(96,144,168,0.10);
+      --text-high: rgba(58,74,88,0.95); --text-mid: rgba(58,74,88,0.6);
+      --text-low: rgba(58,74,88,0.4); --text-ghost: rgba(58,74,88,0.06);
+      --border: rgba(58,74,88,0.12);
+      --overlay-dark: rgba(238,245,248,0.94); --overlay-mid: rgba(238,245,248,0.88);
+      --overlay-light: rgba(238,245,248,0.92);
+      --nav-bg: rgba(238,245,248,0.85); --tab-bg: rgba(238,245,248,0.70);
+      --card-bg: rgba(58,74,88,0.04);
+      --feature-bg: rgba(238,245,248,0.60); --footer-bg: rgba(238,245,248,0.70);
+      background: #eef5f8;
+    }
+    body.theme-baby-shower .page-bg { background-color: #eef5f8; }
+
+    body.theme-fine-dining {
+      --accent: #d4af37;
+      --accent-border: rgba(212,175,55,0.5);
+      --accent-glow: rgba(212,175,55,0.14);
+      --overlay-dark: rgba(10,10,10,0.96); --overlay-mid: rgba(10,10,10,0.82);
+      --overlay-light: rgba(10,10,10,0.92);
+      background: #0a0a0a;
+    }
+    body.theme-fine-dining .page-bg { background-color: #0a0a0a; }
+
+    body.theme-old-cookbook {
+      --accent: #7a4828;
+      --accent-border: rgba(122,72,40,0.45);
+      --accent-glow: rgba(122,72,40,0.10);
+      --text-high: rgba(42,24,16,0.95); --text-mid: rgba(42,24,16,0.6);
+      --text-low: rgba(42,24,16,0.4); --text-ghost: rgba(42,24,16,0.06);
+      --border: rgba(42,24,16,0.14);
+      --overlay-dark: rgba(242,232,208,0.94); --overlay-mid: rgba(242,232,208,0.88);
+      --overlay-light: rgba(242,232,208,0.92);
+      --nav-bg: rgba(242,232,208,0.85); --tab-bg: rgba(242,232,208,0.70);
+      --card-bg: rgba(42,24,16,0.04);
+      --feature-bg: rgba(242,232,208,0.60); --footer-bg: rgba(242,232,208,0.70);
+      background: #f2e8d0;
+    }
+    body.theme-old-cookbook .page-bg { background-color: #f2e8d0; }
+
+    body.theme-world-kitchen {
+      --accent: #e08838;
+      --accent-border: rgba(224,136,56,0.45);
+      --accent-glow: rgba(224,136,56,0.14);
+      --overlay-dark: rgba(26,18,8,0.94); --overlay-mid: rgba(26,18,8,0.78);
+      --overlay-light: rgba(26,18,8,0.88);
+      background: #1a1208;
+    }
+    body.theme-world-kitchen .page-bg { background-color: #1a1208; }
+
+    /* ── INSPIRED (17) ────────────────────────────── */
+    body.theme-silk-whisper {
+      --accent: #c8a8b0;
+      --accent-border: rgba(200,168,176,0.45);
+      --accent-glow: rgba(200,168,176,0.14);
+      --overlay-dark: rgba(26,20,24,0.94); --overlay-mid: rgba(26,20,24,0.78);
+      --overlay-light: rgba(26,20,24,0.88);
+      background: #1a1418;
+    }
+    body.theme-silk-whisper .page-bg { background-color: #1a1418; }
+
+    body.theme-midnight-garden {
+      --accent: #9ab088;
+      --accent-border: rgba(154,176,136,0.45);
+      --accent-glow: rgba(154,176,136,0.14);
+      --overlay-dark: rgba(10,20,16,0.94); --overlay-mid: rgba(10,20,16,0.78);
+      --overlay-light: rgba(10,20,16,0.88);
+      background: #0a1410;
+    }
+    body.theme-midnight-garden .page-bg { background-color: #0a1410; }
+
+    body.theme-crystal-pearl {
+      --accent: #8870a0;
+      --accent-border: rgba(136,112,160,0.45);
+      --accent-glow: rgba(136,112,160,0.10);
+      --text-high: rgba(58,48,74,0.95); --text-mid: rgba(58,48,74,0.6);
+      --text-low: rgba(58,48,74,0.4); --text-ghost: rgba(58,48,74,0.06);
+      --border: rgba(58,48,74,0.12);
+      --overlay-dark: rgba(248,244,248,0.94); --overlay-mid: rgba(248,244,248,0.88);
+      --overlay-light: rgba(248,244,248,0.92);
+      --nav-bg: rgba(248,244,248,0.85); --tab-bg: rgba(248,244,248,0.70);
+      --card-bg: rgba(58,48,74,0.04);
+      --feature-bg: rgba(248,244,248,0.60); --footer-bg: rgba(248,244,248,0.70);
+      background: #f8f4f8;
+    }
+    body.theme-crystal-pearl .page-bg { background-color: #f8f4f8; }
+
+    body.theme-secret-garden {
+      --accent: #90b870;
+      --accent-border: rgba(144,184,112,0.45);
+      --accent-glow: rgba(144,184,112,0.14);
+      --overlay-dark: rgba(14,26,20,0.94); --overlay-mid: rgba(14,26,20,0.78);
+      --overlay-light: rgba(14,26,20,0.88);
+      background: #0e1a14;
+    }
+    body.theme-secret-garden .page-bg { background-color: #0e1a14; }
+
+    body.theme-bridal-blush {
+      --accent: #b87870;
+      --accent-border: rgba(184,120,112,0.45);
+      --accent-glow: rgba(184,120,112,0.10);
+      --text-high: rgba(74,48,46,0.95); --text-mid: rgba(74,48,46,0.6);
+      --text-low: rgba(74,48,46,0.4); --text-ghost: rgba(74,48,46,0.06);
+      --border: rgba(74,48,46,0.12);
+      --overlay-dark: rgba(251,240,238,0.94); --overlay-mid: rgba(251,240,238,0.88);
+      --overlay-light: rgba(251,240,238,0.92);
+      --nav-bg: rgba(251,240,238,0.85); --tab-bg: rgba(251,240,238,0.70);
+      --card-bg: rgba(74,48,46,0.04);
+      --feature-bg: rgba(251,240,238,0.60); --footer-bg: rgba(251,240,238,0.70);
+      background: #fbf0ee;
+    }
+    body.theme-bridal-blush .page-bg { background-color: #fbf0ee; }
+
+    body.theme-pure-petals {
+      --accent: #c08888;
+      --accent-border: rgba(192,136,136,0.45);
+      --accent-glow: rgba(192,136,136,0.10);
+      --text-high: rgba(58,40,40,0.95); --text-mid: rgba(58,40,40,0.6);
+      --text-low: rgba(58,40,40,0.4); --text-ghost: rgba(58,40,40,0.06);
+      --border: rgba(58,40,40,0.12);
+      --overlay-dark: rgba(253,250,250,0.94); --overlay-mid: rgba(253,250,250,0.88);
+      --overlay-light: rgba(253,250,250,0.92);
+      --nav-bg: rgba(253,250,250,0.85); --tab-bg: rgba(253,250,250,0.70);
+      --card-bg: rgba(58,40,40,0.04);
+      --feature-bg: rgba(253,250,250,0.60); --footer-bg: rgba(253,250,250,0.70);
+      background: #fdfafa;
+    }
+    body.theme-pure-petals .page-bg { background-color: #fdfafa; }
+
+    body.theme-violet-storm {
+      --accent: #9070d0;
+      --accent-border: rgba(144,112,208,0.45);
+      --accent-glow: rgba(144,112,208,0.14);
+      --overlay-dark: rgba(10,8,20,0.94); --overlay-mid: rgba(10,8,20,0.78);
+      --overlay-light: rgba(10,8,20,0.88);
+      background: #0a0814;
+    }
+    body.theme-violet-storm .page-bg { background-color: #0a0814; }
+
+    body.theme-golden-hour {
+      --accent: #e8a040;
+      --accent-border: rgba(232,160,64,0.45);
+      --accent-glow: rgba(232,160,64,0.14);
+      --overlay-dark: rgba(26,16,8,0.94); --overlay-mid: rgba(26,16,8,0.78);
+      --overlay-light: rgba(26,16,8,0.88);
+      background: #1a1008;
+    }
+    body.theme-golden-hour .page-bg { background-color: #1a1008; }
+
+    body.theme-forest-rain {
+      --accent: #98ada3;
+      --accent-border: rgba(152,173,163,0.45);
+      --accent-glow: rgba(152,173,163,0.14);
+      --overlay-dark: rgba(14,22,20,0.94); --overlay-mid: rgba(14,22,20,0.78);
+      --overlay-light: rgba(14,22,20,0.88);
+      background: #0e1614;
+    }
+    body.theme-forest-rain .page-bg { background-color: #0e1614; }
+
+    body.theme-enchanted-winter {
+      --accent: #7088a0;
+      --accent-border: rgba(112,136,160,0.45);
+      --accent-glow: rgba(112,136,160,0.10);
+      --text-high: rgba(26,42,58,0.95); --text-mid: rgba(26,42,58,0.6);
+      --text-low: rgba(26,42,58,0.4); --text-ghost: rgba(26,42,58,0.06);
+      --border: rgba(26,42,58,0.12);
+      --overlay-dark: rgba(232,238,242,0.94); --overlay-mid: rgba(232,238,242,0.88);
+      --overlay-light: rgba(232,238,242,0.92);
+      --nav-bg: rgba(232,238,242,0.85); --tab-bg: rgba(232,238,242,0.70);
+      --card-bg: rgba(26,42,58,0.04);
+      --feature-bg: rgba(232,238,242,0.60); --footer-bg: rgba(232,238,242,0.70);
+      background: #e8eef2;
+    }
+    body.theme-enchanted-winter .page-bg { background-color: #e8eef2; }
+
+    body.theme-emerald-night {
+      --accent: #30c090;
+      --accent-border: rgba(48,192,144,0.45);
+      --accent-glow: rgba(48,192,144,0.14);
+      --overlay-dark: rgba(4,14,10,0.94); --overlay-mid: rgba(4,14,10,0.78);
+      --overlay-light: rgba(4,14,10,0.88);
+      background: #040e0a;
+    }
+    body.theme-emerald-night .page-bg { background-color: #040e0a; }
+
+    body.theme-still-waters {
+      --accent: #70a8b8;
+      --accent-border: rgba(112,168,184,0.45);
+      --accent-glow: rgba(112,168,184,0.14);
+      --overlay-dark: rgba(10,20,24,0.94); --overlay-mid: rgba(10,20,24,0.78);
+      --overlay-light: rgba(10,20,24,0.88);
+      background: #0a1418;
+    }
+    body.theme-still-waters .page-bg { background-color: #0a1418; }
+
+    body.theme-heavens-gate {
+      --accent: #8870b8;
+      --accent-border: rgba(136,112,184,0.45);
+      --accent-glow: rgba(136,112,184,0.10);
+      --text-high: rgba(42,40,72,0.95); --text-mid: rgba(42,40,72,0.6);
+      --text-low: rgba(42,40,72,0.4); --text-ghost: rgba(42,40,72,0.06);
+      --border: rgba(42,40,72,0.12);
+      --overlay-dark: rgba(240,240,250,0.94); --overlay-mid: rgba(240,240,250,0.88);
+      --overlay-light: rgba(240,240,250,0.92);
+      --nav-bg: rgba(240,240,250,0.85); --tab-bg: rgba(240,240,250,0.70);
+      --card-bg: rgba(42,40,72,0.04);
+      --feature-bg: rgba(240,240,250,0.60); --footer-bg: rgba(240,240,250,0.70);
+      background: #f0f0fa;
+    }
+    body.theme-heavens-gate .page-bg { background-color: #f0f0fa; }
+
+    body.theme-ocean-breeze {
+      --accent: #4090b0;
+      --accent-border: rgba(64,144,176,0.45);
+      --accent-glow: rgba(64,144,176,0.10);
+      --text-high: rgba(26,58,72,0.95); --text-mid: rgba(26,58,72,0.6);
+      --text-low: rgba(26,58,72,0.4); --text-ghost: rgba(26,58,72,0.06);
+      --border: rgba(26,58,72,0.12);
+      --overlay-dark: rgba(232,244,248,0.94); --overlay-mid: rgba(232,244,248,0.88);
+      --overlay-light: rgba(232,244,248,0.92);
+      --nav-bg: rgba(232,244,248,0.85); --tab-bg: rgba(232,244,248,0.70);
+      --card-bg: rgba(26,58,72,0.04);
+      --feature-bg: rgba(232,244,248,0.60); --footer-bg: rgba(232,244,248,0.70);
+      background: #e8f4f8;
+    }
+    body.theme-ocean-breeze .page-bg { background-color: #e8f4f8; }
+
+    body.theme-wildfire {
+      --accent: #e04020;
+      --accent-border: rgba(224,64,32,0.45);
+      --accent-glow: rgba(224,64,32,0.14);
+      --overlay-dark: rgba(26,8,8,0.94); --overlay-mid: rgba(26,8,8,0.78);
+      --overlay-light: rgba(26,8,8,0.88);
+      background: #1a0808;
+    }
+    body.theme-wildfire .page-bg { background-color: #1a0808; }
+
+    body.theme-full-bloom {
+      --accent: #b04878;
+      --accent-border: rgba(176,72,120,0.45);
+      --accent-glow: rgba(176,72,120,0.10);
+      --text-high: rgba(58,32,48,0.95); --text-mid: rgba(58,32,48,0.6);
+      --text-low: rgba(58,32,48,0.4); --text-ghost: rgba(58,32,48,0.06);
+      --border: rgba(58,32,48,0.12);
+      --overlay-dark: rgba(251,244,232,0.94); --overlay-mid: rgba(251,244,232,0.88);
+      --overlay-light: rgba(251,244,232,0.92);
+      --nav-bg: rgba(251,244,232,0.85); --tab-bg: rgba(251,244,232,0.70);
+      --card-bg: rgba(58,32,48,0.04);
+      --feature-bg: rgba(251,244,232,0.60); --footer-bg: rgba(251,244,232,0.70);
+      background: #fbf4e8;
+    }
+    body.theme-full-bloom .page-bg { background-color: #fbf4e8; }
+
+    body.theme-lunar-gold {
+      --accent: #d4c068;
+      --accent-border: rgba(212,192,104,0.45);
+      --accent-glow: rgba(212,192,104,0.14);
+      --overlay-dark: rgba(10,10,20,0.94); --overlay-mid: rgba(10,10,20,0.78);
+      --overlay-light: rgba(10,10,20,0.88);
+      background: #0a0a14;
+    }
+    body.theme-lunar-gold .page-bg { background-color: #0a0a14; }
+  </style>
+</head>
+<body>
+<div class="page-bg"><div class="page-overlay">
+
+  <nav class="nav">
+    <a class="nav-logo" href="index.html">
+      <span>🍽</span>
+      <span class="nav-logo-text">The Culinary Journal</span>
+      <span class="nav-logo-badge">Est. 2025</span>
+    </a>
+    <div class="nav-btns" style="align-items:center">
+      <span class="nav-user-pill" id="nav-user-pill">@<span id="nav-username">…</span></span>
+      <button class="btn btn-ghost" onclick="signOut()">Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="tab-nav"><div class="tab-nav-inner">
+    <a class="tab" href="index.html">🏠 Home</a>
+    <a class="tab" href="recipes.html">📖 Recipes</a>
+    <a class="tab" href="meal-planner.html">🍽 Meal Planner</a>
+    <a class="tab" href="pantry.html">🥶 Pantry &amp; Fridge</a>
+    <a class="tab" href="grocery.html">🛒 Grocery List</a>
+    <a class="tab" href="table-planner.html">🪑 Table Planner</a>
+    <a class="tab" href="print-studio.html">🖨 Print Studio</a>
+    <a class="tab active" href="profile.html">👤 My Profile</a>
+  </div></div>
+
+  <div id="loading-state" class="loader">
+    <div class="loader-spin"></div>
+    <div class="loader-text">Loading your profile…</div>
+  </div>
+
+  <div id="profile-content" style="display:none">
+    <div class="profile-wrap">
+
+      <header class="profile-header">
+        <h1 class="profile-title">My Profile</h1>
+        <p class="profile-subtitle">Manage your account and personalise your journal.</p>
+      </header>
+
+      <section class="pcard">
+        <h2 class="pcard-title">Account Details</h2>
+        <p class="pcard-desc">Your name and username are visible only to you for now.</p>
+
+        <div class="acct-id">
+          <div class="acct-avatar" id="acct-avatar">?</div>
+          <div>
+            <div class="acct-meta-name" id="acct-display-name">—</div>
+            <div class="acct-meta-since" id="acct-since">Member since —</div>
+          </div>
+        </div>
+
+        <div class="pmsg" id="acct-msg"></div>
+
+        <div class="pfield">
+          <label class="plabel" for="acct-name">Full Name</label>
+          <input class="pinput" type="text" id="acct-name" placeholder="Your full name" autocomplete="name">
+          <div class="perror" id="acct-name-error"></div>
+        </div>
+
+        <div class="pfield">
+          <label class="plabel" for="acct-username">Username</label>
+          <input class="pinput" type="text" id="acct-username" autocomplete="username" oninput="validateUsernameField(this)">
+          <div class="phint">3–20 characters. Letters, numbers, _ and - only.</div>
+          <div class="perror" id="acct-username-error"></div>
+        </div>
+
+        <div class="pfield">
+          <label class="plabel" for="acct-email">Email</label>
+          <input class="pinput" type="email" id="acct-email" disabled>
+          <div class="phint">Email changes are coming soon — contact support if you need to update yours.</div>
+        </div>
+
+        <button class="pbtn" id="acct-save-btn" onclick="saveAccount()">Save Changes</button>
+      </section>
+
+      <section class="pcard">
+        <h2 class="pcard-title">Change Password</h2>
+        <p class="pcard-desc">Enter your current password, then choose a new one.</p>
+
+        <div class="pmsg" id="pwd-msg"></div>
+
+        <div class="pfield">
+          <label class="plabel" for="pwd-current">Current Password</label>
+          <div class="pwd-wrap">
+            <input class="pinput" type="password" id="pwd-current" placeholder="••••••••" autocomplete="current-password" style="padding-right:44px">
+            <button type="button" class="pwd-toggle-btn" onclick="togglePwd('pwd-current', this)" aria-label="Show password" title="Show password">
+              <svg class="eye-show" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-hide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="pfield">
+          <label class="plabel" for="pwd-new">New Password</label>
+          <div class="pwd-wrap">
+            <input class="pinput" type="password" id="pwd-new" placeholder="Choose a strong password" autocomplete="new-password" style="padding-right:44px" oninput="checkPwdStrength(this.value)">
+            <button type="button" class="pwd-toggle-btn" onclick="togglePwd('pwd-new', this)" aria-label="Show password" title="Show password">
+              <svg class="eye-show" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-hide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+          <div style="margin-top:8px;display:none" id="pwd-strength-wrap">
+            <div style="display:flex;gap:4px;margin-bottom:6px">
+              <div class="str-bar" id="pwd-str-1"></div>
+              <div class="str-bar" id="pwd-str-2"></div>
+              <div class="str-bar" id="pwd-str-3"></div>
+              <div class="str-bar" id="pwd-str-4"></div>
+            </div>
+            <div id="pwd-strength-label" style="font-family:'DM Sans',sans-serif;font-size:11px;color:rgba(255,255,255,0.4)"></div>
+          </div>
+          <div id="pwd-rules" style="margin-top:8px;display:none">
+            <div class="pwd-rule" id="pwd-rule-len">✗ At least 8 characters</div>
+            <div class="pwd-rule" id="pwd-rule-upper">✗ At least one uppercase letter (A–Z)</div>
+            <div class="pwd-rule" id="pwd-rule-lower">✗ At least one lowercase letter (a–z)</div>
+            <div class="pwd-rule" id="pwd-rule-num">✗ At least one number (0–9)</div>
+            <div class="pwd-rule" id="pwd-rule-special">✗ At least one special character (!@#$%^&amp;*)</div>
+          </div>
+        </div>
+
+        <button class="pbtn" id="pwd-save-btn" onclick="changePassword()">Change Password</button>
+      </section>
+
+      <section class="pcard">
+        <h2 class="pcard-title">Theme</h2>
+        <p class="pcard-desc">Choose a look for your journal. Your selection is saved automatically.</p>
+
+        <div class="pmsg" id="theme-msg"></div>
+
+        <div class="theme-group">
+          <div class="theme-group-label">Dark</div>
+          <div class="theme-grid" id="theme-grid-dark"></div>
+        </div>
+        <div class="theme-group">
+          <div class="theme-group-label">Light</div>
+          <div class="theme-grid" id="theme-grid-light"></div>
+        </div>
+        <div class="theme-group">
+          <div class="theme-group-label">Seasonal</div>
+          <div class="theme-grid" id="theme-grid-seasonal"></div>
+        </div>
+        <div class="theme-group">
+          <div class="theme-group-label">Festive</div>
+          <div class="theme-grid" id="theme-grid-festive"></div>
+        </div>
+        <div class="theme-group">
+          <div class="theme-group-label">Special</div>
+          <div class="theme-grid" id="theme-grid-special"></div>
+        </div>
+        <div class="theme-group">
+          <div class="theme-group-label">Inspired</div>
+          <div class="theme-grid" id="theme-grid-inspired"></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <footer class="footer">
+    <span class="footer-text">© 2025 The Culinary Journal. All rights reserved.</span>
+    <div class="footer-links">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Use</a>
+      <a href="#">Contact</a>
+    </div>
+  </footer>
+
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   PROFILE PAGE — uses RPCs for all profile reads/writes so it
+   works regardless of how RLS is configured on the profiles table.
+═══════════════════════════════════════════════════════════════ */
+const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+const SUPA_KEY = 'sb_publishable_rAjMRvy0qKszgP8fu3oRiA_5iWPVwob';
+
+const THEMES = {
+  dark: [
+    { key: 'midnight-slate',  name: 'Midnight Slate',  sub: 'Default',         swatches: ['#0a0a0a', '#C4973B', '#ffffff'], live: true },
+    { key: 'midnight-black',  name: 'Midnight Black',  sub: 'Pure dark',       swatches: ['#000000', '#C4973B', '#ffffff'], live: true },
+    { key: 'dark-forest',     name: 'Dark Forest',     sub: 'Deep green',      swatches: ['#0b1410', '#6b8e5a', '#ffffff'], live: true },
+    { key: 'dark-bordeaux',   name: 'Dark Bordeaux',   sub: 'Wine red',        swatches: ['#1a0a0e', '#a04050', '#ffffff'], live: true },
+    { key: 'dark-navy',       name: 'Dark Navy',       sub: 'Deep blue',       swatches: ['#08111e', '#5080b8', '#ffffff'], live: true },
+    { key: 'dark-chocolate',  name: 'Dark Chocolate',  sub: 'Cocoa brown',     swatches: ['#180e08', '#a07050', '#ffffff'], live: true },
+    { key: 'dark-obsidian',   name: 'Dark Obsidian',   sub: 'Volcanic glass',  swatches: ['#0a0a14', '#7868a0', '#ffffff'], live: true }
+  ],
+  light: [
+    { key: 'cream-gold',      name: 'Cream & Gold',    sub: 'Warm paper',      swatches: ['#fdf6e3', '#b8860b', '#281e12'], live: true },
+    { key: 'pure-white',      name: 'Pure White',      sub: 'Minimal',         swatches: ['#ffffff', '#9b7028', '#141414'], live: true },
+    { key: 'soft-linen',      name: 'Soft Linen',      sub: 'Natural texture', swatches: ['#f5f0e8', '#a08868', '#2a2418'], live: true },
+    { key: 'sage-cream',      name: 'Sage & Cream',    sub: 'Herb garden',     swatches: ['#f4f1e8', '#8a9d7a', '#2a2e22'], live: true },
+    { key: 'blush-rose',      name: 'Blush & Rose',    sub: 'Soft romance',    swatches: ['#fbeae5', '#c47b8f', '#3a2028'], live: true },
+    { key: 'silver-morning',  name: 'Silver Morning',  sub: 'Cool grey',       swatches: ['#f0f2f5', '#7a8898', '#1a2028'], live: true },
+    { key: 'lemon-fresh',     name: 'Lemon Fresh',     sub: 'Citrus light',    swatches: ['#fdfbe8', '#c8a838', '#2e2818'], live: true }
+  ],
+  seasonal: [
+    { key: 'spring-blossom',  name: 'Spring Blossom',  sub: 'Soft pinks',      swatches: ['#fdeef2', '#c47b8f', '#3c1e28'], live: true },
+    { key: 'summer-citrus',   name: 'Summer Citrus',   sub: 'Bright zest',     swatches: ['#fff8e0', '#e08820', '#3a2a10'], live: true },
+    { key: 'autumn-harvest',  name: 'Autumn Harvest',  sub: 'Burnt orange',    swatches: ['#1a0e08', '#d97c3c', '#ffffff'], live: true },
+    { key: 'winter-frost',    name: 'Winter Frost',    sub: 'Icy blue',        swatches: ['#e8f0f5', '#6890b0', '#1a2830'], live: true }
+  ],
+  festive: [
+    { key: 'christmas',       name: 'Christmas',       sub: 'Red & green',     swatches: ['#1a0a0a', '#c83838', '#3a8050'], live: true },
+    { key: 'diwali',          name: 'Diwali',          sub: 'Golden glow',     swatches: ['#1f0a05', '#e8a020', '#c84040'], live: true },
+    { key: 'ramadan',         name: 'Ramadan',         sub: 'Crescent moon',   swatches: ['#0a1418', '#80a8c0', '#d8b860'], live: true },
+    { key: 'new-year',        name: 'New Year',        sub: 'Midnight sparkle',swatches: ['#000814', '#d4af37', '#ffffff'], live: true },
+    { key: 'onam',            name: 'Onam',            sub: 'Floral feast',    swatches: ['#fff5e0', '#e08020', '#7a9050'], live: true },
+    { key: 'easter',          name: 'Easter',          sub: 'Pastel spring',   swatches: ['#fbf2e8', '#c8a0c0', '#a0c890'], live: true }
+  ],
+  special: [
+    { key: 'wedding-white',   name: 'Wedding White',   sub: 'Pure & elegant',  swatches: ['#ffffff', '#c0a060', '#1a1a1a'], live: true },
+    { key: 'birthday-cake',   name: 'Birthday Cake',   sub: 'Confetti joy',    swatches: ['#fff0f8', '#e878a8', '#5a3050'], live: true },
+    { key: 'baby-shower',     name: 'Baby Shower',     sub: 'Soft pastels',    swatches: ['#eef5f8', '#a0c8d8', '#3a4a58'], live: true },
+    { key: 'fine-dining',     name: 'Fine Dining',     sub: 'Black & gold',    swatches: ['#0a0a0a', '#d4af37', '#ffffff'], live: true },
+    { key: 'old-cookbook',    name: 'Old Cookbook',    sub: 'Vintage paper',   swatches: ['#f2e8d0', '#7a4828', '#2a1810'], live: true },
+    { key: 'world-kitchen',   name: 'World Kitchen',   sub: 'Global mosaic',   swatches: ['#1a1208', '#e08838', '#80a060'], live: true }
+  ],
+  inspired: [
+    { key: 'silk-whisper',     name: 'Silk & Whisper',  sub: 'Soft luxury',      swatches: ['#1a1418', '#c8a8b0', '#ffffff'], live: true },
+    { key: 'midnight-garden',  name: 'Midnight Garden', sub: 'Botanical dark',   swatches: ['#0a1410', '#7a9070', '#e0c890'], live: true },
+    { key: 'crystal-pearl',    name: 'Crystal & Pearl', sub: 'Iridescent',       swatches: ['#f8f4f8', '#b8a8c8', '#3a304a'], live: true },
+    { key: 'secret-garden',    name: 'The Secret Garden', sub: 'Hidden bloom',   swatches: ['#0e1a14', '#90b870', '#e8d8b0'], live: true },
+    { key: 'bridal-blush',     name: 'Bridal Blush',    sub: 'Veil & rose',      swatches: ['#fbf0ee', '#d8a8a0', '#4a302e'], live: true },
+    { key: 'pure-petals',      name: 'Pure Petals',     sub: 'White florals',    swatches: ['#fdfafa', '#e8c8c8', '#3a2828'], live: true },
+    { key: 'violet-storm',     name: 'Violet Storm',    sub: 'Electric purple',  swatches: ['#0a0814', '#9070d0', '#ffffff'], live: true },
+    { key: 'golden-hour',      name: 'Golden Hour',     sub: 'Sunset glow',      swatches: ['#1a1008', '#e8a040', '#ffd890'], live: true },
+    { key: 'forest-rain',      name: 'Forest Rain',     sub: 'Petrichor mist',   swatches: ['#0e1614', '#7a9088', '#d8d0c0'], live: true },
+    { key: 'enchanted-winter', name: 'Enchanted Winter', sub: 'Snow & silver',   swatches: ['#e8eef2', '#7088a0', '#1a2a3a'], live: true },
+    { key: 'emerald-night',    name: 'Emerald Night',   sub: 'Jewel green',      swatches: ['#040e0a', '#10a070', '#ffffff'], live: true },
+    { key: 'still-waters',     name: 'Still Waters',    sub: 'Calm lake',        swatches: ['#0a1418', '#5090a0', '#d0e0e8'], live: true },
+    { key: 'heavens-gate',     name: "Heaven's Gate",   sub: 'Celestial light',  swatches: ['#f0f0fa', '#a890d0', '#2a2848'], live: true },
+    { key: 'ocean-breeze',     name: 'Ocean Breeze',    sub: 'Salt & spray',     swatches: ['#e8f4f8', '#4090b0', '#1a3a48'], live: true },
+    { key: 'wildfire',         name: 'Wildfire',        sub: 'Untamed flame',    swatches: ['#1a0808', '#e04020', '#f8c060'], live: true },
+    { key: 'full-bloom',       name: 'Full Bloom',      sub: 'Garden in summer', swatches: ['#fbf4e8', '#d870a0', '#3a2030'], live: true },
+    { key: 'lunar-gold',       name: 'Lunar Gold',      sub: 'Moonlight metal',  swatches: ['#0a0a14', '#d4c068', '#ffffff'], live: true }
+  ]
+};
+
+let SESSION = null;
+let PROFILE = null;
+
+/* ═══════════════════════════════════════════════════
+   SESSION
+═══════════════════════════════════════════════════ */
+function loadSession() {
+  try {
+    const raw = localStorage.getItem('tcj_session');
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (!s || typeof s !== 'object') return null;
+    return s;
+  } catch (_) { return null; }
+}
+
+function signOut() {
+  try {
+    if (SESSION && SESSION.access_token) {
+      fetch(SUPA_URL + '/auth/v1/logout', {
+        method: 'POST',
+        headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SESSION.access_token }
+      }).catch(() => {});
+    }
+  } catch (_) {}
+  localStorage.removeItem('tcj_session');
+  window.location.href = 'login.html';
+}
+
+/* ═══════════════════════════════════════════════════
+   RPC HELPER
+   Calls a Postgres function via PostgREST. Returns the
+   parsed JSON body. Throws with the server error message
+   on failure so callers can surface real diagnostics.
+═══════════════════════════════════════════════════ */
+async function callRPC(fnName, args) {
+  const res = await fetch(SUPA_URL + '/rest/v1/rpc/' + fnName, {
+    method: 'POST',
+    headers: {
+      apikey: SUPA_KEY,
+      Authorization: 'Bearer ' + SESSION.access_token,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(args || {})
+  });
+  const text = await res.text();
+  let parsed = null;
+  try { parsed = text ? JSON.parse(text) : null; } catch (_) { parsed = text; }
+
+  if (!res.ok) {
+    const msg = (parsed && (parsed.message || parsed.error_description || parsed.hint)) || ('HTTP ' + res.status);
+    const err = new Error(msg);
+    err.status = res.status;
+    err.body = parsed;
+    throw err;
+  }
+  return parsed;
+}
+
+/* ═══════════════════════════════════════════════════
+   ERROR DISPLAY (replaces silent redirect-to-login)
+═══════════════════════════════════════════════════ */
+function showFatalError(title, detail, showRetry) {
+  const ls = document.getElementById('loading-state');
+  ls.innerHTML = '';
+  const box = document.createElement('div');
+  box.className = 'err-box';
+
+  const t = document.createElement('div');
+  t.className = 'err-title';
+  t.textContent = title;
+  box.appendChild(t);
+
+  const d = document.createElement('div');
+  d.className = 'err-detail';
+  d.textContent = detail;
+  box.appendChild(d);
+
+  const actions = document.createElement('div');
+  actions.className = 'err-actions';
+  if (showRetry) {
+    const retry = document.createElement('button');
+    retry.className = 'btn btn-ghost';
+    retry.textContent = 'Try Again';
+    retry.onclick = function () { window.location.reload(); };
+    actions.appendChild(retry);
+  }
+  const back = document.createElement('a');
+  back.className = 'btn btn-gold';
+  back.href = 'login.html';
+  back.style.textDecoration = 'none';
+  back.style.display = 'inline-block';
+  back.textContent = 'Back to Sign In';
+  actions.appendChild(back);
+  box.appendChild(actions);
+
+  ls.appendChild(box);
+}
+
+/* ═══════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════ */
+async function init() {
+  SESSION = loadSession();
+
+  if (!SESSION) {
+    showFatalError('Not signed in',
+      'No session was found in your browser. Please sign in to view your profile.',
+      false);
+    return;
+  }
+  if (!SESSION.access_token || !SESSION.user_id) {
+    showFatalError('Session is incomplete',
+      'Your saved session is missing required fields. Sign in again to refresh it.',
+      false);
+    return;
+  }
+
+  try {
+    const rows = await callRPC('get_my_profile', {});
+    if (!Array.isArray(rows) || rows.length === 0) {
+      showFatalError('Profile not found',
+        'You are signed in, but no matching profile row exists for your account.\n\n' +
+        'This usually means the database trigger that creates profiles on signup did not run. ' +
+        'Check that handle_new_user() is attached to auth.users.',
+        true);
+      return;
+    }
+    PROFILE = rows[0];
+
+    if (PROFILE.is_active === false) {
+      showFatalError('Account deactivated',
+        'This account has been deactivated. Contact support to reactivate it.',
+        false);
+      localStorage.removeItem('tcj_session');
+      return;
+    }
+
+    hydrateUI();
+    renderAllThemes();
+    applyTheme(PROFILE.theme_preference || 'midnight-slate', false);
+
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('profile-content').style.display = 'block';
+  } catch (err) {
+    if (err && err.status === 401) {
+      showFatalError('Your session has expired',
+        'It has been a while since you signed in. Please sign in again.',
+        false);
+      return;
+    }
+    if (err && err.status === 404) {
+      showFatalError('Database not set up yet',
+        'The required database function (get_my_profile) was not found.\n\n' +
+        'Run the SQL migration profile-rpcs.sql in your Supabase SQL Editor and reload.',
+        true);
+      return;
+    }
+    showFatalError('Could not load your profile',
+      (err && err.message) ? err.message : String(err),
+      true);
+  }
+}
+
+function hydrateUI() {
+  const name = PROFILE.full_name || '';
+  const initials = (
+    name.trim().split(/\s+/).map(function (w) { return w[0]; }).join('').slice(0, 2)
+    || (PROFILE.username || '').slice(0, 2)
+  ).toUpperCase();
+  document.getElementById('acct-avatar').textContent = initials || '?';
+  document.getElementById('acct-display-name').textContent = name || PROFILE.username || '—';
+  document.getElementById('nav-username').textContent = PROFILE.username || '';
+
+  const since = PROFILE.created_at ? new Date(PROFILE.created_at) : null;
+  document.getElementById('acct-since').textContent =
+    'Member since ' + (since && !isNaN(since.getTime())
+      ? since.toLocaleDateString(undefined, { year: 'numeric', month: 'long' })
+      : '—');
+
+  document.getElementById('acct-name').value     = name;
+  document.getElementById('acct-username').value = PROFILE.username || '';
+  document.getElementById('acct-email').value    = PROFILE.email || '';
+}
+
+/* ═══════════════════════════════════════════════════
+   MESSAGES
+═══════════════════════════════════════════════════ */
+function setMsg(id, text, type) {
+  const el = document.getElementById(id);
+  el.className = 'pmsg pmsg-' + type;
+  el.textContent = text;
+  el.style.display = 'block';
+}
+function clearMsg(id) { document.getElementById(id).style.display = 'none'; }
+
+/* ═══════════════════════════════════════════════════
+   ACCOUNT DETAILS
+═══════════════════════════════════════════════════ */
+function validateUsernameField(input) {
+  const err = document.getElementById('acct-username-error');
+  const val = input.value;
+  if (!val) { err.style.display = 'none'; input.classList.remove('error'); return true; }
+  if (val.length < 3 || val.length > 20) {
+    err.textContent = 'Username must be 3–20 characters.';
+    err.style.display = 'block'; input.classList.add('error'); return false;
+  }
+  if (!/^[a-zA-Z0-9_-]+$/.test(val)) {
+    err.textContent = 'Letters, numbers, underscores and hyphens only.';
+    err.style.display = 'block'; input.classList.add('error'); return false;
+  }
+  err.style.display = 'none'; input.classList.remove('error'); return true;
+}
+
+async function saveAccount() {
+  clearMsg('acct-msg');
+  const nameInput = document.getElementById('acct-name');
+  const userInput = document.getElementById('acct-username');
+  const newName = nameInput.value.trim();
+  const newUsername = userInput.value.trim();
+
+  if (!newName) { setMsg('acct-msg', 'Please enter your name.', 'error'); return; }
+  if (!validateUsernameField(userInput)) {
+    setMsg('acct-msg', 'Please fix the username before saving.', 'error'); return;
+  }
+
+  const nameChanged = newName !== (PROFILE.full_name || '');
+  const userChanged = newUsername.toLowerCase() !== (PROFILE.username || '').toLowerCase();
+  if (!nameChanged && !userChanged) {
+    setMsg('acct-msg', 'Nothing to save — your details are already up to date.', 'success');
+    return;
+  }
+
+  const btn = document.getElementById('acct-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    const rows = await callRPC('update_my_profile', {
+      new_full_name: nameChanged ? newName : null,
+      new_username:  userChanged ? newUsername : null
+    });
+    if (!Array.isArray(rows) || rows.length === 0) {
+      throw new Error('Update did not return a profile row.');
+    }
+    PROFILE = rows[0];
+
+    if (userChanged) {
+      SESSION.username = PROFILE.username;
+      localStorage.setItem('tcj_session', JSON.stringify(SESSION));
+    }
+    hydrateUI();
+    setMsg('acct-msg', 'Your details have been saved.', 'success');
+  } catch (e) {
+    let message = e.message || 'Could not save changes.';
+    // Translate known server error codes into friendly text
+    if (/username_taken/i.test(message)) {
+      userInput.classList.add('error');
+      const ue = document.getElementById('acct-username-error');
+      ue.textContent = 'That username is already taken.';
+      ue.style.display = 'block';
+      message = 'That username is already taken. Please choose another.';
+    } else if (/username_invalid_length/i.test(message)) {
+      message = 'Username must be 3–20 characters.';
+    } else if (/username_invalid_chars/i.test(message)) {
+      message = 'Username may only contain letters, numbers, _ and -.';
+    } else if (/name_empty/i.test(message)) {
+      message = 'Please enter your name.';
+    } else if (/not_authenticated/i.test(message)) {
+      message = 'Your session has expired. Please sign in again.';
+    }
+    setMsg('acct-msg', message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Changes';
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   PASSWORD CHANGE
+═══════════════════════════════════════════════════ */
+function togglePwd(id, btn) {
+  const input = document.getElementById(id);
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  const showIcon = btn.querySelector('.eye-show');
+  const hideIcon = btn.querySelector('.eye-hide');
+  if (showIcon && hideIcon) {
+    showIcon.style.display = isHidden ? 'none' : 'block';
+    hideIcon.style.display = isHidden ? 'block' : 'none';
+  }
+  const label = isHidden ? 'Hide password' : 'Show password';
+  btn.setAttribute('aria-label', label);
+  btn.setAttribute('title', label);
+}
+
+function checkPwdStrength(val) {
+  const wrap  = document.getElementById('pwd-strength-wrap');
+  const rules = document.getElementById('pwd-rules');
+  if (!val) { wrap.style.display = 'none'; rules.style.display = 'none'; return; }
+  wrap.style.display = 'block'; rules.style.display = 'block';
+
+  const checks = {
+    len:     val.length >= 8,
+    upper:   /[A-Z]/.test(val),
+    lower:   /[a-z]/.test(val),
+    num:     /[0-9]/.test(val),
+    special: /[!@#$%^&*()_+\-=\[\]{};':"\|,.<>\/?]/.test(val)
+  };
+
+  Object.keys(checks).forEach(function (key) {
+    const el = document.getElementById('pwd-rule-' + key);
+    if (el) {
+      el.classList.toggle('pass', checks[key]);
+      el.textContent = (checks[key] ? '✓' : '✗') + el.textContent.slice(1);
+    }
+  });
+
+  const score = Object.values(checks).filter(Boolean).length;
+  const bars  = ['pwd-str-1', 'pwd-str-2', 'pwd-str-3', 'pwd-str-4'];
+  const label = document.getElementById('pwd-strength-label');
+
+  bars.forEach(function (id, i) {
+    const bar = document.getElementById(id);
+    bar.className = 'str-bar';
+    if (score <= 2 && i < score) bar.classList.add('weak');
+    else if (score === 3 && i < score) bar.classList.add('fair');
+    else if (score === 4 && i < score) bar.classList.add('good');
+    else if (score === 5 && i < score) bar.classList.add('strong');
+  });
+
+  if (score <= 2)        { label.textContent = '🔴 Weak password';   label.style.color = '#e05555'; }
+  else if (score === 3)  { label.textContent = '🟡 Fair password';   label.style.color = '#e09955'; }
+  else if (score === 4)  { label.textContent = '🟠 Good password';   label.style.color = '#e0cc55'; }
+  else                   { label.textContent = '🟢 Strong password'; label.style.color = '#55cc77'; }
+}
+
+function isPasswordStrong(val) {
+  return val.length >= 8 &&
+    /[A-Z]/.test(val) &&
+    /[a-z]/.test(val) &&
+    /[0-9]/.test(val) &&
+    /[!@#$%^&*()_+\-=\[\]{};':"\|,.<>\/?]/.test(val);
+}
+
+async function changePassword() {
+  clearMsg('pwd-msg');
+  const current = document.getElementById('pwd-current').value;
+  const next    = document.getElementById('pwd-new').value;
+
+  if (!current || !next) {
+    setMsg('pwd-msg', 'Please fill in both fields.', 'error'); return;
+  }
+  if (current === next) {
+    setMsg('pwd-msg', 'Your new password must be different from your current one.', 'error'); return;
+  }
+  if (!isPasswordStrong(next)) {
+    setMsg('pwd-msg', 'Please choose a stronger password that meets all the requirements.', 'error'); return;
+  }
+
+  const btn = document.getElementById('pwd-save-btn');
+  btn.disabled = true; btn.textContent = 'Updating…';
+
+  try {
+    // Step 1: verify current password by re-authenticating.
+    const reAuthRes = await fetch(SUPA_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: PROFILE.email, password: current })
+    });
+    if (!reAuthRes.ok) {
+      throw new Error('Your current password is incorrect.');
+    }
+    const reAuthData = await reAuthRes.json();
+    SESSION.access_token = reAuthData.access_token;
+    localStorage.setItem('tcj_session', JSON.stringify(SESSION));
+
+    // Step 2: update the password via Supabase auth user endpoint.
+    const updRes = await fetch(SUPA_URL + '/auth/v1/user', {
+      method: 'PUT',
+      headers: {
+        apikey: SUPA_KEY,
+        Authorization: 'Bearer ' + SESSION.access_token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ password: next })
+    });
+    if (!updRes.ok) {
+      const errData = await updRes.json().catch(function () { return {}; });
+      throw new Error(errData.msg || errData.error_description || 'Could not update password.');
+    }
+
+    document.getElementById('pwd-current').value = '';
+    document.getElementById('pwd-new').value     = '';
+    checkPwdStrength('');
+    setMsg('pwd-msg', 'Password updated successfully.', 'success');
+  } catch (e) {
+    setMsg('pwd-msg', e.message || 'Could not change password. Please try again.', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Change Password';
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   THEME SELECTOR
+═══════════════════════════════════════════════════ */
+function renderAllThemes() {
+  renderThemeGroup('theme-grid-dark',     THEMES.dark);
+  renderThemeGroup('theme-grid-light',    THEMES.light);
+  renderThemeGroup('theme-grid-seasonal', THEMES.seasonal);
+  renderThemeGroup('theme-grid-festive',  THEMES.festive);
+  renderThemeGroup('theme-grid-special',  THEMES.special);
+  renderThemeGroup('theme-grid-inspired', THEMES.inspired);
+}
+
+function renderThemeGroup(containerId, themes) {
+  const root = document.getElementById(containerId);
+  root.innerHTML = '';
+  themes.forEach(function (t) {
+    const card = document.createElement('div');
+    card.className = 'theme-card' + (t.live ? '' : ' locked');
+    card.dataset.key = t.key;
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', t.live ? '0' : '-1');
+    card.setAttribute('aria-label', t.name + (t.live ? '' : ' (coming soon)'));
+
+    const tick = document.createElement('div');
+    tick.className = 'theme-active-tick';
+    tick.textContent = '✓';
+    card.appendChild(tick);
+
+    const sw = document.createElement('div');
+    sw.className = 'theme-swatches';
+    t.swatches.forEach(function (c) {
+      const s = document.createElement('div');
+      s.className = 'theme-swatch';
+      s.style.background = c;
+      sw.appendChild(s);
+    });
+    card.appendChild(sw);
+
+    const nm = document.createElement('div');
+    nm.className = 'theme-name';
+    nm.textContent = t.name;
+    card.appendChild(nm);
+
+    const sub = document.createElement('div');
+    sub.className = 'theme-sub';
+    sub.textContent = t.live ? t.sub : 'Coming soon';
+    card.appendChild(sub);
+
+    if (t.live) {
+      card.addEventListener('click', function () { selectTheme(t.key); });
+      card.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectTheme(t.key); }
+      });
+    }
+    root.appendChild(card);
+  });
+}
+
+function applyTheme(key, persistLocal) {
+  const cl = document.body.classList;
+  Array.from(cl).filter(function (c) { return c.indexOf('theme-') === 0; })
+    .forEach(function (c) { cl.remove(c); });
+  if (key && key !== 'midnight-slate') cl.add('theme-' + key);
+
+  document.querySelectorAll('.theme-card').forEach(function (c) { c.classList.remove('active'); });
+  const active = document.querySelector('.theme-card[data-key="' + key + '"]');
+  if (active) active.classList.add('active');
+
+  if (persistLocal !== false) {
+    try { localStorage.setItem('tcj_theme', key); } catch (_) {}
+  }
+}
+
+async function selectTheme(key) {
+  const prev = PROFILE.theme_preference || 'midnight-slate';
+  applyTheme(key, true);
+  if (key === prev) return;
+
+  try {
+    const returned = await callRPC('update_my_theme', { new_theme: key });
+    PROFILE.theme_preference = (typeof returned === 'string') ? returned : key;
+    showToast('Theme saved');
+  } catch (e) {
+    applyTheme(prev, true);
+    PROFILE.theme_preference = prev;
+    showToast('Could not save theme', true);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════ */
+let toastTimer = null;
+function showToast(text, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.className = 'toast' + (isError ? ' err' : '') + ' show';
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.className = 'toast' + (isError ? ' err' : ''); }, 2200);
+}
+
+/* ═══════════════════════════════════════════════════
+   BOOTSTRAP
+═══════════════════════════════════════════════════ */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
