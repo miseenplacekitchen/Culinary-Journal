@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipes — The Culinary Journal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <style>
+    .page-bg { background-color: #0f0f0f; }
+    .xf{position:relative}
+    .xf-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.15);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:12px;color:rgba(255,255,255,0.65);cursor:pointer;white-space:nowrap;transition:all 0.2s}
+    .xf-btn:hover{background:rgba(255,255,255,0.1);color:#fff}
+    .xf-btn.on{border-color:rgba(196,151,59,0.55);color:#C4973B;background:rgba(196,151,59,0.08)}
+    .xf-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:230px;background:#1c1c1c;border:0.5px solid rgba(196,151,59,0.3);border-radius:10px;z-index:400;box-shadow:0 8px 32px rgba(0,0,0,0.55);overflow:hidden}
+    .xf-panel.open{display:block}
+    .xf-input{width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);border:none;border-bottom:0.5px solid rgba(255,255,255,0.07);font-family:"DM Sans",sans-serif;font-size:12px;color:#fff;outline:none}
+    .xf-input::placeholder{color:rgba(255,255,255,0.28)}
+    .xf-items{max-height:230px;overflow-y:auto}
+    .xf-items::-webkit-scrollbar{width:3px}
+    .xf-items::-webkit-scrollbar-thumb{background:rgba(196,151,59,0.25)}
+    .xf-item{padding:9px 14px;font-family:"DM Sans",sans-serif;font-size:12px;color:rgba(255,255,255,0.7);cursor:pointer;border-bottom:0.5px solid rgba(255,255,255,0.04)}
+    .xf-item:hover{background:rgba(196,151,59,0.08);color:#C4973B}
+    .xf-item.sel{color:#C4973B;font-weight:600}
+    .xf-none{padding:10px 14px;font-family:"DM Sans",sans-serif;font-size:12px;color:rgba(255,255,255,0.3)}
+    .xf-clear-btn{padding:8px 12px;background:none;border:0.5px solid rgba(255,255,255,0.1);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:11px;color:rgba(255,255,255,0.3);cursor:pointer;display:none}
+    .xf-clear-btn:hover{color:rgba(255,255,255,0.6)}
+    .loading{text-align:center;padding:60px;color:rgba(255,255,255,0.3);font-family:"DM Sans",sans-serif;font-size:14px}
+    .loading-spinner{display:inline-block;width:24px;height:24px;border:2px solid rgba(196,151,59,0.2);border-top-color:#C4973B;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:12px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+<div class="page-bg"><div class="page-overlay">
+
+  <nav class="nav">
+    <a class="nav-logo" href="index.html">
+      <span>🍽</span>
+      <span class="nav-logo-text">The Culinary Journal</span>
+      <span class="nav-logo-badge">Est. 2025</span>
+    </a>
+    <div class="nav-btns">
+      <button class="btn btn-ghost">Sign in</button>
+      <button class="btn btn-gold">Get started</button>
+    </div>
+  </nav>
+
+  <div class="tab-nav"><div class="tab-nav-inner">
+    <a class="tab" href="index.html">🏠 Home</a>
+    <a class="tab active" href="recipes.html">📖 Recipes</a>
+    <a class="tab" href="meal-planner.html">🍽 Meal Planner</a>
+    <a class="tab" href="pantry.html">🧊 Pantry &amp; Fridge</a>
+    <a class="tab" href="grocery.html">🛒 Grocery List</a>
+    <a class="tab" href="table-planner.html">🪑 Table Planner</a>
+    <a class="tab" href="print-studio.html">🖨 Print Studio</a>
+    <a class="tab" href="profile.html">👤 My Profile</a>
+  </div></div>
+
+  <div class="recipes-top">
+    <div class="search-wrap" style="margin-bottom:14px">
+      <i class="ti ti-search s-icon"></i>
+      <input type="text" id="rsearch"
+        placeholder="Search by dish name, Thoran, Upperi, Poriyal..."
+        oninput="handleSearch(this.value)">
+      <button class="s-clear" id="sclear" onclick="clearSearch()" style="display:none">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <div class="xf" id="xf-A">
+        <button class="xf-btn" id="btn-A" onclick="togglePanel('A')">🌍 <span id="lbl-A">All Continents</span> ▾</button>
+        <div class="xf-panel" id="panel-A">
+          <input class="xf-input" placeholder="Search continent..." oninput="filterList('A',this.value)">
+          <div class="xf-items" id="list-A"></div>
+        </div>
+      </div>
+      <div class="xf" id="xf-B">
+        <button class="xf-btn" id="btn-B" onclick="togglePanel('B')">🌍 <span id="lbl-B">All Countries</span> ▾</button>
+        <div class="xf-panel" id="panel-B">
+          <input class="xf-input" placeholder="Search country..." oninput="filterList('B',this.value)">
+          <div class="xf-items" id="list-B"></div>
+        </div>
+      </div>
+      <div class="xf" id="xf-C">
+        <button class="xf-btn" id="btn-C" onclick="togglePanel('C')">📍 <span id="lbl-C">All States</span> ▾</button>
+        <div class="xf-panel" id="panel-C">
+          <input class="xf-input" placeholder="Search state..." oninput="filterList('C',this.value)">
+          <div class="xf-items" id="list-C"></div>
+        </div>
+      </div>
+      <button class="xf-clear-btn" id="xf-clear" onclick="clearFilters()">✕ Clear</button>
+    </div>
+  </div>
+
+  <div class="breadcrumb" id="bc">
+    <span class="bc-item" onclick="goHome()">📖 Recipes</span>
+    <span class="bc-sep" id="bcsep1">›</span>
+    <span class="bc-item" id="bccat" onclick="goToDishes()" style="display:none"></span>
+    <span class="bc-sep" id="bcsep2" style="display:none">›</span>
+    <span class="bc-item active" id="bccur"></span>
+  </div>
+
+  <div id="cats-view">
+    <p class="sec-label">Browse by category</p>
+    <div class="cat-grid" id="cat-grid">
+      <div class="loading"><div class="loading-spinner"></div><br>Loading categories...</div>
+    </div>
+  </div>
+
+  <div id="dishes-view" style="display:none">
+    <p class="sec-label" id="dishes-lbl">Dishes</p>
+    <div class="dish-grid" id="dish-grid"></div>
+  </div>
+
+  <div id="styles-view" style="display:none">
+    <p class="sec-label" id="styles-lbl">Recipe styles</p>
+    <div class="styles-grid" id="styles-grid"></div>
+  </div>
+
+  <div id="search-view" style="display:none">
+    <p class="sec-label" id="search-lbl">Search results</p>
+    <div class="styles-grid" id="search-grid"></div>
+  </div>
+
+  <footer class="footer">
+    <span class="footer-text">© 2025 The Culinary Journal. All rights reserved.</span>
+    <div class="footer-links">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Use</a>
+      <a href="#">Contact</a>
+    </div>
+  </footer>
+
+</div></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  SUPABASE CONFIG
+// ══════════════════════════════════════════════════════════
+const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+const SUPA_KEY = 'sb_publishable_rAjMRvy0qKszgP8fu3oRiA_5iWPVwob';
+
+async function supaFetch(table, params) {
+  const url = SUPA_URL + '/rest/v1/' + table + '?' + params + '&apikey=' + SUPA_KEY;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY
+    }
+  });
+  if (!res.ok) throw new Error(res.status);
+  return res.json();
+}
+
+// ══════════════════════════════════════════════════════════
+//  COUNTRY/STATE DATA (built-in)
+// ══════════════════════════════════════════════════════════
+const CD = {"Asia": [{"name": "Afghanistan", "code": "AF", "states": ["Badakhshan", "Badghis", "Baghlan", "Balkh", "Bamyan", "Daykundi", "Farah", "Faryab", "Ghazni", "Ghor", "Helmand", "Herat", "Jowzjan", "Kabul", "Kandahar", "Khost", "Kunar", "Kunduz", "Laghman", "Logar", "Nangarhar", "Nimroz", "Nuristan", "Paktia", "Paktika", "Panjshir", "Parwan", "Samangan", "Sar-e Pol", "Takhar", "Urozgan", "Wardak", "Zabul"]}, {"name": "Armenia", "code": "AM", "states": ["Aragatsotn", "Ararat", "Armavir", "Gegharkunik", "Kotayk", "Lori", "Shirak", "Syunik", "Tavush", "Vayots Dzor", "Yerevan"]}, {"name": "Azerbaijan", "code": "AZ", "states": ["Absheron", "Agdam", "Agdash", "Agstafa", "Agsu", "Astara", "Baku", "Balakan", "Barda", "Beylagan", "Bilasuvar", "Dashkasan", "Fuzuli", "Gadabay", "Ganja", "Goranboy", "Goychay", "Goygol", "Hajigabul", "Imishli", "Ismailli", "Jabrayil", "Jalilabad", "Kalbajar", "Kurdamir", "Lachin", "Lankaran", "Lerik", "Masally", "Mingachevir", "Nakhchivan", "Neftchala", "Oghuz", "Qakh", "Qazakh", "Quba", "Qubadli", "Qusar", "Saatly", "Sabirabad", "Salyan", "Shamakhi", "Shamkir", "Shirvan", "Shusha", "Siyazan", "Sumgayit", "Tartar", "Tovuz", "Ujar", "Yardymli", "Yevlakh", "Zangilan", "Zaqatala", "Zardab"]}, {"name": "Bahrain", "code": "BH", "states": ["Capital", "Central", "Muharraq", "Northern", "Southern"]}, {"name": "Bangladesh", "code": "BD", "states": ["Barisal", "Chittagong", "Dhaka", "Khulna", "Mymensingh", "Rajshahi", "Rangpur", "Sylhet"]}, {"name": "Bhutan", "code": "BT", "states": ["Bumthang", "Chukha", "Dagana", "Gasa", "Haa", "Lhuntse", "Mongar", "Paro", "Pemagatshel", "Punakha", "Samdrup Jongkhar", "Samtse", "Sarpang", "Thimphu", "Trashigang", "Trashiyangtse", "Trongsa", "Tsirang", "Wangdue Phodrang", "Zhemgang"]}, {"name": "Brunei", "code": "BN", "states": ["Belait", "Brunei-Muara", "Temburong", "Tutong"]}, {"name": "Cambodia", "code": "KH", "states": ["Banteay Meanchey", "Battambang", "Kampong Cham", "Kampong Chhnang", "Kampong Speu", "Kampong Thom", "Kampot", "Kandal", "Kep", "Koh Kong", "Krati\u00e9", "Mondulkiri", "Oddar Meanchey", "Pailin", "Phnom Penh", "Preah Sihanouk", "Preah Vihear", "Prey Veng", "Pursat", "Ratanakiri", "Siem Reap", "Stung Treng", "Svay Rieng", "Tak\u00e9o", "Tboung Khmum"]}, {"name": "China", "code": "CN", "states": ["Anhui", "Beijing", "Chongqing", "Fujian", "Gansu", "Guangdong", "Guangxi", "Guizhou", "Hainan", "Hebei", "Heilongjiang", "Henan", "Hong Kong", "Hubei", "Hunan", "Inner Mongolia", "Jiangsu", "Jiangxi", "Jilin", "Liaoning", "Macau", "Ningxia", "Qinghai", "Shaanxi", "Shandong", "Shanghai", "Shanxi", "Sichuan", "Tianjin", "Tibet", "Xinjiang", "Yunnan", "Zhejiang"]}, {"name": "Cyprus", "code": "CY", "states": ["Famagusta", "Kyrenia", "Larnaca", "Limassol", "Nicosia", "Paphos"]}, {"name": "Georgia", "code": "GE", "states": ["Adjara", "Guria", "Imereti", "Kakheti", "Kvemo Kartli", "Mtskheta-Mtianeti", "Racha-Lechkhumi", "Samegrelo-Zemo Svaneti", "Samtskhe-Javakheti", "Shida Kartli", "Tbilisi"]}, {"name": "India", "code": "IN", "states": ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli", "Daman and Diu", "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"]}, {"name": "Indonesia", "code": "ID", "states": ["Aceh", "Bali", "Bangka Belitung Islands", "Banten", "Bengkulu", "Central Java", "Central Kalimantan", "Central Papua", "Central Sulawesi", "East Java", "East Kalimantan", "East Nusa Tenggara", "Gorontalo", "Jakarta", "Jambi", "Lampung", "Maluku", "North Kalimantan", "North Maluku", "North Sulawesi", "North Sumatra", "Papua", "Riau", "Riau Islands", "South East Sulawesi", "South Kalimantan", "South Sulawesi", "South Sumatra", "West Java", "West Kalimantan", "West Nusa Tenggara", "West Papua", "West Sulawesi", "West Sumatra", "Yogyakarta"]}, {"name": "Iran", "code": "IR", "states": ["Alborz", "Ardabil", "Bushehr", "Chaharmahal and Bakhtiari", "East Azerbaijan", "Fars", "Gilan", "Golestan", "Hamadan", "Hormozgan", "Ilam", "Isfahan", "Kerman", "Kermanshah", "Khuzestan", "Kohgiluyeh and Boyer-Ahmad", "Kurdistan", "Lorestan", "Markazi", "Mazandaran", "North Khorasan", "Qazvin", "Qom", "Razavi Khorasan", "Semnan", "Sistan and Baluchestan", "South Khorasan", "Tehran", "West Azerbaijan", "Yazd", "Zanjan"]}, {"name": "Iraq", "code": "IQ", "states": ["Al Anbar", "Al Basrah", "Al Muthanna", "Al Qadisiyyah", "An Najaf", "Arbil", "As Sulaymaniyah", "Babil", "Baghdad", "Dahuk", "Dhi Qar", "Diyala", "Karbala", "Kirkuk", "Maysan", "Ninawa", "Salah ad Din", "Wasit"]}, {"name": "Israel", "code": "IL", "states": ["Central", "Haifa", "Jerusalem", "Northern", "Southern", "Tel Aviv"]}, {"name": "Japan", "code": "JP", "states": ["Aichi", "Akita", "Aomori", "Chiba", "Ehime", "Fukui", "Fukuoka", "Fukushima", "Gifu", "Gunma", "Hiroshima", "Hokkaido", "Hyogo", "Ibaraki", "Ishikawa", "Iwate", "Kagawa", "Kagoshima", "Kanagawa", "Kochi", "Kumamoto", "Kyoto", "Mie", "Miyagi", "Miyazaki", "Nagano", "Nagasaki", "Nara", "Niigata", "Oita", "Okayama", "Okinawa", "Osaka", "Saga", "Saitama", "Shiga", "Shimane", "Shizuoka", "Tochigi", "Tokushima", "Tokyo", "Tottori", "Toyama", "Wakayama", "Yamagata", "Yamaguchi", "Yamanashi"]}, {"name": "Jordan", "code": "JO", "states": ["Ajloun", "Amman", "Aqaba", "Balqa", "Irbid", "Jerash", "Karak", "Ma'an", "Madaba", "Mafraq", "Tafilah", "Zarqa"]}, {"name": "Kazakhstan", "code": "KZ", "states": ["Abai", "Akmola", "Aktobe", "Almaty", "Almaty City", "Astana", "Atyrau", "East Kazakhstan", "Jambyl", "Jetisu", "Karaganda", "Kostanay", "Kyzylorda", "Mangystau", "North Kazakhstan", "Pavlodar", "Shymkent", "South Kazakhstan", "Turkestan", "West Kazakhstan", "Zhetysu"]}, {"name": "Kuwait", "code": "KW", "states": ["Al Ahmadi", "Al Asimah", "Al Farwaniyah", "Al Jahra", "Hawalli", "Mubarak Al-Kabeer"]}, {"name": "Kyrgyzstan", "code": "KG", "states": ["Batken", "Bishkek", "Chuy", "Issyk-Kul", "Jalal-Abad", "Naryn", "Osh", "Talas"]}, {"name": "Laos", "code": "LA", "states": ["Attapeu", "Bokeo", "Bolikhamsai", "Champasak", "Houaphanh", "Khammouane", "Luang Namtha", "Luang Prabang", "Oudomxay", "Phongsali", "Salavan", "Savannakhet", "Vientiane", "Vientiane Prefecture", "Xaisomboun", "Xekong", "Xiengkhouang"]}, {"name": "Lebanon", "code": "LB", "states": ["Akkar", "Baalbek-Hermel", "Beirut", "Beqaa", "Mount Lebanon", "Nabatieh", "North Lebanon", "South Lebanon"]}, {"name": "Malaysia", "code": "MY", "states": ["Johor", "Kedah", "Kelantan", "Kuala Lumpur", "Labuan", "Melaka", "Negeri Sembilan", "Pahang", "Penang", "Perak", "Perlis", "Putrajaya", "Sabah", "Sarawak", "Selangor", "Terengganu"]}, {"name": "Maldives", "code": "MV", "states": ["Addu City", "Central", "Male", "North", "North Central", "South", "South Central", "Upper North", "Upper South"]}, {"name": "Mongolia", "code": "MN", "states": ["Arkhangai", "Bayan-Olgii", "Bayankhongor", "Bulgan", "Darkhan-Uul", "Dornod", "Dornogovi", "Dundgovi", "Govi-Altai", "Govisumber", "Khentii", "Khovd", "Khuvsgul", "Orkhon", "Ovorkhangai", "Selenge", "Sukhbaatar", "Tov", "Ulaanbaatar", "Uvs", "Zavkhan"]}, {"name": "Myanmar", "code": "MM", "states": ["Ayeyarwady", "Bago", "Chin", "Kachin", "Kayah", "Kayin", "Magway", "Mandalay", "Mon", "Naypyidaw", "Rakhine", "Sagaing", "Shan", "Tanintharyi", "Yangon"]}, {"name": "Nepal", "code": "NP", "states": ["Bagmati", "Gandaki", "Karnali", "Koshi", "Lumbini", "Madhesh", "Sudurpashchim"]}, {"name": "North Korea", "code": "KP", "states": ["Chagang", "Hamgyong North", "Hamgyong South", "Hwanghae North", "Hwanghae South", "Kangwon", "Pyongan North", "Pyongan South", "Pyongyang", "Rason", "Ryanggang"]}, {"name": "Oman", "code": "OM", "states": ["Ad Dakhiliyah", "Al Buraymi", "Al Wusta", "Az Zahirah", "Musandam", "Muscat", "North Al Batinah", "North Ash Sharqiyah", "South Al Batinah", "South Ash Sharqiyah", "Dhofar"]}, {"name": "Pakistan", "code": "PK", "states": ["Azad Kashmir", "Balochistan", "Gilgit-Baltistan", "Islamabad", "Khyber Pakhtunkhwa", "Punjab", "Sindh"]}, {"name": "Palestine", "code": "PS", "states": ["Gaza Strip", "West Bank"]}, {"name": "Philippines", "code": "PH", "states": ["Abra", "Agusan del Norte", "Agusan del Sur", "Aklan", "Albay", "Antique", "Apayao", "Aurora", "Basilan", "Bataan", "Batanes", "Batangas", "Benguet", "Biliran", "Bohol", "Bukidnon", "Bulacan", "Cagayan", "Camarines Norte", "Camarines Sur", "Camiguin", "Capiz", "Catanduanes", "Cavite", "Cebu", "Cotabato", "Davao de Oro", "Davao del Norte", "Davao del Sur", "Davao Occidental", "Davao Oriental", "Dinagat Islands", "Eastern Samar", "Guimaras", "Ifugao", "Ilocos Norte", "Ilocos Sur", "Iloilo", "Isabela", "Kalinga", "La Union", "Laguna", "Lanao del Norte", "Lanao del Sur", "Leyte", "Maguindanao del Norte", "Maguindanao del Sur", "Manila", "Marinduque", "Masbate", "Metro Manila", "Misamis Occidental", "Misamis Oriental", "Mountain Province", "Negros Occidental", "Negros Oriental", "Northern Samar", "Nueva Ecija", "Nueva Vizcaya", "Occidental Mindoro", "Oriental Mindoro", "Palawan", "Pampanga", "Pangasinan", "Quezon", "Quirino", "Rizal", "Romblon", "Samar", "Sarangani", "Siquijor", "Sorsogon", "South Cotabato", "Southern Leyte", "Sultan Kudarat", "Sulu", "Surigao del Norte", "Surigao del Sur", "Tarlac", "Tawi-Tawi", "Zambales", "Zamboanga del Norte", "Zamboanga del Sur", "Zamboanga Sibugay"]}, {"name": "Qatar", "code": "QA", "states": ["Ad Dawhah", "Al Khawr", "Al Rayyan", "Al Shahaniya", "Al Wakrah", "Ash Shamal", "Az Za'ayin", "Umm Salal"]}, {"name": "Saudi Arabia", "code": "SA", "states": ["Al Bahah", "Al Hudud ash Shamaliyah", "Al Jawf", "Al Madinah", "Al Qasim", "Ar Riyad", "Asir", "Eastern Province", "Ha'il", "Jazan", "Makkah", "Najran", "Tabuk"]}, {"name": "Singapore", "code": "SG", "states": ["Central Region", "East Region", "North Region", "North-East Region", "West Region"]}, {"name": "South Korea", "code": "KR", "states": ["Busan", "Chungbuk", "Chungnam", "Daegu", "Daejeon", "Gangwon", "Gwangju", "Gyeongbuk", "Gyeonggi", "Gyeongnam", "Incheon", "Jeju", "Jeonbuk", "Jeonnam", "Sejong", "Seoul", "Ulsan"]}, {"name": "Sri Lanka", "code": "LK", "states": ["Central", "Eastern", "North Central", "North Western", "Northern", "Sabaragamuwa", "Southern", "Uva", "Western"]}, {"name": "Syria", "code": "SY", "states": ["Al Hasakah", "Al Ladhiqiyah", "Al Qunaytirah", "Ar Raqqah", "As Suwayda", "Dar'a", "Dayr az Zawr", "Dimashq", "Halab", "Hamah", "Hims", "Idlib", "Rif Dimashq", "Tartus"]}, {"name": "Taiwan", "code": "TW", "states": ["Changhua", "Chiayi City", "Chiayi County", "Hsinchu City", "Hsinchu County", "Hualien", "Kaohsiung", "Keelung", "Kinmen", "Lienchiang", "Miaoli", "Nantou", "New Taipei", "Penghu", "Pingtung", "Taichung", "Tainan", "Taipei", "Taitung", "Taoyuan", "Yilan", "Yunlin"]}, {"name": "Tajikistan", "code": "TJ", "states": ["Dushanbe", "Gorno-Badakhshan", "Khatlon", "Sughd"]}, {"name": "Thailand", "code": "TH", "states": ["Amnat Charoen", "Ang Thong", "Bangkok", "Bueng Kan", "Buri Ram", "Chachoengsao", "Chai Nat", "Chaiyaphum", "Chanthaburi", "Chiang Mai", "Chiang Rai", "Chon Buri", "Chumphon", "Kalasin", "Kamphaeng Phet", "Kanchanaburi", "Khon Kaen", "Krabi", "Lampang", "Lamphun", "Loei", "Lop Buri", "Mae Hong Son", "Maha Sarakham", "Mukdahan", "Nakhon Nayok", "Nakhon Pathom", "Nakhon Phanom", "Nakhon Ratchasima", "Nakhon Sawan", "Nakhon Si Thammarat", "Nan", "Narathiwat", "Nong Bua Lam Phu", "Nong Khai", "Nonthaburi", "Pathum Thani", "Pattani", "Phang Nga", "Phatthalung", "Phayao", "Phetchabun", "Phetchaburi", "Phichit", "Phitsanulok", "Phra Nakhon Si Ayutthaya", "Phrae", "Phuket", "Prachin Buri", "Prachuap Khiri Khan", "Ranong", "Ratchaburi", "Rayong", "Roi Et", "Sa Kaeo", "Sakon Nakhon", "Samut Prakan", "Samut Sakhon", "Samut Songkhram", "Saraburi", "Satun", "Si Sa Ket", "Sing Buri", "Songkhla", "Sukhothai", "Suphanburi", "Surat Thani", "Surin", "Tak", "Trang", "Trat", "Ubon Ratchathani", "Udon Thani", "Uthai Thani", "Uttaradit", "Yala", "Yasothon"]}, {"name": "Timor-Leste", "code": "TL", "states": ["Aileu", "Ainaro", "Baucau", "Bobonaro", "Cova Lima", "Dili", "Ermera", "Lautem", "Liquica", "Manatuto", "Manufahi", "Oecusse", "Viqueque"]}, {"name": "Turkey", "code": "TR", "states": ["Adana", "Adiyaman", "Afyonkarahisar", "Agri", "Aksaray", "Amasya", "Ankara", "Antalya", "Ardahan", "Artvin", "Aydin", "Balikesir", "Bartin", "Batman", "Bayburt", "Bilecik", "Bingol", "Bitlis", "Bolu", "Burdur", "Bursa", "Canakkale", "Cankiri", "Corum", "Denizli", "Diyarbakir", "Duzce", "Edirne", "Elazig", "Erzincan", "Erzurum", "Eskisehir", "Gaziantep", "Giresun", "Gumushane", "Hakkari", "Hatay", "Igdir", "Isparta", "Istanbul", "Izmir", "Kahramanmaras", "Karabuk", "Karaman", "Kars", "Kastamonu", "Kayseri", "Kilis", "Kirikkale", "Kirklareli", "Kirsehir", "Kocaeli", "Konya", "Kutahya", "Malatya", "Manisa", "Mardin", "Mersin", "Mugla", "Mus", "Nevsehir", "Nigde", "Ordu", "Osmaniye", "Rize", "Sakarya", "Samsun", "Sanliurfa", "Siirt", "Sinop", "Sirnak", "Sivas", "Tekirdag", "Tokat", "Trabzon", "Tunceli", "Usak", "Van", "Yalova", "Yozgat", "Zonguldak"]}, {"name": "Turkmenistan", "code": "TM", "states": ["Ahal", "Ashgabat", "Balkan", "Dashoguz", "Lebap", "Mary"]}, {"name": "United Arab Emirates", "code": "AE", "states": ["Abu Dhabi", "Ajman", "Dubai", "Fujairah", "Ras Al Khaimah", "Sharjah", "Umm Al Quwain"]}, {"name": "Uzbekistan", "code": "UZ", "states": ["Andijan", "Bukhara", "Fergana", "Jizzakh", "Karakalpakstan", "Kashkadarya", "Khorezm", "Namangan", "Navoiy", "Samarkand", "Sirdaryo", "Surkhandarya", "Tashkent", "Tashkent City"]}, {"name": "Vietnam", "code": "VN", "states": ["An Giang", "Ba Ria-Vung Tau", "Bac Giang", "Bac Kan", "Bac Lieu", "Bac Ninh", "Ben Tre", "Binh Dinh", "Binh Duong", "Binh Phuoc", "Binh Thuan", "Ca Mau", "Can Tho", "Cao Bang", "Da Nang", "Dak Lak", "Dak Nong", "Dien Bien", "Dong Nai", "Dong Thap", "Gia Lai", "Ha Giang", "Ha Nam", "Ha Noi", "Ha Tinh", "Hai Duong", "Hai Phong", "Hau Giang", "Ho Chi Minh City", "Hoa Binh", "Hung Yen", "Khanh Hoa", "Kien Giang", "Kon Tum", "Lai Chau", "Lam Dong", "Lang Son", "Lao Cai", "Long An", "Nam Dinh", "Nghe An", "Ninh Binh", "Ninh Thuan", "Phu Tho", "Phu Yen", "Quang Binh", "Quang Nam", "Quang Ngai", "Quang Ninh", "Quang Tri", "Soc Trang", "Son La", "Tay Ninh", "Thai Binh", "Thai Nguyen", "Thanh Hoa", "Thua Thien Hue", "Tien Giang", "Tra Vinh", "Tuyen Quang", "Vinh Long", "Vinh Phuc", "Yen Bai"]}, {"name": "Yemen", "code": "YE", "states": ["Abyan", "Aden", "Al Bayda", "Al Hudaydah", "Al Jawf", "Al Mahrah", "Al Mahwit", "Amran", "Dhamar", "Hadhramaut", "Hajjah", "Ibb", "Lahij", "Marib", "Raymah", "Saada", "Sanaa", "Shabwah", "Socotra", "Taiz"]}], "Africa": [{"name": "Algeria", "code": "DZ", "states": ["Adrar", "Ain Defla", "Ain Temouchent", "Algiers", "Annaba", "Batna", "Bechar", "Bejaia", "Biskra", "Blida", "Bordj Bou Arreridj", "Bouira", "Boumerdes", "Chlef", "Constantine", "Djelfa", "El Bayadh", "El Oued", "El Tarf", "Ghardaia", "Guelma", "Illizi", "Jijel", "Khenchela", "Laghouat", "Mascara", "Medea", "Mila", "Mostaganem", "Msila", "Naama", "Oran", "Ouargla", "Oum el Bouaghi", "Relizane", "Saida", "Setif", "Sidi Bel Abbes", "Skikda", "Souk Ahras", "Tamanrasset", "Tebessa", "Tiaret", "Tindouf", "Tipaza", "Tissemsilt", "Tizi Ouzou", "Tlemcen"]}, {"name": "Angola", "code": "AO", "states": ["Bengo", "Benguela", "Bie", "Cabinda", "Cuando Cubango", "Cuanza Norte", "Cuanza Sul", "Cunene", "Huambo", "Huila", "Luanda", "Lunda Norte", "Lunda Sul", "Malanje", "Moxico", "Namibe", "Uige", "Zaire"]}, {"name": "Benin", "code": "BJ", "states": ["Alibori", "Atacora", "Atlantique", "Borgou", "Collines", "Donga", "Littoral", "Mono", "Oueme", "Plateau", "Zou"]}, {"name": "Botswana", "code": "BW", "states": ["Central", "Chobe", "Francistown", "Gaborone", "Ghanzi", "Jwaneng", "Kgalagadi", "Kgatleng", "Kweneng", "Lobatse", "North East", "North West", "Selibe Phikwe", "South East", "Southern", "Sowa Town"]}, {"name": "Cameroon", "code": "CM", "states": ["Adamawa", "Centre", "East", "Far North", "Littoral", "North", "Northwest", "South", "Southwest", "West"]}, {"name": "Egypt", "code": "EG", "states": ["Alexandria", "Aswan", "Asyut", "Beheira", "Beni Suef", "Cairo", "Dakahlia", "Damietta", "Faiyum", "Gharbia", "Giza", "Ismailia", "Kafr el-Sheikh", "Luxor", "Matruh", "Minya", "Monufia", "New Valley", "North Sinai", "Port Said", "Qalyubia", "Qena", "Red Sea", "Sharqia", "Sohag", "South Sinai", "Suez"]}, {"name": "Ethiopia", "code": "ET", "states": ["Addis Ababa", "Afar", "Amhara", "Benishangul-Gumuz", "Dire Dawa", "Gambela", "Harari", "Oromia", "Sidama", "Somali", "South Ethiopia", "South West Ethiopia", "Tigray"]}, {"name": "Ghana", "code": "GH", "states": ["Ahafo", "Ashanti", "Bono", "Bono East", "Central", "Eastern", "Greater Accra", "North East", "Northern", "Oti", "Savannah", "Upper East", "Upper West", "Volta", "Western", "Western North"]}, {"name": "Kenya", "code": "KE", "states": ["Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo-Marakwet", "Embu", "Garissa", "Homa Bay", "Isiolo", "Kajiado", "Kakamega", "Kericho", "Kiambu", "Kilifi", "Kirinyaga", "Kisii", "Kisumu", "Kitui", "Kwale", "Laikipia", "Lamu", "Machakos", "Makueni", "Mandera", "Marsabit", "Meru", "Migori", "Mombasa", "Murang'a", "Nairobi", "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua", "Nyeri", "Samburu", "Siaya", "Taita-Taveta", "Tana River", "Tharaka-Nithi", "Trans Nzoia", "Turkana", "Uasin Gishu", "Vihiga", "Wajir", "West Pokot"]}, {"name": "Morocco", "code": "MA", "states": ["Beni Mellal-Khenifra", "Casablanca-Settat", "Dakhla-Oued Ed-Dahab", "Draa-Tafilalet", "Fes-Meknes", "Guelmim-Oued Noun", "Laayoune-Sakia El Hamra", "Marrakesh-Safi", "Oriental", "Rabat-Sale-Kenitra", "Souss-Massa", "Tanger-Tetouan-Al Hoceima"]}, {"name": "Nigeria", "code": "NG", "states": ["Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "Federal Capital Territory", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"]}, {"name": "South Africa", "code": "ZA", "states": ["Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal", "Limpopo", "Mpumalanga", "Northern Cape", "North West", "Western Cape"]}, {"name": "Tanzania", "code": "TZ", "states": ["Arusha", "Dar es Salaam", "Dodoma", "Geita", "Iringa", "Kagera", "Katavi", "Kigoma", "Kilimanjaro", "Lindi", "Manyara", "Mara", "Mbeya", "Morogoro", "Mtwara", "Mwanza", "Njombe", "Pemba North", "Pemba South", "Pwani", "Rukwa", "Ruvuma", "Shinyanga", "Simiyu", "Singida", "Songwe", "Tabora", "Tanga", "Zanzibar North", "Zanzibar South", "Zanzibar West"]}, {"name": "Uganda", "code": "UG", "states": ["Bugisu", "Bukedi", "Busoga", "Central", "Eastern", "Karamoja", "Kigezi", "Lango", "Northern", "Sebei", "Teso", "Toro", "Western"]}], "North America": [{"name": "Antigua and Barbuda", "code": "AG", "states": ["Barbuda", "Redonda", "Saint George", "Saint John", "Saint Mary", "Saint Paul", "Saint Peter", "Saint Philip"]}, {"name": "Bahamas", "code": "BS", "states": ["Acklins", "Berry Islands", "Bimini", "Black Point", "Cat Island", "Central Abaco", "Central Andros", "Central Eleuthera", "City of Freeport", "Crooked Island", "East Grand Bahama", "Exuma", "Grand Cay", "Harbour Island", "Hope Town", "Inagua", "Long Island", "Mangrove Cay", "Mayaguana", "Moore's Island", "New Providence", "North Abaco", "North Andros", "North Eleuthera", "Ragged Island", "Rum Cay", "San Salvador", "South Abaco", "South Andros", "South Eleuthera", "South Grand Bahama", "Spanish Wells", "West Grand Bahama"]}, {"name": "Barbados", "code": "BB", "states": ["Christ Church", "Saint Andrew", "Saint George", "Saint James", "Saint John", "Saint Joseph", "Saint Lucy", "Saint Michael", "Saint Peter", "Saint Philip", "Saint Thomas"]}, {"name": "Belize", "code": "BZ", "states": ["Belize", "Cayo", "Corozal", "Orange Walk", "Stann Creek", "Toledo"]}, {"name": "Canada", "code": "CA", "states": ["Alberta", "British Columbia", "Manitoba", "New Brunswick", "Newfoundland and Labrador", "Northwest Territories", "Nova Scotia", "Nunavut", "Ontario", "Prince Edward Island", "Quebec", "Saskatchewan", "Yukon"]}, {"name": "Costa Rica", "code": "CR", "states": ["Alajuela", "Cartago", "Guanacaste", "Heredia", "Limon", "Puntarenas", "San Jose"]}, {"name": "Cuba", "code": "CU", "states": ["Artemisa", "Camaguey", "Ciego de Avila", "Cienfuegos", "Granma", "Guantanamo", "Holguin", "Isla de la Juventud", "La Habana", "Las Tunas", "Matanzas", "Mayabeque", "Pinar del Rio", "Sancti Spiritus", "Santiago de Cuba", "Villa Clara"]}, {"name": "Dominican Republic", "code": "DO", "states": ["Azua", "Baoruco", "Barahona", "Dajabon", "Distrito Nacional", "Duarte", "El Seibo", "Elias Pina", "Espaillat", "Hato Mayor", "Hermanas Mirabal", "Independencia", "La Altagracia", "La Romana", "La Vega", "Maria Trinidad Sanchez", "Monsenor Nouel", "Monte Cristi", "Monte Plata", "Pedernales", "Peravia", "Puerto Plata", "Samana", "San Cristobal", "San Jose de Ocoa", "San Juan", "San Pedro de Macoris", "Sanchez Ramirez", "Santiago", "Santiago Rodriguez", "Santo Domingo", "Valverde"]}, {"name": "El Salvador", "code": "SV", "states": ["Ahuachapan", "Cabanas", "Chalatenango", "Cuscatlan", "La Libertad", "La Paz", "La Union", "Morazan", "San Miguel", "San Salvador", "San Vicente", "Santa Ana", "Sonsonate", "Usulutan"]}, {"name": "Guatemala", "code": "GT", "states": ["Alta Verapaz", "Baja Verapaz", "Chimaltenango", "Chiquimula", "El Progreso", "Escuintla", "Guatemala", "Huehuetenango", "Izabal", "Jalapa", "Jutiapa", "Peten", "Quetzaltenango", "Quiche", "Retalhuleu", "Sacatepequez", "San Marcos", "Santa Rosa", "Solola", "Suchitepequez", "Totonicapan", "Zacapa"]}, {"name": "Haiti", "code": "HT", "states": ["Artibonite", "Centre", "Grand'Anse", "Nippes", "Nord", "Nord-Est", "Nord-Ouest", "Ouest", "Sud", "Sud-Est"]}, {"name": "Honduras", "code": "HN", "states": ["Atlantida", "Choluteca", "Colon", "Comayagua", "Copan", "Cortes", "El Paraiso", "Francisco Morazan", "Gracias a Dios", "Intibuca", "Islas de la Bahia", "La Paz", "Lempira", "Ocotepeque", "Olancho", "Santa Barbara", "Valle", "Yoro"]}, {"name": "Jamaica", "code": "JM", "states": ["Clarendon", "Hanover", "Kingston", "Manchester", "Portland", "Saint Andrew", "Saint Ann", "Saint Catherine", "Saint Elizabeth", "Saint James", "Saint Mary", "Saint Thomas", "Trelawny", "Westmoreland"]}, {"name": "Mexico", "code": "MX", "states": ["Aguascalientes", "Baja California", "Baja California Sur", "Campeche", "Chiapas", "Chihuahua", "Ciudad de Mexico", "Coahuila", "Colima", "Durango", "Guanajuato", "Guerrero", "Hidalgo", "Jalisco", "Mexico", "Michoacan", "Morelos", "Nayarit", "Nuevo Leon", "Oaxaca", "Puebla", "Queretaro", "Quintana Roo", "San Luis Potosi", "Sinaloa", "Sonora", "Tabasco", "Tamaulipas", "Tlaxcala", "Veracruz", "Yucatan", "Zacatecas"]}, {"name": "Nicaragua", "code": "NI", "states": ["Boaco", "Carazo", "Chinandega", "Chontales", "Costa Caribe Norte", "Costa Caribe Sur", "Esteli", "Granada", "Jinotega", "Leon", "Madriz", "Managua", "Masaya", "Matagalpa", "Nueva Segovia", "Rio San Juan", "Rivas"]}, {"name": "Panama", "code": "PA", "states": ["Bocas del Toro", "Chiriqui", "Cocle", "Colon", "Darien", "Embera-Wounaan", "Guna Yala", "Herrera", "Los Santos", "Naso Tjer Di", "Ngabe-Bugle", "Panama", "Panama Oeste", "Veraguas"]}, {"name": "Trinidad and Tobago", "code": "TT", "states": ["Arima", "Chaguanas", "Couva-Tabaquite-Talparo", "Diego Martin", "Mayaro", "Penal-Debe", "Point Fortin", "Port of Spain", "Princes Town", "Rio Claro-Mayaro", "San Fernando", "San Juan-Laventille", "Sangre Grande", "Siparia", "Tobago", "Tunapuna-Piarco"]}, {"name": "United States", "code": "US", "states": ["Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"]}], "South America": [{"name": "Argentina", "code": "AR", "states": ["Buenos Aires", "Catamarca", "Chaco", "Chubut", "Ciudad Autonoma de Buenos Aires", "Cordoba", "Corrientes", "Entre Rios", "Formosa", "Jujuy", "La Pampa", "La Rioja", "Mendoza", "Misiones", "Neuquen", "Rio Negro", "Salta", "San Juan", "San Luis", "Santa Cruz", "Santa Fe", "Santiago del Estero", "Tierra del Fuego", "Tucuman"]}, {"name": "Bolivia", "code": "BO", "states": ["Beni", "Chuquisaca", "Cochabamba", "La Paz", "Oruro", "Pando", "Potosi", "Santa Cruz", "Tarija"]}, {"name": "Brazil", "code": "BR", "states": ["Acre", "Alagoas", "Amapa", "Amazonas", "Bahia", "Ceara", "Distrito Federal", "Espirito Santo", "Goias", "Maranhao", "Mato Grosso", "Mato Grosso do Sul", "Minas Gerais", "Para", "Paraiba", "Parana", "Pernambuco", "Piaui", "Rio de Janeiro", "Rio Grande do Norte", "Rio Grande do Sul", "Rondonia", "Roraima", "Santa Catarina", "Sao Paulo", "Sergipe", "Tocantins"]}, {"name": "Chile", "code": "CL", "states": ["Antofagasta", "Araucania", "Arica y Parinacota", "Atacama", "Aysen", "Biobio", "Coquimbo", "El Maule", "Los Lagos", "Los Rios", "Magallanes", "Metropolitana", "Nuble", "O'Higgins", "Tarapaca", "Valparaiso"]}, {"name": "Colombia", "code": "CO", "states": ["Amazonas", "Antioquia", "Arauca", "Archipielago de San Andres", "Atlantico", "Bogota", "Bolivar", "Boyaca", "Caldas", "Caqueta", "Casanare", "Cauca", "Cesar", "Choco", "Cordoba", "Cundinamarca", "Guainia", "Guaviare", "Huila", "La Guajira", "Magdalena", "Meta", "Narino", "Norte de Santander", "Putumayo", "Quindio", "Risaralda", "Santander", "Sucre", "Tolima", "Valle del Cauca", "Vaupes", "Vichada"]}, {"name": "Ecuador", "code": "EC", "states": ["Azuay", "Bolivar", "Canar", "Carchi", "Chimborazo", "Cotopaxi", "El Oro", "Esmeraldas", "Galapagos", "Guayas", "Imbabura", "Loja", "Los Rios", "Manabi", "Morona Santiago", "Napo", "Orellana", "Pastaza", "Pichincha", "Santa Elena", "Santo Domingo de los Tsachilas", "Sucumbios", "Tungurahua", "Zamora Chinchipe"]}, {"name": "Guyana", "code": "GY", "states": ["Barima-Waini", "Cuyuni-Mazaruni", "Demerara-Mahaica", "East Berbice-Corentyne", "Essequibo Islands-West Demerara", "Mahaica-Berbice", "Pomeroon-Supenaam", "Potaro-Siparuni", "Upper Demerara-Berbice", "Upper Takutu-Upper Essequibo"]}, {"name": "Paraguay", "code": "PY", "states": ["Alto Paraguay", "Alto Parana", "Amambay", "Asuncion", "Boqueron", "Caaguazu", "Caazapa", "Canindeyu", "Central", "Concepcion", "Cordillera", "Guaira", "Itapua", "Misiones", "Neembucu", "Paraguari", "Presidente Hayes", "San Pedro"]}, {"name": "Peru", "code": "PE", "states": ["Amazonas", "Ancash", "Apurimac", "Arequipa", "Ayacucho", "Cajamarca", "Callao", "Cusco", "Huancavelica", "Huanuco", "Ica", "Junin", "La Libertad", "Lambayeque", "Lima", "Loreto", "Madre de Dios", "Moquegua", "Pasco", "Piura", "Puno", "San Martin", "Tacna", "Tumbes", "Ucayali"]}, {"name": "Suriname", "code": "SR", "states": ["Brokopondo", "Commewijne", "Coronie", "Marowijne", "Nickerie", "Para", "Paramaribo", "Saramacca", "Sipaliwini", "Wanica"]}, {"name": "Uruguay", "code": "UY", "states": ["Artigas", "Canelones", "Cerro Largo", "Colonia", "Durazno", "Flores", "Florida", "Lavalleja", "Maldonado", "Montevideo", "Paysandu", "Rio Negro", "Rivera", "Rocha", "Salto", "San Jose", "Soriano", "Tacuarembo", "Treinta y Tres"]}, {"name": "Venezuela", "code": "VE", "states": ["Amazonas", "Anzoategui", "Apure", "Aragua", "Barinas", "Bolivar", "Carabobo", "Cojedes", "Delta Amacuro", "Dependencias Federales", "Distrito Capital", "Falcon", "Guarico", "La Guaira", "Lara", "Merida", "Miranda", "Monagas", "Nueva Esparta", "Portuguesa", "Sucre", "Tachira", "Trujillo", "Yaracuy", "Zulia"]}], "Europe": [{"name": "Albania", "code": "AL", "states": ["Berat", "Diber", "Durres", "Elbasan", "Fier", "Gjirokaster", "Korce", "Kukes", "Lezhe", "Shkoder", "Tirana", "Vlore"]}, {"name": "Austria", "code": "AT", "states": ["Burgenland", "Carinthia", "Lower Austria", "Salzburg", "Styria", "Tyrol", "Upper Austria", "Vienna", "Vorarlberg"]}, {"name": "Belgium", "code": "BE", "states": ["Brussels", "Flemish Region", "Walloon Region"]}, {"name": "Bosnia and Herzegovina", "code": "BA", "states": ["Brcko District", "Federation of Bosnia and Herzegovina", "Republika Srpska"]}, {"name": "Bulgaria", "code": "BG", "states": ["Blagoevgrad", "Burgas", "Dobrich", "Gabrovo", "Haskovo", "Kardzhali", "Kyustendil", "Lovech", "Montana", "Pazardzhik", "Pernik", "Pleven", "Plovdiv", "Razgrad", "Ruse", "Shumen", "Silistra", "Sliven", "Smolyan", "Sofia", "Sofia City", "Stara Zagora", "Targovishte", "Varna", "Veliko Tarnovo", "Vidin", "Vratsa", "Yambol"]}, {"name": "Croatia", "code": "HR", "states": ["Bjelovar-Bilogora", "Brod-Posavina", "Dubrovnik-Neretva", "Istria", "Karlovac", "Koprivnica-Krizevci", "Krapina-Zagorje", "Lika-Senj", "Medimurje", "Osijek-Baranja", "Pozega-Slavonia", "Primorje-Gorski Kotar", "Sibenik-Knin", "Sisak-Moslavina", "Split-Dalmatia", "Varazdin", "Virovitica-Podravina", "Vukovar-Srijem", "Zadar", "Zagreb", "Zagreb City"]}, {"name": "Czech Republic", "code": "CZ", "states": ["Central Bohemia", "Hradec Kralove", "Karlovy Vary", "Liberec", "Moravia-Silesia", "Olomouc", "Pardubice", "Plzen", "Prague", "South Bohemia", "South Moravia", "Usti nad Labem", "Vysocina", "Zlin"]}, {"name": "Denmark", "code": "DK", "states": ["Capital", "Central Jutland", "North Jutland", "Sealand", "Southern Denmark"]}, {"name": "Finland", "code": "FI", "states": ["Aland Islands", "Central Finland", "Central Ostrobothnia", "East Uusimaa", "Kainuu", "Kant-Hame", "Kymenlaakso", "Lapland", "North Karelia", "North Ostrobothnia", "North Savo", "Ostrobothnia", "Paijat-Hame", "Pirkanmaa", "Satakunta", "South Karelia", "South Ostrobothnia", "South Savo", "Southwest Finland", "Tavastia Proper", "Uusimaa"]}, {"name": "France", "code": "FR", "states": ["Auvergne-Rhone-Alpes", "Bourgogne-Franche-Comte", "Bretagne", "Centre-Val de Loire", "Corse", "Grand Est", "Guadeloupe", "Guyane", "Hauts-de-France", "Ile-de-France", "La Reunion", "Martinique", "Mayotte", "Normandie", "Nouvelle-Aquitaine", "Occitanie", "Pays de la Loire", "Provence-Alpes-Cote d'Azur"]}, {"name": "Germany", "code": "DE", "states": ["Baden-Wurttemberg", "Bavaria", "Berlin", "Brandenburg", "Bremen", "Hamburg", "Hesse", "Lower Saxony", "Mecklenburg-Vorpommern", "North Rhine-Westphalia", "Rhineland-Palatinate", "Saarland", "Saxony", "Saxony-Anhalt", "Schleswig-Holstein", "Thuringia"]}, {"name": "Greece", "code": "GR", "states": ["Attica", "Central Greece", "Central Macedonia", "Crete", "Eastern Macedonia and Thrace", "Epirus", "Ionian Islands", "North Aegean", "Peloponnese", "South Aegean", "Thessaly", "Western Greece", "Western Macedonia"]}, {"name": "Hungary", "code": "HU", "states": ["Bacs-Kiskun", "Baranya", "Bekes", "Borsod-Abauj-Zemplen", "Budapest", "Csongrad-Csanad", "Fejer", "Gyor-Moson-Sopron", "Hajdu-Bihar", "Heves", "Jasz-Nagykun-Szolnok", "Komarom-Esztergom", "Nograd", "Pest", "Somogy", "Szabolcs-Szatmar-Bereg", "Tolna", "Vas", "Veszprem", "Zala"]}, {"name": "Ireland", "code": "IE", "states": ["Carlow", "Cavan", "Clare", "Cork", "Donegal", "Dublin", "Galway", "Kerry", "Kildare", "Kilkenny", "Laois", "Leitrim", "Limerick", "Longford", "Louth", "Mayo", "Meath", "Monaghan", "Offaly", "Roscommon", "Sligo", "Tipperary", "Waterford", "Westmeath", "Wexford", "Wicklow"]}, {"name": "Italy", "code": "IT", "states": ["Abruzzo", "Aosta Valley", "Apulia", "Basilicata", "Calabria", "Campania", "Emilia-Romagna", "Friuli-Venezia Giulia", "Lazio", "Liguria", "Lombardy", "Marche", "Molise", "Piedmont", "Sardinia", "Sicily", "Trentino-South Tyrol", "Tuscany", "Umbria", "Veneto"]}, {"name": "Netherlands", "code": "NL", "states": ["Drenthe", "Flevoland", "Friesland", "Gelderland", "Groningen", "Limburg", "North Brabant", "North Holland", "Overijssel", "South Holland", "Utrecht", "Zeeland"]}, {"name": "Norway", "code": "NO", "states": ["Agder", "Innlandet", "More og Romsdal", "Nordland", "Oslo", "Rogaland", "Troms og Finnmark", "Trondelag", "Vestfold og Telemark", "Vestland", "Viken"]}, {"name": "Poland", "code": "PL", "states": ["Greater Poland", "Holy Cross", "Kuyavian-Pomeranian", "Lesser Poland", "Lodz", "Lower Silesian", "Lublin", "Lubusz", "Masovian", "Opole", "Podlaskie", "Pomeranian", "Silesian", "Subcarpathian", "Warmian-Masurian", "West Pomeranian"]}, {"name": "Portugal", "code": "PT", "states": ["Aveiro", "Azores", "Beja", "Braga", "Braganca", "Castelo Branco", "Coimbra", "Evora", "Faro", "Guarda", "Leiria", "Lisbon", "Madeira", "Portalegre", "Porto", "Santarem", "Setubal", "Viana do Castelo", "Vila Real", "Viseu"]}, {"name": "Romania", "code": "RO", "states": ["Alba", "Arad", "Arges", "Bacau", "Bihor", "Bistrita-Nasaud", "Botosani", "Braila", "Brasov", "Bucharest", "Buzau", "Caras-Severin", "Calarasi", "Cluj", "Constanta", "Covasna", "Dambovita", "Dolj", "Galati", "Giurgiu", "Gorj", "Harghita", "Hunedoara", "Ialomita", "Iasi", "Ilfov", "Maramures", "Mehedinti", "Mures", "Neamt", "Olt", "Prahova", "Salaj", "Satu Mare", "Sibiu", "Suceava", "Teleorman", "Timis", "Tulcea", "Valcea", "Vaslui", "Vrancea"]}, {"name": "Russia", "code": "RU", "states": ["Adygea", "Altai Krai", "Altai Republic", "Amur Oblast", "Arkhangelsk Oblast", "Astrakhan Oblast", "Bashkortostan", "Belgorod Oblast", "Bryansk Oblast", "Buryatia", "Chechen Republic", "Chelyabinsk Oblast", "Chukotka", "Chuvashia", "Dagestan", "Ingushetia", "Irkutsk Oblast", "Ivanovo Oblast", "Jewish Autonomous Oblast", "Kabardino-Balkaria", "Kaliningrad Oblast", "Kalmykia", "Kaluga Oblast", "Kamchatka Krai", "Karachay-Cherkessia", "Karelia", "Kemerovo Oblast", "Khabarovsk Krai", "Khakassia", "Khanty-Mansiysk", "Kirov Oblast", "Komi", "Kostroma Oblast", "Krasnodar Krai", "Krasnoyarsk Krai", "Kurgan Oblast", "Kursk Oblast", "Leningrad Oblast", "Lipetsk Oblast", "Magadan Oblast", "Mari El", "Mordovia", "Moscow", "Moscow Oblast", "Murmansk Oblast", "Nenets", "Nizhny Novgorod Oblast", "North Ossetia", "Novgorod Oblast", "Novosibirsk Oblast", "Omsk Oblast", "Orel Oblast", "Orenburg Oblast", "Penza Oblast", "Perm Krai", "Primorsky Krai", "Pskov Oblast", "Rostov Oblast", "Ryazan Oblast", "Saint Petersburg", "Sakha Republic", "Sakhalin Oblast", "Samara Oblast", "Saratov Oblast", "Smolensk Oblast", "Stavropol Krai", "Sverdlovsk Oblast", "Tambov Oblast", "Tatarstan", "Tomsk Oblast", "Tula Oblast", "Tuva", "Tver Oblast", "Tyumen Oblast", "Udmurtia", "Ulyanovsk Oblast", "Vladimir Oblast", "Volgograd Oblast", "Vologda Oblast", "Voronezh Oblast", "Yamalo-Nenets", "Yaroslavl Oblast", "Zabaykalsky Krai"]}, {"name": "Spain", "code": "ES", "states": ["Andalusia", "Aragon", "Asturias", "Balearic Islands", "Basque Country", "Canary Islands", "Cantabria", "Castile and Leon", "Castilla-La Mancha", "Catalonia", "Ceuta", "Extremadura", "Galicia", "La Rioja", "Madrid", "Melilla", "Murcia", "Navarre", "Valencia"]}, {"name": "Sweden", "code": "SE", "states": ["Blekinge", "Dalarna", "Gavleborg", "Gotland", "Halland", "Jamtland", "Jonkoping", "Kalmar", "Kronoberg", "Norrbotten", "Orebro", "Ostergotland", "Skane", "Sodermanland", "Stockholm", "Uppsala", "Varmland", "Vasterbotten", "Vasternorrland", "Vastmanland", "Vastra Gotaland"]}, {"name": "Switzerland", "code": "CH", "states": ["Aargau", "Appenzell Ausserrhoden", "Appenzell Innerrhoden", "Basel-Landschaft", "Basel-Stadt", "Bern", "Fribourg", "Geneva", "Glarus", "Graubunden", "Jura", "Lucerne", "Neuchatel", "Nidwalden", "Obwalden", "Schaffhausen", "Schwyz", "Solothurn", "St. Gallen", "Thurgau", "Ticino", "Uri", "Valais", "Vaud", "Zug", "Zurich"]}, {"name": "Ukraine", "code": "UA", "states": ["Cherkasy", "Chernihiv", "Chernivtsi", "Crimea", "Dnipropetrovsk", "Donetsk", "Ivano-Frankivsk", "Kharkiv", "Kherson", "Khmelnytskyi", "Kiev", "Kiev City", "Kirovohrad", "Luhansk", "Lviv", "Mykolaiv", "Odessa", "Poltava", "Rivne", "Sevastopol", "Sumy", "Ternopil", "Vinnytsia", "Volyn", "Zakarpattia", "Zaporizhzhia", "Zhytomyr"]}, {"name": "United Kingdom", "code": "GB", "states": ["England", "Northern Ireland", "Scotland", "Wales"]}], "Oceania": [{"name": "Australia", "code": "AU", "states": ["Australian Capital Territory", "New South Wales", "Northern Territory", "Queensland", "South Australia", "Tasmania", "Victoria", "Western Australia"]}, {"name": "Fiji", "code": "FJ", "states": ["Ba", "Bua", "Cakaudrove", "Kadavu", "Lau", "Lomaiviti", "Macuata", "Nadroga-Navosa", "Naitasiri", "Namosi", "Ra", "Rewa", "Rotuma", "Serua", "Tailevu"]}, {"name": "Kiribati", "code": "KI", "states": ["Gilbert Islands", "Line Islands", "Phoenix Islands"]}, {"name": "Marshall Islands", "code": "MH", "states": ["Ralik Chain", "Ratak Chain"]}, {"name": "Micronesia", "code": "FM", "states": ["Chuuk", "Kosrae", "Pohnpei", "Yap"]}, {"name": "Nauru", "code": "NR", "states": ["Aiwo", "Anabar", "Anetan", "Anibare", "Baitsi", "Boe", "Buada", "Denigomodu", "Ewa", "Ijuw", "Meneng", "Nibok", "Uaboe", "Yaren"]}, {"name": "New Zealand", "code": "NZ", "states": ["Auckland", "Bay of Plenty", "Canterbury", "Gisborne", "Hawke's Bay", "Manawatu-Whanganui", "Marlborough", "Nelson", "Northland", "Otago", "Southland", "Taranaki", "Tasman", "Waikato", "Wellington", "West Coast"]}, {"name": "Palau", "code": "PW", "states": ["Aimeliik", "Airai", "Angaur", "Hatohobei", "Kayangel", "Koror", "Melekeok", "Ngaraard", "Ngarchelong", "Ngardmau", "Ngatpang", "Ngchesar", "Ngeremlengui", "Ngiwal", "Peleliu", "Sonsorol"]}, {"name": "Papua New Guinea", "code": "PG", "states": ["Bougainville", "Central", "Chimbu", "East New Britain", "East Sepik", "Eastern Highlands", "Enga", "Gulf", "Hela", "Jiwaka", "Madang", "Manus", "Milne Bay", "Morobe", "National Capital", "New Ireland", "Northern", "Southern Highlands", "West New Britain", "West Sepik", "Western", "Western Highlands"]}, {"name": "Samoa", "code": "WS", "states": ["A'ana", "Aiga-i-le-Tai", "Atua", "Fa'asaleleaga", "Gaga'emauga", "Gaga'ifomauga", "Palauli", "Satupa'itea", "Tuamasaga", "Va'a-o-Fonoti", "Vaisigano"]}, {"name": "Solomon Islands", "code": "SB", "states": ["Capital Territory", "Central", "Choiseul", "Guadalcanal", "Isabel", "Makira-Ulawa", "Malaita", "Rennell and Bellona", "Temotu", "Western"]}, {"name": "Tonga", "code": "TO", "states": ["Eua", "Ha'apai", "Niuas", "Tongatapu", "Vava'u"]}, {"name": "Tuvalu", "code": "TV", "states": ["Funafuti", "Nanumanga", "Nanumea", "Niutao", "Nui", "Nukufetau", "Nukulaelae", "Vaitupu"]}, {"name": "Vanuatu", "code": "VU", "states": ["Malampa", "Penama", "Sanma", "Shefa", "Tafea", "Torba"]}], "Antarctica": [{"name": "Antarctica", "code": "AQ", "states": ["Antarctic Territory"]}]};
+
+// ══════════════════════════════════════════════════════════
+//  FILTER STATE
+// ══════════════════════════════════════════════════════════
+let fContinent = null, fCountry = null, fState = null;
+
+function getContinents() { return Object.keys(CD).sort(); }
+function getCountries() {
+  const conts = fContinent ? [fContinent] : Object.keys(CD);
+  const list = [];
+  conts.forEach(c => CD[c].forEach(co => list.push(co.name)));
+  return list.sort();
+}
+function getStates() {
+  const list = [];
+  if (fCountry) {
+    Object.values(CD).forEach(cos => cos.forEach(c => { if (c.name===fCountry) list.push(...c.states); }));
+  } else if (fContinent) {
+    CD[fContinent].forEach(c => list.push(...c.states));
+  } else {
+    Object.values(CD).forEach(cos => cos.forEach(c => list.push(...c.states)));
+  }
+  return list.sort();
+}
+
+function renderItems(pid, items, selected, fn) {
+  const el = document.getElementById('list-'+pid);
+  if (!items.length) { el.innerHTML = '<div class="xf-none">No results found</div>'; return; }
+  el.innerHTML = items.map(item =>
+    '<div class="xf-item' + (item===selected?' sel':'') + '" data-val="' +
+    item.replace(/&/g,'&amp;').replace(/"/g,'&quot;') + '" data-fn="'+fn+'">' +
+    item.replace(/&/g,'&amp;') + '</div>'
+  ).join('');
+  el.querySelectorAll('.xf-item').forEach(function(d) {
+    d.addEventListener('click', function() { window[this.dataset.fn](this.dataset.val); });
+  });
+}
+
+function togglePanel(id) {
+  ['A','B','C'].forEach(p => { if (p!==id) document.getElementById('panel-'+p).classList.remove('open'); });
+  const panel = document.getElementById('panel-'+id);
+  const wasOpen = panel.classList.contains('open');
+  panel.classList.toggle('open');
+  if (!wasOpen) {
+    panel.querySelector('.xf-input').value = '';
+    if (id==='A') renderItems('A', getContinents(), fContinent, 'pickContinent');
+    if (id==='B') renderItems('B', getCountries(), fCountry, 'pickCountry');
+    if (id==='C') renderItems('C', getStates(), fState, 'pickState');
+    setTimeout(() => panel.querySelector('.xf-input').focus(), 30);
+  }
+}
+
+function filterList(id, val) {
+  const q = val.toLowerCase();
+  let items = [];
+  if (id==='A') items = getContinents().filter(i=>i.toLowerCase().includes(q));
+  if (id==='B') items = getCountries().filter(i=>i.toLowerCase().includes(q));
+  if (id==='C') items = getStates().filter(i=>i.toLowerCase().includes(q));
+  const sel = id==='A'?fContinent:id==='B'?fCountry:fState;
+  const fn = id==='A'?'pickContinent':id==='B'?'pickCountry':'pickState';
+  renderItems(id, items, sel, fn);
+}
+
+function pickContinent(val) {
+  fContinent=val; fCountry=null; fState=null;
+  document.getElementById('lbl-A').textContent=val;
+  document.getElementById('btn-A').classList.add('on');
+  document.getElementById('lbl-B').textContent='All Countries';
+  document.getElementById('btn-B').classList.remove('on');
+  document.getElementById('lbl-C').textContent='All States';
+  document.getElementById('btn-C').classList.remove('on');
+  document.getElementById('panel-A').classList.remove('open');
+  document.getElementById('xf-clear').style.display='inline-block';
+  loadCategories();
+}
+
+function pickCountry(val) {
+  fCountry=val; fState=null;
+  Object.keys(CD).forEach(cont => CD[cont].forEach(c => { if (c.name===val) fContinent=cont; }));
+  document.getElementById('lbl-A').textContent=fContinent;
+  document.getElementById('btn-A').classList.add('on');
+  document.getElementById('lbl-B').textContent=val;
+  document.getElementById('btn-B').classList.add('on');
+  document.getElementById('lbl-C').textContent='All States';
+  document.getElementById('btn-C').classList.remove('on');
+  document.getElementById('panel-B').classList.remove('open');
+  document.getElementById('xf-clear').style.display='inline-block';
+  loadCategories();
+}
+
+function pickState(val) {
+  fState=val;
+  Object.keys(CD).forEach(cont => CD[cont].forEach(c => {
+    if (c.states.includes(val)) { fContinent=cont; fCountry=c.name; }
+  }));
+  document.getElementById('lbl-A').textContent=fContinent;
+  document.getElementById('btn-A').classList.add('on');
+  document.getElementById('lbl-B').textContent=fCountry;
+  document.getElementById('btn-B').classList.add('on');
+  document.getElementById('lbl-C').textContent=val;
+  document.getElementById('btn-C').classList.add('on');
+  document.getElementById('panel-C').classList.remove('open');
+  document.getElementById('xf-clear').style.display='inline-block';
+  loadCategories();
+}
+
+function clearFilters() {
+  fContinent=null; fCountry=null; fState=null;
+  ['A','B','C'].forEach(id => {
+    document.getElementById('btn-'+id).classList.remove('on');
+    document.getElementById('panel-'+id).classList.remove('open');
+  });
+  document.getElementById('lbl-A').textContent='All Continents';
+  document.getElementById('lbl-B').textContent='All Countries';
+  document.getElementById('lbl-C').textContent='All States';
+  document.getElementById('xf-clear').style.display='none';
+  loadCategories();
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.xf')) {
+    ['A','B','C'].forEach(id => document.getElementById('panel-'+id).classList.remove('open'));
+  }
+});
+
+// ══════════════════════════════════════════════════════════
+//  LOAD FROM SUPABASE
+// ══════════════════════════════════════════════════════════
+let curCat=null, curCatName=null, curDish=null;
+let allRecipes = [];
+
+// Load categories from Supabase
+// Categories ALWAYS show — filters only affect recipes inside them
+async function loadCategories() {
+  const grid = document.getElementById('cat-grid');
+  grid.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Loading categories...</div>';
+
+  try {
+    const cats = await supaFetch('categories', 'order=sort_order');
+
+    if (!cats || !cats.length) {
+      grid.innerHTML = '<div class="loading">No categories found.</div>';
+      return;
+    }
+
+    grid.innerHTML = cats.map(cat =>
+      '<div class="cat-card" data-id="' + cat.id + '" data-name="' + cat.name.replace(/"/g,'&quot;') + '">' +
+      '<span class="cat-emoji">' + cat.emoji + '</span>' +
+      '<div class="cat-name">' + cat.name + '</div>' +
+      '<div class="cat-desc">' + cat.description + '</div>' +
+      '</div>'
+    ).join('');
+
+    grid.querySelectorAll('.cat-card').forEach(function(card) {
+      card.addEventListener('click', function() {
+        openCat(this.dataset.id, this.dataset.name);
+      });
+    });
+
+  } catch(e) {
+    console.error('loadCategories error:', e.message);
+    // Fallback to hardcoded categories if Supabase fails
+    const fallback = [
+      {id:'rise-shine',name:'Rise & Shine',emoji:'🌅',description:'All breakfast dishes'},
+      {id:'evening-table',name:'The Evening Table',emoji:'🕓',description:'Tea time snacks & bites'},
+      {id:'garden-earth',name:'Garden & Earth',emoji:'🥬',description:'Vegetarian stir fries & dry dishes'},
+      {id:'meat-fire',name:'Meat & Fire',emoji:'🍖',description:'Non-veg dry, fry & roasts'},
+      {id:'ocean-river',name:'Ocean & River',emoji:'🌊',description:'All seafood dishes'},
+      {id:'slow-soulful',name:'Slow & Soulful',emoji:'🥘',description:'All curries & stews'},
+      {id:'grains-comfort',name:'Grains & Comfort',emoji:'🍚',description:'Rice, biryani, pasta, noodles'},
+      {id:'breads-bakes',name:'Breads & Bakes',emoji:'🫓',description:'Breads, pastries, baked goods'},
+      {id:'sweet-serenades',name:'Sweet Serenades',emoji:'🍮',description:'Desserts & sweets'},
+      {id:'sips-stories',name:'Sips & Stories',emoji:'🥂',description:'All drinks & beverages'},
+      {id:'preserved-cherished',name:'Preserved & Cherished',emoji:'🫙',description:'Pickles, jams, chutneys, spice blends'},
+      {id:'feast-days',name:'Feast Days',emoji:'🎉',description:'Festive & special occasion dishes'},
+      {id:'little-ones',name:'Little Ones',emoji:'👶',description:'Baby food & toddler meals'},
+      {id:'nourish-heal',name:'Nourish & Heal',emoji:'💪',description:'Health focused & dietary specific'}
+    ];
+    grid.innerHTML = fallback.map(cat =>
+      '<div class="cat-card" data-id="' + cat.id + '" data-name="' + cat.name.replace(/"/g,'&quot;') + '">' +
+      '<span class="cat-emoji">' + cat.emoji + '</span>' +
+      '<div class="cat-name">' + cat.name + '</div>' +
+      '<div class="cat-desc">' + cat.description + '</div>' +
+      '</div>'
+    ).join('');
+    grid.querySelectorAll('.cat-card').forEach(function(card) {
+      card.addEventListener('click', function() { openCat(this.dataset.id, this.dataset.name); });
+    });
+  }
+}
+
+// Load dishes for a category
+async function openCat(id, name) {
+  curCat=id; curCatName=name;
+  hide('cats-view'); hide('styles-view'); hide('search-view');
+  document.getElementById('dishes-lbl').textContent = name + ' — Dishes';
+  const g = document.getElementById('dish-grid');
+  g.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Loading dishes...</div>';
+  show('dishes-view');
+  setBc(name, null);
+
+  try {
+    let params = 'category_id=eq.' + encodeURIComponent(id) + '&order=name';
+    if (fState)      params += '&state=eq.'     + encodeURIComponent(fState);
+    else if (fCountry)   params += '&country=eq.'   + encodeURIComponent(fCountry);
+    else if (fContinent) params += '&continent=eq.' + encodeURIComponent(fContinent);
+
+    const dishes = await supaFetch('dishes', params);
+
+    if (!dishes.length) {
+      g.innerHTML = '<div class="empty-state"><div class="empty-icon">🍽</div>' +
+        '<div class="empty-title">No dishes found</div>' +
+        '<div class="empty-desc">Try a different filter or check back soon</div></div>';
+      return;
+    }
+
+    g.innerHTML = dishes.map(dish =>
+      '<div class="dish-card" data-id="' + dish.id + '">' +
+      '<span class="dish-emoji">' + (dish.emoji||'🍽') + '</span>' +
+      '<div class="dish-name">' + dish.name + '</div>' +
+      '<div class="dish-aka">' + (dish.aka||'') + '</div>' +
+      '<div class="dish-desc">' + (dish.description||'') + '</div>' +
+      '</div>'
+    ).join('');
+
+    g.querySelectorAll('.dish-card').forEach(function(card) {
+      card.addEventListener('click', function() { openDish(this.dataset.id, dishes); });
+    });
+
+  } catch(e) {
+    console.error(e);
+    g.innerHTML = '<div class="loading">Could not load dishes. Please refresh.</div>';
+  }
+}
+
+// Load recipes for a dish
+async function openDish(id, dishes) {
+  const dish = dishes.find(d => d.id === id);
+  if (!dish) return;
+  curDish = dish;
+  hide('dishes-view');
+  document.getElementById('styles-lbl').textContent = dish.name + ' — Regional Styles';
+  const g = document.getElementById('styles-grid');
+  g.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Loading recipes...</div>';
+  show('styles-view');
+  setBc(curCatName, dish.name);
+
+  try {
+    let params = 'dish_id=eq.' + encodeURIComponent(id) + '&order=name';
+    if (fState)      params += '&state=eq.'     + encodeURIComponent(fState);
+    else if (fCountry)   params += '&country=eq.'   + encodeURIComponent(fCountry);
+    else if (fContinent) params += '&continent=eq.' + encodeURIComponent(fContinent);
+
+    const recipes = await supaFetch('recipes', params);
+    allRecipes = recipes;
+
+    if (!recipes.length) {
+      g.innerHTML = '<div class="empty-state"><div class="empty-icon">🍽</div>' +
+        '<div class="empty-title">No recipes found</div>' +
+        '<div class="empty-desc">Try a different filter</div></div>';
+      return;
+    }
+
+    g.innerHTML = recipes.map(r =>
+      '<div class="style-card">' +
+      '<div class="style-hdr"><span class="style-emoji">' + (r.emoji||'🍽') + '</span>' +
+      '<div><div class="style-name">' + r.name + '</div>' +
+      '<div class="style-origin">✦ ' + (r.style||'') + ' · ' + (r.origin||'') + '</div></div></div>' +
+      '<div class="style-desc">' + (r.description||'') + '</div>' +
+      '<div class="style-aka">' + (r.aka||'') + '</div>' +
+      '<div class="tags-row">' + renderTags(r.tags||[]) + '</div>' +
+      '</div>'
+    ).join('');
+
+  } catch(e) {
+    console.error(e);
+    g.innerHTML = '<div class="loading">Could not load recipes. Please refresh.</div>';
+  }
+}
+
+function renderTags(tags) {
+  if (!tags || !tags.length) return '';
+  return tags.map(t => '<span class="tag tag-' + t.t + '">' + t.l + '</span>').join('');
+}
+
+// ══════════════════════════════════════════════════════════
+//  SEARCH
+// ══════════════════════════════════════════════════════════
+async function handleSearch(v) {
+  document.getElementById('sclear').style.display = v ? 'block' : 'none';
+  if (!v.trim()) { clearSearch(); return; }
+
+  hide('cats-view'); hide('dishes-view'); hide('styles-view');
+  document.getElementById('bc').style.display = 'none';
+
+  const g = document.getElementById('search-grid');
+  g.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Searching...</div>';
+  show('search-view');
+
+  try {
+    const q = encodeURIComponent('%' + v + '%');
+    const recipes = await supaFetch('recipes',
+      'or=(name.ilike.' + q + ',aka.ilike.' + q + ',origin.ilike.' + q + ',style.ilike.' + q + ',description.ilike.' + q + ')'
+    );
+
+    document.getElementById('search-lbl').textContent =
+      recipes.length + ' result' + (recipes.length!==1?'s':'') + ' for "' + v + '"';
+
+    if (!recipes.length) {
+      g.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div>' +
+        '<div class="empty-title">No recipes found</div>' +
+        '<div class="empty-desc">Try Thoran, Upperi or Poriyal</div></div>';
+      return;
+    }
+
+    g.innerHTML = recipes.map(r =>
+      '<div class="style-card">' +
+      '<div class="style-hdr"><span class="style-emoji">' + (r.emoji||'🍽') + '</span>' +
+      '<div><div class="style-name">' + r.name + '</div>' +
+      '<div class="style-origin">✦ ' + (r.style||'') + ' · ' + (r.origin||'') + '</div></div></div>' +
+      '<div class="style-desc">' + (r.description||'') + '</div>' +
+      '<div class="style-aka">' + (r.aka||'') + '</div>' +
+      '<div class="tags-row">' + renderTags(r.tags||[]) + '</div>' +
+      '</div>'
+    ).join('');
+
+  } catch(e) {
+    g.innerHTML = '<div class="loading">Search failed. Please try again.</div>';
+  }
+}
+
+function clearSearch() {
+  document.getElementById('rsearch').value = '';
+  document.getElementById('sclear').style.display = 'none';
+  hide('search-view');
+  goHome();
+}
+
+// ══════════════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════════════
+function goHome() {
+  curCat=null; curCatName=null; curDish=null;
+  show('cats-view'); hide('dishes-view'); hide('styles-view'); hide('search-view');
+  document.getElementById('bc').style.display='none';
+}
+
+function goToDishes() {
+  if (curCat && curCatName) { hide('styles-view'); openCat(curCat, curCatName); }
+}
+
+function setBc(cat, dish) {
+  document.getElementById('bc').style.display='flex';
+  if (dish) {
+    document.getElementById('bccat').textContent=cat;
+    document.getElementById('bccat').style.display='inline';
+    document.getElementById('bcsep2').style.display='inline';
+    document.getElementById('bccur').textContent=dish;
+  } else {
+    document.getElementById('bccat').style.display='none';
+    document.getElementById('bcsep2').style.display='none';
+    document.getElementById('bccur').textContent=cat;
+  }
+}
+
+function show(id) { document.getElementById(id).style.display='block'; }
+function hide(id) { document.getElementById(id).style.display='none'; }
+
+// ══════════════════════════════════════════════════════════
+//  INIT — Load categories on page load
+// ══════════════════════════════════════════════════════════
+loadCategories();
+</script>
+</body>
+</html>
