@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile — The Culinary Journal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ═══════════════════════════════════════════════════
+       PROFILE PAGE — local styles
+    ═══════════════════════════════════════════════════ */
+    .page-bg { background-color: #0f0f0f; }
+
+    /* ── LOADING STATE ── */
+    .loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 64px);
+      gap: 14px;
+    }
+    .loader-spin {
+      width: 28px; height: 28px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loader-text {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--text-mid);
+    }
+
+    /* ── PROFILE WRAP ── */
+    .profile-wrap {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+      width: 100%;
+    }
+
+    .profile-header { margin-bottom: 32px; }
+    .profile-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 38px;
+      font-weight: 700;
+      color: var(--text-high);
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+    .profile-subtitle {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--text-mid);
+    }
+
+    /* ── CARDS ── */
+    .pcard {
+      background: rgba(255,255,255,0.03);
+      border: 0.5px solid var(--border);
+      border-radius: 18px;
+      padding: 32px;
+      margin-bottom: 22px;
+    }
+    .pcard-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-high);
+      margin-bottom: 6px;
+    }
+    .pcard-desc {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--text-mid);
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+
+    /* ── ACCOUNT IDENTITY STRIP ── */
+    .acct-id {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 22px;
+      margin-bottom: 22px;
+      border-bottom: 0.5px solid var(--border);
+    }
+    .acct-avatar {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent) 0%, #8a6a28 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .acct-meta-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text-high);
+      margin-bottom: 2px;
+    }
+    .acct-meta-since {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      color: var(--text-low);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* ── FORM FIELDS (reuse login.html conventions) ── */
+    .pfield { margin-bottom: 16px; }
+    .plabel {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .pinput {
+      width: 100%;
+      padding: 11px 14px;
+      background: rgba(255,255,255,0.05);
+      border: 0.5px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--text-high);
+      outline: none;
+      transition: all 0.2s;
+      box-sizing: border-box;
+    }
+    .pinput:focus {
+      border-color: rgba(196,151,59,0.5);
+      background: rgba(255,255,255,0.07);
+    }
+    .pinput:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      background: rgba(255,255,255,0.025);
+    }
+    .pinput.error { border-color: rgba(220,80,80,0.6); }
+    .phint {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      color: rgba(255,255,255,0.25);
+      margin-top: 5px;
+    }
+    .perror {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      color: #e07070;
+      margin-top: 5px;
+      display: none;
+    }
+
+    .pbtn {
+      padding: 11px 22px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pbtn:hover { filter: brightness(0.9); transform: translateY(-1px); }
+    .pbtn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* ── INLINE MESSAGES per card ── */
+    .pmsg {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      margin-bottom: 16px;
+      display: none;
+      line-height: 1.5;
+    }
+    .pmsg-error   { background: rgba(220,80,80,0.1); border: 0.5px solid rgba(220,80,80,0.3); color: #e07070; }
+    .pmsg-success { background: rgba(80,180,80,0.1); border: 0.5px solid rgba(80,180,80,0.3); color: #70c070; }
+
+    /* ── PASSWORD STRENGTH (re-use login.html visual lang) ── */
+    .pwd-wrap { position: relative; }
+    .pwd-toggle-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.55);
+      cursor: pointer;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+    .pwd-toggle-btn:hover { color: var(--accent); background: rgba(255,255,255,0.06); }
+    .str-bar {
+      flex: 1; height: 3px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      transition: background 0.3s;
+    }
+    .str-bar.weak   { background: #e05555; }
+    .str-bar.fair   { background: #e09955; }
+    .str-bar.good   { background: #e0cc55; }
+    .str-bar.strong { background: #55cc77; }
+    .pwd-rule {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+      padding: 2px 0;
+    }
+    .pwd-rule.pass { color: #55cc77; }
+
+    /* ── THEME SELECTOR ── */
+    .theme-group { margin-bottom: 26px; }
+    .theme-group:last-child { margin-bottom: 0; }
+    .theme-group-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      color: var(--text-low);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .theme-group-label::after {
+      content: '';
+      flex: 1;
+      height: 0.5px;
+      background: var(--border);
+    }
+    .theme-group-tag {
+      font-size: 9px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: rgba(196,151,59,0.12);
+      color: var(--accent);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+    }
+    .theme-card {
+      position: relative;
+      background: rgba(255,255,255,0.04);
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      overflow: hidden;
+    }
+    .theme-card:hover {
+      border-color: var(--accent-border);
+      transform: translateY(-2px);
+    }
+    .theme-card.active {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+    }
+    .theme-card.locked {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .theme-card.locked:hover { transform: none; border-color: var(--border); }
+    .theme-swatches {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+    .theme-swatch {
+      flex: 1;
+      height: 22px;
+      border-radius: 4px;
+      border: 0.5px solid rgba(255,255,255,0.08);
+    }
+    .theme-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-high);
+      margin-bottom: 2px;
+    }
+    .theme-sub {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      color: var(--text-low);
+    }
+    .theme-active-tick {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .theme-card.active .theme-active-tick { display: flex; }
+
+    /* ── TOAST (theme save confirmation) ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 18px;
+      background: rgba(80,180,80,0.95);
+      color: #fff;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.25s ease;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.err { background: rgba(220,80,80,0.95); }
+
+    /* ── NAV USERNAME PILL ── */
+    .nav-user-pill {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: var(--text-mid);
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 20px;
+      border: 0.5px solid var(--border);
+    }
+    .nav-user-pill span { color: var(--accent); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      .profile-wrap { padding: 32px 16px 48px; }
+      .profile-title { font-size: 30px; }
+      .pcard { padding: 22px; border-radius: 14px; }
+      .acct-id { gap: 12px; }
+      .acct-avatar { width: 48px; height: 48px; font-size: 18px; }
+      .theme-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .nav-user-pill { display: none; }
+    }
+
+    /* ═══════════════════════════════════════════════════
+       THEME OVERRIDES (7 working previews)
+       Move to style.css later to apply site-wide.
+    ═══════════════════════════════════════════════════ */
+
+    /* MIDNIGHT SLATE is the default (no class needed) — it's what's already in :root */
+
+    /* MIDNIGHT BLACK — deeper, no warm tints */
+    body.theme-midnight-black {
+      --overlay-dark:  rgba(0,0,0,0.96);
+      --overlay-mid:   rgba(0,0,0,0.82);
+      --overlay-light: rgba(0,0,0,0.92);
+      --nav-bg:        rgba(0,0,0,0.78);
+      --card-bg:       rgba(255,255,255,0.025);
+      background: #000;
+    }
+    body.theme-midnight-black .page-bg { background-color: #000; }
+
+    /* DARK FOREST — deep green */
+    body.theme-dark-forest {
+      --accent:        #6b8e5a;
+      --accent-border: rgba(107,142,90,0.4);
+      --accent-glow:   rgba(107,142,90,0.14);
+      --overlay-dark:  rgba(12,22,16,0.92);
+      --overlay-mid:   rgba(8,18,12,0.72);
+      --overlay-light: rgba(6,14,10,0.85);
+      background: #0b1410;
+    }
+    body.theme-dark-forest .page-bg { background-color: #0b1410; }
+
+    /* CREAM & GOLD — warm paper, dark text */
+    body.theme-cream-gold {
+      --accent:        #b8860b;
+      --accent-border: rgba(184,134,11,0.45);
+      --accent-glow:   rgba(184,134,11,0.10);
+      --text-high:     rgba(40,30,18,0.95);
+      --text-mid:      rgba(40,30,18,0.62);
+      --text-low:      rgba(40,30,18,0.4);
+      --text-ghost:    rgba(40,30,18,0.06);
+      --border:        rgba(40,30,18,0.12);
+      --overlay-dark:  rgba(252,245,225,0.94);
+      --overlay-mid:   rgba(248,238,210,0.88);
+      --overlay-light: rgba(245,232,200,0.92);
+      --nav-bg:        rgba(252,245,225,0.85);
+      --tab-bg:        rgba(248,238,210,0.7);
+      --card-bg:       rgba(40,30,18,0.04);
+      --feature-bg:    rgba(248,238,210,0.6);
+      --footer-bg:     rgba(245,232,200,0.7);
+      background: #fdf6e3;
+    }
+    body.theme-cream-gold .page-bg { background-color: #fdf6e3; }
+
+    /* PURE WHITE — minimal light */
+    body.theme-pure-white {
+      --accent:        #9b7028;
+      --accent-border: rgba(155,112,40,0.4);
+      --accent-glow:   rgba(155,112,40,0.08);
+      --text-high:     rgba(20,20,20,0.95);
+      --text-mid:      rgba(20,20,20,0.6);
+      --text-low:      rgba(20,20,20,0.38);
+      --text-ghost:    rgba(20,20,20,0.05);
+      --border:        rgba(20,20,20,0.1);
+      --overlay-dark:  rgba(255,255,255,0.96);
+      --overlay-mid:   rgba(250,250,250,0.9);
+      --overlay-light: rgba(248,248,248,0.94);
+      --nav-bg:        rgba(255,255,255,0.85);
+      --tab-bg:        rgba(250,250,250,0.7);
+      --card-bg:       rgba(0,0,0,0.025);
+      --feature-bg:    rgba(250,250,250,0.6);
+      --footer-bg:     rgba(248,248,248,0.7);
+      background: #ffffff;
+    }
+    body.theme-pure-white .page-bg { background-color: #ffffff; }
+
+    /* SPRING BLOSSOM — soft pink */
+    body.theme-spring-blossom {
+      --accent:        #c47b8f;
+      --accent-border: rgba(196,123,143,0.45);
+      --accent-glow:   rgba(196,123,143,0.12);
+      --text-high:     rgba(60,30,40,0.95);
+      --text-mid:      rgba(60,30,40,0.6);
+      --text-low:      rgba(60,30,40,0.38);
+      --text-ghost:    rgba(60,30,40,0.05);
+      --border:        rgba(60,30,40,0.12);
+      --overlay-dark:  rgba(253,238,242,0.94);
+      --overlay-mid:   rgba(250,228,235,0.88);
+      --overlay-light: rgba(248,220,228,0.92);
+      --nav-bg:        rgba(253,238,242,0.85);
+      --tab-bg:        rgba(250,228,235,0.7);
+      --card-bg:       rgba(60,30,40,0.04);
+      --feature-bg:    rgba(250,228,235,0.6);
+      --footer-bg:     rgba(248,220,228,0.7);
+      background: #fdeef2;
+    }
+    body.theme-spring-blossom .page-bg { background-color: #fdeef2; }
+
+    /* AUTUMN HARVEST — burnt orange, warm dark */
+    body.theme-autumn-harvest {
+      --accent:        #d97c3c;
+      --accent-border: rgba(217,124,60,0.45);
+      --accent-glow:   rgba(217,124,60,0.14);
+      --overlay-dark:  rgba(28,16,8,0.92);
+      --overlay-mid:   rgba(38,22,12,0.78);
+      --overlay-light: rgba(32,18,10,0.86);
+      --card-bg:       rgba(217,124,60,0.05);
+      background: #1a0e08;
+    }
+    body.theme-autumn-harvest .page-bg { background-color: #1a0e08; }
+  </style>
+</head>
+<body>
+<div class="page-bg"><div class="page-overlay">
+
+  <!-- ═══ NAV ═══ -->
+  <nav class="nav">
+    <a class="nav-logo" href="index.html">
+      <span>🍽</span>
+      <span class="nav-logo-text">The Culinary Journal</span>
+      <span class="nav-logo-badge">Est. 2025</span>
+    </a>
+    <div class="nav-btns" style="align-items:center">
+      <span class="nav-user-pill" id="nav-user-pill">@<span id="nav-username">…</span></span>
+      <button class="btn btn-ghost" onclick="signOut()">Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- ═══ TAB NAV ═══ -->
+  <div class="tab-nav"><div class="tab-nav-inner">
+    <a class="tab" href="index.html">🏠 Home</a>
+    <a class="tab" href="recipes.html">📖 Recipes</a>
+    <a class="tab" href="meal-planner.html">🍽 Meal Planner</a>
+    <a class="tab" href="pantry.html">🥶 Pantry &amp; Fridge</a>
+    <a class="tab" href="grocery.html">🛒 Grocery List</a>
+    <a class="tab" href="table-planner.html">🪑 Table Planner</a>
+    <a class="tab" href="print-studio.html">🖨 Print Studio</a>
+    <a class="tab active" href="profile.html">👤 My Profile</a>
+  </div></div>
+
+  <!-- ═══ LOADING ═══ -->
+  <div id="loading-state" class="loader">
+    <div class="loader-spin"></div>
+    <div class="loader-text">Loading your profile…</div>
+  </div>
+
+  <!-- ═══ PROFILE CONTENT ═══ -->
+  <div id="profile-content" style="display:none">
+    <div class="profile-wrap">
+
+      <header class="profile-header">
+        <h1 class="profile-title">My Profile</h1>
+        <p class="profile-subtitle">Manage your account and personalise your journal.</p>
+      </header>
+
+      <!-- ─── ACCOUNT DETAILS ─── -->
+      <section class="pcard">
+        <h2 class="pcard-title">Account Details</h2>
+        <p class="pcard-desc">Your name and username are visible only to you for now.</p>
+
+        <div class="acct-id">
+          <div class="acct-avatar" id="acct-avatar">?</div>
+          <div>
+            <div class="acct-meta-name" id="acct-display-name">—</div>
+            <div class="acct-meta-since" id="acct-since">Member since —</div>
+          </div>
+        </div>
+
+        <div class="pmsg" id="acct-msg"></div>
+
+        <div class="pfield">
+          <label class="plabel" for="acct-name">Full Name</label>
+          <input class="pinput" type="text" id="acct-name" placeholder="Your full name" autocomplete="name">
+          <div class="perror" id="acct-name-error"></div>
+        </div>
+
+        <div class="pfield">
+          <label class="plabel" for="acct-username">Username</label>
+          <input class="pinput" type="text" id="acct-username" autocomplete="username" oninput="validateUsernameField(this)">
+          <div class="phint">3–20 characters. Letters, numbers, _ and - only.</div>
+          <div class="perror" id="acct-username-error"></div>
+        </div>
+
+        <div class="pfield">
+          <label class="plabel" for="acct-email">Email</label>
+          <input class="pinput" type="email" id="acct-email" disabled>
+          <div class="phint">Email changes are coming soon — contact support if you need to update yours.</div>
+        </div>
+
+        <button class="pbtn" id="acct-save-btn" onclick="saveAccount()">Save Changes</button>
+      </section>
+
+      <!-- ─── CHANGE PASSWORD ─── -->
+      <section class="pcard">
+        <h2 class="pcard-title">Change Password</h2>
+        <p class="pcard-desc">Enter your current password, then choose a new one.</p>
+
+        <div class="pmsg" id="pwd-msg"></div>
+
+        <div class="pfield">
+          <label class="plabel" for="pwd-current">Current Password</label>
+          <div class="pwd-wrap">
+            <input class="pinput" type="password" id="pwd-current" placeholder="••••••••" autocomplete="current-password" style="padding-right:44px">
+            <button type="button" class="pwd-toggle-btn" onclick="togglePwd('pwd-current', this)" aria-label="Show password" title="Show password">
+              <svg class="eye-show" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-hide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="pfield">
+          <label class="plabel" for="pwd-new">New Password</label>
+          <div class="pwd-wrap">
+            <input class="pinput" type="password" id="pwd-new" placeholder="Choose a strong password" autocomplete="new-password" style="padding-right:44px" oninput="checkPwdStrength(this.value)">
+            <button type="button" class="pwd-toggle-btn" onclick="togglePwd('pwd-new', this)" aria-label="Show password" title="Show password">
+              <svg class="eye-show" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="eye-hide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+          <!-- strength bar -->
+          <div style="margin-top:8px;display:none" id="pwd-strength-wrap">
+            <div style="display:flex;gap:4px;margin-bottom:6px">
+              <div class="str-bar" id="pwd-str-1"></div>
+              <div class="str-bar" id="pwd-str-2"></div>
+              <div class="str-bar" id="pwd-str-3"></div>
+              <div class="str-bar" id="pwd-str-4"></div>
+            </div>
+            <div id="pwd-strength-label" style="font-family:'DM Sans',sans-serif;font-size:11px;color:rgba(255,255,255,0.4)"></div>
+          </div>
+          <!-- rules -->
+          <div id="pwd-rules" style="margin-top:8px;display:none">
+            <div class="pwd-rule" id="pwd-rule-len">✗ At least 8 characters</div>
+            <div class="pwd-rule" id="pwd-rule-upper">✗ At least one uppercase letter (A–Z)</div>
+            <div class="pwd-rule" id="pwd-rule-lower">✗ At least one lowercase letter (a–z)</div>
+            <div class="pwd-rule" id="pwd-rule-num">✗ At least one number (0–9)</div>
+            <div class="pwd-rule" id="pwd-rule-special">✗ At least one special character (!@#$%^&amp;*)</div>
+          </div>
+        </div>
+
+        <button class="pbtn" id="pwd-save-btn" onclick="changePassword()">Change Password</button>
+      </section>
+
+      <!-- ─── THEME SELECTOR ─── -->
+      <section class="pcard">
+        <h2 class="pcard-title">Theme</h2>
+        <p class="pcard-desc">Choose a look for your journal. Your selection is saved automatically and will apply across every page once the theme system is rolled out site-wide.</p>
+
+        <div class="pmsg" id="theme-msg"></div>
+
+        <!-- DARK -->
+        <div class="theme-group">
+          <div class="theme-group-label">Dark</div>
+          <div class="theme-grid" id="theme-grid-dark"></div>
+        </div>
+
+        <!-- LIGHT -->
+        <div class="theme-group">
+          <div class="theme-group-label">Light</div>
+          <div class="theme-grid" id="theme-grid-light"></div>
+        </div>
+
+        <!-- SEASONAL -->
+        <div class="theme-group">
+          <div class="theme-group-label">Seasonal</div>
+          <div class="theme-grid" id="theme-grid-seasonal"></div>
+        </div>
+
+        <!-- FESTIVE (teaser) -->
+        <div class="theme-group">
+          <div class="theme-group-label">Festive <span class="theme-group-tag">Coming soon</span></div>
+          <div class="theme-grid" id="theme-grid-festive"></div>
+        </div>
+
+        <!-- SPECIAL (teaser) -->
+        <div class="theme-group">
+          <div class="theme-group-label">Special <span class="theme-group-tag">Coming soon</span></div>
+          <div class="theme-grid" id="theme-grid-special"></div>
+        </div>
+
+        <!-- INSPIRED (teaser) -->
+        <div class="theme-group">
+          <div class="theme-group-label">Inspired <span class="theme-group-tag">Coming soon</span></div>
+          <div class="theme-grid" id="theme-grid-inspired"></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="footer">
+    <span class="footer-text">© 2025 The Culinary Journal. All rights reserved.</span>
+    <div class="footer-links">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Use</a>
+      <a href="#">Contact</a>
+    </div>
+  </footer>
+
+</div></div>
+
+<!-- ═══ TOAST ═══ -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   PROFILE PAGE — script
+═══════════════════════════════════════════════════════════════ */
+const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+const SUPA_KEY = 'sb_publishable_rAjMRvy0qKszgP8fu3oRiA_5iWPVwob';
+
+/* ── THEME CATALOGUE ──────────────────────────────────────────
+   `live: true` = working preview wired up in CSS above.
+   `live: false` = card visible but locked; will light up once
+   you add its body.theme-{key} block to style.css. */
+const THEMES = {
+  dark: [
+    { key: 'midnight-slate',  name: 'Midnight Slate',  sub: 'Default',            swatches: ['#0a0a0a', '#C4973B', '#ffffff'], live: true },
+    { key: 'midnight-black',  name: 'Midnight Black',  sub: 'Pure dark',          swatches: ['#000000', '#C4973B', '#ffffff'], live: true },
+    { key: 'dark-forest',     name: 'Dark Forest',     sub: 'Deep green',         swatches: ['#0b1410', '#6b8e5a', '#ffffff'], live: true },
+    { key: 'dark-bordeaux',   name: 'Dark Bordeaux',   sub: 'Wine red',           swatches: ['#1a0a0e', '#a04050', '#ffffff'], live: false },
+    { key: 'dark-navy',       name: 'Dark Navy',       sub: 'Deep blue',          swatches: ['#08111e', '#5080b8', '#ffffff'], live: false },
+    { key: 'dark-chocolate',  name: 'Dark Chocolate',  sub: 'Cocoa brown',        swatches: ['#180e08', '#a07050', '#ffffff'], live: false },
+    { key: 'dark-obsidian',   name: 'Dark Obsidian',   sub: 'Volcanic glass',     swatches: ['#0a0a14', '#7868a0', '#ffffff'], live: false }
+  ],
+  light: [
+    { key: 'cream-gold',      name: 'Cream & Gold',    sub: 'Warm paper',         swatches: ['#fdf6e3', '#b8860b', '#281e12'], live: true },
+    { key: 'pure-white',      name: 'Pure White',      sub: 'Minimal',            swatches: ['#ffffff', '#9b7028', '#141414'], live: true },
+    { key: 'soft-linen',      name: 'Soft Linen',      sub: 'Natural texture',    swatches: ['#f5f0e8', '#a08868', '#2a2418'], live: false },
+    { key: 'sage-cream',      name: 'Sage & Cream',    sub: 'Herb garden',        swatches: ['#f4f1e8', '#8a9d7a', '#2a2e22'], live: false },
+    { key: 'blush-rose',      name: 'Blush & Rose',    sub: 'Soft romance',       swatches: ['#fbeae5', '#c47b8f', '#3a2028'], live: false },
+    { key: 'silver-morning',  name: 'Silver Morning',  sub: 'Cool grey',          swatches: ['#f0f2f5', '#7a8898', '#1a2028'], live: false },
+    { key: 'lemon-fresh',     name: 'Lemon Fresh',     sub: 'Citrus light',       swatches: ['#fdfbe8', '#c8a838', '#2e2818'], live: false }
+  ],
+  seasonal: [
+    { key: 'spring-blossom',  name: 'Spring Blossom',  sub: 'Soft pinks',         swatches: ['#fdeef2', '#c47b8f', '#3c1e28'], live: true },
+    { key: 'summer-citrus',   name: 'Summer Citrus',   sub: 'Bright zest',        swatches: ['#fff8e0', '#e08820', '#3a2a10'], live: false },
+    { key: 'autumn-harvest',  name: 'Autumn Harvest',  sub: 'Burnt orange',       swatches: ['#1a0e08', '#d97c3c', '#ffffff'], live: true },
+    { key: 'winter-frost',    name: 'Winter Frost',    sub: 'Icy blue',           swatches: ['#e8f0f5', '#6890b0', '#1a2830'], live: false }
+  ],
+  festive: [
+    { key: 'christmas',       name: 'Christmas',       sub: 'Red & green',        swatches: ['#1a0a0a', '#c83838', '#3a8050'], live: false },
+    { key: 'diwali',          name: 'Diwali',          sub: 'Golden glow',        swatches: ['#1f0a05', '#e8a020', '#c84040'], live: false },
+    { key: 'ramadan',         name: 'Ramadan',         sub: 'Crescent moon',      swatches: ['#0a1418', '#80a8c0', '#d8b860'], live: false },
+    { key: 'new-year',        name: 'New Year',        sub: 'Midnight sparkle',   swatches: ['#000814', '#d4af37', '#ffffff'], live: false },
+    { key: 'onam',            name: 'Onam',            sub: 'Floral feast',       swatches: ['#fff5e0', '#e08020', '#7a9050'], live: false },
+    { key: 'easter',          name: 'Easter',          sub: 'Pastel spring',      swatches: ['#fbf2e8', '#c8a0c0', '#a0c890'], live: false }
+  ],
+  special: [
+    { key: 'wedding-white',   name: 'Wedding White',   sub: 'Pure & elegant',     swatches: ['#ffffff', '#c0a060', '#1a1a1a'], live: false },
+    { key: 'birthday-cake',   name: 'Birthday Cake',   sub: 'Confetti joy',       swatches: ['#fff0f8', '#e878a8', '#5a3050'], live: false },
+    { key: 'baby-shower',     name: 'Baby Shower',     sub: 'Soft pastels',       swatches: ['#eef5f8', '#a0c8d8', '#3a4a58'], live: false },
+    { key: 'fine-dining',     name: 'Fine Dining',     sub: 'Black & gold',       swatches: ['#0a0a0a', '#d4af37', '#ffffff'], live: false },
+    { key: 'old-cookbook',    name: 'Old Cookbook',    sub: 'Vintage paper',      swatches: ['#f2e8d0', '#7a4828', '#2a1810'], live: false },
+    { key: 'world-kitchen',   name: 'World Kitchen',   sub: 'Global mosaic',      swatches: ['#1a1208', '#e08838', '#80a060'], live: false }
+  ],
+  inspired: [
+    { key: 'silk-whisper',     name: 'Silk & Whisper',  sub: 'Soft luxury',        swatches: ['#1a1418', '#c8a8b0', '#ffffff'], live: false },
+    { key: 'midnight-garden',  name: 'Midnight Garden', sub: 'Botanical dark',     swatches: ['#0a1410', '#7a9070', '#e0c890'], live: false },
+    { key: 'crystal-pearl',    name: 'Crystal & Pearl', sub: 'Iridescent',         swatches: ['#f8f4f8', '#b8a8c8', '#3a304a'], live: false },
+    { key: 'secret-garden',    name: 'The Secret Garden', sub: 'Hidden bloom',     swatches: ['#0e1a14', '#90b870', '#e8d8b0'], live: false },
+    { key: 'bridal-blush',     name: 'Bridal Blush',    sub: 'Veil & rose',        swatches: ['#fbf0ee', '#d8a8a0', '#4a302e'], live: false },
+    { key: 'pure-petals',      name: 'Pure Petals',     sub: 'White florals',      swatches: ['#fdfafa', '#e8c8c8', '#3a2828'], live: false },
+    { key: 'violet-storm',     name: 'Violet Storm',    sub: 'Electric purple',    swatches: ['#0a0814', '#9070d0', '#ffffff'], live: false },
+    { key: 'golden-hour',      name: 'Golden Hour',     sub: 'Sunset glow',        swatches: ['#1a1008', '#e8a040', '#ffd890'], live: false },
+    { key: 'forest-rain',      name: 'Forest Rain',     sub: 'Petrichor mist',     swatches: ['#0e1614', '#7a9088', '#d8d0c0'], live: false },
+    { key: 'enchanted-winter', name: 'Enchanted Winter', sub: 'Snow & silver',     swatches: ['#e8eef2', '#7088a0', '#1a2a3a'], live: false },
+    { key: 'emerald-night',    name: 'Emerald Night',   sub: 'Jewel green',        swatches: ['#040e0a', '#10a070', '#ffffff'], live: false },
+    { key: 'still-waters',     name: 'Still Waters',    sub: 'Calm lake',          swatches: ['#0a1418', '#5090a0', '#d0e0e8'], live: false },
+    { key: 'heavens-gate',     name: "Heaven's Gate",   sub: 'Celestial light',    swatches: ['#f0f0fa', '#a890d0', '#2a2848'], live: false },
+    { key: 'ocean-breeze',     name: 'Ocean Breeze',    sub: 'Salt & spray',       swatches: ['#e8f4f8', '#4090b0', '#1a3a48'], live: false },
+    { key: 'wildfire',         name: 'Wildfire',        sub: 'Untamed flame',      swatches: ['#1a0808', '#e04020', '#f8c060'], live: false },
+    { key: 'full-bloom',       name: 'Full Bloom',      sub: 'Garden in summer',   swatches: ['#fbf4e8', '#d870a0', '#3a2030'], live: false },
+    { key: 'lunar-gold',       name: 'Lunar Gold',      sub: 'Moonlight metal',    swatches: ['#0a0a14', '#d4c068', '#ffffff'], live: false }
+  ]
+};
+
+let SESSION = null;     // { access_token, user_id, username }
+let PROFILE = null;     // loaded profile row
+
+/* ═══════════════════════════════════════════════════
+   SESSION + AUTH GUARD
+═══════════════════════════════════════════════════ */
+function loadSession() {
+  try {
+    const raw = localStorage.getItem('tcj_session');
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch(_) { return null; }
+}
+
+function redirectToLogin() {
+  window.location.href = 'login.html';
+}
+
+function signOut() {
+  // Best-effort revoke (no need to await)
+  if (SESSION && SESSION.access_token) {
+    fetch(SUPA_URL + '/auth/v1/logout', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SESSION.access_token
+      }
+    }).catch(() => {});
+  }
+  localStorage.removeItem('tcj_session');
+  // Keep theme in localStorage so the next visitor still sees a styled login page
+  window.location.href = 'login.html';
+}
+
+/* ═══════════════════════════════════════════════════
+   SUPABASE HELPERS (mirror login.html conventions + add PATCH)
+═══════════════════════════════════════════════════ */
+async function supaGet(path, params) {
+  const res = await fetch(SUPA_URL + '/rest/v1/' + path + (params ? '?' + params : ''), {
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SESSION.access_token
+    }
+  });
+  if (res.status === 401) { redirectToLogin(); throw new Error('Session expired'); }
+  if (!res.ok) throw new Error('Request failed (' + res.status + ')');
+  return res.json();
+}
+
+async function supaPatch(path, body) {
+  const res = await fetch(SUPA_URL + '/rest/v1/' + path, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SESSION.access_token,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(body)
+  });
+  if (res.status === 401) { redirectToLogin(); throw new Error('Session expired'); }
+  if (!res.ok) {
+    let m = 'Could not save changes.';
+    try { const d = await res.json(); m = d.message || d.error || m; } catch(_) {}
+    throw new Error(m);
+  }
+  return res.json();
+}
+
+async function supaRPC(fnName, args) {
+  const res = await fetch(SUPA_URL + '/rest/v1/rpc/' + fnName, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SESSION.access_token,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(args || {})
+  });
+  if (!res.ok) {
+    let m = 'Database call failed';
+    try { const d = await res.json(); m = d.message || d.error || m; } catch(_) {}
+    throw new Error(m);
+  }
+  return res.json();
+}
+
+async function supaAuth(endpoint, body, method) {
+  const res = await fetch(SUPA_URL + '/auth/v1/' + endpoint, {
+    method: method || 'POST',
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SESSION.access_token,
+      'Content-Type': 'application/json'
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error_description || data.msg || data.error || 'Auth call failed');
+  return data;
+}
+
+/* ═══════════════════════════════════════════════════
+   INITIAL LOAD
+═══════════════════════════════════════════════════ */
+async function init() {
+  SESSION = loadSession();
+  if (!SESSION || !SESSION.access_token || !SESSION.user_id) {
+    redirectToLogin();
+    return;
+  }
+
+  try {
+    // Fetch the user's own profile row. RLS allows self-read.
+    const rows = await supaGet(
+      'profiles',
+      'id=eq.' + encodeURIComponent(SESSION.user_id) +
+      '&select=id,full_name,username,email,is_active,theme_preference,created_at'
+    );
+    if (!rows || !rows.length) throw new Error('Profile not found.');
+    PROFILE = rows[0];
+
+    if (PROFILE.is_active === false) {
+      // Deactivated accounts should never reach this page; defensive.
+      localStorage.removeItem('tcj_session');
+      redirectToLogin();
+      return;
+    }
+
+    hydrateUI();
+    renderAllThemes();
+    applyTheme(PROFILE.theme_preference || 'midnight-slate', false);
+
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('profile-content').style.display = 'block';
+  } catch (err) {
+    // Most likely an expired token — bounce to login.
+    console.error(err);
+    redirectToLogin();
+  }
+}
+
+function hydrateUI() {
+  const name = PROFILE.full_name || '';
+  const initials = (name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2) || PROFILE.username.slice(0, 2)).toUpperCase();
+  document.getElementById('acct-avatar').textContent = initials;
+  document.getElementById('acct-display-name').textContent = name || PROFILE.username;
+  document.getElementById('nav-username').textContent = PROFILE.username;
+
+  const since = PROFILE.created_at ? new Date(PROFILE.created_at) : null;
+  document.getElementById('acct-since').textContent =
+    'Member since ' + (since ? since.toLocaleDateString(undefined, { year: 'numeric', month: 'long' }) : '—');
+
+  document.getElementById('acct-name').value     = name;
+  document.getElementById('acct-username').value = PROFILE.username;
+  document.getElementById('acct-email').value    = PROFILE.email;
+}
+
+/* ═══════════════════════════════════════════════════
+   ACCOUNT DETAILS
+═══════════════════════════════════════════════════ */
+function setMsg(id, text, type) {
+  const el = document.getElementById(id);
+  el.className = 'pmsg pmsg-' + type;
+  el.textContent = text;
+  el.style.display = 'block';
+}
+function clearMsg(id) { document.getElementById(id).style.display = 'none'; }
+
+function validateUsernameField(input) {
+  const err = document.getElementById('acct-username-error');
+  const val = input.value;
+  if (!val) { err.style.display = 'none'; input.classList.remove('error'); return true; }
+  if (val.length < 3 || val.length > 20) {
+    err.textContent = 'Username must be 3–20 characters.';
+    err.style.display = 'block'; input.classList.add('error'); return false;
+  }
+  if (!/^[a-zA-Z0-9_-]+$/.test(val)) {
+    err.textContent = 'Letters, numbers, underscores and hyphens only.';
+    err.style.display = 'block'; input.classList.add('error'); return false;
+  }
+  err.style.display = 'none'; input.classList.remove('error'); return true;
+}
+
+async function saveAccount() {
+  clearMsg('acct-msg');
+  const nameInput = document.getElementById('acct-name');
+  const userInput = document.getElementById('acct-username');
+  const newName = nameInput.value.trim();
+  const newUsername = userInput.value.trim();
+
+  if (!newName) { setMsg('acct-msg', 'Please enter your name.', 'error'); return; }
+  if (!validateUsernameField(userInput)) {
+    setMsg('acct-msg', 'Please fix the username before saving.', 'error'); return;
+  }
+
+  const nameChanged = newName !== (PROFILE.full_name || '');
+  const userChanged = newUsername.toLowerCase() !== (PROFILE.username || '').toLowerCase();
+  if (!nameChanged && !userChanged) {
+    setMsg('acct-msg', 'Nothing to save — your details are already up to date.', 'success');
+    return;
+  }
+
+  const btn = document.getElementById('acct-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    // Check username availability only if it actually changed (case-insensitive)
+    if (userChanged) {
+      const taken = await supaRPC('is_username_taken', { uname: newUsername });
+      if (taken) {
+        userInput.classList.add('error');
+        document.getElementById('acct-username-error').textContent = 'That username is already taken.';
+        document.getElementById('acct-username-error').style.display = 'block';
+        throw new Error('That username is already taken. Please choose another.');
+      }
+    }
+
+    const patch = {};
+    if (nameChanged) patch.full_name = newName;
+    if (userChanged) patch.username  = newUsername;
+
+    const updated = await supaPatch(
+      'profiles?id=eq.' + encodeURIComponent(SESSION.user_id),
+      patch
+    );
+    PROFILE = updated[0] || { ...PROFILE, ...patch };
+
+    // Refresh derived UI bits + keep session in sync if username changed
+    if (userChanged) {
+      SESSION.username = PROFILE.username;
+      localStorage.setItem('tcj_session', JSON.stringify(SESSION));
+    }
+    hydrateUI();
+    setMsg('acct-msg', 'Your details have been saved.', 'success');
+  } catch (e) {
+    setMsg('acct-msg', e.message || 'Could not save changes.', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Changes';
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   PASSWORD CHANGE
+═══════════════════════════════════════════════════ */
+function togglePwd(id, btn) {
+  const input = document.getElementById(id);
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  const showIcon = btn.querySelector('.eye-show');
+  const hideIcon = btn.querySelector('.eye-hide');
+  if (showIcon && hideIcon) {
+    showIcon.style.display = isHidden ? 'none' : 'block';
+    hideIcon.style.display = isHidden ? 'block' : 'none';
+  }
+  const label = isHidden ? 'Hide password' : 'Show password';
+  btn.setAttribute('aria-label', label);
+  btn.setAttribute('title', label);
+}
+
+function checkPwdStrength(val) {
+  const wrap  = document.getElementById('pwd-strength-wrap');
+  const rules = document.getElementById('pwd-rules');
+  if (!val) { wrap.style.display = 'none'; rules.style.display = 'none'; return; }
+  wrap.style.display = 'block'; rules.style.display = 'block';
+
+  const checks = {
+    len:     val.length >= 8,
+    upper:   /[A-Z]/.test(val),
+    lower:   /[a-z]/.test(val),
+    num:     /[0-9]/.test(val),
+    special: /[!@#$%^&*()_+\-=\[\]{};':"\|,.<>\/?]/.test(val)
+  };
+
+  Object.keys(checks).forEach(key => {
+    const el = document.getElementById('pwd-rule-' + key);
+    if (el) {
+      el.classList.toggle('pass', checks[key]);
+      el.textContent = (checks[key] ? '✓' : '✗') + el.textContent.slice(1);
+    }
+  });
+
+  const score = Object.values(checks).filter(Boolean).length;
+  const bars  = ['pwd-str-1', 'pwd-str-2', 'pwd-str-3', 'pwd-str-4'];
+  const label = document.getElementById('pwd-strength-label');
+
+  bars.forEach((id, i) => {
+    const bar = document.getElementById(id);
+    bar.className = 'str-bar';
+    if (score <= 2 && i < score) bar.classList.add('weak');
+    else if (score === 3 && i < score) bar.classList.add('fair');
+    else if (score === 4 && i < score) bar.classList.add('good');
+    else if (score === 5 && i < score) bar.classList.add('strong');
+  });
+
+  if (score <= 2)        { label.textContent = '🔴 Weak password';   label.style.color = '#e05555'; }
+  else if (score === 3)  { label.textContent = '🟡 Fair password';   label.style.color = '#e09955'; }
+  else if (score === 4)  { label.textContent = '🟠 Good password';   label.style.color = '#e0cc55'; }
+  else                   { label.textContent = '🟢 Strong password'; label.style.color = '#55cc77'; }
+}
+
+function isPasswordStrong(val) {
+  return val.length >= 8 &&
+    /[A-Z]/.test(val) &&
+    /[a-z]/.test(val) &&
+    /[0-9]/.test(val) &&
+    /[!@#$%^&*()_+\-=\[\]{};':"\|,.<>\/?]/.test(val);
+}
+
+async function changePassword() {
+  clearMsg('pwd-msg');
+  const current = document.getElementById('pwd-current').value;
+  const next    = document.getElementById('pwd-new').value;
+
+  if (!current || !next) {
+    setMsg('pwd-msg', 'Please fill in both fields.', 'error'); return;
+  }
+  if (current === next) {
+    setMsg('pwd-msg', 'Your new password must be different from your current one.', 'error'); return;
+  }
+  if (!isPasswordStrong(next)) {
+    setMsg('pwd-msg', 'Please choose a stronger password that meets all the requirements.', 'error'); return;
+  }
+
+  const btn = document.getElementById('pwd-save-btn');
+  btn.disabled = true; btn.textContent = 'Updating…';
+
+  try {
+    // Step 1: verify current password by re-authenticating.
+    const reAuth = await fetch(SUPA_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: PROFILE.email, password: current })
+    });
+    if (!reAuth.ok) {
+      throw new Error('Your current password is incorrect.');
+    }
+    const reAuthData = await reAuth.json();
+
+    // Refresh our in-memory access token to the freshly issued one before updating.
+    SESSION.access_token = reAuthData.access_token;
+    localStorage.setItem('tcj_session', JSON.stringify(SESSION));
+
+    // Step 2: update the password.
+    await supaAuth('user', { password: next }, 'PUT');
+
+    // Clear form
+    document.getElementById('pwd-current').value = '';
+    document.getElementById('pwd-new').value     = '';
+    checkPwdStrength('');
+
+    setMsg('pwd-msg', 'Password updated successfully.', 'success');
+  } catch (e) {
+    setMsg('pwd-msg', e.message || 'Could not change password. Please try again.', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Change Password';
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   THEME SELECTOR
+═══════════════════════════════════════════════════ */
+function renderAllThemes() {
+  renderThemeGroup('theme-grid-dark',     THEMES.dark);
+  renderThemeGroup('theme-grid-light',    THEMES.light);
+  renderThemeGroup('theme-grid-seasonal', THEMES.seasonal);
+  renderThemeGroup('theme-grid-festive',  THEMES.festive);
+  renderThemeGroup('theme-grid-special',  THEMES.special);
+  renderThemeGroup('theme-grid-inspired', THEMES.inspired);
+}
+
+function renderThemeGroup(containerId, themes) {
+  const root = document.getElementById(containerId);
+  root.innerHTML = '';
+  themes.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'theme-card' + (t.live ? '' : ' locked');
+    card.dataset.key = t.key;
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', t.live ? '0' : '-1');
+    card.setAttribute('aria-label', t.name + (t.live ? '' : ' (coming soon)'));
+    card.innerHTML =
+      '<div class="theme-active-tick">✓</div>' +
+      '<div class="theme-swatches">' +
+        t.swatches.map(c => '<div class="theme-swatch" style="background:' + c + '"></div>').join('') +
+      '</div>' +
+      '<div class="theme-name">' + t.name + '</div>' +
+      '<div class="theme-sub">' + (t.live ? t.sub : 'Coming soon') + '</div>';
+    if (t.live) {
+      card.addEventListener('click', () => selectTheme(t.key));
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectTheme(t.key); }
+      });
+    }
+    root.appendChild(card);
+  });
+}
+
+function applyTheme(key, persistLocal) {
+  // Strip any existing theme-* class then add the new one (unless it's the default).
+  const cl = document.body.classList;
+  Array.from(cl).filter(c => c.startsWith('theme-')).forEach(c => cl.remove(c));
+  if (key && key !== 'midnight-slate') cl.add('theme-' + key);
+
+  // Update card "active" state
+  document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+  const active = document.querySelector('.theme-card[data-key="' + key + '"]');
+  if (active) active.classList.add('active');
+
+  if (persistLocal !== false) {
+    localStorage.setItem('tcj_theme', key);
+  }
+}
+
+async function selectTheme(key) {
+  // Apply instantly for snappy preview
+  const prev = PROFILE.theme_preference || 'midnight-slate';
+  applyTheme(key, true);
+
+  if (key === prev) return;
+
+  try {
+    const updated = await supaPatch(
+      'profiles?id=eq.' + encodeURIComponent(SESSION.user_id),
+      { theme_preference: key }
+    );
+    PROFILE.theme_preference = (updated[0] && updated[0].theme_preference) || key;
+    showToast('Theme saved');
+  } catch (e) {
+    // Roll back UI if save failed
+    applyTheme(prev, true);
+    PROFILE.theme_preference = prev;
+    showToast('Could not save theme', true);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════ */
+let toastTimer = null;
+function showToast(text, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.className = 'toast' + (isError ? ' err' : '') + ' show';
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = 'toast' + (isError ? ' err' : ''); }, 2200);
+}
+
+/* ═══════════════════════════════════════════════════
+   GO
+═══════════════════════════════════════════════════ */
+init();
+</script>
+</body>
+</html>
