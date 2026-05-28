@@ -2863,6 +2863,22 @@ async function processUploadedFile(file) {
     showImgStatus('Please sign in to upload images.', 'error');
     return;
   }
+  // 4b. Pre-flight: decode the JWT to check if it's expired BEFORE uploading.
+  // The server will reject expired tokens with "exp claim timestamp check failed"
+  // — better to catch it here so the user knows to re-login first.
+  try {
+    const tok = session.access_token;
+    const payload = JSON.parse(atob(tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      try { lsRemove('tcj_session'); } catch(_) {}
+      showImgStatus('Your session has expired. Please sign in again, then re-upload the photo. ' +
+                    'Reloading the page will take you to login.', 'error');
+      return;
+    }
+  } catch(_) {
+    // If decode fails, fall through — server will reject it and the catch
+    // block below will handle the error with a friendlier message.
+  }
   const userId = getUserId();
   if (!userId) {
     showImgStatus('Could not identify your user account. Please sign out and sign in again.', 'error');
@@ -2898,8 +2914,28 @@ async function processUploadedFile(file) {
     // Save to draft so a reload doesn't lose it
     try { saveDraft(); } catch(_) {}
   } catch(e) {
-    showImgStatus('Upload failed: ' + (e.message || e) +
-      '. The "recipe-images" bucket may not exist yet \u2014 run setup-recipe-images-bucket.sql.', 'error');
+    const raw = (e.message || String(e || '')).toLowerCase();
+    let friendly;
+    if (/exp.*claim|jwt expired|jwt.*expired|invalid jwt/i.test(raw)) {
+      // Auth token expired — most common cause when the user has been on
+      // the page for an hour+. Clear the session and ask them to sign in.
+      try { lsRemove('tcj_session'); } catch(_) {}
+      friendly = 'Your session has expired. Please sign in again, then re-upload the photo. ' +
+                 '(Sessions last about an hour; reloading the page will redirect you to login.)';
+    } else if (/bucket.*not\s*found|not\s*found.*bucket|no\s*such\s*bucket/.test(raw)) {
+      friendly = 'The "recipe-images" storage bucket doesn\'t exist yet. ' +
+                 'Run setup-recipe-images-bucket.sql in Supabase, then try again.';
+    } else if (/row[-\s]?level\s*security|rls|not\s*authorized|policy/.test(raw)) {
+      friendly = 'Upload was blocked by the storage policy. ' +
+                 'Make sure setup-recipe-images-bucket.sql has been run (it creates the bucket AND the RLS policies).';
+    } else if (/payload\s*too\s*large|file.*too\s*large|413/.test(raw)) {
+      friendly = 'That file is too large. Please use a photo under 5 MB.';
+    } else if (/network|failed\s*to\s*fetch|connection/.test(raw)) {
+      friendly = 'Network problem reaching the server. Please check your connection and try again.';
+    } else {
+      friendly = (e.message || String(e || 'Unknown error'));
+    }
+    showImgStatus('Upload failed: ' + friendly, 'error');
   }
 }
 
