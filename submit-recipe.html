@@ -1304,7 +1304,7 @@
       </div>
       <div style="display:flex;align-items:center;gap:0">
         <button class="btn-cancel" onclick="cancelSubmission()">Cancel Submission</button>
-        <button class="btn-draft" onclick="saveDraft()">Save Draft</button>
+        <button class="btn-draft" onclick="saveNamedDraft(true)">Save Draft</button>
         <button class="btn-submit" id="btn-submit" onclick="submitRecipe()">Submit for Review</button>
       </div>
     </div>
@@ -2651,6 +2651,8 @@ function collectFormData() {
 function saveDraft() {
   let data; try { data = collectFormData(); } catch(_) { return; }
   lsSet(DRAFT_KEY, JSON.stringify(data));
+  // Also keep named draft in sync silently
+  try { saveNamedDraft(false); } catch(_) {}
   const badge = document.getElementById('draft-badge');
   if (!badge) return;
   badge.style.display = 'inline-block';
@@ -2734,7 +2736,14 @@ function cancelSubmission() {
 }
 
 function loadDraftSilent() {
-  const raw = lsGet(DRAFT_KEY);
+  // Load specific draft if URL has ?draft=id param
+  const draftParam = new URLSearchParams(window.location.search).get('draft');
+  let raw = null;
+  if (draftParam) {
+    window._currentDraftId = draftParam;
+    try { const entry = JSON.parse(lsGet('tcj_draft_' + draftParam) || 'null'); raw = entry ? JSON.stringify(entry.data) : null; } catch(_) {}
+  }
+  if (!raw) raw = lsGet(DRAFT_KEY);
   if (!raw) return;
   try {
     const d = JSON.parse(raw) || {};
@@ -3342,6 +3351,70 @@ function removeImage() {
 }
 
 
+
+
+// ── MULTI-DRAFT SYSTEM ───────────────────────────────────────────────────────
+// Each draft lives at tcj_draft_[id]. The index is tcj_drafts_index (array).
+const DRAFTS_INDEX_KEY = 'tcj_drafts_index';
+
+function getDraftId() {
+  // Check URL param first
+  const params = new URLSearchParams(window.location.search);
+  const urlId = params.get('draft');
+  if (urlId) { window._currentDraftId = urlId; return urlId; }
+  // Otherwise use or create a session draft ID
+  if (!window._currentDraftId) window._currentDraftId = 'draft_' + Date.now();
+  return window._currentDraftId;
+}
+
+function saveNamedDraft(redirectAfter) {
+  let data; try { data = collectFormData(); } catch(_) { return; }
+  const id = getDraftId();
+  const entry = {
+    id,
+    recipe_name: data.recipe_name || 'Untitled Recipe',
+    category: data.category || '',
+    image_url: data.image_url || '',
+    saved_at: new Date().toISOString(),
+    data
+  };
+  lsSet('tcj_draft_' + id, JSON.stringify(entry));
+  // Update index
+  let index = [];
+  try { index = JSON.parse(lsGet(DRAFTS_INDEX_KEY) || '[]'); } catch(_) {}
+  const existing = index.findIndex(d => d.id === id);
+  if (existing >= 0) index[existing] = { id, recipe_name: entry.recipe_name, category: entry.category, image_url: entry.image_url, saved_at: entry.saved_at };
+  else index.unshift({ id, recipe_name: entry.recipe_name, category: entry.category, image_url: entry.image_url, saved_at: entry.saved_at });
+  lsSet(DRAFTS_INDEX_KEY, JSON.stringify(index));
+  if (redirectAfter) window.location.href = 'draft-recipes.html';
+}
+
+async function refreshSessionIfNeeded() {
+  if (!session) return false;
+  try {
+    const tok = session.access_token;
+    const payload = JSON.parse(atob(tok.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    const expiresIn = (payload.exp * 1000) - Date.now();
+    if (expiresIn > 120000) return true; // still valid for 2+ mins, fine
+  } catch(_) {}
+  // Token expired or expiring soon — try to refresh
+  if (!session.refresh_token) return false;
+  try {
+    const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: session.refresh_token })
+    });
+    if (res.ok) {
+      const fresh = await res.json();
+      session = fresh;
+      lsSet('tcj_session', JSON.stringify(fresh));
+      return true;
+    }
+  } catch(_) {}
+  return false;
+}
+
 async function submitRecipe() {
   const data = collectFormData();
   const err = validate(data);
@@ -3380,8 +3453,18 @@ async function submitRecipe() {
 
   const btn = document.getElementById('btn-submit');
   btn.disabled = true;
-  btn.textContent = 'Submitting...';
+  btn.textContent = 'Checking session...';
 
+  const sessionOk = await refreshSessionIfNeeded();
+  if (!sessionOk) {
+    showMsg('Your session has expired. Please sign out and sign in again — your draft has been saved.', 'error');
+    saveDraft();
+    btn.disabled = false;
+    btn.textContent = 'Submit for Review';
+    return;
+  }
+
+  btn.textContent = 'Submitting...';
   try {
     const payload = {
       ...data,
