@@ -612,9 +612,12 @@
     #img-preview {
       display: block;
       width: 100%;
-      max-height: 360px;
-      object-fit: contain;
-      background: var(--bg);
+      height: 320px;
+      background-size: cover;
+      background-position: 50% 50%;
+      background-repeat: no-repeat;
+      background-color: var(--bg);
+      border-radius: 6px;
     }
     .img-preview-wrap {
       background: var(--bg);
@@ -701,8 +704,8 @@
   
 
     /* ── IMAGE DRAG TO PAN ───────────────────── */
-    #img-preview { cursor: grab; user-select: none; }
-    #img-preview.dragging { cursor: grabbing; }
+    #img-drag-overlay { cursor: grab; }
+    #img-drag-overlay.dragging { cursor: grabbing !important; }
 
     /* ── PHOTO ZOOM / POSITION CONTROLS ─────────── */
     .img-controls {
@@ -918,12 +921,20 @@
               <div class="img-meta">JPG &middot; PNG &middot; WebP &nbsp;&middot;&nbsp; Max 5MB &nbsp;&middot;&nbsp; Recommended 1200&times;800</div>
             </div>
             <div id="img-preview-state" class="img-preview-wrap" style="display:none" onclick="event.stopPropagation()">
-              <img id="img-preview" alt="Recipe preview">
+              <!-- Background-image div — no native browser drag interference -->
+              <div id="img-preview"
+                   style="width:100%;height:320px;background-size:cover;background-position:50% 50%;background-repeat:no-repeat;background-color:var(--bg);border-radius:6px;">
+              </div>
+              <!-- Drag overlay — sits on top, captures all drag events cleanly -->
+              <div id="img-drag-overlay"
+                   style="position:absolute;top:0;left:0;right:0;height:320px;cursor:grab;z-index:3;"
+                   title="Drag to reposition">
+              </div>
               <div class="img-overlay">
                 <button type="button" class="btn-img-action" onclick="event.stopPropagation(); document.getElementById('recipe-image-input').click()">&#8635; Change</button>
                 <button type="button" class="btn-img-action btn-img-remove" onclick="event.stopPropagation(); removeImage()">&times; Remove</button>
               </div>
-              <!-- PHOTO CONTROLS — zoom + vertical position -->
+              <!-- PHOTO CONTROLS -->
               <div class="img-controls" id="img-controls">
                 <div class="img-ctrl-group">
                   <span class="img-ctrl-label">Zoom</span>
@@ -932,7 +943,7 @@
                   <button type="button" class="img-ctrl-btn" onclick="event.stopPropagation(); adjustZoom(10)" title="Zoom in">+</button>
                 </div>
                 <div class="img-ctrl-group">
-                  <span class="img-ctrl-label" style="opacity:0.7">✥ Drag image to reposition</span>
+                  <span class="img-ctrl-label" style="opacity:0.8">✥ Drag to reposition</span>
                 </div>
               </div>
             </div>
@@ -3093,12 +3104,13 @@ function getUserId() {
 }
 
 function showImagePreview(url) {
+  setTimeout(initImageDrag, 100);
   const empty   = document.getElementById('img-empty-state');
   const preview = document.getElementById('img-preview-state');
   const img     = document.getElementById('img-preview');
   const warning = document.getElementById('img-warning');
   if (!empty || !preview || !img) return;
-  img.src = url;
+  img.style.backgroundImage = 'url(' + url + ')';
   empty.style.display   = 'none';
   preview.style.display = 'block';
   // Hide the "won't be approved" warning — user has uploaded a photo
@@ -3255,79 +3267,60 @@ function applyImgPosition() {
 }
 
 function initImageDrag() {
-  const img = document.getElementById('img-preview');
-  if (!img || img._dragInit) return;
-  img._dragInit = true;
+  const overlay = document.getElementById('img-drag-overlay');
+  if (!overlay || overlay._dragInit) return;
+  overlay._dragInit = true;
+  if (window._imgPosX  === undefined) window._imgPosX  = 50;
+  if (window._imgPosVal === undefined) window._imgPosVal = 50;
   let dragging = false;
   let last = { x: 0, y: 0 };
-  if (!window._imgPosX) window._imgPosX = 50;
-  if (!window._imgPosVal) window._imgPosVal = 50;
 
-  img.addEventListener('mousedown', (e) => {
+  function startDrag(x, y) {
     dragging = true;
-    last = { x: e.clientX, y: e.clientY };
-    img.classList.add('dragging');
-    e.preventDefault();
-    e.stopPropagation();
-  });
-  img.addEventListener('click', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-  });
-  document.addEventListener('mousemove', (e) => {
+    last = { x, y };
+    overlay.classList.add('dragging');
+  }
+  function moveDrag(x, y) {
     if (!dragging) return;
-    const dx = e.clientX - last.x;
-    const dy = e.clientY - last.y;
-    last = { x: e.clientX, y: e.clientY };
-    const box = img.parentElement;
-    const W = box ? box.offsetWidth : 400;
-    const H = box ? box.offsetHeight : 300;
-    window._imgPosX  = Math.max(0, Math.min(100, (window._imgPosX  || 50) + (dx / W * 100)));
-    window._imgPosVal = Math.max(0, Math.min(100, (window._imgPosVal || 50) + (dy / H * 100)));
+    const dx = x - last.x;
+    const dy = y - last.y;
+    last = { x, y };
+    const W = overlay.offsetWidth  || 400;
+    const H = overlay.offsetHeight || 300;
+    // Sensitivity: larger = faster pan
+    const sensitivity = 1.5;
+    window._imgPosX   = Math.max(0, Math.min(100, window._imgPosX  - (dx / W * 100 * sensitivity)));
+    window._imgPosVal = Math.max(0, Math.min(100, window._imgPosVal - (dy / H * 100 * sensitivity)));
     applyImgTransform();
-  });
-  document.addEventListener('mouseup', () => {
+  }
+  function endDrag() {
     dragging = false;
-    img.classList.remove('dragging');
-  });
-  img.addEventListener('touchstart', (e) => {
-    const t = e.touches[0];
-    dragging = true;
-    last = { x: t.clientX, y: t.clientY };
-    e.stopPropagation();
-  }, { passive: true });
-  document.addEventListener('touchmove', (e) => {
-    if (!dragging) return;
-    const t = e.touches[0];
-    const dx = t.clientX - last.x;
-    const dy = t.clientY - last.y;
-    last = { x: t.clientX, y: t.clientY };
-    const box = img.parentElement;
-    const W = box ? box.offsetWidth : 400;
-    const H = box ? box.offsetHeight : 300;
-    window._imgPosX  = Math.max(0, Math.min(100, (window._imgPosX  || 50) + (dx / W * 100)));
-    window._imgPosVal = Math.max(0, Math.min(100, (window._imgPosVal || 50) + (dy / H * 100)));
-    applyImgTransform();
-  }, { passive: true });
-  document.addEventListener('touchend', () => { dragging = false; });
+    overlay.classList.remove('dragging');
+  }
+
+  // Mouse
+  overlay.addEventListener('mousedown', (e) => { startDrag(e.clientX, e.clientY); e.preventDefault(); e.stopPropagation(); });
+  document.addEventListener('mousemove', (e) => { moveDrag(e.clientX, e.clientY); });
+  document.addEventListener('mouseup', endDrag);
+
+  // Touch
+  overlay.addEventListener('touchstart', (e) => { const t = e.touches[0]; startDrag(t.clientX, t.clientY); e.stopPropagation(); }, { passive: true });
+  document.addEventListener('touchmove', (e) => { if (!dragging) return; const t = e.touches[0]; moveDrag(t.clientX, t.clientY); }, { passive: true });
+  document.addEventListener('touchend', endDrag);
 }
 
 function applyImgTransform() {
-  const img = document.getElementById('img-preview');
+  const div = document.getElementById('img-preview');
   const val = document.getElementById('img-zoom-val');
-  if (!img) return;
+  if (!div) return;
   const zoom = window._imgZoom || 100;
   const posX = window._imgPosX !== undefined ? window._imgPosX : 50;
   const posY = window._imgPosVal !== undefined ? window._imgPosVal : 50;
   if (val) val.textContent = zoom + '%';
-  // Always cover: image fills frame, drag to reposition which part shows
-  img.style.objectFit      = 'cover';
-  img.style.objectPosition = posX + '% ' + posY + '%';
-  img.style.maxHeight      = '360px';
-  img.style.width          = '100%';
-  // Zoom via scale — parent has overflow:hidden so it clips cleanly
-  img.style.transform      = zoom !== 100 ? 'scale(' + (zoom / 100) + ')' : '';
-  img.style.transformOrigin = posX + '% ' + posY + '%';
+  // background-position works on both axes regardless of image dimensions
+  div.style.backgroundPosition = posX + '% ' + posY + '%';
+  // zoom: cover = 100%, above 100% zooms in, below zooms out
+  div.style.backgroundSize = zoom === 100 ? 'cover' : zoom + '%';
 }
 
 function removeImage() {
@@ -3341,6 +3334,8 @@ function removeImage() {
   if (val) val.textContent = '100%';
   window._imgPosVal = 50;
   window._imgPosX = 50; window._imgPosVal = 50;
+  const imgDiv = document.getElementById('img-preview');
+  if (imgDiv) { imgDiv.style.backgroundImage=''; imgDiv.style.backgroundSize='cover'; imgDiv.style.backgroundPosition='50% 50%'; }
   // Save the cleared state to the draft
   try { saveDraft(); } catch(_) {}
 }
