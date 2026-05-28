@@ -137,13 +137,42 @@
 </head>
 <body class="cj-body">
 
-<!-- Access denied screen -->
-<div id="screen-denied" class="ap-denied" style="display:none">
-  <div class="ap-denied-box">
-    <div class="ap-denied-icon">🔒</div>
-    <div class="ap-denied-title">Admin Access Only</div>
-    <div class="ap-denied-sub">This panel is restricted. Please sign in with the admin account.</div>
-    <a href="login.html" style="font-family:'DM Sans',sans-serif;font-size:14px;color:var(--accent)">Sign In →</a>
+<!-- Dashboard login screen -->
+<div id="screen-login" style="display:none; min-height:100vh; align-items:center; justify-content:center; background:var(--bg);">
+  <div style="width:100%;max-width:380px;padding:40px 24px;">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:600;color:var(--accent);text-align:center;margin-bottom:4px;">The Culinary Journal</div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-mid);text-align:center;margin-bottom:32px;">Dashboard</div>
+
+    <div id="login-error" style="display:none;font-family:'DM Sans',sans-serif;font-size:13px;color:#dc5050;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.3);border-radius:8px;padding:10px 14px;margin-bottom:16px;text-align:center;"></div>
+
+    <!-- First time setup notice -->
+    <div id="setup-notice" style="display:none;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);background:var(--text-ghost);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:16px;line-height:1.6;">
+      <strong style="color:var(--text-high);">First time setup.</strong> Choose a username and password for the dashboard. These are stored only in your browser.
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:6px;">Username</label>
+      <input id="dash-username" type="text" autocomplete="username"
+        style="width:100%;font-family:'DM Sans',sans-serif;font-size:14px;padding:11px 14px;border-radius:9px;border:1px solid var(--border);background:var(--text-ghost);color:var(--text-high);outline:none;box-sizing:border-box;"
+        placeholder="Enter username"
+        onfocus="this.style.borderColor='var(--accent)'"
+        onblur="this.style.borderColor='var(--border)'"
+        onkeydown="if(event.key==='Enter')document.getElementById('dash-password').focus()">
+    </div>
+    <div style="margin-bottom:20px;">
+      <label style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:6px;">Password</label>
+      <input id="dash-password" type="password" autocomplete="current-password"
+        style="width:100%;font-family:'DM Sans',sans-serif;font-size:14px;padding:11px 14px;border-radius:9px;border:1px solid var(--border);background:var(--text-ghost);color:var(--text-high);outline:none;box-sizing:border-box;"
+        placeholder="Enter password"
+        onfocus="this.style.borderColor='var(--accent)'"
+        onblur="this.style.borderColor='var(--border)'"
+        onkeydown="if(event.key==='Enter')dashLogin()">
+    </div>
+    <button onclick="dashLogin()"
+      style="width:100%;padding:13px;background:var(--accent);border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:#fff;cursor:pointer;transition:opacity 0.15s;"
+      onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+      Sign In
+    </button>
   </div>
 </div>
 
@@ -293,8 +322,6 @@
 <script>
 const SUPABASE_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
-const ADMIN_EMAIL  = 'miseenplacekitchen.official@gmail.com';
-
 let session = null;
 let allRecipes = [];
 let currentView = 'pending';
@@ -333,28 +360,80 @@ async function rpc(fn, params = {}) {
 }
 
 // ── Auth ──────────────────────────────────────────────────────────
-function init() {
-  try { session = JSON.parse(lsGet('tcj_session') || 'null'); } catch(_) {}
+// ── Dashboard credentials (stored in localStorage, set by user) ──
+const DASH_CREDS_KEY = 'tcj_dash_creds';
 
-  // Check if logged in and is admin
-  const email = session?.user?.email ||
-    (() => { try { return JSON.parse(atob((session?.access_token||'').split('.')[1]?.replace(/-/g,'+').replace(/_/g,'/'))).email; } catch(_) { return null; } })();
+function dashLogin() {
+  const username = (document.getElementById('dash-username').value || '').trim();
+  const password = document.getElementById('dash-password').value || '';
+  const errEl    = document.getElementById('login-error');
 
-  if (!session || email !== ADMIN_EMAIL) {
-    document.getElementById('screen-denied').style.display = 'flex';
+  if (!username || !password) {
+    errEl.textContent = 'Please enter both username and password.';
+    errEl.style.display = 'block';
     return;
   }
 
-  document.getElementById('screen-main').style.display = 'flex';
-  document.getElementById('admin-email').textContent = email;
+  const stored = getStoredCreds();
+
+  // First time — no creds set yet — save these as the admin credentials
+  if (!stored) {
+    const creds = { username: username, password: btoa(password) };
+    localStorage.setItem(DASH_CREDS_KEY, JSON.stringify(creds));
+    startDashboard(username);
+    return;
+  }
+
+  // Check against stored creds
+  if (username === stored.username && btoa(password) === stored.password) {
+    startDashboard(username);
+  } else {
+    errEl.textContent = 'Incorrect username or password.';
+    errEl.style.display = 'block';
+    document.getElementById('dash-password').value = '';
+  }
+}
+
+function getStoredCreds() {
+  try { return JSON.parse(localStorage.getItem(DASH_CREDS_KEY) || 'null'); } catch(_) { return null; }
+}
+
+function dashSignOut() {
+  localStorage.removeItem('tcj_dash_session');
+  showLoginScreen();
+}
+
+function showLoginScreen() {
+  const creds = getStoredCreds();
+  document.getElementById('screen-login').style.display = 'flex';
+  document.getElementById('screen-main').style.display  = 'none';
+  if (!creds) document.getElementById('setup-notice').style.display = 'block';
+}
+
+function startDashboard(username) {
+  // Store a short-lived dashboard session
+  const exp = Date.now() + (8 * 60 * 60 * 1000); // 8 hours
+  localStorage.setItem('tcj_dash_session', JSON.stringify({ username, exp }));
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('screen-main').style.display  = 'flex';
+  document.getElementById('admin-email').textContent     = username;
   loadStats();
   loadRecipes('pending');
 }
 
-function signOut() {
-  lsSet('tcj_session', 'null');
-  window.location.href = 'login.html';
+function init() {
+  // Check if there is a valid dashboard session already
+  try {
+    const ds = JSON.parse(localStorage.getItem('tcj_dash_session') || 'null');
+    if (ds && ds.exp > Date.now()) {
+      startDashboard(ds.username);
+      return;
+    }
+  } catch(_) {}
+  showLoginScreen();
 }
+
+function signOut() { dashSignOut(); }
 
 // ── Stats ─────────────────────────────────────────────────────────
 async function loadStats() {

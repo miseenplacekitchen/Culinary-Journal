@@ -214,6 +214,7 @@
       signout.addEventListener('click', function () {
         try { localStorage.removeItem('tcj_session'); } catch (_) {}
         try { localStorage.removeItem('tcj_profile'); } catch (_) {}
+        try { localStorage.removeItem('tcj_theme');   } catch (_) {}
         window.location.href = 'index.html';
       });
     }
