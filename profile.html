@@ -7,6 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <script src="nav-init.js" defer></script>
   <script>
     // Apply saved theme as early as possible (prevents flash on subsequent loads).
     (function(){
@@ -381,9 +383,8 @@
       <span class="nav-logo-text">The Culinary Journal</span>
       <span class="nav-logo-badge">Est. 2025</span>
     </a>
-    <div class="nav-btns" style="align-items:center">
-      <span class="nav-user-pill" id="nav-user-pill">@<span id="nav-username">…</span></span>
-      <button class="btn btn-ghost" onclick="signOut()">Sign Out</button>
+    <div class="nav-btns" id="nav-btns" style="align-items:center">
+      <!-- populated by nav-init.js -->
     </div>
   </nav>
 
@@ -793,7 +794,7 @@ function hydrateUI() {
   ).toUpperCase();
   document.getElementById('acct-avatar').textContent = initials || '?';
   document.getElementById('acct-display-name').textContent = name || PROFILE.username || '—';
-  document.getElementById('nav-username').textContent = PROFILE.username || '';
+  { const _nu = document.getElementById('nav-username'); if (_nu) _nu.textContent = PROFILE.username || ''; }
 
   const since = PROFILE.created_at ? new Date(PROFILE.created_at) : null;
   document.getElementById('acct-since').textContent =

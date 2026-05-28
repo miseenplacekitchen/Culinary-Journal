@@ -6,6 +6,7 @@
   <title>Submit a Recipe — The Culinary Journal</title>
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+  <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
@@ -648,18 +649,28 @@
 </head>
 <body class="cj-body">
 
-<!-- NAV -->
-<nav class="cj-nav">
-  <div class="cj-nav-inner">
-    <a href="index.html" class="cj-logo">🍽 The Culinary Journal</a>
-    <div class="cj-nav-links" id="nav-links">
-      <a href="recipes.html">Recipes</a>
-      <a href="submit-recipe.html" class="active">Submit</a>
-      <a href="profile.html" id="nav-profile" style="display:none"></a>
-      <a href="login.html" id="nav-login">Sign In</a>
+<!-- NAV (shared structure — auth area filled by nav-init.js) -->
+  <nav class="nav">
+    <a class="nav-logo" href="index.html">
+      <span>🍽</span>
+      <span class="nav-logo-text">The Culinary Journal</span>
+      <span class="nav-logo-badge">Est. 2025</span>
+    </a>
+    <div class="nav-btns" id="nav-btns">
+      <!-- populated by nav-init.js -->
     </div>
-  </div>
-</nav>
+  </nav>
+
+  <div class="tab-nav"><div class="tab-nav-inner">
+    <a class="tab" href="index.html">🏠 Home</a>
+    <a class="tab" href="recipes.html">📖 Recipes</a>
+    <a class="tab" href="meal-planner.html">🍽 Meal Planner</a>
+    <a class="tab" href="pantry.html">🧊 Pantry &amp; Fridge</a>
+    <a class="tab" href="grocery.html">🛒 Grocery List</a>
+    <a class="tab" href="table-planner.html">🪑 Table Planner</a>
+    <a class="tab" href="print-studio.html">🖨 Print Studio</a>
+    <a class="tab" href="profile.html">👤 My Profile</a>
+  </div></div>
 
 <div class="sr-page">
 
