@@ -67,6 +67,17 @@
       color: var(--accent) !important;
     }
     .sr-hint { font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--text-mid); margin-top: 2px; }
+    /* Soft, on-theme info marker — replaces the OS blue <span class="sr-i">i</span> emoji.
+       An outlined accent "i" that follows whatever theme accent is active. */
+    .sr-i {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 15px; height: 15px; border-radius: 50%;
+      border: 1.4px solid var(--accent); color: var(--accent);
+      background: transparent;
+      font-family: Georgia, "Times New Roman", serif;
+      font-style: normal; font-weight: 700; font-size: 9.5px; line-height: 1;
+      vertical-align: -2px; margin-right: 6px; flex-shrink: 0;
+    }
 
     /* ── PASTE AREA ──────────────────────────── */
     .sr-paste-area { position: relative; }
@@ -706,7 +717,7 @@
         <div class="sr-field sr-full">
           <label class="sr-label">Introduction <span class="opt">optional</span></label>
           <div class="sr-hint" style="margin: -4px 0 8px">
-            ℹ️ Describe the dish itself in no more than 100 words. Include details such as its origin, flavour profile, typical serving style, and any distinctive characteristics. Please don&rsquo;t include personal stories or memories in this section. Personal experiences can be placed under &ldquo;Personal Notes&rdquo; below.
+            <span class="sr-i">i</span> Describe the dish itself in no more than 100 words. Include details such as its origin, flavour profile, typical serving style, and any distinctive characteristics. Please don&rsquo;t include personal stories or memories in this section. Personal experiences can be placed under &ldquo;Personal Notes&rdquo; below.
           </div>
           <textarea class="sr-input sr-textarea" id="introduction" maxlength="800"
             placeholder="e.g. White coconut chutney is a traditional South Indian condiment commonly served with idli, dosa, vada, and various breakfast preparations. Known for its mild flavour, creamy texture, and pale appearance, this chutney emphasizes fresh coconut and restrained seasoning."
@@ -845,7 +856,7 @@
               <input class="level-opt" type="radio" name="spice" id="spice-5" value="Extremely Hot">
               <label for="spice-5" data-tip="Extremely Hot"><span class="level-symbols"><span class="chilli chilli-darkred"></span><span class="chilli chilli-darkred"></span><span class="chilli chilli-darkred"></span><span class="chilli chilli-darkred"></span><span class="chilli chilli-darkred"></span></span></label>
             </div>
-            <div class="sr-hint" id="spice-hint">ℹ️ Click a chilli to pick. Click again to deselect. Required before submitting.</div>
+            <div class="sr-hint" id="spice-hint"><span class="sr-i">i</span> Click a chilli to pick. Click again to deselect. Required before submitting.</div>
           </div>
 
           <!-- Sweet Level — bluish-white sugar cube SVG with mint leaf -->
@@ -865,7 +876,7 @@
               <input class="level-opt" type="radio" name="sweet" id="sweet-5" value="Extremely Sweet">
               <label for="sweet-5" data-tip="Extremely Sweet"><span class="level-symbols"><span class="sugar-cube"></span><span class="sugar-cube"></span><span class="sugar-cube"></span><span class="sugar-cube"></span><span class="sugar-cube"></span></span></label>
             </div>
-            <div class="sr-hint" id="sweet-hint">ℹ️ Click a cube to pick. Click again to deselect. Required before submitting.</div>
+            <div class="sr-hint" id="sweet-hint"><span class="sr-i">i</span> Click a cube to pick. Click again to deselect. Required before submitting.</div>
           </div>
 
           <!-- Difficulty — three options, no N/A. Icons only, hover tooltip. -->
@@ -879,7 +890,7 @@
               <input class="level-opt" type="radio" name="difficulty" id="diff-adv"   value="Advanced">
               <label for="diff-adv" data-tip="Advanced: Total time required is more than 90 minutes."><span class="level-symbols">&#128308;</span></label>
             </div>
-            <div class="sr-hint" id="diff-hint">ℹ️ Click a dot to pick difficulty. Click again to deselect. Required before submitting.</div>
+            <div class="sr-hint" id="diff-hint"><span class="sr-i">i</span> Click a dot to pick difficulty. Click again to deselect. Required before submitting.</div>
           </div>
         </div>
       </div>
@@ -891,24 +902,24 @@
         <div class="sr-field">
           <label class="sr-label">Prep Time <span class="req">*</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-high)">(minutes)</span></label>
           <input class="sr-input" type="number" id="prep-time" placeholder="e.g. 15" min="0">
-          <div class="sr-hint">ℹ️ Chopping, measuring, marinating prep, etc. — anything before active cooking.</div>
+          <div class="sr-hint"><span class="sr-i">i</span> Chopping, measuring, marinating prep, etc. — anything before active cooking.</div>
         </div>
         <div class="sr-field">
           <label class="sr-label">Cooking Time <span class="req">*</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-high)">(minutes)</span></label>
           <input class="sr-input" type="number" id="cook-time" placeholder="e.g. 30" min="0">
-          <div class="sr-hint">ℹ️ Includes baking, roasting, simmering, frying, smoking, steaming &mdash; any active method.</div>
+          <div class="sr-hint"><span class="sr-i">i</span> Includes baking, roasting, simmering, frying, smoking, steaming &mdash; any active method.</div>
         </div>
         <div class="sr-field">
           <label class="sr-label">Servings <span class="req">*</span></label>
           <input class="sr-input" type="number" id="servings" placeholder="e.g. 4" min="1">
-          <div class="sr-hint">ℹ️ How many people the recipe feeds.</div>
+          <div class="sr-hint"><span class="sr-i">i</span> How many people the recipe feeds.</div>
         </div>
       </div>
 
       <hr class="sr-divider">
 
       <div class="sr-section-subtitle" style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600;color:var(--accent);margin:0 0 4px;letter-spacing:0.4px">Tags</div>
-      <div class="sr-hint" style="margin:0 0 18px">ℹ️ Pick everything that applies — tags help users find your recipe when they filter or search.</div>
+      <div class="sr-hint" style="margin:0 0 18px"><span class="sr-i">i</span> Pick everything that applies — tags help users find your recipe when they filter or search.</div>
 
       <!-- Meal Type Tags -->
       <div class="sr-field">
@@ -1028,7 +1039,7 @@
     <div class="sr-section">
       <div class="sr-section-title">Procedure</div>
       <div class="sr-hint" style="margin: -16px 0 16px;">
-        ℹ️ Please update the steps for the recipe and split it into clearly labelled sections, such as:<br>
+        <span class="sr-i">i</span> Please update the steps for the recipe and split it into clearly labelled sections, such as:<br>
         &bull; <b>Prep Work:</b> Ingredients, Chopping, Measuring, Marinating, Preheating, etc.<br>
         &bull; <b>Directions:</b> The actual cooking steps.
       </div>
@@ -1042,7 +1053,7 @@
       <div class="sr-field">
         <label class="sr-label">Tips, tricks, variations &amp; what to watch out for <span class="opt">optional</span></label>
         <div class="sr-hint" style="margin: -4px 0 8px">
-          ℹ️ Feel free to include the small but important details that help this recipe succeed, such as technique tips, common mistakes to avoid, practical ingredient substitutions, recommended equipment, and clear indicators for determining when the dish is properly cooked or finished.
+          <span class="sr-i">i</span> Feel free to include the small but important details that help this recipe succeed, such as technique tips, common mistakes to avoid, practical ingredient substitutions, recommended equipment, and clear indicators for determining when the dish is properly cooked or finished.
         </div>
         <textarea class="sr-input sr-textarea" id="cooking-notes" maxlength="5000" placeholder="e.g. Toast the spices only until they become fragrant. Avoid overheating or burning them, as this may cause the curry to develop a bitter flavour."></textarea>
       </div>
@@ -1079,7 +1090,7 @@
           <div class="sr-field sr-full">
             <label class="sr-label" id="credit-url-label">Source URL <span class="req">*</span> <span style="font-weight:400;font-style:italic;text-transform:none;letter-spacing:0;color:var(--text-mid)">It is important to respectfully acknowledge and credit the original creator for their work, contribution, or intellectual property.</span></label>
             <input class="sr-input" type="url" id="credit-url" maxlength="2000" placeholder="https://www.example.com/the-original-recipe">
-            <span class="sr-hint" style="font-style:italic">ℹ️ Please provide the complete URL linking to the original blog post, video, or social media content referenced.</span>
+            <span class="sr-hint" style="font-style:italic"><span class="sr-i">i</span> Please provide the complete URL linking to the original blog post, video, or social media content referenced.</span>
           </div>
         </div>
       </div>
@@ -1103,7 +1114,7 @@
       <div class="sr-field">
         <label class="sr-label">Your Personal Notes <span class="opt">optional</span></label>
         <div class="sr-hint" style="margin: -4px 0 8px">
-          ℹ️ Please feel free to share your story, personal memories, family traditions, or details about who introduced you to this recipe. You may also include any unique variations or meaningful experiences connected to it. Please note that all submissions are reviewed by the site administrator prior to public publication. We kindly ask that all content remain respectful, relevant to the recipe, and appropriate for a public audience.
+          <span class="sr-i">i</span> Please feel free to share your story, personal memories, family traditions, or details about who introduced you to this recipe. You may also include any unique variations or meaningful experiences connected to it. Please note that all submissions are reviewed by the site administrator prior to public publication. We kindly ask that all content remain respectful, relevant to the recipe, and appropriate for a public audience.
         </div>
         <textarea class="sr-input sr-textarea" id="personal-notes" maxlength="5000" placeholder="e.g. My grandmother made this every Sunday in our home in Alleppey. She always added an extra pinch of cumin, a detail I continue to follow to this day. No restaurant version has ever tasted quite the same to me, perhaps because it always carried more than flavour; it carried memory, comfort, and home."></textarea>
       </div>
@@ -1700,7 +1711,7 @@ function addIngRow(container, qty='', unit='', name='', note='') {
       <span class="ing-unknown-unit-badge" style="display:none" title="This unit isn't in our standard list — admin will review on submit">⚠</span>
     </div>
     <div class="ing-name-wrap">
-      <input class="ing-input ing-name-input" type="text" maxlength="80" placeholder="Ingredient" value="${esc(name)}" oninput="searchIngredients(this)" onblur="hideAC(this)">
+      <input class="ing-input ing-name-input" type="text" maxlength="80" placeholder="Search ingredients…" value="${esc(name)}" oninput="searchIngredients(this)" onfocus="searchIngredients(this)" onclick="searchIngredients(this)" onblur="hideAC(this)" autocomplete="off">
       <div class="ing-autocomplete"></div>
       <span class="ing-unknown-badge" style="display:none">⚠ New ingredient — not in our database (will be reviewed by admin)</span>
     </div>
@@ -1723,24 +1734,33 @@ function addIngRow(container, qty='', unit='', name='', note='') {
 }
 
 // ── INGREDIENT AUTOCOMPLETE ───────────────────────────
+// Attribute/HTML-safe escaper (the local 'esc' lives inside addIngRow only).
+function escIng(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
 function searchIngredients(input) {
   const query = input.value.trim().toLowerCase();
   const ac = input.nextElementSibling;
   const badge = ac.nextElementSibling;
-
-  if (query.length < 2) { ac.style.display = 'none'; badge.style.display = 'none'; return; }
-
   const col = 'Ingredient Name';
-  const matches = allIngredients.filter(i => {
-    const n = (i[col] || i.ingredient_name || '').toLowerCase();
-    const aka = (i['Also Known As'] || i.also_known_as || '').toLowerCase();
-    return n.includes(query) || aka.includes(query);
-  }).slice(0, 8);
+
+  // Empty box (e.g. just focused/clicked) → show the WHOLE list, like the
+  // region/state picker. As soon as the user types, we filter from char 1.
+  let matches;
+  if (query.length === 0) {
+    matches = allIngredients;
+  } else {
+    matches = allIngredients.filter(i => {
+      const n   = (i[col] || i.ingredient_name || '').toLowerCase();
+      const aka = (i['Also Known As'] || i.also_known_as || '').toLowerCase();
+      return n.includes(query) || aka.includes(query);
+    });
+  }
 
   if (matches.length === 0) {
+    // "Unknown ingredient" only applies once the user has actually typed.
     ac.style.display = 'none';
-    badge.style.display = 'block';
-    input.classList.add('ing-unknown');
+    if (query.length >= 1) { badge.style.display = 'block'; input.classList.add('ing-unknown'); }
+    else { badge.style.display = 'none'; }
     return;
   }
 
@@ -1748,12 +1768,19 @@ function searchIngredients(input) {
   input.classList.remove('ing-unknown');
   ac.innerHTML = matches.map(m => {
     const name = m[col] || m.ingredient_name || '';
-    const cat = m['Category'] || m.category || '';
-    return `<div class="ing-autocomplete-item" onmousedown="selectIngredient(this, '${name.replace(/'/g,"\'")}')">
-      ${name} <span class="ing-autocomplete-cat">${cat}</span>
+    const cat  = m['Category'] || m.category || '';
+    // Use a data attribute (not a string baked into onmousedown) so names
+    // containing apostrophes — e.g. "Confectioner's Sugar" — never break.
+    return `<div class="ing-autocomplete-item" data-name="${escIng(name)}" onmousedown="selectIngredientEl(this)">
+      ${escIng(name)} <span class="ing-autocomplete-cat">${escIng(cat)}</span>
     </div>`;
   }).join('');
   ac.style.display = 'block';
+}
+
+// Apostrophe-safe wrapper: reads the name from the clicked element.
+function selectIngredientEl(el) {
+  selectIngredient(el, el.getAttribute('data-name') || '');
 }
 
 function selectIngredient(item, name) {
@@ -2641,14 +2668,14 @@ function setupAutoSave() {
   // All three are REQUIRED on submit (see validate()).
   [
     { prefix: 'diff',  name: 'difficulty', hintId: 'diff-hint',
-      defaultHint: 'ℹ️ Click a dot to pick difficulty. Click again to deselect. Required before submitting.',
-      pickedHint:  'ℹ️ Click the selected dot to deselect, or click another to change.' },
+      defaultHint: '<span class="sr-i">i</span> Click a dot to pick difficulty. Click again to deselect. Required before submitting.',
+      pickedHint:  '<span class="sr-i">i</span> Click the selected dot to deselect, or click another to change.' },
     { prefix: 'spice', name: 'spice',      hintId: 'spice-hint',
-      defaultHint: 'ℹ️ Click a chilli to pick. Click again to deselect. Required before submitting.',
-      pickedHint:  'ℹ️ Click again to deselect, or click another to change.' },
+      defaultHint: '<span class="sr-i">i</span> Click a chilli to pick. Click again to deselect. Required before submitting.',
+      pickedHint:  '<span class="sr-i">i</span> Click again to deselect, or click another to change.' },
     { prefix: 'sweet', name: 'sweet',      hintId: 'sweet-hint',
-      defaultHint: 'ℹ️ Click a cube to pick. Click again to deselect. Required before submitting.',
-      pickedHint:  'ℹ️ Click again to deselect, or click another to change.' }
+      defaultHint: '<span class="sr-i">i</span> Click a cube to pick. Click again to deselect. Required before submitting.',
+      pickedHint:  '<span class="sr-i">i</span> Click again to deselect, or click another to change.' }
   ].forEach(grp => {
     document.querySelectorAll('label[for^="' + grp.prefix + '-"]').forEach(lbl => {
       const id = lbl.getAttribute('for');
@@ -2661,7 +2688,7 @@ function setupAutoSave() {
           // Was already selected → DESELECT and STAY deselected
           radio.checked = false;
           document.querySelectorAll('input[name="' + grp.name + '"]').forEach(r => r.removeAttribute('data-user-set'));
-          if (hint) hint.textContent = grp.defaultHint;
+          if (hint) hint.innerHTML = grp.defaultHint;
         } else {
           // Select this one, deselect siblings
           document.querySelectorAll('input[name="' + grp.name + '"]').forEach(r => {
@@ -2670,7 +2697,7 @@ function setupAutoSave() {
           });
           radio.checked = true;
           radio.setAttribute('data-user-set', '1');
-          if (hint) hint.textContent = grp.pickedHint;
+          if (hint) hint.innerHTML = grp.pickedHint;
         }
         // Bubble an "input" event so the form's autosave listener catches the change.
         try {
