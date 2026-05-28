@@ -27,13 +27,16 @@
     .sr-field { display: flex; flex-direction: column; gap: 6px; }
     .sr-label { font-family: "DM Sans", sans-serif; font-size: 11px; font-weight: 500; color: var(--text-high); letter-spacing: 0.08em; text-transform: uppercase; }
     .sr-label .req { color: var(--accent); margin-left: 2px; }
+    /* Optional-field marker — quiet, lowercase, italic, dimmed. Pairs with .req
+       so every field signals its status: required (*) or optional. */
+    .sr-label .opt { color: var(--text-mid); margin-left: 6px; font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 10px; font-style: italic; }
     .sr-input, .sr-select, .sr-textarea {
       font-family: "DM Sans", sans-serif; font-size: 14px; color: var(--text-high);
       background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
       padding: 10px 14px; width: 100%; box-sizing: border-box;
       transition: border-color 0.2s, box-shadow 0.2s; outline: none;
     }
-    .sr-input:focus, .sr-select:focus, .sr-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(196,151,59,0.12); }
+    .sr-input:focus, .sr-select:focus, .sr-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgb(from var(--accent) r g b / 0.12); }
     /* Dropdown OPTION rendering — browsers (esp. Chrome on Windows/macOS) ignore
        most CSS on <option> elements. We force a contrasting colour combo that
        reads on whatever background the OS draws. */
@@ -53,11 +56,11 @@
     /* Source URL nudge — when user picks "From Somewhere Else" / "Scanned",
        gently pulse the URL input so they don't forget to add the credit link. */
     @keyframes source-url-pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(196,151,59,0.0); }
-      50%      { box-shadow: 0 0 0 4px rgba(196,151,59,0.25); }
+      0%, 100% { box-shadow: 0 0 0 0 rgb(from var(--accent) r g b / 0.0); }
+      50%      { box-shadow: 0 0 0 4px rgb(from var(--accent) r g b / 0.25); }
     }
     .credit-url-nudge {
-      border-color: rgba(196,151,59,0.65) !important;
+      border-color: rgb(from var(--accent) r g b / 0.65) !important;
       animation: source-url-pulse 1.8s ease-in-out infinite;
     }
     .credit-url-label-nudge {
@@ -72,7 +75,7 @@
     .sr-parse-btn:hover { opacity: 0.85; }
     .sr-parse-result { margin-top: 12px; font-family: "DM Sans", sans-serif; font-size: 13px; padding: 10px 14px; border-radius: 8px; display: none; }
     .sr-parse-result.success { background: rgba(85,204,119,0.1); border: 1px solid rgba(85,204,119,0.3); color: #55cc77; }
-    .sr-parse-result.info { background: rgba(196,151,59,0.1); border: 1px solid rgba(196,151,59,0.3); color: var(--accent); }
+    .sr-parse-result.info { background: rgb(from var(--accent) r g b / 0.1); border: 1px solid rgb(from var(--accent) r g b / 0.3); color: var(--accent); }
 
     /* ── CATEGORY PILL GRID ──────────────────── */
     .cat-grid {
@@ -115,8 +118,8 @@
       line-height: 1.2;
       margin: 0;
     }
-    .cat-opt + label:hover { border-color: rgba(196,151,59,0.5); background: rgba(196,151,59,0.06); color: var(--text-high); }
-    .cat-opt:checked + label { border-color: var(--accent); background: rgba(196,151,59,0.14); color: var(--text-high); }
+    .cat-opt + label:hover { border-color: rgb(from var(--accent) r g b / 0.5); background: rgb(from var(--accent) r g b / 0.06); color: var(--text-high); }
+    .cat-opt:checked + label { border-color: var(--accent); background: rgb(from var(--accent) r g b / 0.14); color: var(--text-high); }
 
     /* ── SPICE / SWEET LEVEL — symbol only with hover label ───── */
     .level-options { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -139,8 +142,8 @@
       color: var(--text-high);
     }
     .level-opt + label:hover {
-      border-color: rgba(196,151,59,0.45);
-      background: rgba(196,151,59,0.04);
+      border-color: rgb(from var(--accent) r g b / 0.45);
+      background: rgb(from var(--accent) r g b / 0.04);
       color: var(--text-high);
     }
     /* Selected state — gentle gold accent, NO bold colour fill. The colour
@@ -148,9 +151,9 @@
        itself for difficulty). Boxes stay neutral. */
     .level-opt:checked + label {
       border-color: var(--accent);
-      background: rgba(196,151,59,0.06);
+      background: rgb(from var(--accent) r g b / 0.06);
       color: var(--text-high);
-      box-shadow: 0 0 0 1px rgba(196,151,59,0.20);
+      box-shadow: 0 0 0 1px rgb(from var(--accent) r g b / 0.20);
     }
     /* N/A: same visible border as other pills, no colour fill.
        Using .label-na class on the label (not :has() — broader browser support).
@@ -161,13 +164,13 @@
       box-shadow: none;
     }
     .level-opt + label.label-na:hover {
-      border-color: rgba(196,151,59,0.45);
-      background: rgba(196,151,59,0.04);
+      border-color: rgb(from var(--accent) r g b / 0.45);
+      background: rgb(from var(--accent) r g b / 0.04);
     }
     .level-opt:checked + label.label-na {
       border-color: var(--accent);
-      background: rgba(196,151,59,0.06);
-      box-shadow: 0 0 0 1px rgba(196,151,59,0.20);
+      background: rgb(from var(--accent) r g b / 0.06);
+      box-shadow: 0 0 0 1px rgb(from var(--accent) r g b / 0.20);
     }
     .level-opt:checked + label.label-na .level-na {
       color: var(--text-high);
@@ -238,7 +241,7 @@
       white-space: normal; text-align: center;
       pointer-events: none;
       opacity: 0; transition: opacity 0.15s; z-index: 10;
-      border: 1px solid rgba(196,151,59,0.4);
+      border: 1px solid rgb(from var(--accent) r g b / 0.4);
     }
     .level-opt + label:hover::after { opacity: 1; }
 
@@ -246,7 +249,7 @@
     .spice-options { display: flex; gap: 8px; flex-wrap: wrap; }
     .spice-opt { display: none; }
     .spice-opt + label { font-family: "DM Sans", sans-serif; font-size: 13px; padding: 8px 14px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; color: var(--text-high); white-space: nowrap; }
-    .spice-opt:checked + label { border-color: var(--accent); background: rgba(196,151,59,0.12); color: var(--text-high); }
+    .spice-opt:checked + label { border-color: var(--accent); background: rgb(from var(--accent) r g b / 0.12); color: var(--text-high); }
 
     /* ── TAG CHECKBOXES ──────────────────────── */
     .tag-grid { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -265,7 +268,7 @@
       gap: 5px;
       line-height: 1.4;
     }
-    .tag-cb:checked + label { border-color: var(--accent); background: rgba(196,151,59,0.12); color: var(--text-high); }
+    .tag-cb:checked + label { border-color: var(--accent); background: rgb(from var(--accent) r g b / 0.12); color: var(--text-high); }
 
     /* ── ORIGIN SELECTS ──────────────────────── */
     .origin-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
@@ -274,16 +277,16 @@
     .xf-btn{display:flex;align-items:center;gap:6px;padding:10px 14px;background:var(--text-ghost);border:0.5px solid var(--border);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:13px;color:var(--text-high);cursor:pointer;white-space:nowrap;transition:all 0.2s}
     .xf-btn:hover{background:var(--accent-glow);color:var(--text-high)}
     .xf-btn.on{border-color:var(--accent-border);color:var(--accent);background:var(--accent-glow)}
-    .xf-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:260px;background:#1c1c1c;border:0.5px solid rgba(196,151,59,0.3);border-radius:10px;z-index:400;box-shadow:0 8px 32px rgba(0,0,0,0.55);overflow:hidden}
+    .xf-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:260px;background:#1c1c1c;border:0.5px solid rgb(from var(--accent) r g b / 0.3);border-radius:10px;z-index:400;box-shadow:0 8px 32px rgba(0,0,0,0.55);overflow:hidden}
     .xf-panel.open{display:block}
     .xf-input{width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);border:none;border-bottom:0.5px solid rgba(255,255,255,0.07);font-family:"DM Sans",sans-serif;font-size:13px;color:#fff;outline:none;box-sizing:border-box}
     .xf-input::placeholder{color:rgba(255,255,255,0.28)}
     .xf-items{max-height:260px;overflow-y:auto}
     .xf-items::-webkit-scrollbar{width:3px}
-    .xf-items::-webkit-scrollbar-thumb{background:rgba(196,151,59,0.25)}
+    .xf-items::-webkit-scrollbar-thumb{background:rgb(from var(--accent) r g b / 0.25)}
     .xf-item{padding:9px 14px;font-family:"DM Sans",sans-serif;font-size:13px;color:rgba(255,255,255,0.7);cursor:pointer;border-bottom:0.5px solid rgba(255,255,255,0.04)}
-    .xf-item:hover{background:rgba(196,151,59,0.08);color:#C4973B}
-    .xf-item.sel{color:#C4973B;font-weight:600}
+    .xf-item:hover{background:rgb(from var(--accent) r g b / 0.08);color:var(--accent)}
+    .xf-item.sel{color:var(--accent);font-weight:600}
     .xf-none{padding:10px 14px;font-family:"DM Sans",sans-serif;font-size:12px;color:rgba(255,255,255,0.3)}
     .xf-clear-btn{padding:8px 12px;background:none;border:0.5px solid var(--border);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:11px;color:var(--text-high);cursor:pointer;display:none}
     .xf-clear-btn:hover{color:var(--text-high);border-color:var(--accent-border)}
@@ -316,8 +319,8 @@
       display: none;
       margin-top: 8px;
       padding: 10px 14px;
-      background: rgba(196,151,59,0.08);
-      border: 0.5px solid rgba(196,151,59,0.30);
+      background: rgb(from var(--accent) r g b / 0.08);
+      border: 0.5px solid rgb(from var(--accent) r g b / 0.30);
       border-radius: 8px;
       font-family: "DM Sans", sans-serif;
       font-size: 12px;
@@ -353,12 +356,12 @@
     }
     .region-card {
       text-align: left; padding: 12px 14px;
-      background: var(--text-ghost, rgba(196,151,59,0.06));
-      border: 1px solid rgba(196,151,59,0.22);
+      background: var(--text-ghost, rgb(from var(--accent) r g b / 0.06));
+      border: 1px solid rgb(from var(--accent) r g b / 0.22);
       border-radius: 8px; cursor: pointer;
       transition: all 0.15s; font-family: inherit;
     }
-    .region-card:hover { border-color: var(--accent); background: rgba(196,151,59,0.12); }
+    .region-card:hover { border-color: var(--accent); background: rgb(from var(--accent) r g b / 0.12); }
     .region-card-name {
       display: block; font-family: "DM Sans", sans-serif;
       font-size: 13px; font-weight: 600;
@@ -386,13 +389,13 @@
     .source-options { display: flex; gap: 10px; flex-wrap: wrap; }
     .source-opt { display: none; }
     .source-opt + label { font-family: "DM Sans", sans-serif; font-size: 13px; padding: 10px 16px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; color: var(--text-high); display: flex; align-items: center; gap: 6px; }
-    .source-opt:checked + label { border-color: var(--accent); background: rgba(196,151,59,0.12); color: var(--text-high); }
+    .source-opt:checked + label { border-color: var(--accent); background: rgb(from var(--accent) r g b / 0.12); color: var(--text-high); }
 
     /* ── VISIBILITY ──────────────────────────── */
     .vis-options { display: flex; gap: 10px; }
     .vis-opt { display: none; }
     .vis-opt + label { font-family: "DM Sans", sans-serif; font-size: 13px; padding: 10px 16px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; color: var(--text-high); display: flex; align-items: center; gap: 6px; }
-    .vis-opt:checked + label { border-color: var(--accent); background: rgba(196,151,59,0.12); color: var(--text-high); }
+    .vis-opt:checked + label { border-color: var(--accent); background: rgb(from var(--accent) r g b / 0.12); color: var(--text-high); }
 
     /* ── INGREDIENT SECTIONS ─────────────────── */
     .ing-section { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
@@ -467,7 +470,7 @@
       border-bottom: 1px solid rgba(255,255,255,0.05);
     }
     .ing-autocomplete-item:last-child { border-bottom: none; }
-    .ing-autocomplete-item:hover { background: rgba(196,151,59,0.22); color: #fff; }
+    .ing-autocomplete-item:hover { background: rgb(from var(--accent) r g b / 0.22); color: #fff; }
     .ing-autocomplete-cat { font-size: 11px; color: rgba(255,255,255,0.55); letter-spacing: 0.02em; }
     .ing-unknown { border-color: #e09955 !important; }
     .ing-unknown-badge { font-size: 10px; color: #e09955; margin-top: 2px; display: block; }
@@ -517,7 +520,7 @@
     .auth-guard a { padding: 12px 28px; background: var(--accent); color: #1a1a1a; border-radius: 8px; text-decoration: none; font-family: "DM Sans", sans-serif; font-size: 14px; font-weight: 500; }
 
     /* ── DRAFT BADGE ─────────────────────────── */
-    .draft-badge { display: none; font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--accent); background: rgba(196,151,59,0.1); border: 1px solid rgba(196,151,59,0.2); padding: 4px 10px; border-radius: 20px; }
+    .draft-badge { display: none; font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--accent); background: rgb(from var(--accent) r g b / 0.1); border: 1px solid rgb(from var(--accent) r g b / 0.2); padding: 4px 10px; border-radius: 20px; }
 
     /* ── INGREDIENT COLUMN HEADERS ───────────── */
     .ing-col-headers { display: grid; grid-template-columns: 80px 120px 1fr 160px 32px; gap: 8px; margin-bottom: 6px; padding: 0 0 6px; border-bottom: 1px solid var(--border); }
@@ -532,21 +535,21 @@
        Works on all 47 themes — uses theme vars + fixed accent colour.   */
     .img-upload-box {
       position: relative;
-      border: 1.5px dashed rgba(196,151,59,0.40);
+      border: 1.5px dashed rgb(from var(--accent) r g b / 0.40);
       border-radius: 12px;
-      background: var(--text-ghost, rgba(196,151,59,0.04));
+      background: var(--text-ghost, rgb(from var(--accent) r g b / 0.04));
       min-height: 220px;
       cursor: pointer;
       transition: all 0.2s;
       overflow: hidden;
     }
     .img-upload-box:hover {
-      border-color: rgba(196,151,59,0.75);
-      background: rgba(196,151,59,0.08);
+      border-color: rgb(from var(--accent) r g b / 0.75);
+      background: rgb(from var(--accent) r g b / 0.08);
     }
     .img-upload-box.drag-over {
       border-color: var(--accent);
-      background: rgba(196,151,59,0.14);
+      background: rgb(from var(--accent) r g b / 0.14);
       border-style: solid;
     }
     .img-empty {
@@ -701,7 +704,7 @@
 
         <!-- Introduction — short blurb, 100 words max, shown on the recipe page below the title -->
         <div class="sr-field sr-full">
-          <label class="sr-label">Introduction</label>
+          <label class="sr-label">Introduction <span class="opt">optional</span></label>
           <div class="sr-hint" style="margin: -4px 0 8px">
             Describe the dish itself in no more than 100 words. Include details such as its origin, flavour profile, typical serving style, and any distinctive characteristics. Please don&rsquo;t include personal stories or memories in this section. Personal experiences can be placed under &ldquo;Personal Notes&rdquo; below.
           </div>
@@ -714,7 +717,7 @@
         <!-- Origin (continent / country / region) — placed right after Introduction
              since the dish's origin is closely tied to how the user thinks about it. -->
         <div class="sr-field sr-full" style="margin-bottom: 8px">
-          <label class="sr-label">Origin</label>
+          <label class="sr-label">Origin <span class="opt">optional</span></label>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
             <div class="xf" id="xf-A">
               <button type="button" class="xf-btn" id="btn-A" onclick="togglePanel('A')">🌍 <span id="lbl-A">Continent</span> ▾</button>
@@ -760,7 +763,7 @@
 
         <!-- Recipe Image — optional but strongly nudged (admin rejects without one) -->
         <div class="sr-field sr-full" style="margin-bottom: 28px">
-          <label class="sr-label">Recipe Photo</label>
+          <label class="sr-label">Recipe Photo <span class="opt">optional</span></label>
           <input type="file" id="recipe-image-input" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleImageUpload(this)">
           <div class="img-upload-box" id="img-upload-box"
                onclick="document.getElementById('recipe-image-input').click()"
@@ -1037,7 +1040,7 @@
     <div class="sr-section">
       <div class="sr-section-title">Cooking Notes &amp; Tips <span>Optional</span></div>
       <div class="sr-field">
-        <label class="sr-label">Tips, tricks, variations &amp; what to watch out for</label>
+        <label class="sr-label">Tips, tricks, variations &amp; what to watch out for <span class="opt">optional</span></label>
         <div class="sr-hint" style="margin: -4px 0 8px">
           Feel free to include the small but important details that help this recipe succeed, such as technique tips, common mistakes to avoid, practical ingredient substitutions, recommended equipment, and clear indicators for determining when the dish is properly cooked or finished.
         </div>
@@ -1066,11 +1069,11 @@
       <div id="credit-fields" style="display:none">
         <div class="sr-grid">
           <div class="sr-field">
-            <label class="sr-label">Original Creator Name</label>
+            <label class="sr-label">Original Creator Name <span class="opt">optional</span></label>
             <input class="sr-input" type="text" id="credit-name" maxlength="100" placeholder="e.g. Chef Ranveer Brar">
           </div>
           <div class="sr-field">
-            <label class="sr-label">Instagram / Social Handle</label>
+            <label class="sr-label">Instagram / Social Handle <span class="opt">optional</span></label>
             <input class="sr-input" type="text" id="credit-handle" maxlength="60" placeholder="@username">
           </div>
           <div class="sr-field sr-full">
@@ -1098,7 +1101,7 @@
 
       <!-- Personal Notes — public after admin review (was private). -->
       <div class="sr-field">
-        <label class="sr-label">Your Personal Notes</label>
+        <label class="sr-label">Your Personal Notes <span class="opt">optional</span></label>
         <div class="sr-hint" style="margin: -4px 0 8px">
           Please feel free to share your story, personal memories, family traditions, or details about who introduced you to this recipe. You may also include any unique variations or meaningful experiences connected to it. Please note that all submissions are reviewed by the site administrator prior to public publication. We kindly ask that all content remain respectful, relevant to the recipe, and appropriate for a public audience.
         </div>
@@ -2743,7 +2746,7 @@ async function checkDuplicateName() {
              (where ? ` &mdash; ${escapeHtml(where)}` : '') + `${status}</li>`;
     }).join('');
     info.innerHTML =
-      `<div style="background:rgba(196,151,59,0.10);border:0.5px solid rgba(196,151,59,0.35);` +
+      `<div style="background:rgb(from var(--accent) r g b / 0.10);border:0.5px solid rgb(from var(--accent) r g b / 0.35);` +
       `border-radius:8px;padding:10px 12px;color:var(--text-high);">` +
       `<strong style="color:var(--accent);">${matches.length} existing recipe${matches.length===1?'':'s'} ` +
       `with this name:</strong>` +
