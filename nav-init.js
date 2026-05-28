@@ -36,7 +36,14 @@
     if (document.getElementById('cj-nav-style')) return;
     var css = ''
       + '.cj-menu-wrap{position:relative;display:inline-block}'
-      + '.cj-trigger{display:inline-flex;align-items:center;gap:7px;cursor:pointer}'
+      + '.cj-trigger{display:inline-flex;align-items:center;gap:7px;cursor:pointer;'
+        + 'font-family:"DM Sans",sans-serif;font-size:13px;font-weight:500;line-height:1;'
+        + 'padding:9px 15px;border-radius:22px;text-decoration:none;'
+        + 'background:var(--card-bg);border:1px solid var(--border);color:var(--text-high);'
+        + 'transition:background .18s,border-color .18s,color .18s}'
+      + '.cj-trigger:hover{border-color:var(--accent-border);background:var(--accent-glow);color:var(--text-high)}'
+      + '.cj-trigger.cj-primary{background:var(--accent);border-color:var(--accent);color:#fff}'
+      + '.cj-trigger.cj-primary:hover{filter:brightness(.94)}'
       + '.cj-trigger .cj-chev{width:12px;height:12px;opacity:.7;transition:transform .2s}'
       + '.cj-menu-wrap.open .cj-chev{transform:rotate(180deg)}'
       + '.cj-handle{color:var(--accent);font-weight:500}'
@@ -89,7 +96,7 @@
     if (loggedIn) {
       html =
         '<div class="cj-menu-wrap" id="cj-user">' +
-          '<button class="btn-ghost cj-trigger" id="cj-user-trigger" type="button" aria-haspopup="true" aria-expanded="false">' +
+          '<button class="cj-trigger" id="cj-user-trigger" type="button" aria-haspopup="true" aria-expanded="false">' +
             '<span class="cj-handle">@' + escapeHtml(username || 'me') + '</span>' + IC.chevron +
           '</button>' +
           '<div class="cj-menu" role="menu" aria-label="Account menu">' +
@@ -107,9 +114,9 @@
         '</div>';
     } else {
       html =
-        '<a href="login.html" class="btn-ghost">Sign In</a>' +
+        '<a href="login.html" class="cj-trigger cj-primary">Sign In</a>' +
         '<div class="cj-menu-wrap" id="cj-hub">' +
-          '<button class="btn-gold cj-trigger" id="cj-hub-trigger" type="button" aria-haspopup="true" aria-expanded="false">' +
+          '<button class="cj-trigger" id="cj-hub-trigger" type="button" aria-haspopup="true" aria-expanded="false">' +
             'Hub' + IC.chevron +
           '</button>' +
           '<div class="cj-menu" role="menu" aria-label="Hub menu">' +

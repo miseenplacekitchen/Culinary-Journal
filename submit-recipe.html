@@ -418,7 +418,7 @@
     .btn-remove-section { background: none; border: none; color: var(--text-high); cursor: pointer; font-size: 18px; padding: 0; line-height: 1; opacity: 0.5; transition: opacity 0.2s; }
     .btn-remove-section:hover { opacity: 1; color: #e05555; }
 
-    .ing-row { display: grid; grid-template-columns: 80px 120px 1fr 160px 32px; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .ing-row { display: grid; grid-template-columns: 80px 110px 1fr 150px 150px 32px; gap: 8px; align-items: center; margin-bottom: 8px; }
     .ing-input { font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high); background: var(--text-ghost); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; width: 100%; box-sizing: border-box; outline: none; }
     .ing-input:focus { border-color: var(--accent); }
     .ing-input::placeholder { color: var(--text-high); opacity: 0.6; }
@@ -517,8 +517,8 @@
     /* Cancel — discards draft + clears the form. Quieter than the others
        so it isn't the most obvious choice. Red-tinted border on hover to
        signal "destructive action". */
-    .btn-cancel { padding: 12px 20px; background: none; color: rgba(232,140,45,0.85); border: 1px solid rgba(232,140,45,0.35); border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 14px; cursor: pointer; transition: all 0.2s; margin-right: 10px; }
-    .btn-cancel:hover { border-color: #e88c2d; color: #e88c2d; background: rgba(232,140,45,0.05); }
+    .btn-cancel { padding: 12px 20px; background: none; color: var(--text-mid); border: 1px solid var(--border); border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 14px; cursor: pointer; transition: all 0.2s; margin-right: 10px; }
+    .btn-cancel:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
 
     /* ── MESSAGES ────────────────────────────── */
     .sr-msg { padding: 14px 18px; border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 14px; margin-bottom: 20px; display: none; }
@@ -535,7 +535,15 @@
     .draft-badge { display: none; font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--accent); background: rgb(from var(--accent) r g b / 0.1); border: 1px solid rgb(from var(--accent) r g b / 0.2); padding: 4px 10px; border-radius: 20px; }
 
     /* ── INGREDIENT COLUMN HEADERS ───────────── */
-    .ing-col-headers { display: grid; grid-template-columns: 80px 120px 1fr 160px 32px; gap: 8px; margin-bottom: 6px; padding: 0 0 6px; border-bottom: 1px solid var(--border); }
+    .ing-col-headers { display: grid; grid-template-columns: 80px 110px 1fr 150px 150px 32px; gap: 8px; margin-bottom: 6px; padding: 0 0 6px; border-bottom: 1px solid var(--border); }
+    /* Per-ingredient category filter — styled to match .ing-input */
+    .ing-cat-select {
+      font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high);
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 9px 10px; width: 100%; box-sizing: border-box; cursor: pointer;
+      outline: none; transition: border-color 0.2s;
+    }
+    .ing-cat-select:focus { border-color: var(--accent); }
     .ing-col-hdr { font-family: "DM Sans", sans-serif; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-high); }
 
     /* ── DIVIDER ─────────────────────────────── */
@@ -641,7 +649,9 @@
     @media (max-width: 680px) {
       .sr-grid, .sr-grid-3, .origin-row { grid-template-columns: 1fr; }
       .sr-full { grid-column: 1; }
-      .ing-row { grid-template-columns: 70px 100px 1fr 32px; }
+      .ing-row { grid-template-columns: 70px 100px 1fr 28px; }
+      .ing-col-headers { display: none; }
+      .ing-cat-select, .ing-row .ing-note-col { grid-column: 1 / -1; }
       .ing-note-col { display: none; }
       .sr-submit-bar { flex-direction: column; gap: 14px; text-align: center; }
     }
@@ -739,7 +749,7 @@
         <!-- Origin (continent / country / region) — placed right after Introduction
              since the dish's origin is closely tied to how the user thinks about it. -->
         <div class="sr-field sr-full" style="margin-bottom: 8px">
-          <label class="sr-label">Origin <span class="opt">optional</span></label>
+          <label class="sr-label">Origin <span class="req">*</span></label>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
             <div class="xf" id="xf-A">
               <button type="button" class="xf-btn" id="btn-A" onclick="togglePanel('A')">🗺️ <span id="lbl-A">Continent</span> ▾</button>
@@ -785,7 +795,7 @@
 
         <!-- Recipe Image — optional but strongly nudged (admin rejects without one) -->
         <div class="sr-field sr-full" style="margin-bottom: 28px">
-          <label class="sr-label">Recipe Photo <span class="opt">optional</span></label>
+          <label class="sr-label">Recipe Photo <span class="req">*</span></label>
           <input type="file" id="recipe-image-input" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleImageUpload(this)">
           <div class="img-upload-box" id="img-upload-box"
                onclick="document.getElementById('recipe-image-input').click()"
@@ -806,8 +816,8 @@
             </div>
           </div>
           <div id="img-status" class="img-status"></div>
-          <div class="sr-hint" id="img-warning" style="margin-top:6px;color:rgba(232,140,45,0.95);font-weight:500">
-            &#9888;&#65039; Including a photo with your recipe submission is optional; however, <b>recipes submitted without an image may not be approved</b>. A clear, high-quality photo helps reviewers evaluate the dish and allows other home cooks to better understand the final presentation and expected outcome.
+          <div class="sr-hint" id="img-warning" style="margin-top:6px;color:var(--text-mid);font-weight:500">
+            &#9888;&#65039; A clear, high-quality photo is <b style="color:var(--accent)">required</b> for your recipe to be approved — it helps reviewers evaluate the dish and shows other home cooks the final presentation and expected outcome.
           </div>
         </div>
 
@@ -1051,8 +1061,8 @@
       <div class="sr-section-title">Procedure</div>
       <div class="sr-hint" style="margin: -16px 0 16px;">
         <span class="sr-i">i</span> Please update the steps for the recipe and split it into clearly labelled sections, such as:<br>
-        &bull; <b>Prep Work:</b> Ingredients, Chopping, Measuring, Marinating, Preheating, etc.<br>
-        &bull; <b>Directions:</b> The actual cooking steps.
+        <span style="display:inline-block;margin-left:1.5em">&bull; Prep Work: Ingredients, Chopping, Measuring, Marinating, Preheating, etc.</span><br>
+        <span style="display:inline-block;margin-left:1.5em">&bull; Directions: The actual cooking steps.</span>
       </div>
       <div id="method-sections"></div>
       <button class="btn-add-section" onclick="addMethodSection()">+ Add Procedure Section</button>
@@ -1276,6 +1286,8 @@ async function loadIngredients() {
       return;
     }
     allIngredients = await res.json();
+    // Categories are derived from the live data — fill any category dropdowns now.
+    try { populateCategorySelects(); } catch(_) {}
     if (status) {
       if (allIngredients.length === 0) {
         // Edge case: bucket loaded but empty (probably a setup issue). Worth flagging.
@@ -1695,6 +1707,7 @@ function addIngSection(name = '') {
       <span class="ing-col-hdr">Qty</span>
       <span class="ing-col-hdr">Unit</span>
       <span class="ing-col-hdr">Ingredient</span>
+      <span class="ing-col-hdr">Category</span>
       <span class="ing-col-hdr ing-note-col">Preparation Note</span>
       <span></span>
     </div>
@@ -1706,7 +1719,7 @@ function addIngSection(name = '') {
 }
 
 // ── ADD INGREDIENT ROW ────────────────────────────────
-function addIngRow(container, qty='', unit='', name='', note='') {
+function addIngRow(container, qty='', unit='', name='', note='', cat='') {
   const row = document.createElement('div');
   row.className = 'ing-row';
 
@@ -1726,6 +1739,7 @@ function addIngRow(container, qty='', unit='', name='', note='') {
       <div class="ing-autocomplete"></div>
       <span class="ing-unknown-badge" style="display:none">⚠ New ingredient — not in our database (will be reviewed by admin)</span>
     </div>
+    <select class="ing-cat-select" onchange="onCategoryChange(this)" title="Pick a category to narrow the ingredient search">${categoryOptionsHtml(cat)}</select>
     <input class="ing-input ing-note-col" type="text" maxlength="120" placeholder="e.g. finely chopped" value="${esc(note)}">
     <button class="btn-remove-row" onclick="this.closest('.ing-row').remove()">×</button>
   `;
@@ -1748,19 +1762,57 @@ function addIngRow(container, qty='', unit='', name='', note='') {
 // Attribute/HTML-safe escaper (the local 'esc' lives inside addIngRow only).
 function escIng(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+// ── CATEGORY DROPDOWN (per ingredient row) ────────────
+// Categories are derived from the live ingredients table so they always
+// match exactly what's searchable. Picking one narrows that row's search.
+function getIngredientCategories() {
+  var seen = {};
+  (allIngredients || []).forEach(function (i) {
+    var c = i['Category'] || i.category;
+    if (c) seen[c] = 1;
+  });
+  return Object.keys(seen).sort();
+}
+function categoryOptionsHtml(selected) {
+  var html = '<option value="">Category</option>';
+  getIngredientCategories().forEach(function (c) {
+    html += '<option value="' + escIng(c) + '"' + (c === selected ? ' selected' : '') + '>' + escIng(c) + '</option>';
+  });
+  return html;
+}
+function populateCategorySelects() {
+  document.querySelectorAll('.ing-cat-select').forEach(function (sel) {
+    var cur = sel.value;
+    sel.innerHTML = categoryOptionsHtml(cur);
+  });
+}
+function onCategoryChange(sel) {
+  var row = sel.closest('.ing-row');
+  var nameInput = row && row.querySelector('.ing-name-input');
+  if (nameInput) searchIngredients(nameInput); // refresh suggestions for the chosen category
+}
+
 function searchIngredients(input) {
   const query = input.value.trim().toLowerCase();
   const ac = input.nextElementSibling;
   const badge = ac.nextElementSibling;
   const col = 'Ingredient Name';
 
-  // Empty box (e.g. just focused/clicked) → show the WHOLE list, like the
-  // region/state picker. As soon as the user types, we filter from char 1.
+  // If this row has a Category chosen, restrict the pool to that category first.
+  const row = input.closest('.ing-row');
+  const catSel = row && row.querySelector('.ing-cat-select');
+  const cat = catSel ? catSel.value : '';
+  const pool = cat
+    ? allIngredients.filter(i => (i['Category'] || i.category) === cat)
+    : allIngredients;
+
+  // Empty box (e.g. just focused/clicked) → show the WHOLE (category) list, like
+  // the region/state picker. As soon as the user types, we filter from char 1.
   let matches;
   if (query.length === 0) {
-    matches = allIngredients;
+    matches = pool;
   } else {
-    matches = allIngredients.filter(i => {
+    matches = pool.filter(i => {
       const n   = (i[col] || i.ingredient_name || '').toLowerCase();
       const aka = (i['Also Known As'] || i.also_known_as || '').toLowerCase();
       return n.includes(query) || aka.includes(query);
@@ -2279,7 +2331,7 @@ function parseRecipe() {
       addIngSection(sec.name);
       const container = document.getElementById('ingredient-sections').lastChild.querySelector('.ing-rows');
       container.innerHTML = '';
-      sec.items.forEach(item => addIngRow(container, item.qty, item.unit, item.ingredient, item.note));
+      sec.items.forEach(item => addIngRow(container, item.qty, item.unit, item.ingredient, item.note, item.category || ''));
       parsed += sec.items.length;
     });
   } else {
@@ -2352,7 +2404,8 @@ function collectFormData() {
       const unit = inputs[1].value;
       const ingredient = inputs[2]?.querySelector ? row.querySelector('.ing-name-input')?.value.trim() : inputs[2]?.value?.trim();
       const note = inputs[3]?.value?.trim() || '';
-      if (ingredient) items.push({ qty, unit, ingredient, note });
+      const category = row.querySelector('.ing-cat-select')?.value || '';
+      if (ingredient) items.push({ qty, unit, ingredient, note, category });
     });
     if (items.length > 0 || sectionName) ingredients.push({ section: sectionName, items });
   });
@@ -2585,7 +2638,7 @@ function loadDraftSilent() {
             const rows     = lastSec.querySelector('.ing-rows');
             if (rows) rows.innerHTML = '';              // wipe the default first row
             (sec.items || []).forEach(it => {
-              addIngRow(rows, it.qty || '', it.unit || '', it.ingredient || '', it.note || '');
+              addIngRow(rows, it.qty || '', it.unit || '', it.ingredient || '', it.note || '', it.category || '');
             });
           });
           // If a saved section had zero items, addIngSection's default first row got wiped
@@ -2732,6 +2785,8 @@ function validate(data) {
   if (!data.difficulty) return 'Please pick a difficulty level (Easy, Intermediate, or Advanced).';
   if (!data.servings || data.servings < 1) return 'Please enter the number of servings.';
   if (!data.prep_time_minutes && !data.cook_time_minutes) return 'Please enter prep time or cook time.';
+  if (!data.origin_continent) return 'Please select the recipe origin (at least a continent).';
+  if (!data.image_url) return 'Please add a recipe photo — a photo is required for approval.';
   const hasIng = data.ingredients.some(s => s.items.length > 0);
   if (!hasIng) return 'Please add at least one ingredient.';
   const hasStep = data.method.some(s => s.steps.length > 0);
