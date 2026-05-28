@@ -657,28 +657,35 @@
     .img-status.img-status-error     { color: #dc5050; }
 
 
+
     /* ── COLLAPSIBLE SECTIONS ────────────────── */
     .sr-section-title {
       cursor: pointer;
       user-select: none;
       justify-content: space-between;
     }
-    .sr-section-title:hover { opacity: 0.85; }
-    .sr-toggle-arrow {
-      font-size: 14px;
+    .sr-section-title::after {
+      content: '▾';
+      font-size: 16px;
       font-family: "DM Sans", sans-serif;
-      font-weight: 400;
+      font-weight: 300;
       color: var(--text-mid);
       margin-left: auto;
-      transition: transform 0.2s ease;
+      padding-left: 12px;
       flex-shrink: 0;
+      display: inline-block;
+      transition: transform 0.25s ease;
+      line-height: 1;
     }
-    .sr-section.collapsed .sr-toggle-arrow { transform: rotate(-90deg); }
-    .sr-section.collapsed > *:not(.sr-section-title):not(.sr-section-subtitle) {
+    .sr-section.collapsed .sr-section-title::after {
+      transform: rotate(-90deg);
+    }
+    .sr-section.collapsed > *:not(.sr-section-title) {
       display: none !important;
     }
     .sr-section.collapsed {
-      padding-bottom: 20px;
+      padding-bottom: 22px;
+      margin-bottom: 16px;
     }
 
     /* ── RESPONSIVE ──────────────────────────── */
@@ -791,7 +798,7 @@
 
     <!-- 1. PASTE & PARSE -->
     <div class="sr-section" id="section-paste">
-      <div class="sr-section-title" onclick="toggleSection('section-paste')">Paste Recipe Text <span>Optional</span><span class="sr-toggle-arrow">▾</span></div>
+      <div class="sr-section-title">Paste Recipe Text <span>Optional</span></div>
       <div class="sr-field">
         <label class="sr-label">Paste from Instagram caption or any source</label>
         <textarea class="sr-input sr-paste-textarea" id="paste-input" maxlength="20000" placeholder="Paste the recipe text here and we will try to parse it automatically into the fields below..."></textarea>
@@ -804,7 +811,7 @@
 
     <!-- 2. RECIPE DETAILS -->
     <div class="sr-section" id="section-details">
-      <div class="sr-section-title" onclick="toggleSection('section-details')">Recipe Details</div><span class="sr-toggle-arrow">▾</span>
+      <div class="sr-section-title">Recipe Details</div>
 
       <div class="sr-grid">
         <!-- Recipe Name -->
@@ -1170,7 +1177,7 @@
 
     <!-- 3. INGREDIENTS -->
     <div class="sr-section" id="section-ingredients">
-      <div class="sr-section-title" onclick="toggleSection('section-ingredients')">Ingredients</div><span class="sr-toggle-arrow">▾</span>
+      <div class="sr-section-title">Ingredients</div>
       <div id="ing-db-status" class="sr-hint" style="display:none; margin: -16px 0 14px;"></div>
       <div id="ingredient-sections"></div>
       <button class="btn-add-section" onclick="addIngSection()">+ Add Ingredient Section</button>
@@ -1178,7 +1185,7 @@
 
     <!-- 4. PROCEDURE -->
     <div class="sr-section" id="section-procedure">
-      <div class="sr-section-title" onclick="toggleSection('section-procedure')">Procedure</div><span class="sr-toggle-arrow">▾</span>
+      <div class="sr-section-title">Procedure</div>
       <div class="sr-hint" style="margin: -16px 0 16px;">
         <span class="sr-i">i</span> Please update the steps for the recipe and split it into clearly labelled sections, such as:
         <div style="margin:12px 0 0 36px; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid);">
@@ -1192,7 +1199,7 @@
 
     <!-- 5. COOKING NOTES & TIPS — public, prints on the recipe card -->
     <div class="sr-section" id="section-notes">
-      <div class="sr-section-title" onclick="toggleSection('section-notes')">Cooking Notes &amp; Tips</div><span class="sr-toggle-arrow">▾</span>
+      <div class="sr-section-title">Cooking Notes &amp; Tips</div>
       <div class="sr-field">
         <label class="sr-label">Tips, tricks, variations &amp; what to watch out for <span class="opt">optional</span></label>
         <div class="sr-hint" style="margin: -4px 0 8px">
@@ -1204,7 +1211,7 @@
 
     <!-- 6. SOURCE & CREDITS -->
     <div class="sr-section" id="section-credits">
-      <div class="sr-section-title" onclick="toggleSection('section-credits')">Source & Credits</div><span class="sr-toggle-arrow">▾</span>
+      <div class="sr-section-title">Source & Credits</div>
 
       <!-- Source Type -->
       <div class="sr-field" style="margin-bottom:24px">
@@ -1376,7 +1383,7 @@ function updateNav() {
   if (!session) return;
   let profile = {};
   try { profile = JSON.parse(lsGet('tcj_profile') || '{}') || {}; } catch(_) { profile = {}; }
-  setTimeout(restoreCollapse, 100);
+  setTimeout(initCollapsible, 150);
   const loginLink = document.getElementById('nav-login');
   const np = document.getElementById('nav-profile');
   if (loginLink) loginLink.style.display = 'none';
@@ -3528,29 +3535,40 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+
 // ── COLLAPSIBLE SECTIONS ──────────────────────────
 function toggleSection(id) {
   const section = document.getElementById(id);
   if (!section) return;
-  const wasCollapsed = section.classList.contains('collapsed');
-  section.classList.toggle('collapsed');
-  // Persist state
+  const collapsed = section.classList.toggle('collapsed');
   try {
     const states = JSON.parse(localStorage.getItem('tcj_collapse') || '{}');
-    states[id] = !wasCollapsed;
+    states[id] = collapsed;
     localStorage.setItem('tcj_collapse', JSON.stringify(states));
   } catch(_) {}
 }
 
-function restoreCollapse() {
+function initCollapsible() {
+  document.querySelectorAll('.sr-section').forEach(function(section, i) {
+    const title = section.querySelector('.sr-section-title');
+    if (!title) return;
+    if (!section.id) section.id = 'sr-section-' + i;
+    title.addEventListener('click', function() {
+      toggleSection(section.id);
+    });
+  });
+  // Restore saved states
   try {
     const states = JSON.parse(localStorage.getItem('tcj_collapse') || '{}');
-    Object.entries(states).forEach(([id, collapsed]) => {
-      const s = document.getElementById(id);
-      if (s && collapsed) s.classList.add('collapsed');
+    Object.keys(states).forEach(function(id) {
+      if (states[id]) {
+        const s = document.getElementById(id);
+        if (s) s.classList.add('collapsed');
+      }
     });
   } catch(_) {}
 }
+
 
 </script>
 </body>
