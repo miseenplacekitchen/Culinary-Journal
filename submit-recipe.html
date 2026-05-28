@@ -880,10 +880,11 @@
                   <button type="button" class="img-ctrl-btn" onclick="event.stopPropagation(); adjustZoom(10)" title="Zoom in">+</button>
                 </div>
                 <div class="img-ctrl-group">
-                  <span class="img-ctrl-label">Position</span>
-                  <button type="button" class="img-ctrl-btn" onclick="event.stopPropagation(); setImgPosition('top')" id="pos-top" title="Align top">↑</button>
-                  <button type="button" class="img-ctrl-btn img-ctrl-active" onclick="event.stopPropagation(); setImgPosition('center')" id="pos-center" title="Align centre">⊙</button>
-                  <button type="button" class="img-ctrl-btn" onclick="event.stopPropagation(); setImgPosition('bottom')" id="pos-bottom" title="Align bottom">↓</button>
+                  <span class="img-ctrl-label">↕ Position</span>
+                  <input type="range" id="img-pos-slider" min="0" max="100" value="50"
+                    style="width:80px;accent-color:var(--accent);cursor:pointer"
+                    oninput="event.stopPropagation(); applyImgPos(this.value)"
+                    onclick="event.stopPropagation()">
                 </div>
               </div>
             </div>
@@ -1139,9 +1140,11 @@
     <div class="sr-section">
       <div class="sr-section-title">Procedure</div>
       <div class="sr-hint" style="margin: -16px 0 16px;">
-        <span class="sr-i">i</span> Please update the steps for the recipe and split it into clearly labelled sections, such as:<br>
-        <span style="display:inline-block;margin-left:2em">&bull; <b>Prep Work:</b> Ingredients, Chopping, Measuring, Marinating, Preheating, etc.</span><br>
-        <span style="display:inline-block;margin-left:2em">&bull; <b>Directions:</b> The actual cooking steps.</span>
+        <span class="sr-i">i</span> Please update the steps for the recipe and split it into clearly labelled sections, such as:
+        <ul style="margin:6px 0 0 0;padding-left:2em;list-style:disc">
+          <li><b>Prep Work:</b> Ingredients, Chopping, Measuring, Marinating, Preheating, etc.</li>
+          <li><b>Directions:</b> The actual cooking steps.</li>
+        </ul>
       </div>
       <div id="method-sections"></div>
       <button class="btn-add-section" onclick="addMethodSection()">+ Add Procedure Section</button>
@@ -3180,13 +3183,11 @@ function adjustZoom(delta) {
   applyImgTransform();
 }
 
-function setImgPosition(pos) {
-  window._imgPos = pos;
-  ['top','center','bottom'].forEach(p => {
-    const btn = document.getElementById('pos-' + p);
-    if (btn) btn.classList.toggle('img-ctrl-active', p === pos);
-  });
-  applyImgTransform();
+function applyImgPos(val) {
+  // val is 0-100 from slider; maps to object-position percentage
+  window._imgPosVal = val;
+  const img = document.getElementById('img-preview');
+  if (img) img.style.objectPosition = 'center ' + val + '%';
 }
 
 function applyImgTransform() {
@@ -3194,19 +3195,19 @@ function applyImgTransform() {
   const val = document.getElementById('img-zoom-val');
   if (!img) return;
   const zoom = window._imgZoom || 100;
-  const pos  = window._imgPos  || 'center';
+  const posVal = (window._imgPosVal !== undefined ? window._imgPosVal : 50) + '%';
   if (val) val.textContent = zoom + '%';
   // At 100% show full image (contain). Above 100% zoom in (cover + scale).
   if (zoom <= 100) {
     img.style.objectFit      = 'contain';
-    img.style.objectPosition = 'center ' + pos;
+    img.style.objectPosition = 'center ' + posVal;
     img.style.transform      = '';
     img.style.maxHeight      = '360px';
   } else {
     img.style.objectFit      = 'contain';
-    img.style.objectPosition = 'center ' + pos;
+    img.style.objectPosition = 'center ' + posVal;
     img.style.transform      = 'scale(' + (zoom / 100) + ')';
-    img.style.transformOrigin = 'center ' + pos;
+    img.style.transformOrigin = 'center ' + posVal;
     img.style.maxHeight      = '360px';
   }
 }
@@ -3220,10 +3221,9 @@ function removeImage() {
   // Reset zoom/pos display
   const val = document.getElementById('img-zoom-val');
   if (val) val.textContent = '100%';
-  ['top','center','bottom'].forEach(p => {
-    const btn = document.getElementById('pos-' + p);
-    if (btn) btn.classList.toggle('img-ctrl-active', p === 'center');
-  });
+  window._imgPosVal = 50;
+  const slider = document.getElementById('img-pos-slider');
+  if (slider) slider.value = 50;
   // Save the cleared state to the draft
   try { saveDraft(); } catch(_) {}
 }
