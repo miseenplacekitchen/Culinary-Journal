@@ -666,16 +666,17 @@
     }
     .sr-section-title::after {
       content: '▾';
-      font-size: 16px;
+      font-size: 13px;
       font-family: "DM Sans", sans-serif;
-      font-weight: 300;
+      font-weight: 400;
       color: var(--text-mid);
       margin-left: auto;
-      padding-left: 12px;
+      padding-left: 14px;
       flex-shrink: 0;
       display: inline-block;
       transition: transform 0.25s ease;
       line-height: 1;
+      opacity: 0.7;
     }
     .sr-section.collapsed .sr-section-title::after {
       transform: rotate(-90deg);
@@ -795,6 +796,20 @@
 
     <!-- MESSAGE -->
     <div class="sr-msg" id="sr-msg"></div>
+
+    <!-- COLLAPSE / EXPAND ALL -->
+    <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+      <button type="button" id="btn-toggle-all"
+        onclick="toggleAllSections()"
+        style="font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500;
+               color:var(--text-mid); background:none; border:1px solid var(--border);
+               border-radius:6px; padding:5px 14px; cursor:pointer; letter-spacing:0.03em;
+               transition:all 0.15s;"
+        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'">
+        Collapse All ▾
+      </button>
+    </div>
 
     <!-- 1. PASTE & PARSE -->
     <div class="sr-section" id="section-paste">
@@ -3536,6 +3551,26 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+
+function toggleAllSections() {
+  const sections = document.querySelectorAll('.sr-section');
+  const anyExpanded = Array.from(sections).some(s => !s.classList.contains('collapsed'));
+  const btn = document.getElementById('btn-toggle-all');
+  sections.forEach(function(section) {
+    if (anyExpanded) {
+      section.classList.add('collapsed');
+    } else {
+      section.classList.remove('collapsed');
+    }
+    try {
+      const states = JSON.parse(localStorage.getItem('tcj_collapse') || '{}');
+      if (section.id) states[section.id] = anyExpanded;
+      localStorage.setItem('tcj_collapse', JSON.stringify(states));
+    } catch(_) {}
+  });
+  if (btn) btn.textContent = anyExpanded ? 'Expand All ▴' : 'Collapse All ▾';
+}
+
 // ── COLLAPSIBLE SECTIONS ──────────────────────────
 function toggleSection(id) {
   const section = document.getElementById(id);
@@ -3546,6 +3581,11 @@ function toggleSection(id) {
     states[id] = collapsed;
     localStorage.setItem('tcj_collapse', JSON.stringify(states));
   } catch(_) {}
+  // Keep the Collapse All / Expand All button label in sync
+  const sections = document.querySelectorAll('.sr-section');
+  const anyExpanded = Array.from(sections).some(s => !s.classList.contains('collapsed'));
+  const btn = document.getElementById('btn-toggle-all');
+  if (btn) btn.textContent = anyExpanded ? 'Collapse All ▾' : 'Expand All ▴';
 }
 
 function initCollapsible() {
