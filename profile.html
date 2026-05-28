@@ -13,7 +13,10 @@
     // Apply saved theme as early as possible (prevents flash on subsequent loads).
     (function(){
       try {
-        var t = localStorage.getItem('tcj_theme');
+        var s = null;
+        try { s = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(_) {}
+        var loggedIn = !!(s && s.access_token);
+        var t = loggedIn ? localStorage.getItem('tcj_theme') : null;
         if (t && t !== 'midnight-slate') {
           document.addEventListener('DOMContentLoaded', function () {
             document.body.classList.add('theme-' + t);
