@@ -1016,7 +1016,7 @@
     <!-- 3. INGREDIENTS -->
     <div class="sr-section">
       <div class="sr-section-title">Ingredients</div>
-      <div id="ing-db-status" class="sr-hint" style="margin: -16px 0 14px;">📚 Loading ingredient database…</div>
+      <div id="ing-db-status" class="sr-hint" style="display:none; margin: -16px 0 14px;"></div>
       <div id="ingredient-sections"></div>
       <button class="btn-add-section" onclick="addIngSection()">+ Add Ingredient Section</button>
     </div>
@@ -1246,17 +1246,22 @@ async function loadIngredients() {
         status.innerHTML = '⚠ Could not load ingredient database (HTTP ' + res.status + '): ' + detail +
           '. Ingredients can\u2019t be autocompleted or validated. Run <code>enable-ingredients-rls-read.sql</code> in Supabase to fix.';
         status.style.color = '#e09955';
+        status.style.display = 'block';
       }
       return;
     }
     allIngredients = await res.json();
     if (status) {
       if (allIngredients.length === 0) {
+        // Edge case: bucket loaded but empty (probably a setup issue). Worth flagging.
         status.textContent = '⚠ Ingredient database loaded but empty (0 ingredients). Autocomplete won\u2019t work.';
         status.style.color = '#e09955';
+        status.style.display = 'block';
       } else {
-        status.textContent = '📚 Autocomplete dictionary loaded (' + allIngredients.length + ' ingredients in the database) — start typing in any ingredient row.';
-        status.style.color = '';
+        // Success — DON'T announce a count to the user. They don't need to
+        // know how many ingredients are in our autocomplete dictionary.
+        status.style.display = 'none';
+        status.textContent = '';
       }
     }
     // Re-validate any rows the parser may have populated before the DB arrived
@@ -1265,6 +1270,7 @@ async function loadIngredients() {
     if (status) {
       status.textContent = '⚠ Could not load ingredient database: ' + (e.message || e);
       status.style.color = '#e09955';
+      status.style.display = 'block';
     }
   }
 }
