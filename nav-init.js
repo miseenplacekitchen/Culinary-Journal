@@ -120,12 +120,27 @@
     if (!host) return;
     injectStyles();
 
+    var ADMIN_EMAIL = 'miseenplacekitchen.official@gmail.com';
+
     var session = null, profile = {};
     try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
     try { profile = JSON.parse(localStorage.getItem('tcj_profile') || '{}') || {}; } catch (_) {}
     var loggedIn = !!(session && session.access_token);
     var username = (session && session.username) || profile.username || '';
     var fullName = profile.full_name || profile.name || '';
+
+    // Decode JWT to check if admin — never shown to regular users
+    var isAdmin = false;
+    if (loggedIn && session.access_token) {
+      try {
+        var payload = JSON.parse(atob(session.access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+        isAdmin = (payload.email === ADMIN_EMAIL);
+      } catch(_) {}
+      // Also check user object if present (Google OAuth)
+      if (!isAdmin && session.user && session.user.email) {
+        isAdmin = (session.user.email === ADMIN_EMAIL);
+      }
+    }
 
     var html;
     if (loggedIn) {
@@ -140,7 +155,8 @@
                 (fullName ? '<div class="cj-menu-name">' + escapeHtml(fullName) + '</div>' : '') +
                 '<div class="cj-menu-handle">@' + escapeHtml(username || 'me') + '</div>' +
               '</div><div class="cj-menu-sep"></div>' : '') +
-            item('dashboard.html',     IC.dashboard,'Dashboard') +
+            (isAdmin ? item('dashboard.html', IC.dashboard, '⚙ Admin Dashboard') : '') +
+            (isAdmin ? '<div class="cj-menu-sep"></div>' : '') +
             item('profile.html',       IC.profile, 'My Profile') +
             item('draft-recipes.html', IC.drafts,  'Draft Recipes') +
             item('submit-recipe.html', IC.submit,  'Submit a Recipe') +
