@@ -746,7 +746,7 @@
           </div>
           <button type="button" class="origin-help-toggle" onclick="toggleOriginHelp()">
             <span id="origin-help-icon">?</span>
-            <span id="origin-help-label">Not sure where it's from? Help me identify</span>
+            <span id="origin-help-label" style="font-style:italic">Not sure where the recipe is from? Click Here</span>
           </button>
           <div class="origin-help-panel" id="origin-help-panel">
             <p class="origin-help-intro">
@@ -1255,7 +1255,7 @@ async function loadIngredients() {
         status.textContent = '⚠ Ingredient database loaded but empty (0 ingredients). Autocomplete won\u2019t work.';
         status.style.color = '#e09955';
       } else {
-        status.textContent = '📚 ' + allIngredients.length + ' ingredients loaded — autocomplete & unknown-flagging active.';
+        status.textContent = '📚 Autocomplete dictionary loaded (' + allIngredients.length + ' ingredients in the database) — start typing in any ingredient row.';
         status.style.color = '';
       }
     }
@@ -1588,7 +1588,7 @@ function applyRegion(r) {
   const panel = document.getElementById('origin-help-panel');
   if (panel) panel.classList.remove('open');
   const label = document.getElementById('origin-help-label');
-  if (label) label.textContent = 'Not sure where it\u2019s from? Help me identify';
+  if (label) label.textContent = 'Not sure where the recipe is from? Click Here';
 }
 
 function toggleOriginHelp() {
@@ -1600,7 +1600,7 @@ function toggleOriginHelp() {
     panel.dataset.built = '1';
   }
   const label = document.getElementById('origin-help-label');
-  if (label) label.textContent = open ? 'Hide regional hints' : 'Not sure where it\u2019s from? Help me identify';
+  if (label) label.textContent = open ? 'Hide regional hints' : 'Not sure where the recipe is from? Click Here';
 }
 
 function escapeHtml(s) {
