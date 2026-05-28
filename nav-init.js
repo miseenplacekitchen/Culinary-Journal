@@ -82,6 +82,39 @@
     return '<a class="cj-menu-item" role="menuitem" href="' + href + '">' + icon + '<span>' + label + '</span></a>';
   }
 
+
+  // ── Google OAuth Callback Handler ────────────────────────────
+  // When Google redirects back, the session is in the URL hash.
+  // Read it, store it in localStorage, then clean the URL.
+  function handleOAuthCallback() {
+    var hash = window.location.hash;
+    if (!hash || hash.indexOf('access_token=') === -1) return;
+    var params = {};
+    hash.replace(/^#/, '').split('&').forEach(function(pair) {
+      var kv = pair.split('=');
+      params[decodeURIComponent(kv[0])] = decodeURIComponent((kv[1] || '').replace(/\+/g,' '));
+    });
+    var token = params.access_token;
+    if (!token) return;
+    try {
+      var payload = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+      var stored = {
+        access_token:   token,
+        refresh_token:  params.refresh_token || '',
+        user: {
+          id:    payload.sub  || '',
+          email: payload.email || ''
+        },
+        user_id:  payload.sub || '',
+        username: ''
+      };
+      localStorage.setItem('tcj_session', JSON.stringify(stored));
+      // Clean the URL so the hash disappears
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+    } catch(e) { console.error('OAuth callback error:', e); }
+  }
+  handleOAuthCallback();
+
   function init() {
     var host = document.getElementById('nav-btns');
     if (!host) return;
