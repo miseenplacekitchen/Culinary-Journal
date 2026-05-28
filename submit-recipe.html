@@ -203,7 +203,10 @@
     /* ── SWEET: inline-SVG sugar cube ──
        Bluish-white tones (cool, fresh, distinctly NOT brown).
        Three-face 3D cube with crystalline texture dots on the front.
-       Margin 0 so multiple cubes group into a tight cluster within each pill. */
+       ViewBox is tightened to 15x16 (was 24x24 with empty padding) so
+       multiple cubes inside one pill actually touch each other — the old
+       viewBox had ~8px of empty space around the cube making them look
+       spaced apart even with margin: 0. */
     .sugar-cube {
       display: inline-block;
       width: 18px;
@@ -213,7 +216,7 @@
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M 4 9 L 13 9 L 13 19 L 4 19 Z' fill='%23e4ecf1' stroke='%234a6573' stroke-width='0.7' stroke-linejoin='round'/><path d='M 4 9 L 8 5 L 17 5 L 13 9 Z' fill='%23f4f8fb' stroke='%234a6573' stroke-width='0.7' stroke-linejoin='round'/><path d='M 13 9 L 17 5 L 17 15 L 13 19 Z' fill='%23becdd6' stroke='%234a6573' stroke-width='0.7' stroke-linejoin='round'/><circle cx='6.5' cy='13' r='0.5' fill='%237a8b97'/><circle cx='9' cy='14.5' r='0.4' fill='%237a8b97'/><circle cx='10.5' cy='17' r='0.5' fill='%237a8b97'/><circle cx='7' cy='17.5' r='0.4' fill='%237a8b97'/></svg>");
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 15 16'><path d='M 1 5 L 10 5 L 10 15 L 1 15 Z' fill='%23e4ecf1' stroke='%234a6573' stroke-width='0.6' stroke-linejoin='round'/><path d='M 1 5 L 5 1 L 14 1 L 10 5 Z' fill='%23f4f8fb' stroke='%234a6573' stroke-width='0.6' stroke-linejoin='round'/><path d='M 10 5 L 14 1 L 14 11 L 10 15 Z' fill='%23becdd6' stroke='%234a6573' stroke-width='0.6' stroke-linejoin='round'/><circle cx='3.5' cy='9' r='0.5' fill='%237a8b97'/><circle cx='6' cy='10.5' r='0.4' fill='%237a8b97'/><circle cx='7.5' cy='13' r='0.5' fill='%237a8b97'/><circle cx='4' cy='13.5' r='0.4' fill='%237a8b97'/></svg>");
     }
     /* Common SVG shape, only the fill colour varies per spice level.
        Each url() encodes a small chilli: stem + curved body + subtle highlight. */
