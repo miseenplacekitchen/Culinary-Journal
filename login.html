@@ -542,14 +542,40 @@ async function doLogin() {
     const data = await supaAuth('token?grant_type=password', { email, password });
 
     // Save session
-    localStorage.setItem('tcj_session', JSON.stringify({
-      access_token: data.access_token,
-      user_id: data.user.id,
-      username: username
-    }));
+    const sessionObj = {
+      access_token:  data.access_token,
+      refresh_token: data.refresh_token || '',
+      user_id:       data.user.id,
+      username:      username
+    };
+    localStorage.setItem('tcj_session', JSON.stringify(sessionObj));
+
+    // Fetch full profile (includes is_admin) and store it
+    let isAdmin = false;
+    try {
+      const profileRes = await fetch(SUPA_URL + '/rest/v1/rpc/get_my_profile', {
+        method: 'POST',
+        headers: {
+          'apikey':        SUPA_ANON,
+          'Authorization': 'Bearer ' + data.access_token,
+          'Content-Type':  'application/json'
+        },
+        body: JSON.stringify({})
+      });
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+        const profile = Array.isArray(profileData) ? profileData[0] : profileData;
+        if (profile) {
+          localStorage.setItem('tcj_profile', JSON.stringify(profile));
+          isAdmin = !!profile.is_admin;
+        }
+      }
+    } catch(_) {}
 
     showMsg('Welcome back, ' + username + '! Redirecting...', 'success');
-    setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+    setTimeout(() => {
+      window.location.href = isAdmin ? 'dashboard.html' : 'index.html';
+    }, 1000);
 
   } catch(e) {
     showMsg(e.message, 'error');

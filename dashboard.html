@@ -137,42 +137,13 @@
 </head>
 <body class="cj-body">
 
-<!-- Dashboard login screen -->
-<div id="screen-login" style="display:none; min-height:100vh; align-items:center; justify-content:center; background:var(--bg);">
-  <div style="width:100%;max-width:380px;padding:40px 24px;">
-    <div style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:600;color:var(--accent);text-align:center;margin-bottom:4px;">The Culinary Journal</div>
-    <div style="font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-mid);text-align:center;margin-bottom:32px;">Dashboard</div>
-
-    <div id="login-error" style="display:none;font-family:'DM Sans',sans-serif;font-size:13px;color:#dc5050;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.3);border-radius:8px;padding:10px 14px;margin-bottom:16px;text-align:center;"></div>
-
-    <!-- First time setup notice -->
-    <div id="setup-notice" style="display:none;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);background:var(--text-ghost);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:16px;line-height:1.6;">
-      <strong style="color:var(--text-high);">First time setup.</strong> Choose a username and password for the dashboard. These are stored only in your browser.
-    </div>
-
-    <div style="margin-bottom:14px;">
-      <label style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:6px;">Username</label>
-      <input id="dash-username" type="text" autocomplete="username"
-        style="width:100%;font-family:'DM Sans',sans-serif;font-size:14px;padding:11px 14px;border-radius:9px;border:1px solid var(--border);background:var(--text-ghost);color:var(--text-high);outline:none;box-sizing:border-box;"
-        placeholder="Enter username"
-        onfocus="this.style.borderColor='var(--accent)'"
-        onblur="this.style.borderColor='var(--border)'"
-        onkeydown="if(event.key==='Enter')document.getElementById('dash-password').focus()">
-    </div>
-    <div style="margin-bottom:20px;">
-      <label style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:6px;">Password</label>
-      <input id="dash-password" type="password" autocomplete="current-password"
-        style="width:100%;font-family:'DM Sans',sans-serif;font-size:14px;padding:11px 14px;border-radius:9px;border:1px solid var(--border);background:var(--text-ghost);color:var(--text-high);outline:none;box-sizing:border-box;"
-        placeholder="Enter password"
-        onfocus="this.style.borderColor='var(--accent)'"
-        onblur="this.style.borderColor='var(--border)'"
-        onkeydown="if(event.key==='Enter')dashLogin()">
-    </div>
-    <button onclick="dashLogin()"
-      style="width:100%;padding:13px;background:var(--accent);border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:#fff;cursor:pointer;transition:opacity 0.15s;"
-      onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
-      Sign In
-    </button>
+<!-- Access denied screen -->
+<div id="screen-denied" class="ap-denied" style="display:none">
+  <div class="ap-denied-box">
+    <div class="ap-denied-icon">🔒</div>
+    <div class="ap-denied-title">Admin Access Only</div>
+    <div class="ap-denied-sub">You need an admin account to access this area.</div>
+    <a href="login.html" style="font-family:'DM Sans',sans-serif;font-size:14px;color:var(--accent)">Sign In to the Site First</a>
   </div>
 </div>
 
@@ -360,284 +331,51 @@ async function rpc(fn, params = {}) {
 }
 
 // ── Auth ──────────────────────────────────────────────────────────
-// ── Dashboard credentials (stored in localStorage, set by user) ──
-const DASH_CREDS_KEY = 'tcj_dash_creds';
+function signOut() {
+  try { localStorage.removeItem("tcj_session");  } catch(e) {}
+  try { localStorage.removeItem("tcj_profile");  } catch(e) {}
+  try { localStorage.removeItem("tcj_theme");    } catch(e) {}
+  window.location.href = "login.html";
+}
 
-function dashLogin() {
-  const username = (document.getElementById('dash-username').value || '').trim();
-  const password = document.getElementById('dash-password').value || '';
-  const errEl    = document.getElementById('login-error');
+async function init() {
+  let sess = null;
+  try { sess = JSON.parse(localStorage.getItem("tcj_session") || "null"); } catch(e) {}
+  if (!sess || !sess.access_token) { window.location.href = "login.html"; return; }
+  session = sess;
 
-  if (!username || !password) {
-    errEl.textContent = 'Please enter both username and password.';
-    errEl.style.display = 'block';
+  let profile = null;
+  try { profile = JSON.parse(localStorage.getItem("tcj_profile") || "null"); } catch(e) {}
+  if (!profile) {
+    try {
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/get_my_profile", {
+        method: "POST",
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": "Bearer " + sess.access_token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({})
+      });
+      if (res.ok) {
+        const d = await res.json();
+        profile = Array.isArray(d) ? d[0] : d;
+        if (profile) localStorage.setItem("tcj_profile", JSON.stringify(profile));
+      }
+    } catch(e) {}
+  }
+
+  if (!profile || !profile.is_admin) {
+    document.getElementById("screen-denied").style.display = "flex";
     return;
   }
 
-  const stored = getStoredCreds();
-
-  // First time — no creds set yet — save these as the admin credentials
-  if (!stored) {
-    const creds = { username: username, password: btoa(password) };
-    localStorage.setItem(DASH_CREDS_KEY, JSON.stringify(creds));
-    startDashboard(username);
-    return;
-  }
-
-  // Check against stored creds
-  if (username === stored.username && btoa(password) === stored.password) {
-    startDashboard(username);
-  } else {
-    errEl.textContent = 'Incorrect username or password.';
-    errEl.style.display = 'block';
-    document.getElementById('dash-password').value = '';
-  }
-}
-
-function getStoredCreds() {
-  try { return JSON.parse(localStorage.getItem(DASH_CREDS_KEY) || 'null'); } catch(_) { return null; }
-}
-
-function dashSignOut() {
-  localStorage.removeItem('tcj_dash_session');
-  showLoginScreen();
-}
-
-function showLoginScreen() {
-  const creds = getStoredCreds();
-  document.getElementById('screen-login').style.display = 'flex';
-  document.getElementById('screen-main').style.display  = 'none';
-  if (!creds) document.getElementById('setup-notice').style.display = 'block';
-}
-
-function startDashboard(username) {
-  // Store a short-lived dashboard session
-  const exp = Date.now() + (8 * 60 * 60 * 1000); // 8 hours
-  localStorage.setItem('tcj_dash_session', JSON.stringify({ username, exp }));
-  document.getElementById('screen-login').style.display = 'none';
-  document.getElementById('screen-main').style.display  = 'flex';
-  document.getElementById('admin-email').textContent     = username;
+  document.getElementById("screen-main").style.display = "flex";
+  document.getElementById("admin-email").textContent   = profile.username || profile.email || "Admin";
   loadStats();
-  loadRecipes('pending');
+  loadRecipes("pending");
 }
 
-function init() {
-  // Check if there is a valid dashboard session already
-  try {
-    const ds = JSON.parse(localStorage.getItem('tcj_dash_session') || 'null');
-    if (ds && ds.exp > Date.now()) {
-      startDashboard(ds.username);
-      return;
-    }
-  } catch(_) {}
-  showLoginScreen();
-}
-
-function signOut() { dashSignOut(); }
-
-// ── Stats ─────────────────────────────────────────────────────────
-async function loadStats() {
-  try {
-    const stats = await rpc('admin_get_stats');
-    document.getElementById('stat-pending').textContent  = stats.pending  ?? '—';
-    document.getElementById('stat-approved').textContent = stats.approved ?? '—';
-    document.getElementById('stat-rejected').textContent = stats.rejected ?? '—';
-    document.getElementById('stat-total').textContent    = stats.total    ?? '—';
-    const badge = document.getElementById('badge-pending');
-    if (badge) badge.textContent = stats.pending ?? '0';
-  } catch(e) { console.error('Stats error:', e.message); }
-}
-
-// ── Recipe List ───────────────────────────────────────────────────
-async function loadRecipes(statusFilter) {
-  const tbody = document.getElementById('ap-tbody');
-  tbody.innerHTML = '<tr><td colspan="6" class="ap-empty-row">Loading...</td></tr>';
-  try {
-    const params = statusFilter && statusFilter !== 'all' ? { p_status: statusFilter } : {};
-    allRecipes = await rpc('admin_get_recipes', params);
-    renderTable(allRecipes);
-  } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="6" class="ap-empty-row">Error: ${e.message}</td></tr>`;
-  }
-}
-
-function renderTable(recipes) {
-  const tbody = document.getElementById('ap-tbody');
-  const search = document.getElementById('ap-search').value.toLowerCase();
-  const filtered = recipes.filter(r => !search || (r.recipe_name||'').toLowerCase().includes(search));
-
-  if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="ap-empty-row">No recipes found.</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = filtered.map(r => {
-    const thumb = r.image_url
-      ? `<div class="ap-thumb" style="background-image:url('${r.image_url}');background-size:cover;background-position:center;border-radius:6px;width:48px;height:36px;"></div>`
-      : `<div class="ap-thumb-empty">🍽</div>`;
-    const origin = [r.origin_state, r.origin_country].filter(Boolean).join(', ') || '—';
-    const notes = r.reviewer_notes ? `<span style="font-size:11px;color:var(--text-mid);font-style:italic">${r.reviewer_notes.substring(0,60)}${r.reviewer_notes.length>60?'…':''}</span>` : '<span style="color:var(--border);font-size:11px">—</span>';
-    return `<tr onclick="openRecipe('${r.id}')">
-      <td>${thumb}</td>
-      <td><div class="ap-recipe-name">${r.recipe_name||'Untitled'}</div><div class="ap-recipe-cat">${r.category||''}</div></td>
-      <td><span class="ap-submitter">${origin}</span></td>
-      <td><span class="ap-date">${formatDate(r.submitted_at)}</span></td>
-      <td>${statusPill(r.status||'pending')}</td>
-      <td>${notes}</td>
-    </tr>`;
-  }).join('');
-}
-
-function filterTable() { renderTable(allRecipes); }
-
-// ── Navigation ────────────────────────────────────────────────────
-function switchView(view) {
-  currentView = view;
-  document.querySelectorAll('.ap-nav-item').forEach(el => el.classList.remove('active'));
-  const btn = document.getElementById('nav-' + view);
-  if (btn) btn.classList.add('active');
-
-  const titles = { pending:'Pending Review', all:'All Recipes', approved:'Approved Recipes', rejected:'Rejected Recipes' };
-  const subs   = { pending:'Recipes waiting for your approval before going live.', all:'Every submitted recipe.', approved:'Recipes that are live on the site.', rejected:'Recipes that were not approved.' };
-  document.getElementById('page-title').textContent = titles[view] || 'Recipes';
-  document.getElementById('page-sub').textContent   = subs[view]   || '';
-  loadRecipes(view === 'all' ? null : view);
-}
-
-// ── Recipe Review Modal ───────────────────────────────────────────
-function openRecipe(id) {
-  currentRecipe = allRecipes.find(r => r.id === id);
-  if (!currentRecipe) return;
-  const r = currentRecipe;
-
-  document.getElementById('m-name').textContent   = r.recipe_name || 'Untitled';
-  document.getElementById('m-native').textContent = r.native_title || '';
-  document.getElementById('m-notes-input').value  = r.reviewer_notes || '';
-
-  // Meta tags
-  const metaTags = [r.category, r.spice_level, r.difficulty, r.sweet_level, r.visibility]
-    .filter(Boolean)
-    .map(t => `<span class="ap-modal-meta-tag">${t}</span>`).join('');
-  document.getElementById('m-meta').innerHTML = metaTags + statusPill(r.status||'pending');
-
-  // Photo
-  document.getElementById('m-photo').innerHTML = r.image_url
-    ? `<div class="ap-modal-photo" style="background-image:url('${r.image_url}')"></div>`
-    : `<div class="ap-modal-photo-empty">🍽</div>`;
-
-  // Details
-  const details = [
-    ['Origin', [r.origin_state, r.origin_country, r.origin_continent].filter(Boolean).join(', ') || '—'],
-    ['Prep Time', r.prep_time_minutes ? r.prep_time_minutes + ' mins' : '—'],
-    ['Cook Time', r.cook_time_minutes ? r.cook_time_minutes + ' mins' : '—'],
-    ['Servings',  r.servings || '—'],
-    ['Source',    r.source_type || '—'],
-    ['Submitted', formatDate(r.submitted_at)],
-    ['Reviewed',  formatDate(r.reviewed_at)],
-  ];
-  document.getElementById('m-details').innerHTML = details.map(([l,v]) =>
-    `<div class="ap-info-row"><span class="ap-info-label">${l}</span><span class="ap-info-val">${v}</span></div>`
-  ).join('');
-
-  // Ingredients
-  let ingsHtml = '';
-  try {
-    const ings = typeof r.ingredients === 'string' ? JSON.parse(r.ingredients) : r.ingredients;
-    if (Array.isArray(ings)) {
-      ings.forEach(section => {
-        ingsHtml += `<div class="ap-ingredient-section">`;
-        if (section.name) ingsHtml += `<div class="ap-ing-section-name">${section.name}</div>`;
-        (section.items || []).forEach(item => {
-          ingsHtml += `<div class="ap-ing-row"><span class="ap-ing-qty">${item.qty||''} ${item.unit||''}</span><span>${item.ingredient||''}</span>${item.note?`<span style="color:var(--text-mid);font-size:11px;margin-left:4px">(${item.note})</span>`:''}</div>`;
-        });
-        ingsHtml += `</div>`;
-      });
-    }
-  } catch(_) { ingsHtml = '<span style="font-size:12px;color:var(--text-mid)">—</span>'; }
-  document.getElementById('m-ingredients').innerHTML = ingsHtml || '<span style="font-size:12px;color:var(--text-mid)">—</span>';
-
-  // Method / Procedure
-  let methodHtml = '';
-  try {
-    const method = typeof r.method === 'string' ? JSON.parse(r.method) : r.method;
-    if (Array.isArray(method)) {
-      method.forEach(section => {
-        methodHtml += `<div class="ap-method-section">`;
-        if (section.name) methodHtml += `<div class="ap-method-section-name">${section.name}</div>`;
-        (section.steps || []).forEach((step, i) => {
-          methodHtml += `<div class="ap-step">${i+1}. ${step.text||step||''}</div>`;
-        });
-        methodHtml += `</div>`;
-      });
-    }
-  } catch(_) {}
-  document.getElementById('m-procedure').innerHTML = methodHtml || '<span style="font-size:12px;color:var(--text-mid)">—</span>';
-
-  // Notes
-  const noteStyle = 'font-family:"DM Sans",sans-serif;font-size:12px;color:var(--text-high);line-height:1.6';
-  document.getElementById('m-cooking-notes').innerHTML = r.cooking_notes
-    ? `<p style="${noteStyle}">${r.cooking_notes}</p>` : '<span style="font-size:12px;color:var(--text-mid)">—</span>';
-  document.getElementById('m-personal-notes').innerHTML = r.personal_notes
-    ? `<p style="${noteStyle}">${r.personal_notes}</p>` : '<span style="font-size:12px;color:var(--text-mid)">—</span>';
-  document.getElementById('m-intro').innerHTML = r.introduction
-    ? `<p style="${noteStyle}">${r.introduction}</p>` : '<span style="font-size:12px;color:var(--text-mid)">—</span>';
-
-  // Credits
-  let credits = '';
-  if (r.credit_name)   credits += `<div class="ap-info-row"><span class="ap-info-label">By</span><span class="ap-info-val">${r.credit_name}</span></div>`;
-  if (r.credit_handle) credits += `<div class="ap-info-row"><span class="ap-info-label">Handle</span><span class="ap-info-val">${r.credit_handle}</span></div>`;
-  if (r.credit_url)    credits += `<div class="ap-info-row"><span class="ap-info-label">Source URL</span><span class="ap-info-val"><a href="${r.credit_url}" target="_blank" style="color:var(--accent);font-size:11px;word-break:break-all">${r.credit_url}</a></span></div>`;
-  document.getElementById('m-credits').innerHTML = credits || '<span style="font-size:12px;color:var(--text-mid)">Original / no external source</span>';
-
-  const msg = document.getElementById('m-review-msg');
-  msg.style.display = 'none';
-
-  document.getElementById('ap-modal').classList.add('open');
-}
-
-function closeModal() {
-  document.getElementById('ap-modal').classList.remove('open');
-  currentRecipe = null;
-}
-
-async function reviewRecipe(newStatus) {
-  if (!currentRecipe) return;
-  const notes = document.getElementById('m-notes-input').value.trim();
-  const msg   = document.getElementById('m-review-msg');
-  const btns  = document.querySelectorAll('.ap-review-btns button');
-  btns.forEach(b => b.disabled = true);
-  msg.style.display = 'none';
-
-  try {
-    await rpc('admin_review_recipe', { p_id: currentRecipe.id, p_status: newStatus, p_notes: notes });
-    msg.textContent = newStatus === 'approved' ? '✓ Approved!' : newStatus === 'rejected' ? '✕ Rejected' : '↺ Reset to pending';
-    msg.className = 'ap-review-msg ' + (newStatus === 'approved' ? 'success' : 'error');
-    msg.style.display = 'inline-block';
-    // Update local data
-    currentRecipe.status = newStatus;
-    currentRecipe.reviewer_notes = notes;
-    document.getElementById('m-meta').innerHTML = [currentRecipe.category, currentRecipe.spice_level, currentRecipe.difficulty, currentRecipe.sweet_level, currentRecipe.visibility]
-      .filter(Boolean).map(t => `<span class="ap-modal-meta-tag">${t}</span>`).join('') + statusPill(newStatus);
-    // Refresh list and stats
-    await loadStats();
-    await loadRecipes(currentView === 'all' ? null : currentView);
-    setTimeout(closeModal, 1500);
-  } catch(e) {
-    msg.textContent = 'Error: ' + e.message;
-    msg.className = 'ap-review-msg error';
-    msg.style.display = 'inline-block';
-  } finally {
-    btns.forEach(b => b.disabled = false);
-  }
-}
-
-// Close modal on overlay click
-document.getElementById('ap-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
-
-// Keyboard shortcut: Escape closes modal
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
 init();
 </script>

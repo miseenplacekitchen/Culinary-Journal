@@ -111,6 +111,19 @@
       localStorage.setItem('tcj_session', JSON.stringify(stored));
       // Clean the URL so the hash disappears
       window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+      // Fetch profile (includes is_admin) and store it
+      fetch('https://kzywmodvfbyexqgipcjt.supabase.co/rest/v1/rpc/get_my_profile', {
+        method: 'POST',
+        headers: {
+          'apikey':        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM',
+          'Authorization': 'Bearer ' + token,
+          'Content-Type':  'application/json'
+        },
+        body: JSON.stringify({})
+      }).then(function(r){ return r.json(); }).then(function(d){
+        var p = Array.isArray(d) ? d[0] : d;
+        if (p) localStorage.setItem('tcj_profile', JSON.stringify(p));
+      }).catch(function(){});
     } catch(e) { console.error('OAuth callback error:', e); }
   }
   handleOAuthCallback();
@@ -120,27 +133,13 @@
     if (!host) return;
     injectStyles();
 
-    var ADMIN_EMAIL = 'miseenplacekitchen.official@gmail.com';
-
     var session = null, profile = {};
     try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
     try { profile = JSON.parse(localStorage.getItem('tcj_profile') || '{}') || {}; } catch (_) {}
     var loggedIn = !!(session && session.access_token);
     var username = (session && session.username) || profile.username || '';
     var fullName = profile.full_name || profile.name || '';
-
-    // Decode JWT to check if admin — never shown to regular users
-    var isAdmin = false;
-    if (loggedIn && session.access_token) {
-      try {
-        var payload = JSON.parse(atob(session.access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-        isAdmin = (payload.email === ADMIN_EMAIL);
-      } catch(_) {}
-      // Also check user object if present (Google OAuth)
-      if (!isAdmin && session.user && session.user.email) {
-        isAdmin = (session.user.email === ADMIN_EMAIL);
-      }
-    }
+    var isAdmin  = !!(loggedIn && profile.is_admin);
 
     var html;
     if (loggedIn) {
