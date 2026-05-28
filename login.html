@@ -556,7 +556,7 @@ async function doLogin() {
       const profileRes = await fetch(SUPA_URL + '/rest/v1/rpc/get_my_profile', {
         method: 'POST',
         headers: {
-          'apikey':        SUPA_ANON,
+          'apikey':        SUPA_KEY,
           'Authorization': 'Bearer ' + data.access_token,
           'Content-Type':  'application/json'
         },
