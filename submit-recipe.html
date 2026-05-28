@@ -67,17 +67,17 @@
     .credit-url-label-nudge {
       color: var(--accent) !important;
     }
-    .sr-hint { font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--text-mid); margin-top: 2px; }
+    .sr-hint { font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--text-mid); margin-top: 2px; line-height: 1.7; }
     /* Soft, on-theme info marker — replaces the OS blue <span class="sr-i">i</span> emoji.
        An outlined accent "i" that follows whatever theme accent is active. */
     .sr-i {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 15px; height: 15px; border-radius: 50%;
-      border: 1.4px solid var(--accent); color: var(--accent);
+      width: 13px; height: 13px; border-radius: 50%;
+      border: 1.3px solid var(--accent); color: var(--accent);
       background: transparent;
       font-family: Georgia, "Times New Roman", serif;
-      font-style: normal; font-weight: 700; font-size: 9.5px; line-height: 1;
-      vertical-align: -2px; margin-right: 6px; flex-shrink: 0;
+      font-style: normal; font-weight: 700; font-size: 8.5px; line-height: 1;
+      vertical-align: -0.16em; margin-right: 6px; flex-shrink: 0;
     }
 
     /* ── PASTE AREA ──────────────────────────── */
@@ -231,15 +231,21 @@
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 15 16'><path d='M 1 5 L 10 5 L 10 15 L 1 15 Z' fill='%23e4ecf1' stroke='%234a6573' stroke-width='0.6' stroke-linejoin='round'/><path d='M 1 5 L 5 1 L 14 1 L 10 5 Z' fill='%23f4f8fb' stroke='%234a6573' stroke-width='0.6' stroke-linejoin='round'/><path d='M 10 5 L 14 1 L 14 11 L 10 15 Z' fill='%23becdd6' stroke='%234a6573' stroke-width='0.6' stroke-linejoin='round'/><circle cx='3.5' cy='9' r='0.5' fill='%237a8b97'/><circle cx='6' cy='10.5' r='0.4' fill='%237a8b97'/><circle cx='7.5' cy='13' r='0.5' fill='%237a8b97'/><circle cx='4' cy='13.5' r='0.4' fill='%237a8b97'/></svg>");
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><path d='M10 7.2 L16.4 4 L16.4 12.6 L10 16.6 Z' fill='%23c7d6e2' stroke='%237f96a8' stroke-width='0.5' stroke-linejoin='round'/><path d='M3.6 4 L10 7.2 L10 16.6 L3.6 12.6 Z' fill='%23dce7f0' stroke='%237f96a8' stroke-width='0.5' stroke-linejoin='round'/><path d='M10 0.8 L16.4 4 L10 7.2 L3.6 4 Z' fill='%23f4f9fc' stroke='%237f96a8' stroke-width='0.5' stroke-linejoin='round'/><path d='M8 3.4 L8.5 4.3 L9.4 4.8 L8.5 5.3 L8 6.2 L7.5 5.3 L6.6 4.8 L7.5 4.3 Z' fill='%23ffffff'/></svg>");
     }
     /* Common SVG shape, only the fill colour varies per spice level.
        Each url() encodes a small chilli: stem + curved body + subtle highlight. */
-    .chilli-green   { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 26'><path d='M 6 4.5 L 8 4.5 C 9 3 9 1.5 8 1.5 L 6 1.5 C 5 1.5 5 3 6 4.5 Z' fill='%234a7a1e' stroke='%232d5010' stroke-width='0.4'/><line x1='7' y1='4.5' x2='7' y2='6' stroke='%232d5010' stroke-width='0.8'/><path d='M 7 6 C 3.5 6 2 9.5 2.5 14 C 3 18 5.5 23.5 7 24.5 C 8.5 23.5 11 18 11.5 14 C 12 9.5 10.5 6 7 6 Z' fill='%2356b94f' stroke='%231e6620' stroke-width='0.5'/><path d='M 4 9 C 4 14 4.5 19 5.5 22' stroke='rgba(255,255,255,0.45)' stroke-width='0.9' fill='none' stroke-linecap='round'/></svg>"); }
-    .chilli-yellow   { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 26'><path d='M 6 4.5 L 8 4.5 C 9 3 9 1.5 8 1.5 L 6 1.5 C 5 1.5 5 3 6 4.5 Z' fill='%234a7a1e' stroke='%232d5010' stroke-width='0.4'/><line x1='7' y1='4.5' x2='7' y2='6' stroke='%232d5010' stroke-width='0.8'/><path d='M 7 6 C 3.5 6 2 9.5 2.5 14 C 3 18 5.5 23.5 7 24.5 C 8.5 23.5 11 18 11.5 14 C 12 9.5 10.5 6 7 6 Z' fill='%23fbc02d' stroke='%23a87814' stroke-width='0.5'/><path d='M 4 9 C 4 14 4.5 19 5.5 22' stroke='rgba(255,255,255,0.45)' stroke-width='0.9' fill='none' stroke-linecap='round'/></svg>"); }
-    .chilli-orange   { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 26'><path d='M 6 4.5 L 8 4.5 C 9 3 9 1.5 8 1.5 L 6 1.5 C 5 1.5 5 3 6 4.5 Z' fill='%234a7a1e' stroke='%232d5010' stroke-width='0.4'/><line x1='7' y1='4.5' x2='7' y2='6' stroke='%232d5010' stroke-width='0.8'/><path d='M 7 6 C 3.5 6 2 9.5 2.5 14 C 3 18 5.5 23.5 7 24.5 C 8.5 23.5 11 18 11.5 14 C 12 9.5 10.5 6 7 6 Z' fill='%23ff8a00' stroke='%23c14400' stroke-width='0.5'/><path d='M 4 9 C 4 14 4.5 19 5.5 22' stroke='rgba(255,255,255,0.45)' stroke-width='0.9' fill='none' stroke-linecap='round'/></svg>"); }
-    .chilli-red   { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 26'><path d='M 6 4.5 L 8 4.5 C 9 3 9 1.5 8 1.5 L 6 1.5 C 5 1.5 5 3 6 4.5 Z' fill='%234a7a1e' stroke='%232d5010' stroke-width='0.4'/><line x1='7' y1='4.5' x2='7' y2='6' stroke='%232d5010' stroke-width='0.8'/><path d='M 7 6 C 3.5 6 2 9.5 2.5 14 C 3 18 5.5 23.5 7 24.5 C 8.5 23.5 11 18 11.5 14 C 12 9.5 10.5 6 7 6 Z' fill='%23e53935' stroke='%23a01818' stroke-width='0.5'/><path d='M 4 9 C 4 14 4.5 19 5.5 22' stroke='rgba(255,255,255,0.45)' stroke-width='0.9' fill='none' stroke-linecap='round'/></svg>"); }
-    .chilli-darkred   { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 26'><path d='M 6 4.5 L 8 4.5 C 9 3 9 1.5 8 1.5 L 6 1.5 C 5 1.5 5 3 6 4.5 Z' fill='%234a7a1e' stroke='%232d5010' stroke-width='0.4'/><line x1='7' y1='4.5' x2='7' y2='6' stroke='%232d5010' stroke-width='0.8'/><path d='M 7 6 C 3.5 6 2 9.5 2.5 14 C 3 18 5.5 23.5 7 24.5 C 8.5 23.5 11 18 11.5 14 C 12 9.5 10.5 6 7 6 Z' fill='%237b1818' stroke='%23300707' stroke-width='0.5'/><path d='M 4 9 C 4 14 4.5 19 5.5 22' stroke='rgba(255,255,255,0.45)' stroke-width='0.9' fill='none' stroke-linecap='round'/></svg>"); }
+    .chilli-green   { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 28'><path d='M8 6 C 7 3.5 7.4 1.8 9 1.8 C 10 1.8 10.2 3.2 9.4 4.6' fill='none' stroke='%233a6b1a' stroke-width='1.4' stroke-linecap='round'/><path d='M4.8 6.3 C 6.2 4.4 9.8 4.4 11.2 6.3 C 10 7.8 6 7.8 4.8 6.3 Z' fill='%234a7a1e' stroke='%232d5010' stroke-width='0.4'/><path d='M5.3 6.5 C 10.6 6 13 9.5 12 14.6 C 11.1 19.2 8 25.2 5.4 26.8 C 5.0 27.0 4.6 26.6 4.9 26.2 C 6.4 22.5 6.7 18 6.1 14 C 5.6 10.5 4 7.3 5.3 6.5 Z' fill='%2356b94f' stroke='%231e6620' stroke-width='0.5'/><path d='M6.6 9 C 6.4 13 6.7 17.5 7.1 21' stroke='rgba(255,255,255,0.5)' stroke-width='0.9' fill='none' stroke-linecap='round'/></svg>"); }
+    .chilli-yellow   { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 28'><path d='M8 6 C 7 3.5 7.4 1.8 9 1.8 C 10 1.8 10.2 3.2 9.4 4.6' fill='none' stroke='%233a6b1a' stroke-width='1.4' stroke-linecap='round'/><path d='M4.8 6.3 C 6.2 4.4 9.8 4.4 11.2 6.3 C 10 7.8 6 7.8 4.8 6.3 Z' fill='%234a7a1e' stroke='%232d5010' stroke-width='0.4'/><path d='M5.3 6.5 C 10.6 6 13 9.5 12 14.6 C 11.1 19.2 8 25.2 5.4 26.8 C 5.0 27.0 4.6 26.6 4.9 26.2 C 6.4 22.5 6.7 18 6.1 14 C 5.6 10.5 4 7.3 5.3 6.5 Z' fill='%23fbc02d' stroke='%23a87814' stroke-width='0.5'/><path d='M6.6 9 C 6.4 13 6.7 17.5 7.1 21' stroke='rgba(255,255,255,0.5)' stroke-width='0.9' fill='none' stroke-linecap='round'/></svg>"); }
+    .chilli-orange   { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 28'><path d='M8 6 C 7 3.5 7.4 1.8 9 1.8 C 10 1.8 10.2 3.2 9.4 4.6' fill='none' stroke='%233a6b1a' stroke-width='1.4' stroke-linecap='round'/><path d='M4.8 6.3 C 6.2 4.4 9.8 4.4 11.2 6.3 C 10 7.8 6 7.8 4.8 6.3 Z' fill='%234a7a1e' stroke='%232d5010' stroke-width='0.4'/><path d='M5.3 6.5 C 10.6 6 13 9.5 12 14.6 C 11.1 19.2 8 25.2 5.4 26.8 C 5.0 27.0 4.6 26.6 4.9 26.2 C 6.4 22.5 6.7 18 6.1 14 C 5.6 10.5 4 7.3 5.3 6.5 Z' fill='%23ff8a00' stroke='%23c14400' stroke-width='0.5'/><path d='M6.6 9 C 6.4 13 6.7 17.5 7.1 21' stroke='rgba(255,255,255,0.5)' stroke-width='0.9' fill='none' stroke-linecap='round'/></svg>"); }
+    .chilli-red   { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 28'><path d='M8 6 C 7 3.5 7.4 1.8 9 1.8 C 10 1.8 10.2 3.2 9.4 4.6' fill='none' stroke='%233a6b1a' stroke-width='1.4' stroke-linecap='round'/><path d='M4.8 6.3 C 6.2 4.4 9.8 4.4 11.2 6.3 C 10 7.8 6 7.8 4.8 6.3 Z' fill='%234a7a1e' stroke='%232d5010' stroke-width='0.4'/><path d='M5.3 6.5 C 10.6 6 13 9.5 12 14.6 C 11.1 19.2 8 25.2 5.4 26.8 C 5.0 27.0 4.6 26.6 4.9 26.2 C 6.4 22.5 6.7 18 6.1 14 C 5.6 10.5 4 7.3 5.3 6.5 Z' fill='%23e53935' stroke='%23a01818' stroke-width='0.5'/><path d='M6.6 9 C 6.4 13 6.7 17.5 7.1 21' stroke='rgba(255,255,255,0.5)' stroke-width='0.9' fill='none' stroke-linecap='round'/></svg>"); }
+    .chilli-darkred   { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 28'><path d='M8 6 C 7 3.5 7.4 1.8 9 1.8 C 10 1.8 10.2 3.2 9.4 4.6' fill='none' stroke='%233a6b1a' stroke-width='1.4' stroke-linecap='round'/><path d='M4.8 6.3 C 6.2 4.4 9.8 4.4 11.2 6.3 C 10 7.8 6 7.8 4.8 6.3 Z' fill='%234a7a1e' stroke='%232d5010' stroke-width='0.4'/><path d='M5.3 6.5 C 10.6 6 13 9.5 12 14.6 C 11.1 19.2 8 25.2 5.4 26.8 C 5.0 27.0 4.6 26.6 4.9 26.2 C 6.4 22.5 6.7 18 6.1 14 C 5.6 10.5 4 7.3 5.3 6.5 Z' fill='%237b1818' stroke='%23300707' stroke-width='0.5'/><path d='M6.6 9 C 6.4 13 6.7 17.5 7.1 21' stroke='rgba(255,255,255,0.5)' stroke-width='0.9' fill='none' stroke-linecap='round'/></svg>"); }
+
+    /* ── DIFFICULTY: glossy orbs (replaces flat traffic-light emoji) ── */
+    .diff-dot { display:inline-block; width:20px; height:20px; vertical-align:middle; background-size:contain; background-repeat:no-repeat; background-position:center; }
+    .diff-easy  { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' fill='%233fae5a' stroke='%231f7a39' stroke-width='0.9'/><ellipse cx='9' cy='8.5' rx='4.2' ry='2.8' fill='%23ffffff' opacity='0.55' transform='rotate(-30 9 8.5)'/><ellipse cx='14.5' cy='16' rx='4' ry='2.4' fill='%231f7a39' opacity='0.30' transform='rotate(-30 14.5 16)'/></svg>"); }
+    .diff-inter { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' fill='%23f0a830' stroke='%23bd7d12' stroke-width='0.9'/><ellipse cx='9' cy='8.5' rx='4.2' ry='2.8' fill='%23ffffff' opacity='0.55' transform='rotate(-30 9 8.5)'/><ellipse cx='14.5' cy='16' rx='4' ry='2.4' fill='%23bd7d12' opacity='0.30' transform='rotate(-30 14.5 16)'/></svg>"); }
+    .diff-adv   { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' fill='%23e0524d' stroke='%23ad2f2b' stroke-width='0.9'/><ellipse cx='9' cy='8.5' rx='4.2' ry='2.8' fill='%23ffffff' opacity='0.55' transform='rotate(-30 9 8.5)'/><ellipse cx='14.5' cy='16' rx='4' ry='2.4' fill='%23ad2f2b' opacity='0.30' transform='rotate(-30 14.5 16)'/></svg>"); }
 
     /* Tooltip on hover */
     .level-opt + label::after {
@@ -702,7 +708,7 @@
     <!-- HEADER -->
     <div class="sr-header">
       <h1>Submit a Recipe</h1>
-      <p>Share something delicious with the community — every recipe is reviewed before publishing</p>
+      <p style="font-style:italic">Share something delicious with the community</p>
       <div class="draft-badge" id="draft-badge">✓ Draft saved</div>
     </div>
 
@@ -732,6 +738,15 @@
           <label class="sr-label">Recipe Name <span class="req">*</span></label>
           <input class="sr-input" type="text" id="recipe-name" maxlength="200" placeholder="e.g. Kerala Beef Curry" onblur="checkDuplicateName()">
           <div id="dup-name-info" class="sr-hint" style="margin-top:6px; display:none;"></div>
+        </div>
+
+        <!-- Native Title — optional, the dish's name in its language of origin -->
+        <div class="sr-field sr-full" style="margin-bottom: 24px">
+          <label class="sr-label">Native Title <span class="opt">optional</span></label>
+          <div class="sr-hint" style="margin: -4px 0 8px">
+            <span class="sr-i">i</span> The dish&rsquo;s name in its original language or script &mdash; e.g. &ldquo;നെയ്ച്ചോറ്&rdquo; or &ldquo;Neychoru&rdquo; for Ghee Rice. Shown alongside the recipe name.
+          </div>
+          <input class="sr-input" type="text" id="native-title" maxlength="200" placeholder="e.g. Neychoru">
         </div>
 
         <!-- Introduction — short blurb, 100 words max, shown on the recipe page below the title -->
@@ -780,8 +795,8 @@
             in location-based searches or filters, for example, &ldquo;Kerala recipes&rdquo; or &ldquo;Tuscan dishes.&rdquo;
           </div>
           <button type="button" class="origin-help-toggle" onclick="toggleOriginHelp()">
-            <span id="origin-help-icon">?</span>
-            <span id="origin-help-label" style="font-style:italic">Not sure where the recipe is from? Click Here</span>
+            <span id="origin-help-icon" class="sr-i">i</span>
+            <span id="origin-help-label" style="font-style:italic">Unsure of the recipe&rsquo;s origin or background? Click here for suggestions.</span>
           </button>
           <div class="origin-help-panel" id="origin-help-panel">
             <p class="origin-help-intro">
@@ -905,11 +920,11 @@
             <label class="sr-label">Difficulty Level <span class="req">*</span></label>
             <div class="level-options">
               <input class="level-opt" type="radio" name="difficulty" id="diff-easy"  value="Easy">
-              <label for="diff-easy" data-tip="Easy: Total time required is 30 minutes or less."><span class="level-symbols">&#128994;</span></label>
+              <label for="diff-easy" data-tip="Easy: Total time required is 30 minutes or less."><span class="level-symbols"><span class="diff-dot diff-easy"></span></span></label>
               <input class="level-opt" type="radio" name="difficulty" id="diff-inter" value="Intermediate">
-              <label for="diff-inter" data-tip="Intermediate: Total time required is between 30 and 90 minutes."><span class="level-symbols">&#128993;</span></label>
+              <label for="diff-inter" data-tip="Intermediate: Total time required is between 30 and 90 minutes."><span class="level-symbols"><span class="diff-dot diff-inter"></span></span></label>
               <input class="level-opt" type="radio" name="difficulty" id="diff-adv"   value="Advanced">
-              <label for="diff-adv" data-tip="Advanced: Total time required is more than 90 minutes."><span class="level-symbols">&#128308;</span></label>
+              <label for="diff-adv" data-tip="Advanced: Total time required is more than 90 minutes."><span class="level-symbols"><span class="diff-dot diff-adv"></span></span></label>
             </div>
             <div class="sr-hint" id="diff-hint"><span class="sr-i">i</span> Click a dot to pick difficulty. Click again to deselect. Required before submitting.</div>
           </div>
@@ -961,6 +976,7 @@
           <input class="tag-cb" type="checkbox" id="tag-mt-rice"        value="Rice Dish"><label for="tag-mt-rice">&#127834; Rice Dish</label>
           <input class="tag-cb" type="checkbox" id="tag-mt-dessert"     value="Dessert"><label for="tag-mt-dessert">&#127854; Dessert</label>
           <input class="tag-cb" type="checkbox" id="tag-mt-frozen"      value="Frozen Treat"><label for="tag-mt-frozen">&#127846; Frozen Treat</label>
+          <input class="tag-cb" type="checkbox" id="tag-mt-preserve"    value="Preserve / Pickle"><label for="tag-mt-preserve">&#129531; Preserve / Pickle</label>
         </div>
       </div>
       <!-- Occasion Tags -->
@@ -977,6 +993,11 @@
           <input class="tag-cb" type="checkbox" id="tag-wedding" value="Wedding"><label for="tag-wedding">💒 Wedding</label>
           <input class="tag-cb" type="checkbox" id="tag-bbq" value="BBQ"><label for="tag-bbq">🔥 BBQ</label>
           <input class="tag-cb" type="checkbox" id="tag-quick" value="Quick"><label for="tag-quick">⚡ Under 30 Mins</label>
+          <input class="tag-cb" type="checkbox" id="tag-quick5" value="Under 5 Mins"><label for="tag-quick5">⚡ Under 5 Mins</label>
+          <input class="tag-cb" type="checkbox" id="tag-goodfri" value="Good Friday"><label for="tag-goodfri">✝️ Good Friday</label>
+          <input class="tag-cb" type="checkbox" id="tag-lent" value="Lent"><label for="tag-lent">🕊 Lent</label>
+          <input class="tag-cb" type="checkbox" id="tag-thanksgiving" value="Thanksgiving"><label for="tag-thanksgiving">🦃 Thanksgiving</label>
+          <input class="tag-cb" type="checkbox" id="tag-ramadan" value="Ramadan"><label for="tag-ramadan">🌙 Ramadan</label>
         </div>
       </div>
       <!-- Style Tags -->
@@ -1631,7 +1652,7 @@ function applyRegion(r) {
   const panel = document.getElementById('origin-help-panel');
   if (panel) panel.classList.remove('open');
   const label = document.getElementById('origin-help-label');
-  if (label) label.textContent = 'Not sure where the recipe is from? Click Here';
+  if (label) label.textContent = 'Unsure of the recipe’s origin or background? Click here for suggestions.';
 }
 
 function toggleOriginHelp() {
@@ -1643,7 +1664,7 @@ function toggleOriginHelp() {
     panel.dataset.built = '1';
   }
   const label = document.getElementById('origin-help-label');
-  if (label) label.textContent = open ? 'Hide regional hints' : 'Not sure where the recipe is from? Click Here';
+  if (label) label.textContent = open ? 'Hide regional hints' : 'Unsure of the recipe’s origin or background? Click here for suggestions.';
 }
 
 function escapeHtml(s) {
@@ -2388,9 +2409,9 @@ function collectFormData() {
   const getTags = (name) => [...document.querySelectorAll(`input[id^="tag-"]:checked`)].map(c => c.value);
   const getDietaryTags = () => ['tag-vegan','tag-veg','tag-gf','tag-df','tag-nf','tag-sf','tag-ef','tag-halal','tag-kosher'].filter(id => document.getElementById(id)?.checked).map(id => document.getElementById(id).value);
   const getHealthTags = () => ['tag-hp','tag-lc','tag-lf','tag-ls','tag-diab','tag-bf','tag-kf'].filter(id => document.getElementById(id)?.checked).map(id => document.getElementById(id).value);
-  const getOccasionTags = () => ['tag-everyday','tag-onam','tag-eid','tag-xmas','tag-diwali','tag-easter','tag-party','tag-wedding','tag-bbq','tag-quick'].filter(id => document.getElementById(id)?.checked).map(id => document.getElementById(id).value);
+  const getOccasionTags = () => ['tag-everyday','tag-onam','tag-eid','tag-xmas','tag-diwali','tag-easter','tag-party','tag-wedding','tag-bbq','tag-quick','tag-quick5','tag-goodfri','tag-lent','tag-thanksgiving','tag-ramadan'].filter(id => document.getElementById(id)?.checked).map(id => document.getElementById(id).value);
   const getStyleTags = () => ['tag-trad','tag-modern','tag-fusion','tag-streetfood','tag-finedining','tag-comfort'].filter(id => document.getElementById(id)?.checked).map(id => document.getElementById(id).value);
-  const getMealTypeTags = () => ['tag-mt-breakfast','tag-mt-brunch','tag-mt-lunch','tag-mt-dinner','tag-mt-snack','tag-mt-drink','tag-mt-soup','tag-mt-salad','tag-mt-main','tag-mt-side','tag-mt-appetizer','tag-mt-bread','tag-mt-rice','tag-mt-dessert','tag-mt-frozen'].filter(id => document.getElementById(id)?.checked).map(id => document.getElementById(id).value);
+  const getMealTypeTags = () => ['tag-mt-breakfast','tag-mt-brunch','tag-mt-lunch','tag-mt-dinner','tag-mt-snack','tag-mt-drink','tag-mt-soup','tag-mt-salad','tag-mt-main','tag-mt-side','tag-mt-appetizer','tag-mt-bread','tag-mt-rice','tag-mt-dessert','tag-mt-frozen','tag-mt-preserve'].filter(id => document.getElementById(id)?.checked).map(id => document.getElementById(id).value);
   const getFlavorProfileTags = () => ['tag-fp-spicy','tag-fp-tangy','tag-fp-savoury','tag-fp-sweet','tag-fp-rich','tag-fp-creamy','tag-fp-fresh','tag-fp-smoky','tag-fp-nutty','tag-fp-fruity','tag-fp-salty','tag-fp-umami','tag-fp-bitter','tag-fp-earthy','tag-fp-floral','tag-fp-mild'].filter(id => document.getElementById(id)?.checked).map(id => document.getElementById(id).value);
 
   // Ingredients
@@ -2420,6 +2441,7 @@ function collectFormData() {
 
   return {
     recipe_name: document.getElementById('recipe-name').value.trim(),
+    native_title: (document.getElementById('native-title')?.value || '').trim(),
     category: document.querySelector('input[name="category"]:checked')?.value || '',
     spice_level: document.querySelector('input[name="spice"]:checked')?.value || '',
     sweet_level: document.querySelector('input[name="sweet"]:checked')?.value || '',
@@ -2566,6 +2588,7 @@ function loadDraftSilent() {
       d.recipe_name = '';
     }
     setVal('recipe-name', d.recipe_name);
+    setVal('native-title', d.native_title || '');
     setVal('introduction', d.introduction);
     try { updateIntroCounter(); } catch(_) {}
     setRadio('category', d.category);
@@ -2605,7 +2628,7 @@ function loadDraftSilent() {
     restoreTags(d.health_tags,         ['tag-hp','tag-lc','tag-lf','tag-ls','tag-diab','tag-bf','tag-kf']);
     restoreTags(d.occasion_tags,       ['tag-everyday','tag-onam','tag-eid','tag-xmas','tag-diwali','tag-easter','tag-party','tag-wedding','tag-bbq','tag-quick']);
     restoreTags(d.style_tags,          ['tag-trad','tag-modern','tag-fusion','tag-streetfood','tag-finedining','tag-comfort']);
-    restoreTags(d.meal_type_tags,      ['tag-mt-breakfast','tag-mt-brunch','tag-mt-lunch','tag-mt-dinner','tag-mt-snack','tag-mt-drink','tag-mt-soup','tag-mt-salad','tag-mt-main','tag-mt-side','tag-mt-appetizer','tag-mt-bread','tag-mt-rice','tag-mt-dessert','tag-mt-frozen']);
+    restoreTags(d.meal_type_tags,      ['tag-mt-breakfast','tag-mt-brunch','tag-mt-lunch','tag-mt-dinner','tag-mt-snack','tag-mt-drink','tag-mt-soup','tag-mt-salad','tag-mt-main','tag-mt-side','tag-mt-appetizer','tag-mt-bread','tag-mt-rice','tag-mt-dessert','tag-mt-frozen','tag-mt-preserve']);
     restoreTags(d.flavor_profile_tags, ['tag-fp-spicy','tag-fp-tangy','tag-fp-savoury','tag-fp-sweet','tag-fp-rich','tag-fp-creamy','tag-fp-fresh','tag-fp-smoky','tag-fp-nutty','tag-fp-fruity','tag-fp-salty','tag-fp-umami','tag-fp-bitter','tag-fp-earthy','tag-fp-floral','tag-fp-mild']);
 
     // Restore origin via xf pick functions (state > country > continent precedence)
@@ -3125,7 +3148,7 @@ async function submitRecipe() {
       throw new Error(errData.message || 'Submission failed');
     }
   } catch(e) {
-    showMsg('Something went wrong — ' + e.message + '. Your draft has been saved.', 'error');
+    showMsg('We were unable to submit your recipe. Your draft has been saved successfully. Please contact admin immediately.', 'error');
     saveDraft();
     btn.disabled = false;
     btn.textContent = 'Submit for Review';

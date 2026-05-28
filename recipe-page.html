@@ -926,12 +926,12 @@ function renderProcedure(method, containerId = 'procedure-content') {
     if (allStrings) {
       // A flat section of step strings → one numbered list
       inner = `<ol class="rp-proc-steps">${steps.map(s =>
-        `<li class="rp-proc-step"><span class="rp-proc-step-num">→</span><span class="rp-proc-step-text">${escapeHtml(s)}</span></li>`
+        `<li class="rp-proc-step"><span class="rp-proc-step-num">→</span><span class="rp-proc-step-text">${fmtStep(s)}</span></li>`
       ).join('')}</ol>`;
     } else {
       inner = steps.map(step => {
         if (typeof step === 'string') {
-          return `<div class="rp-proc-section"><span class="rp-proc-single">${escapeHtml(step)}</span></div>`;
+          return `<div class="rp-proc-section"><span class="rp-proc-single">${fmtStep(step)}</span></div>`;
         }
         const titleHtml = step.title ? `<div class="rp-proc-section-title">${escapeHtml(step.title)}:</div>` : '';
         const body = (step.multiple && Array.isArray(step.items))
@@ -947,6 +947,15 @@ function renderProcedure(method, containerId = 'procedure-content') {
       ${inner}
     </div>`;
   }).join('');
+}
+
+// Renders a procedure step, italicising a short leading "Label:" prefix
+// e.g. "Pack Mangoes: Place the pieces..." → <em>Pack Mangoes</em>: Place...
+function fmtStep(s) {
+  s = String(s == null ? '' : s);
+  const m = s.match(/^([^:.\n]{1,40}):\s+([\s\S]+)$/);
+  if (m) return '<em>' + escapeHtml(m[1]) + '</em>: ' + escapeHtml(m[2]);
+  return escapeHtml(s);
 }
 
 // Small HTML-escape helper (procedure/notes come from user submissions)
