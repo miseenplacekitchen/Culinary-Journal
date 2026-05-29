@@ -765,14 +765,14 @@ async function loadIngredients(page) {
     tbody.innerHTML = rows.map(i => {
       const esc = s => (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
       return `<tr onclick="openIngModal(${JSON.stringify(i).replace(/"/g,'&quot;')})">
-        <td style="font-size:11px;color:var(--text-mid)">${i.id}</td>
-        <td><div class="ap-recipe-name">${esc(i.ingredient_name)}</div></td>
-        <td><span class="ap-submitter">${esc(i.also_known_as)}</span></td>
-        <td><span class="ap-submitter">${esc(i.category)}</span></td>
-        <td><span class="ap-submitter">${esc(i.sub_category)}</span></td>
-        <td><span class="ap-submitter">${esc(i.allergen)}</span></td>
-        <td><span class="ap-status-pill ${i.vegan==='Yes'?'approved':'rejected'}">${i.vegan||''}</span></td>
-        <td><span class="ap-status-pill ${i.vegetarian==='Yes'?'approved':'rejected'}">${i.vegetarian||''}</span></td>
+        <td style="font-size:11px;color:var(--text-mid)">${i["ID"]}</td>
+        <td><div class="ap-recipe-name">${esc(i["Ingredient Name"])}</div></td>
+        <td><span class="ap-submitter">${esc(i["Also Known As"])}</span></td>
+        <td><span class="ap-submitter">${esc(i["Category"])}</span></td>
+        <td><span class="ap-submitter">${esc(i["Sub Category"])}</span></td>
+        <td><span class="ap-submitter">${esc(i["Allergen"])}</span></td>
+        <td><span class="ap-status-pill ${i["Vegan (Yes/No)"]==='Yes'?'approved':'rejected'}">${i["Vegan (Yes/No)"]||''}</span></td>
+        <td><span class="ap-status-pill ${i["Vegetarian (Yes/No)"]==='Yes'?'approved':'rejected'}">${i["Vegetarian (Yes/No)"]||''}</span></td>
         <td><button class="ap-filter-btn" style="font-size:11px" onclick="event.stopPropagation();openIngModal(${JSON.stringify(i).replace(/"/g,'&quot;')})">Edit</button></td>
       </tr>`;
     }).join('');
@@ -800,19 +800,19 @@ function openIngModal(ing) {
   if (ing) {
     document.getElementById('ing-modal-title').textContent = 'Edit Ingredient';
     document.getElementById('ing-id').value       = ing.id||'';
-    document.getElementById('ing-name').value     = ing.ingredient_name||'';
-    document.getElementById('ing-aka').value      = ing.also_known_as||'';
-    document.getElementById('ing-category').value = ing.category||'';
-    document.getElementById('ing-subcat').value   = ing.sub_category||'';
-    document.getElementById('ing-qty').value      = ing.standard_qty||'';
-    document.getElementById('ing-weight').value   = ing.standard_weight||'';
-    document.getElementById('ing-unit').value     = ing.unit||'';
-    document.getElementById('ing-liquid').value   = ing.liquid||'No';
-    document.getElementById('ing-brand').value    = ing.cj_recommended_brand||'';
-    document.getElementById('ing-allergen').value = ing.allergen||'';
-    document.getElementById('ing-vegan').value    = ing.vegan||'Yes';
-    document.getElementById('ing-veg').value      = ing.vegetarian||'Yes';
-    document.getElementById('ing-notes').value    = ing.notes||'';
+    document.getElementById('ing-name').value     = ing["Ingredient Name"]||'';
+    document.getElementById('ing-aka').value      = ing["Also Known As"]||'';
+    document.getElementById('ing-category').value = ing["Category"]||'';
+    document.getElementById('ing-subcat').value   = ing["Sub Category"]||'';
+    document.getElementById('ing-qty').value      = ing["Standard Qty"]||'';
+    document.getElementById('ing-weight').value   = ing["Standard Weight (g or ml)"]||'';
+    document.getElementById('ing-unit').value     = ing["Unit"]||'';
+    document.getElementById('ing-liquid').value   = ing["Liquid (Yes/No)"]||'No';
+    document.getElementById('ing-brand').value    = ing["CJ Recommended Brand"]||'';
+    document.getElementById('ing-allergen').value = ing["Allergen"]||'';
+    document.getElementById('ing-vegan').value    = ing["Vegan (Yes/No)"]||'Yes';
+    document.getElementById('ing-veg').value      = ing["Vegetarian (Yes/No)"]||'Yes';
+    document.getElementById('ing-notes').value    = ing["Notes"]||'';
     if (delBtn) delBtn.style.display = 'inline-block';
   } else {
     document.getElementById('ing-modal-title').textContent = 'Add Ingredient';
