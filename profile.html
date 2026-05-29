@@ -592,6 +592,14 @@
           <label class="pref-check"><input type="checkbox" value="Elderly"> 👴 Elderly / Soft Foods</label>
         </div>
 
+        <div class="pref-label">Text Size</div>
+        <div class="pref-checks" id="pref-fontsize">
+          <label class="pref-check"><input type="radio" name="font-size" value="small"> A Small</label>
+          <label class="pref-check"><input type="radio" name="font-size" value="medium" checked> A Medium</label>
+          <label class="pref-check"><input type="radio" name="font-size" value="large"> A Large</label>
+          <label class="pref-check"><input type="radio" name="font-size" value="extra-large"> A Extra Large</label>
+        </div>
+
         <div class="pref-label">Cooking Style</div>
         <div class="pref-checks" id="pref-style">
           <label class="pref-check"><input type="radio" name="cooking-style" value="Home Cook"> 🧑‍🍳 Home Cook</label>
@@ -1300,6 +1308,14 @@ function hydratePreferences() {
     var radio = document.querySelector('input[name="cooking-style"][value="' + style + '"]');
     if (radio) radio.checked = true;
   }
+  var fontSize = PROFILE.font_size || 'medium';
+  var fsRadio = document.querySelector('input[name="font-size"][value="' + fontSize + '"]');
+  if (fsRadio) fsRadio.checked = true;
+}
+
+function applyFontSize(size) {
+  document.body.classList.remove('fs-small','fs-medium','fs-large','fs-extra-large');
+  if (size && size !== 'medium') document.body.classList.add('fs-'+size);
 }
 
 async function savePreferences() {
@@ -1313,7 +1329,8 @@ async function savePreferences() {
       p_dietary_preferences: getChecked('pref-dietary'),
       p_allergies:           getChecked('pref-allergies'),
       p_health_conditions:   getChecked('pref-health'),
-      p_cooking_style:       style
+      p_cooking_style:       style,
+      p_font_size:           fontSize
     });
     PROFILE.dietary_preferences = getChecked('pref-dietary');
     PROFILE.allergies            = getChecked('pref-allergies');

@@ -221,6 +221,7 @@
       .page-bg { background:white!important; }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body class="page-bg cj-body">
 <div data-nav-host></div>
@@ -433,6 +434,28 @@ document.addEventListener('DOMContentLoaded', function() {
       .catch(()=>{});
   }
 });
+
+function downloadPDF() {
+  var btn = document.getElementById('pdf-btn');
+  var container = document.getElementById('ps-cards-area');
+  if (!container || !container.children.length) { alert('Build some cards first — choose a recipe, select your card size, and the cards will appear here.'); return; }
+  if (btn) { btn.textContent = '⏳ Generating PDF...'; btn.disabled = true; }
+  var opt = {
+    margin:       [4, 4, 4, 4],
+    filename:     'culinary-journal-recipe-cards.pdf',
+    image:        {type:'jpeg', quality:0.95},
+    html2canvas:  {scale:2, useCORS:true, backgroundColor:'#ffffff'},
+    jsPDF:        {unit:'mm', format:'a4', orientation:'portrait'},
+    pagebreak:    {mode:['avoid-all','css']}
+  };
+  html2pdf().set(opt).from(container).save().then(function() {
+    if (btn) { btn.textContent = '⬇ Download PDF'; btn.disabled = false; }
+  }).catch(function(e) {
+    if (btn) { btn.textContent = '⬇ Download PDF'; btn.disabled = false; }
+    alert('PDF generation failed: ' + e.message);
+  });
+}
+
 </script>
 </body>
 </html>

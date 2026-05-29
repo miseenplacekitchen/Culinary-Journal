@@ -47,3 +47,11 @@
     else document.addEventListener('DOMContentLoaded', apply);
   } catch (_) {}
 })();
+
+// ── FONT SIZE ─────────────────────────────────────────────────────
+(function() {
+  var fs = localStorage.getItem('tcj_fontsize');
+  if (fs && fs !== 'medium') {
+    document.body.classList.add('fs-' + fs);
+  }
+})();

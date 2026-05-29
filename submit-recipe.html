@@ -819,9 +819,13 @@
       <div class="sr-section-title">Paste Recipe Text <span>Optional</span></div>
 
       <div class="sr-field">
-        <label class="sr-label">Recipe URL <span style="font-weight:400;text-transform:none;color:var(--text-muted)">(optional — paste a website link to auto-fill the source)</span></label>
-        <input class="sr-input" type="url" id="source-url-input" placeholder="https://www.example.com/recipe/..." oninput="detectUrlPaste(this.value)" style="font-size:13px">
+        <label class="sr-label">Recipe URL <span style="font-weight:400;text-transform:none;color:var(--text-muted)">(paste a link — we can auto-import from most recipe websites)</span></label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="sr-input" type="url" id="source-url-input" placeholder="https://www.allrecipes.com/recipe/..." oninput="detectUrlPaste(this.value)" style="font-size:13px;flex:1">
+          <button type="button" class="sr-parse-btn" style="white-space:nowrap;padding:9px 16px;font-size:12px" onclick="importFromUrl()">⬇ Import</button>
+        </div>
         <div id="url-detect-msg" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-muted);margin-top:4px;display:none"></div>
+        <div id="url-import-status" style="font-family:'DM Sans',sans-serif;font-size:12px;margin-top:6px;display:none"></div>
       </div>
 
       <div class="sr-field">
@@ -1299,6 +1303,10 @@
           <label for="vis-public">🌍 Public</label>
           <input class="vis-opt" type="radio" name="visibility" id="vis-private" value="Private">
           <label for="vis-private">🔒 Private</label>
+        </div>
+        <div class="sr-radio-opt">
+          <input class="vis-opt" type="radio" name="visibility" id="vis-archived" value="Archived">
+          <label for="vis-archived">📦 Archived — saved but hidden everywhere</label>
         </div>
       </div>
 
@@ -2141,6 +2149,110 @@ function renumberSteps(container) {
 }
 
 // ── PARSE RECIPE ──────────────────────────────────────
+
+
+// ── RECIPE AUTO-IMPORT FROM URL ──────────────────────────────────
+var NL = String.fromCharCode(10);
+
+async function importFromUrl() {
+  var url = document.getElementById('source-url-input').value.trim();
+  if (!url || !url.startsWith('http')) { showImportStatus('Please enter a valid recipe URL first.', false); return; }
+  showImportStatus('Fetching recipe...', null);
+  try {
+    var proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+    var res = await fetch(proxyUrl, {signal: AbortSignal.timeout(10000)});
+    if (!res.ok) throw new Error('Could not fetch the page.');
+    var data = await res.json();
+    var html = data.contents || '';
+    if (!html) throw new Error('Empty response.');
+    var recipe = extractJsonLdRecipe(html);
+    if (!recipe) throw new Error('No recipe data found. Try pasting the text manually.');
+    populateFromJsonLd(recipe, url);
+    showImportStatus('Recipe imported! Review all fields below before submitting.', true);
+  } catch(e) {
+    showImportStatus((e.message || 'Import failed') + ' — paste the recipe text manually instead.', false);
+  }
+}
+
+function showImportStatus(msg, ok) {
+  var el = document.getElementById('url-import-status');
+  if (!el) return;
+  el.textContent = (ok===true?'✅ ':ok===false?'⚠ ':'⏳ ') + msg;
+  el.style.display = 'block';
+  el.style.color = ok===true?'#4caf76':ok===false?'#dc5050':'var(--text-muted)';
+}
+
+function extractJsonLdRecipe(html) {
+  var re = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  var m;
+  while ((m = re.exec(html)) !== null) {
+    try {
+      var json = JSON.parse(m[1]);
+      var candidates = json['@graph'] ? json['@graph'] : [json];
+      for (var i=0; i<candidates.length; i++) {
+        var t = candidates[i]['@type'];
+        if (t === 'Recipe' || (Array.isArray(t) && t.indexOf('Recipe') > -1)) return candidates[i];
+      }
+    } catch(_) {}
+  }
+  return null;
+}
+
+function parseDuration(iso) {
+  if (!iso) return '';
+  var h = (iso.match(/(\d+)H/)||[])[1]||0;
+  var m = (iso.match(/(\d+)M/)||[])[1]||0;
+  if (h && m) return h + ' hr ' + m + ' min';
+  if (h) return h + ' hr';
+  return m ? m + ' min' : '';
+}
+
+function extractInstructions(instructions) {
+  if (!instructions) return '';
+  if (typeof instructions === 'string') return instructions;
+  return instructions.map(function(step) {
+    if (typeof step === 'string') return step;
+    if (step.text) return step.text;
+    if (step.itemListElement) {
+      var prefix = step.name ? step.name + ':' + NL : '';
+      return prefix + step.itemListElement.map(function(s){return s.text||String(s);}).join(NL);
+    }
+    return '';
+  }).filter(Boolean).join(NL);
+}
+
+function populateFromJsonLd(r, sourceUrl) {
+  var nameEl = document.getElementById('recipe-name');
+  if (nameEl && r.name) nameEl.value = r.name;
+
+  var ingredients = (r.recipeIngredient || []).join(NL);
+  var instructions = extractInstructions(r.recipeInstructions || []);
+  var pasteText = (ingredients ? 'INGREDIENTS' + NL + ingredients + NL + NL : '') +
+                  (instructions ? 'INSTRUCTIONS' + NL + instructions : '');
+  var pasteEl = document.getElementById('paste-input');
+  if (pasteEl && pasteText) pasteEl.value = pasteText;
+
+  var prepEl = document.getElementById('prep-time');
+  var cookEl = document.getElementById('cook-time');
+  if (prepEl && r.prepTime) prepEl.value = parseDuration(r.prepTime);
+  if (cookEl && r.cookTime) cookEl.value = parseDuration(r.cookTime);
+
+  var servEl = document.getElementById('servings');
+  if (servEl && r.recipeYield) {
+    var yld = typeof r.recipeYield === 'string' ? r.recipeYield : (r.recipeYield[0]||'');
+    var num = parseInt(yld);
+    if (!isNaN(num)) servEl.value = num;
+  }
+
+  var creditUrl = document.getElementById('credit-url');
+  if (creditUrl && !creditUrl.value) creditUrl.value = sourceUrl;
+
+  var srcEl = document.querySelector('input[name="source-type"][value="from-somewhere"]');
+  if (srcEl) srcEl.checked = true;
+
+  if (pasteText && typeof parseRecipe === 'function') setTimeout(parseRecipe, 200);
+}
+
 
 // ── IMPROVED PASTE AREA HELPERS ───────────────────────────────────
 function clearPaste() {

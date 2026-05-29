@@ -965,6 +965,17 @@ async function reviewRecipe(newStatus) {
     // Refresh list and stats
     await loadStats();
     await loadRecipes(currentView === 'all' ? null : currentView);
+    // In-app notification
+    if ((newStatus === 'approved' || newStatus === 'rejected') && currentRecipe.user_id) {
+      const notifMsg = newStatus === 'approved'
+        ? `Your recipe "${currentRecipe.recipe_name}" has been approved and is now live!`
+        : `Your recipe "${currentRecipe.recipe_name}" needs some updates before going live.`;
+      rpc('admin_create_notification', {
+        p_user_id: currentRecipe.user_id, p_type: 'recipe_' + newStatus,
+        p_recipe_id: currentRecipe.id, p_recipe_name: currentRecipe.recipe_name, p_message: notifMsg
+      }).catch(() => {});
+      showEmailNotification(currentRecipe, newStatus, notes);
+    }
     setTimeout(closeModal, 1500);
   } catch(e) {
     msg.textContent = 'Error: ' + e.message;
@@ -1895,118 +1906,5 @@ document.addEventListener('DOMContentLoaded',function(){
 
 
 </script>
-
-<!-- EMAIL NOTIFICATION MODAL -->
-<div id="email-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)">
-  <div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:0;max-width:560px;width:100%;max-height:90vh;overflow-y:auto">
-    <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-      <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:600;color:var(--text-high)" id="email-modal-title">Notify Author</div>
-      <button onclick="closeEmailModal()" style="background:none;border:none;color:var(--text-mid);cursor:pointer;font-size:20px;line-height:1">&#215;</button>
-    </div>
-    <div style="padding:20px 24px">
-      <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:12px">Preview the notification email below. Click Send to open in your email client.</div>
-      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px">
-        <iframe id="email-preview" style="width:100%;height:340px;border:none" title="Email preview"></iframe>
-      </div>
-      <div style="display:flex;gap:10px">
-        <button onclick="sendNotificationEmail()" style="flex:1;padding:11px;background:var(--accent);border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:#fff;cursor:pointer">Send via Email Client</button>
-        <button onclick="closeEmailModal()" style="padding:11px 18px;background:none;border:1px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);cursor:pointer">Skip</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
-// ── EMAIL NOTIFICATIONS ──────────────────────────────────────────
-let _emailData = null;
-
-function showEmailNotification(recipe, status, notes) {
-  _emailData = {recipe, status, notes};
-  const isApproved = status === 'approved';
-  document.getElementById('email-modal-title').textContent =
-    isApproved ? 'Recipe Approved — Notify Author' : 'Recipe Needs Work — Notify Author';
-  const html = buildNotificationEmail(recipe, status, notes);
-  const iframe = document.getElementById('email-preview');
-  iframe.srcdoc = html;
-  document.getElementById('email-modal').style.display = 'flex';
-}
-
-function closeEmailModal() {
-  document.getElementById('email-modal').style.display = 'none';
-  _emailData = null;
-}
-
-function sendNotificationEmail() {
-  if (!_emailData) return;
-  const {recipe, status, notes} = _emailData;
-  const isApproved = status === 'approved';
-  const subject = isApproved
-    ? 'Your recipe "' + recipe.recipe_name + '" is now live on The Culinary Journal!'
-    : 'Update needed on your recipe "' + recipe.recipe_name + '"';
-  const body = isApproved
-    ? 'Hi ' + (recipe.username||'there') + ',
-
-Your recipe "' + recipe.recipe_name + '" has been approved and is now live!
-
-View it here: https://www.theculinaryjournal.site/recipe-page.html?id=' + recipe.id + '
-
-Thank you for contributing to The Culinary Journal.
-
-Best,
-The Culinary Journal Team'
-    : 'Hi ' + (recipe.username||'there') + ',
-
-Thank you for submitting "' + recipe.recipe_name + '" to The Culinary Journal.
-
-After review, a few updates are needed before it can go live:
-
-' + (notes||'Please review your submission and make the requested changes.') + '
-
-You can edit and resubmit from your dashboard:
-https://www.theculinaryjournal.site/my-dashboard.html
-
-Thank you!
-The Culinary Journal Team';
-  window.open('mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body));
-  closeEmailModal();
-}
-
-function buildNotificationEmail(recipe, status, notes) {
-  const isApproved = status === 'approved';
-  const accent = '#c4973b';
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' +
-    'body{margin:0;padding:0;background:#f4f1eb;font-family:Georgia,serif}' +
-    '.wrap{max-width:540px;margin:20px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.1)}' +
-    '.hdr{background:#0f1011;padding:28px 32px;text-align:center}' +
-    '.logo{font-size:20px;font-weight:700;color:' + accent + ';letter-spacing:.04em}' +
-    '.logo-sub{font-family:Helvetica,sans-serif;font-size:10px;color:#888;letter-spacing:.12em;text-transform:uppercase;margin-top:4px}' +
-    '.body{padding:32px}' +
-    '.pill{display:inline-block;padding:6px 16px;border-radius:20px;font-family:Helvetica,sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:18px;background:' + (isApproved?'rgba(76,175,118,.12)':'rgba(220,80,80,.1)') + ';color:' + (isApproved?'#4caf76':'#dc5050') + ';border:1px solid ' + (isApproved?'rgba(76,175,118,.3)':'rgba(220,80,80,.3)') + '}' +
-    'h1{font-size:20px;font-weight:700;color:#1a1a1a;margin:0 0 6px}' +
-    '.subtitle{font-size:15px;font-style:italic;color:' + accent + ';margin-bottom:18px}' +
-    'p{font-family:Helvetica,sans-serif;font-size:14px;color:#444;line-height:1.7;margin:0 0 14px}' +
-    '.notes{background:#f8f5f0;border-left:3px solid ' + accent + ';padding:12px 16px;border-radius:0 6px 6px 0;margin:14px 0}' +
-    '.btn{display:inline-block;padding:12px 24px;background:' + accent + ';color:#fff;text-decoration:none;border-radius:8px;font-family:Helvetica,sans-serif;font-size:13px;font-weight:700;margin:6px 0 20px}' +
-    '.footer{padding:16px 32px;border-top:1px solid #ede9e0;text-align:center;font-family:Helvetica,sans-serif;font-size:11px;color:#aaa}' +
-    '.footer a{color:' + accent + ';text-decoration:none}' +
-    '</style></head><body>' +
-    '<div class="wrap">' +
-    '<div class="hdr"><div class="logo">The Culinary Journal</div><div class="logo-sub">Recipe Submission</div></div>' +
-    '<div class="body">' +
-    '<div class="pill">' + (isApproved ? '✓ Approved &amp; Live' : '&#9888; Needs Updates') + '</div>' +
-    '<h1>' + (isApproved ? 'Your recipe is live!' : 'A few updates needed') + '</h1>' +
-    '<div class="subtitle">&ldquo;' + (recipe.recipe_name||'Your Recipe') + '&rdquo;</div>' +
-    (isApproved
-      ? '<p>Your recipe has been reviewed and approved. It is now live on The Culinary Journal for the community to discover and cook.</p>' +
-        '<a href="https://www.theculinaryjournal.site/recipe-page.html?id=' + recipe.id + '" class="btn">View Your Recipe &#8594;</a>'
-      : '<p>Thank you for submitting your recipe. After careful review, we have a few notes before it can go live:</p>' +
-        (notes ? '<div class="notes"><p>' + notes + '</p></div>' : '') +
-        '<a href="https://www.theculinaryjournal.site/my-dashboard.html" class="btn">Go to My Dashboard &#8594;</a>') +
-    '<p style="font-size:12px;color:#999">Thank you for being part of The Culinary Journal community.</p>' +
-    '</div>' +
-    '<div class="footer">&#169; 2025 The Culinary Journal &middot; <a href="https://www.theculinaryjournal.site">theculinaryjournal.site</a></div>' +
-    '</div></body></html>';
-}
-
-

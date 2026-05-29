@@ -1255,3 +1255,15 @@ body.theme-lunar-gold {
   background: #0a0a14;
 }
 body.theme-lunar-gold .page-bg { background-color: #0a0a14; }
+
+
+/* ── FONT SIZE ACCESSIBILITY ──────────────────────────────────── */
+.fs-small  { font-size: 14px !important; }
+.fs-small  .rp-ing-name, .fs-small .rp-step, .fs-small p { font-size: 13px !important; }
+.fs-large  { font-size: 17px !important; }
+.fs-large  .rp-ing-name, .fs-large .rp-step, .fs-large p { font-size: 16px !important; }
+.fs-large  .rp-tab-btn { font-size: 14px !important; }
+.fs-extra-large { font-size: 20px !important; }
+.fs-extra-large .rp-ing-name, .fs-extra-large .rp-step, .fs-extra-large p { font-size: 18px !important; }
+.fs-extra-large .rp-tab-btn { font-size: 16px !important; }
+.fs-extra-large .rp-card-title { font-size: 2.2rem !important; }

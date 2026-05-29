@@ -257,3 +257,118 @@
     init();
   }
 })();
+
+// ── NOTIFICATIONS ────────────────────────────────────────────────
+(function() {
+  var NOTIF_CSS = '.nav-notif-panel{position:absolute;top:56px;right:16px;background:var(--bg);border:1px solid var(--border);border-radius:13px;width:340px;max-height:400px;overflow-y:auto;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.3)}' +
+    '.nav-notif-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}' +
+    '.nav-notif-title{font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;color:var(--text-high)}' +
+    '.nav-notif-clear{font-family:DM Sans,sans-serif;font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer}' +
+    '.nav-notif-item{padding:11px 16px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;display:flex;gap:10px;align-items:flex-start;text-decoration:none}' +
+    '.nav-notif-item:hover{background:var(--text-ghost)}' +
+    '.nav-notif-item.unread{background:rgb(from var(--accent) r g b / 0.05)}' +
+    '.nav-notif-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:4px}' +
+    '.nav-notif-dot.read{background:transparent}' +
+    '.nav-notif-msg{font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high);line-height:1.4}' +
+    '.nav-notif-time{font-family:DM Sans,sans-serif;font-size:10px;color:var(--text-mid);margin-top:2px}' +
+    '.nav-notif-empty{padding:24px 16px;text-align:center;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)}';
+  var s = document.createElement('style'); s.textContent = NOTIF_CSS;
+  document.head.appendChild(s);
+})();
+
+var _notifOpen = false;
+var _notifPanel = null;
+var SUPA_URL_N = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+var SUPA_KEY_N = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+
+async function notifRpc(fn, params) {
+  var session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+  if (!session) return null;
+  var res = await fetch(SUPA_URL_N + '/rest/v1/rpc/' + fn, {
+    method:'POST',
+    headers:{'apikey':SUPA_KEY_N,'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+    body:JSON.stringify(params||{})
+  });
+  return res.ok ? res.json() : null;
+}
+
+async function loadNotifCount() {
+  var session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+  if (!session) return;
+  try {
+    var count = await notifRpc('get_notification_count',{});
+    var badge = document.getElementById('nav-notif-badge');
+    var n = parseInt(count)||0;
+    if (badge) { badge.textContent = n>9?'9+':n; badge.style.display = n>0?'inline':'none'; }
+  } catch(_) {}
+}
+
+async function toggleNotifPanel() {
+  if (_notifOpen) { closeNotifPanel(); return; }
+  _notifOpen = true;
+  var btn = document.getElementById('nav-notif-btn');
+  if (!btn) return;
+  if (_notifPanel) _notifPanel.remove();
+  _notifPanel = document.createElement('div');
+  _notifPanel.className = 'nav-notif-panel';
+  _notifPanel.innerHTML = '<div class="nav-notif-head"><div class="nav-notif-title">Notifications</div><button class="nav-notif-clear" onclick="markAllRead()">Mark all read</button></div><div class="nav-notif-empty">Loading...</div>';
+  document.body.appendChild(_notifPanel);
+  positionPanel();
+  setTimeout(function(){document.addEventListener('click', outsideNotifClick, {once:true});},50);
+  var notifs = await notifRpc('get_my_notifications',{});
+  renderNotifPanel(notifs||[]);
+}
+
+function positionPanel() {
+  if (!_notifPanel) return;
+  _notifPanel.style.cssText = 'position:fixed;top:56px;right:16px;background:var(--bg);border:1px solid var(--border);border-radius:13px;width:340px;max-height:400px;overflow-y:auto;z-index:99999;box-shadow:0 8px 32px rgba(0,0,0,0.4)';
+}
+
+function renderNotifPanel(notifs) {
+  if (!_notifPanel) return;
+  var head = _notifPanel.querySelector('.nav-notif-head');
+  _notifPanel.innerHTML = '';
+  _notifPanel.appendChild(head);
+  if (!notifs.length) {
+    _notifPanel.innerHTML += '<div class="nav-notif-empty">No notifications yet</div>';
+    return;
+  }
+  notifs.forEach(function(n) {
+    var timeStr = '';
+    var diff = Date.now() - new Date(n.created_at).getTime();
+    if (diff < 3600000) timeStr = Math.round(diff/60000)+'m ago';
+    else if (diff < 86400000) timeStr = Math.round(diff/3600000)+'h ago';
+    else timeStr = Math.round(diff/86400000)+'d ago';
+    var icon = n.type==='recipe_approved'?'✅':n.type==='recipe_rejected'?'❌':'⏳';
+    var item = document.createElement('a');
+    item.className = 'nav-notif-item' + (n.read?'':' unread');
+    item.href = n.recipe_id ? 'recipe-page.html?id='+n.recipe_id : '#';
+    item.innerHTML = '<div class="nav-notif-dot'+(n.read?' read':'')+'"></div><div><div class="nav-notif-msg">'+icon+' '+(n.message||n.recipe_name||'Notification')+'</div><div class="nav-notif-time">'+timeStr+'</div></div>';
+    item.addEventListener('click', function(){notifRpc('mark_notification_read',{p_id:n.id}); loadNotifCount();});
+    _notifPanel.appendChild(item);
+  });
+  loadNotifCount();
+}
+
+async function markAllRead() {
+  await notifRpc('mark_all_notifications_read',{});
+  var badge = document.getElementById('nav-notif-badge');
+  if (badge) badge.style.display = 'none';
+  if (_notifPanel) renderNotifPanel([]);
+  closeNotifPanel();
+}
+
+function closeNotifPanel() {
+  if (_notifPanel) { _notifPanel.remove(); _notifPanel = null; }
+  _notifOpen = false;
+}
+
+function outsideNotifClick(e) {
+  var btn = document.getElementById('nav-notif-btn');
+  if (_notifPanel && !_notifPanel.contains(e.target) && btn && !btn.contains(e.target)) {
+    closeNotifPanel();
+  }
+}
+
+// Load count on page load (after small delay to let nav render)
+setTimeout(loadNotifCount, 800);

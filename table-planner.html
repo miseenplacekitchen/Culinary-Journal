@@ -967,6 +967,122 @@ async function unassignGuest(guest, table, seatNum) {
   } catch(e) { alert('Error: ' + e.message); }
 }
 
+// ── SMART SEATING ────────────────────────────────────────────────
+async function suggestSeating() {
+  const attending = currentGuests.filter(function(g){return g.rsvp_status!=='declined';});
+  if (!attending.length) { showToast('No attending guests to seat.', true); return; }
+  if (!currentLayout.tables.length) { showToast('No tables in layout. Add tables first.', true); return; }
+
+  // Build available seats
+  const seatPool = [];
+  currentLayout.tables.forEach(function(table) {
+    for (var s = 1; s <= table.seats; s++) {
+      var seatKey = table.id + ':' + s;
+      var taken = currentGuests.find(function(g){return g.seat_assignment===seatKey;});
+      if (!taken) seatPool.push({tableId:table.id, seatNum:s, table:table, key:seatKey});
+    }
+  });
+
+  const unseated = attending.filter(function(g){return !g.seat_assignment;});
+  if (!unseated.length) { showToast('All attending guests are already seated!', false); return; }
+  if (seatPool.length < unseated.length) {
+    showToast('Not enough empty seats for ' + unseated.length + ' guests. Add more tables or seats.', true);
+    return;
+  }
+
+  if (!confirm('Auto-assign ' + unseated.length + ' unassigned guest' + (unseated.length===1?'':'s') + ' to available seats? Groups will be kept together where possible.')) return;
+
+  // Group guests by group_name
+  const groups = {};
+  unseated.forEach(function(g) {
+    var grp = (g.group_name||'').trim() || ('solo_' + g.id);
+    if (!groups[grp]) groups[grp] = [];
+    groups[grp].push(g);
+  });
+
+  // Sort groups: those with dietary restrictions first (need most consideration)
+  const sortedGroups = Object.values(groups).sort(function(a,b) {
+    var aReqs = a.reduce(function(t,g){return t+(g.dietary_requirements||[]).length;},0);
+    var bReqs = b.reduce(function(t,g){return t+(g.dietary_requirements||[]).length;},0);
+    return bReqs - aReqs;
+  });
+
+  // Assign seats — try to keep groups at same table
+  const assignments = [];
+  var usedIdx = new Set();
+
+  sortedGroups.forEach(function(group) {
+    // Build table→available_seats map
+    var tableSeats = {};
+    seatPool.forEach(function(seat, idx) {
+      if (usedIdx.has(idx)) return;
+      if (!tableSeats[seat.tableId]) tableSeats[seat.tableId] = [];
+      tableSeats[seat.tableId].push(idx);
+    });
+
+    // Find a table with enough room for the whole group
+    var bestTable = null;
+    var bestIdxs  = null;
+    Object.entries(tableSeats).forEach(function(entry) {
+      var tId = entry[0]; var idxs = entry[1];
+      if (!bestTable && idxs.length >= group.length) {
+        bestTable = tId;
+        bestIdxs  = idxs.slice(0, group.length);
+      }
+    });
+
+    if (bestIdxs) {
+      group.forEach(function(guest, i) {
+        assignments.push({guest:guest, seat:seatPool[bestIdxs[i]]});
+        usedIdx.add(bestIdxs[i]);
+      });
+    } else {
+      // No single table fits the group — distribute
+      group.forEach(function(guest) {
+        for (var i = 0; i < seatPool.length; i++) {
+          if (!usedIdx.has(i)) {
+            assignments.push({guest:guest, seat:seatPool[i]});
+            usedIdx.add(i);
+            break;
+          }
+        }
+      });
+    }
+  });
+
+  // Apply assignments
+  var errors = 0;
+  for (const asgn of assignments) {
+    try {
+      var seatKey = asgn.seat.key;
+      await rpc('assign_seat', {p_guest_id: asgn.guest.id, p_seat: seatKey});
+      asgn.guest.seat_assignment = seatKey;
+    } catch(_) { errors++; }
+  }
+
+  renderSeating();
+  renderLayout();
+  var msg = assignments.length + ' guest' + (assignments.length===1?'':'s') + ' seated';
+  if (errors) msg += ' (' + errors + ' failed)';
+  showToast(msg + ' ✓', false);
+}
+
+async function clearAllSeating() {
+  const seated = currentGuests.filter(function(g){return g.seat_assignment;});
+  if (!seated.length) { showToast('No guests are currently seated.', false); return; }
+  if (!confirm('Remove all ' + seated.length + ' seating assignment' + (seated.length===1?'':'s') + '?')) return;
+  for (const g of seated) {
+    try {
+      await rpc('assign_seat', {p_guest_id: g.id, p_seat: null});
+      g.seat_assignment = null;
+    } catch(_) {}
+  }
+  renderSeating();
+  renderLayout();
+  showToast('All seating cleared.', false);
+}
+
+
 // ── PRINT ────────────────────────────────────────────────────────
 function renderPrint() {
   renderPlaceCardsPreview();
