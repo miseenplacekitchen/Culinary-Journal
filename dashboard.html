@@ -947,10 +947,6 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
 
 init();
 // ── FRACTION DISPLAY ─────────────────────────────────────────────
-const FRACTIONS = {
-  '1/8':'⅛','1/4':'¼','3/8':'⅜','1/2':'½',
-  '5/8':'⅝','2/3':'⅔','3/4':'¾','7/8':'⅞','1/3':'⅓'
-};
 function formatQty(val) {
   if (!val) return '';
   let s = String(val);
@@ -961,29 +957,35 @@ function formatQty(val) {
 }
 
 
-// ── DROPDOWN THEME FIX — reads actual computed values ───────────
+// ── FRACTION DISPLAY ─────────────────────────────────────────────
+const FRACTIONS = {'1/8':'⅛','1/4':'¼','3/8':'⅜','1/2':'½','5/8':'⅝','2/3':'⅔','3/4':'¾','7/8':'⅞','1/3':'⅓'};
+function fmtQty(v) {
+  if (!v) return '';
+  let s = String(v);
+  Object.keys(FRACTIONS).forEach(function(f) { s = s.replace(new RegExp(f.replace('/','[/]'),'g'), FRACTIONS[f]); });
+  return s;
+}
+
+// ── DROPDOWN THEME FIX — computed values ─────────────────────────
 function getThemeColors() {
   const cs = getComputedStyle(document.body);
   return {
-    bg:     cs.getPropertyValue('--bg').trim()       || '#0f1011',
-    fg:     cs.getPropertyValue('--text-high').trim()|| '#e8e5e0',
-    border: cs.getPropertyValue('--border').trim()   || 'rgba(255,255,255,0.1)',
+    bg:     cs.getPropertyValue('--bg').trim()        || '#0f1011',
+    fg:     cs.getPropertyValue('--text-high').trim() || '#e8e5e0',
+    border: cs.getPropertyValue('--border').trim()    || 'rgba(255,255,255,0.1)',
     mid:    cs.getPropertyValue('--text-mid').trim()  || '#888888'
   };
 }
-
+function isLightTheme() {
+  return !!document.body.className.match(/theme-(cream-gold|pure-white|soft-linen|sage-cream|blush-rose|silver-morning|lemon-fresh|spring-blossom|summer-citrus|christmas|easter|wedding-white|baby-shower|old-cookbook|bridal-blush|pure-petals|full-bloom|heaven)/);
+}
 function applyThemeColors(el) {
   if (!el) return;
   const c = getThemeColors();
-  const isDark = !document.body.className.match(/theme-(cream-gold|pure-white|soft-linen|sage-cream|blush-rose|silver-morning|lemon-fresh|spring-blossom|summer-citrus|christmas|easter|wedding-white|baby-shower|old-cookbook|bridal-blush|pure-petals|full-bloom|heaven)/);
-  const scheme = isDark ? 'dark' : 'light';
-
-  // Apply to the container itself
+  const scheme = isLightTheme() ? 'light' : 'dark';
   el.style.setProperty('background-color', c.bg, 'important');
   el.style.setProperty('color', c.fg, 'important');
-
-  // Apply to all form elements
-  el.querySelectorAll('input, textarea').forEach(function(f) {
+  el.querySelectorAll('input,textarea').forEach(function(f) {
     f.style.setProperty('background-color', c.bg, 'important');
     f.style.setProperty('color', c.fg, 'important');
     f.style.setProperty('border-color', c.border, 'important');
@@ -992,50 +994,312 @@ function applyThemeColors(el) {
   el.querySelectorAll('select').forEach(function(s) {
     s.style.setProperty('background-color', c.bg, 'important');
     s.style.setProperty('color', c.fg, 'important');
-    s.style.setProperty('border-color', c.border, 'important');
     s.style.colorScheme = scheme;
     Array.from(s.options).forEach(function(o) {
       o.style.setProperty('background-color', c.bg, 'important');
       o.style.setProperty('color', c.fg, 'important');
     });
   });
-  // Labels inside filter panels
-  el.querySelectorAll('label').forEach(function(l) {
-    l.style.setProperty('color', c.fg, 'important');
-  });
+  el.querySelectorAll('label').forEach(function(l) { l.style.setProperty('color', c.fg, 'important'); });
 }
-
-
 function fixDropdownTheme() {
   const c = getThemeColors();
-  const isDark = !document.body.className.match(/theme-(cream-gold|pure-white|soft-linen|sage-cream|blush-rose|silver-morning|lemon-fresh|spring-blossom|summer-citrus|christmas|easter|wedding-white|baby-shower|old-cookbook|bridal-blush|pure-petals|full-bloom|heaven)/);
-  const scheme = isDark ? 'dark' : 'light';
-  document.querySelectorAll(
-    '.ing-modal-body select, .ing-modal-body input, .ing-modal-body textarea, ' +
-    '.ing-cat-filter, .bulk-field-sel, .bulk-val-input, .ap-search, ' +
-    '.col-filter-search, .inline-input, .inline-select'
-  ).forEach(function(el) {
+  const scheme = isLightTheme() ? 'light' : 'dark';
+  document.querySelectorAll('.ing-modal-body select,.ing-modal-body input,.ing-modal-body textarea,.bulk-field-sel,.bulk-val-input,.col-filter-search,.inline-input,.inline-select').forEach(function(el) {
     el.style.setProperty('background-color', c.bg, 'important');
     el.style.setProperty('color', c.fg, 'important');
     el.style.colorScheme = scheme;
-    if (el.tagName === 'SELECT') {
-      Array.from(el.options).forEach(function(o) {
-        o.style.setProperty('background-color', c.bg, 'important');
-        o.style.setProperty('color', c.fg, 'important');
-      });
-    }
+    if (el.tagName === 'SELECT') Array.from(el.options).forEach(function(o) {
+      o.style.setProperty('background-color', c.bg, 'important');
+      o.style.setProperty('color', c.fg, 'important');
+    });
   });
 }
-
-// Run on load and on every theme change
 document.addEventListener('DOMContentLoaded', fixDropdownTheme);
 const _themeObserver = new MutationObserver(fixDropdownTheme);
 document.addEventListener('DOMContentLoaded', function() {
-  _themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  _themeObserver.observe(document.body, {attributes:true, attributeFilter:['class']});
 });
 
-// ── COLUMN VISIBILITY ─────────────────────────────────────────────
-let _visibleCols = { name:true, aka:true, cat:true, subcat:true, allergen:true, vegan:true, veg:true };
+// ── COLUMN CONFIG — all standard + extra columns ──────────────────
+// visible: shown by default | editable: how to edit inline
+const STD_COLS = [
+  {key:'Ingredient Name',         label:'Name',          vis:true,  edit:'modal'},
+  {key:'Also Known As',           label:'Also Known As', vis:false, edit:'modal'},
+  {key:'Category',                label:'Category',      vis:true,  edit:'select'},
+  {key:'Sub Category',            label:'Sub Category',  vis:false, edit:'text'},
+  {key:'Standard Qty',            label:'Std Qty',       vis:false, edit:'text',   fmt:'qty'},
+  {key:'Standard Weight (g or ml)',label:'Weight',       vis:false, edit:'text'},
+  {key:'Unit',                    label:'Unit',          vis:false, edit:'text'},
+  {key:'Liquid (Yes/No)',         label:'Liquid',        vis:false, edit:'yesno'},
+  {key:'CJ Recommended Brand',    label:'Brand',         vis:false, edit:'text'},
+  {key:'Allergen',                label:'Allergen',      vis:true,  edit:'text'},
+  {key:'Vegan (Yes/No)',          label:'Vegan',         vis:true,  edit:'yesno'},
+  {key:'Vegetarian (Yes/No)',     label:'Veg',           vis:true,  edit:'yesno'},
+  {key:'Notes',                   label:'Notes',         vis:false, edit:'modal'},
+];
+const CATS_LIST = ["Baking","Grains, Pasta & Noodles","Breads & Flatbreads","Packaged & Convenience","Meat","Poultry","Seafood","Dairy & Eggs","Plant-Based","Vegetables","Fruits","Herbs","Spices","Oils & Fats","Legumes & Pulses","Nuts & Seeds","Condiments & Sauces","Vinegars","Sweeteners","Canned & Preserved","Alcohol & Cooking Wine","Stocks & Broths"];
+
+// Visibility state — starts from STD_COLS defaults
+let _colVis = {};
+STD_COLS.forEach(function(c) { _colVis[c.key] = c.vis; });
+let _extraColKeys = []; // keys found in extra_fields across loaded rows
+
+// ── SORT & FILTER STATE ───────────────────────────────────────────
+let _ingAllData  = [];
+let _ingSortCol  = null;
+let _ingSortDir  = 'asc';
+let _ingColFilters = {};
+let ingPage = 1;
+const ING_PAGE_SIZE = 1000;
+let ingSearchTimer = null;
+let selectedIds = new Set();
+
+function ingSearch() {
+  clearTimeout(ingSearchTimer);
+  ingSearchTimer = setTimeout(function() { loadIngredients(1); }, 350);
+}
+
+// ── LOAD INGREDIENTS ──────────────────────────────────────────────
+async function loadIngredients(page) {
+  ingPage = page || 1;
+  const tbody = document.getElementById('ing-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="20" class="ap-empty-row">Loading...</td></tr>';
+  try {
+    const [rows, total] = await Promise.all([
+      rpc('admin_get_ingredients', {p_search:null, p_category:null, p_limit:1000, p_offset:0}),
+      rpc('admin_count_ingredients', {p_search:null, p_category:null})
+    ]);
+    _ingAllData = rows;
+    // Discover extra_fields keys
+    const extraSeen = {};
+    rows.forEach(function(r) {
+      if (r.extra_fields && typeof r.extra_fields === 'object') {
+        Object.keys(r.extra_fields).forEach(function(k) { extraSeen[k] = true; });
+      }
+    });
+    _extraColKeys = Object.keys(extraSeen);
+    // Add any new extra keys to visibility state (default visible)
+    _extraColKeys.forEach(function(k) {
+      if (_colVis[k] === undefined) _colVis[k] = true;
+    });
+    const countEl = document.getElementById('ing-count');
+    if (countEl) countEl.textContent = total + ' ingredient' + (total===1?'':'s');
+    const badge = document.getElementById('badge-ingredients');
+    if (badge) { badge.textContent = total; badge.style.display = 'inline-block'; }
+    buildTableHeader();
+    buildColVisPanel();
+    renderIngFiltered();
+    setTimeout(fixDropdownTheme, 50);
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="20" class="ap-empty-row">Error: ' + e.message + '</td></tr>';
+  }
+}
+
+// ── BUILD TABLE HEADER ────────────────────────────────────────────
+function buildTableHeader() {
+  const thead = document.querySelector('#ing-tbody')?.closest('table')?.querySelector('thead tr');
+  if (!thead) return;
+  // Keep only the first th (checkbox) and rebuild rest
+  while (thead.children.length > 1) thead.removeChild(thead.lastChild);
+
+  function makeColTh(colKey, label) {
+    const vis = _colVis[colKey] !== false;
+    const th = document.createElement('th');
+    th.dataset.col = colKey;
+    th.style.cssText = 'cursor:pointer;white-space:nowrap' + (vis ? '' : ';display:none');
+    th.className = 'sortable-col';
+    th.innerHTML = label +
+      ' <span class="sort-icon" data-col="' + colKey + '">⇅</span>' +
+      ' <button class="col-filter-btn" title="Filter">▼</button>';
+    th.addEventListener('click', function() { sortIngBy(colKey); });
+    th.querySelector('.col-filter-btn').addEventListener('click', function(e) {
+      e.stopPropagation(); openColFilter(e, colKey);
+    });
+    thead.appendChild(th);
+  }
+
+  // ID column
+  const thId = document.createElement('th');
+  thId.style.cssText = 'cursor:pointer;white-space:nowrap';
+  thId.innerHTML = 'ID <span class="sort-icon" data-col="ID">⇅</span>';
+  thId.addEventListener('click', function() { sortIngBy('ID'); });
+  thead.appendChild(thId);
+
+  // Standard columns
+  STD_COLS.forEach(function(c) { makeColTh(c.key, c.label); });
+  // Extra columns
+  _extraColKeys.forEach(function(k) { makeColTh('extra:' + k, k); });
+
+  // Edit column
+  const thEdit = document.createElement('th');
+  thead.appendChild(thEdit);
+}
+
+// ── SORT ──────────────────────────────────────────────────────────
+function sortIngBy(col) {
+  _ingSortDir = (_ingSortCol === col && _ingSortDir === 'asc') ? 'desc' : 'asc';
+  _ingSortCol = col;
+  document.querySelectorAll('.sort-icon').forEach(function(el) { el.className = 'sort-icon'; });
+  const icon = document.querySelector('.sort-icon[data-col="' + col + '"]');
+  if (icon) icon.className = 'sort-icon ' + _ingSortDir;
+  renderIngFiltered();
+}
+
+// ── FILTER ────────────────────────────────────────────────────────
+function renderIngFiltered() {
+  let data = _ingAllData.slice();
+  Object.keys(_ingColFilters).forEach(function(col) {
+    const vals = _ingColFilters[col];
+    if (vals && vals.length) {
+      data = data.filter(function(row) {
+        const v = col.startsWith('extra:') ?
+          (row.extra_fields ? String(row.extra_fields[col.slice(6)]||'') : '') :
+          String(row[col]||'');
+        return vals.includes(v);
+      });
+    }
+  });
+  if (_ingSortCol) {
+    data.sort(function(a, b) {
+      const getV = function(r, c) {
+        if (c === 'ID') return parseInt(r["ID"])||0;
+        if (c.startsWith('extra:')) return String(r.extra_fields ? (r.extra_fields[c.slice(6)]||'') : '');
+        return String(r[c]||'');
+      };
+      const av = getV(a, _ingSortCol), bv = getV(b, _ingSortCol);
+      const cmp = (typeof av === 'number') ? av - bv : av.localeCompare(bv, undefined, {numeric:true});
+      return _ingSortDir === 'asc' ? cmp : -cmp;
+    });
+  }
+  renderIngRows(data);
+  const countEl = document.getElementById('ing-count');
+  const base = _ingAllData.length + ' ingredient' + (_ingAllData.length===1?'':'s');
+  if (countEl) countEl.textContent = data.length !== _ingAllData.length ? data.length + ' shown (filtered from ' + _ingAllData.length + ')' : base;
+}
+
+// ── RENDER ROWS ───────────────────────────────────────────────────
+function renderIngRows(rows) {
+  const tbody = document.getElementById('ing-tbody');
+  if (!tbody) return;
+  window._ingRows = {};
+  rows.forEach(function(i) { window._ingRows[i["ID"]] = i; });
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="20" class="ap-empty-row">No ingredients found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = '';
+  rows.forEach(function(i) {
+    const id = i["ID"];
+    const tr = document.createElement('tr');
+    tr.id = 'ing-row-' + id;
+
+    // Checkbox
+    const tdChk = document.createElement('td');
+    tdChk.addEventListener('click', function(e) { e.stopPropagation(); });
+    const chk = document.createElement('input');
+    chk.type='checkbox'; chk.className='ing-check ing-row-check'; chk.dataset.id=id;
+    chk.addEventListener('click', updateBulkToolbar);
+    tdChk.appendChild(chk); tr.appendChild(tdChk);
+
+    // ID
+    const tdId = document.createElement('td');
+    tdId.style.cssText = 'font-size:11px;color:var(--text-mid)';
+    tdId.textContent = id; tr.appendChild(tdId);
+
+    // Standard columns
+    STD_COLS.forEach(function(colCfg) {
+      const td = document.createElement('td');
+      td.dataset.col = colCfg.key;
+      if (_colVis[colCfg.key] === false) td.style.display = 'none';
+
+      const rawVal = i[colCfg.key] || '';
+      const dispVal = colCfg.fmt === 'qty' ? fmtQty(rawVal) : rawVal;
+
+      if (colCfg.edit === 'modal') {
+        td.addEventListener('click', function() { openIngModal(window._ingRows[id]); });
+        td.style.cursor = 'pointer';
+        if (colCfg.key === 'Vegan (Yes/No)' || colCfg.key === 'Vegetarian (Yes/No)') {
+          const span = document.createElement('span');
+          span.className = 'ap-status-pill ' + (rawVal==='Yes'?'approved':'rejected');
+          span.textContent = rawVal;
+          td.appendChild(span);
+        } else {
+          const div = document.createElement('div');
+          div.className = (colCfg.key === 'Ingredient Name') ? 'ap-recipe-name' : 'ap-submitter';
+          div.textContent = dispVal;
+          td.appendChild(div);
+        }
+      } else if (colCfg.edit === 'yesno') {
+        td.className = 'editable-cell';
+        const span = document.createElement('span');
+        span.className = 'ap-status-pill ' + (rawVal==='Yes'?'approved':'rejected');
+        span.textContent = rawVal;
+        td.appendChild(span);
+        td.addEventListener('click', function(e) { inlineCell(e, id, colCfg.key, 'yesno'); });
+      } else {
+        td.className = 'editable-cell';
+        td.title = 'Click to edit';
+        td.textContent = dispVal;
+        td.addEventListener('click', function(e) { inlineCell(e, id, colCfg.key, colCfg.edit === 'select' ? 'select' : 'text'); });
+      }
+      tr.appendChild(td);
+    });
+
+    // Extra columns from extra_fields
+    _extraColKeys.forEach(function(k) {
+      const td = document.createElement('td');
+      td.dataset.col = 'extra:' + k;
+      if (_colVis['extra:' + k] === false) td.style.display = 'none';
+      td.className = 'editable-cell';
+      td.title = 'Click to edit';
+      td.textContent = i.extra_fields ? (i.extra_fields[k] || '') : '';
+      td.addEventListener('click', function(e) { inlineCell(e, id, 'extra:' + k, 'text'); });
+      tr.appendChild(td);
+    });
+
+    // Edit button
+    const tdEdit = document.createElement('td');
+    const btn = document.createElement('button');
+    btn.className='ap-filter-btn'; btn.style.fontSize='11px'; btn.textContent='Edit';
+    btn.addEventListener('click', function(e) { e.stopPropagation(); openIngModal(window._ingRows[id]); });
+    tdEdit.appendChild(btn); tr.appendChild(tdEdit);
+    tbody.appendChild(tr);
+  });
+  setTimeout(fixDropdownTheme, 10);
+}
+
+// ── COLUMN VISIBILITY PANEL ───────────────────────────────────────
+function buildColVisPanel() {
+  const panel = document.getElementById('col-vis-panel');
+  if (!panel) return;
+  panel.innerHTML = '<div class="col-vis-title">Show / Hide Columns</div>';
+
+  function addColRow(key, label) {
+    const lbl = document.createElement('label');
+    lbl.className = 'col-vis-row';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = _colVis[key] !== false;
+    cb.addEventListener('change', function() {
+      _colVis[key] = cb.checked;
+      // Toggle column in header and all data cells
+      document.querySelectorAll('[data-col="' + key + '"]').forEach(function(el) {
+        el.style.display = cb.checked ? '' : 'none';
+      });
+    });
+    lbl.appendChild(cb);
+    lbl.appendChild(document.createTextNode(' ' + label));
+    panel.appendChild(lbl);
+  }
+
+  STD_COLS.forEach(function(c) { addColRow(c.key, c.label); });
+  _extraColKeys.forEach(function(k) { addColRow('extra:' + k, k); });
+  applyThemeColors(panel);
+}
 
 function toggleColVisPanel() {
   const panel = document.getElementById('col-vis-panel');
@@ -1043,10 +1307,7 @@ function toggleColVisPanel() {
   const isOpen = panel.classList.toggle('open');
   if (isOpen) {
     applyThemeColors(panel);
-    // Close when clicking outside
-    setTimeout(function() {
-      document.addEventListener('click', closeColVisPanelOutside);
-    }, 10);
+    setTimeout(function() { document.addEventListener('click', closeColVisPanelOutside); }, 10);
   } else {
     document.removeEventListener('click', closeColVisPanelOutside);
   }
@@ -1061,68 +1322,7 @@ function closeColVisPanelOutside(e) {
   }
 }
 
-function toggleColumn(thId, colClass, visible) {
-  const th = document.getElementById(thId);
-  if (th) th.style.display = visible ? '' : 'none';
-  document.querySelectorAll('.' + colClass).forEach(function(td) {
-    td.style.display = visible ? '' : 'none';
-  });
-}
-
-
-// ── SORT ──────────────────────────────────────────────────────────
-let _ingAllData = [];
-let _ingSortCol = null;
-let _ingSortDir = 'asc';
-let _ingColFilters = {};
-
-function sortIngBy(col) {
-  if (_ingSortCol === col) {
-    _ingSortDir = _ingSortDir === 'asc' ? 'desc' : 'asc';
-  } else {
-    _ingSortCol = col;
-    _ingSortDir = 'asc';
-  }
-  // Update sort icons
-  document.querySelectorAll('.sort-icon').forEach(function(el) {
-    el.className = 'sort-icon';
-  });
-  const icon = document.querySelector('.sort-icon[data-col="' + col + '"]');
-  if (icon) icon.className = 'sort-icon ' + _ingSortDir;
-  renderIngFiltered();
-}
-
-function renderIngFiltered() {
-  let data = _ingAllData.slice();
-
-  // Apply column filters
-  Object.keys(_ingColFilters).forEach(function(col) {
-    const vals = _ingColFilters[col];
-    if (vals && vals.length) {
-      data = data.filter(function(row) {
-        const v = col.startsWith('extra:') ? (row.extra_fields ? String(row.extra_fields[col.slice(6)]||'') : '') : String(row[col]||'');
-        return vals.includes(v);
-      });
-    }
-  });
-
-  // Apply sort
-  if (_ingSortCol) {
-    data.sort(function(a, b) {
-      const av = String(a[_ingSortCol] || '');
-      const bv = String(b[_ingSortCol] || '');
-      const cmp = _ingSortCol === 'ID'
-        ? (parseInt(av)||0) - (parseInt(bv)||0)
-        : av.localeCompare(bv, undefined, { numeric: true });
-      return _ingSortDir === 'asc' ? cmp : -cmp;
-    });
-  }
-
-  renderIngRows(data);
-  const countEl = document.getElementById('ing-count');
-  if (countEl) countEl.textContent = data.length + ' ingredient' + (data.length===1?'':'s') +
-    (_ingAllData.length !== data.length ? ' (filtered from ' + _ingAllData.length + ')' : '');
-}
+function toggleColumn(thId, colClass, visible) {} // kept for compatibility
 
 // ── COLUMN FILTER PANEL ───────────────────────────────────────────
 let _activeFilterPanel = null;
@@ -1130,63 +1330,46 @@ let _activeFilterPanel = null;
 function openColFilter(e, col) {
   e.stopPropagation();
   closeColFilter();
-
   const vals = {};
   _ingAllData.forEach(function(row) {
-    const v = col.startsWith('extra:') ? (row.extra_fields ? String(row.extra_fields[col.slice(6)]||'') : '') : String(row[col]||'');
+    const v = col.startsWith('extra:') ?
+      (row.extra_fields ? String(row.extra_fields[col.slice(6)]||'') : '') :
+      String(row[col]||'');
     vals[v] = true;
   });
   const unique = Object.keys(vals).sort();
   const active = _ingColFilters[col] || [];
 
   const panel = document.createElement('div');
-  panel.className = 'col-filter-panel';
-  panel.id = 'col-filter-panel';
-  panel.dataset.col = col;  // Store col as data attribute — no JS string escaping needed
+  panel.className = 'col-filter-panel'; panel.id = 'col-filter-panel'; panel.dataset.col = col;
 
   const title = document.createElement('div');
   title.className = 'col-filter-panel-title';
-  title.textContent = 'Filter: ' + col;
+  title.textContent = 'Filter: ' + col.replace('extra:','');
 
   const search = document.createElement('input');
-  search.className = 'col-filter-search';
-  search.placeholder = 'Search...';
+  search.className = 'col-filter-search'; search.placeholder = 'Search...';
   search.addEventListener('input', function() { filterColOptions(this); });
 
   const opts = document.createElement('div');
-  opts.className = 'col-filter-options';
-  opts.id = 'col-filter-opts';
+  opts.className = 'col-filter-options'; opts.id = 'col-filter-opts';
   unique.forEach(function(v) {
-    const lbl = document.createElement('label');
-    lbl.className = 'col-filter-option';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.value = v;
+    const lbl = document.createElement('label'); lbl.className = 'col-filter-option';
+    const cb = document.createElement('input'); cb.type='checkbox'; cb.value=v;
     if (active.includes(v)) cb.checked = true;
     lbl.appendChild(cb);
-    lbl.appendChild(document.createTextNode(' ' + (v || '(blank)')));
+    lbl.appendChild(document.createTextNode(' ' + (v||'(blank)')));
     opts.appendChild(lbl);
   });
 
-  const foot = document.createElement('div');
-  foot.className = 'col-filter-foot';
-
-  const applyBtn = document.createElement('button');
-  applyBtn.className = 'col-filter-apply';
-  applyBtn.textContent = 'Apply';
+  const foot = document.createElement('div'); foot.className = 'col-filter-foot';
+  const applyBtn = document.createElement('button'); applyBtn.className='col-filter-apply'; applyBtn.textContent='Apply';
   applyBtn.addEventListener('click', function() { applyColFilter(col); });
-
-  const clearBtn = document.createElement('button');
-  clearBtn.className = 'col-filter-clear';
-  clearBtn.textContent = 'Clear';
+  const clearBtn = document.createElement('button'); clearBtn.className='col-filter-clear'; clearBtn.textContent='Clear';
   clearBtn.addEventListener('click', function() { clearColFilter(col); });
+  foot.appendChild(applyBtn); foot.appendChild(clearBtn);
 
-  foot.appendChild(applyBtn);
-  foot.appendChild(clearBtn);
-  panel.appendChild(title);
-  panel.appendChild(search);
-  panel.appendChild(opts);
-  panel.appendChild(foot);
+  panel.appendChild(title); panel.appendChild(search); panel.appendChild(opts); panel.appendChild(foot);
   document.body.appendChild(panel);
   _activeFilterPanel = panel;
 
@@ -1194,11 +1377,9 @@ function openColFilter(e, col) {
   panel.style.top  = (rect.bottom + 4) + 'px';
   panel.style.left = Math.min(rect.left, window.innerWidth - 260) + 'px';
 
-  if (active.length) e.target.classList.add('active');
   setTimeout(function() {
     document.addEventListener('click', closeColFilterOnOutside);
     applyThemeColors(panel);
-    fixDropdownTheme();
   }, 10);
 }
 
@@ -1211,29 +1392,16 @@ function filterColOptions(input) {
 
 function applyColFilter(col) {
   const checked = [];
-  document.querySelectorAll('#col-filter-opts input:checked').forEach(function(cb) {
-    checked.push(cb.value);
+  document.querySelectorAll('#col-filter-opts input:checked').forEach(function(cb) { checked.push(cb.value); });
+  if (checked.length) _ingColFilters[col] = checked; else delete _ingColFilters[col];
+  // Update filter button
+  document.querySelectorAll('[data-col="' + col + '"] .col-filter-btn').forEach(function(b) {
+    b.classList.toggle('active', checked.length > 0);
   });
-  if (checked.length) {
-    _ingColFilters[col] = checked;
-  } else {
-    delete _ingColFilters[col];
-  }
-  // Update button state
-  document.querySelectorAll('.col-filter-btn').forEach(function(btn) {
-    if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'" + col + "'")) {
-      btn.classList.toggle('active', checked.length > 0);
-    }
-  });
-  closeColFilter();
-  renderIngFiltered();
+  closeColFilter(); renderIngFiltered();
 }
 
-function clearColFilter(col) {
-  delete _ingColFilters[col];
-  closeColFilter();
-  renderIngFiltered();
-}
+function clearColFilter(col) { delete _ingColFilters[col]; closeColFilter(); renderIngFiltered(); }
 
 function closeColFilter() {
   const p = document.getElementById('col-filter-panel');
@@ -1247,417 +1415,204 @@ function closeColFilterOnOutside(e) {
   if (p && !p.contains(e.target)) closeColFilter();
 }
 
-// ── EXPORT CSV ────────────────────────────────────────────────────
-async function exportCsv() {
-  const btn = document.querySelector('[onclick="exportCsv()"]');
-  if (btn) { btn.textContent = '⏳ Exporting...'; btn.disabled = true; }
+// ── INLINE EDITING ────────────────────────────────────────────────
+function inlineCell(e, id, field, type) {
+  e.stopPropagation();
+  const td = e.currentTarget;
+  if (td.querySelector('input,select')) return;
+  const ing = window._ingRows && window._ingRows[id];
+  let currentVal;
+  if (field.startsWith('extra:')) {
+    const k = field.slice(6);
+    currentVal = ing && ing.extra_fields ? (ing.extra_fields[k]||'') : '';
+  } else {
+    currentVal = ing ? (ing[field]||'') : td.textContent.trim();
+  }
+  const origHTML = td.innerHTML;
+
+  if (type === 'text') {
+    const input = document.createElement('input');
+    input.className = 'inline-input'; input.value = currentVal;
+    input.addEventListener('keydown', function(ev) {
+      if (ev.key==='Enter') { ev.preventDefault(); this.blur(); }
+      if (ev.key==='Escape') { td.innerHTML = origHTML; td.className='editable-cell'; }
+    });
+    input.addEventListener('blur', function() { saveInlineField(id, field, this.value, td); });
+    input.addEventListener('click', function(ev) { ev.stopPropagation(); });
+    td.innerHTML = ''; td.appendChild(input);
+    applyThemeColors(td); input.focus();
+
+  } else if (type === 'select' || type === 'yesno') {
+    const sel = document.createElement('select'); sel.className = 'inline-select';
+    const opts = type==='yesno' ? ['Yes','No'] : CATS_LIST;
+    opts.forEach(function(o) {
+      const opt = document.createElement('option'); opt.value=o; opt.textContent=o;
+      if (o===currentVal) opt.selected=true; sel.appendChild(opt);
+    });
+    sel.addEventListener('change', function() { saveInlineField(id, field, this.value, td); });
+    sel.addEventListener('blur', function() { if (!this._saved) { td.innerHTML=origHTML; td.className='editable-cell'; } });
+    sel.addEventListener('click', function(ev) { ev.stopPropagation(); });
+    td.innerHTML = ''; td.appendChild(sel);
+    applyThemeColors(td); sel.focus();
+  }
+}
+
+const PARAM_MAP = {
+  'Ingredient Name':'p_ingredient_name', 'Also Known As':'p_also_known_as',
+  'Category':'p_category', 'Sub Category':'p_sub_category',
+  'Standard Qty':'p_standard_qty', 'Standard Weight (g or ml)':'p_standard_weight',
+  'Unit':'p_unit', 'Liquid (Yes/No)':'p_liquid',
+  'CJ Recommended Brand':'p_cj_recommended_brand', 'Allergen':'p_allergen',
+  'Vegan (Yes/No)':'p_vegan', 'Vegetarian (Yes/No)':'p_vegetarian', 'Notes':'p_notes'
+};
+
+async function saveInlineField(id, field, value, td) {
+  const sel = td.querySelector('select');
+  if (sel) sel._saved = true;
+  const ing = window._ingRows && window._ingRows[id];
   try {
-    const rows = await rpc('admin_export_ingredients', { p_search: null, p_category: null });
-    if (!rows.length) { alert('No ingredients to export.'); return; }
-
-    // Get all extra_fields keys across all rows
-    const extraKeys = [];
-    const extraKeySeen = {};
-    rows.forEach(function(r) {
-      if (r.extra_fields && typeof r.extra_fields === 'object') {
-        Object.keys(r.extra_fields).forEach(function(k) {
-          if (!extraKeySeen[k]) { extraKeySeen[k] = true; extraKeys.push(k); }
-        });
-      }
-    });
-
-    const stdCols = ['ID','Ingredient Name','Also Known As','Category','Sub Category',
-      'Standard Qty','Standard Weight (g or ml)','Unit','Liquid (Yes/No)',
-      'CJ Recommended Brand','Allergen','Vegan (Yes/No)','Vegetarian (Yes/No)','Notes'];
-    const allCols = stdCols.concat(extraKeys);
-
-    const escape = function(v) {
-      const s = String(v == null ? '' : v);
-      return s.includes(',') || s.includes('"') || s.includes('\n')
-        ? '"' + s.replace(/"/g,'""') + '"' : s;
-    };
-
-    const csv = [allCols.join(',')].concat(
-      rows.map(function(r) {
-        return allCols.map(function(c) {
-          if (stdCols.includes(c)) return escape(r[c]);
-          return escape(r.extra_fields ? (r.extra_fields[c] || '') : '');
-        }).join(',');
-      })
-    ).join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url;
-    a.download = 'ingredients-' + new Date().toISOString().slice(0,10) + '.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  } catch(e) {
-    alert('Export failed: ' + e.message);
-  } finally {
-    if (btn) { btn.textContent = '⬇ Export CSV'; btn.disabled = false; }
-  }
-}
-
-
-// ── CUSTOM FIELDS ─────────────────────────────────────────────────
-let _customFields = {};
-
-function loadCustomFields(extraFields) {
-  _customFields = extraFields || {};
-  renderCustomFieldsList();
-}
-
-function renderCustomFieldsList() {
-  const container = document.getElementById('ing-custom-fields-list');
-  if (!container) return;
-  container.innerHTML = '';
-  const keys = Object.keys(_customFields);
-  if (!keys.length) {
-    const msg = document.createElement('div');
-    msg.style.cssText = 'font-family:"DM Sans",sans-serif;font-size:12px;color:var(--text-mid)';
-    msg.textContent = 'No custom fields yet. Click + Add Field to add one.';
-    container.appendChild(msg);
-    return;
-  }
-  keys.forEach(function(k) {
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px';
-
-    const keyInput = document.createElement('input');
-    keyInput.style.cssText = 'flex:1;font-family:"DM Sans",sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';
-    keyInput.value = k;
-    keyInput.placeholder = 'Field name';
-    keyInput.addEventListener('change', function() { renameCustomField(k, this.value); });
-
-    const valInput = document.createElement('input');
-    valInput.style.cssText = 'flex:2;font-family:"DM Sans",sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';
-    valInput.value = String(_customFields[k] || '');
-    valInput.placeholder = 'Value';
-    valInput.addEventListener('change', function() { _customFields[k] = this.value; });
-
-    const delBtn = document.createElement('button');
-    delBtn.style.cssText = 'padding:4px 8px;background:none;border:1px solid #dc5050;border-radius:5px;color:#dc5050;cursor:pointer;font-size:12px';
-    delBtn.textContent = '×';
-    delBtn.addEventListener('click', function() { removeCustomField(k); });
-
-    row.appendChild(keyInput);
-    row.appendChild(valInput);
-    row.appendChild(delBtn);
-    container.appendChild(row);
-  });
-}
-
-
-function addCustomField() {
-  const key = 'Custom Field ' + (Object.keys(_customFields).length + 1);
-  _customFields[key] = '';
-  renderCustomFieldsList();
-}
-
-function renameCustomField(oldKey, newKey) {
-  if (oldKey === newKey || !newKey.trim()) return;
-  const val = _customFields[oldKey];
-  delete _customFields[oldKey];
-  _customFields[newKey.trim()] = val;
-  renderCustomFieldsList();
-}
-
-function removeCustomField(key) {
-  delete _customFields[key];
-  renderCustomFieldsList();
-}
-
-// ── UNITS AUTOCOMPLETE ────────────────────────────────────────────
-async function loadUnitsAutocomplete() {
-  try {
-    const units = await rpc('admin_get_ingredient_units', {});
-    const dl = document.getElementById('ing-units-list');
-    if (dl && units.length) {
-      dl.innerHTML = units.map(function(u) { return '<option value="' + u.unit + '">'; }).join('');
+    if (field.startsWith('extra:')) {
+      const k = field.slice(6);
+      const ef = Object.assign({}, (ing && ing.extra_fields)||{});
+      ef[k] = value;
+      await rpc('admin_upsert_ingredient', {p_id:id, p_ingredient_name:ing?(ing['Ingredient Name']||''):'', p_extra_fields:ef});
+      if (window._ingRows&&window._ingRows[id]) window._ingRows[id].extra_fields = ef;
+    } else {
+      const param = PARAM_MAP[field];
+      if (!param) return;
+      await rpc('admin_upsert_ingredient', {p_id:id, p_ingredient_name:ing?(ing['Ingredient Name']||''):'', [param]:value});
+      if (window._ingRows&&window._ingRows[id]) window._ingRows[id][field] = value;
     }
-  } catch(_) {}
-}
-
-
-
-function getExtraFieldKeys(rows) {
-  const keys = {};
-  rows.forEach(function(r) {
-    if (r.extra_fields && typeof r.extra_fields === 'object') {
-      Object.keys(r.extra_fields).forEach(function(k) { keys[k] = true; });
+    // Update cell display
+    const colCfg = STD_COLS.find(function(c){return c.key===field;});
+    if (field==='Vegan (Yes/No)'||field==='Vegetarian (Yes/No)') {
+      td.innerHTML = '<span class="ap-status-pill '+(value==='Yes'?'approved':'rejected')+'">'+value+'</span>';
+    } else {
+      td.textContent = (colCfg&&colCfg.fmt==='qty') ? fmtQty(value) : value;
     }
-  });
-  return Object.keys(keys);
-}
-
-function buildDynamicHeader(extraKeys) {
-  const thead = document.querySelector('#ing-tbody')?.closest('table')?.querySelector('thead tr');
-  if (!thead) return;
-  // Remove old dynamic columns
-  thead.querySelectorAll('.th-dynamic').forEach(function(el) { el.remove(); });
-  const editTh = document.getElementById('th-edit');
-  extraKeys.forEach(function(k) {
-    const th = document.createElement('th');
-    th.className = 'sortable-col th-dynamic';
-    th.style.cursor = 'pointer';
-    th.style.whiteSpace = 'nowrap';
-    th.innerHTML = k + ' <span class="sort-icon" data-col="extra:' + k + '">⇅</span>' +
-      ' <button class="col-filter-btn" title="Filter">▼</button>';
-    th.querySelector('.sort-icon').addEventListener('click', function(e) {
-      e.stopPropagation(); sortIngBy('extra:' + k);
-    });
-    th.addEventListener('click', function() { sortIngBy('extra:' + k); });
-    th.querySelector('.col-filter-btn').addEventListener('click', function(e) {
-      e.stopPropagation(); openColFilter(e, 'extra:' + k);
-    });
-    if (editTh) thead.insertBefore(th, editTh);
-    else thead.appendChild(th);
-  });
-  // Update column visibility panel dynamically
-  updateColVisPanel(extraKeys);
-}
-
-function updateColVisPanel(extraKeys) {
-  const panel = document.getElementById('col-vis-panel');
-  if (!panel) return;
-  // Remove old dynamic rows
-  panel.querySelectorAll('.col-vis-dynamic').forEach(function(el) { el.remove(); });
-  extraKeys.forEach(function(k) {
-    const lbl = document.createElement('label');
-    lbl.className = 'col-vis-row col-vis-dynamic';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox'; cb.checked = true;
-    cb.addEventListener('change', function() {
-      document.querySelectorAll('.ing-col-extra-' + k.replace(/[^a-z0-9]/gi,'_')).forEach(function(td) {
-        td.style.display = cb.checked ? '' : 'none';
-      });
-      document.querySelectorAll('.th-dynamic').forEach(function(th) {
-        if (th.textContent.includes(k)) th.style.display = cb.checked ? '' : 'none';
-      });
-    });
-    lbl.appendChild(cb);
-    lbl.appendChild(document.createTextNode(' ' + k));
-    panel.appendChild(lbl);
-  });
-}
-
-function getRowExtraVal(row, key) {
-  if (!row.extra_fields) return '';
-  return String(row.extra_fields[key] || '');
-}
-
-function renderIngRows(rows) {
-  const tbody = document.getElementById('ing-tbody');
-  if (!tbody) return;
-  window._ingRows = {};
-  rows.forEach(function(i) { window._ingRows[i["ID"]] = i; });
-
-  // Build dynamic columns from extra_fields
-  const extraKeys = getExtraFieldKeys(rows);
-  buildDynamicHeader(extraKeys);
-
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="ap-empty-row">No ingredients found.</td></tr>';
-    return;
+    td.className = 'editable-cell';
+  } catch(err) {
+    console.error('Inline save error:', err.message);
+    td.innerHTML = origHTML||value; td.className='editable-cell';
   }
+}
 
-  tbody.innerHTML = '';
-  rows.forEach(function(i) {
-    const id = i["ID"];
-    const tr = document.createElement('tr');
-    tr.id = 'ing-row-' + id;
-
-    // Checkbox
-    const tdChk = document.createElement('td');
-    tdChk.addEventListener('click', function(e) { e.stopPropagation(); });
-    const chk = document.createElement('input');
-    chk.type = 'checkbox'; chk.className = 'ing-check ing-row-check'; chk.dataset.id = id;
-    chk.addEventListener('click', function() { updateBulkToolbar(); });
-    tdChk.appendChild(chk); tr.appendChild(tdChk);
-
-    // ID
-    const tdId = document.createElement('td');
-    tdId.style.cssText = 'font-size:11px;color:var(--text-mid)';
-    tdId.textContent = id; tr.appendChild(tdId);
-
-    // Name
-    const tdName = document.createElement('td');
-    tdName.className = 'ing-col-name';
-    tdName.addEventListener('click', function() { openIngModal(window._ingRows[id]); });
-    const nameDiv = document.createElement('div');
-    nameDiv.className = 'ap-recipe-name'; nameDiv.style.cursor = 'pointer';
-    nameDiv.textContent = i["Ingredient Name"] || '';
-    tdName.appendChild(nameDiv); tr.appendChild(tdName);
-
-    // Also Known As
-    const tdAka = document.createElement('td');
-    tdAka.className = 'ing-col-aka';
-    tdAka.addEventListener('click', function() { openIngModal(window._ingRows[id]); });
-    const akaSpan = document.createElement('span');
-    akaSpan.className = 'ap-submitter'; akaSpan.textContent = i["Also Known As"] || '';
-    tdAka.appendChild(akaSpan); tr.appendChild(tdAka);
-
-    // Editable: Category, Sub Category, Allergen
-    const colClassMap = {'Category':'ing-col-cat','Sub Category':'ing-col-subcat','Allergen':'ing-col-allergen'};
-    [['Category','select'],['Sub Category','text'],['Allergen','text']].forEach(function(pair) {
-      const col = pair[0], type = pair[1];
-      const td = document.createElement('td');
-      td.className = 'editable-cell ' + (colClassMap[col]||''); td.title = 'Click to edit';
-      td.textContent = i[col] || '';
-      td.addEventListener('click', function(e) { inlineCell(e, id, col, type); });
-      tr.appendChild(td);
-    });
-
-    // Vegan pill
-    const tdVegan = document.createElement('td');
-    tdVegan.className = 'editable-cell ing-col-vegan';
-    const veganSpan = document.createElement('span');
-    veganSpan.className = 'ap-status-pill ' + (i["Vegan (Yes/No)"] === 'Yes' ? 'approved' : 'rejected');
-    veganSpan.textContent = i["Vegan (Yes/No)"] || '';
-    tdVegan.appendChild(veganSpan);
-    tdVegan.addEventListener('click', function(e) { inlineCell(e, id, "Vegan (Yes/No)", 'yesno'); });
-    tr.appendChild(tdVegan);
-
-    // Vegetarian pill
-    const tdVeg = document.createElement('td');
-    tdVeg.className = 'editable-cell ing-col-veg';
-    const vegSpan = document.createElement('span');
-    vegSpan.className = 'ap-status-pill ' + (i["Vegetarian (Yes/No)"] === 'Yes' ? 'approved' : 'rejected');
-    vegSpan.textContent = i["Vegetarian (Yes/No)"] || '';
-    tdVeg.appendChild(vegSpan);
-    tdVeg.addEventListener('click', function(e) { inlineCell(e, id, "Vegetarian (Yes/No)", 'yesno'); });
-    tr.appendChild(tdVeg);
-
-    // Dynamic extra_fields columns
-    extraKeys.forEach(function(k) {
-      const td = document.createElement('td');
-      td.className = 'editable-cell ing-col-extra-' + k.replace(/[^a-z0-9]/gi,'_');
-      td.textContent = getRowExtraVal(i, k);
-      td.title = 'Click to edit';
-      td.addEventListener('click', function(e) { inlineCell(e, id, 'extra:' + k, 'text'); });
-      tr.appendChild(td);
-    });
-
-    // Edit button
-    const tdEdit = document.createElement('td');
-    tdEdit.id = 'th-edit-' + id;
-    const editBtn = document.createElement('button');
-    editBtn.className = 'ap-filter-btn'; editBtn.style.fontSize = '11px';
-    editBtn.textContent = 'Edit';
-    editBtn.addEventListener('click', function(e) { e.stopPropagation(); openIngModal(window._ingRows[id]); });
-    tdEdit.appendChild(editBtn); tr.appendChild(tdEdit);
-
-    tbody.appendChild(tr);
+// ── BULK EDIT ─────────────────────────────────────────────────────
+function toggleSelectAll(cb) {
+  document.querySelectorAll('.ing-row-check').forEach(function(c) {
+    c.checked = cb.checked;
+    const id = parseInt(c.dataset.id);
+    if (cb.checked) selectedIds.add(id); else selectedIds.delete(id);
   });
+  updateBulkToolbar();
+}
+
+function updateBulkToolbar() {
+  const checks = document.querySelectorAll('.ing-row-check');
+  selectedIds = new Set();
+  checks.forEach(function(c) { if (c.checked) selectedIds.add(parseInt(c.dataset.id)); });
+  const toolbar = document.getElementById('bulk-toolbar');
+  const countEl = document.getElementById('bulk-count');
+  if (selectedIds.size > 0) {
+    toolbar.classList.add('visible');
+    countEl.textContent = selectedIds.size + ' selected';
+  } else {
+    toolbar.classList.remove('visible');
+  }
+  const all = document.getElementById('ing-select-all');
+  if (all) all.checked = checks.length > 0 && selectedIds.size === checks.length;
+}
+
+function clearSelection() {
+  document.querySelectorAll('.ing-row-check').forEach(function(c) { c.checked=false; });
+  const all = document.getElementById('ing-select-all');
+  if (all) all.checked = false;
+  selectedIds.clear();
+  const toolbar = document.getElementById('bulk-toolbar');
+  if (toolbar) toolbar.classList.remove('visible');
+}
+
+function updateBulkValueInput() {
+  const field = document.getElementById('bulk-field').value;
+  const wrap  = document.getElementById('bulk-val-wrap');
+  const yesno = ['Vegan (Yes/No)','Vegetarian (Yes/No)','Liquid (Yes/No)'];
+  if (field==='Category') {
+    wrap.innerHTML = '<select class="bulk-val-input" id="bulk-value"><option value="">— Select —</option>'+CATS_LIST.map(function(c){return '<option>'+c+'</option>';}).join('')+'</select>';
+  } else if (yesno.includes(field)) {
+    wrap.innerHTML = '<select class="bulk-val-input" id="bulk-value"><option>Yes</option><option>No</option></select>';
+  } else {
+    wrap.innerHTML = '<input type="text" class="bulk-val-input" id="bulk-value" placeholder="New value...">';
+  }
   setTimeout(fixDropdownTheme, 10);
 }
 
-
-// ── INGREDIENT MANAGEMENT ─────────────────────────────────────────
-let ingPage = 1;
-const ING_PAGE_SIZE = 1000;
-let ingSearchTimer = null;
-
-function ingSearch() {
-  clearTimeout(ingSearchTimer);
-  ingSearchTimer = setTimeout(() => loadIngredients(1), 350);
-}
-
-async function loadIngredients(page) {
-  ingPage = page || 1;
-  const search = (document.getElementById('ing-search')?.value || '').trim() || null;
-  const cat    = document.getElementById('ing-cat')?.value || null;
-  const tbody  = document.getElementById('ing-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="9" class="ap-empty-row">Loading...</td></tr>';
+async function applyBulkEdit() {
+  const field = document.getElementById('bulk-field').value;
+  const value = document.getElementById('bulk-value').value.trim();
+  if (!field) { alert('Please choose a field to update.'); return; }
+  if (!value && field!=='Allergen') { alert('Please enter a value.'); return; }
+  if (selectedIds.size===0) { alert('No ingredients selected.'); return; }
+  if (!confirm('Update "'+field+'" to "'+value+'" for '+selectedIds.size+' ingredient(s)?')) return;
   try {
-    const [rows, total] = await Promise.all([
-      rpc('admin_get_ingredients', { p_search: search, p_category: cat || null, p_limit: ING_PAGE_SIZE, p_offset: (ingPage-1)*ING_PAGE_SIZE }),
-      rpc('admin_count_ingredients', { p_search: search, p_category: cat || null })
-    ]);
-    const countEl = document.getElementById('ing-count');
-    if (countEl) countEl.textContent = total + ' ingredient' + (total===1?'':'s');
-    const badge = document.getElementById('badge-ingredients');
-    if (badge) { badge.textContent = total; badge.style.display = 'inline-block'; }
-    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="9" class="ap-empty-row">No ingredients found.</td></tr>'; renderIngPagination(0,total); return; }
-    // Store ingredient data for inline editing
-    window._ingRows = {};
-
-    tbody.innerHTML = rows.map(i => {
-      const esc = s => (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-      const id = i["ID"];
-      return `<tr id="ing-row-${id}">
-        <td onclick="event.stopPropagation()"><input type="checkbox" class="ing-check ing-row-check" data-id="${id}" onclick="updateBulkToolbar()"></td>
-        <td style="font-size:11px;color:var(--text-mid)">${id}</td>
-        <td onclick="openIngModal(window._ingRows[${id}])"><div class="ap-recipe-name" style="cursor:pointer">${esc(i["Ingredient Name"])}</div></td>
-        <td onclick="openIngModal(window._ingRows[${id}])"><span class="ap-submitter">${esc(i["Also Known As"])}</span></td>
-        <td class="editable-cell" title="Click to edit" onclick="inlineCell(event,${id},'Category','select')">${esc(i["Category"])}</td>
-        <td class="editable-cell" title="Click to edit" onclick="inlineCell(event,${id},'Sub Category','text')">${esc(i["Sub Category"])}</td>
-        <td class="editable-cell" title="Click to edit" onclick="inlineCell(event,${id},'Allergen','text')">${esc(i["Allergen"])}</td>
-        <td class="editable-cell" onclick="inlineCell(event,${id},'Vegan (Yes/No)','yesno')"><span class="ap-status-pill ${i["Vegan (Yes/No)"]==='Yes'?'approved':'rejected'}">${i["Vegan (Yes/No)"]||''}</span></td>
-        <td class="editable-cell" onclick="inlineCell(event,${id},'Vegetarian (Yes/No)','yesno')"><span class="ap-status-pill ${i["Vegetarian (Yes/No)"]==='Yes'?'approved':'rejected'}">${i["Vegetarian (Yes/No)"]||''}</span></td>
-        <td><button class="ap-filter-btn" style="font-size:11px" onclick="event.stopPropagation();openIngModal(window._ingRows[${id}])">Edit</button></td>
-      </tr>`;
-    }).join('');
-    _ingAllData = rows;  // Store for sort/filter
-    renderIngFiltered();
-    renderIngPagination(ingPage, total);
-    setTimeout(fixDropdownTheme, 50);
-  } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="9" class="ap-empty-row">Error: ${e.message}</td></tr>`;
-  }
+    const affected = await rpc('admin_bulk_update_field', {p_ids:Array.from(selectedIds), p_field:field, p_value:value});
+    clearSelection(); await loadIngredients(ingPage);
+    alert('Updated '+affected+' ingredient(s).');
+  } catch(e) { alert('Error: '+e.message); }
 }
 
-function renderIngPagination(page, total) {
-  const pages = Math.ceil(total / ING_PAGE_SIZE);
-  const el = document.getElementById('ing-pagination');
-  if (!el || pages <= 1) { if(el) el.innerHTML=''; return; }
-  let html = '';
-  for (let p=1; p<=pages; p++) {
-    html += `<button onclick="loadIngredients(${p})" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:${p===page?'var(--accent)':'none'};color:${p===page?'#fff':'var(--text-mid)'};cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px">${p}</button>`;
-  }
-  el.innerHTML = html;
+async function deleteSelected() {
+  if (selectedIds.size===0) return;
+  if (!confirm('Delete '+selectedIds.size+' ingredient(s)? Cannot be undone.')) return;
+  try {
+    await Promise.all(Array.from(selectedIds).map(function(id) { return rpc('admin_delete_ingredient',{p_id:id}); }));
+    clearSelection(); await loadIngredients(ingPage);
+  } catch(e) { alert('Error: '+e.message); }
 }
+
+// ── INGREDIENT MODAL ──────────────────────────────────────────────
+let _customFields = {};
 
 function openIngModal(ing) {
-  const msg = document.getElementById('ing-msg');
+  const msg    = document.getElementById('ing-msg');
   const delBtn = document.getElementById('ing-del-btn');
   if (msg) msg.style.display = 'none';
+
   if (ing) {
     document.getElementById('ing-modal-title').textContent = 'Edit Ingredient';
     document.getElementById('ing-id').value       = String(ing['ID']||'');
-    document.getElementById('ing-name').value     = ing["Ingredient Name"]||'';
-    document.getElementById('ing-aka').value      = ing["Also Known As"]||'';
-    document.getElementById('ing-category').value = ing["Category"]||'';
-    document.getElementById('ing-subcat').value   = ing["Sub Category"]||'';
-    document.getElementById('ing-qty').value      = formatQty(ing["Standard Qty"])||'';
-    document.getElementById('ing-weight').value   = ing["Standard Weight (g or ml)"]||'';
-    document.getElementById('ing-unit').value     = ing["Unit"]||'';
-    document.getElementById('ing-liquid').value   = ing["Liquid (Yes/No)"]||'No';
-    document.getElementById('ing-brand').value    = ing["CJ Recommended Brand"]||'';
-    document.getElementById('ing-allergen').value = ing["Allergen"]||'';
-    document.getElementById('ing-vegan').value    = ing["Vegan (Yes/No)"]||'Yes';
-    document.getElementById('ing-veg').value      = ing["Vegetarian (Yes/No)"]||'Yes';
-    document.getElementById('ing-notes').value    = ing["Notes"]||'';
+    document.getElementById('ing-name').value     = ing['Ingredient Name']||'';
+    document.getElementById('ing-aka').value      = ing['Also Known As']||'';
+    document.getElementById('ing-category').value = ing['Category']||'';
+    document.getElementById('ing-subcat').value   = ing['Sub Category']||'';
+    document.getElementById('ing-qty').value      = fmtQty(ing['Standard Qty'])||'';
+    document.getElementById('ing-weight').value   = ing['Standard Weight (g or ml)']||'';
+    document.getElementById('ing-unit').value     = ing['Unit']||'';
+    document.getElementById('ing-liquid').value   = ing['Liquid (Yes/No)']||'No';
+    document.getElementById('ing-brand').value    = ing['CJ Recommended Brand']||'';
+    document.getElementById('ing-allergen').value = ing['Allergen']||'';
+    document.getElementById('ing-vegan').value    = ing['Vegan (Yes/No)']||'Yes';
+    document.getElementById('ing-veg').value      = ing['Vegetarian (Yes/No)']||'Yes';
+    document.getElementById('ing-notes').value    = ing['Notes']||'';
+    _customFields = Object.assign({}, ing.extra_fields||{});
     if (delBtn) delBtn.style.display = 'inline-block';
   } else {
     document.getElementById('ing-modal-title').textContent = 'Add Ingredient';
-    ['ing-id','ing-name','ing-aka','ing-subcat','ing-qty','ing-weight','ing-unit','ing-brand','ing-allergen','ing-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    ['ing-id','ing-name','ing-aka','ing-subcat','ing-qty','ing-weight','ing-unit','ing-brand','ing-allergen','ing-notes'].forEach(function(id) {
+      const el=document.getElementById(id); if(el) el.value='';
+    });
     document.getElementById('ing-category').value = '';
     document.getElementById('ing-liquid').value   = 'No';
     document.getElementById('ing-vegan').value    = 'Yes';
     document.getElementById('ing-veg').value      = 'Yes';
+    _customFields = {};
     if (delBtn) delBtn.style.display = 'none';
   }
-  const ingModalEl = document.getElementById('ing-modal');
-  ingModalEl.classList.add('open');
-  // Load units autocomplete and custom fields
+
+  const modal = document.getElementById('ing-modal');
+  modal.classList.add('open');
   loadUnitsAutocomplete();
-  loadCustomFields(ing ? (ing.extra_fields || {}) : {});
-  // Apply actual computed theme colors to ALL form elements in modal
-  setTimeout(function() { applyThemeColors(ingModalEl); }, 20);
+  renderCustomFieldsList();
+  setTimeout(function() { applyThemeColors(modal); }, 20);
 }
 
 function closeIngModal() { document.getElementById('ing-modal').classList.remove('open'); }
@@ -1672,24 +1627,24 @@ async function saveIngredient() {
   saveBtn.disabled=true; saveBtn.textContent='Saving...';
   try {
     await rpc('admin_upsert_ingredient', {
-      p_id: id ? parseInt(id) : null,
-      p_ingredient_name: name,
-      p_also_known_as: document.getElementById('ing-aka').value.trim(),
-      p_category: cat,
-      p_sub_category: document.getElementById('ing-subcat').value.trim(),
-      p_standard_qty: document.getElementById('ing-qty').value.trim(),
-      p_standard_weight: parseFloat(document.getElementById('ing-weight').value)||null,
-      p_unit: document.getElementById('ing-unit').value.trim(),
-      p_liquid: document.getElementById('ing-liquid').value,
-      p_cj_recommended_brand: document.getElementById('ing-brand').value.trim(),
-      p_allergen: document.getElementById('ing-allergen').value.trim(),
-      p_vegan: document.getElementById('ing-vegan').value,
-      p_vegetarian: document.getElementById('ing-veg').value,
-      p_notes: document.getElementById('ing-notes').value.trim(),
-      p_extra_fields: Object.keys(_customFields).length ? _customFields : null
+      p_id:                  id ? parseInt(id) : null,
+      p_ingredient_name:     name,
+      p_also_known_as:       document.getElementById('ing-aka').value.trim(),
+      p_category:            cat,
+      p_sub_category:        document.getElementById('ing-subcat').value.trim(),
+      p_standard_qty:        document.getElementById('ing-qty').value.trim(),
+      p_standard_weight:     parseFloat(document.getElementById('ing-weight').value)||null,
+      p_unit:                document.getElementById('ing-unit').value.trim(),
+      p_liquid:              document.getElementById('ing-liquid').value,
+      p_cj_recommended_brand:document.getElementById('ing-brand').value.trim(),
+      p_allergen:            document.getElementById('ing-allergen').value.trim(),
+      p_vegan:               document.getElementById('ing-vegan').value,
+      p_vegetarian:          document.getElementById('ing-veg').value,
+      p_notes:               document.getElementById('ing-notes').value.trim(),
+      p_extra_fields:        Object.keys(_customFields).length ? _customFields : null
     });
-    showIngMsg(id ? '✓ Saved!' : '✓ Added!', true);
-    setTimeout(() => { closeIngModal(); loadIngredients(ingPage); }, 900);
+    showIngMsg(id?'✓ Saved!':'✓ Added!', true);
+    setTimeout(function() { closeIngModal(); loadIngredients(ingPage); }, 900);
   } catch(e) {
     showIngMsg('Error: '+e.message, false);
   } finally { saveBtn.disabled=false; saveBtn.textContent='Save Ingredient'; }
@@ -1698,8 +1653,8 @@ async function saveIngredient() {
 async function deleteIngredient() {
   const id=document.getElementById('ing-id').value;
   const name=document.getElementById('ing-name').value;
-  if (!id || !confirm('Delete "'+name+'"? This cannot be undone.')) return;
-  try { await rpc('admin_delete_ingredient', {p_id: parseInt(id)}); closeIngModal(); loadIngredients(ingPage); }
+  if (!id||!confirm('Delete "'+name+'"? Cannot be undone.')) return;
+  try { await rpc('admin_delete_ingredient',{p_id:parseInt(id)}); closeIngModal(); loadIngredients(ingPage); }
   catch(e) { showIngMsg('Error: '+e.message, false); }
 }
 
@@ -1709,205 +1664,56 @@ function showIngMsg(text, ok) {
   el.textContent=text; el.className='ing-msg '+(ok?'ok':'err'); el.style.display='inline-block';
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  const o=document.getElementById('ing-modal');
-  if (o) o.addEventListener('click', function(e) { if(e.target===this) closeIngModal(); });
-});
-
-
-// ── BULK EDIT ─────────────────────────────────────────────────────
-let selectedIds = new Set();
-
-function toggleSelectAll(cb) {
-  const checks = document.querySelectorAll('.ing-row-check');
-  checks.forEach(c => {
-    c.checked = cb.checked;
-    const id = parseInt(c.dataset.id);
-    if (cb.checked) selectedIds.add(id); else selectedIds.delete(id);
+// ── CUSTOM FIELDS ─────────────────────────────────────────────────
+function renderCustomFieldsList() {
+  const container = document.getElementById('ing-custom-fields-list');
+  if (!container) return;
+  container.innerHTML = '';
+  const keys = Object.keys(_customFields);
+  if (!keys.length) {
+    const msg = document.createElement('div');
+    msg.style.cssText = 'font-family:"DM Sans",sans-serif;font-size:12px;color:var(--text-mid)';
+    msg.textContent = 'No custom fields. Click + Add Field to add one.';
+    container.appendChild(msg); return;
+  }
+  keys.forEach(function(k) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px';
+    const ki = document.createElement('input');
+    ki.style.cssText = 'flex:1;font-family:"DM Sans",sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';
+    ki.value = k; ki.placeholder='Field name';
+    ki.addEventListener('change', function() { renameCustomField(k,this.value); });
+    const vi = document.createElement('input');
+    vi.style.cssText = 'flex:2;font-family:"DM Sans",sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';
+    vi.value = String(_customFields[k]||''); vi.placeholder='Value';
+    vi.addEventListener('change', function() { _customFields[k]=this.value; });
+    const db = document.createElement('button');
+    db.style.cssText = 'padding:4px 8px;background:none;border:1px solid #dc5050;border-radius:5px;color:#dc5050;cursor:pointer;font-size:12px';
+    db.textContent='×';
+    db.addEventListener('click', function() { removeCustomField(k); });
+    row.appendChild(ki); row.appendChild(vi); row.appendChild(db);
+    container.appendChild(row);
   });
-  updateBulkToolbar();
 }
 
-function updateBulkToolbar() {
-  const checks = document.querySelectorAll('.ing-row-check');
-  selectedIds = new Set();
-  checks.forEach(c => { if (c.checked) selectedIds.add(parseInt(c.dataset.id)); });
-  const toolbar = document.getElementById('bulk-toolbar');
-  const countEl = document.getElementById('bulk-count');
-  if (selectedIds.size > 0) {
-    toolbar.classList.add('visible');
-    countEl.textContent = selectedIds.size + ' selected';
-  } else {
-    toolbar.classList.remove('visible');
-  }
-  // Update select-all state
-  const all = document.getElementById('ing-select-all');
-  if (all) all.checked = checks.length > 0 && selectedIds.size === checks.length;
+function addCustomField() {
+  const key='Custom Field '+(Object.keys(_customFields).length+1);
+  _customFields[key]=''; renderCustomFieldsList();
 }
-
-function clearSelection() {
-  document.querySelectorAll('.ing-row-check').forEach(c => c.checked = false);
-  const all = document.getElementById('ing-select-all');
-  if (all) all.checked = false;
-  selectedIds.clear();
-  document.getElementById('bulk-toolbar').classList.remove('visible');
+function renameCustomField(oldKey, newKey) {
+  if (oldKey===newKey||!newKey.trim()) return;
+  const val=_customFields[oldKey]; delete _customFields[oldKey];
+  _customFields[newKey.trim()]=val; renderCustomFieldsList();
 }
+function removeCustomField(key) { delete _customFields[key]; renderCustomFieldsList(); }
 
-function updateBulkValueInput() {
-  const field = document.getElementById('bulk-field').value;
-  const wrap  = document.getElementById('bulk-val-wrap');
-  const yesno = ['Vegan (Yes/No)','Vegetarian (Yes/No)','Liquid (Yes/No)'];
-  const cats  = ["Baking","Grains, Pasta & Noodles","Breads & Flatbreads","Packaged & Convenience","Meat","Poultry","Seafood","Dairy & Eggs","Plant-Based","Vegetables","Fruits","Herbs","Spices","Oils & Fats","Legumes & Pulses","Nuts & Seeds","Condiments & Sauces","Vinegars","Sweeteners","Canned & Preserved","Alcohol & Cooking Wine","Stocks & Broths"];
-
-  if (field === 'Category') {
-    wrap.innerHTML = `<select class="bulk-val-input" id="bulk-value"><option value="">— Select —</option>${cats.map(c=>`<option>${c}</option>`).join('')}</select>`;
-  } else if (yesno.includes(field)) {
-    wrap.innerHTML = `<select class="bulk-val-input" id="bulk-value"><option>Yes</option><option>No</option></select>`;
-  } else {
-    wrap.innerHTML = `<input type="text" class="bulk-val-input" id="bulk-value" placeholder="New value...">`;
-  }
-}
-
-async function applyBulkEdit() {
-  const field = document.getElementById('bulk-field').value;
-  const value = document.getElementById('bulk-value').value.trim();
-  if (!field) { alert('Please choose a field to update.'); return; }
-  if (!value && field !== 'Allergen') { alert('Please enter a value.'); return; }
-  if (selectedIds.size === 0) { alert('No ingredients selected.'); return; }
-  if (!confirm(`Update "${field}" to "${value}" for ${selectedIds.size} ingredient(s)?`)) return;
+// ── UNITS AUTOCOMPLETE ────────────────────────────────────────────
+async function loadUnitsAutocomplete() {
   try {
-    const affected = await rpc('admin_bulk_update_field', {
-      p_ids:   Array.from(selectedIds),
-      p_field: field,
-      p_value: value
-    });
-    clearSelection();
-    await loadIngredients(ingPage);
-    alert('✓ Updated ' + affected + ' ingredient(s).');
-  } catch(e) { alert('Error: ' + e.message); }
-}
-
-async function deleteSelected() {
-  if (selectedIds.size === 0) return;
-  if (!confirm('Delete ' + selectedIds.size + ' ingredient(s)? This cannot be undone.')) return;
-  try {
-    await Promise.all(Array.from(selectedIds).map(id => rpc('admin_delete_ingredient', { p_id: id })));
-    clearSelection();
-    await loadIngredients(ingPage);
-  } catch(e) { alert('Error: ' + e.message); }
-}
-
-// ── INLINE EDITING ────────────────────────────────────────────────
-const CATS_LIST = ["Baking","Grains, Pasta & Noodles","Breads & Flatbreads","Packaged & Convenience","Meat","Poultry","Seafood","Dairy & Eggs","Plant-Based","Vegetables","Fruits","Herbs","Spices","Oils & Fats","Legumes & Pulses","Nuts & Seeds","Condiments & Sauces","Vinegars","Sweeteners","Canned & Preserved","Alcohol & Cooking Wine","Stocks & Broths"];
-
-function inlineCell(e, id, field, type) {
-  e.stopPropagation();
-  const td = e.currentTarget;
-  if (td.querySelector('input,select')) return;
-  const ing = window._ingRows && window._ingRows[id];
-  let currentVal;
-  if (field.startsWith('extra:')) {
-    const k = field.slice(6);
-    currentVal = ing && ing.extra_fields ? (ing.extra_fields[k] || '') : '';
-  } else {
-    currentVal = ing ? (ing[field] || '') : td.textContent.trim();
-  }
-  const origHTML = td.innerHTML;
-
-  if (type === 'text') {
-    const input = document.createElement('input');
-    input.className = 'inline-input';
-    input.value = currentVal;
-    input.addEventListener('keydown', function(ev) {
-      if (ev.key === 'Enter') { ev.preventDefault(); this.blur(); }
-      if (ev.key === 'Escape') { td.innerHTML = origHTML; td.className = 'editable-cell'; }
-    });
-    input.addEventListener('blur', function() {
-      saveInlineField(id, field, this.value, td);
-    });
-    input.addEventListener('click', function(ev) { ev.stopPropagation(); });
-    td.innerHTML = '';
-    applyThemeColors(td);
-    td.appendChild(input);
-    input.focus();
-
-  } else if (type === 'select' || type === 'yesno') {
-    const sel = document.createElement('select');
-    sel.className = 'inline-select';
-    const opts = type === 'yesno' ? ['Yes','No'] : CATS_LIST;
-    opts.forEach(function(o) {
-      const opt = document.createElement('option');
-      opt.value = o; opt.textContent = o;
-      if (o === currentVal) opt.selected = true;
-      sel.appendChild(opt);
-    });
-    sel.addEventListener('change', function() {
-      saveInlineField(id, field, this.value, td);
-    });
-    sel.addEventListener('blur', function() {
-      if (!this._saved) { td.innerHTML = origHTML; td.className = 'editable-cell'; }
-    });
-    sel.addEventListener('click', function(ev) { ev.stopPropagation(); });
-    td.innerHTML = '';
-    applyThemeColors(td);
-    td.appendChild(sel);
-    sel.focus();
-  }
-}
-
-async function saveInlineField(id, field, value, td) {
-  const sel = td.querySelector('select');
-  if (sel) sel._saved = true;
-  // Map field name to RPC param
-  const paramMap = {
-    'Category':            'p_category',
-    'Sub Category':        'p_sub_category',
-    'Allergen':            'p_allergen',
-    'Vegan (Yes/No)':      'p_vegan',
-    'Vegetarian (Yes/No)': 'p_vegetarian',
-    'Liquid (Yes/No)':     'p_liquid',
-    'CJ Recommended Brand':'p_cj_recommended_brand',
-    'Unit':                'p_unit',
-    'Notes':               'p_notes'
-  };
-  // Handle extra_fields columns
-  if (field.startsWith('extra:')) {
-    const k = field.slice(6);
-    try {
-      const ing = window._ingRows && window._ingRows[id];
-      const ef = Object.assign({}, (ing && ing.extra_fields) || {});
-      ef[k] = value;
-      await rpc('admin_upsert_ingredient', { p_id: id, p_ingredient_name: ing ? (ing['Ingredient Name']||'') : '', p_extra_fields: ef });
-      if (window._ingRows && window._ingRows[id]) {
-        window._ingRows[id].extra_fields = ef;
-      }
-      td.textContent = value; td.className = 'editable-cell';
-    } catch(err) { console.error(err); }
-    return;
-  }
-  const param = paramMap[field];
-  if (!param) return;
-  try {
-    const ing = window._ingRows && window._ingRows[id];
-    await rpc('admin_upsert_ingredient', {
-      p_id: id,
-      p_ingredient_name: ing ? ing["Ingredient Name"] : '',
-      [param]: value
-    });
-    // Update stored data
-    if (window._ingRows && window._ingRows[id]) window._ingRows[id][field] = value;
-    // Update cell
-    if (field === 'Vegan (Yes/No)' || field === 'Vegetarian (Yes/No)') {
-      td.innerHTML = '<span class="ap-status-pill ' + (value==='Yes'?'approved':'rejected') + '">' + value + '</span>';
-    } else {
-      td.textContent = value;
-    }
-    td.className = 'editable-cell';
-  } catch(err) {
-    console.error('Inline save error:', err.message);
-    td.innerHTML = window._ingRows && window._ingRows[id] ? (window._ingRows[id][field] || '') : value;
-    td.className = 'editable-cell';
-  }
+    const units = await rpc('admin_get_ingredient_units',{});
+    const dl = document.getElementById('ing-units-list');
+    if (dl&&units.length) dl.innerHTML = units.map(function(u){return '<option value="'+u.unit+'">';}).join('');
+  } catch(_) {}
 }
 
 // ── CSV IMPORT ────────────────────────────────────────────────────
@@ -1926,117 +1732,125 @@ function openCsvModal() {
   setTimeout(function() { applyThemeColors(csvModalEl); }, 20);
 }
 
-function closeCsvModal() {
-  document.getElementById('csv-modal').classList.remove('open');
-  csvData = null;
-}
+function closeCsvModal() { document.getElementById('csv-modal').classList.remove('open'); csvData=null; }
 
 function handleCsvDrop(e) {
   e.preventDefault();
   document.getElementById('csv-drop-zone').classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if (file) handleCsvFile(file);
+  const file=e.dataTransfer.files[0]; if(file) handleCsvFile(file);
 }
 
 function handleCsvFile(file) {
-  if (!file || !file.name.endsWith('.csv')) {
-    showCsvError('Please upload a .csv file.');
-    return;
-  }
-  if (file.size > 5 * 1024 * 1024) {
-    showCsvError('File too large. Maximum 5MB.');
-    return;
-  }
-  document.getElementById('csv-error').style.display = 'none';
+  if (!file||!file.name.endsWith('.csv')) { showCsvError('Please upload a .csv file.'); return; }
+  document.getElementById('csv-error').style.display='none';
   Papa.parse(file, {
-    header: true,
-    skipEmptyLines: true,
+    header:true, skipEmptyLines:true,
     complete: function(results) {
-      if (results.errors.length) {
-        showCsvError('CSV parse error: ' + results.errors[0].message);
-        return;
-      }
-      if (!results.data.length) {
-        showCsvError('No data rows found in the CSV.');
-        return;
-      }
-      // Separate standard columns from extra columns
-      const STANDARD_COLS = ['ID','Ingredient Name','Also Known As','Category',
-        'Sub Category','Standard Qty','Standard Weight (g or ml)','Unit',
-        'Liquid (Yes/No)','CJ Recommended Brand','Allergen','Vegan (Yes/No)',
-        'Vegetarian (Yes/No)','Notes'];
-      const allCols = results.data.length > 0 ? Object.keys(results.data[0]) : [];
-      const extraCols = allCols.filter(function(c) { return !STANDARD_COLS.includes(c); });
+      if (results.errors.length) { showCsvError('CSV parse error: '+results.errors[0].message); return; }
+      if (!results.data.length) { showCsvError('No data rows found.'); return; }
+      const STANDARD = ['ID','Ingredient Name','Also Known As','Category','Sub Category',
+        'Standard Qty','Standard Weight (g or ml)','Unit','Liquid (Yes/No)',
+        'CJ Recommended Brand','Allergen','Vegan (Yes/No)','Vegetarian (Yes/No)','Notes'];
+      const allCols = Object.keys(results.data[0]);
+      const extraCols = allCols.filter(function(c){ return !STANDARD.includes(c); });
       // Map extra columns into extra_fields JSONB
       csvData = results.data.map(function(row) {
         const mapped = {};
-        STANDARD_COLS.forEach(function(c) { if (row[c] !== undefined) mapped[c] = row[c]; });
+        STANDARD.forEach(function(c){ if(row[c]!==undefined) mapped[c]=row[c]; });
         if (extraCols.length) {
           mapped.extra_fields = {};
-          extraCols.forEach(function(c) { if (row[c] !== undefined && row[c] !== '') mapped.extra_fields[c] = row[c]; });
+          extraCols.forEach(function(c){ if(row[c]!==undefined&&row[c]!=='') mapped.extra_fields[c]=row[c]; });
         }
         return mapped;
       });
-      showCsvPreview(results.data); // Show original data in preview
+      showCsvPreview(results.data);
       if (extraCols.length) {
-        document.getElementById('csv-row-count').textContent +=
-          ' — ' + extraCols.length + ' extra column(s) will be stored as custom fields: ' + extraCols.join(', ');
+        const rc = document.getElementById('csv-row-count');
+        if (rc) rc.textContent += ' — '+extraCols.length+' extra column(s) will be stored as custom fields: '+extraCols.join(', ');
       }
     },
-    error: function(e) { showCsvError('Error reading file: ' + e.message); }
+    error:function(e){ showCsvError('Error reading file: '+e.message); }
   });
 }
 
 function showCsvPreview(data) {
   const cols = Object.keys(data[0]);
-  const preview = data.slice(0, 10);
-  const total = data.length;
-  document.getElementById('csv-drop-zone').style.display = 'none';
-  document.getElementById('csv-row-count').textContent = total + ' row' + (total===1?'':'s') + ' ready to import';
-  document.getElementById('csv-preview-label').textContent = ' — showing first ' + Math.min(10, total);
+  const preview = data.slice(0,10);
+  document.getElementById('csv-drop-zone').style.display='none';
+  document.getElementById('csv-row-count').textContent = data.length+' row'+(data.length===1?'':'s')+' ready';
+  document.getElementById('csv-preview-label').textContent = ' — showing first '+Math.min(10,data.length);
   document.getElementById('csv-preview-table').innerHTML =
-    '<thead><tr>' + cols.map(c=>`<th>${c}</th>`).join('') + '</tr></thead>' +
-    '<tbody>' + preview.map(row=>'<tr>' + cols.map(c=>`<td>${row[c]||''}</td>`).join('') + '</tr>').join('') + '</tbody>';
-  document.getElementById('csv-preview-section').style.display = 'block';
-  document.getElementById('csv-import-btn').disabled = false;
+    '<thead><tr>'+cols.map(function(c){return '<th>'+c+'</th>';}).join('')+'</tr></thead>'+
+    '<tbody>'+preview.map(function(row){return '<tr>'+cols.map(function(c){return '<td>'+(row[c]||'')+'</td>';}).join('')+'</tr>';}).join('')+'</tbody>';
+  document.getElementById('csv-preview-section').style.display='block';
+  document.getElementById('csv-import-btn').disabled=false;
+  setTimeout(fixDropdownTheme,10);
 }
 
 function showCsvError(msg) {
-  const el = document.getElementById('csv-error');
-  el.textContent = msg; el.style.display = 'block';
-  document.getElementById('csv-import-btn').disabled = true;
+  const el=document.getElementById('csv-error');
+  el.textContent=msg; el.style.display='block';
+  document.getElementById('csv-import-btn').disabled=true;
 }
 
 async function importCsv() {
-  if (!csvData || !csvData.length) return;
-  const btn    = document.getElementById('csv-import-btn');
-  const status = document.getElementById('csv-status');
-  btn.disabled = true; btn.textContent = 'Importing...';
-  status.textContent = '';
+  if (!csvData||!csvData.length) return;
+  const btn=document.getElementById('csv-import-btn');
+  const status=document.getElementById('csv-status');
+  btn.disabled=true; btn.textContent='Importing...'; status.textContent='';
   try {
-    const total = await rpc('admin_bulk_upsert_ingredients', { p_rows: csvData });
-    status.textContent = '✓ ' + total + ' ingredient(s) imported.';
-    setTimeout(() => { closeCsvModal(); loadIngredients(1); }, 1200);
+    const total=await rpc('admin_bulk_upsert_ingredients',{p_rows:csvData});
+    status.textContent='✓ '+total+' ingredient(s) imported.';
+    setTimeout(function(){ closeCsvModal(); loadIngredients(1); },1200);
   } catch(e) {
-    showCsvError('Import failed: ' + e.message);
-    btn.disabled = false; btn.textContent = 'Import';
+    showCsvError('Import failed: '+e.message);
+    btn.disabled=false; btn.textContent='Import';
   }
 }
 
 function downloadTemplate() {
-  const cols = ['ID','Ingredient Name','Also Known As','Category','Sub Category','Standard Qty','Standard Weight (g or ml)','Unit','Liquid (Yes/No)','CJ Recommended Brand','Allergen','Vegan (Yes/No)','Vegetarian (Yes/No)','Notes'];
-  const csv = cols.join(',') + '\n' +
-    ',Plain Flour,,Baking,Wheat Flours,1/4 cup,30,cup,No,,Gluten,Yes,Yes,Example ingredient';
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = 'ingredients-template.csv'; a.click();
+  const cols=['ID','Ingredient Name','Also Known As','Category','Sub Category',
+    'Standard Qty','Standard Weight (g or ml)','Unit','Liquid (Yes/No)',
+    'CJ Recommended Brand','Allergen','Vegan (Yes/No)','Vegetarian (Yes/No)','Notes'];
+  const csv=cols.join(',')+'\n,Plain Flour,,Baking,Wheat Flours,¼ cup,30,cup,No,,Gluten,Yes,Yes,Example';
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='ingredients-template.csv'; a.click();
   URL.revokeObjectURL(url);
 }
 
+// ── EXPORT CSV ────────────────────────────────────────────────────
+async function exportCsv() {
+  const btn=document.querySelector('[onclick="exportCsv()"]');
+  if (btn) { btn.textContent='⏳ Exporting...'; btn.disabled=true; }
+  try {
+    const rows=await rpc('admin_export_ingredients',{p_search:null,p_category:null});
+    if (!rows.length) { alert('No ingredients to export.'); return; }
+    const extraKeys=[]; const seen={};
+    rows.forEach(function(r){ if(r.extra_fields&&typeof r.extra_fields==='object') Object.keys(r.extra_fields).forEach(function(k){ if(!seen[k]){seen[k]=true;extraKeys.push(k);} }); });
+    const stdCols=['ID','Ingredient Name','Also Known As','Category','Sub Category',
+      'Standard Qty','Standard Weight (g or ml)','Unit','Liquid (Yes/No)',
+      'CJ Recommended Brand','Allergen','Vegan (Yes/No)','Vegetarian (Yes/No)','Notes'];
+    const allCols=stdCols.concat(extraKeys);
+    const esc=function(v){ const s=String(v==null?'':v); return (s.includes(',')||s.includes('"')||s.includes('\n'))?'"'+s.replace(/"/g,'""')+'"':s; };
+    const csv=[allCols.join(',')].concat(rows.map(function(r){ return allCols.map(function(c){ return stdCols.includes(c)?esc(r[c]):esc(r.extra_fields?(r.extra_fields[c]||''):''); }).join(','); })).join('\n');
+    const blob=new Blob([csv],{type:'text/csv'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url;
+    a.download='ingredients-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+    URL.revokeObjectURL(url);
+  } catch(e) { alert('Export failed: '+e.message); }
+  finally { if(btn){btn.textContent='⬇ Export CSV';btn.disabled=false;} }
+}
+
+// ── PAGINATION (hidden but kept for compatibility) ─────────────────
+function renderIngPagination() {}
+
 document.addEventListener('DOMContentLoaded', function() {
-  const co = document.getElementById('csv-modal');
-  if (co) co.addEventListener('click', function(e) { if(e.target===this) closeCsvModal(); });
+  const io=document.getElementById('ing-modal');
+  if(io) io.addEventListener('click',function(e){if(e.target===this)closeIngModal();});
+  const co=document.getElementById('csv-modal');
+  if(co) co.addEventListener('click',function(e){if(e.target===this)closeCsvModal();});
 });
 
 
