@@ -1584,7 +1584,6 @@ async function loadIngredients(page) {
     if (!rows.length) { tbody.innerHTML = '<tr><td colspan="9" class="ap-empty-row">No ingredients found.</td></tr>'; renderIngPagination(0,total); return; }
     // Store ingredient data for inline editing
     window._ingRows = {};
-    rows.forEach(i => { window._ingRows[i["ID"]] = i; });
 
     tbody.innerHTML = rows.map(i => {
       const esc = s => (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
@@ -1633,7 +1632,7 @@ function openIngModal(ing) {
     document.getElementById('ing-aka').value      = ing["Also Known As"]||'';
     document.getElementById('ing-category').value = ing["Category"]||'';
     document.getElementById('ing-subcat').value   = ing["Sub Category"]||'';
-    document.getElementById('ing-qty').value      = ing["Standard Qty"]||'';
+    document.getElementById('ing-qty').value      = formatQty(ing["Standard Qty"])||'';
     document.getElementById('ing-weight').value   = ing["Standard Weight (g or ml)"]||'';
     document.getElementById('ing-unit').value     = ing["Unit"]||'';
     document.getElementById('ing-liquid').value   = ing["Liquid (Yes/No)"]||'No';
