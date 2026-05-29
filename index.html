@@ -2,17 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <script src="theme-init.js"></script>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="manifest" href="site.webmanifest">
-  <meta name="theme-color" content="#DEA82B">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="The Culinary Journal">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Culinary Journal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
   <link rel="stylesheet" href="style.css">
   <style>
@@ -21,13 +14,10 @@
     }
   </style>
   <script>
-    // Apply saved theme ONLY if signed in — prevents theme leaking after sign out
+    // Apply saved theme before paint to prevent flash
     (function(){
       try {
-        var s = null;
-        try { s = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(_) {}
-        var loggedIn = !!(s && s.access_token);
-        var t = loggedIn ? localStorage.getItem('tcj_theme') : null;
+        var t = localStorage.getItem('tcj_theme');
         if (t && t !== 'midnight-slate') {
           document.documentElement.setAttribute('data-pending-theme', t);
         }
@@ -119,6 +109,17 @@
       <i class="ti ti-shopping-cart feature-icon"></i>
       <div class="feature-title">Grocery List</div>
       <div class="feature-desc">Auto-generated from recipes</div>
+    </div>
+  </div>
+
+
+  <!-- Featured Community Recipes -->
+  <div class="feat-section" id="feat-section" style="display:none">
+    <div class="feat-label">From the Community</div>
+    <div class="feat-title">Recent Recipes</div>
+    <div class="feat-grid" id="feat-grid"></div>
+    <div style="text-align:center;margin-top:24px">
+      <a href="recipes.html" class="feat-see-all">Browse all recipes →</a>
     </div>
   </div>
 

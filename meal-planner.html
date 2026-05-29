@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meal Planner — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .mp-wrap { max-width:1200px; margin:0 auto; padding:24px 16px 80px; }
+
+    /* Header */
+    .mp-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
+    .mp-title  { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--text-high); }
+    .mp-week-nav { display:flex; align-items:center; gap:12px; }
+    .mp-week-btn { padding:7px 14px; border-radius:8px; border:1px solid var(--border); background:none; color:var(--text-mid); font-family:'DM Sans',sans-serif; font-size:13px; cursor:pointer; }
+    .mp-week-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .mp-week-label { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-high); min-width:160px; text-align:center; }
+    .mp-actions { display:flex; gap:8px; }
+    .mp-btn { padding:9px 18px; border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; border:none; }
+    .mp-btn-primary { background:var(--accent); color:#fff; }
+    .mp-btn-ghost   { background:none; border:1px solid var(--border); color:var(--text-mid); }
+    .mp-btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+
+    /* Calendar grid */
+    .mp-grid { display:grid; grid-template-columns: 90px repeat(7,1fr); gap:0; border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+    .mp-col-header { text-align:center; padding:12px 6px; background:var(--text-ghost); border-bottom:1px solid var(--border); border-right:1px solid var(--border); }
+    .mp-col-header:last-child { border-right:none; }
+    .mp-col-day  { font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; color:var(--text-high); }
+    .mp-col-date { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); margin-top:2px; }
+    .mp-col-header.today { background:rgb(from var(--accent) r g b / 0.1); }
+    .mp-col-header.today .mp-col-day { color:var(--accent); }
+    .mp-row-label { display:flex; align-items:center; justify-content:center; padding:8px 6px; background:var(--text-ghost); border-right:1px solid var(--border); border-bottom:1px solid rgba(from var(--border) r g b / 0.4); font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-mid); writing-mode:horizontal-tb; text-align:center; min-height:90px; }
+    .mp-row-label:last-child { border-bottom:none; }
+    .mp-slot { border-right:1px solid rgba(from var(--border) r g b / 0.4); border-bottom:1px solid rgba(from var(--border) r g b / 0.4); min-height:90px; padding:6px; position:relative; }
+    .mp-slot:last-child { border-right:none; }
+
+    /* When row is last */
+    .mp-grid-row:last-child .mp-slot,
+    .mp-grid-row:last-child .mp-row-label { border-bottom:none; }
+
+    .mp-slot-empty { width:100%; height:100%; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:8px; border:1px dashed rgba(from var(--border) r g b / 0.4); min-height:78px; transition:all 0.15s; }
+    .mp-slot-empty:hover { border-color:var(--accent); background:rgb(from var(--accent) r g b / 0.06); }
+    .mp-slot-add { font-size:18px; color:var(--text-mid); }
+    .mp-slot-empty:hover .mp-slot-add { color:var(--accent); }
+
+    .mp-recipe-card { background:rgb(from var(--accent) r g b / 0.08); border:1px solid rgb(from var(--accent) r g b / 0.2); border-radius:8px; padding:7px 8px; cursor:pointer; position:relative; min-height:78px; }
+    .mp-recipe-card:hover { background:rgb(from var(--accent) r g b / 0.14); }
+    .mp-recipe-name { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; color:var(--text-high); line-height:1.3; margin-bottom:3px; }
+    .mp-recipe-cat  { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); }
+    .mp-recipe-remove { position:absolute; top:4px; right:4px; background:none; border:none; color:var(--text-mid); cursor:pointer; font-size:14px; padding:0 2px; line-height:1; }
+    .mp-recipe-remove:hover { color:#dc5050; }
+
+    /* Weekly summary */
+    .mp-summary { margin-top:20px; background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:18px 20px; }
+    .mp-summary-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-mid); margin-bottom:12px; }
+    .mp-summary-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .mp-summary-stat { text-align:center; }
+    .mp-summary-num { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:700; color:var(--accent); }
+    .mp-summary-label { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+
+    /* Recipe search modal */
+    .mp-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+    .mp-modal.open { display:flex; }
+    .mp-modal-box { background:var(--bg); border:1px solid var(--border); border-radius:16px; width:100%; max-width:520px; overflow:hidden; }
+    .mp-modal-head { padding:18px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .mp-modal-title { font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:600; color:var(--text-high); }
+    .mp-modal-close { background:none; border:none; color:var(--text-mid); cursor:pointer; font-size:20px; }
+    .mp-modal-search { padding:14px 20px; border-bottom:1px solid var(--border); }
+    .mp-modal-search input { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:9px 14px; border:1px solid var(--border); border-radius:9px; background:var(--bg); color:var(--text-high); outline:none; }
+    .mp-modal-search input:focus { border-color:var(--accent); }
+    .mp-modal-results { max-height:340px; overflow-y:auto; padding:10px; }
+    .mp-result-item { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:9px; cursor:pointer; }
+    .mp-result-item:hover { background:var(--text-ghost); }
+    .mp-result-emoji { font-size:24px; flex-shrink:0; }
+    .mp-result-name { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-high); }
+    .mp-result-cat  { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+    .mp-result-empty { text-align:center; padding:30px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
+  </style>
+</head>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+
+<div class="mp-wrap">
+  <div class="mp-header">
+    <div>
+      <div class="mp-title">🗓 Meal Planner</div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div class="mp-week-nav">
+        <button class="mp-week-btn" onclick="prevWeek()">← Prev</button>
+        <div class="mp-week-label" id="week-label"></div>
+        <button class="mp-week-btn" onclick="nextWeek()">Next →</button>
+      </div>
+      <div class="mp-actions">
+        <button class="mp-btn mp-btn-ghost" onclick="clearWeek()">Clear Week</button>
+        <button class="mp-btn mp-btn-primary" onclick="addToGrocery()">🛒 Add to Grocery List</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mp-grid" id="mp-grid"></div>
+
+  <div class="mp-summary" id="mp-summary"></div>
+</div>
+
+<!-- Recipe picker modal -->
+<div class="mp-modal" id="mp-modal">
+  <div class="mp-modal-box">
+    <div class="mp-modal-head">
+      <div class="mp-modal-title" id="mp-modal-title">Choose a Recipe</div>
+      <button class="mp-modal-close" onclick="closePicker()">&#215;</button>
+    </div>
+    <div class="mp-modal-search">
+      <input type="text" id="mp-search" placeholder="Search recipes..." oninput="searchRecipes(this.value)" autocomplete="off">
+    </div>
+    <div class="mp-modal-results" id="mp-results">
+      <div class="mp-result-empty">Loading recipes...</div>
+    </div>
+  </div>
+</div>
+
+<script src="nav-init.js"></script>
+<script>
+const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+
+const MEALS = ['Breakfast','Lunch','Dinner','Snack'];
+const DAYS  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
+
+let currentWeekOffset = 0;
+let pickerTarget = null; // {day, meal}
+let allRecipes = [];
+
+function getWeekDates(offset) {
+  const today = new Date();
+  const day = today.getDay();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1) + (offset * 7));
+  return DAYS.map(function(_, i) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
+  });
+}
+
+function getWeekKey(offset) {
+  const dates = getWeekDates(offset);
+  return 'tcj_meal_' + dates[0].toISOString().slice(0, 10);
+}
+
+function getPlan() {
+  try { return JSON.parse(localStorage.getItem(getWeekKey(currentWeekOffset)) || '{}'); }
+  catch(_) { return {}; }
+}
+
+function savePlan(plan) {
+  localStorage.setItem(getWeekKey(currentWeekOffset), JSON.stringify(plan));
+}
+
+function getSlot(day, meal) {
+  const plan = getPlan();
+  return plan[day] ? plan[day][meal] : null;
+}
+
+function setSlot(day, meal, recipe) {
+  const plan = getPlan();
+  if (!plan[day]) plan[day] = {};
+  plan[day][meal] = recipe;
+  savePlan(plan);
+}
+
+function clearSlot(day, meal) {
+  const plan = getPlan();
+  if (plan[day]) { delete plan[day][meal]; if (!Object.keys(plan[day]).length) delete plan[day]; }
+  savePlan(plan);
+}
+
+function prevWeek() { currentWeekOffset--; renderCalendar(); }
+function nextWeek() { currentWeekOffset++; renderCalendar(); }
+
+function clearWeek() {
+  if (!confirm('Clear all meals for this week?')) return;
+  localStorage.removeItem(getWeekKey(currentWeekOffset));
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const dates = getWeekDates(currentWeekOffset);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  // Week label
+  const from = dates[0].toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+  const to   = dates[6].toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+  document.getElementById('week-label').textContent = from + ' – ' + to;
+
+  const grid = document.getElementById('mp-grid');
+  grid.innerHTML = '';
+
+  // Header row: empty corner + day columns
+  const corner = document.createElement('div');
+  corner.className = 'mp-col-header';
+  corner.style.cssText = 'background:var(--text-ghost);border-bottom:1px solid var(--border);border-right:1px solid var(--border)';
+  grid.appendChild(corner);
+
+  dates.forEach(function(date, i) {
+    const isToday = date.getTime() === today.getTime();
+    const hdr = document.createElement('div');
+    hdr.className = 'mp-col-header' + (isToday ? ' today' : '');
+    hdr.innerHTML = '<div class="mp-col-day">' + DAYS[i] + '</div><div class="mp-col-date">' + date.getDate() + ' ' + date.toLocaleDateString('en-AU',{month:'short'}) + '</div>';
+    grid.appendChild(hdr);
+  });
+
+  // Meal rows
+  MEALS.forEach(function(meal) {
+    const rowLabel = document.createElement('div');
+    rowLabel.className = 'mp-row-label';
+    rowLabel.textContent = meal;
+    grid.appendChild(rowLabel);
+
+    dates.forEach(function(_, di) {
+      const day = DAYS[di];
+      const recipe = getSlot(day, meal);
+      const slot = document.createElement('div');
+      slot.className = 'mp-slot';
+
+      if (recipe) {
+        const card = document.createElement('div');
+        card.className = 'mp-recipe-card';
+        const emoji = CAT_EMOJI[recipe.category] || '🍽';
+        card.innerHTML = '<div class="mp-recipe-name">' + emoji + ' ' + recipe.name + '</div>' +
+          '<div class="mp-recipe-cat">' + (recipe.category||'') + '</div>' +
+          '<button class="mp-recipe-remove" title="Remove">×</button>';
+        card.querySelector('.mp-recipe-remove').addEventListener('click', function(e) {
+          e.stopPropagation(); clearSlot(day, meal); renderCalendar();
+        });
+        card.addEventListener('click', function() { openPicker(day, meal); });
+        slot.appendChild(card);
+      } else {
+        const empty = document.createElement('div');
+        empty.className = 'mp-slot-empty';
+        empty.innerHTML = '<span class="mp-slot-add">+</span>';
+        empty.addEventListener('click', function() { openPicker(day, meal); });
+        slot.appendChild(empty);
+      }
+      grid.appendChild(slot);
+    });
+  });
+
+  // Set column layout
+  grid.style.gridTemplateColumns = '90px repeat(7,1fr)';
+
+  renderSummary();
+}
+
+function renderSummary() {
+  const plan = getPlan();
+  let total = 0, uniqueRecipes = {}, days = 0;
+  DAYS.forEach(function(day) {
+    let hasMeal = false;
+    MEALS.forEach(function(meal) {
+      const r = plan[day] && plan[day][meal];
+      if (r) { total++; uniqueRecipes[r.id||r.name] = true; hasMeal = true; }
+    });
+    if (hasMeal) days++;
+  });
+  const unique = Object.keys(uniqueRecipes).length;
+  document.getElementById('mp-summary').innerHTML =
+    '<div class="mp-summary-title">This Week at a Glance</div>' +
+    '<div class="mp-summary-grid">' +
+    '<div class="mp-summary-stat"><div class="mp-summary-num">' + total + '</div><div class="mp-summary-label">Meals Planned</div></div>' +
+    '<div class="mp-summary-stat"><div class="mp-summary-num">' + unique + '</div><div class="mp-summary-label">Unique Recipes</div></div>' +
+    '<div class="mp-summary-stat"><div class="mp-summary-num">' + days + '</div><div class="mp-summary-label">Days Covered</div></div>' +
+    '</div>';
+}
+
+// ── RECIPE PICKER ────────────────────────────────────────────────
+function openPicker(day, meal) {
+  pickerTarget = {day, meal};
+  document.getElementById('mp-modal-title').textContent = 'Choose ' + meal + ' for ' + day;
+  document.getElementById('mp-search').value = '';
+  document.getElementById('mp-modal').classList.add('open');
+  renderResults(allRecipes);
+  setTimeout(function() { document.getElementById('mp-search').focus(); }, 100);
+}
+
+function closePicker() {
+  document.getElementById('mp-modal').classList.remove('open');
+  pickerTarget = null;
+}
+
+function searchRecipes(q) {
+  const filtered = q.trim()
+    ? allRecipes.filter(function(r) { return r.name.toLowerCase().includes(q.toLowerCase()) || (r.category||'').toLowerCase().includes(q.toLowerCase()); })
+    : allRecipes;
+  renderResults(filtered);
+}
+
+function renderResults(recipes) {
+  const el = document.getElementById('mp-results');
+  if (!recipes.length) {
+    el.innerHTML = '<div class="mp-result-empty">No recipes found. Add some via Submit Recipe!</div>';
+    return;
+  }
+  el.innerHTML = '';
+  recipes.slice(0, 40).forEach(function(r) {
+    const item = document.createElement('div');
+    item.className = 'mp-result-item';
+    const emoji = CAT_EMOJI[r.category] || '🍽';
+    item.innerHTML = '<div class="mp-result-emoji">' + emoji + '</div><div><div class="mp-result-name">' + r.name + '</div><div class="mp-result-cat">' + (r.category||'') + (r.origin_country?' · '+r.origin_country:'') + '</div></div>';
+    item.addEventListener('click', function() {
+      if (!pickerTarget) return;
+      setSlot(pickerTarget.day, pickerTarget.meal, {id: r.id, name: r.name, category: r.category, image_url: r.image_url});
+      closePicker();
+      renderCalendar();
+    });
+    el.appendChild(item);
+  });
+}
+
+// ── GROCERY EXPORT ───────────────────────────────────────────────
+async function addToGrocery() {
+  const plan = getPlan();
+  const recipeIds = [];
+  DAYS.forEach(function(day) {
+    MEALS.forEach(function(meal) {
+      const r = plan[day] && plan[day][meal];
+      if (r && r.id && !recipeIds.includes(r.id)) recipeIds.push(r.id);
+    });
+  });
+  if (!recipeIds.length) { alert('No recipes planned this week.'); return; }
+
+  // Load full recipe data for each unique recipe and add to grocery list
+  const data = JSON.parse(localStorage.getItem('tcj_grocery')||'{"recipes":[]}');
+  let added = 0;
+  for (const id of recipeIds) {
+    if (data.recipes.find(function(r){return r.id===id;})) continue;
+    try {
+      const res = await fetch(SUPA_URL + '/rest/v1/submitted_recipes?id=eq.' + id + '&select=id,recipe_name,servings,ingredients', {headers:{'apikey':SUPA_KEY}});
+      const [recipe] = await res.json();
+      if (!recipe) continue;
+      const ingredients = [];
+      (recipe.ingredients||[]).forEach(function(sec) {
+        (sec.items||[]).forEach(function(ing) {
+          ingredients.push({name:ing.ingredient, qty:ing.qty, unit:ing.unit||'', section:sec.section||sec.title||''});
+        });
+      });
+      data.recipes.push({id:recipe.id, name:recipe.recipe_name, servings:recipe.servings||1, ingredients});
+      added++;
+    } catch(_) {}
+  }
+  localStorage.setItem('tcj_grocery', JSON.stringify(data));
+  if (added > 0) {
+    alert(added + ' recipe(s) added to your grocery list!');
+    window.location.href = 'grocery.html';
+  } else {
+    alert('All planned recipes are already in your grocery list.');
+  }
+}
+
+// ── LOAD RECIPES ─────────────────────────────────────────────────
+async function loadRecipes() {
+  try {
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_approved_recipes', {
+      method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({p_limit:100})
+    });
+    if (res.ok) {
+      allRecipes = await res.json();
+    }
+  } catch(_) {}
+  renderResults(allRecipes);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  renderCalendar();
+  loadRecipes();
+  document.getElementById('mp-modal').addEventListener('click', function(e) {
+    if (e.target === this) closePicker();
+  });
+});
+</script>
+</body>
+</html>
