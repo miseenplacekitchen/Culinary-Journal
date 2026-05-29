@@ -168,44 +168,27 @@
     .csv-status { font-family:"DM Sans",sans-serif; font-size:12px; color:var(--text-mid); margin-left:auto; }
 
     /* ── GLOBAL INPUT THEME FIX ─────────────── */
-    .ing-modal, .ing-modal * { color-scheme: inherit; }
-    .ing-modal input, .ing-modal select, .ing-modal textarea,
-    .ing-modal-body input, .ing-modal-body select, .ing-modal-body textarea {
+    /* Only the ingredient modal form fields — NOT table inline selects */
+    .ing-modal-body input,
+    .ing-modal-body textarea {
       background: var(--bg) !important;
       color: var(--text-high) !important;
       border-color: var(--border) !important;
-      -webkit-appearance: none !important;
-      appearance: none !important;
-      color-scheme: inherit;
     }
-    .ing-modal select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") !important;
-      background-repeat: no-repeat !important;
-      background-position: right 10px center !important;
-      background-size: 12px !important;
-      padding-right: 32px !important;
-    }
-    .ing-modal select option { background: var(--bg); color: var(--text-high); }
-    .ing-cat-filter {
-      -webkit-appearance: none !important;
-      appearance: none !important;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") !important;
-      background-repeat: no-repeat !important;
-      background-position: right 10px center !important;
-      background-size: 12px !important;
-      padding-right: 28px !important;
-      background-color: var(--bg) !important;
+    .ing-modal-body select {
+      background: var(--bg) !important;
       color: var(--text-high) !important;
+      border-color: var(--border) !important;
+      -webkit-appearance: auto;
+      appearance: auto;
     }
+    .ing-modal-body select option { background: var(--bg); color: var(--text-high); }
+    .ing-modal-foot input, .ing-modal-foot select { background: var(--bg) !important; color: var(--text-high) !important; }
+    .ing-cat-filter { background: var(--bg) !important; color: var(--text-high) !important; }
     .ing-cat-filter option { background: var(--bg); color: var(--text-high); }
     .ap-search { background: var(--bg) !important; color: var(--text-high) !important; }
     .ap-search::placeholder { color: var(--text-mid); }
-    .bulk-field-sel, .bulk-val-input {
-      -webkit-appearance: none !important;
-      appearance: none !important;
-      background: var(--bg) !important;
-      color: var(--text-high) !important;
-    }
+    .bulk-field-sel, .bulk-val-input { background: var(--bg) !important; color: var(--text-high) !important; }
     .ap-reviewer-notes { background: var(--bg) !important; color: var(--text-high) !important; }
 
     /* ── INGREDIENT MANAGEMENT ────────────────── */
@@ -935,21 +918,24 @@ async function loadIngredients(page) {
     const badge = document.getElementById('badge-ingredients');
     if (badge) { badge.textContent = total; badge.style.display = 'inline-block'; }
     if (!rows.length) { tbody.innerHTML = '<tr><td colspan="9" class="ap-empty-row">No ingredients found.</td></tr>'; renderIngPagination(0,total); return; }
+    // Store ingredient data for inline editing
+    window._ingRows = {};
+    rows.forEach(i => { window._ingRows[i["ID"]] = i; });
+
     tbody.innerHTML = rows.map(i => {
       const esc = s => (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
       const id = i["ID"];
-      const cats = ["Baking","Grains, Pasta & Noodles","Breads & Flatbreads","Packaged & Convenience","Meat","Poultry","Seafood","Dairy & Eggs","Plant-Based","Vegetables","Fruits","Herbs","Spices","Oils & Fats","Legumes & Pulses","Nuts & Seeds","Condiments & Sauces","Vinegars","Sweeteners","Canned & Preserved","Alcohol & Cooking Wine","Stocks & Broths"].map(c=>`<option${c===i["Category"]?' selected':''}>${c}</option>`).join('');
       return `<tr id="ing-row-${id}">
         <td onclick="event.stopPropagation()"><input type="checkbox" class="ing-check ing-row-check" data-id="${id}" onclick="updateBulkToolbar()"></td>
         <td style="font-size:11px;color:var(--text-mid)">${id}</td>
-        <td onclick="openIngModal(${JSON.stringify(i).replace(/"/g,'&quot;')})"><div class="ap-recipe-name" style="cursor:pointer">${esc(i["Ingredient Name"])}</div></td>
-        <td onclick="openIngModal(${JSON.stringify(i).replace(/"/g,'&quot;')})"><span class="ap-submitter" style="cursor:pointer">${esc(i["Also Known As"])}</span></td>
-        <td class="editable-cell" onclick="inlineEditSelect(event,${id},'Category',this,\`<select class=\'inline-select\' onchange=\'saveInlineEdit(${id},\"Category\",this.value,this.closest(\"td\"))\' onblur=\'cancelInlineEdit(this.closest(\"td\"),\"${esc(i["Category"])}\")\' >${cats}</select>\`)">${esc(i["Category"])}</td>
-        <td class="editable-cell" onclick="inlineEditText(event,${id},'Sub Category',this,'${esc(i["Sub Category"]||"")}')">${esc(i["Sub Category"])}</td>
-        <td class="editable-cell" onclick="inlineEditText(event,${id},'Allergen',this,'${esc(i["Allergen"]||"")}')">${esc(i["Allergen"])}</td>
-        <td class="editable-cell" onclick="inlineEditSelect(event,${id},'Vegan (Yes/No)',this,\`<select class=\'inline-select\' onchange=\'saveInlineEdit(${id},\"Vegan (Yes/No)\",this.value,this.closest(\"td\"))\' ><option${i["Vegan (Yes/No)"]==='Yes'?' selected':''}>Yes</option><option${i["Vegan (Yes/No)"]!=='Yes'?' selected':''}>No</option></select>\`)"><span class="ap-status-pill ${i["Vegan (Yes/No)"]==='Yes'?'approved':'rejected'}">${i["Vegan (Yes/No)"]||''}</span></td>
-        <td class="editable-cell" onclick="inlineEditSelect(event,${id},'Vegetarian (Yes/No)',this,\`<select class=\'inline-select\' onchange=\'saveInlineEdit(${id},\"Vegetarian (Yes/No)\",this.value,this.closest(\"td\"))\' ><option${i["Vegetarian (Yes/No)"]==='Yes'?' selected':''}>Yes</option><option${i["Vegetarian (Yes/No)"]!=='Yes'?' selected':''}>No</option></select>\`)"><span class="ap-status-pill ${i["Vegetarian (Yes/No)"]==='Yes'?'approved':'rejected'}">${i["Vegetarian (Yes/No)"]||''}</span></td>
-        <td><button class="ap-filter-btn" style="font-size:11px" onclick="event.stopPropagation();openIngModal(${JSON.stringify(i).replace(/"/g,'&quot;')})">Edit</button></td>
+        <td onclick="openIngModal(window._ingRows[${id}])"><div class="ap-recipe-name" style="cursor:pointer">${esc(i["Ingredient Name"])}</div></td>
+        <td onclick="openIngModal(window._ingRows[${id}])"><span class="ap-submitter">${esc(i["Also Known As"])}</span></td>
+        <td class="editable-cell" title="Click to edit" onclick="inlineCell(event,${id},'Category','select')">${esc(i["Category"])}</td>
+        <td class="editable-cell" title="Click to edit" onclick="inlineCell(event,${id},'Sub Category','text')">${esc(i["Sub Category"])}</td>
+        <td class="editable-cell" title="Click to edit" onclick="inlineCell(event,${id},'Allergen','text')">${esc(i["Allergen"])}</td>
+        <td class="editable-cell" onclick="inlineCell(event,${id},'Vegan (Yes/No)','yesno')"><span class="ap-status-pill ${i["Vegan (Yes/No)"]==='Yes'?'approved':'rejected'}">${i["Vegan (Yes/No)"]||''}</span></td>
+        <td class="editable-cell" onclick="inlineCell(event,${id},'Vegetarian (Yes/No)','yesno')"><span class="ap-status-pill ${i["Vegetarian (Yes/No)"]==='Yes'?'approved':'rejected'}">${i["Vegetarian (Yes/No)"]||''}</span></td>
+        <td><button class="ap-filter-btn" style="font-size:11px" onclick="event.stopPropagation();openIngModal(window._ingRows[${id}])">Edit</button></td>
       </tr>`;
     }).join('');
     renderIngPagination(ingPage, total);
@@ -1139,47 +1125,93 @@ async function deleteSelected() {
 }
 
 // ── INLINE EDITING ────────────────────────────────────────────────
-function inlineEditText(e, id, field, td, currentVal) {
-  e.stopPropagation();
-  if (td.querySelector('.inline-input')) return;
-  const orig = td.innerHTML;
-  td.innerHTML = `<input class="inline-input" value="${currentVal.replace(/"/g,'&quot;')}" 
-    onblur="saveInlineEdit(${id},'${field}',this.value,this.closest('td'),true)"
-    onkeydown="if(event.key==='Enter'){this.blur();}if(event.key==='Escape'){this.closest('td').innerHTML='${orig.replace(/'/g,"&#39;")}';}"
-    onclick="event.stopPropagation()">`;
-  td.querySelector('.inline-input').focus();
-}
+const CATS_LIST = ["Baking","Grains, Pasta & Noodles","Breads & Flatbreads","Packaged & Convenience","Meat","Poultry","Seafood","Dairy & Eggs","Plant-Based","Vegetables","Fruits","Herbs","Spices","Oils & Fats","Legumes & Pulses","Nuts & Seeds","Condiments & Sauces","Vinegars","Sweeteners","Canned & Preserved","Alcohol & Cooking Wine","Stocks & Broths"];
 
-function inlineEditSelect(e, id, field, td, selectHtml) {
+function inlineCell(e, id, field, type) {
   e.stopPropagation();
-  if (td.querySelector('.inline-select')) return;
-  td.innerHTML = selectHtml;
-  td.querySelector('.inline-select').focus();
-}
+  const td = e.currentTarget;
+  if (td.querySelector('input,select')) return;
+  const ing = window._ingRows && window._ingRows[id];
+  const currentVal = ing ? (ing[field] || '') : td.textContent.trim();
+  const origHTML = td.innerHTML;
 
-async function saveInlineEdit(id, field, value, td, fromText) {
-  try {
-    await rpc('admin_upsert_ingredient', {
-      p_id: id,
-      ['p_' + field.toLowerCase().replace(/[^a-z]/g,'_').replace(/_+/g,'_').replace(/_$/,'')]: value
+  if (type === 'text') {
+    const input = document.createElement('input');
+    input.className = 'inline-input';
+    input.value = currentVal;
+    input.addEventListener('keydown', function(ev) {
+      if (ev.key === 'Enter') { ev.preventDefault(); this.blur(); }
+      if (ev.key === 'Escape') { td.innerHTML = origHTML; td.className = 'editable-cell'; }
     });
-    // Update the cell display
-    if (field === 'Vegan (Yes/No)' || field === 'Vegetarian (Yes/No)') {
-      td.innerHTML = `<span class="ap-status-pill ${value==='Yes'?'approved':'rejected'}">${value}</span>`;
-    } else {
-      td.textContent = value;
-      td.className = 'editable-cell';
-    }
-    td.className = 'editable-cell';
-  } catch(e) {
-    console.error('Inline edit error:', e.message);
-    await loadIngredients(ingPage);
+    input.addEventListener('blur', function() {
+      saveInlineField(id, field, this.value, td);
+    });
+    input.addEventListener('click', function(ev) { ev.stopPropagation(); });
+    td.innerHTML = '';
+    td.appendChild(input);
+    input.focus();
+
+  } else if (type === 'select' || type === 'yesno') {
+    const sel = document.createElement('select');
+    sel.className = 'inline-select';
+    const opts = type === 'yesno' ? ['Yes','No'] : CATS_LIST;
+    opts.forEach(function(o) {
+      const opt = document.createElement('option');
+      opt.value = o; opt.textContent = o;
+      if (o === currentVal) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', function() {
+      saveInlineField(id, field, this.value, td);
+    });
+    sel.addEventListener('blur', function() {
+      if (!this._saved) { td.innerHTML = origHTML; td.className = 'editable-cell'; }
+    });
+    sel.addEventListener('click', function(ev) { ev.stopPropagation(); });
+    td.innerHTML = '';
+    td.appendChild(sel);
+    sel.focus();
   }
 }
 
-function cancelInlineEdit(td, origVal) {
-  td.textContent = origVal;
-  td.className = 'editable-cell';
+async function saveInlineField(id, field, value, td) {
+  const sel = td.querySelector('select');
+  if (sel) sel._saved = true;
+  // Map field name to RPC param
+  const paramMap = {
+    'Category':            'p_category',
+    'Sub Category':        'p_sub_category',
+    'Allergen':            'p_allergen',
+    'Vegan (Yes/No)':      'p_vegan',
+    'Vegetarian (Yes/No)': 'p_vegetarian',
+    'Liquid (Yes/No)':     'p_liquid',
+    'CJ Recommended Brand':'p_cj_recommended_brand',
+    'Unit':                'p_unit',
+    'Notes':               'p_notes'
+  };
+  const param = paramMap[field];
+  if (!param) return;
+  try {
+    const ing = window._ingRows && window._ingRows[id];
+    await rpc('admin_upsert_ingredient', {
+      p_id: id,
+      p_ingredient_name: ing ? ing["Ingredient Name"] : '',
+      [param]: value
+    });
+    // Update stored data
+    if (window._ingRows && window._ingRows[id]) window._ingRows[id][field] = value;
+    // Update cell
+    if (field === 'Vegan (Yes/No)' || field === 'Vegetarian (Yes/No)') {
+      td.innerHTML = '<span class="ap-status-pill ' + (value==='Yes'?'approved':'rejected') + '">' + value + '</span>';
+    } else {
+      td.textContent = value;
+    }
+    td.className = 'editable-cell';
+  } catch(err) {
+    console.error('Inline save error:', err.message);
+    td.innerHTML = window._ingRows && window._ingRows[id] ? (window._ingRows[id][field] || '') : value;
+    td.className = 'editable-cell';
+  }
 }
 
 // ── CSV IMPORT ────────────────────────────────────────────────────
