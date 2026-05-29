@@ -84,6 +84,7 @@
         <div class="ch-detail-name"   id="cd-name"></div>
         <div class="ch-detail-handle" id="cd-handle"></div>
         <div class="ch-detail-meta"   id="cd-meta"></div>
+        <a  class="ch-detail-url"    id="cd-profile-link" href="#" style="display:none;margin-top:4px;font-size:12px">👤 View profile page →</a>
         <a  class="ch-detail-url"    id="cd-url" href="#" target="_blank" rel="noopener" style="display:none"></a>
       </div>
     </div>
@@ -161,13 +162,17 @@ function renderChefGrid(chefs) {
     const initials = chef.name.trim().split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
     const countries = [...chef.countries].slice(0,2).join(', ');
     const cats = [...chef.categories].slice(0,2).join(', ');
+    var profileHandle = chef.handle ? chef.handle.replace(/^@/,'') : '';
     card.innerHTML =
       '<div class="ch-avatar">' + initials + '</div>' +
       '<div class="ch-name">' + chef.name + '</div>' +
       (chef.handle ? '<div class="ch-handle">' + chef.handle + '</div>' : '') +
       (countries  ? '<div class="ch-meta">' + countries + '</div>' : '') +
       (cats       ? '<div class="ch-meta">' + cats + '</div>' : '') +
-      '<div class="ch-count"><strong>' + chef.recipes.length + '</strong> recipe' + (chef.recipes.length===1?'':'s') + '</div>';
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">' +
+        '<div class="ch-count"><strong>' + chef.recipes.length + '</strong> recipe' + (chef.recipes.length===1?'':'s') + '</div>' +
+        (profileHandle ? '<a href="user.html?u=' + profileHandle + '" onclick="event.stopPropagation()" style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--accent);text-decoration:none">View profile →</a>' : '') +
+      '</div>';
     card.addEventListener('click', function() { openChef(chef); });
     grid.appendChild(card);
   });
@@ -191,6 +196,13 @@ function openChef(chef) {
     urlEl.style.display = 'inline-block';
   } else {
     urlEl.style.display = 'none';
+  }
+  // Add profile link if handle looks like a CJ username
+  var profLinkEl = document.getElementById('cd-profile-link');
+  if (profLinkEl) {
+    var h = chef.handle ? chef.handle.replace(/^@/,'') : '';
+    if (h) { profLinkEl.href='user.html?u='+h; profLinkEl.style.display='inline-block'; }
+    else { profLinkEl.style.display='none'; }
   }
   document.getElementById('cd-recipe-label').textContent = chef.recipes.length + ' recipe' + (chef.recipes.length===1?'':'s') + ' by ' + chef.name;
   const recipeGrid = document.getElementById('cd-recipes');

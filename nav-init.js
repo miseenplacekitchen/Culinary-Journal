@@ -170,12 +170,15 @@
               '</div><div class="cj-menu-sep"></div>' : '') +
             (isAdmin ? item('dashboard.html', IC.dashboard, '⚙ Admin Dashboard') : '') +
             (isAdmin ? '<div class="cj-menu-sep"></div>' : '') +
-            item('my-dashboard.html',  IC.profile, 'My Kitchen') +
-            item('profile.html',       IC.profile, 'My Profile') +
-            item('grocery.html',       IC.drafts,  '🛒 Grocery List') +
-            item('draft-recipes.html', IC.drafts,  'Draft Recipes') +
-            item('submit-recipe.html', IC.submit,  'Submit a Recipe') +
-            item('recipes.html',       IC.book,    'Browse Recipes') +
+            item('my-dashboard.html',    IC.profile, 'My Kitchen') +
+            item('profile.html',         IC.profile, 'My Profile') +
+            item('collections.html',     IC.drafts,  '📁 My Collections') +
+            item('family-profiles.html', IC.profile, '👨‍👩‍👧 Family Profiles') +
+            '<div class="cj-menu-sep"></div>' +
+            item('grocery.html',         IC.drafts,  '🛒 Grocery List') +
+            item('draft-recipes.html',   IC.drafts,  'Draft Recipes') +
+            item('submit-recipe.html',   IC.submit,  'Submit a Recipe') +
+            item('recipes.html',         IC.book,    'Browse Recipes') +
             '<div class="cj-menu-sep"></div>' +
             '<button class="cj-menu-item cj-menu-danger" id="cj-signout" type="button" role="menuitem">' + IC.signout + '<span>Sign Out</span></button>' +
           '</div>' +

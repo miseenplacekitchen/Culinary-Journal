@@ -1142,19 +1142,28 @@ function renderCredit(r) {
     badge.textContent = '🌐 From Somewhere Else';
     badge.className = 'rp-credit-badge external';
   }
-  // We do not store the *submitter's* username on the recipe row, so we
-  // don't fabricate an "Added by". Attribution below uses the real credit_* fields.
   const added = document.getElementById('credit-added');
-  if (added) { added.textContent = ''; added.style.display = 'none'; }
+  if (r.username) {
+    added.innerHTML = 'Added by <a href="user.html?u=' + escapeHtml(r.username) + '" style="color:var(--accent);text-decoration:none;font-weight:600">@' + escapeHtml(r.username) + '</a>';
+    added.style.display = 'inline';
+  } else if (added) {
+    added.style.display = 'none';
+  }
   if (r.credit_name) {
     const orig = document.getElementById('credit-original');
-    orig.innerHTML = `Original recipe by <strong>${escapeHtml(r.credit_name)}</strong>${r.credit_handle ? ' <span style="color:var(--accent)">' + escapeHtml(r.credit_handle) + '</span>' : ''}`;
+    // If credit_handle looks like a CJ username, link to their profile
+    var creditHandleHtml = '';
+    if (r.credit_handle) {
+      var handle = r.credit_handle.replace(/^@/, '');
+      creditHandleHtml = ' <a href="user.html?u=' + escapeHtml(handle) + '" style="color:var(--accent);text-decoration:none">@' + escapeHtml(handle) + '</a>';
+    }
+    orig.innerHTML = 'Original recipe by <strong>' + escapeHtml(r.credit_name) + '</strong>' + creditHandleHtml;
     orig.style.display = 'inline';
     document.getElementById('credit-preserved').style.display = 'flex';
   }
   if (r.credit_url) {
     const src = document.getElementById('credit-source');
-    src.innerHTML = `<a href="${escapeHtml(r.credit_url)}" target="_blank" rel="noopener">View original source ↗</a>`;
+    src.innerHTML = '<a href="' + escapeHtml(r.credit_url) + '" target="_blank" rel="noopener">View original source ↗</a>';
     src.style.display = 'inline';
   }
 }

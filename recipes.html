@@ -51,7 +51,18 @@
     .cr-meta { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); display:flex; gap:8px; flex-wrap:wrap; }
     .cr-empty { text-align:center; padding:40px 20px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
     .cr-spice { display:inline-flex; gap:1px; }
-  </style>
+  
+    /* Community recipe cards */
+    .cr-grid  { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; }
+    .cr-card  { background:var(--surface,var(--text-ghost)); border:1px solid var(--border); border-radius:11px; overflow:hidden; text-decoration:none; display:block; transition:all .15s; }
+    .cr-card:hover { border-color:var(--accent-border,var(--accent)); transform:translateY(-2px); }
+    .cr-img   { height:110px; display:flex; align-items:center; justify-content:center; font-size:28px; border-bottom:1px solid var(--border); overflow:hidden; background:var(--text-ghost); }
+    .cr-body  { padding:10px 12px; }
+    .cr-name  { font-family:'Cormorant Garamond',serif; font-size:.95rem; font-weight:600; color:var(--text-high); margin-bottom:2px; }
+    .cr-meta  { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); margin-bottom:2px; }
+    .cr-chef  { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); }
+    .cr-empty { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); text-align:center; padding:30px; }
+</style>
 </head>
 <body>
 <div class="page-bg"><div class="page-overlay">
@@ -156,9 +167,14 @@
         <button class="cr-filter" onclick="filterCommunity('Dairy Free',this)">🥛 Dairy Free</button>
         <button class="cr-filter" onclick="filterCommunity('Under 30 Mins',this)">⚡ Quick</button>
       </div>
+      <!-- Chef filter — populated once recipes load -->
+      <div id="cr-chef-row" style="display:none;margin-top:8px;display:none">
+        <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px">Filter by Chef</div>
+        <div class="cr-filters" id="cr-chef-filters"></div>
+      </div>
     </div>
     <div class="cr-grid" id="cr-grid">
-      <div class="cr-empty">Loading community recipes...</div>
+      <div class="cr-grid" id="community-grid"><div class="cr-empty">Loading community recipes...</div></div>
     </div>
   </div>
 
@@ -570,6 +586,102 @@ function hide(id) { document.getElementById(id).style.display='none'; }
 // ══════════════════════════════════════════════════════════
 loadCategories();
 </script>
-<script src="nav-init.js"></script>
+<script src="nav-init.js">
+// ══════════════════════════════════════════════════════════
+//  COMMUNITY RECIPES
+// ══════════════════════════════════════════════════════════
+var allCommunityRecipes = [];
+var activeDietFilter = '';
+var activeChefFilter = '';
+var SUPA_URL_CR = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+var SUPA_KEY_CR = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+var CR_CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
+
+async function loadCommunityRecipes() {
+  var grid = document.getElementById('community-grid');
+  if (!grid) return;
+  grid.innerHTML = '<div class="cr-empty">Loading community recipes...</div>';
+  try {
+    var res = await fetch(SUPA_URL_CR + '/rest/v1/rpc/get_approved_recipes', {
+      method:'POST', headers:{'apikey':SUPA_KEY_CR,'Content-Type':'application/json'},
+      body:JSON.stringify({p_limit:40})
+    });
+    allCommunityRecipes = res.ok ? await res.json() : [];
+    buildChefFilter();
+    renderCommunityRecipes();
+  } catch(_) {
+    if (grid) grid.innerHTML = '<div class="cr-empty">Could not load community recipes.</div>';
+  }
+}
+
+function buildChefFilter() {
+  var chefs = {};
+  allCommunityRecipes.forEach(function(r) {
+    var name = r.credit_name || (r.username ? '@'+r.username : '');
+    if (name) chefs[name] = (chefs[name]||0) + 1;
+  });
+  var chefNames = Object.entries(chefs).sort(function(a,b){return b[1]-a[1];}).slice(0,8).map(function(e){return e[0];});
+  if (!chefNames.length) return;
+  var row = document.getElementById('cr-chef-row');
+  var filterEl = document.getElementById('cr-chef-filters');
+  if (!row || !filterEl) return;
+  filterEl.innerHTML = '<button class="cr-filter active" onclick="filterByChef('',this)">All</button>' +
+    chefNames.map(function(n){return '<button class="cr-filter" onclick="filterByChef(''+n.replace(/'/g,"\'")+'',this)">'+n+'</button>';}).join('');
+  row.style.display = 'block';
+}
+
+function filterCommunity(tag, btn) {
+  activeDietFilter = tag;
+  document.querySelectorAll('#cr-dietary-filters .cr-filter').forEach(function(b){b.classList.remove('active');});
+  if (btn) btn.classList.add('active');
+  renderCommunityRecipes();
+}
+
+function filterByChef(name, btn) {
+  activeChefFilter = name;
+  document.querySelectorAll('#cr-chef-filters .cr-filter').forEach(function(b){b.classList.remove('active');});
+  if (btn) btn.classList.add('active');
+  renderCommunityRecipes();
+}
+
+function renderCommunityRecipes() {
+  var grid = document.getElementById('community-grid');
+  if (!grid) return;
+  var filtered = allCommunityRecipes.filter(function(r) {
+    if (activeDietFilter && !(r.dietary_tags||[]).includes(activeDietFilter)) return false;
+    if (activeChefFilter) {
+      var chefName = r.credit_name || (r.username ? '@'+r.username : '');
+      if (chefName !== activeChefFilter) return false;
+    }
+    return true;
+  });
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="cr-empty">No recipes match this filter.</div>';
+    return;
+  }
+  grid.innerHTML = filtered.map(function(r) {
+    var emoji = CR_CAT_EMOJI[r.category] || '🍳';
+    var chefLine = '';
+    if (r.credit_name) {
+      chefLine = '<div class="cr-chef">by <a href="user.html?u=' + (r.username||r.credit_handle||'').replace(/^@/,'') + '" style="color:var(--accent);text-decoration:none">' + r.credit_name + '</a></div>';
+    } else if (r.username) {
+      chefLine = '<div class="cr-chef">by <a href="user.html?u=' + r.username + '" style="color:var(--accent);text-decoration:none">@' + r.username + '</a></div>';
+    }
+    return '<a class="cr-card" href="recipe-page.html?id=' + r.id + '">' +
+      '<div class="cr-img">' + (r.image_url ? '<img src="'+r.image_url+'" loading="lazy" style="width:100%;height:100%;object-fit:cover">' : emoji) + '</div>' +
+      '<div class="cr-body">' +
+        '<div class="cr-name">' + (r.recipe_name||'') + '</div>' +
+        '<div class="cr-meta">' + (r.category||'') + (r.origin_country?' · '+r.origin_country:'') + '</div>' +
+        chefLine +
+      '</div></a>';
+  }).join('');
+}
+
+// Load community recipes on page load
+document.addEventListener('DOMContentLoaded', function() {
+  if (document.getElementById('community-grid')) loadCommunityRecipes();
+});
+
+</script>
 </body>
 </html>
