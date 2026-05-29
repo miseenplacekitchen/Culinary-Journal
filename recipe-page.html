@@ -373,6 +373,39 @@ const SPICE_TEXT_TO_NUM = {
   'mild':1, 'medium':2, 'hot':3, 'very hot':4, 'extremely hot':5
 };
 
+
+// ── SUBSTITUTIONS ─────────────────────────────────────────────
+let substitutionsMap = {}; // { 'butter': [{substitute, ratio, notes, dietary_benefit}] }
+
+async function loadSubstitutions() {
+  try {
+    const res = await fetch(
+      SUPABASE_URL + '/rest/v1/substitutions?select=original,substitute,ratio,notes,dietary_benefit',
+      { headers: { 'apikey': SUPABASE_KEY } }
+    );
+    if (!res.ok) return;
+    const rows = await res.json();
+    rows.forEach(row => {
+      const key = row.original.toLowerCase().trim();
+      if (!substitutionsMap[key]) substitutionsMap[key] = [];
+      substitutionsMap[key].push(row);
+    });
+  } catch(_) {}
+}
+
+function getSubstitutes(ingredientName) {
+  const name = ingredientName.toLowerCase().trim();
+  // Exact match first
+  if (substitutionsMap[name]) return substitutionsMap[name];
+  // Partial match — ingredient name contains a known original
+  for (const key of Object.keys(substitutionsMap)) {
+    if (name.includes(key) || key.includes(name.split(' ')[0])) {
+      return substitutionsMap[key];
+    }
+  }
+  return [];
+}
+
 // ── NORMALIZE ─────────────────────────────────────────
 // Coerces a row coming straight from submitted_recipes into the exact
 // shape the renderers expect. Idempotent: data already in the right
@@ -444,6 +477,7 @@ try { groceryList = JSON.parse(lsGet('tcj_grocery') || '[]') || []; } catch(_) {
 
 // ── INIT ─────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
+  loadSubstitutions(); // load in background, non-blocking
   try { session = JSON.parse(lsGet('tcj_session') || 'null'); } catch(_) { session = null; }
   try { updateNav(); } catch(e) { console.error('Nav error:', e); }
 
@@ -856,18 +890,33 @@ function renderIngRow(item, section, idx) {
     ? `<span class="rp-ing-qty" data-base="${baseNum}" data-unit="${item.unit || ''}">${item.qty}</span>`
     : `<span class="rp-ing-qty">${item.qty}</span>`;
 
+  const dbSubs = getSubstitutes(item.ingredient);
+  const allSubs = dbSubs.length ? dbSubs : (item.substitute ? [{substitute:item.substitute,ratio:'',notes:'',dietary_benefit:''}] : []);
+  const hasAnyInfo = hasInfo || allSubs.length > 0;
+
+  const subsHtml = allSubs.map(s => `
+    <div class="rp-info-row" style="flex-direction:column;align-items:flex-start;gap:2px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:14px">🔄</span>
+        <span style="font-weight:600;color:var(--text-high)">${s.substitute}</span>
+        ${s.ratio ? `<span style="font-size:10px;color:var(--accent);background:rgba(196,151,59,0.12);padding:1px 6px;border-radius:4px">${s.ratio}</span>` : ''}
+      </div>
+      ${s.notes ? `<div style="font-size:11px;color:var(--text-muted);padding-left:20px;line-height:1.4">${s.notes}</div>` : ''}
+      ${s.dietary_benefit ? `<div style="font-size:10px;color:#4caf76;padding-left:20px">${s.dietary_benefit}</div>` : ''}
+    </div>`).join('');
+
   return `
     <div class="rp-ing-row">
       <input type="checkbox" class="rp-ing-cb" onchange="toggleIngredient(this)">
       ${qtyHtml}
       <span class="rp-ing-name">${item.ingredient}${item.note ? ' <span style="font-size:11px;color:var(--text-muted);font-style:italic">— ' + item.note + '</span>' : ''}</span>
-      ${hasInfo ? `
-        <button class="rp-ing-info-btn" onclick="toggleInfo(this)" title="Chef recommendation & substitutes">
+      ${hasAnyInfo ? `
+        <button class="rp-ing-info-btn" onclick="toggleInfo(this)" title="Substitutes & chef tips">
           <div class="rp-ing-info-icon">i</div>
           <div class="rp-info-popup">
             <div class="rp-info-popup-title">${item.ingredient}</div>
             ${item.chef_rec ? `<div class="rp-info-row"><span>👨‍🍳</span><span>Chef recommends <strong>${item.chef_rec}</strong></span></div>` : ''}
-            ${item.substitute ? `<div class="rp-info-row"><span>🔄</span><span>Substitute: ${item.substitute}</span></div>` : ''}
+            ${allSubs.length ? `<div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-top:6px;margin-bottom:2px">Substitutes</div>${subsHtml}` : ''}
           </div>
         </button>` : '<span></span>'}
       <button class="rp-ing-cart-btn ${inGrocery ? 'added' : ''}" onclick="toggleGrocery(this, '${item.ingredient}', '${item.qty}', '${item.unit || ''}')" title="${inGrocery ? 'In grocery list' : 'Add to grocery list'}">
