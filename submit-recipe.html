@@ -764,13 +764,14 @@
 
   <div class="tab-nav"><div class="tab-nav-inner">
     <a class="tab" href="index.html">🏠 Home</a>
-    <a class="tab" href="recipes.html">📖 Recipes</a>
-    <a class="tab" href="meal-planner.html">🍽 Meal Planner</a>
-    <a class="tab" href="pantry.html">🧊 Pantry &amp; Fridge</a>
+    <a class="tab active" href="recipes.html">📖 Recipes</a>
+    <a class="tab" href="meal-planner.html">🗓 Meal Planner</a>
+    <a class="tab" href="pantry.html">🫙 Pantry &amp; Fridge</a>
     <a class="tab" href="grocery.html">🛒 Grocery List</a>
     <a class="tab" href="table-planner.html">🪑 Table Planner</a>
     <a class="tab" href="print-studio.html">🖨 Print Studio</a>
-    <a class="tab" href="profile.html">👤 My Profile</a>
+    <a class="tab" href="diary.html">📓 Diary</a>
+  <a class="tab" href="profile.html">👤 My Profile</a>
   </div></div>
 
 <div class="sr-page">
@@ -2914,9 +2915,72 @@ function cancelSubmission() {
 }
 
 function loadDraftSilent() {
+  // ── EDIT MODE: load rejected recipe by ?id= ──────────────────
+  const editId = new URLSearchParams(window.location.search).get('id');
+  let raw = null;
+
+  if (editId) {
+    window._editRecipeId = editId;
+    // Show edit banner
+    setTimeout(function() {
+      const banner = document.createElement('div');
+      banner.id = 'edit-mode-banner';
+      banner.style.cssText = 'background:rgba(220,130,50,.12);border:1px solid rgba(220,130,50,.4);border-radius:10px;padding:12px 16px;margin:0 0 20px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high,#e8e5e0);display:flex;align-items:center;gap:10px';
+      banner.innerHTML = '📝 <span><strong>Editing rejected recipe.</strong> Make your changes and click <strong>Submit for Review</strong> to resubmit for review.</span>';
+      const firstSection = document.querySelector('.sr-section');
+      if (firstSection) firstSection.parentNode.insertBefore(banner, firstSection);
+    }, 300);
+    // Load recipe from Supabase async, then populate form
+    (async function() {
+      try {
+        const s = JSON.parse(localStorage.getItem('tcj_session')||'null');
+        const headers = { 'apikey': SUPABASE_KEY };
+        if (s && s.access_token) headers['Authorization'] = 'Bearer ' + s.access_token;
+        const res = await fetch(SUPABASE_URL + '/rest/v1/submitted_recipes?id=eq.' + editId + '&select=*', { headers });
+        if (res.ok) {
+          const rows = await res.json();
+          if (rows && rows[0]) {
+            const r = rows[0];
+            window._editRecipeData = r;
+            // Populate basic fields
+            const setVal = (id, v) => { const el = document.getElementById(id); if (el && v !== null && v !== undefined) el.value = v; };
+            setVal('recipe-name', r.recipe_name);
+            setVal('native-title', r.native_title);
+            setVal('origin-continent', r.origin_continent);
+            setVal('origin-country', r.origin_country);
+            setVal('origin-state', r.origin_state);
+            setVal('cook-time', r.cook_time_minutes);
+            setVal('prep-time', r.prep_time_minutes);
+            setVal('servings', r.servings);
+            setVal('cooking-notes', r.cooking_notes);
+            setVal('personal-notes', r.personal_notes);
+            setVal('credit-name', r.credit_name);
+            setVal('credit-handle', r.credit_handle);
+            setVal('credit-url', r.credit_url);
+            // Set radio buttons
+            const setRadioFn = (name, val) => { const el = document.querySelector('input[name="'+name+'"][value="'+val+'"]'); if (el) el.checked = true; };
+            setRadioFn('source-type', r.source_type || 'Original');
+            setRadioFn('visibility', r.visibility || 'Public');
+            // Category + spice
+            const catSel = document.getElementById('category'); if (catSel && r.category) catSel.value = r.category;
+            const spiceSel = document.getElementById('spice-level'); if (spiceSel && r.spice_level) spiceSel.value = r.spice_level;
+            // Tags — check checkboxes
+            const checkTags = (arr, prefix) => (arr||[]).forEach(t => { const el = document.querySelector('input[data-tag="'+t+'"]') || document.querySelector('input[value="'+t+'"][name="'+prefix+'"]'); if (el) el.checked = true; });
+            checkTags(r.dietary_tags, 'dietary');
+            checkTags(r.health_tags, 'health');
+            checkTags(r.occasion_tags, 'occasion');
+            checkTags(r.style_tags, 'style');
+            // Image
+            if (r.image_url) { window._uploadedImageUrl = r.image_url; const pr = document.getElementById('img-preview'); if (pr) { pr.src = r.image_url; pr.style.display='block'; } }
+          }
+        }
+      } catch(e) { console.warn('Edit load error:', e); }
+    })();
+    return;
+  }
+
   // Load specific draft if URL has ?draft=id param
   const draftParam = new URLSearchParams(window.location.search).get('draft');
-  let raw = null;
   if (draftParam) {
     window._currentDraftId = draftParam;
     try { const entry = JSON.parse(lsGet('tcj_draft_' + draftParam) || 'null'); raw = entry ? JSON.stringify(entry.data) : null; } catch(_) {}
@@ -2924,146 +2988,8 @@ function loadDraftSilent() {
   if (!raw) raw = lsGet(DRAFT_KEY);
   if (!raw) return;
   try {
-    const d = JSON.parse(raw) || {};
-    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
-    const setRadio = (name, val) => {
-      if (!val) return;
-      // Iterate rather than use CSS attribute selector — handles values
-      // with &, ", or special characters that can break selectors.
-      document.querySelectorAll('input[name="' + name + '"]').forEach(r => {
-        if (r.value === val) r.checked = true;
-      });
-    };
-    // Auto-clean: if the saved recipe-name accidentally contains parser
-    // metadata like "[introduction]: ..." OR AI-style prose ("Received a
-    // complete, multi-component...", "Structured from...", "Note: ..."),
-    // strip it so the user gets a fresh field on reload.
-    const aiMetaCheck = (s) => {
-      if (!s) return false;
-      if (/^\[[^\]]+\]\s*:/i.test(s)) return true;
-      if (/^(received|structured|parsed|extracted|here'?s|here\s+is|this\s+(?:is|recipe)|i'?ve|i\s+have|i\s+can|the\s+(?:recipe|user|provided|input|following)|note\s*:|source\s+values|estimated\s+values|based\s+on|using\s+the)/i.test(s)) return true;
-      if (s.length > 100 && /,/.test(s)) return true;
-      if (((s.match(/[.!?]/g) || []).length) >= 2) return true;
-      return false;
-    };
-    if (d.recipe_name && aiMetaCheck(d.recipe_name)) {
-      d.recipe_name = '';
-    }
-    setVal('recipe-name', d.recipe_name);
-    setVal('native-title', d.native_title || '');
-    setVal('introduction', d.introduction);
-    try { updateIntroCounter(); } catch(_) {}
-    setRadio('category', d.category);
-    setRadio('spice',    d.spice_level);
-    setRadio('sweet',    d.sweet_level);
-    setRadio('difficulty', d.difficulty);
-    if (d.difficulty) {
-      const r = document.querySelector('input[name="difficulty"][value="' + d.difficulty + '"]');
-      if (r) r.setAttribute('data-user-set', '1'); // restoring a saved choice → respect it
-    }
-    setVal('prep-time', d.prep_time_minutes);
-    setVal('cook-time', d.cook_time_minutes);
-    setVal('servings', d.servings);
-    setVal('cooking-notes', d.cooking_notes || d.prep_notes || '');
-    setVal('personal-notes', d.personal_notes);
-    setVal('credit-name', d.credit_name);
-    setVal('credit-handle', d.credit_handle);
-    setVal('credit-url', d.credit_url);
-
-    // Restore previously uploaded image (if any) — preview re-appears,
-    // window.uploadedImageUrl is set so submit picks it up.
-    if (d.image_url) {
-      window.uploadedImageUrl = d.image_url;
-      try { showImagePreview(d.image_url); } catch(_) {}
-    }
-
-    // Restore multi-select tag groups by ticking matching checkboxes by VALUE
-    const restoreTags = (values, ids) => {
-      if (!Array.isArray(values)) return;
-      const wanted = new Set(values);
-      ids.forEach(id => {
-        const cb = document.getElementById(id);
-        if (cb && wanted.has(cb.value)) cb.checked = true;
-      });
-    };
-    restoreTags(d.dietary_tags,        ['tag-vegan','tag-veg','tag-gf','tag-df','tag-nf','tag-sf','tag-ef','tag-halal','tag-kosher']);
-    restoreTags(d.health_tags,         ['tag-hp','tag-lc','tag-lf','tag-ls','tag-diab','tag-bf','tag-kf']);
-    restoreTags(d.occasion_tags,       ['tag-everyday','tag-onam','tag-eid','tag-xmas','tag-diwali','tag-easter','tag-party','tag-wedding','tag-bbq','tag-quick']);
-    restoreTags(d.style_tags,          ['tag-trad','tag-modern','tag-fusion','tag-streetfood','tag-finedining','tag-comfort']);
-    restoreTags(d.meal_type_tags,      ['tag-mt-breakfast','tag-mt-brunch','tag-mt-lunch','tag-mt-dinner','tag-mt-snack','tag-mt-drink','tag-mt-soup','tag-mt-salad','tag-mt-main','tag-mt-side','tag-mt-appetizer','tag-mt-bread','tag-mt-rice','tag-mt-dessert','tag-mt-frozen','tag-mt-preserve']);
-    restoreTags(d.flavor_profile_tags, ['tag-fp-spicy','tag-fp-tangy','tag-fp-savoury','tag-fp-sweet','tag-fp-rich','tag-fp-creamy','tag-fp-fresh','tag-fp-smoky','tag-fp-nutty','tag-fp-fruity','tag-fp-salty','tag-fp-umami','tag-fp-bitter','tag-fp-earthy','tag-fp-floral','tag-fp-mild']);
-
-    // Restore origin via xf pick functions (state > country > continent precedence)
-    if (d.origin_state)         { try { pickState(d.origin_state); }       catch(_) {} }
-    else if (d.origin_country)  { try { pickCountry(d.origin_country); }   catch(_) {} }
-    else if (d.origin_continent){ try { pickContinent(d.origin_continent);} catch(_) {} }
-
-    // Restore source type + visibility radios (were missing — would reset to defaults on reload)
-    setRadio('source-type', d.source_type);
-    setRadio('visibility',  d.visibility);
-    // If source_type isn't Original, reveal credit fields
-    try {
-      if (d.source_type && d.source_type !== 'Original') {
-        const cf = document.getElementById('credit-fields');
-        if (cf) cf.style.display = 'block';
-      }
-    } catch(_) {}
-
-    // Restore ingredient sections (entire structure) — clear the default
-    // empty section first, then rebuild from saved data
-    if (Array.isArray(d.ingredients) && d.ingredients.length > 0) {
-      try {
-        const cont = document.getElementById('ingredient-sections');
-        if (cont) {
-          cont.innerHTML = '';                          // wipe default
-          ingSectionCount = 0;                          // reset counter
-          d.ingredients.forEach(sec => {
-            addIngSection(sec.section || '');
-            const lastSec  = cont.lastElementChild;
-            const rows     = lastSec.querySelector('.ing-rows');
-            if (rows) rows.innerHTML = '';              // wipe the default first row
-            (sec.items || []).forEach(it => {
-              addIngRow(rows, it.qty || '', it.unit || '', it.ingredient || '', it.note || '', it.category || '');
-            });
-          });
-          // If a saved section had zero items, addIngSection's default first row got wiped
-          // and replaced with nothing — make sure every section has at least one row
-          document.querySelectorAll('#ingredient-sections .ing-rows').forEach(rs => {
-            if (!rs.children.length) addIngRow(rs);
-          });
-          try { validateAllIngredientRows(); } catch(_) {}
-        }
-      } catch(_) {}
-    }
-
-    // Restore method sections (same approach)
-    if (Array.isArray(d.method) && d.method.length > 0) {
-      try {
-        const cont = document.getElementById('method-sections');
-        if (cont) {
-          cont.innerHTML = '';
-          methodSectionCount = 0;
-          d.method.forEach(sec => {
-            addMethodSection(sec.section || '');
-            const lastSec = cont.lastElementChild;
-            const rows    = lastSec.querySelector('.step-rows');
-            if (rows) rows.innerHTML = '';
-            (sec.steps || []).forEach(text => addStep(rows, text));
-          });
-          document.querySelectorAll('#method-sections .step-rows').forEach(rs => {
-            if (!rs.children.length) addStep(rs);
-          });
-        }
-      } catch(_) {}
-    }
-
-    const badge = document.getElementById('draft-badge');
-    if (badge) {
-      badge.style.display = 'inline-block';
-      badge.textContent = '✓ Draft restored';
-      setTimeout(() => { badge.style.display = 'none'; }, 3000);
-    }
-  } catch(e) {}
+    restoreDraft(raw);
+  } catch(_) {}
 }
 
 // ── AUTO-DIFFICULTY ───────────────────────────────────
@@ -3651,8 +3577,14 @@ async function submitRecipe() {
       submitted_at: new Date().toISOString()
     };
 
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/submitted_recipes`, {
-      method: 'POST',
+    // If editing a rejected recipe, PATCH the existing row instead of inserting
+    const isEdit = !!window._editRecipeId;
+    const submitUrl = isEdit
+      ? `${SUPABASE_URL}/rest/v1/submitted_recipes?id=eq.${window._editRecipeId}`
+      : `${SUPABASE_URL}/rest/v1/submitted_recipes`;
+    const submitMethod = isEdit ? 'PATCH' : 'POST';
+    const res = await fetch(submitUrl, {
+      method: submitMethod,
       headers: {
         'apikey': SUPABASE_KEY,
         'Authorization': `Bearer ${session.access_token}`,
@@ -3666,7 +3598,7 @@ async function submitRecipe() {
       lsRemove(DRAFT_KEY);
       showMsg('✓ Recipe submitted! You will be notified when it is reviewed and published. 🔔', 'success');
       btn.textContent = '✓ Submitted';
-      setTimeout(() => { window.location.href = 'recipes.html'; }, 3000);
+      setTimeout(() => { window.location.href = 'my-dashboard.html'; }, 3000);
     } else {
       const errText = await res.text().catch(() => '');
       console.error('Submit response:', res.status, errText);

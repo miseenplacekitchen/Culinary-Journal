@@ -90,15 +90,56 @@
     .mp-result-name { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-high); }
     .mp-result-cat  { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
     .mp-result-empty { text-align:center; padding:30px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
+  
+    .mp-view-btn { padding:5px 18px; border-radius:8px; border:none; background:none; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:all .15s; }
+    .mp-view-btn.active { background:var(--accent); color:#fff; }
+    /* ── Month view ── */
+    #mp-month-view { display:none; }
+    .mth-cal { border:1px solid var(--border); border-radius:14px; overflow:hidden; background:var(--text-ghost); }
+    .mth-cal-head { display:grid; grid-template-columns:repeat(7,1fr); border-bottom:1px solid var(--border); }
+    .mth-dow { padding:10px 6px; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; text-align:center; color:var(--text-mid); }
+    .mth-body { display:grid; grid-template-columns:repeat(7,1fr); }
+    .mth-cell { border-right:1px solid var(--border); border-bottom:1px solid var(--border); min-height:90px; padding:6px; cursor:pointer; transition:background .15s; }
+    .mth-cell:hover { background:rgba(var(--accent-rgb,196,151,59),.05); }
+    .mth-cell:nth-child(7n) { border-right:none; }
+    .mth-cell.other { opacity:.3; cursor:default; }
+    .mth-cell.other:hover { background:none; }
+    .mth-cell.today .mth-day-num { color:var(--accent); font-weight:700; }
+    .mth-day-num { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-bottom:4px; }
+    .mth-meal-dot { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-high); padding:2px 5px; border-radius:4px; margin-bottom:2px; background:rgba(var(--accent-rgb,196,151,59),.1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.4; }
+    .mth-more { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--accent); }
+    @media(max-width:600px){ .mth-cell { min-height:60px; } .mth-meal-dot { display:none; } }
   </style>
 </head>
 <body class="page-bg cj-body">
-<div data-nav-host></div>
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"><div class="tab-nav-inner">
+    <a class="tab" href="index.html">🏠 Home</a>
+    <a class="tab" href="recipes.html">📖 Recipes</a>
+    <a class="tab active" href="meal-planner.html">🗓 Meal Planner</a>
+    <a class="tab" href="pantry.html">🫙 Pantry &amp; Fridge</a>
+    <a class="tab" href="grocery.html">🛒 Grocery List</a>
+    <a class="tab" href="table-planner.html">🪑 Table Planner</a>
+    <a class="tab" href="print-studio.html">🖨 Print Studio</a>
+    <a class="tab" href="diary.html">📓 Diary</a>
+  <a class="tab" href="profile.html">👤 My Profile</a>
+</div></div>
 
 <div class="mp-wrap">
   <div class="mp-header">
     <div>
       <div class="mp-title">🗓 Meal Planner</div>
+      <div style="display:flex;gap:4px;background:var(--text-ghost);border:1px solid var(--border);border-radius:10px;padding:3px;margin-top:10px;width:fit-content">
+        <button id="view-week-btn" class="mp-view-btn active" onclick="setView('week',this)">Week</button>
+        <button id="view-month-btn" class="mp-view-btn" onclick="setView('month',this)">Month</button>
+      </div>
     </div>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
       <div class="mp-week-nav">
@@ -126,7 +167,14 @@
 
   <div class="mp-grid" id="mp-grid"></div>
 
-  <div class="mp-summary" id="mp-summary"></div>
+  <div id="mp-month-view">
+  <div class="mth-cal">
+    <div class="mth-cal-head" id="mth-dow"></div>
+    <div class="mth-body" id="mth-body"></div>
+  </div>
+</div>
+
+<div class="mp-summary" id="mp-summary"></div>
 </div>
 
 <!-- Recipe picker modal -->
@@ -499,6 +547,151 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.target === this) closePicker();
   });
 });
+
+
+// ── MONTH VIEW ────────────────────────────────────────────────────
+var currentView = 'week';
+var monthYear, monthMon;
+
+function setView(v, btn) {
+  currentView = v;
+  document.querySelectorAll('.mp-view-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  var weekEl  = document.getElementById('mp-grid');
+  var modeBar = document.querySelector('.mp-mode-bar');
+  var summary = document.getElementById('mp-summary');
+  var weekNav = document.querySelector('.mp-week-nav');
+  var monthEl = document.getElementById('mp-month-view');
+  if (v === 'month') {
+    if (weekEl)  weekEl.style.display  = 'none';
+    if (modeBar) modeBar.style.display = 'none';
+    if (summary) summary.style.display = 'none';
+    if (weekNav) weekNav.style.display = 'none';
+    if (monthEl) monthEl.style.display = 'block';
+    var wl = document.getElementById('week-label');
+    var inner = document.createElement('span');
+    inner.id = 'mth-nav-inner';
+    inner.style.cssText = 'display:flex;align-items:center;gap:8px';
+    var btnPrev = document.createElement('button');
+    btnPrev.textContent = '←';
+    btnPrev.style.cssText = 'background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);width:28px;height:28px;cursor:pointer;font-size:13px';
+    btnPrev.onclick = function(){ changeMonthView(-1); };
+    var lbl = document.createElement('span');
+    lbl.id = 'mth-label';
+    lbl.style.cssText = 'font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;color:var(--text-high);min-width:130px;text-align:center';
+    var btnNext = document.createElement('button');
+    btnNext.textContent = '→';
+    btnNext.style.cssText = 'background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);width:28px;height:28px;cursor:pointer;font-size:13px';
+    btnNext.onclick = function(){ changeMonthView(1); };
+    inner.appendChild(btnPrev); inner.appendChild(lbl); inner.appendChild(btnNext);
+    wl.innerHTML = ''; wl.appendChild(inner);
+    buildMonthView();
+  } else {
+    if (weekEl)  weekEl.style.display  = '';
+    if (modeBar) modeBar.style.display = '';
+    if (summary) summary.style.display = '';
+    if (weekNav) weekNav.style.display = '';
+    if (monthEl) monthEl.style.display = 'none';
+    renderWeek();
+  }
+}
+
+function changeMonthView(dir) {
+  monthMon += dir;
+  if (monthMon < 0)  { monthMon = 11; monthYear--; }
+  if (monthMon > 11) { monthMon = 0;  monthYear++; }
+  buildMonthView();
+}
+
+function getMonthWeekKey(ds) {
+  var d = new Date(ds + 'T00:00:00');
+  var day = d.getDay();
+  var mon = new Date(d); mon.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
+  var sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  return mon.toISOString().slice(0,10) + '_' + sun.toISOString().slice(0,10);
+}
+
+function buildMonthView() {
+  var n = new Date();
+  if (monthYear === undefined) { monthYear = n.getFullYear(); monthMon = n.getMonth(); }
+  var DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var DAY_NAMES = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  var labelEl = document.getElementById('mth-label');
+  if (labelEl) labelEl.textContent = new Date(monthYear, monthMon, 1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+
+  var dowEl = document.getElementById('mth-dow');
+  if (dowEl && !dowEl.children.length)
+    dowEl.innerHTML = DAYS.map(function(d){ return '<div class="mth-dow">' + d + '</div>'; }).join('');
+
+  var body = document.getElementById('mth-body');
+  if (!body) return;
+  body.innerHTML = '';
+
+  var first = new Date(monthYear, monthMon, 1).getDay();
+  var days  = new Date(monthYear, monthMon + 1, 0).getDate();
+  var today = new Date().toISOString().slice(0,10);
+  var SLOTS = ['breakfast','lunch','dinner','snack'];
+
+  for (var i = 0; i < first; i++) {
+    var pd = new Date(monthYear, monthMon, 1 - first + i);
+    var cell = document.createElement('div');
+    cell.className = 'mth-cell other';
+    cell.innerHTML = '<div class="mth-day-num">' + pd.getDate() + '</div>';
+    body.appendChild(cell);
+  }
+
+  for (var d = 1; d <= days; d++) {
+    var yr  = String(monthYear);
+    var mo  = String(monthMon + 1).padStart(2, '0');
+    var dy  = String(d).padStart(2, '0');
+    var ds  = yr + '-' + mo + '-' + dy;
+    var dow = new Date(ds + 'T00:00:00').getDay();
+    var wk  = getMonthWeekKey(ds);
+    var saved = {};
+    try { saved = JSON.parse(localStorage.getItem('tcj_meals_' + wk) || '{}'); } catch(e) {}
+    var dayKey = DAY_NAMES[dow];
+    var meals = [];
+    SLOTS.forEach(function(s){
+      var slot = saved[dayKey] && saved[dayKey][s];
+      if (slot && slot.name) meals.push(slot.name);
+    });
+
+    var cell = document.createElement('div');
+    cell.className = 'mth-cell' + (ds === today ? ' today' : '');
+    cell.innerHTML = '<div class="mth-day-num">' + d + '</div>';
+    meals.slice(0,2).forEach(function(m){
+      var dot = document.createElement('div');
+      dot.className = 'mth-meal-dot';
+      dot.textContent = m;
+      cell.appendChild(dot);
+    });
+    if (meals.length > 2) {
+      var more = document.createElement('div');
+      more.className = 'mth-more';
+      more.textContent = '+' + (meals.length - 2) + ' more';
+      cell.appendChild(more);
+    }
+    (function(dateStr, weekKey){
+      cell.addEventListener('click', function(){ jumpToDay(dateStr, weekKey); });
+    })(ds, wk);
+    body.appendChild(cell);
+  }
+
+  var remaining = 7 - ((first + days) % 7 || 7);
+  for (var i = 1; i <= remaining && remaining < 7; i++) {
+    var cell2 = document.createElement('div');
+    cell2.className = 'mth-cell other';
+    cell2.innerHTML = '<div class="mth-day-num">' + i + '</div>';
+    body.appendChild(cell2);
+  }
+}
+
+function jumpToDay(ds, wk) {
+  var parts = wk.split('_');
+  if (parts.length === 2) weekStart = new Date(parts[0] + 'T00:00:00');
+  setView('week', document.getElementById('view-week-btn'));
+  renderWeek();
+}
 </script>
 </body>
 </html>

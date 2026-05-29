@@ -242,17 +242,28 @@
 <body class="cj-body">
 
 <!-- NAV -->
-<nav class="cj-nav">
-  <div class="cj-nav-inner">
-    <a href="index.html" class="cj-logo">🍽 The Culinary Journal</a>
-    <div class="cj-nav-links">
-      <a href="recipes.html">Recipes</a>
-      <a href="submit-recipe.html">Submit</a>
-      <a href="profile.html" id="nav-profile" style="display:none"></a>
-      <a href="login.html" id="nav-login">Sign In</a>
-    </div>
-  </div>
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"></div>
 </nav>
+<div class="tab-nav"><div class="tab-nav-inner">
+    <a class="tab" href="index.html">🏠 Home</a>
+    <a class="tab active" href="recipes.html">📖 Recipes</a>
+    <a class="tab" href="meal-planner.html">🗓 Meal Planner</a>
+    <a class="tab" href="pantry.html">🫙 Pantry &amp; Fridge</a>
+    <a class="tab" href="grocery.html">🛒 Grocery List</a>
+    <a class="tab" href="table-planner.html">🪑 Table Planner</a>
+    <a class="tab" href="print-studio.html">🖨 Print Studio</a>
+    <a class="tab" href="diary.html">📓 Diary</a>
+  <a class="tab" href="profile.html">👤 My Profile</a>
+</div></div>
+<div style="max-width:900px;margin:12px auto 0;padding:0 20px">
+  <a href="recipes.html" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);text-decoration:none;display:inline-flex;align-items:center;gap:4px">← Back to Recipes</a>
+</div>
 
 <div class="rp-wrap">
 
@@ -862,8 +873,43 @@ async function loadRecipe(id) {
       const data = await res.json();
       if (data.length > 0) {
         recipe = data[0];
+        // Check visibility: only approved+public are viewable by non-owners
+        const isOwner = session && recipe.user_id &&
+          (session.user_id === recipe.user_id || session.user?.id === recipe.user_id);
+        const isApprovedPublic = recipe.status === 'approved' && recipe.visibility === 'Public';
+        if (!isOwner && !isApprovedPublic) {
+          // Show appropriate message instead of recipe
+          var msg = recipe.status === 'pending'
+            ? 'This recipe is currently under review and will be visible once approved.'
+            : recipe.status === 'rejected'
+            ? 'This recipe is not currently available.'
+            : recipe.visibility !== 'Public'
+            ? 'This recipe is private.'
+            : 'Recipe not available.';
+          var wrap = document.getElementById('rp-wrap') || document.body;
+          wrap.innerHTML = '<div style="max-width:600px;margin:80px auto;text-align:center;padding:40px 20px">'
+            + '<div style="font-size:48px;margin-bottom:16px">🔒</div>'
+            + '<div style="font-family:Cormorant Garamond,serif;font-size:1.6rem;font-weight:700;color:var(--text-high,#e8e5e0);margin-bottom:10px">Recipe Unavailable</div>'
+            + '<div style="font-family:DM Sans,sans-serif;font-size:14px;color:var(--text-mid,#7a736d);line-height:1.6;margin-bottom:24px">' + msg + '</div>'
+            + '<a href="recipes.html" style="display:inline-block;padding:11px 28px;background:var(--accent,#c4973b);color:#fff;text-decoration:none;border-radius:9px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600">Browse Recipes</a>'
+            + '</div>';
+          return;
+        }
+        // Owner viewing own pending/rejected recipe — show preview banner
+        if (isOwner && !isApprovedPublic) {
+          var bannerColour = recipe.status === 'pending' ? '#ffc107' : '#dc5050';
+          var bannerMsg = recipe.status === 'pending'
+            ? '⏳ This recipe is under review. Only you can see this preview.'
+            : '✗ This recipe needs updates. <a href="submit-recipe.html?id=' + recipe.id + '" style="color:' + bannerColour + ';font-weight:600">Edit &amp; Resubmit →</a>';
+          setTimeout(function() {
+            var b = document.createElement('div');
+            b.style.cssText = 'background:rgba(0,0,0,.6);border-bottom:2px solid ' + bannerColour + ';padding:10px 20px;font-family:DM Sans,sans-serif;font-size:13px;color:' + bannerColour + ';text-align:center;position:sticky;top:0;z-index:100';
+            b.innerHTML = bannerMsg;
+            document.body.insertBefore(b, document.body.firstChild);
+          }, 500);
+        }
         renderRecipe(recipe);
-        enrichIngredientInfo(recipe);   // best-effort chef-rec lookup
+        enrichIngredientInfo(recipe);
         return;
       }
     }

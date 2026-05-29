@@ -220,11 +220,61 @@
       .ps-card:last-child { page-break-after:auto!important; }
       .page-bg { background:white!important; }
     }
+  
+    .ps-mode-btn { padding:7px 16px; border-radius:8px; border:none; background:none; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:all .15s; }
+    .ps-mode-btn.active { background:var(--accent); color:#fff; }
+    /* ── Print & Post ── */
+    .po-wrap { padding:24px 0; }
+    .po-section { background:var(--text-ghost); border:1px solid var(--border); border-radius:14px; padding:22px 24px; margin-bottom:16px; }
+    .po-section-title { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:700; color:var(--text-high); margin-bottom:14px; }
+    .po-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+    .po-qty { padding:10px 14px; border:1.5px solid var(--border); border-radius:9px; text-align:center; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); transition:all .15s; }
+    .po-qty:hover { border-color:var(--accent); color:var(--accent); }
+    .po-qty.selected { border-color:var(--accent); background:rgba(196,151,59,.1); color:var(--accent); font-weight:600; }
+    .po-qty-label { font-size:10px; color:var(--text-mid); margin-top:2px; }
+    .po-quality { display:flex; gap:10px; flex-wrap:wrap; }
+    .po-qual-opt { flex:1; min-width:120px; padding:12px; border:1.5px solid var(--border); border-radius:9px; cursor:pointer; transition:all .15s; }
+    .po-qual-opt:hover { border-color:var(--accent); }
+    .po-qual-opt.selected { border-color:var(--accent); background:rgba(196,151,59,.1); }
+    .po-qual-name { font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; color:var(--text-high); }
+    .po-qual-desc { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); margin-top:2px; }
+    .po-price-row { display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-top:1px solid var(--border); margin-top:10px; }
+    .po-price { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:700; color:var(--accent); }
+    .po-price-note { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+    .po-input { width:100%; box-sizing:border-box; padding:10px 12px; background:var(--bg); border:1px solid var(--border); border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); outline:none; margin-bottom:10px; }
+    .po-input:focus { border-color:var(--accent); }
+    .po-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .po-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--text-mid); margin-bottom:5px; }
+    .po-submit { width:100%; padding:14px; background:var(--accent); color:#fff; border:none; border-radius:10px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer; margin-top:8px; transition:filter .15s; }
+    .po-submit:hover { filter:brightness(.9); }
+    .po-coming-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; background:rgba(76,175,118,.1); border:1px solid rgba(76,175,118,.3); border-radius:20px; font-family:'DM Sans',sans-serif; font-size:11px; color:#4caf76; margin-bottom:16px; }
+    .po-confirm { display:none; text-align:center; padding:30px 20px; }
+    .po-confirm-icon { font-size:48px; margin-bottom:12px; }
+    .po-confirm-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:700; color:var(--text-high); margin-bottom:8px; }
+    .po-confirm-text { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); line-height:1.6; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body class="page-bg cj-body">
-<div data-nav-host></div>
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"><div class="tab-nav-inner">
+    <a class="tab" href="index.html">🏠 Home</a>
+    <a class="tab" href="recipes.html">📖 Recipes</a>
+    <a class="tab" href="meal-planner.html">🗓 Meal Planner</a>
+    <a class="tab" href="pantry.html">🫙 Pantry &amp; Fridge</a>
+    <a class="tab" href="grocery.html">🛒 Grocery List</a>
+    <a class="tab" href="table-planner.html">🪑 Table Planner</a>
+    <a class="tab active" href="print-studio.html">🖨 Print Studio</a>
+    <a class="tab" href="diary.html">📓 Diary</a>
+  <a class="tab" href="profile.html">👤 My Profile</a>
+</div></div>
 
 <div class="ps-wrap">
   <!-- Sidebar -->
@@ -456,6 +506,154 @@ function downloadPDF() {
   });
 }
 
+
+// ── PRINT & POST ─────────────────────────────────────────────────
+var poQty = 10, poQual = 'standard';
+var PRICES = {
+  standard:  {10:4.99, 25:9.99, 50:17.99, 100:29.99},
+  premium:   {10:6.99, 25:13.99, 50:24.99, 100:42.99},
+  laminated: {10:8.99, 25:17.99, 50:31.99, 100:54.99}
+};
+
+function setPrintMode(mode, btn) {
+  document.querySelectorAll('.ps-mode-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  var homeSection  = document.querySelector('.ps-layout');
+  var orderSection = document.getElementById('po-section');
+  if (mode === 'order') {
+    if (homeSection)  homeSection.style.display  = 'none';
+    if (orderSection) orderSection.style.display = 'block';
+  } else {
+    if (homeSection)  homeSection.style.display  = '';
+    if (orderSection) orderSection.style.display = 'none';
+  }
+}
+
+function updatePrice() {
+  var p = (PRICES[poQual] || PRICES.standard)[poQty] || 4.99;
+  var formatted = '£' + p.toFixed(2);
+  var el = document.getElementById('po-price-display');
+  var btn = document.getElementById('po-btn-price');
+  if (el) el.textContent = formatted;
+  if (btn) btn.textContent = formatted;
+}
+
+function selectQty(el) {
+  document.querySelectorAll('.po-qty').forEach(function(b){ b.classList.remove('selected'); });
+  el.classList.add('selected');
+  poQty = parseInt(el.dataset.qty);
+  updatePrice();
+}
+
+function selectQual(el) {
+  document.querySelectorAll('.po-qual-opt').forEach(function(b){ b.classList.remove('selected'); });
+  el.classList.add('selected');
+  poQual = el.dataset.qual;
+  updatePrice();
+}
+
+function submitOrder() {
+  var first = (document.getElementById('po-first')||{}).value||'';
+  var last  = (document.getElementById('po-last')||{}).value||'';
+  var addr1 = (document.getElementById('po-addr1')||{}).value||'';
+  var city  = (document.getElementById('po-city')||{}).value||'';
+  var post  = (document.getElementById('po-postcode')||{}).value||'';
+  if (!first || !addr1 || !city || !post) {
+    alert('Please fill in your name and delivery address.'); return;
+  }
+  // Show confirmation
+  var form = document.getElementById('po-form-wrap');
+  var conf = document.getElementById('po-confirm');
+  if (form) form.style.display = 'none';
+  if (conf) conf.style.display = 'block';
+}
+
+function resetOrder() {
+  var form = document.getElementById('po-form-wrap');
+  var conf = document.getElementById('po-confirm');
+  if (form) form.style.display = 'block';
+  if (conf) conf.style.display = 'none';
+}
 </script>
+
+<!-- ── PRINT & POST SECTION ── -->
+<div id="po-section" style="display:none">
+  <div class="po-wrap">
+
+    <div class="po-section">
+      <div class="po-coming-badge">📬 New Feature — Launching Soon</div>
+      <div class="po-section-title">How it works</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)">
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:20px;flex-shrink:0">1️⃣</span><div><div style="color:var(--text-high);font-weight:600;margin-bottom:2px">Choose your recipe</div>Select a recipe from your journal to print</div></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:20px;flex-shrink:0">2️⃣</span><div><div style="color:var(--text-high);font-weight:600;margin-bottom:2px">Pick size &amp; style</div>Choose card size, layout and quantity</div></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:20px;flex-shrink:0">3️⃣</span><div><div style="color:var(--text-high);font-weight:600;margin-bottom:2px">We print &amp; post</div>Cards are printed by a specialist and mailed to you</div></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:20px;flex-shrink:0">4️⃣</span><div><div style="color:var(--text-high);font-weight:600;margin-bottom:2px">Delivered beautifully</div>Ready to use, gift or frame</div></div>
+      </div>
+    </div>
+
+    <!-- Order form -->
+    <div id="po-form-wrap">
+      <div class="po-section">
+        <div class="po-section-title">Quantity</div>
+        <div class="po-grid" id="po-qty-grid">
+          <div class="po-qty selected" data-qty="10" onclick="selectQty(this)"><div><strong>10</strong> cards</div><div class="po-qty-label">Starter set</div></div>
+          <div class="po-qty" data-qty="25" onclick="selectQty(this)"><div><strong>25</strong> cards</div><div class="po-qty-label">Most popular</div></div>
+          <div class="po-qty" data-qty="50" onclick="selectQty(this)"><div><strong>50</strong> cards</div><div class="po-qty-label">Great value</div></div>
+          <div class="po-qty" data-qty="100" onclick="selectQty(this)"><div><strong>100</strong> cards</div><div class="po-qty-label">Full collection</div></div>
+        </div>
+      </div>
+
+      <div class="po-section">
+        <div class="po-section-title">Card Quality</div>
+        <div class="po-quality">
+          <div class="po-qual-opt selected" data-qual="standard" onclick="selectQual(this)"><div class="po-qual-name">Standard</div><div class="po-qual-desc">300gsm white card · matte finish</div></div>
+          <div class="po-qual-opt" data-qual="premium" onclick="selectQual(this)"><div class="po-qual-name">Premium</div><div class="po-qual-desc">350gsm silk card · subtle sheen</div></div>
+          <div class="po-qual-opt" data-qual="laminated" onclick="selectQual(this)"><div class="po-qual-name">Laminated</div><div class="po-qual-desc">350gsm · wipeable · kitchen-proof</div></div>
+        </div>
+        <div class="po-price-row">
+          <div>
+            <div class="po-price" id="po-price-display">£4.99</div>
+            <div class="po-price-note">inc. delivery · printed &amp; dispatched within 5 working days</div>
+          </div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);text-align:right">
+            Card size from<br>selection above
+          </div>
+        </div>
+      </div>
+
+      <div class="po-section">
+        <div class="po-section-title">Delivery Address</div>
+        <div class="po-row">
+          <div><div class="po-label">First Name</div><input class="po-input" id="po-first" placeholder="Betty"></div>
+          <div><div class="po-label">Last Name</div><input class="po-input" id="po-last" placeholder="Jacob"></div>
+        </div>
+        <div class="po-label">Address Line 1</div>
+        <input class="po-input" id="po-addr1" placeholder="123 Spice Lane">
+        <div class="po-label">Address Line 2 (optional)</div>
+        <input class="po-input" id="po-addr2" placeholder="Apartment, suite, unit…">
+        <div class="po-row">
+          <div><div class="po-label">City</div><input class="po-input" id="po-city" placeholder="London"></div>
+          <div><div class="po-label">Postcode</div><input class="po-input" id="po-postcode" placeholder="EC1A 1BB"></div>
+        </div>
+        <div class="po-label">Country</div>
+        <input class="po-input" id="po-country" placeholder="United Kingdom">
+        <button class="po-submit" onclick="submitOrder()">📬 Place Order — <span id="po-btn-price">£4.99</span></button>
+        <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);text-align:center;margin-top:8px">Secure checkout · No payment taken until fulfilment launches</div>
+      </div>
+    </div>
+
+    <!-- Confirmation -->
+    <div class="po-confirm" id="po-confirm">
+      <div class="po-confirm-icon">🎉</div>
+      <div class="po-confirm-title">Order Request Received!</div>
+      <div class="po-confirm-text">
+        Thank you! We've captured your order details. When the print service launches you'll be among the first to receive your cards.<br><br>
+        We'll send a confirmation and payment link to your email address.
+      </div>
+      <button class="po-submit" style="max-width:280px;margin:20px auto 0" onclick="resetOrder()">Place Another Order</button>
+    </div>
+
+  </div>
+</div>
 </body>
 </html>
