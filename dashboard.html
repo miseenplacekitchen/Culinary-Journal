@@ -450,6 +450,45 @@
       <div id="ing-pagination" style="display:none"></div>
     </div>
 
+    <!-- USERS VIEW -->
+    <div id="view-users" style="display:none">
+      <div class="ing-toolbar" style="margin-bottom:16px">
+        <span style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid)" id="user-count">Loading...</span>
+        <div style="display:flex;gap:8px;margin-left:auto">
+          <input id="user-search" type="text"
+            placeholder="Search by name, username or email…"
+            oninput="userSearchDebounce()"
+            style="padding:8px 14px;border:1px solid var(--border);border-radius:9px;background:var(--text-ghost);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);outline:none;width:280px">
+        </div>
+      </div>
+      <div style="overflow-x:auto;border:1px solid var(--border);border-radius:12px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border)">
+              <th class="ap-th">Member</th>
+              <th class="ap-th">Email</th>
+              <th class="ap-th">Joined</th>
+              <th class="ap-th" style="text-align:center">Submitted</th>
+              <th class="ap-th" style="text-align:center">Approved</th>
+              <th class="ap-th">Status</th>
+              <th class="ap-th">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="user-tbody">
+            <tr><td colspan="7" class="ap-empty-row">Loading members…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="user-pagination" style="margin-top:12px;display:flex;gap:8px;justify-content:center"></div>
+    </div>
+
+    <!-- ANALYTICS VIEW -->
+    <div id="view-analytics" style="display:none">
+      <div id="analytics-content">
+        <div class="ap-empty-row" style="padding:40px;text-align:center">Loading analytics…</div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -722,7 +761,14 @@ async function init() {
     } catch(e) {}
   }
 
-  if (!profile || !profile.is_admin) {
+  // Admin check: accepts is_admin flag OR the owner email
+  const ADMIN_EMAIL = 'miseenplacekitchen.official@gmail.com';
+  const isAdminUser = profile && (
+    profile.is_admin === true   ||
+    profile.is_admin === 'true' ||
+    (profile.email && profile.email.toLowerCase() === ADMIN_EMAIL)
+  );
+  if (!profile || !isAdminUser) {
     document.getElementById("screen-denied").style.display = "flex";
     return;
   }
@@ -823,9 +869,14 @@ function switchView(view) {
   if (filtersEl) filtersEl.style.display = isRecipe ? 'flex' : 'none';
   if (tableEl)   tableEl.style.display   = isRecipe ? 'block': 'none';
 
-  document.getElementById('view-ingredients').style.display = isIng       ? 'block' : 'none';
-  document.getElementById('view-users').style.display       = isUsers     ? 'block' : 'none';
-  document.getElementById('view-analytics').style.display   = isAnalytics ? 'block' : 'none';
+  // Null-safe: missing views don't crash the entire panel
+  function showIfExists(id, show) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? 'block' : 'none';
+  }
+  showIfExists('view-ingredients', isIng);
+  showIfExists('view-users',       isUsers);
+  showIfExists('view-analytics',   isAnalytics);
 
   const titles = {
     pending:'Pending Review', all:'All Recipes',
