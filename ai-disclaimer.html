@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI & Automation Disclaimer — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .legal-wrap { max-width:760px; margin:0 auto; padding:48px 24px 100px; }
+    .legal-eyebrow { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.18em; text-transform:uppercase; color:var(--accent); margin-bottom:10px; }
+    .legal-title { font-family:'Cormorant Garamond',serif; font-size:2.4rem; font-weight:700; color:var(--text-high); margin-bottom:8px; line-height:1.15; }
+    .legal-date  { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); margin-bottom:40px; padding-bottom:24px; border-bottom:1px solid var(--border); }
+    .legal-body { font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-high); line-height:1.8; }
+    .legal-body h2 { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:600; color:var(--text-high); margin:36px 0 10px; padding-top:10px; border-top:1px solid var(--border); }
+    .legal-body h2:first-child { border-top:none; margin-top:0; }
+    .legal-body p  { margin:0 0 14px; }
+    .legal-body ul { margin:0 0 14px; padding-left:20px; }
+    .legal-body li { margin-bottom:6px; }
+    .legal-body a  { color:var(--accent); text-decoration:none; }
+    .legal-body a:hover { text-decoration:underline; }
+    .legal-highlight { background:rgb(from var(--accent) r g b / 0.08); border:1px solid rgb(from var(--accent) r g b / 0.2); border-radius:10px; padding:16px 20px; margin:20px 0; }
+    .legal-highlight p { margin:0; }
+    .legal-warning { background:rgba(220,80,80,0.07); border:1px solid rgba(220,80,80,0.2); border-radius:10px; padding:14px 18px; margin:16px 0; font-size:13px; }
+    .feature-table { width:100%; border-collapse:collapse; margin:16px 0 24px; }
+    .feature-table th { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-mid); padding:8px 12px; border-bottom:2px solid var(--border); text-align:left; }
+    .feature-table td { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); padding:10px 12px; border-bottom:1px solid rgba(from var(--border) r g b / 0.5); vertical-align:top; }
+    .feature-table tr:last-child td { border-bottom:none; }
+    .status-live    { color:#4caf76; font-weight:600; }
+    .status-planned { color:var(--accent); font-weight:600; }
+    .status-no      { color:var(--text-mid); }
+    .legal-footer { margin-top:48px; padding-top:24px; border-top:1px solid var(--border); font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); }
+    .legal-nav { display:flex; gap:12px; flex-wrap:wrap; margin-top:16px; }
+    .legal-nav a { padding:7px 14px; border:1px solid var(--border); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); text-decoration:none; }
+    .legal-nav a:hover { border-color:var(--accent); color:var(--accent); }
+  </style>
+</head>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+
+<div class="legal-wrap">
+  <div class="legal-eyebrow">The Culinary Journal</div>
+  <h1 class="legal-title">AI &amp; Automation Disclaimer</h1>
+  <div class="legal-date">Last updated: May 2025 &nbsp;·&nbsp; Effective immediately</div>
+
+  <div class="legal-body">
+
+    <div class="legal-highlight">
+      <p>The Culinary Journal uses a combination of automated tools, mathematical calculations, and (in future versions) AI-powered features. This page explains exactly what is automated, what is AI-generated, where the data comes from, and what its limitations are.</p>
+    </div>
+
+    <h2>1. What Is and Isn't AI on This Site</h2>
+
+    <table class="feature-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Data source</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Nutritional information</td>
+          <td>Mathematical calculation</td>
+          <td class="status-live">Live</td>
+          <td>Open Food Facts (open database)</td>
+        </tr>
+        <tr>
+          <td>Recipe paste-and-parse</td>
+          <td>Pattern matching (not AI)</td>
+          <td class="status-live">Live</td>
+          <td>Text you paste</td>
+        </tr>
+        <tr>
+          <td>Ingredient substitutes</td>
+          <td>Database lookup (not AI)</td>
+          <td class="status-live">Live</td>
+          <td>Our curated substitution database</td>
+        </tr>
+        <tr>
+          <td>Serving size scaling</td>
+          <td>Mathematical (not AI)</td>
+          <td class="status-live">Live</td>
+          <td>User-entered quantities</td>
+        </tr>
+        <tr>
+          <td>Recipe photo reading</td>
+          <td>AI (image recognition)</td>
+          <td class="status-planned">Planned — Phase 2</td>
+          <td>Anthropic Claude API</td>
+        </tr>
+        <tr>
+          <td>Handwriting recognition</td>
+          <td>AI (OCR + language model)</td>
+          <td class="status-planned">Planned — Phase 2</td>
+          <td>Anthropic Claude API</td>
+        </tr>
+        <tr>
+          <td>AI-generated food images</td>
+          <td>AI image generation</td>
+          <td class="status-planned">Planned — Phase 2</td>
+          <td>Anthropic Claude API</td>
+        </tr>
+        <tr>
+          <td>Google sign-in</td>
+          <td>OAuth authentication</td>
+          <td class="status-live">Live</td>
+          <td>Google</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>2. Nutritional Information</h2>
+    <p>Nutritional values displayed on recipe pages are calculated automatically by searching the <strong>Open Food Facts</strong> database (<a href="https://openfoodfacts.org" target="_blank" rel="noopener">openfoodfacts.org</a>) for each ingredient by name, retrieving nutrient data per 100g, and scaling by the quantity used in the recipe.</p>
+    <p><strong>Important limitations:</strong></p>
+    <ul>
+      <li>Nutritional values are <strong>estimates only</strong>. Real food varies by brand, variety, freshness, growing conditions, and cooking method.</li>
+      <li>Not every ingredient in our database has a matching entry in Open Food Facts. Missing ingredients are excluded from the calculation.</li>
+      <li>Unit-to-gram conversions (e.g. 1 cup flour ≈ 120g) are approximations and may differ from your actual ingredients.</li>
+      <li>Cooking method affects nutrition (e.g. frying adds fat, boiling reduces sodium). Our calculations use raw ingredient values.</li>
+      <li>Vitamins, minerals, and micronutrients are not yet shown but are planned for a future update.</li>
+    </ul>
+    <div class="legal-warning">
+      ⚠️ <strong>Not medical or dietary advice.</strong> Nutritional information on this site must not be used to manage a health condition, allergy, or dietary requirement. Always consult a qualified dietitian, nutritionist, or medical professional for advice specific to your needs.
+    </div>
+
+    <h2>3. Recipe Paste-and-Parse</h2>
+    <p>When you paste recipe text into the Submit Recipe form, our parser uses <strong>pattern matching and regular expressions</strong> — not AI — to detect ingredients, quantities, units, and method steps. It recognises common structures found in recipe writing.</p>
+    <p>The parser will make mistakes. It may misread quantities, combine two ingredients into one, or miss sections entirely. You are shown the parsed result and asked to review and correct everything before submitting. You are responsible for the accuracy of the recipe you publish.</p>
+
+    <h2>4. Ingredient Substitution Suggestions</h2>
+    <p>Substitution suggestions are drawn from a <strong>curated database</strong> maintained by the site owner. Substitutes are selected based on culinary knowledge, not AI. Each substitute includes a ratio (e.g. "use 0.75x the quantity"), notes on flavour and texture differences, and any dietary benefit.</p>
+    <p>Substitutions are provided as a <strong>guide only</strong>. Results will vary based on the specific recipe, technique, and ingredients used. We make no guarantee that a suggested substitute will produce the same result.</p>
+    <p><strong>We never suggest protein substitutes (meat, fish, poultry), fruit substitutes, or vegetable substitutes.</strong> These are excluded by design because substitution in these categories depends heavily on the specific recipe and cannot be simplified.</p>
+
+    <h2>5. AI-Powered Features (Planned — Phase 2)</h2>
+    <p>The following features are planned but not yet live. When they are introduced, this page will be updated.</p>
+    <p><strong>Recipe photo reading and handwriting recognition:</strong> You will be able to upload a photo of a handwritten recipe, torn magazine page, or cookbook photocopy. The Anthropic Claude API will read and transcribe the content. You will always be shown the result and asked to review it before anything is published. AI-read content is never published without your review and approval.</p>
+    <p><strong>AI-generated food images:</strong> When no photo is available for a recipe, an AI-generated food image may be used as a placeholder. AI-generated images will be labelled as such. They are decorative only and do not represent the actual dish.</p>
+    <p>When AI features are introduced, we will publish updated information about:</p>
+    <ul>
+      <li>What data is sent to the AI provider</li>
+      <li>How long that data is retained by the provider</li>
+      <li>What the AI output is used for</li>
+      <li>How to opt out</li>
+    </ul>
+
+    <h2>6. Allergy and Health Warnings</h2>
+    <div class="legal-warning">
+      ⚠️ <strong>Allergy flags on recipes are not guaranteed to be complete or accurate.</strong> They are derived from the ingredients listed by the recipe submitter. Undisclosed ingredients, cross-contamination, and brand-specific formulations are not accounted for. If you or someone you are cooking for has a serious allergy or medical dietary requirement, always read all ingredient labels yourself and consult a medical professional.
+    </div>
+    <p>Dietary tags (Vegan, Gluten Free, Dairy Free, etc.) are applied by the recipe submitter and are not independently verified. The Culinary Journal is not responsible for errors in these tags.</p>
+
+    <h2>7. Open Food Facts Attribution</h2>
+    <p>Nutritional data is sourced from <strong>Open Food Facts</strong>, a free, open, collaborative database of food products from around the world. It is available under the <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">Open Database Licence (ODbL)</a>. Individual contents of the database are available under the <a href="https://opendatacommons.org/licenses/dbcl/1-0/" target="_blank" rel="noopener">Database Contents Licence (DbCL)</a>.</p>
+    <p>Open Food Facts data is community-contributed and may contain errors. The Culinary Journal does not warrant its accuracy.</p>
+
+    <h2>8. No Professional Endorsement</h2>
+    <p>Nothing on The Culinary Journal constitutes professional nutritional, medical, dietary, or culinary advice. The site is a recipe organisation and preservation tool. All content is for general informational and creative purposes only.</p>
+
+    <h2>9. Changes to This Disclaimer</h2>
+    <p>As new automated or AI features are introduced, this disclaimer will be updated. The "Last updated" date at the top will reflect the most recent revision. We will announce significant changes on the homepage.</p>
+
+    <h2>10. Contact</h2>
+    <p>Questions about our use of automation or AI:<br>
+    <strong>The Culinary Journal</strong><br>
+    <a href="mailto:miseenplacekitchen.official@gmail.com">miseenplacekitchen.official@gmail.com</a></p>
+
+  </div>
+
+  <div class="legal-footer">
+    <div>Also read:</div>
+    <div class="legal-nav">
+      <a href="privacy.html">Privacy Policy →</a>
+      <a href="terms.html">Terms of Use →</a>
+      <a href="index.html">← Back to Home</a>
+    </div>
+  </div>
+</div>
+
+<script src="nav-init.js"></script>
+</body>
+</html>
