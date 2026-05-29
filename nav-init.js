@@ -1,32 +1,137 @@
-// ── PAGE GUARD LOADER ────────────────────────────────────────────
-// Loads page-guard.js once on every page that includes nav-init.js
+// ══════════════════════════════════════════════════════
+// THE CULINARY JOURNAL — Navigation
+// CJ_SECTIONS is the single source of truth for all navigation.
+// Edit here → every page updates automatically.
+// ══════════════════════════════════════════════════════
 
-// ── CANONICAL TAB NAVIGATION ────────────────────────────────────
-// Single source of truth for all navigation tabs.
-// Edit here to update every page simultaneously.
-var CJ_TABS = [
-  { href: 'index.html',         emoji: '🏠', label: 'Home' },
-  { href: 'recipes.html',       emoji: '📖', label: 'Recipes' },
-  { href: 'meal-planner.html',  emoji: '🗓', label: 'Meal Planner' },
-  { href: 'pantry.html',        emoji: '🫙', label: 'Pantry & Fridge' },
-  { href: 'grocery.html',       emoji: '🛒', label: 'Grocery List' },
-  { href: 'table-planner.html', emoji: '🪑', label: 'Table Planner' },
-  { href: 'print-studio.html',  emoji: '🖨', label: 'Print Studio' },
-  { href: 'diary.html',         emoji: '📓', label: 'Diary' },
-  { href: 'profile.html',       emoji: '👤', label: 'My Profile' },
+var CJ_SECTIONS = [
+  {
+    id:'knowledge', label:'Knowledge', emoji:'📖',
+    pages:['recipes.html','chefs.html','search.html','baby.html','preservation.html','conversions.html','dietary-card.html'],
+    links:[
+      {href:'recipes.html',      emoji:'📖', label:'Browse Recipes'},
+      {href:'chefs.html',        emoji:'👨‍🍳', label:'Chef Directory'},
+      {href:'search.html',       emoji:'🔍', label:'Search'},
+      {href:'preservation.html', emoji:'🫙', label:'Preservation Library'},
+      {href:'conversions.html',  emoji:'⚖️', label:'Conversions'},
+      {href:'baby.html',         emoji:'👶', label:'Baby & Toddler'},
+    ]
+  },
+  {
+    id:'planning', label:'Planning', emoji:'🗓',
+    pages:['meal-planner.html','grocery.html','pantry.html'],
+    links:[
+      {href:'meal-planner.html', emoji:'🗓', label:'Meal Planner'},
+      {href:'grocery.html',      emoji:'🛒', label:'Grocery List'},
+      {href:'pantry.html',       emoji:'🫙', label:'Pantry & Fridge'},
+    ]
+  },
+  {
+    id:'hosting', label:'Hosting', emoji:'🪑',
+    pages:['table-planner.html','family-profiles.html'],
+    links:[
+      {href:'table-planner.html',   emoji:'🪑', label:'Table Planner'},
+      {href:'family-profiles.html', emoji:'👨‍👩‍👧', label:'Family Profiles'},
+    ]
+  },
+  {
+    id:'publishing', label:'Publishing', emoji:'🖨',
+    pages:['print-studio.html','submit-recipe.html','draft-recipes.html'],
+    links:[
+      {href:'print-studio.html',  emoji:'🖨', label:'Print Studio'},
+      {href:'submit-recipe.html', emoji:'📝', label:'Submit a Recipe'},
+      {href:'draft-recipes.html', emoji:'📄', label:'Draft Recipes'},
+    ]
+  },
+  {
+    id:'personal', label:'Personal', emoji:'📓',
+    pages:['diary.html','my-dashboard.html','collections.html','profile.html','site-settings.html','user.html'],
+    links:[
+      {href:'diary.html',        emoji:'📓', label:'My Diary'},
+      {href:'my-dashboard.html', emoji:'🏠', label:'My Kitchen'},
+      {href:'collections.html',  emoji:'📁', label:'Collections'},
+      {href:'profile.html',      emoji:'👤', label:'My Profile'},
+    ]
+  }
 ];
 
-function buildTabNav() {
-  var tabNavInner = document.querySelector('.tab-nav-inner');
-  if (!tabNavInner) return;
-  var page = window.location.pathname.split('/').pop() || 'index.html';
-  tabNavInner.innerHTML = CJ_TABS.map(function(t) {
-    var isActive = t.href === page;
-    return '<a class="tab' + (isActive ? ' active' : '') + '" href="' + t.href + '">'
-      + t.emoji + ' ' + t.label + '</a>';
-  }).join('');
+function buildSectionNav() {
+  var tabNav = document.querySelector('.tab-nav');
+  if (!tabNav) return;
+  var page = (window.location.pathname.split('/').pop() || 'index.html');
+  var isHome = (page === 'index.html' || page === '');
+  var activeSection = null;
+  CJ_SECTIONS.forEach(function(s){ if (s.pages.indexOf(page) > -1) activeSection = s.id; });
+  if (activeSection) document.body.classList.add('section-' + activeSection);
+
+  var inner = document.createElement('div');
+  inner.className = 'sec-nav';
+  inner.setAttribute('role','navigation');
+  inner.setAttribute('aria-label','Main navigation');
+
+  // Home
+  var homeA = document.createElement('a');
+  homeA.href = 'index.html';
+  homeA.className = 'sec-nav-home' + (isHome ? ' active' : '');
+  homeA.innerHTML = '🏠 Home';
+  inner.appendChild(homeA);
+
+  // Sections
+  CJ_SECTIONS.forEach(function(section) {
+    var isActive = (activeSection === section.id);
+    var item = document.createElement('div');
+    item.className = 'sec-nav-item';
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'sec-nav-btn' + (isActive ? ' active' : '');
+    btn.setAttribute('aria-haspopup','true');
+    btn.setAttribute('aria-expanded','false');
+    btn.innerHTML = section.emoji + ' ' + section.label + ' <span class="sec-nav-chevron" aria-hidden="true">▾</span>';
+
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var isOpen = item.classList.contains('open');
+      document.querySelectorAll('.sec-nav-item.open').forEach(function(el){
+        el.classList.remove('open');
+        var b = el.querySelector('.sec-nav-btn'); if(b) b.setAttribute('aria-expanded','false');
+      });
+      if (!isOpen) {
+        item.classList.add('open');
+        btn.setAttribute('aria-expanded','true');
+      }
+    });
+
+    var dropdown = document.createElement('div');
+    dropdown.className = 'sec-nav-dropdown';
+    dropdown.setAttribute('role','menu');
+    section.links.forEach(function(link){
+      var isLinkActive = (link.href === page);
+      var a = document.createElement('a');
+      a.href = link.href;
+      a.className = 'sec-nav-link' + (isLinkActive ? ' active' : '');
+      a.setAttribute('role','menuitem');
+      a.innerHTML = '<span class="sec-nav-link-icon">' + link.emoji + '</span>' + link.label;
+      dropdown.appendChild(a);
+    });
+    item.appendChild(btn);
+    item.appendChild(dropdown);
+    inner.appendChild(item);
+  });
+
+  tabNav.innerHTML = '';
+  tabNav.appendChild(inner);
+
+  document.addEventListener('click', function(){
+    document.querySelectorAll('.sec-nav-item.open').forEach(function(el){
+      el.classList.remove('open');
+      var b = el.querySelector('.sec-nav-btn'); if(b) b.setAttribute('aria-expanded','false');
+    });
+  });
 }
 
+// ── PAGE GUARD LOADER ────────────────────────────────────────────
+// Loads page-guard.js once on every page that includes nav-init.js
 (function() {
   if (window.__pgLoaded) return;
   window.__pgLoaded = true;
@@ -166,7 +271,7 @@ function buildTabNav() {
   handleOAuthCallback();
 
   function init() {
-    buildTabNav();   // Sync tab labels/emojis from canonical definition above
+    buildSectionNav();
     var host = document.getElementById('nav-btns') || document.querySelector('[data-nav-host]');
     if (!host) return;
     injectStyles();
