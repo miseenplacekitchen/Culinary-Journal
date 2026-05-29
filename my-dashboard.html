@@ -295,6 +295,56 @@ function renderAnalytics() {
     (recent.length ? '<div class="an-sec-title" style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:12px">Recently Viewed</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">'+recentCards+'</div>' : '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Visit some recipes and they will appear here as recently viewed.</div>');
 }
 
+
+// ── QUICK EDIT ───────────────────────────────────────────────────
+function openQuickEdit(r) {
+  document.getElementById('qe-id').value   = r.id;
+  document.getElementById('qe-name').value = r.recipe_name||r.name||'';
+  document.getElementById('qe-visibility').value = (r.visibility||'public').toLowerCase();
+  document.getElementById('qe-note').value = r.description||'';
+  document.getElementById('qe-modal').classList.add('open');
+  setTimeout(function(){document.getElementById('qe-name').focus();},50);
+}
+function closeQuickEdit() { document.getElementById('qe-modal').classList.remove('open'); }
+async function saveQuickEdit() {
+  var id   = document.getElementById('qe-id').value;
+  var name = document.getElementById('qe-name').value.trim();
+  if (!name) { alert('Please enter a recipe name.'); return; }
+  var vis  = document.getElementById('qe-visibility').value;
+  var note = document.getElementById('qe-note').value.trim();
+  try {
+    await supaRpc('quick_update_recipe', {p_id:id, p_name:name, p_visibility:vis, p_description:note||null});
+    closeQuickEdit();
+    // Refresh current tab
+    if (typeof loadRecipes === 'function') loadRecipes(currentFilter);
+  } catch(e) { alert('Error: '+e.message); }
+}
+
 </script>
+
+<!-- Quick Edit Modal -->
+<div class="qe-modal" id="qe-modal">
+  <div class="qe-box">
+    <div class="qe-title">Quick Edit</div>
+    <input type="hidden" id="qe-id">
+    <div class="qe-field"><label class="qe-label">Recipe Name</label><input class="qe-input" id="qe-name" placeholder="Recipe name"></div>
+    <div class="qe-field"><label class="qe-label">Visibility</label>
+      <select class="qe-input" id="qe-visibility">
+        <option value="public">🌍 Public</option>
+        <option value="private">🔒 Private</option>
+        <option value="archived">📦 Archived</option>
+      </select>
+    </div>
+    <div class="qe-field"><label class="qe-label">Note (for yourself)</label>
+      <textarea class="qe-input" id="qe-note" rows="2" placeholder="Any note about this recipe..."></textarea>
+    </div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)">For bigger changes, use the full edit form.</div>
+    <div class="qe-foot">
+      <button style="flex:1;padding:11px;background:var(--accent);border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:#fff;cursor:pointer" onclick="saveQuickEdit()">Save</button>
+      <button style="padding:11px 16px;background:none;border:1px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);cursor:pointer" onclick="closeQuickEdit()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

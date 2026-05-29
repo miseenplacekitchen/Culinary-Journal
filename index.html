@@ -113,6 +113,21 @@
   </div>
 
 
+
+  <!-- Recipe of the Day -->
+  <div id="rotd-section" style="display:none;padding:0 20px;max-width:1100px;margin:0 auto 48px;">
+    <div style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:8px">Today</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:700;color:var(--text-high);margin-bottom:16px">Recipe of the Day</div>
+    <a id="rotd-card" href="#" style="display:grid;grid-template-columns:180px 1fr;gap:0;background:var(--text-ghost);border:1px solid var(--border);border-radius:14px;overflow:hidden;text-decoration:none;max-width:640px;transition:border-color .15s">
+      <div id="rotd-img" style="height:160px;display:flex;align-items:center;justify-content:center;font-size:48px;border-right:1px solid var(--border);overflow:hidden;background:var(--text-ghost)"></div>
+      <div style="padding:20px 24px;display:flex;flex-direction:column;justify-content:center">
+        <div id="rotd-name" style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--text-high);margin-bottom:4px"></div>
+        <div id="rotd-meta" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:10px"></div>
+        <div style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;color:var(--accent)">View Recipe →</div>
+      </div>
+    </a>
+  </div>
+
   <!-- Featured Community Recipes -->
   <div class="feat-section" id="feat-section" style="display:none">
     <div class="feat-label">From the Community</div>
@@ -145,3 +160,50 @@
 
 </body>
 </html>
+<script>
+// ── RECIPE OF THE DAY ─────────────────────────────────────────────
+const CAT_EMOJI_ROD = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
+
+async function loadRecipeOfDay() {
+  try {
+    const settings = JSON.parse(localStorage.getItem('tcj_site_settings')||'{}');
+    const rotdId   = settings.recipe_of_day;
+    let recipe = null;
+    // If admin has set a specific recipe
+    if (rotdId) {
+      const res = await fetch(SUPA_URL + '/rest/v1/submitted_recipes?id=eq.' + rotdId + '&status=eq.approved&select=id,recipe_name,category,origin_country,image_url&limit=1', {headers:{'apikey':SUPA_KEY}});
+      const rows = await res.json();
+      if (rows && rows.length) recipe = rows[0];
+    }
+    // Fallback: date-seeded random from approved recipes
+    if (!recipe) {
+      const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_approved_recipes', {
+        method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+        body:JSON.stringify({p_limit:50})
+      });
+      const recipes = await res.json() || [];
+      if (!recipes.length) return;
+      const seed = Math.floor(Date.now() / 86400000); // Changes daily
+      recipe = recipes[seed % recipes.length];
+    }
+    if (!recipe) return;
+    const section = document.getElementById('rotd-section');
+    const card    = document.getElementById('rotd-card');
+    const imgEl   = document.getElementById('rotd-img');
+    const nameEl  = document.getElementById('rotd-name');
+    const metaEl  = document.getElementById('rotd-meta');
+    if (!section) return;
+    card.href = 'recipe-page.html?id=' + recipe.id;
+    if (recipe.image_url) {
+      imgEl.innerHTML = '<img src="'+recipe.image_url+'" style="width:100%;height:100%;object-fit:cover" loading="lazy">';
+    } else {
+      imgEl.textContent = CAT_EMOJI_ROD[recipe.category] || '🍳';
+    }
+    nameEl.textContent = recipe.recipe_name || 'Today's Recipe';
+    metaEl.textContent = [recipe.category, recipe.origin_country].filter(Boolean).join(' · ');
+    section.style.display = 'block';
+    card.style.borderColor = 'var(--accent-border)';
+  } catch(_) {}
+}
+
+</script>

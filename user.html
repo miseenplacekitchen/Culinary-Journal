@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <style>
+    .page-bg{min-height:100vh;background:var(--bg);}
+    .up-wrap{max-width:900px;margin:0 auto;padding:40px 20px 80px;}
+    .up-hero{display:flex;align-items:center;gap:24px;margin-bottom:32px;padding-bottom:28px;border-bottom:1px solid var(--border);}
+    .up-avatar{width:72px;height:72px;border-radius:50%;background:rgb(from var(--accent) r g b / 0.15);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;color:var(--accent);flex-shrink:0;}
+    .up-username{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:700;color:var(--text-high);}
+    .up-name{font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-mid);}
+    .up-meta{font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-top:4px;display:flex;gap:14px;flex-wrap:wrap;}
+    .up-stat{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);}
+    .up-stat strong{color:var(--accent);}
+    .up-section-title{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;}
+    .up-recipe-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:32px;}
+    .up-recipe-card{background:var(--text-ghost);border:1px solid var(--border);border-radius:11px;overflow:hidden;text-decoration:none;display:block;transition:all 0.15s;}
+    .up-recipe-card:hover{border-color:var(--accent-border);transform:translateY(-2px);}
+    .up-recipe-img{height:110px;display:flex;align-items:center;justify-content:center;font-size:28px;border-bottom:1px solid var(--border);overflow:hidden;}
+    .up-recipe-img img{width:100%;height:100%;object-fit:cover;}
+    .up-recipe-body{padding:10px 12px;}
+    .up-recipe-name{font-family:'Cormorant Garamond',serif;font-size:0.95rem;font-weight:600;color:var(--text-high);margin-bottom:2px;}
+    .up-recipe-cat{font-family:'DM Sans',sans-serif;font-size:10px;color:var(--text-mid);}
+    .up-coll-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+    .up-coll-card{background:var(--text-ghost);border:1px solid var(--border);border-radius:11px;padding:16px;text-decoration:none;display:block;transition:all 0.15s;}
+    .up-coll-card:hover{border-color:var(--accent-border);}
+    .up-coll-emoji{font-size:28px;margin-bottom:8px;}
+    .up-coll-name{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:var(--text-high);margin-bottom:2px;}
+    .up-coll-count{font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);}
+    .up-empty{text-align:center;padding:40px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);}
+    .up-error{text-align:center;padding:80px 20px;}
+    .up-error-icon{font-size:40px;margin-bottom:12px;}
+    .up-error-title{font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--text-high);margin-bottom:6px;}
+  </style>
+</head>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+<div class="up-wrap">
+  <div id="up-loading" style="text-align:center;padding:80px;font-family:DM Sans,sans-serif;color:var(--text-mid)">Loading profile...</div>
+  <div id="up-error" class="up-error" style="display:none">
+    <div class="up-error-icon">👤</div>
+    <div class="up-error-title">User not found</div>
+    <div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">This profile doesn't exist or is not public.</div>
+  </div>
+  <div id="up-content" style="display:none">
+    <div class="up-hero">
+      <div class="up-avatar" id="up-avatar"></div>
+      <div>
+        <div class="up-username" id="up-username"></div>
+        <div class="up-name" id="up-name"></div>
+        <div class="up-meta" id="up-meta"></div>
+      </div>
+    </div>
+    <div id="up-recipes-section">
+      <div class="up-section-title" id="up-recipes-label">Recipes</div>
+      <div class="up-recipe-grid" id="up-recipes"></div>
+    </div>
+    <div id="up-collections-section" style="display:none">
+      <div class="up-section-title">Public Collections</div>
+      <div class="up-coll-grid" id="up-collections"></div>
+    </div>
+  </div>
+</div>
+<script src="nav-init.js"></script>
+<script>
+const SUPA_URL='https://kzywmodvfbyexqgipcjt.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+const CAT_EMOJI={'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
+
+async function load(){
+  const params=new URLSearchParams(window.location.search);
+  const username=params.get('u');
+  if(!username){show('error');return;}
+  try{
+    const [profileRes,recipesRes]= await Promise.all([
+      fetch(SUPA_URL+'/rest/v1/rpc/get_public_profile',{method:'POST',headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_username:username})}),
+      fetch(SUPA_URL+'/rest/v1/rpc/get_approved_recipes',{method:'POST',headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_limit:40})})
+    ]);
+    const profiles=await profileRes.json();
+    if(!profiles||!profiles.length){show('error');return;}
+    const profile=profiles[0];
+    const allRecipes=await recipesRes.json()||[];
+    const userRecipes=allRecipes.filter(r=>r.username&&r.username.toLowerCase()===username.toLowerCase());
+    renderProfile(profile,userRecipes);
+    show('content');
+    document.title='@'+profile.username+' — The Culinary Journal';
+  }catch(e){show('error');}
+}
+
+function show(state){
+  document.getElementById('up-loading').style.display=state==='loading'?'block':'none';
+  document.getElementById('up-error').style.display=state==='error'?'block':'none';
+  document.getElementById('up-content').style.display=state==='content'?'block':'none';
+}
+
+function renderProfile(profile,recipes){
+  const initials=(profile.full_name||profile.username||'?').charAt(0).toUpperCase();
+  document.getElementById('up-avatar').textContent=initials;
+  document.getElementById('up-username').textContent='@'+profile.username;
+  document.getElementById('up-name').textContent=profile.full_name||'';
+  const joined=profile.created_at?new Date(profile.created_at).toLocaleDateString('en-AU',{month:'long',year:'numeric'}):'';
+  document.getElementById('up-meta').innerHTML=
+    '<span class="up-stat"><strong>'+profile.recipe_count+'</strong> public recipe'+(profile.recipe_count==1?'':'s')+'</span>'+
+    (joined?'<span>Joined '+joined+'</span>':'');
+  const label=document.getElementById('up-recipes-label');
+  label.textContent=(recipes.length||0)+' Public Recipe'+(recipes.length===1?'':'s');
+  const grid=document.getElementById('up-recipes');
+  if(!recipes.length){grid.innerHTML='<div class="up-empty">No public recipes yet.</div>';return;}
+  grid.innerHTML=recipes.map(r=>{
+    const emoji=CAT_EMOJI[r.category]||'🍳';
+    return '<a class="up-recipe-card" href="recipe-page.html?id='+r.id+'">'+
+      '<div class="up-recipe-img">'+(r.image_url?'<img src="'+r.image_url+'" loading="lazy">':emoji)+'</div>'+
+      '<div class="up-recipe-body"><div class="up-recipe-name">'+(r.recipe_name||'')+'</div>'+
+      '<div class="up-recipe-cat">'+(r.category||'')+(r.origin_country?' · '+r.origin_country:'')+'</div></div></a>';
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded',load);
+</script>
+</body>
+</html>

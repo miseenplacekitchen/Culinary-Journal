@@ -141,6 +141,11 @@
     <div class="bp-section">
       <div class="bp-sec-title">Featured Recipe IDs</div>
       <div class="bp-field">
+        <div class="bp-label">Recipe of the Day — UUID (single recipe ID)</div>
+        <input class="bp-input" id="bp-rotd" type="text" placeholder="Leave blank for automatic daily rotation">
+        <div class="bp-hint">If set, this specific recipe appears as Recipe of the Day. If blank, a different recipe is shown each day automatically.</div>
+      </div>
+      <div class="bp-field">
         <div class="bp-label">Recipe UUIDs to feature on homepage (one per line)</div>
         <textarea class="bp-input" id="bp-featured" rows="4" placeholder="Paste recipe IDs here, one per line...&#10;Find IDs in the Admin Dashboard → All Recipes"></textarea>
         <div class="bp-hint">These recipes appear in the featured section on the homepage. Get IDs from the Admin Dashboard.</div>
@@ -250,6 +255,7 @@ function loadSavedSettings() {
   if (s.banner_text)   document.getElementById('bp-banner').value = s.banner_text;
   if (s.banner_link)   document.getElementById('bp-banner-link').value = s.banner_link;
   if (s.featured_ids)  document.getElementById('bp-featured').value = (s.featured_ids||[]).join('\n');
+  if (s.recipe_of_day) document.getElementById('bp-rotd').value = s.recipe_of_day;
   if (s.submissions)   document.getElementById('bp-submissions').value = s.submissions;
   if (s.registrations) document.getElementById('bp-registrations').value = s.registrations;
 }
