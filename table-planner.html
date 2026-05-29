@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Table Planner — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .tp-wrap  { max-width:1100px; margin:0 auto; padding:24px 16px 80px; }
+
+    /* ── EVENTS LIST ────────────────────────────────── */
+    .tp-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
+    .tp-title  { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--text-high); }
+    .tp-btn    { padding:10px 20px; border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; border:none; }
+    .tp-btn-primary { background:var(--accent); color:#fff; }
+    .tp-btn-primary:hover { opacity:0.88; }
+    .tp-btn-ghost { background:none; border:1px solid var(--border); color:var(--text-mid); }
+    .tp-btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+    .tp-btn-sm  { padding:7px 14px; font-size:12px; }
+    .tp-btn-danger { background:rgba(220,80,80,0.1); border:1px solid rgba(220,80,80,0.3); color:#dc5050; }
+    .tp-btn-danger:hover { background:rgba(220,80,80,0.2); }
+
+    .tp-events-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+    .tp-event-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:14px; padding:20px; cursor:pointer; transition:all 0.15s; }
+    .tp-event-card:hover { border-color:var(--accent-border); transform:translateY(-2px); }
+    .tp-event-type { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
+    .tp-event-name { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:700; color:var(--text-high); margin-bottom:4px; }
+    .tp-event-meta { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); margin-bottom:12px; }
+    .tp-event-stats { display:flex; gap:12px; }
+    .tp-event-stat { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+    .tp-event-stat strong { color:var(--text-high); font-weight:600; }
+    .tp-empty { text-align:center; padding:60px 20px; }
+    .tp-empty-icon { font-size:48px; margin-bottom:12px; }
+    .tp-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--text-high); margin-bottom:6px; }
+    .tp-empty-sub   { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
+
+    /* ── WORKSPACE ──────────────────────────────────── */
+    .tp-ws-header { display:flex; align-items:center; gap:12px; margin-bottom:24px; flex-wrap:wrap; }
+    .tp-back-btn  { background:none; border:1px solid var(--border); border-radius:8px; padding:7px 12px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); cursor:pointer; }
+    .tp-back-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .tp-ws-name   { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:700; color:var(--text-high); flex:1; }
+    .tp-ws-date   { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); }
+
+    /* Tabs */
+    .tp-tabs { display:flex; gap:0; border-bottom:2px solid var(--border); margin-bottom:24px; overflow-x:auto; }
+    .tp-tab  { padding:10px 20px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-mid); background:none; border:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; white-space:nowrap; }
+    .tp-tab:hover { color:var(--text-high); }
+    .tp-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+    /* ── LAYOUT CANVAS ──────────────────────────────── */
+    .tp-canvas-wrap { position:relative; }
+    .tp-canvas-toolbar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+    .tp-canvas { position:relative; width:100%; height:520px; background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; overflow:hidden; touch-action:none; }
+    .tp-canvas-grid { position:absolute; inset:0; background-image:radial-gradient(circle, var(--border) 1px, transparent 1px); background-size:40px 40px; opacity:0.4; pointer-events:none; }
+    .tp-table-el { position:absolute; display:flex; align-items:center; justify-content:center; flex-direction:column; cursor:grab; user-select:none; touch-action:none; transition:box-shadow 0.1s; }
+    .tp-table-el:active { cursor:grabbing; }
+    .tp-table-el.selected { outline:2px solid var(--accent); outline-offset:3px; }
+    .tp-table-round { border-radius:50%; background:var(--bg); border:2px solid var(--accent); }
+    .tp-table-rect  { border-radius:10px; background:var(--bg); border:2px solid var(--accent); }
+    .tp-table-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; color:var(--text-high); text-align:center; line-height:1.3; pointer-events:none; padding:4px; }
+    .tp-table-count { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--accent); pointer-events:none; }
+    .tp-table-actions { position:absolute; top:-32px; left:50%; transform:translateX(-50%); display:none; gap:4px; background:var(--bg); border:1px solid var(--border); border-radius:7px; padding:3px 6px; white-space:nowrap; z-index:10; }
+    .tp-table-el.selected .tp-table-actions { display:flex; }
+    .tp-tact-btn { background:none; border:none; font-size:12px; cursor:pointer; color:var(--text-mid); padding:2px 4px; }
+    .tp-tact-btn:hover { color:var(--accent); }
+    .tp-canvas-hint { position:absolute; bottom:12px; right:16px; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); pointer-events:none; }
+
+    /* ── GUEST LIST ─────────────────────────────────── */
+    .tp-guest-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px; }
+    @media(max-width:600px){ .tp-guest-stats { grid-template-columns:repeat(2,1fr); } }
+    .tp-gstat { background:var(--text-ghost); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+    .tp-gstat-num   { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:700; color:var(--accent); }
+    .tp-gstat-label { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); text-transform:uppercase; letter-spacing:0.08em; }
+    .tp-guest-table { width:100%; border-collapse:collapse; }
+    .tp-gh { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-mid); padding:8px 12px; border-bottom:1px solid var(--border); text-align:left; }
+    .tp-gd { padding:10px 12px; border-bottom:1px solid rgba(from var(--border) r g b / 0.5); vertical-align:middle; }
+    .tp-guest-name { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-high); }
+    .tp-guest-group { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+    .tp-diet-pill  { display:inline-block; font-size:11px; padding:2px 7px; border-radius:4px; margin:1px 2px; background:rgb(from var(--accent) r g b / 0.1); color:var(--accent); }
+    .tp-rsvp { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; padding:3px 8px; border-radius:20px; }
+    .tp-rsvp.attending { background:rgba(76,175,118,0.12); color:#4caf76; }
+    .tp-rsvp.declined  { background:rgba(220,80,80,0.12); color:#dc5050; }
+    .tp-rsvp.pending   { background:rgba(180,180,180,0.12); color:var(--text-mid); }
+
+    /* ── SEATING ────────────────────────────────────── */
+    .tp-seating-layout { display:grid; grid-template-columns:1fr 280px; gap:20px; }
+    @media(max-width:768px){ .tp-seating-layout { grid-template-columns:1fr; } }
+    .tp-seating-tables { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; align-content:start; }
+    .tp-seat-card  { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:14px; }
+    .tp-seat-card-title { font-family:'Cormorant Garamond',serif; font-size:1rem; font-weight:600; color:var(--text-high); margin-bottom:3px; }
+    .tp-seat-card-sub   { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); margin-bottom:12px; }
+    .tp-seats-grid { display:flex; flex-direction:column; gap:4px; }
+    .tp-seat-row { display:flex; align-items:center; gap:8px; padding:5px 8px; border-radius:7px; background:var(--bg); border:1px solid var(--border); cursor:pointer; min-height:34px; }
+    .tp-seat-row:hover { border-color:var(--accent-border); }
+    .tp-seat-row.occupied { background:rgb(from var(--accent) r g b / 0.07); border-color:rgb(from var(--accent) r g b / 0.3); }
+    .tp-seat-num   { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); min-width:16px; text-align:center; flex-shrink:0; }
+    .tp-seat-guest { font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; color:var(--text-high); flex:1; }
+    .tp-seat-empty { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); flex:1; font-style:italic; }
+    .tp-seat-diet  { font-size:13px; flex-shrink:0; }
+    .tp-unassigned { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:14px; position:sticky; top:80px; }
+    .tp-unassigned-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-mid); margin-bottom:12px; }
+    .tp-unassigned-list { display:flex; flex-direction:column; gap:4px; max-height:480px; overflow-y:auto; }
+    .tp-unassigned-item { padding:7px 10px; border-radius:7px; background:var(--bg); border:1px solid var(--border); font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-high); cursor:pointer; }
+    .tp-unassigned-item:hover { border-color:var(--accent); }
+    .tp-unassigned-item.selecting { background:rgb(from var(--accent) r g b / 0.1); border-color:var(--accent); }
+
+    /* ── PRINT ──────────────────────────────────────── */
+    .tp-print-wrap { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
+    @media(max-width:640px){ .tp-print-wrap { grid-template-columns:1fr; } }
+    .tp-print-section { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:18px; }
+    .tp-print-section-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-mid); margin-bottom:12px; }
+    .tp-place-card-preview { background:#fff; border:1px solid #ddd; border-radius:8px; padding:14px 16px; margin-bottom:8px; }
+    .tp-pc-table { font-family:'Helvetica',sans-serif; font-size:9px; color:#888; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:3px; }
+    .tp-pc-name  { font-family:Georgia,serif; font-size:20px; font-weight:700; color:#1a1a1a; margin-bottom:4px; }
+    .tp-pc-diet  { font-size:14px; }
+    .tp-table-chart { width:100%; border-collapse:collapse; font-family:'DM Sans',sans-serif; font-size:12px; }
+    .tp-tc-th { padding:6px 10px; background:var(--text-ghost); color:var(--text-mid); font-weight:600; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; border-bottom:1px solid var(--border); text-align:left; }
+    .tp-tc-td { padding:6px 10px; border-bottom:1px solid rgba(from var(--border) r g b / 0.5); color:var(--text-high); }
+
+    /* Modals */
+    .tp-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+    .tp-modal.open { display:flex; }
+    .tp-modal-box { background:var(--bg); border:1px solid var(--border); border-radius:16px; width:100%; max-width:440px; padding:24px; max-height:90vh; overflow-y:auto; }
+    .tp-modal-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:600; color:var(--text-high); margin-bottom:20px; }
+    .tp-field { margin-bottom:14px; }
+    .tp-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-mid); margin-bottom:5px; display:block; }
+    .tp-input { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text-high); outline:none; }
+    .tp-input:focus { border-color:var(--accent); }
+    .tp-select { -webkit-appearance:none; }
+    .tp-diet-checks { display:flex; flex-wrap:wrap; gap:6px; }
+    .tp-diet-check { display:flex; align-items:center; gap:5px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-high); background:var(--text-ghost); border:1px solid var(--border); border-radius:7px; padding:5px 9px; cursor:pointer; }
+    .tp-diet-check input { accent-color:var(--accent); }
+    .tp-modal-foot { display:flex; gap:8px; margin-top:20px; flex-wrap:wrap; }
+
+    /* Print media */
+    @media print {
+      .page-bg,.tp-wrap,[data-nav-host],.tp-header,.tp-tabs,.tp-ws-header,.tp-canvas-toolbar,
+      .tp-guest-stats,.tp-seating-layout .tp-unassigned,
+      .tp-btn,.tp-back-btn,button { display:none !important; }
+      #print-output { display:block !important; }
+      .tp-place-card-print { width:148mm; height:105mm; border:1px solid #ccc; page-break-after:always;
+        display:flex !important; flex-direction:column; align-items:center; justify-content:center;
+        font-family:Georgia,serif; padding:20mm; box-sizing:border-box; }
+    }
+    #print-output { display:none; }
+  </style>
+</head>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+<div id="print-output"></div>
+
+<div class="tp-wrap">
+
+<!-- ═══ EVENTS LIST ════════════════════════════════════════════ -->
+<div id="view-events">
+  <div class="tp-header">
+    <div class="tp-title">🪑 Table Planner</div>
+    <button class="tp-btn tp-btn-primary" onclick="openEventModal()">+ New Event</button>
+  </div>
+  <div id="events-list"></div>
+</div>
+
+<!-- ═══ WORKSPACE ══════════════════════════════════════════════ -->
+<div id="view-workspace" style="display:none">
+  <div class="tp-ws-header">
+    <button class="tp-back-btn" onclick="goBack()">← All Events</button>
+    <div>
+      <div class="tp-ws-name" id="ws-name"></div>
+      <div class="tp-ws-date" id="ws-date"></div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="openEventModal(currentEvent)">Edit Event</button>
+      <button class="tp-btn tp-btn-sm tp-btn-danger" onclick="deleteCurrentEvent()">Delete</button>
+    </div>
+  </div>
+
+  <div class="tp-tabs">
+    <button class="tp-tab active" onclick="switchTab('layout',this)">🗺 Layout</button>
+    <button class="tp-tab" onclick="switchTab('guests',this)">👥 Guests</button>
+    <button class="tp-tab" onclick="switchTab('seating',this)">🪑 Seating</button>
+    <button class="tp-tab" onclick="switchTab('print',this)">🖨 Print</button>
+  </div>
+
+  <!-- LAYOUT TAB -->
+  <div id="tab-layout" class="tp-tab-content">
+    <div class="tp-canvas-toolbar">
+      <button class="tp-btn tp-btn-primary tp-btn-sm" onclick="openAddTableModal()">+ Add Table</button>
+      <button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="autoArrange()">↻ Auto Arrange</button>
+      <button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="saveLayout()">💾 Save Layout</button>
+      <span id="layout-save-msg" style="font-family:'DM Sans',sans-serif;font-size:12px;color:#4caf76;display:none">✓ Saved</span>
+    </div>
+    <div class="tp-canvas" id="layout-canvas">
+      <div class="tp-canvas-grid"></div>
+      <div class="tp-canvas-hint">Drag tables to arrange · Click to select · Double-click to rename</div>
+    </div>
+  </div>
+
+  <!-- GUESTS TAB -->
+  <div id="tab-guests" class="tp-tab-content" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div class="tp-guest-stats" id="guest-stats" style="flex:1;min-width:0"></div>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="importGuestsCSV()">Import CSV</button>
+        <button class="tp-btn tp-btn-primary tp-btn-sm" onclick="openGuestModal()">+ Add Guest</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;background:var(--text-ghost);border:1px solid var(--border);border-radius:12px">
+      <table class="tp-guest-table" id="guest-table">
+        <thead>
+          <tr>
+            <th class="tp-gh">Name</th>
+            <th class="tp-gh">Dietary</th>
+            <th class="tp-gh">RSVP</th>
+            <th class="tp-gh">Group</th>
+            <th class="tp-gh">Seat</th>
+            <th class="tp-gh"></th>
+          </tr>
+        </thead>
+        <tbody id="guest-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SEATING TAB -->
+  <div id="tab-seating" class="tp-tab-content" style="display:none">
+    <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px">Click any empty seat to assign a guest. Click an occupied seat to remove.</div>
+    <div class="tp-seating-layout">
+      <div class="tp-seating-tables" id="seating-tables"></div>
+      <div class="tp-unassigned">
+        <div class="tp-unassigned-title">Unassigned Guests <span id="unassigned-count" style="color:var(--accent)"></span></div>
+        <div class="tp-unassigned-list" id="unassigned-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRINT TAB -->
+  <div id="tab-print" class="tp-tab-content" style="display:none">
+    <div class="tp-print-wrap">
+      <div class="tp-print-section">
+        <div class="tp-print-section-title">Place Cards (A6 Landscape)</div>
+        <div id="place-cards-preview"></div>
+        <button class="tp-btn tp-btn-primary tp-btn-sm" style="margin-top:10px" onclick="printPlaceCards()">🖨 Print Place Cards</button>
+      </div>
+      <div class="tp-print-section">
+        <div class="tp-print-section-title">Seating Chart</div>
+        <div id="seating-chart"></div>
+        <button class="tp-btn tp-btn-ghost tp-btn-sm" style="margin-top:10px" onclick="printSeatingChart()">🖨 Print Chart</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- .tp-wrap -->
+
+<!-- ════ MODALS ══════════════════════════════════════════════════ -->
+
+<!-- Event Modal -->
+<div class="tp-modal" id="event-modal">
+  <div class="tp-modal-box">
+    <div class="tp-modal-title" id="event-modal-title">New Event</div>
+    <input type="hidden" id="em-id">
+    <div class="tp-field"><label class="tp-label">Event Name *</label><input class="tp-input" id="em-name" placeholder="e.g. Sarah's Wedding"></div>
+    <div class="tp-field"><label class="tp-label">Event Type</label>
+      <select class="tp-input tp-select" id="em-type">
+        <option>Dinner Party</option><option>Wedding</option><option>Birthday</option>
+        <option>Anniversary</option><option>Baby Shower</option><option>Corporate Event</option>
+        <option>Graduation</option><option>Funeral Wake</option><option>Other</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="tp-field"><label class="tp-label">Date</label><input class="tp-input" id="em-date" type="date"></div>
+      <div class="tp-field"><label class="tp-label">Venue Name</label><input class="tp-input" id="em-venue" placeholder="e.g. The Grand Hall"></div>
+    </div>
+    <div class="tp-field"><label class="tp-label">Notes</label><textarea class="tp-input" id="em-notes" rows="2" placeholder="Any special notes..."></textarea></div>
+    <div class="tp-modal-foot">
+      <button class="tp-btn tp-btn-primary" style="flex:1" onclick="saveEvent()">Save Event</button>
+      <button class="tp-btn tp-btn-ghost" onclick="closeModal('event-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Table Modal -->
+<div class="tp-modal" id="table-modal">
+  <div class="tp-modal-box">
+    <div class="tp-modal-title">Add Table</div>
+    <div class="tp-field"><label class="tp-label">Table Name</label><input class="tp-input" id="tm-name" placeholder="e.g. Table 1, Bridal Table..."></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="tp-field"><label class="tp-label">Shape</label>
+        <select class="tp-input tp-select" id="tm-shape">
+          <option value="round">Round</option>
+          <option value="rect">Rectangular</option>
+        </select>
+      </div>
+      <div class="tp-field"><label class="tp-label">Seats</label>
+        <select class="tp-input tp-select" id="tm-seats">
+          <option value="2">2 seats</option><option value="4">4 seats</option>
+          <option value="6">6 seats</option><option value="8" selected>8 seats</option>
+          <option value="10">10 seats</option><option value="12">12 seats</option>
+        </select>
+      </div>
+    </div>
+    <div class="tp-modal-foot">
+      <button class="tp-btn tp-btn-primary" style="flex:1" onclick="addTable()">Add to Layout</button>
+      <button class="tp-btn tp-btn-ghost" onclick="closeModal('table-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rename Table Modal -->
+<div class="tp-modal" id="rename-modal">
+  <div class="tp-modal-box">
+    <div class="tp-modal-title">Rename Table</div>
+    <input type="hidden" id="rename-table-id">
+    <div class="tp-field"><label class="tp-label">Table Name</label><input class="tp-input" id="rename-name" placeholder="Table name..."></div>
+    <div class="tp-field"><label class="tp-label">Seats</label>
+      <select class="tp-input tp-select" id="rename-seats">
+        <option value="2">2</option><option value="4">4</option><option value="6">6</option>
+        <option value="8">8</option><option value="10">10</option><option value="12">12</option>
+      </select>
+    </div>
+    <div class="tp-modal-foot">
+      <button class="tp-btn tp-btn-primary" style="flex:1" onclick="renameTable()">Save</button>
+      <button class="tp-btn tp-btn-ghost" onclick="closeModal('rename-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Guest Modal -->
+<div class="tp-modal" id="guest-modal">
+  <div class="tp-modal-box">
+    <div class="tp-modal-title" id="guest-modal-title">Add Guest</div>
+    <input type="hidden" id="gm-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="tp-field"><label class="tp-label">Guest Name *</label><input class="tp-input" id="gm-name" placeholder="Full name"></div>
+      <div class="tp-field"><label class="tp-label">Group / Party</label><input class="tp-input" id="gm-group" placeholder="e.g. Family, Friends"></div>
+    </div>
+    <div class="tp-field"><label class="tp-label">RSVP Status</label>
+      <select class="tp-input tp-select" id="gm-rsvp">
+        <option value="pending">Pending</option>
+        <option value="attending">Attending</option>
+        <option value="declined">Declined</option>
+      </select>
+    </div>
+    <div class="tp-field"><label class="tp-label">Dietary Requirements</label>
+      <div class="tp-diet-checks" id="diet-checks"></div>
+    </div>
+    <div class="tp-field">
+      <label class="tp-label" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="gm-plusone" style="accent-color:var(--accent)" onchange="togglePlusOne(this.checked)"> Bringing a plus-one
+      </label>
+    </div>
+    <div class="tp-field" id="gm-plusone-field" style="display:none">
+      <label class="tp-label">Plus-one Name</label><input class="tp-input" id="gm-plusone-name" placeholder="Name">
+    </div>
+    <div class="tp-field"><label class="tp-label">Notes</label><textarea class="tp-input" id="gm-notes" rows="2" placeholder="Allergies, preferences..."></textarea></div>
+    <div class="tp-modal-foot">
+      <button class="tp-btn tp-btn-primary" style="flex:1" onclick="saveGuest()">Save Guest</button>
+      <button class="tp-btn tp-btn-ghost" onclick="closeModal('guest-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Seat Assign Modal -->
+<div class="tp-modal" id="seat-modal">
+  <div class="tp-modal-box" style="max-width:360px">
+    <div class="tp-modal-title" id="seat-modal-title">Assign Seat</div>
+    <input type="hidden" id="sm-table-id">
+    <input type="hidden" id="sm-seat-num">
+    <div class="tp-field">
+      <label class="tp-label">Choose Guest</label>
+      <select class="tp-input tp-select" id="sm-guest-select"></select>
+    </div>
+    <div class="tp-modal-foot">
+      <button class="tp-btn tp-btn-primary" style="flex:1" onclick="confirmSeatAssign()">Assign</button>
+      <button class="tp-btn tp-btn-ghost" onclick="closeModal('seat-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="nav-init.js"></script>
+<script>
+const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+
+const DIETS = ['Vegan','Vegetarian','Gluten Free','Dairy Free','Nut Free','Halal','Kosher','Shellfish Free','Egg Free','Soy Free'];
+const DIET_ICONS = {Vegan:'🌿',Vegetarian:'🥕','Gluten Free':'🌾','Dairy Free':'🥛','Nut Free':'🥜',Halal:'☪',Kosher:'✡','Shellfish Free':'🦐','Egg Free':'🥚','Soy Free':'🌱'};
+const EVENT_ICONS = {'Dinner Party':'🍽','Wedding':'💍','Birthday':'🎂','Anniversary':'💑','Baby Shower':'👶','Corporate Event':'🏢','Graduation':'🎓','Funeral Wake':'🕊','Other':'📋'};
+
+let currentEvent = null;
+let currentLayout = {tables:[]};
+let currentGuests = [];
+let dragState = null;
+let selectedTableId = null;
+let selectingForSeat = null; // {tableId, seatNum}
+
+// ── SUPABASE RPC ─────────────────────────────────────────────────
+async function rpc(fn, params) {
+  const session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+  const headers = {'apikey':SUPA_KEY,'Content-Type':'application/json'};
+  if (session && session.access_token) headers['Authorization'] = 'Bearer ' + session.access_token;
+  const res = await fetch(SUPA_URL + '/rest/v1/rpc/' + fn, {method:'POST',headers,body:JSON.stringify(params||{})});
+  if (!res.ok) { const e = await res.text(); throw new Error(e); }
+  const ct = res.headers.get('content-type')||'';
+  return ct.includes('json') ? res.json() : null;
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── EVENTS LIST ──────────────────────────────────────────────────
+async function loadEvents() {
+  const el = document.getElementById('events-list');
+  el.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:20px 0">Loading events...</div>';
+  const session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+  if (!session) {
+    el.innerHTML = '<div class="tp-empty"><div class="tp-empty-icon">🔐</div><div class="tp-empty-title">Sign in to plan your events</div><div class="tp-empty-sub"><a href="login.html" style="color:var(--accent)">Sign in here →</a></div></div>';
+    return;
+  }
+  try {
+    const events = await rpc('get_my_events',{});
+    renderEventsList(events);
+  } catch(e) {
+    el.innerHTML = '<div class="tp-empty"><div class="tp-empty-icon">⚠</div><div class="tp-empty-title">Could not load events</div><div class="tp-empty-sub">' + escHtml(e.message) + '</div></div>';
+  }
+}
+
+function renderEventsList(events) {
+  const el = document.getElementById('events-list');
+  if (!events || !events.length) {
+    el.innerHTML = '<div class="tp-empty"><div class="tp-empty-icon">🪑</div><div class="tp-empty-title">No events yet</div><div class="tp-empty-sub">Create your first event to start planning tables and seating.</div></div>';
+    return;
+  }
+  el.innerHTML = '<div class="tp-events-grid" id="events-grid"></div>';
+  const grid = document.getElementById('events-grid');
+  events.forEach(function(ev) {
+    const icon = EVENT_ICONS[ev.event_type] || '📋';
+    const date = ev.event_date ? new Date(ev.event_date).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'}) : 'Date TBC';
+    const tables = ((ev.layout && ev.layout.tables) || []).length;
+    const card = document.createElement('div');
+    card.className = 'tp-event-card';
+    card.innerHTML =
+      '<div class="tp-event-type">' + icon + ' ' + escHtml(ev.event_type||'Event') + '</div>' +
+      '<div class="tp-event-name">' + escHtml(ev.name) + '</div>' +
+      '<div class="tp-event-meta">' + date + (ev.venue_name ? ' · ' + escHtml(ev.venue_name) : '') + '</div>' +
+      '<div class="tp-event-stats">' +
+        '<span class="tp-event-stat"><strong>' + tables + '</strong> table' + (tables===1?'':'s') + '</span>' +
+      '</div>';
+    card.addEventListener('click', function() { openEvent(ev); });
+    grid.appendChild(card);
+  });
+}
+
+// ── OPEN EVENT WORKSPACE ─────────────────────────────────────────
+async function openEvent(ev) {
+  currentEvent = ev;
+  currentLayout = (ev.layout && ev.layout.tables) ? ev.layout : {tables:[]};
+  document.getElementById('view-events').style.display = 'none';
+  document.getElementById('view-workspace').style.display = 'block';
+  document.getElementById('ws-name').textContent = ev.name;
+  const date = ev.event_date ? new Date(ev.event_date).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'}) : '';
+  document.getElementById('ws-date').textContent = (date ? date + ' · ' : '') + (ev.venue_name||'');
+  switchTab('layout', document.querySelector('.tp-tab'));
+  renderLayout();
+  await loadGuests();
+}
+
+function goBack() {
+  document.getElementById('view-workspace').style.display = 'none';
+  document.getElementById('view-events').style.display = 'block';
+  currentEvent = null;
+  loadEvents();
+}
+
+// ── TABS ─────────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tp-tab').forEach(function(b){b.classList.remove('active');});
+  if (btn) btn.classList.add('active');
+  document.querySelectorAll('.tp-tab-content').forEach(function(el){el.style.display='none';});
+  const tab = document.getElementById('tab-'+name);
+  if (tab) tab.style.display = 'block';
+  if (name==='seating') renderSeating();
+  if (name==='print')   renderPrint();
+  if (name==='guests')  renderGuestStats();
+}
+
+// ── LAYOUT EDITOR ────────────────────────────────────────────────
+const TABLE_SIZES = {round:80, rect_w:120, rect_h:70};
+
+function renderLayout() {
+  const canvas = document.getElementById('layout-canvas');
+  // Remove all existing table elements
+  canvas.querySelectorAll('.tp-table-el').forEach(function(el){el.remove();});
+  selectedTableId = null;
+  (currentLayout.tables||[]).forEach(function(t) { createTableEl(t); });
+}
+
+function createTableEl(t) {
+  const canvas = document.getElementById('layout-canvas');
+  const el = document.createElement('div');
+  el.className = 'tp-table-el ' + (t.shape==='round' ? 'tp-table-round' : 'tp-table-rect');
+  el.dataset.tableId = t.id;
+  const w = t.shape==='round' ? TABLE_SIZES.round : TABLE_SIZES.rect_w;
+  const h = t.shape==='round' ? TABLE_SIZES.round : TABLE_SIZES.rect_h;
+  el.style.cssText = 'width:'+w+'px;height:'+h+'px;left:'+t.x+'px;top:'+t.y+'px;';
+
+  const assignedCount = currentGuests.filter(function(g){return g.seat_assignment && g.seat_assignment.startsWith(t.id+':');}).length;
+
+  el.innerHTML =
+    '<div class="tp-table-actions">' +
+      '<button class="tp-tact-btn" onclick="openRenameModal(\'' + t.id + '\')" title="Rename">✏</button>' +
+      '<button class="tp-tact-btn" onclick="removeTable(\'' + t.id + '\')" title="Remove" style="color:#dc5050">🗑</button>' +
+    '</div>' +
+    '<div class="tp-table-label">' + escHtml(t.name) + '</div>' +
+    '<div class="tp-table-count">' + assignedCount + '/' + t.seats + ' seated</div>';
+
+  // Click to select
+  el.addEventListener('click', function(e) {
+    e.stopPropagation();
+    selectTable(t.id);
+  });
+
+  // Double-click to rename
+  el.addEventListener('dblclick', function(e) {
+    e.stopPropagation();
+    openRenameModal(t.id);
+  });
+
+  // Drag: mouse
+  el.addEventListener('mousedown', function(e) {
+    if (e.target.tagName === 'BUTTON') return;
+    e.preventDefault();
+    startDrag(e.clientX, e.clientY, t.id);
+  });
+
+  // Drag: touch
+  el.addEventListener('touchstart', function(e) {
+    if (e.target.tagName === 'BUTTON') return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    startDrag(touch.clientX, touch.clientY, t.id);
+  }, {passive:false});
+
+  canvas.appendChild(el);
+}
+
+function selectTable(id) {
+  document.querySelectorAll('.tp-table-el').forEach(function(el){el.classList.remove('selected');});
+  if (id) {
+    const el = document.querySelector('[data-table-id="' + id + '"]');
+    if (el) el.classList.add('selected');
+  }
+  selectedTableId = id;
+}
+
+function startDrag(clientX, clientY, tableId) {
+  const canvas = document.getElementById('layout-canvas');
+  const rect = canvas.getBoundingClientRect();
+  const table = currentLayout.tables.find(function(t){return t.id===tableId;});
+  if (!table) return;
+  selectTable(tableId);
+  dragState = {tableId, offsetX: clientX - rect.left - table.x, offsetY: clientY - rect.top - table.y};
+}
+
+function onDragMove(clientX, clientY) {
+  if (!dragState) return;
+  const canvas = document.getElementById('layout-canvas');
+  const rect = canvas.getBoundingClientRect();
+  const table = currentLayout.tables.find(function(t){return t.id===dragState.tableId;});
+  if (!table) return;
+  const el = document.querySelector('[data-table-id="' + table.id + '"]');
+  const w = table.shape==='round' ? TABLE_SIZES.round : TABLE_SIZES.rect_w;
+  const h = table.shape==='round' ? TABLE_SIZES.round : TABLE_SIZES.rect_h;
+  const canvasW = rect.width;
+  const canvasH = rect.height;
+  table.x = Math.max(0, Math.min(canvasW - w, clientX - rect.left - dragState.offsetX));
+  table.y = Math.max(0, Math.min(canvasH - h, clientY - rect.top - dragState.offsetY));
+  if (el) { el.style.left = table.x + 'px'; el.style.top = table.y + 'px'; }
+}
+
+function onDragEnd() {
+  if (!dragState) return;
+  dragState = null;
+}
+
+function openAddTableModal() {
+  document.getElementById('tm-name').value = 'Table ' + ((currentLayout.tables||[]).length + 1);
+  document.getElementById('tp-modal-box','table-modal');
+  openModal('table-modal');
+}
+
+function addTable() {
+  const name  = document.getElementById('tm-name').value.trim() || ('Table ' + ((currentLayout.tables||[]).length + 1));
+  const shape = document.getElementById('tm-shape').value;
+  const seats = parseInt(document.getElementById('tm-seats').value) || 8;
+  if (!currentLayout.tables) currentLayout.tables = [];
+  const id = 't' + Date.now();
+  // Stagger position
+  const offset = currentLayout.tables.length * 20;
+  const t = {id, name, shape, seats, x: 60 + (offset%300), y: 60 + Math.floor(offset/300)*120};
+  currentLayout.tables.push(t);
+  createTableEl(t);
+  closeModal('table-modal');
+}
+
+function removeTable(tableId) {
+  if (!confirm('Remove this table? Guests assigned here will become unseated.')) return;
+  currentLayout.tables = currentLayout.tables.filter(function(t){return t.id!==tableId;});
+  // Clear seat assignments for this table
+  currentGuests.forEach(function(g) {
+    if (g.seat_assignment && g.seat_assignment.startsWith(tableId+':')) {
+      g.seat_assignment = null;
+      rpc('assign_seat',{p_guest_id:g.id, p_seat:null}).catch(function(){});
+    }
+  });
+  const el = document.querySelector('[data-table-id="' + tableId + '"]');
+  if (el) el.remove();
+  selectTable(null);
+}
+
+function openRenameModal(tableId) {
+  const table = currentLayout.tables.find(function(t){return t.id===tableId;});
+  if (!table) return;
+  document.getElementById('rename-table-id').value = tableId;
+  document.getElementById('rename-name').value = table.name;
+  document.getElementById('rename-seats').value = String(table.seats);
+  openModal('rename-modal');
+}
+
+function renameTable() {
+  const tableId = document.getElementById('rename-table-id').value;
+  const table = currentLayout.tables.find(function(t){return t.id===tableId;});
+  if (!table) return;
+  table.name  = document.getElementById('rename-name').value.trim() || table.name;
+  table.seats = parseInt(document.getElementById('rename-seats').value) || table.seats;
+  // Re-render this table element
+  const el = document.querySelector('[data-table-id="' + tableId + '"]');
+  if (el) el.remove();
+  createTableEl(table);
+  selectTable(tableId);
+  closeModal('rename-modal');
+}
+
+function autoArrange() {
+  const canvas = document.getElementById('layout-canvas');
+  const w = canvas.clientWidth || 800;
+  const cols = Math.min(4, currentLayout.tables.length);
+  const spacingX = Math.max(120, (w - 80) / Math.max(cols,1));
+  currentLayout.tables.forEach(function(t, i) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    t.x = 60 + col * spacingX;
+    t.y = 60 + row * 140;
+    const el = document.querySelector('[data-table-id="' + t.id + '"]');
+    if (el) { el.style.left = t.x + 'px'; el.style.top = t.y + 'px'; }
+  });
+}
+
+async function saveLayout() {
+  if (!currentEvent) return;
+  try {
+    await rpc('save_event_layout',{p_id:currentEvent.id, p_layout:currentLayout});
+    currentEvent.layout = currentLayout;
+    const msg = document.getElementById('layout-save-msg');
+    msg.style.display = 'inline';
+    setTimeout(function(){ msg.style.display='none'; }, 2000);
+  } catch(e) { alert('Save failed: ' + e.message); }
+}
+
+// ── GUESTS ───────────────────────────────────────────────────────
+async function loadGuests() {
+  if (!currentEvent) return;
+  try {
+    const guests = await rpc('get_event_guests',{p_event_id:currentEvent.id});
+    currentGuests = guests || [];
+    renderGuestList();
+    renderGuestStats();
+    renderLayout(); // Update seat counts on tables
+  } catch(e) {
+    currentGuests = [];
+  }
+}
+
+function renderGuestStats() {
+  const attending = currentGuests.filter(function(g){return g.rsvp_status==='attending';}).length;
+  const declined  = currentGuests.filter(function(g){return g.rsvp_status==='declined';}).length;
+  const pending   = currentGuests.filter(function(g){return g.rsvp_status==='pending';}).length;
+  const seated    = currentGuests.filter(function(g){return g.seat_assignment;}).length;
+  const el = document.getElementById('guest-stats');
+  if (!el) return;
+  el.innerHTML =
+    '<div class="tp-gstat"><div class="tp-gstat-num">' + currentGuests.length + '</div><div class="tp-gstat-label">Total</div></div>' +
+    '<div class="tp-gstat"><div class="tp-gstat-num" style="color:#4caf76">' + attending + '</div><div class="tp-gstat-label">Attending</div></div>' +
+    '<div class="tp-gstat"><div class="tp-gstat-num" style="color:#dc5050">' + declined + '</div><div class="tp-gstat-label">Declined</div></div>' +
+    '<div class="tp-gstat"><div class="tp-gstat-num">' + seated + '</div><div class="tp-gstat-label">Seated</div></div>';
+}
+
+function renderGuestList() {
+  const tbody = document.getElementById('guest-tbody');
+  if (!tbody) return;
+  if (!currentGuests.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">No guests yet. Click + Add Guest to begin.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = '';
+  currentGuests.forEach(function(g) {
+    const dietIcons = (g.dietary_requirements||[]).map(function(d){return '<span class="tp-diet-pill">'+(DIET_ICONS[d]||'')+(d)+'</span>';}).join('');
+    const seat = g.seat_assignment ? getSeatLabel(g.seat_assignment) : '';
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="tp-gd"><div class="tp-guest-name">' + escHtml(g.name) + (g.plus_one&&g.plus_one_name ? ' <span style="font-size:10px;color:var(--text-mid)">+'+escHtml(g.plus_one_name)+'</span>' : '') + '</div></td>' +
+      '<td class="tp-gd">' + (dietIcons||'<span style="color:var(--text-mid);font-size:11px">None</span>') + '</td>' +
+      '<td class="tp-gd"><span class="tp-rsvp ' + (g.rsvp_status||'pending') + '">' + (g.rsvp_status||'pending') + '</span></td>' +
+      '<td class="tp-gd"><div class="tp-guest-group">' + escHtml(g.group_name||'') + '</div></td>' +
+      '<td class="tp-gd"><div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--accent)">' + escHtml(seat) + '</div></td>' +
+      '<td class="tp-gd"><div style="display:flex;gap:6px">' +
+        '<button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="openGuestModal(\'' + g.id + '\')">Edit</button>' +
+        '<button class="tp-btn tp-btn-sm tp-btn-danger" onclick="deleteGuest(\'' + g.id + '\')">×</button>' +
+      '</div></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function getSeatLabel(assignment) {
+  if (!assignment) return '';
+  const parts = assignment.split(':');
+  if (parts.length < 2) return assignment;
+  const table = currentLayout.tables.find(function(t){return t.id===parts[0];});
+  return (table ? table.name : parts[0]) + ', Seat ' + parts[1];
+}
+
+function openGuestModal(guestId) {
+  const g = guestId ? currentGuests.find(function(x){return x.id===guestId;}) : null;
+  document.getElementById('guest-modal-title').textContent = g ? 'Edit Guest' : 'Add Guest';
+  document.getElementById('gm-id').value = g ? g.id : '';
+  document.getElementById('gm-name').value = g ? (g.name||'') : '';
+  document.getElementById('gm-group').value = g ? (g.group_name||'') : '';
+  document.getElementById('gm-rsvp').value  = g ? (g.rsvp_status||'pending') : 'pending';
+  document.getElementById('gm-notes').value = g ? (g.notes||'') : '';
+  document.getElementById('gm-plusone').checked = g ? (g.plus_one||false) : false;
+  document.getElementById('gm-plusone-name').value = g ? (g.plus_one_name||'') : '';
+  togglePlusOne(g ? g.plus_one : false);
+
+  // Build dietary checkboxes
+  const checks = document.getElementById('diet-checks');
+  const existing = g ? (g.dietary_requirements||[]) : [];
+  checks.innerHTML = '';
+  DIETS.forEach(function(d) {
+    const label = document.createElement('label');
+    label.className = 'tp-diet-check';
+    label.innerHTML = '<input type="checkbox" value="' + d + '"' + (existing.includes(d)?' checked':'') + '> ' + (DIET_ICONS[d]||'') + ' ' + d;
+    checks.appendChild(label);
+  });
+  openModal('guest-modal');
+}
+
+function togglePlusOne(on) {
+  document.getElementById('gm-plusone-field').style.display = on ? 'block' : 'none';
+}
+
+async function saveGuest() {
+  const name = document.getElementById('gm-name').value.trim();
+  if (!name) { alert('Please enter a guest name.'); return; }
+  const id = document.getElementById('gm-id').value || null;
+  const dietary = [...document.querySelectorAll('#diet-checks input:checked')].map(function(i){return i.value;});
+  try {
+    await rpc('upsert_guest',{
+      p_id:       id,
+      p_event_id: currentEvent.id,
+      p_name:     name,
+      p_dietary_requirements: dietary,
+      p_rsvp_status:  document.getElementById('gm-rsvp').value,
+      p_group_name:   document.getElementById('gm-group').value.trim(),
+      p_plus_one:     document.getElementById('gm-plusone').checked,
+      p_plus_one_name:document.getElementById('gm-plusone-name').value.trim(),
+      p_notes:        document.getElementById('gm-notes').value.trim()
+    });
+    closeModal('guest-modal');
+    await loadGuests();
+  } catch(e) { alert('Error saving guest: ' + e.message); }
+}
+
+async function deleteGuest(id) {
+  if (!confirm('Remove this guest?')) return;
+  try {
+    await rpc('delete_guest',{p_id:id});
+    await loadGuests();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+function importGuestsCSV() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.csv';
+  input.onchange = async function() {
+    const text = await input.files[0].text();
+    const lines = text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+    if (!lines.length) return;
+    // Detect header row
+    const first = lines[0].toLowerCase();
+    const start = first.includes('name') ? 1 : 0;
+    let added = 0;
+    for (let i = start; i < lines.length; i++) {
+      const cols = lines[i].split(',').map(function(s){return s.trim().replace(/^"|"$/g,'');});
+      const name = cols[0];
+      if (!name) continue;
+      const dietary = cols[1] ? cols[1].split(';').map(function(s){return s.trim();}).filter(Boolean) : [];
+      const rsvp = cols[2] || 'pending';
+      const group = cols[3] || '';
+      try {
+        await rpc('upsert_guest',{p_id:null, p_event_id:currentEvent.id, p_name:name, p_dietary_requirements:dietary, p_rsvp_status:rsvp, p_group_name:group, p_plus_one:false, p_plus_one_name:'', p_notes:''});
+        added++;
+      } catch(_) {}
+    }
+    alert(added + ' guest(s) imported.');
+    await loadGuests();
+  };
+  input.click();
+}
+
+// ── SEATING ──────────────────────────────────────────────────────
+function renderSeating() {
+  const tablesEl = document.getElementById('seating-tables');
+  const unassignedEl = document.getElementById('unassigned-list');
+  const countEl = document.getElementById('unassigned-count');
+  if (!tablesEl || !unassignedEl) return;
+
+  const attending = currentGuests.filter(function(g){return g.rsvp_status!=='declined';});
+  const unseated  = attending.filter(function(g){return !g.seat_assignment;});
+  countEl.textContent = '(' + unseated.length + ')';
+
+  // Unassigned panel
+  unassignedEl.innerHTML = '';
+  if (!unseated.length) {
+    unassignedEl.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:#4caf76;text-align:center;padding:12px">All guests are seated! 🎉</div>';
+  } else {
+    unseated.forEach(function(g) {
+      const item = document.createElement('div');
+      item.className = 'tp-unassigned-item';
+      const icons = (g.dietary_requirements||[]).map(function(d){return DIET_ICONS[d]||'';}).join('');
+      item.textContent = g.name + (icons ? ' ' + icons : '');
+      item.dataset.guestId = g.id;
+      item.title = 'Click a seat to assign ' + g.name;
+      unassignedEl.appendChild(item);
+    });
+  }
+
+  // Tables
+  tablesEl.innerHTML = '';
+  if (!currentLayout.tables.length) {
+    tablesEl.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">No tables in layout yet. Add tables in the Layout tab first.</div>';
+    return;
+  }
+
+  currentLayout.tables.forEach(function(table) {
+    const card = document.createElement('div');
+    card.className = 'tp-seat-card';
+    const assignedHere = currentGuests.filter(function(g){return g.seat_assignment && g.seat_assignment.startsWith(table.id+':');});
+    card.innerHTML = '<div class="tp-seat-card-title">' + escHtml(table.name) + '</div>' +
+      '<div class="tp-seat-card-sub">' + assignedHere.length + ' / ' + table.seats + ' seated</div>' +
+      '<div class="tp-seats-grid" id="seats-' + table.id + '"></div>';
+    tablesEl.appendChild(card);
+
+    const seatsEl = document.getElementById('seats-' + table.id);
+    for (let s = 1; s <= table.seats; s++) {
+      const seatKey = table.id + ':' + s;
+      const guest = currentGuests.find(function(g){return g.seat_assignment===seatKey;});
+      const row = document.createElement('div');
+      row.className = 'tp-seat-row' + (guest ? ' occupied' : '');
+      const icons = guest ? (guest.dietary_requirements||[]).map(function(d){return DIET_ICONS[d]||'';}).join('') : '';
+      row.innerHTML =
+        '<span class="tp-seat-num">' + s + '</span>' +
+        (guest
+          ? '<span class="tp-seat-guest">' + escHtml(guest.name) + '</span><span class="tp-seat-diet">' + icons + '</span>'
+          : '<span class="tp-seat-empty">+ Assign guest</span>');
+      row.addEventListener('click', function() {
+        if (guest) { unassignGuest(guest, table, s); }
+        else { openSeatModal(table, s); }
+      });
+      seatsEl.appendChild(row);
+    }
+  });
+}
+
+function openSeatModal(table, seatNum) {
+  document.getElementById('sm-table-id').value = table.id;
+  document.getElementById('sm-seat-num').value  = seatNum;
+  document.getElementById('seat-modal-title').textContent = escHtml(table.name) + ' — Seat ' + seatNum;
+  const select = document.getElementById('sm-guest-select');
+  const unassigned = currentGuests.filter(function(g){return !g.seat_assignment && g.rsvp_status!=='declined';});
+  select.innerHTML = unassigned.length
+    ? unassigned.map(function(g){
+        const icons = (g.dietary_requirements||[]).map(function(d){return DIET_ICONS[d]||'';}).join('');
+        return '<option value="' + g.id + '">' + escHtml(g.name) + (icons?' '+icons:'') + '</option>';
+      }).join('')
+    : '<option value="">No unassigned guests</option>';
+  openModal('seat-modal');
+}
+
+async function confirmSeatAssign() {
+  const tableId = document.getElementById('sm-table-id').value;
+  const seatNum = document.getElementById('sm-seat-num').value;
+  const guestId = document.getElementById('sm-guest-select').value;
+  if (!guestId) { closeModal('seat-modal'); return; }
+  try {
+    const seat = tableId + ':' + seatNum;
+    await rpc('assign_seat',{p_guest_id:guestId, p_seat:seat});
+    const g = currentGuests.find(function(x){return x.id===guestId;});
+    if (g) g.seat_assignment = seat;
+    closeModal('seat-modal');
+    renderSeating();
+    renderLayout();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function unassignGuest(guest, table, seatNum) {
+  if (!confirm('Remove ' + guest.name + ' from ' + table.name + ', Seat ' + seatNum + '?')) return;
+  try {
+    await rpc('assign_seat',{p_guest_id:guest.id, p_seat:null});
+    guest.seat_assignment = null;
+    renderSeating();
+    renderLayout();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ── PRINT ────────────────────────────────────────────────────────
+function renderPrint() {
+  renderPlaceCardsPreview();
+  renderSeatingChart();
+}
+
+function renderPlaceCardsPreview() {
+  const el = document.getElementById('place-cards-preview');
+  const attending = currentGuests.filter(function(g){return g.rsvp_status!=='declined' && g.name;}).slice(0,3);
+  if (!attending.length) {
+    el.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)">Add guests to generate place cards.</div>';
+    return;
+  }
+  el.innerHTML = attending.map(function(g) {
+    const seat = g.seat_assignment ? getSeatLabel(g.seat_assignment) : 'No seat assigned';
+    const icons = (g.dietary_requirements||[]).map(function(d){return DIET_ICONS[d]||'';}).join(' ');
+    return '<div class="tp-place-card-preview">' +
+      '<div class="tp-pc-table">' + escHtml(seat) + '</div>' +
+      '<div class="tp-pc-name">' + escHtml(g.name) + '</div>' +
+      (icons ? '<div class="tp-pc-diet">' + icons + '</div>' : '') +
+      '</div>';
+  }).join('') + '<div style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid);margin-top:6px">Showing first 3 of ' + currentGuests.filter(function(g){return g.rsvp_status!=='declined';}).length + '</div>';
+}
+
+function renderSeatingChart() {
+  const el = document.getElementById('seating-chart');
+  if (!currentLayout.tables.length) {
+    el.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)">No tables in layout yet.</div>';
+    return;
+  }
+  let rows = '';
+  currentLayout.tables.forEach(function(table) {
+    for (let s = 1; s <= table.seats; s++) {
+      const seatKey = table.id + ':' + s;
+      const guest = currentGuests.find(function(g){return g.seat_assignment===seatKey;});
+      const icons = guest ? (guest.dietary_requirements||[]).map(function(d){return DIET_ICONS[d]||'';}).join('') : '';
+      rows += '<tr><td class="tp-tc-td">' + escHtml(table.name) + '</td><td class="tp-tc-td">' + s + '</td><td class="tp-tc-td">' + (guest ? escHtml(guest.name) : '<span style="color:var(--text-mid)">—</span>') + '</td><td class="tp-tc-td">' + icons + '</td></tr>';
+    }
+  });
+  el.innerHTML = '<table class="tp-table-chart"><thead><tr><th class="tp-tc-th">Table</th><th class="tp-tc-th">Seat</th><th class="tp-tc-th">Guest</th><th class="tp-tc-th">Dietary</th></tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+function printPlaceCards() {
+  const attending = currentGuests.filter(function(g){return g.rsvp_status!=='declined' && g.name;});
+  const out = document.getElementById('print-output');
+  out.innerHTML = attending.map(function(g) {
+    const seat = g.seat_assignment ? getSeatLabel(g.seat_assignment) : '';
+    const icons = (g.dietary_requirements||[]).map(function(d){return DIET_ICONS[d]||'';}).join(' ');
+    return '<div class="tp-place-card-print">' +
+      '<div style="font-family:Helvetica,sans-serif;font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">' + escHtml(currentEvent.name) + (seat?' · '+escHtml(seat):'') + '</div>' +
+      '<div style="font-family:Georgia,serif;font-size:32px;font-weight:700;color:#1a1a1a;margin-bottom:8px">' + escHtml(g.name) + '</div>' +
+      (icons ? '<div style="font-size:18px">' + icons + '</div>' : '') +
+      '</div>';
+  }).join('');
+  window.print();
+  setTimeout(function(){ out.innerHTML=''; }, 1000);
+}
+
+function printSeatingChart() {
+  const out = document.getElementById('print-output');
+  const chart = document.getElementById('seating-chart');
+  out.innerHTML = '<h2 style="font-family:Georgia,serif;font-size:24px;margin-bottom:16px">' + escHtml(currentEvent.name||'') + ' — Seating Chart</h2>' + (chart ? chart.innerHTML : '');
+  window.print();
+  setTimeout(function(){ out.innerHTML=''; }, 1000);
+}
+
+// ── EVENT MODAL ──────────────────────────────────────────────────
+function openEventModal(ev) {
+  document.getElementById('event-modal-title').textContent = ev ? 'Edit Event' : 'New Event';
+  document.getElementById('em-id').value    = ev ? ev.id : '';
+  document.getElementById('em-name').value  = ev ? (ev.name||'') : '';
+  document.getElementById('em-type').value  = ev ? (ev.event_type||'Dinner Party') : 'Dinner Party';
+  document.getElementById('em-date').value  = ev ? (ev.event_date||'') : '';
+  document.getElementById('em-venue').value = ev ? (ev.venue_name||'') : '';
+  document.getElementById('em-notes').value = ev ? (ev.notes||'') : '';
+  openModal('event-modal');
+}
+
+async function saveEvent() {
+  const name = document.getElementById('em-name').value.trim();
+  if (!name) { alert('Please enter an event name.'); return; }
+  const id = document.getElementById('em-id').value || null;
+  try {
+    const ev = await rpc('upsert_event',{
+      p_id:         id,
+      p_name:       name,
+      p_event_type: document.getElementById('em-type').value,
+      p_event_date: document.getElementById('em-date').value || null,
+      p_venue_name: document.getElementById('em-venue').value.trim(),
+      p_notes:      document.getElementById('em-notes').value.trim(),
+      p_layout:     id ? null : {tables:[]}
+    });
+    closeModal('event-modal');
+    if (id && currentEvent && currentEvent.id === id) {
+      currentEvent = Object.assign(currentEvent, ev);
+      document.getElementById('ws-name').textContent = ev.name;
+    } else {
+      await loadEvents();
+    }
+  } catch(e) { alert('Error saving event: ' + e.message); }
+}
+
+async function deleteCurrentEvent() {
+  if (!currentEvent) return;
+  if (!confirm('Delete "' + currentEvent.name + '" and all its guests? This cannot be undone.')) return;
+  try {
+    await rpc('delete_event',{p_id:currentEvent.id});
+    goBack();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ── MODAL HELPERS ────────────────────────────────────────────────
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('open');
+}
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('open');
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  loadEvents();
+
+  // Canvas drag events
+  const canvas = document.getElementById('layout-canvas');
+  canvas.addEventListener('mousemove', function(e) { onDragMove(e.clientX, e.clientY); });
+  canvas.addEventListener('mouseup',   function()  { onDragEnd(); saveLayout(); });
+  canvas.addEventListener('mouseleave',function()  { onDragEnd(); });
+  canvas.addEventListener('touchmove', function(e) { if(dragState){e.preventDefault();onDragMove(e.touches[0].clientX,e.touches[0].clientY);}}, {passive:false});
+  canvas.addEventListener('touchend',  function()  { onDragEnd(); saveLayout(); });
+
+  // Deselect tables by clicking canvas background
+  canvas.addEventListener('click', function(e) {
+    if (e.target === canvas || e.target.classList.contains('tp-canvas-grid') || e.target.classList.contains('tp-canvas-hint')) {
+      selectTable(null);
+    }
+  });
+
+  // Close modals on backdrop click
+  document.querySelectorAll('.tp-modal').forEach(function(m) {
+    m.addEventListener('click', function(e){ if(e.target===m) closeModal(m.id); });
+  });
+});
+
+</script>
+</body>
+</html>
