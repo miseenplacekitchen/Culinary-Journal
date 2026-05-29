@@ -4,9 +4,11 @@
 // Edit here → every page updates automatically.
 // ══════════════════════════════════════════════════════
 
+// Each section has a primary page — clicking the label navigates there directly.
+// The dropdown (sub-pages) appears on hover; the chevron toggles it for touch/keyboard.
 var CJ_SECTIONS = [
   {
-    id:'knowledge', label:'Knowledge', emoji:'📖',
+    id:'knowledge', label:'Knowledge', emoji:'📖', primaryPage:'recipes.html',
     pages:['recipes.html','chefs.html','search.html','baby.html','preservation.html','conversions.html','dietary-card.html'],
     links:[
       {href:'recipes.html',      emoji:'📖', label:'Browse Recipes'},
@@ -18,7 +20,7 @@ var CJ_SECTIONS = [
     ]
   },
   {
-    id:'planning', label:'Planning', emoji:'🗓',
+    id:'planning', label:'Planning', emoji:'🗓', primaryPage:'meal-planner.html',
     pages:['meal-planner.html','grocery.html','pantry.html'],
     links:[
       {href:'meal-planner.html', emoji:'🗓', label:'Meal Planner'},
@@ -27,7 +29,7 @@ var CJ_SECTIONS = [
     ]
   },
   {
-    id:'hosting', label:'Hosting', emoji:'🪑',
+    id:'hosting', label:'Hosting', emoji:'🪑', primaryPage:'table-planner.html',
     pages:['table-planner.html','family-profiles.html'],
     links:[
       {href:'table-planner.html',   emoji:'🪑', label:'Table Planner'},
@@ -35,7 +37,7 @@ var CJ_SECTIONS = [
     ]
   },
   {
-    id:'publishing', label:'Publishing', emoji:'🖨',
+    id:'publishing', label:'Publishing', emoji:'🖨', primaryPage:'print-studio.html',
     pages:['print-studio.html','submit-recipe.html','draft-recipes.html'],
     links:[
       {href:'print-studio.html',  emoji:'🖨', label:'Print Studio'},
@@ -44,7 +46,7 @@ var CJ_SECTIONS = [
     ]
   },
   {
-    id:'personal', label:'Personal', emoji:'📓',
+    id:'personal', label:'Personal', emoji:'📓', primaryPage:'diary.html',
     pages:['diary.html','my-dashboard.html','culinary-life.html','collections.html','profile.html','site-settings.html','user.html'],
     links:[
       {href:'culinary-life.html', emoji:'✨', label:'My Culinary Life'},
@@ -99,23 +101,31 @@ function buildSectionNav() {
     var item = document.createElement('div');
     item.className = 'sec-nav-item';
 
-    var btn = document.createElement('button');
-    btn.type = 'button';
+    // Main label: navigate to primary page on click
+    var btn = document.createElement('a');
+    btn.href = section.primaryPage || (section.links[0] && section.links[0].href) || '#';
     btn.className = 'sec-nav-btn' + (isActive ? ' active' : '');
-    btn.setAttribute('aria-haspopup','true');
-    btn.setAttribute('aria-expanded','false');
-    btn.innerHTML = section.emoji + ' ' + section.label + ' <span class="sec-nav-chevron" aria-hidden="true">▾</span>';
+    btn.setAttribute('role','button');
+    btn.innerHTML = section.emoji + ' ' + section.label;
 
-    btn.addEventListener('click', function(e){
+    // Chevron: separate button that toggles dropdown (keyboard/touch access)
+    var chevron = document.createElement('button');
+    chevron.type = 'button';
+    chevron.className = 'sec-nav-chevron-btn';
+    chevron.setAttribute('aria-haspopup','true');
+    chevron.setAttribute('aria-expanded','false');
+    chevron.setAttribute('aria-label', 'Expand ' + section.label + ' menu');
+    chevron.innerHTML = '<span class="sec-nav-chevron" aria-hidden="true">▾</span>';
+    chevron.addEventListener('click', function(e){
       e.stopPropagation();
       var isOpen = item.classList.contains('open');
       document.querySelectorAll('.sec-nav-item.open').forEach(function(el){
         el.classList.remove('open');
-        var b = el.querySelector('.sec-nav-btn'); if(b) b.setAttribute('aria-expanded','false');
+        var ch = el.querySelector('.sec-nav-chevron-btn'); if(ch) ch.setAttribute('aria-expanded','false');
       });
       if (!isOpen) {
         item.classList.add('open');
-        btn.setAttribute('aria-expanded','true');
+        chevron.setAttribute('aria-expanded','true');
       }
     });
 
@@ -132,6 +142,7 @@ function buildSectionNav() {
       dropdown.appendChild(a);
     });
     item.appendChild(btn);
+    item.appendChild(chevron);
     item.appendChild(dropdown);
     inner.appendChild(item);
   });

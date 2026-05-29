@@ -340,7 +340,10 @@
   <div class="ps-preview">
     <div class="ps-preview-header">
       <div class="ps-preview-title">Preview</div>
-      <div class="ps-card-count" id="ps-card-count"></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="ps-card-count" id="ps-card-count"></div>
+        <button id="pdf-btn" onclick="downloadPDF()" style="padding:7px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;display:none">⬇ Download PDF</button>
+      </div>
     </div>
     <div class="ps-cards" id="ps-cards">
       <div class="ps-empty">
@@ -488,7 +491,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function downloadPDF() {
   var btn = document.getElementById('pdf-btn');
-  var container = document.getElementById('ps-cards-area');
+  var container = document.getElementById('ps-cards');
   if (!container || !container.children.length) { alert('Build some cards first — choose a recipe, select your card size, and the cards will appear here.'); return; }
   if (btn) { btn.textContent = '⏳ Generating PDF...'; btn.disabled = true; }
   var opt = {

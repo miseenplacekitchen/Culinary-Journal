@@ -267,7 +267,7 @@
   <a href="recipes.html" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);text-decoration:none;display:inline-flex;align-items:center;gap:4px">← Back to Recipes</a>
 </div>
 
-<div class="rp-wrap">
+<div class="rp-wrap" id="rp-wrap">
 
   <!-- HERO IMAGE -->
   <div class="rp-hero" id="rp-hero">
@@ -855,8 +855,8 @@ function updateNav() {
   if (!session) return;
   let profile = {};
   try { profile = JSON.parse(lsGet('tcj_profile') || '{}') || {}; } catch(_) { profile = {}; }
-  const loginLink = document.getElementById('nav-login');
-  const np = document.getElementById('nav-profile');
+  const loginLink = (document.getElementById('nav-login')||document.createElement('a'));
+  const np = (document.getElementById('nav-profile')||document.createElement('a'));
   if (loginLink) loginLink.style.display = 'none';
   if (np) {
     np.style.display = 'inline';
