@@ -19,7 +19,20 @@
     try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
     var loggedIn = !!(session && session.access_token);
 
-    var t = loggedIn ? localStorage.getItem('tcj_theme') : null;
+    var t = null;
+    if (loggedIn) {
+      t = localStorage.getItem('tcj_theme');
+      // Fallback: read from stored profile if tcj_theme not set yet
+      if (!t) {
+        try {
+          var prof = JSON.parse(localStorage.getItem('tcj_profile') || 'null');
+          if (prof && prof.theme_preference) {
+            t = prof.theme_preference;
+            localStorage.setItem('tcj_theme', t); // cache it for next time
+          }
+        } catch (_) {}
+      }
+    }
 
     // No session, no saved theme, or the default → leave the page on the
     // default theme (style.css :root) and stop.
