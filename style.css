@@ -25,6 +25,9 @@
   --footer-bg:     rgba(0,0,0,0.45);
   --bg:            #0f1011;
   --surface:       rgba(255,255,255,0.04);
+  /* Aliases for compatibility with recipe-page and submit-recipe */
+  --text:          var(--text-high);
+  --text-muted:    var(--text-mid);
 }
 
 /* ── RESET ── */

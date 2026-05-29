@@ -56,6 +56,22 @@ var CJ_SECTIONS = [
   }
 ];
 
+
+// ── CANONICAL LOGO ────────────────────────────────────────────────
+// Ensures the logo is always correct regardless of what the page HTML
+// has hardcoded. Single source of truth for logo content.
+function canonicalizeLogo() {
+  var logo = document.querySelector('a.nav-logo, .nav-logo');
+  if (!logo) return;
+  if (!logo.querySelector('.nav-logo-badge')) {
+    logo.setAttribute('href', 'index.html');
+    logo.innerHTML =
+      '<span aria-hidden="true">🍽</span>' +
+      '<span class="nav-logo-text">The Culinary Journal</span>' +
+      '<span class="nav-logo-badge">Est. 2025</span>';
+  }
+}
+
 function buildSectionNav() {
   var tabNav = document.querySelector('.tab-nav');
   if (!tabNav) return;
@@ -272,6 +288,7 @@ function buildSectionNav() {
   handleOAuthCallback();
 
   function init() {
+    canonicalizeLogo();
     buildSectionNav();
     var host = document.getElementById('nav-btns') || document.querySelector('[data-nav-host]');
     if (!host) return;
