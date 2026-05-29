@@ -574,6 +574,12 @@ async function doLogin() {
         if (profile) {
           localStorage.setItem('tcj_profile', JSON.stringify(profile));
           isAdmin = !!profile.is_admin;
+          // Save theme immediately so every page applies it on first load
+          if (profile.theme_preference && profile.theme_preference !== 'midnight-slate') {
+            localStorage.setItem('tcj_theme', profile.theme_preference);
+          } else {
+            localStorage.removeItem('tcj_theme');
+          }
         }
       }
     } catch(_) {}
