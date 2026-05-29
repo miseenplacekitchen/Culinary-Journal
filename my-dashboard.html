@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Kitchen — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .ud-wrap { max-width:1100px; margin:0 auto; padding:24px 20px 60px; }
+    .ud-header { margin-bottom:32px; }
+    .ud-greeting { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:600; color:var(--text-high); }
+    .ud-greeting span { color:var(--accent); }
+    .ud-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-top:4px; }
+
+    /* Stats */
+    .ud-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:32px; }
+    @media(max-width:600px){ .ud-stats { grid-template-columns:repeat(2,1fr); } }
+    .ud-stat { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:18px 20px; }
+    .ud-stat-num { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:700; color:var(--accent); }
+    .ud-stat-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mid); margin-top:2px; }
+
+    /* Tabs */
+    .ud-tabs { display:flex; gap:4px; background:var(--text-ghost); border-radius:10px; padding:4px; margin-bottom:24px; width:fit-content; }
+    .ud-tab { font-family:'DM Sans',sans-serif; font-size:13px; padding:8px 18px; border-radius:7px; border:none; background:none; color:var(--text-mid); cursor:pointer; transition:all 0.15s; }
+    .ud-tab.active { background:var(--bg); color:var(--text-high); font-weight:500; box-shadow:0 1px 4px rgba(0,0,0,0.15); }
+
+    /* Recipe cards */
+    .ud-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+    .ud-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; overflow:hidden; transition:transform 0.15s,border-color 0.15s; cursor:pointer; }
+    .ud-card:hover { transform:translateY(-2px); border-color:var(--accent-border); }
+    .ud-card-img { height:140px; background:var(--text-ghost); display:flex; align-items:center; justify-content:center; font-size:40px; border-bottom:1px solid var(--border); overflow:hidden; position:relative; }
+    .ud-card-img img { width:100%; height:100%; object-fit:cover; }
+    .ud-card-body { padding:14px 16px; }
+    .ud-card-name { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:600; color:var(--text-high); margin-bottom:4px; }
+    .ud-card-meta { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .ud-card-status { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; }
+    .status-pending  { background:rgba(255,193,7,0.15); color:#ffc107; border:1px solid rgba(255,193,7,0.3); }
+    .status-approved { background:rgba(76,175,118,0.15); color:#4caf76; border:1px solid rgba(76,175,118,0.3); }
+    .status-rejected { background:rgba(220,80,80,0.15); color:#dc5050; border:1px solid rgba(220,80,80,0.3); }
+    .ud-card-notes { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-top:8px; padding:8px 10px; background:rgba(220,80,80,0.08); border-radius:6px; border-left:2px solid #dc5050; line-height:1.5; }
+    .ud-card-actions { padding:10px 16px; border-top:1px solid var(--border); display:flex; gap:8px; }
+    .ud-btn { flex:1; padding:8px; border-radius:7px; border:none; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; cursor:pointer; text-align:center; text-decoration:none; display:inline-block; }
+    .ud-btn-primary { background:var(--accent); color:#fff; }
+    .ud-btn-secondary { background:var(--text-ghost); color:var(--text-mid); border:1px solid var(--border); }
+
+    /* Empty state */
+    .ud-empty { text-align:center; padding:60px 20px; }
+    .ud-empty-icon { font-size:48px; margin-bottom:12px; }
+    .ud-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--text-high); margin-bottom:6px; }
+    .ud-empty-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-bottom:20px; }
+    .ud-cta { display:inline-block; padding:10px 22px; background:var(--accent); color:#fff; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; text-decoration:none; }
+  </style>
+</head>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+
+<div class="ud-wrap" id="ud-main" style="display:none">
+  <div class="ud-header">
+    <div class="ud-greeting">My Kitchen, <span id="ud-name">Chef</span></div>
+    <div class="ud-sub" id="ud-sub">Your recipe submissions and activity.</div>
+  </div>
+
+  <div class="ud-stats">
+    <div class="ud-stat"><div class="ud-stat-num" id="stat-total">0</div><div class="ud-stat-label">Submitted</div></div>
+    <div class="ud-stat"><div class="ud-stat-num" id="stat-approved">0</div><div class="ud-stat-label">Published</div></div>
+    <div class="ud-stat"><div class="ud-stat-num" id="stat-pending">0</div><div class="ud-stat-label">Under Review</div></div>
+    <div class="ud-stat"><div class="ud-stat-num" id="stat-rejected">0</div><div class="ud-stat-label">Needs Work</div></div>
+  </div>
+
+  <div class="ud-tabs">
+    <button class="ud-tab active" onclick="switchTab('all',this)">All Recipes</button>
+    <button class="ud-tab" onclick="switchTab('pending',this)">Under Review</button>
+    <button class="ud-tab" onclick="switchTab('approved',this)">Published</button>
+    <button class="ud-tab" onclick="switchTab('rejected',this)">Needs Work</button>
+    <button class="ud-tab" onclick="switchTab('drafts',this)">Drafts</button>
+  </div>
+
+  <div id="ud-grid" class="ud-grid"></div>
+</div>
+
+<!-- Login prompt -->
+<div id="ud-login" style="display:none;min-height:80vh;align-items:center;justify-content:center;flex-direction:column;gap:16px;text-align:center;padding:40px">
+  <div style="font-size:48px">👨‍🍳</div>
+  <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;color:var(--text-high)">Sign in to see your kitchen</div>
+  <a href="login.html" style="padding:10px 24px;background:var(--accent);color:#fff;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;text-decoration:none">Sign In</a>
+</div>
+
+<script src="nav-init.js"></script>
+<script>
+const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+
+let session = null, allRecipes = [], currentTab = 'all';
+
+async function rpc(fn, params) {
+  const res = await fetch(SUPA_URL + '/rest/v1/rpc/' + fn, {
+    method:'POST',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json'},
+    body:JSON.stringify(params)
+  });
+  if (!res.ok) { const t = await res.text(); throw new Error(t); }
+  return res.json();
+}
+
+async function init() {
+  try { session = JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch(_){}
+  if (!session?.access_token) {
+    document.getElementById('ud-login').style.display = 'flex';
+    return;
+  }
+  document.getElementById('ud-main').style.display = 'block';
+  const profile = JSON.parse(localStorage.getItem('tcj_profile')||'{}');
+  const name = profile.full_name || profile.username || 'Chef';
+  document.getElementById('ud-name').textContent = name;
+  await loadRecipes();
+}
+
+async function loadRecipes() {
+  try {
+    allRecipes = await rpc('get_my_submissions', {});
+    updateStats();
+    renderCards('all');
+  } catch(e) {
+    document.getElementById('ud-grid').innerHTML = '<div class="ud-empty"><div class="ud-empty-title">Could not load recipes</div><div class="ud-empty-sub">'+e.message+'</div></div>';
+  }
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent    = allRecipes.length;
+  document.getElementById('stat-approved').textContent = allRecipes.filter(r=>r.status==='approved').length;
+  document.getElementById('stat-pending').textContent  = allRecipes.filter(r=>r.status==='pending').length;
+  document.getElementById('stat-rejected').textContent = allRecipes.filter(r=>r.status==='rejected').length;
+}
+
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.ud-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCards(tab);
+}
+
+function renderCards(tab) {
+  const grid = document.getElementById('ud-grid');
+  let recipes = tab === 'drafts' ? [] : allRecipes;
+  if (tab === 'drafts') { renderDrafts(); return; }
+  if (tab !== 'all') recipes = recipes.filter(r=>r.status===tab);
+
+  if (!recipes.length) {
+    const msgs = {
+      all: ['No recipes yet','Start cooking — submit your first recipe!','submit-recipe.html'],
+      pending: ['Nothing under review','All your recipes have been reviewed.',''],
+      approved: ['No published recipes yet','Keep submitting — they\'ll show here once approved.','submit-recipe.html'],
+      rejected: ['No recipes need work','Great — all your submissions are in good standing.',''],
+    };
+    const [title,sub,link] = msgs[tab]||msgs.all;
+    grid.innerHTML = `<div class="ud-empty"><div class="ud-empty-icon">📖</div><div class="ud-empty-title">${title}</div><div class="ud-empty-sub">${sub}</div>${link?`<a href="${link}" class="ud-cta">Submit a Recipe</a>`:''}</div>`;
+    return;
+  }
+
+  grid.innerHTML = '';
+  recipes.forEach(r => {
+    const card = document.createElement('div');
+    card.className = 'ud-card';
+    const statusMap = {pending:'🕐 Under Review',approved:'✓ Published',rejected:'✗ Needs Work'};
+    const statusClass = {pending:'status-pending',approved:'status-approved',rejected:'status-rejected'};
+    const date = r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}) : '';
+    card.innerHTML = `
+      <div class="ud-card-img">${r.image_url?`<img src="${r.image_url}" alt="${r.recipe_name}">`:'🍳'}</div>
+      <div class="ud-card-body">
+        <div class="ud-card-name">${r.recipe_name||'Untitled'}</div>
+        <div class="ud-card-meta">
+          <span class="ud-card-status ${statusClass[r.status]||''}">${statusMap[r.status]||r.status}</span>
+          ${r.category?`<span>${r.category}</span>`:''}
+          ${date?`<span>${date}</span>`:''}
+        </div>
+        ${r.status==='rejected'&&r.reviewer_notes?`<div class="ud-card-notes">💬 ${r.reviewer_notes}</div>`:''}
+      </div>
+      <div class="ud-card-actions">
+        ${r.status==='approved'?`<a href="recipe-page.html?id=${r.id}" class="ud-btn ud-btn-primary">View Recipe</a>`:''}
+        ${r.status==='pending'?`<span class="ud-btn ud-btn-secondary" style="cursor:default">Under Review</span>`:''}
+        ${r.status==='rejected'?`<a href="submit-recipe.html?id=${r.id}" class="ud-btn ud-btn-primary">Edit & Resubmit</a>`:''}
+        <a href="submit-recipe.html" class="ud-btn ud-btn-secondary">+ New Recipe</a>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function renderDrafts() {
+  const grid = document.getElementById('ud-grid');
+  const drafts = JSON.parse(localStorage.getItem('tcj_drafts_index')||'[]');
+  if (!drafts.length) {
+    grid.innerHTML = '<div class="ud-empty"><div class="ud-empty-icon">📝</div><div class="ud-empty-title">No drafts saved</div><div class="ud-empty-sub">Start a recipe and it\'ll auto-save here.</div><a href="submit-recipe.html" class="ud-cta">Start a Recipe</a></div>';
+    return;
+  }
+  grid.innerHTML = '';
+  drafts.forEach(d => {
+    const draftData = JSON.parse(localStorage.getItem('tcj_draft_'+d.id)||'{}');
+    const card = document.createElement('div');
+    card.className = 'ud-card';
+    const date = d.updated_at ? new Date(d.updated_at).toLocaleDateString('en-AU',{day:'numeric',month:'short'}) : '';
+    card.innerHTML = `
+      <div class="ud-card-img">📝</div>
+      <div class="ud-card-body">
+        <div class="ud-card-name">${draftData.recipe_name||'Untitled Draft'}</div>
+        <div class="ud-card-meta"><span class="ud-card-status status-pending">Draft</span>${date?`<span>${date}</span>`:''}</div>
+      </div>
+      <div class="ud-card-actions">
+        <a href="submit-recipe.html?draft=${d.id}" class="ud-btn ud-btn-primary">Continue Editing</a>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

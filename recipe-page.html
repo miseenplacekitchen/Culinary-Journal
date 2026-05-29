@@ -3,11 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="manifest" href="site.webmanifest">
-  <meta name="theme-color" content="#DEA82B">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="The Culinary Journal">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recipe — The Culinary Journal</title>
   <link rel="stylesheet" href="style.css">
@@ -439,6 +434,12 @@ function lsRemove(key) {
   try { localStorage.removeItem(key); } catch(_) {}
 }
 
+// Load grocery list (new format: {recipes:[...], checked:[]})
+function getGroceryData() {
+  try { return JSON.parse(localStorage.getItem('tcj_grocery') || '{"recipes":[]}'); }
+  catch(_) { return {recipes:[]}; }
+}
+function saveGroceryData(data) { localStorage.setItem('tcj_grocery', JSON.stringify(data)); }
 try { groceryList = JSON.parse(lsGet('tcj_grocery') || '[]') || []; } catch(_) { groceryList = []; }
 
 // ── INIT ─────────────────────────────────────────────
@@ -889,32 +890,56 @@ function toggleInfo(btn) {
 }
 
 function toggleGrocery(btn, ingredient, qty, unit) {
-  const idx = groceryList.findIndex(g => g.ingredient === ingredient);
+  const data = getGroceryData();
+  const recipeName = recipe?.recipe_name || 'Unknown Recipe';
+  const recipeId   = recipe?.id || 'demo';
+  let   recipeEntry = data.recipes.find(r => r.id === recipeId);
+  if (!recipeEntry) {
+    recipeEntry = {id: recipeId, name: recipeName, servings: currentServings || 1, ingredients: []};
+    data.recipes.push(recipeEntry);
+  }
+  const idx = recipeEntry.ingredients.findIndex(i => i.name === ingredient);
   if (idx > -1) {
-    groceryList.splice(idx, 1);
+    recipeEntry.ingredients.splice(idx, 1);
+    if (!recipeEntry.ingredients.length) data.recipes = data.recipes.filter(r => r.id !== recipeId);
     btn.classList.remove('added');
     showToast('Removed from grocery list');
   } else {
-    groceryList.push({ ingredient, qty, unit, recipe: recipe?.recipe_name || '' });
+    recipeEntry.ingredients.push({name: ingredient, qty, unit, section: ''});
     btn.classList.add('added');
     showToast('Added to grocery list ✓');
   }
-  lsSet('tcj_grocery', JSON.stringify(groceryList));
+  saveGroceryData(data);
+  groceryList = recipeEntry.ingredients || [];
 }
 
 function addAllToGrocery() {
+  const data = getGroceryData();
+  const recipeName = recipe?.recipe_name || 'Unknown Recipe';
+  const recipeId   = recipe?.id || 'demo';
+  let   recipeEntry = data.recipes.find(r => r.id === recipeId);
+  if (!recipeEntry) {
+    recipeEntry = {id: recipeId, name: recipeName, servings: currentServings || 1, ingredients: []};
+    data.recipes.push(recipeEntry);
+  }
   let added = 0;
   (recipe?.ingredients || []).forEach(sec => {
     sec.items.forEach(item => {
-      if (!groceryList.some(g => g.ingredient === item.ingredient)) {
-        groceryList.push({ ingredient: item.ingredient, qty: item.qty, unit: item.unit || '', recipe: recipe.recipe_name });
+      if (!recipeEntry.ingredients.some(i => i.name === item.ingredient)) {
+        recipeEntry.ingredients.push({name: item.ingredient, qty: item.qty, unit: item.unit||'', section: sec.title||''});
         added++;
       }
     });
   });
-  lsSet('tcj_grocery', JSON.stringify(groceryList));
+  saveGroceryData(data);
+  groceryList = recipeEntry.ingredients;
   document.querySelectorAll('.rp-ing-cart-btn').forEach(btn => btn.classList.add('added'));
-  showToast(added > 0 ? `${added} ingredients added to Grocery List ✓` : 'All ingredients already in Grocery List');
+  const msg = added > 0 ? added + ' ingredients added to Grocery List ✓' : 'All ingredients already in Grocery List';
+  showToast(msg);
+  // Show link to grocery page
+  if (added > 0) {
+    setTimeout(() => showToast('<a href="grocery.html" style="color:var(--accent)">View Grocery List →</a>', true), 1500);
+  }
 }
 
 // ── RENDER PROCEDURE ──────────────────────────────────
@@ -1072,7 +1097,9 @@ function setupSwipe() {
 
 // ── PRINT ─────────────────────────────────────────────
 function showPrintOptions() {
-  showToast('Print Studio coming soon 🖨');
+  // Save recipe to sessionStorage for print studio
+  sessionStorage.setItem('tcj_print_recipe', JSON.stringify(recipe));
+  window.location.href = 'print-studio.html?id=' + (recipe?.id || '');
 }
 
 // ── TOAST ─────────────────────────────────────────────

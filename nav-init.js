@@ -156,7 +156,9 @@
               '</div><div class="cj-menu-sep"></div>' : '') +
             (isAdmin ? item('dashboard.html', IC.dashboard, '⚙ Admin Dashboard') : '') +
             (isAdmin ? '<div class="cj-menu-sep"></div>' : '') +
+            item('my-dashboard.html',  IC.profile, 'My Kitchen') +
             item('profile.html',       IC.profile, 'My Profile') +
+            item('grocery.html',       IC.drafts,  '🛒 Grocery List') +
             item('draft-recipes.html', IC.drafts,  'Draft Recipes') +
             item('submit-recipe.html', IC.submit,  'Submit a Recipe') +
             item('recipes.html',       IC.book,    'Browse Recipes') +

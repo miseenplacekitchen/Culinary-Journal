@@ -3,11 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="manifest" href="site.webmanifest">
-  <meta name="theme-color" content="#DEA82B">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="The Culinary Journal">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Recipes — The Culinary Journal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,6 +32,25 @@
     .loading{text-align:center;padding:60px;color:rgba(255,255,255,0.3);font-family:"DM Sans",sans-serif;font-size:14px}
     .loading-spinner{display:inline-block;width:24px;height:24px;border:2px solid rgba(196,151,59,0.2);border-top-color:#C4973B;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:12px}
     @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* ── COMMUNITY RECIPES ────────────────── */
+    .cr-section { margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border); }
+    .cr-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:10px; }
+    .cr-title { font-family:'Cormorant Garamond',serif; font-size:1.5rem; font-weight:600; color:var(--text-high); }
+    .cr-filters { display:flex; gap:6px; flex-wrap:wrap; }
+    .cr-filter { padding:6px 14px; border-radius:20px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+    .cr-filter:hover { border-color:var(--accent); color:var(--accent); }
+    .cr-filter.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:500; }
+    .cr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
+    .cr-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; overflow:hidden; cursor:pointer; transition:transform 0.15s,border-color 0.15s; text-decoration:none; display:block; }
+    .cr-card:hover { transform:translateY(-2px); border-color:var(--accent-border); }
+    .cr-img { height:130px; background:var(--text-ghost); display:flex; align-items:center; justify-content:center; font-size:36px; border-bottom:1px solid var(--border); overflow:hidden; }
+    .cr-img img { width:100%; height:100%; object-fit:cover; }
+    .cr-body { padding:12px 14px; }
+    .cr-name { font-family:'Cormorant Garamond',serif; font-size:1rem; font-weight:600; color:var(--text-high); margin-bottom:4px; }
+    .cr-meta { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); display:flex; gap:8px; flex-wrap:wrap; }
+    .cr-empty { text-align:center; padding:40px 20px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
+    .cr-spice { display:inline-flex; gap:1px; }
   </style>
 </head>
 <body>
@@ -128,6 +142,24 @@
   <div id="search-view" style="display:none">
     <p class="sec-label" id="search-lbl">Search results</p>
     <div class="styles-grid" id="search-grid"></div>
+  </div>
+
+
+  <div class="cr-section">
+    <div class="cr-header">
+      <div class="cr-title">Community Recipes</div>
+      <div class="cr-filters" id="cr-dietary-filters">
+        <button class="cr-filter active" onclick="filterCommunity('',this)">All</button>
+        <button class="cr-filter" onclick="filterCommunity('Vegan',this)">🌿 Vegan</button>
+        <button class="cr-filter" onclick="filterCommunity('Vegetarian',this)">🥦 Vegetarian</button>
+        <button class="cr-filter" onclick="filterCommunity('Gluten Free',this)">🌾 Gluten Free</button>
+        <button class="cr-filter" onclick="filterCommunity('Dairy Free',this)">🥛 Dairy Free</button>
+        <button class="cr-filter" onclick="filterCommunity('Under 30 Mins',this)">⚡ Quick</button>
+      </div>
+    </div>
+    <div class="cr-grid" id="cr-grid">
+      <div class="cr-empty">Loading community recipes...</div>
+    </div>
   </div>
 
   <footer class="footer">

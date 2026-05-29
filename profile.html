@@ -2,12 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="manifest" href="site.webmanifest">
-  <meta name="theme-color" content="#DEA82B">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="The Culinary Journal">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Profile — The Culinary Journal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,10 +13,7 @@
     // Apply saved theme as early as possible (prevents flash on subsequent loads).
     (function(){
       try {
-        var s = null;
-        try { s = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(_) {}
-        var loggedIn = !!(s && s.access_token);
-        var t = loggedIn ? localStorage.getItem('tcj_theme') : null;
+        var t = localStorage.getItem('tcj_theme');
         if (t && t !== 'midnight-slate') {
           document.addEventListener('DOMContentLoaded', function () {
             document.body.classList.add('theme-' + t);
@@ -548,6 +539,28 @@
     </div>
   </div>
 
+
+      <!-- ── DANGER ZONE ── -->
+      <section class="pcard" style="border-color:rgba(220,80,80,0.3)">
+        <h2 class="pcard-title" style="color:#dc5050">Danger Zone</h2>
+        <p class="pcard-desc">These actions are permanent and cannot be undone without contacting support.</p>
+
+        <div class="pmsg" id="danger-msg"></div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:16px">
+          <div style="flex:1;min-width:240px;padding:16px;background:rgba(220,80,80,0.06);border:1px solid rgba(220,80,80,0.2);border-radius:10px">
+            <div style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--text-high);margin-bottom:4px">Sign Out</div>
+            <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:12px">Sign out of your account on this device.</div>
+            <button class="pbtn" onclick="signOut()" style="background:none;border:1px solid var(--border);color:var(--text-mid)">Sign Out</button>
+          </div>
+          <div style="flex:1;min-width:240px;padding:16px;background:rgba(220,80,80,0.06);border:1px solid rgba(220,80,80,0.2);border-radius:10px">
+            <div style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:#dc5050;margin-bottom:4px">Deactivate Account</div>
+            <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:12px">Deactivates your account. Your data is preserved — contact support to reactivate.</div>
+            <button class="pbtn" onclick="showDeactivateModal()" style="background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);color:#dc5050">Deactivate Account</button>
+          </div>
+        </div>
+      </section>
+
   <footer class="footer">
     <span class="footer-text">© 2025 The Culinary Journal. All rights reserved.</span>
     <div class="footer-links">
@@ -655,7 +668,35 @@ function signOut() {
     }
   } catch (_) {}
   localStorage.removeItem('tcj_session');
-  window.location.href = 'login.html';
+  localStorage.removeItem('tcj_profile');
+  localStorage.removeItem('tcj_theme');
+  window.location.href = 'index.html';
+}
+
+function showDeactivateModal() {
+  const modal = document.getElementById('deactivate-modal');
+  modal.style.display = 'flex';
+}
+
+function cancelDeactivate() {
+  document.getElementById('deactivate-modal').style.display = 'none';
+}
+
+async function confirmDeactivate() {
+  const btn = document.getElementById('deactivate-confirm-btn');
+  btn.disabled = true; btn.textContent = 'Deactivating...';
+  try {
+    await callRPC('deactivate_my_account', {});
+    localStorage.removeItem('tcj_session');
+    localStorage.removeItem('tcj_profile');
+    localStorage.removeItem('tcj_theme');
+    window.location.href = 'login.html';
+  } catch(e) {
+    const msg = document.getElementById('danger-msg');
+    if (msg) { msg.textContent = 'Error: ' + e.message; msg.className = 'pmsg error'; msg.style.display = 'block'; }
+    btn.disabled = false; btn.textContent = 'Yes, Deactivate';
+    document.getElementById('deactivate-modal').style.display = 'none';
+  }
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1175,5 +1216,19 @@ if (document.readyState === 'loading') {
   init();
 }
 </script>
+
+<!-- Deactivation Modal -->
+<div id="deactivate-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)">
+  <div style="background:var(--bg);border:1px solid rgba(220,80,80,0.4);border-radius:16px;padding:28px;max-width:420px;width:100%">
+    <div style="font-size:32px;text-align:center;margin-bottom:12px">⚠️</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600;color:#dc5050;text-align:center;margin-bottom:8px">Deactivate Account?</div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);text-align:center;margin-bottom:20px;line-height:1.6">Your account will be deactivated and you will be signed out. Your recipes and data are preserved. Contact support at <strong style="color:var(--text-high)">miseenplacekitchen.official@gmail.com</strong> to reactivate.</div>
+    <div style="display:flex;gap:10px">
+      <button onclick="cancelDeactivate()" style="flex:1;padding:12px;background:none;border:1px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-mid);cursor:pointer">Cancel</button>
+      <button onclick="confirmDeactivate()" id="deactivate-confirm-btn" style="flex:1;padding:12px;background:rgba(220,80,80,0.15);border:1px solid rgba(220,80,80,0.5);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;color:#dc5050;font-weight:600;cursor:pointer">Yes, Deactivate</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

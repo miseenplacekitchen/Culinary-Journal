@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Print Studio — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .ps-wrap  { max-width:1200px; margin:0 auto; padding:24px 20px 60px; display:grid; grid-template-columns:300px 1fr; gap:24px; }
+    @media(max-width:768px){ .ps-wrap { grid-template-columns:1fr; } }
+
+    /* Sidebar */
+    .ps-sidebar { }
+    .ps-section { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:18px; margin-bottom:16px; }
+    .ps-section-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-mid); margin-bottom:12px; }
+    .ps-btn-group { display:flex; flex-direction:column; gap:6px; }
+    .ps-opt-btn { padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); cursor:pointer; text-align:left; transition:all 0.15s; }
+    .ps-opt-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .ps-opt-btn.active { background:rgb(from var(--accent) r g b / 0.12); border-color:var(--accent); color:var(--accent); font-weight:500; }
+    .ps-print-btn { width:100%; padding:13px; background:var(--accent); border:none; border-radius:10px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; color:#fff; cursor:pointer; margin-top:8px; }
+    .ps-print-btn:hover { opacity:0.88; }
+
+    /* Preview area */
+    .ps-preview { }
+    .ps-preview-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .ps-preview-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:600; color:var(--text-high); }
+    .ps-card-count { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); }
+    .ps-cards { display:flex; flex-direction:column; gap:20px; align-items:center; }
+
+    /* Recipe cards */
+    .ps-card { background:#fff; color:#1a1a1a; border-radius:4px; box-shadow:0 4px 24px rgba(0,0,0,0.2); position:relative; overflow:hidden; page-break-inside:avoid; }
+    .ps-card.size-4x6  { width:384px; min-height:256px; padding:20px 22px; }
+    .ps-card.size-3x5  { width:360px; min-height:216px; padding:16px 18px; }
+    .ps-card.size-a5   { width:420px; min-height:594px; padding:28px 32px; }
+    .ps-card.size-a4   { width:595px; min-height:842px; padding:36px 40px; }
+    .ps-watermark { font-family:'Cormorant Garamond',serif; font-size:10px; letter-spacing:0.08em; color:rgba(150,100,40,0.35); position:absolute; top:8px; left:10px; }
+    .ps-card-num { font-family:'DM Sans',sans-serif; font-size:9px; color:rgba(0,0,0,0.3); position:absolute; bottom:8px; right:10px; }
+    .ps-card-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:700; color:#1a1a1a; margin-bottom:2px; line-height:1.2; }
+    .ps-card-subtitle { font-family:'Cormorant Garamond',serif; font-size:0.85rem; font-style:italic; color:#8b6914; margin-bottom:10px; }
+    .ps-card-meta { display:flex; gap:12px; font-family:'DM Sans',sans-serif; font-size:10px; color:#555; margin-bottom:10px; flex-wrap:wrap; padding-bottom:8px; border-bottom:0.5px solid #e8e0d0; }
+    .ps-card-meta span { display:flex; align-items:center; gap:3px; }
+    .ps-section-head { font-family:'DM Sans',sans-serif; font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#8b6914; margin:10px 0 5px; }
+    .ps-ing-list { display:grid; grid-template-columns:1fr 1fr; gap:2px 16px; }
+    .ps-ing-item { font-family:'DM Sans',sans-serif; font-size:10px; color:#333; display:flex; gap:6px; align-items:baseline; padding:1px 0; }
+    .ps-ing-qty  { color:#8b6914; font-weight:600; white-space:nowrap; flex-shrink:0; min-width:40px; }
+    .ps-step     { font-family:'DM Sans',sans-serif; font-size:10px; color:#333; margin-bottom:4px; line-height:1.5; display:flex; gap:8px; }
+    .ps-step-num { color:#8b6914; font-weight:700; flex-shrink:0; }
+    .ps-step-text { flex:1; }
+    .ps-divider  { border:none; border-top:0.5px solid #e8e0d0; margin:8px 0; }
+
+    /* No recipe state */
+    .ps-empty { text-align:center; padding:60px 20px; color:var(--text-mid); font-family:'DM Sans',sans-serif; }
+    .ps-empty-icon { font-size:48px; margin-bottom:12px; }
+    .ps-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--text-high); margin-bottom:8px; }
+
+    /* Print styles */
+    @media print {
+      nav, .ps-sidebar, .ps-preview-header, body > *:not(.page-bg), .page-bg > *:not(.ps-wrap) { display:none!important; }
+      .ps-wrap { display:block!important; padding:0!important; margin:0!important; }
+      .ps-preview { display:block!important; }
+      .ps-card { box-shadow:none!important; margin:0!important; page-break-after:always!important; border:1px solid #ddd; }
+      .ps-card:last-child { page-break-after:auto!important; }
+      .page-bg { background:white!important; }
+    }
+  </style>
+</head>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+
+<div class="ps-wrap">
+  <!-- Sidebar -->
+  <div class="ps-sidebar">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:600;color:var(--text-high);margin-bottom:20px">🖨 Print Studio</div>
+
+    <div class="ps-section">
+      <div class="ps-section-title">Card Size</div>
+      <div class="ps-btn-group">
+        <button class="ps-opt-btn active" data-size="4x6" onclick="setSize('4x6',this)">4×6 inch — Most Popular</button>
+        <button class="ps-opt-btn" data-size="3x5" onclick="setSize('3x5',this)">3×5 inch — Compact</button>
+        <button class="ps-opt-btn" data-size="a5" onclick="setSize('a5',this)">A5 — Half Page</button>
+        <button class="ps-opt-btn" data-size="a4" onclick="setSize('a4',this)">A4 — Full Page</button>
+      </div>
+    </div>
+
+    <div class="ps-section">
+      <div class="ps-section-title">Include on Cards</div>
+      <div class="ps-btn-group">
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-overview" checked onchange="buildCards()" style="accent-color:var(--accent)"> Overview & Ingredients
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-method" checked onchange="buildCards()" style="accent-color:var(--accent)"> Procedure
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-notes" onchange="buildCards()" style="accent-color:var(--accent)"> Cooking Notes
+        </label>
+      </div>
+    </div>
+
+    <div class="ps-section">
+      <div class="ps-section-title">Recipe</div>
+      <div id="ps-recipe-name" style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid)">No recipe selected</div>
+      <a href="recipes.html" style="display:block;margin-top:8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--accent)">Browse Recipes →</a>
+    </div>
+
+    <button class="ps-print-btn" onclick="printCards()">🖨 Print Cards</button>
+  </div>
+
+  <!-- Preview -->
+  <div class="ps-preview">
+    <div class="ps-preview-header">
+      <div class="ps-preview-title">Preview</div>
+      <div class="ps-card-count" id="ps-card-count"></div>
+    </div>
+    <div class="ps-cards" id="ps-cards">
+      <div class="ps-empty">
+        <div class="ps-empty-icon">📄</div>
+        <div class="ps-empty-title">Open a recipe to print it</div>
+        <div style="font-size:13px;margin-top:4px">Click Print on any recipe page, or browse recipes above.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="nav-init.js"></script>
+<script>
+const FRACTIONS = {'1/8':'⅛','1/4':'¼','3/8':'⅜','1/2':'½','5/8':'⅝','3/4':'¾','7/8':'⅞','1/3':'⅓','2/3':'⅔'};
+function fmtQty(v){ if(!v)return''; let s=String(v); Object.keys(FRACTIONS).forEach(f=>{s=s.replace(new RegExp(f.replace('/','[/]'),'g'),FRACTIONS[f]);}); return s; }
+
+let currentSize = '4x6';
+let currentRecipe = null;
+
+function setSize(size, btn) {
+  currentSize = size;
+  document.querySelectorAll('.ps-opt-btn[data-size]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildCards();
+}
+
+function printCards() {
+  if (!currentRecipe) { alert('No recipe loaded. Open a recipe page and click Print.'); return; }
+  window.print();
+}
+
+function buildCards() {
+  if (!currentRecipe) return;
+  const container = document.getElementById('ps-cards');
+  const incOverview = document.getElementById('inc-overview').checked;
+  const incMethod   = document.getElementById('inc-method').checked;
+  const incNotes    = document.getElementById('inc-notes').checked;
+  const r = currentRecipe;
+  const cards = [];
+
+  // Card 1: Overview + Ingredients
+  if (incOverview) {
+    const meta = [
+      r.prep_time_minutes ? '⏱ Prep: ' + r.prep_time_minutes + ' min' : '',
+      r.cook_time_minutes ? '🔥 Cook: ' + r.cook_time_minutes + ' min' : '',
+      r.servings ? '🍽 Serves ' + r.servings : '',
+      r.spice_level && r.spice_level !== 'Not Applicable' ? '🌶 ' + r.spice_level : '',
+      r.origin_country ? '🌍 ' + r.origin_country : '',
+    ].filter(Boolean);
+
+    let ingHtml = '';
+    (r.ingredients || []).forEach(sec => {
+      if (sec.title) ingHtml += `<div class="ps-section-head">${sec.title}</div>`;
+      ingHtml += '<div class="ps-ing-list">';
+      (sec.items || []).forEach(item => {
+        ingHtml += `<div class="ps-ing-item"><span class="ps-ing-qty">${fmtQty(item.qty)} ${item.unit||''}</span><span>${item.ingredient||''}</span></div>`;
+      });
+      ingHtml += '</div>';
+    });
+
+    cards.push(`
+      <div class="ps-watermark">The Culinary Journal</div>
+      <div class="ps-card-title">${r.recipe_name||''}</div>
+      ${r.native_title?`<div class="ps-card-subtitle">${r.native_title}</div>`:''}
+      <div class="ps-card-meta">${meta.map(m=>`<span>${m}</span>`).join('')}</div>
+      ${ingHtml}
+    `);
+  }
+
+  // Cards for Procedure (split across cards if long)
+  if (incMethod) {
+    (r.method || []).forEach(block => {
+      const steps = (block.steps || []).map((step, i) => {
+        const text = typeof step === 'string' ? step : (step.text || step.title || '');
+        return `<div class="ps-step"><span class="ps-step-num">${i+1}.</span><span class="ps-step-text">${text}</span></div>`;
+      }).join('');
+      if (steps) {
+        cards.push(`
+          <div class="ps-watermark">The Culinary Journal</div>
+          <div class="ps-card-title">${r.recipe_name||''}</div>
+          ${block.title?`<div class="ps-section-head">${block.title}</div>`:'<div class="ps-section-head">Procedure</div>'}
+          ${steps}
+        `);
+      }
+    });
+  }
+
+  // Notes card
+  if (incNotes && r.cooking_notes) {
+    cards.push(`
+      <div class="ps-watermark">The Culinary Journal</div>
+      <div class="ps-card-title">${r.recipe_name||''}</div>
+      <div class="ps-section-head">Cooking Notes</div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#444;line-height:1.6">${r.cooking_notes}</div>
+    `);
+  }
+
+  if (!cards.length) {
+    container.innerHTML = '<div class="ps-empty"><div class="ps-empty-icon">⚠️</div><div class="ps-empty-title">Nothing selected to print</div></div>';
+    return;
+  }
+
+  document.getElementById('ps-card-count').textContent = cards.length + ' card' + (cards.length>1?'s':'');
+  container.innerHTML = cards.map((content, i) =>
+    `<div class="ps-card size-${currentSize}">
+      ${content}
+      <div class="ps-card-num">Card ${i+1} of ${cards.length}</div>
+    </div>`
+  ).join('');
+}
+
+function loadRecipe(recipe) {
+  currentRecipe = recipe;
+  document.getElementById('ps-recipe-name').innerHTML =
+    '<strong style="font-family:\'DM Sans\',sans-serif;font-size:13px;color:var(--text-high)">' + (recipe.recipe_name||'Recipe') + '</strong>';
+  buildCards();
+}
+
+// Load recipe from URL params or sessionStorage
+document.addEventListener('DOMContentLoaded', function() {
+  const id = new URLSearchParams(window.location.search).get('id');
+  // Try sessionStorage first (set by recipe page)
+  const stored = sessionStorage.getItem('tcj_print_recipe');
+  if (stored) {
+    try { loadRecipe(JSON.parse(stored)); return; } catch(_){}
+  }
+  // Try fetching by id
+  if (id) {
+    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+    fetch('https://kzywmodvfbyexqgipcjt.supabase.co/rest/v1/submitted_recipes?id=eq.'+id+'&select=*',
+      {headers:{'apikey':KEY}})
+      .then(r=>r.json()).then(data=>{ if(data[0]) loadRecipe(data[0]); })
+      .catch(()=>{});
+  }
+});
+</script>
+</body>
+</html>
