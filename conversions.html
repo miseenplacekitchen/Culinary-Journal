@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conversion Tools — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .cv-wrap  { max-width:900px; margin:0 auto; padding:32px 20px 80px; }
+    .cv-title { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--text-high); margin-bottom:8px; }
+    .cv-sub   { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-bottom:32px; }
+    .cv-grid  { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    @media(max-width:640px){ .cv-grid { grid-template-columns:1fr; } }
+    .cv-card  { background:var(--text-ghost); border:1px solid var(--border); border-radius:14px; padding:22px 24px; }
+    .cv-card-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); margin-bottom:16px; }
+    .cv-row   { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+    .cv-input { flex:1; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:500; padding:10px 12px; border:1px solid var(--border); border-radius:9px; background:var(--bg); color:var(--text-high); outline:none; min-width:0; }
+    .cv-input:focus { border-color:var(--accent); }
+    .cv-unit  { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); width:44px; flex-shrink:0; }
+    .cv-eq    { font-family:'DM Sans',sans-serif; font-size:16px; color:var(--text-mid); flex-shrink:0; }
+    .cv-sep   { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); text-align:center; margin:14px 0 6px; letter-spacing:0.08em; padding-bottom:8px; border-bottom:1px solid var(--border); }
+    .cv-result { font-family:'Cormorant Garamond',serif; font-size:1.1rem; color:var(--accent); font-weight:600; }
+
+    /* Serving scaler */
+    .cv-scaler { grid-column:1/-1; }
+    .cv-scaler-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+    .cv-scaler-label { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); min-width:80px; }
+    .cv-scaler-input { width:70px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:500; padding:9px 12px; border:1px solid var(--border); border-radius:9px; background:var(--bg); color:var(--text-high); outline:none; text-align:center; }
+    .cv-scaler-input:focus { border-color:var(--accent); }
+    .cv-ingredient-rows { display:flex; flex-direction:column; gap:8px; }
+    .cv-ing-row { display:grid; grid-template-columns:1fr 80px 80px; gap:8px; align-items:center; }
+    .cv-ing-name { font-family:'DM Sans',sans-serif; font-size:13px; padding:8px 11px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text-high); outline:none; }
+    .cv-ing-name:focus { border-color:var(--accent); }
+    .cv-ing-qty  { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; padding:8px 11px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text-high); outline:none; text-align:center; }
+    .cv-ing-qty:focus { border-color:var(--accent); }
+    .cv-ing-result { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; color:var(--accent); padding:8px 11px; background:rgb(from var(--accent) r g b / 0.07); border:1px solid rgb(from var(--accent) r g b / 0.2); border-radius:8px; text-align:center; }
+    .cv-add-ing { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--accent); background:none; border:1px dashed rgb(from var(--accent) r g b / 0.4); border-radius:8px; padding:7px 14px; cursor:pointer; margin-top:4px; width:100%; }
+    .cv-add-ing:hover { background:rgb(from var(--accent) r g b / 0.06); }
+    .cv-col-header { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mid); padding:0 11px; }
+
+    /* Temperature special */
+    .cv-temp-wrap { display:flex; flex-direction:column; gap:6px; }
+    .cv-temp-row  { display:flex; align-items:center; gap:8px; }
+    .cv-temp-label { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); width:50px; flex-shrink:0; }
+  </style>
+</head>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+
+<div class="cv-wrap">
+  <div class="cv-title">⚖️ Conversion Tools</div>
+  <div class="cv-sub">All calculations are instant and mathematical — no rounding surprises.</div>
+
+  <div class="cv-grid">
+
+    <!-- Volume -->
+    <div class="cv-card">
+      <div class="cv-card-title">Volume</div>
+
+      <div class="cv-sep">Cups & Spoons → Millilitres</div>
+      <div class="cv-row"><input class="cv-input" id="v-cups" type="number" min="0" placeholder="0" oninput="convertVol('cups')"><div class="cv-unit">cups</div><div class="cv-eq">=</div><input class="cv-input cv-result" id="v-cups-ml" type="number" placeholder="0" oninput="convertVol('cups-ml')"><div class="cv-unit">ml</div></div>
+      <div class="cv-row"><input class="cv-input" id="v-tbsp" type="number" min="0" placeholder="0" oninput="convertVol('tbsp')"><div class="cv-unit">tbsp</div><div class="cv-eq">=</div><input class="cv-input cv-result" id="v-tbsp-ml" type="number" placeholder="0" oninput="convertVol('tbsp-ml')"><div class="cv-unit">ml</div></div>
+      <div class="cv-row"><input class="cv-input" id="v-tsp" type="number" min="0" placeholder="0" oninput="convertVol('tsp')"><div class="cv-unit">tsp</div><div class="cv-eq">=</div><input class="cv-input cv-result" id="v-tsp-ml" type="number" placeholder="0" oninput="convertVol('tsp-ml')"><div class="cv-unit">ml</div></div>
+
+      <div class="cv-sep">Litres ↔ Millilitres</div>
+      <div class="cv-row"><input class="cv-input" id="v-l" type="number" min="0" placeholder="0" oninput="convertVol('l')"><div class="cv-unit">L</div><div class="cv-eq">=</div><input class="cv-input cv-result" id="v-l-ml" type="number" placeholder="0" oninput="convertVol('l-ml')"><div class="cv-unit">ml</div></div>
+
+      <div class="cv-sep">Fluid Ounces → Millilitres</div>
+      <div class="cv-row"><input class="cv-input" id="v-floz" type="number" min="0" placeholder="0" oninput="convertVol('floz')"><div class="cv-unit">fl oz</div><div class="cv-eq">=</div><input class="cv-input cv-result" id="v-floz-ml" type="number" placeholder="0" oninput="convertVol('floz-ml')"><div class="cv-unit">ml</div></div>
+    </div>
+
+    <!-- Weight -->
+    <div class="cv-card">
+      <div class="cv-card-title">Weight</div>
+
+      <div class="cv-sep">Grams ↔ Kilograms</div>
+      <div class="cv-row"><input class="cv-input" id="w-g" type="number" min="0" placeholder="0" oninput="convertWeight('g')"><div class="cv-unit">g</div><div class="cv-eq">=</div><input class="cv-input cv-result" id="w-kg" type="number" placeholder="0" oninput="convertWeight('kg')"><div class="cv-unit">kg</div></div>
+
+      <div class="cv-sep">Grams ↔ Ounces</div>
+      <div class="cv-row"><input class="cv-input" id="w-g2" type="number" min="0" placeholder="0" oninput="convertWeight('g2')"><div class="cv-unit">g</div><div class="cv-eq">=</div><input class="cv-input cv-result" id="w-oz" type="number" placeholder="0" oninput="convertWeight('oz')"><div class="cv-unit">oz</div></div>
+
+      <div class="cv-sep">Pounds ↔ Kilograms</div>
+      <div class="cv-row"><input class="cv-input" id="w-lb" type="number" min="0" placeholder="0" oninput="convertWeight('lb')"><div class="cv-unit">lb</div><div class="cv-eq">=</div><input class="cv-input cv-result" id="w-lb-kg" type="number" placeholder="0" oninput="convertWeight('lb-kg')"><div class="cv-unit">kg</div></div>
+
+      <div class="cv-sep">Common Baking Conversions</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:'DM Sans',sans-serif;font-size:12px">
+        <div style="color:var(--text-mid)">1 cup plain flour</div><div style="color:var(--accent);font-weight:600">120g</div>
+        <div style="color:var(--text-mid)">1 cup caster sugar</div><div style="color:var(--accent);font-weight:600">200g</div>
+        <div style="color:var(--text-mid)">1 cup butter</div><div style="color:var(--accent);font-weight:600">225g</div>
+        <div style="color:var(--text-mid)">1 cup rice (dry)</div><div style="color:var(--accent);font-weight:600">185g</div>
+        <div style="color:var(--text-mid)">1 tbsp butter</div><div style="color:var(--accent);font-weight:600">14g</div>
+        <div style="color:var(--text-mid)">1 tbsp oil</div><div style="color:var(--accent);font-weight:600">14g</div>
+      </div>
+    </div>
+
+    <!-- Temperature -->
+    <div class="cv-card">
+      <div class="cv-card-title">Temperature</div>
+      <div class="cv-temp-wrap">
+        <div class="cv-temp-row"><div class="cv-temp-label">°C</div><input class="cv-input" id="t-c" type="number" placeholder="180" oninput="convertTemp('c')"></div>
+        <div class="cv-temp-row"><div class="cv-temp-label">°F</div><input class="cv-input" id="t-f" type="number" placeholder="350" oninput="convertTemp('f')"></div>
+        <div class="cv-temp-row"><div class="cv-temp-label">Gas Mark</div><input class="cv-input" id="t-gas" type="number" placeholder="4" step="0.5" oninput="convertTemp('gas')"></div>
+        <div class="cv-temp-row"><div class="cv-temp-label">Fan °C</div><input class="cv-input cv-result" id="t-fan" type="number" placeholder="160" readonly style="opacity:0.7;cursor:default"></div>
+      </div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">Fan/convection ovens are typically 20°C lower than conventional.</div>
+
+      <div class="cv-sep" style="margin-top:16px">Common Temperatures</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-family:'DM Sans',sans-serif;font-size:11px">
+        <div style="color:var(--text-mid)">Slow oven</div><div style="color:var(--accent)">150°C</div><div style="color:var(--text-mid)">Gas 2</div>
+        <div style="color:var(--text-mid)">Moderate</div><div style="color:var(--accent)">180°C</div><div style="color:var(--text-mid)">Gas 4</div>
+        <div style="color:var(--text-mid)">Hot</div><div style="color:var(--accent)">200°C</div><div style="color:var(--text-mid)">Gas 6</div>
+        <div style="color:var(--text-mid)">Very hot</div><div style="color:var(--accent)">220°C</div><div style="color:var(--text-mid)">Gas 7</div>
+        <div style="color:var(--text-mid)">Deep fry</div><div style="color:var(--accent)">175°C</div><div style="color:var(--text-mid)">—</div>
+      </div>
+    </div>
+
+    <!-- Pan Sizes -->
+    <div class="cv-card">
+      <div class="cv-card-title">Pan & Tin Sizes</div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:10px">Common pan equivalents</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-family:'DM Sans',sans-serif;font-size:12px">
+        <div style="font-weight:600;color:var(--text-high);border-bottom:1px solid var(--border);padding-bottom:4px">Inches</div>
+        <div style="font-weight:600;color:var(--text-high);border-bottom:1px solid var(--border);padding-bottom:4px">Centimetres</div>
+        <div style="color:var(--text-mid)">6 inch round</div><div style="color:var(--accent)">15 cm</div>
+        <div style="color:var(--text-mid)">8 inch round</div><div style="color:var(--accent)">20 cm</div>
+        <div style="color:var(--text-mid)">9 inch round</div><div style="color:var(--accent)">23 cm</div>
+        <div style="color:var(--text-mid)">10 inch round</div><div style="color:var(--accent)">25 cm</div>
+        <div style="color:var(--text-mid)">8 × 8 square</div><div style="color:var(--accent)">20 × 20 cm</div>
+        <div style="color:var(--text-mid)">9 × 13 rect</div><div style="color:var(--accent)">23 × 33 cm</div>
+        <div style="color:var(--text-mid)">Loaf tin 9×5</div><div style="color:var(--accent)">23 × 13 cm</div>
+        <div style="color:var(--text-mid)">Muffin tin</div><div style="color:var(--accent)">12 holes, 7 cm each</div>
+      </div>
+    </div>
+
+    <!-- Serving scaler — full width -->
+    <div class="cv-card cv-scaler">
+      <div class="cv-card-title">Serving Size Scaler</div>
+      <div class="cv-scaler-row">
+        <div class="cv-scaler-label">Original serves</div>
+        <input class="cv-scaler-input" id="sc-from" type="number" min="1" value="4" oninput="scaleAll()">
+        <div class="cv-scaler-label" style="min-width:auto">→ New serves</div>
+        <input class="cv-scaler-input" id="sc-to" type="number" min="1" value="8" oninput="scaleAll()">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 80px 80px;gap:8px;margin-bottom:8px;padding:0 0 6px;border-bottom:1px solid var(--border)">
+        <div class="cv-col-header">Ingredient</div>
+        <div class="cv-col-header" style="text-align:center">Original qty</div>
+        <div class="cv-col-header" style="text-align:center">Scaled qty</div>
+      </div>
+      <div class="cv-ingredient-rows" id="sc-rows"></div>
+      <button class="cv-add-ing" onclick="addScalerRow()">+ Add ingredient</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="nav-init.js"></script>
+<script>
+// ── VOLUME ───────────────────────────────────────────────────────
+const VOL = {cups:240, tbsp:15, tsp:5, l:1000, floz:29.5735};
+function convertVol(from) {
+  const pairs = {cups:['v-cups','v-cups-ml',240], 'cups-ml':['v-cups-ml','v-cups',1/240],
+    tbsp:['v-tbsp','v-tbsp-ml',15], 'tbsp-ml':['v-tbsp-ml','v-tbsp',1/15],
+    tsp:['v-tsp','v-tsp-ml',5], 'tsp-ml':['v-tsp-ml','v-tsp',1/5],
+    l:['v-l','v-l-ml',1000], 'l-ml':['v-l-ml','v-l',1/1000],
+    floz:['v-floz','v-floz-ml',29.5735], 'floz-ml':['v-floz-ml','v-floz',1/29.5735]};
+  const [src,dst,factor] = pairs[from];
+  const val = parseFloat(document.getElementById(src).value)||0;
+  document.getElementById(dst).value = val ? round(val*factor) : '';
+}
+
+// ── WEIGHT ───────────────────────────────────────────────────────
+function convertWeight(from) {
+  const pairs = {g:['w-g','w-kg',1/1000],'kg':['w-kg','w-g',1000],
+    g2:['w-g2','w-oz',1/28.3495],'oz':['w-oz','w-g2',28.3495],
+    lb:['w-lb','w-lb-kg',0.453592],'lb-kg':['w-lb-kg','w-lb',1/0.453592]};
+  const [src,dst,factor] = pairs[from];
+  const val = parseFloat(document.getElementById(src).value)||0;
+  document.getElementById(dst).value = val ? round(val*factor) : '';
+}
+
+// ── TEMPERATURE ──────────────────────────────────────────────────
+function convertTemp(from) {
+  let c = 0;
+  if (from==='c')   c = parseFloat(document.getElementById('t-c').value)||0;
+  if (from==='f')   c = ((parseFloat(document.getElementById('t-f').value)||0) - 32) * 5/9;
+  if (from==='gas') c = (parseFloat(document.getElementById('t-gas').value)||0) * 25 + 125;
+  const f   = c * 9/5 + 32;
+  const gas = Math.max(0.25, (c - 125) / 25);
+  const fan = c - 20;
+  if (from!=='c')   document.getElementById('t-c').value   = round(c);
+  if (from!=='f')   document.getElementById('t-f').value   = round(f);
+  if (from!=='gas') document.getElementById('t-gas').value = round(gas);
+  document.getElementById('t-fan').value = round(fan);
+}
+
+// ── SERVING SCALER ───────────────────────────────────────────────
+function addScalerRow(name, qty) {
+  const rows = document.getElementById('sc-rows');
+  const row = document.createElement('div');
+  row.className = 'cv-ing-row';
+  row.innerHTML =
+    '<input class="cv-ing-name" type="text" placeholder="e.g. Plain Flour" value="' + (name||'') + '">' +
+    '<input class="cv-ing-qty" type="number" min="0" step="any" placeholder="qty" value="' + (qty||'') + '" oninput="scaleAll()">' +
+    '<div class="cv-ing-result">—</div>';
+  rows.appendChild(row);
+  scaleAll();
+}
+
+function scaleAll() {
+  const from = parseFloat(document.getElementById('sc-from').value)||1;
+  const to   = parseFloat(document.getElementById('sc-to').value)||1;
+  const ratio = to/from;
+  document.querySelectorAll('.cv-ing-row').forEach(function(row) {
+    const qty = parseFloat(row.querySelector('.cv-ing-qty').value);
+    const res = row.querySelector('.cv-ing-result');
+    if (!isNaN(qty) && qty > 0) {
+      res.textContent = formatScaled(qty * ratio);
+      res.style.color = 'var(--accent)';
+    } else {
+      res.textContent = '—';
+    }
+  });
+}
+
+function formatScaled(n) {
+  const fractions = [[0.125,'⅛'],[0.25,'¼'],[0.333,'⅓'],[0.5,'½'],[0.667,'⅔'],[0.75,'¾']];
+  const whole = Math.floor(n);
+  const frac = n - whole;
+  for (const [val,sym] of fractions) {
+    if (Math.abs(frac-val) < 0.04) return (whole>0 ? whole+' ':'')+sym;
+  }
+  if (n < 0.1) return n.toFixed(2);
+  if (n < 10)  return n.toFixed(1).replace(/\.0$/,'');
+  return Math.round(n).toString();
+}
+
+function round(n) {
+  if (Math.abs(n) < 0.001) return 0;
+  if (Math.abs(n) < 1)    return parseFloat(n.toFixed(3));
+  if (Math.abs(n) < 100)  return parseFloat(n.toFixed(2));
+  return parseFloat(n.toFixed(1));
+}
+
+// Pre-populate scaler with a few example rows
+document.addEventListener('DOMContentLoaded', function() {
+  addScalerRow('Plain Flour', 2);
+  addScalerRow('Eggs', 3);
+  addScalerRow('Butter', 125);
+  addScalerRow('Sugar', 1.5);
+  scaleAll();
+});
+</script>
+</body>
+</html>

@@ -120,6 +120,97 @@
     @media print {
       .ps-card.layout-candlelit { background:#2c1a0e!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     }
+
+    /* Elegant Wedding */
+    .ps-card.layout-wedding { background:linear-gradient(135deg,#fffef9 0%,#fdf8f0 100%); border:1px solid #d4b896; }
+    .ps-card.layout-wedding .ps-card-title { font-family:'Palatino Linotype',Georgia,serif; font-size:1.5rem; text-align:center; color:#8b6040; letter-spacing:0.04em; border-bottom:1px solid #d4b896; padding-bottom:8px; margin-bottom:10px; }
+    .ps-card.layout-wedding .ps-card-subtitle { text-align:center; color:#b8895a; font-family:'Palatino Linotype',Georgia,serif; }
+    .ps-card.layout-wedding .ps-watermark { font-family:'Palatino Linotype',Georgia,serif; color:rgba(180,140,100,0.3); }
+    .ps-card.layout-wedding .ps-section-head { color:#8b6040; font-size:9px; letter-spacing:0.15em; border-bottom:0.5px solid #d4b896; }
+    .ps-card.layout-wedding .ps-ing-qty { color:#b8895a; font-weight:600; }
+    .ps-card.layout-wedding .ps-card-meta { border-bottom:1px solid #d4b896; color:#8b6040; }
+    .ps-card.layout-wedding::before { content:'❧'; position:absolute; top:8px; right:12px; font-size:16px; color:rgba(180,140,100,0.25); }
+    .ps-card.layout-wedding::after  { content:'❧'; position:absolute; bottom:8px; left:12px; font-size:16px; color:rgba(180,140,100,0.25); transform:scaleX(-1); }
+
+    /* Colourful & Fun */
+    .ps-card.layout-colourful { background:#fff9f0; border:3px solid #ff7043; border-radius:16px; }
+    .ps-card.layout-colourful .ps-card-title { font-family:'Helvetica Neue',Arial,sans-serif; font-weight:900; color:#e64a19; font-size:1.2rem; }
+    .ps-card.layout-colourful .ps-card-subtitle { color:#ff7043; }
+    .ps-card.layout-colourful .ps-watermark { color:rgba(255,112,67,0.3); }
+    .ps-card.layout-colourful .ps-section-head { color:#ff7043; background:#fff3ef; border-radius:4px; padding:2px 6px; font-size:9px; }
+    .ps-card.layout-colourful .ps-ing-qty { color:#e64a19; font-weight:700; }
+    .ps-card.layout-colourful .ps-step-num { color:#ff7043; }
+    .ps-card.layout-colourful .ps-card-meta { border-bottom:2px solid #ff7043; }
+    .ps-card.layout-colourful .ps-card-num { color:#ff7043; background:#fff3ef; border-radius:4px; padding:1px 5px; }
+
+    /* Soft Pastel */
+    .ps-card.layout-pastel { background:linear-gradient(135deg,#fce4ec 0%,#f8bbd0 30%,#e8f5e9 70%,#dcedc8 100%); border:1px solid #f48fb1; }
+    .ps-card.layout-pastel .ps-card-title { font-family:'Palatino Linotype',Georgia,serif; font-size:1.3rem; color:#880e4f; }
+    .ps-card.layout-pastel .ps-card-subtitle { color:#c2185b; }
+    .ps-card.layout-pastel .ps-watermark { color:rgba(136,14,79,0.2); }
+    .ps-card.layout-pastel .ps-section-head { color:#c2185b; border-bottom:0.5px solid #f48fb1; }
+    .ps-card.layout-pastel .ps-ing-qty { color:#e91e63; font-weight:600; }
+    .ps-card.layout-pastel .ps-card-meta { border-bottom:1px solid #f48fb1; color:#c2185b; }
+    .ps-card.layout-pastel .ps-step-num { color:#c2185b; }
+
+    /* Fitness Focused */
+    .ps-card.layout-fitness { background:#0a0a0a; border:2px solid #00e676; border-radius:8px; color:#e8f5e9; }
+    .ps-card.layout-fitness .ps-card-title { font-family:'Helvetica Neue',Arial,sans-serif; font-weight:900; color:#00e676; letter-spacing:-0.01em; text-transform:uppercase; font-size:1.1rem; }
+    .ps-card.layout-fitness .ps-card-subtitle { color:#69f0ae; font-style:normal; font-family:'Helvetica Neue',sans-serif; }
+    .ps-card.layout-fitness .ps-watermark { color:rgba(0,230,118,0.2); }
+    .ps-card.layout-fitness .ps-section-head { color:#00e676; letter-spacing:0.15em; font-size:8px; border-bottom:1px solid rgba(0,230,118,0.3); }
+    .ps-card.layout-fitness .ps-ing-qty { color:#69f0ae; font-weight:700; }
+    .ps-card.layout-fitness .ps-ing-item { color:#c8e6c9; }
+    .ps-card.layout-fitness .ps-step { color:#c8e6c9; }
+    .ps-card.layout-fitness .ps-step-num { color:#00e676; }
+    .ps-card.layout-fitness .ps-card-meta { color:#4db6ac; border-bottom:1px solid rgba(0,230,118,0.3); }
+    .ps-card.layout-fitness .ps-card-num { color:rgba(0,230,118,0.5); }
+    @media print { .ps-card.layout-fitness { background:#0a0a0a!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+
+    /* Dark & Moody */
+    .ps-card.layout-dark-moody { background:linear-gradient(160deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%); border:1px solid #534b8a; color:#e0d7f8; }
+    .ps-card.layout-dark-moody .ps-card-title { font-family:'Palatino Linotype',Georgia,serif; color:#b39ddb; font-size:1.3rem; }
+    .ps-card.layout-dark-moody .ps-card-subtitle { color:#9575cd; }
+    .ps-card.layout-dark-moody .ps-watermark { color:rgba(149,117,205,0.25); }
+    .ps-card.layout-dark-moody .ps-section-head { color:#9575cd; border-bottom:0.5px solid rgba(83,75,138,0.6); }
+    .ps-card.layout-dark-moody .ps-ing-qty { color:#b39ddb; font-weight:600; }
+    .ps-card.layout-dark-moody .ps-ing-item { color:#d1c4e9; }
+    .ps-card.layout-dark-moody .ps-step { color:#d1c4e9; }
+    .ps-card.layout-dark-moody .ps-step-num { color:#9575cd; }
+    .ps-card.layout-dark-moody .ps-card-meta { color:#7e57c2; border-bottom:1px solid rgba(83,75,138,0.6); }
+    @media print { .ps-card.layout-dark-moody { background:#1a1a2e!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+
+    /* Bright & Fresh */
+    .ps-card.layout-bright { background:#f0fbff; border:1px solid #4fc3f7; }
+    .ps-card.layout-bright .ps-card-title { font-family:'Helvetica Neue',Arial,sans-serif; font-weight:800; color:#0277bd; }
+    .ps-card.layout-bright .ps-card-subtitle { color:#0288d1; font-family:'Helvetica Neue',sans-serif; font-style:normal; }
+    .ps-card.layout-bright .ps-watermark { color:rgba(2,119,189,0.2); }
+    .ps-card.layout-bright .ps-section-head { color:#0288d1; border-bottom:0.5px solid #4fc3f7; }
+    .ps-card.layout-bright .ps-ing-qty { color:#0277bd; font-weight:700; }
+    .ps-card.layout-bright .ps-card-meta { border-bottom:2px solid #4fc3f7; color:#0288d1; }
+    .ps-card.layout-bright .ps-step-num { color:#0288d1; }
+
+    /* Vintage Recipe Card */
+    .ps-card.layout-vintage { background:#fdf6e3; border:2px solid #8d6e63; border-radius:4px; box-shadow:inset 0 0 0 4px #fdf6e3, inset 0 0 0 6px #8d6e63; }
+    .ps-card.layout-vintage .ps-card-title { font-family:'Palatino Linotype',Georgia,serif; font-size:1.3rem; color:#4e342e; text-align:center; border-bottom:2px solid #8d6e63; padding-bottom:8px; margin-bottom:10px; }
+    .ps-card.layout-vintage .ps-card-subtitle { text-align:center; font-family:'Palatino Linotype',Georgia,serif; color:#6d4c41; }
+    .ps-card.layout-vintage .ps-watermark { font-family:'Palatino Linotype',Georgia,serif; color:rgba(109,76,65,0.3); }
+    .ps-card.layout-vintage .ps-section-head { font-family:'Palatino Linotype',Georgia,serif; color:#5d4037; border-bottom:1px solid #bcaaa4; letter-spacing:0.04em; }
+    .ps-card.layout-vintage .ps-ing-qty { color:#6d4c41; font-weight:600; }
+    .ps-card.layout-vintage .ps-step { font-family:'Palatino Linotype',Georgia,serif; color:#3e2723; }
+    .ps-card.layout-vintage .ps-ing-item { font-family:'Palatino Linotype',Georgia,serif; color:#3e2723; }
+    .ps-card.layout-vintage .ps-card-meta { border-bottom:1px solid #bcaaa4; color:#6d4c41; }
+
+    /* Aged Parchment */
+    .ps-card.layout-parchment { background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%23f4e4c1'/%3E%3Ccircle cx='1' cy='1' r='0.5' fill='%23e8d5a0' opacity='0.4'/%3E%3C/svg%3E") #f4e4c1; border:1px solid #a07850; }
+    .ps-card.layout-parchment .ps-card-title { font-family:'Palatino Linotype',Georgia,serif; color:#3d2b1a; font-style:italic; text-align:center; border-bottom:1px solid #c4a068; padding-bottom:8px; }
+    .ps-card.layout-parchment .ps-card-subtitle { font-family:'Palatino Linotype',Georgia,serif; color:#6b4c2a; text-align:center; }
+    .ps-card.layout-parchment .ps-watermark { font-family:'Palatino Linotype',Georgia,serif; color:rgba(107,76,42,0.25); font-style:italic; }
+    .ps-card.layout-parchment .ps-section-head { color:#6b4c2a; border-bottom:0.5px solid #c4a068; font-family:'Palatino Linotype',Georgia,serif; letter-spacing:0.04em; }
+    .ps-card.layout-parchment .ps-ing-qty { color:#8b5e3c; font-weight:600; }
+    .ps-card.layout-parchment .ps-step { font-family:'Palatino Linotype',Georgia,serif; color:#3d2b1a; line-height:1.7; }
+    .ps-card.layout-parchment .ps-ing-item { font-family:'Palatino Linotype',Georgia,serif; color:#3d2b1a; }
+    .ps-card.layout-parchment .ps-card-meta { border-bottom:1px solid #c4a068; color:#6b4c2a; }
     /* Print styles */
     @media print {
       nav, .ps-sidebar, .ps-preview-header, body > *:not(.page-bg), .page-bg > *:not(.ps-wrap) { display:none!important; }
@@ -158,6 +249,14 @@
         <button class="ps-opt-btn" data-layout="minimal" onclick="setLayout('minimal',this)">Modern Minimal</button>
         <button class="ps-opt-btn" data-layout="botanical" onclick="setLayout('botanical',this)">Botanical</button>
         <button class="ps-opt-btn" data-layout="candlelit" onclick="setLayout('candlelit',this)">Warm Candlelit</button>
+        <button class="ps-opt-btn" data-layout="wedding" onclick="setLayout('wedding',this)">Elegant Wedding</button>
+        <button class="ps-opt-btn" data-layout="colourful" onclick="setLayout('colourful',this)">Colourful &amp; Fun</button>
+        <button class="ps-opt-btn" data-layout="pastel" onclick="setLayout('pastel',this)">Soft Pastel</button>
+        <button class="ps-opt-btn" data-layout="fitness" onclick="setLayout('fitness',this)">Fitness Focused</button>
+        <button class="ps-opt-btn" data-layout="dark-moody" onclick="setLayout('dark-moody',this)">Dark &amp; Moody</button>
+        <button class="ps-opt-btn" data-layout="bright" onclick="setLayout('bright',this)">Bright &amp; Fresh</button>
+        <button class="ps-opt-btn" data-layout="vintage" onclick="setLayout('vintage',this)">Vintage Recipe Card</button>
+        <button class="ps-opt-btn" data-layout="parchment" onclick="setLayout('parchment',this)">Aged Parchment</button>
       </div>
     </div>
 

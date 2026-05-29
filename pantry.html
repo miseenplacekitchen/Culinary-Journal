@@ -139,6 +139,10 @@
         <div class="pt-label">Low Stock Alert Below</div>
         <input class="pt-input" id="pt-min" type="number" min="0" step="0.1" placeholder="e.g. 0.5">
       </div>
+      <div class="pt-field" style="flex:1">
+        <div class="pt-label">Best Before Date</div>
+        <input class="pt-input" id="pt-expiry" type="date">
+      </div>
     </div>
     <div class="pt-modal-foot">
       <button class="pt-btn pt-btn-primary" style="flex:1" onclick="saveItem()">Save</button>
@@ -164,6 +168,16 @@ function getStatus(item) {
   if (!item.qty || item.qty <= 0) return 'out';
   if (item.min_qty && item.qty <= item.min_qty) return 'low';
   return 'ok';
+}
+
+function getExpiryStatus(item) {
+  if (!item.expiry_date) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const exp   = new Date(item.expiry_date); exp.setHours(0,0,0,0);
+  const days  = Math.round((exp - today) / 86400000);
+  if (days < 0)  return {status:'expired', days, label:'Expired ' + Math.abs(days) + 'd ago'};
+  if (days <= 7) return {status:'expiring', days, label:'Expires in ' + days + 'd'};
+  return {status:'ok', days, label:'Best before: ' + exp.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})};
 }
 
 function setFilter(f, btn) {
@@ -241,7 +255,7 @@ function deleteItem(id) {
 function openAddModal() {
   document.getElementById('pt-modal-title').textContent = 'Add Pantry Item';
   document.getElementById('pt-edit-id').value = '';
-  ['pt-name','pt-qty','pt-unit','pt-min'].forEach(function(id) { document.getElementById(id).value = ''; });
+  ['pt-name','pt-qty','pt-unit','pt-min','pt-expiry'].forEach(function(id) { document.getElementById(id).value = ''; });
   document.getElementById('pt-category').value = '';
   document.getElementById('pt-modal').classList.add('open');
   setTimeout(function() { document.getElementById('pt-name').focus(); }, 50);
@@ -257,6 +271,7 @@ function editItem(id) {
   document.getElementById('pt-unit').value = item.unit||'';
   document.getElementById('pt-category').value = item.category||'';
   document.getElementById('pt-min').value  = item.min_qty||'';
+  document.getElementById('pt-expiry').value = item.expiry_date||'';
   document.getElementById('pt-modal').classList.add('open');
 }
 
@@ -274,6 +289,7 @@ function saveItem() {
     unit: document.getElementById('pt-unit').value.trim(),
     category: document.getElementById('pt-category').value,
     min_qty: parseFloat(document.getElementById('pt-min').value)||null,
+    expiry_date: document.getElementById('pt-expiry').value||null,
     updated: new Date().toISOString()
   };
   if (editId) {

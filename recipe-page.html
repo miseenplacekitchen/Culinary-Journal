@@ -123,6 +123,15 @@
     .rp-combined-col-title { font-family: "DM Sans", sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin: 0 0 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
 
 
+
+    /* ── ALLERGEN BANNER ─────────────────────── */
+    .rp-allergen-banner { display:flex; align-items:flex-start; gap:12px; padding:12px 16px; background:rgba(240,168,48,0.08); border:1px solid rgba(240,168,48,0.25); border-radius:10px; margin-bottom:20px; }
+    .rp-allergen-icon  { font-size:16px; flex-shrink:0; margin-top:1px; }
+    .rp-allergen-text  { font-family:"DM Sans",sans-serif; font-size:13px; color:var(--text-high); line-height:1.5; }
+    .rp-allergen-label { font-weight:600; color:#f0a830; }
+    .rp-allergen-pills { display:flex; flex-wrap:wrap; gap:5px; margin-top:5px; }
+    .rp-allergen-pill  { font-family:"DM Sans",sans-serif; font-size:11px; font-weight:600; padding:2px 9px; border-radius:20px; background:rgba(240,168,48,0.12); color:#f0a830; border:1px solid rgba(240,168,48,0.25); }
+    .rp-allergen-pill.serious { background:rgba(220,80,80,0.1); color:#dc5050; border-color:rgba(220,80,80,0.25); }
     /* ── RELATED RECIPES ─────────────────── */
     .rp-related { padding:48px 0 24px; }
     .rp-related-label { font-family:"DM Sans",sans-serif; font-size:10px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
@@ -226,6 +235,15 @@
     <h1 class="rp-title" id="rp-title">Loading...</h1>
     <p class="rp-also-known" id="rp-also-known" style="display:none"></p>
     <p class="rp-intro" id="rp-intro" style="display:none;font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.65;color:var(--text-mid,var(--text-muted));max-width:680px;margin:0 0 18px"></p>
+
+    <!-- ALLERGEN BANNER -->
+    <div id="allergen-banner" style="display:none" class="rp-allergen-banner">
+      <div class="rp-allergen-icon">⚠️</div>
+      <div class="rp-allergen-text">
+        <span class="rp-allergen-label">Allergen information</span>
+        <div class="rp-allergen-pills" id="allergen-pills"></div>
+      </div>
+    </div>
 
     <!-- META ROW -->
     <div class="rp-meta-row" id="rp-meta-row">
@@ -385,6 +403,69 @@ const SPICE_TEXT_TO_NUM = {
   'not applicable':0, 'none':0, 'no spice':0, '':0,
   'mild':1, 'medium':2, 'hot':3, 'very hot':4, 'extremely hot':5
 };
+
+
+// ── ALLERGEN DETECTION ────────────────────────────────────────
+const SERIOUS_ALLERGENS = new Set(['Peanuts','Tree Nuts','Shellfish','Fish','Eggs','Dairy','Gluten','Soy','Sesame','Sulphites','Mustard']);
+let ingredientAllergenMap = null;
+
+async function loadAllergenMap() {
+  if (ingredientAllergenMap) return ingredientAllergenMap;
+  try {
+    const res = await fetch(
+      SUPABASE_URL + '/rest/v1/ingredients?select=Ingredient Name,Also Known As,Allergen&Allergen=neq.&limit=300',
+      {headers: {'apikey': SUPABASE_KEY}}
+    );
+    if (!res.ok) return null;
+    const rows = await res.json();
+    ingredientAllergenMap = new Map();
+    rows.forEach(function(r) {
+      const allergen = (r['Allergen']||'').trim();
+      if (!allergen) return;
+      const name = (r['Ingredient Name']||'').toLowerCase().trim();
+      const aka  = (r['Also Known As']||'').toLowerCase().trim();
+      if (name) ingredientAllergenMap.set(name, allergen);
+      if (aka)  ingredientAllergenMap.set(aka, allergen);
+    });
+  } catch(_) {}
+  return ingredientAllergenMap;
+}
+
+async function detectAllergens(recipe) {
+  const map = await loadAllergenMap();
+  if (!map) return;
+  const found = new Set();
+  const allIngredients = [];
+  (recipe.ingredients||[]).forEach(function(sec) {
+    (sec.items||[]).forEach(function(item) { allIngredients.push(item.ingredient||''); });
+  });
+  allIngredients.forEach(function(name) {
+    const lower = name.toLowerCase().trim();
+    // Exact match
+    if (map.has(lower)) {
+      map.get(lower).split(',').forEach(function(a) { found.add(a.trim()); });
+      return;
+    }
+    // Partial match — check if any known allergen ingredient is contained in name
+    map.forEach(function(allergen, key) {
+      if (lower.includes(key) || key.includes(lower.split(' ')[0])) {
+        allergen.split(',').forEach(function(a) { found.add(a.trim()); });
+      }
+    });
+  });
+  if (!found.size) return;
+  const banner = document.getElementById('allergen-banner');
+  const pills  = document.getElementById('allergen-pills');
+  if (!banner || !pills) return;
+  pills.innerHTML = '';
+  Array.from(found).sort().forEach(function(allergen) {
+    const pill = document.createElement('span');
+    pill.className = 'rp-allergen-pill' + (SERIOUS_ALLERGENS.has(allergen) ? ' serious' : '');
+    pill.textContent = allergen;
+    pills.appendChild(pill);
+  });
+  banner.style.display = 'flex';
+}
 
 
 // ── RELATED RECIPES ───────────────────────────────────────────────
@@ -621,6 +702,8 @@ async function enrichIngredientInfo(r) {
       if (currentView === 'combined') renderIngredients(r.ingredients, 'ingredients-combined');
   // Load related recipes
   if (r.id && r.category) loadRelatedRecipes(r.id, r.category);
+  // Detect allergens from recipe ingredients
+  detectAllergens(r);
       if (currentServes !== baseServes) scaleIngredients(currentServes);
     }
   } catch (_) { /* best-effort — never break the page */ }
@@ -1015,6 +1098,18 @@ function toggleGrocery(btn, ingredient, qty, unit) {
   groceryList = recipeEntry.ingredients || [];
 }
 
+function getPantryItems() {
+  try { return JSON.parse(localStorage.getItem('tcj_pantry')||'[]'); } catch(_) { return []; }
+}
+
+function isInPantry(ingredientName) {
+  const pantry = getPantryItems();
+  const name = ingredientName.toLowerCase().trim();
+  return pantry.some(function(p) {
+    return p.name && p.name.toLowerCase().trim() === name && (p.qty||0) > 0;
+  });
+}
+
 function addAllToGrocery() {
   const data = getGroceryData();
   const recipeName = recipe?.recipe_name || 'Unknown Recipe';
@@ -1024,23 +1119,23 @@ function addAllToGrocery() {
     recipeEntry = {id: recipeId, name: recipeName, servings: currentServings || 1, ingredients: []};
     data.recipes.push(recipeEntry);
   }
-  let added = 0;
+  let added = 0, skipped = 0;
   (recipe?.ingredients || []).forEach(sec => {
     sec.items.forEach(item => {
-      if (!recipeEntry.ingredients.some(i => i.name === item.ingredient)) {
-        recipeEntry.ingredients.push({name: item.ingredient, qty: item.qty, unit: item.unit||'', section: sec.title||''});
-        added++;
-      }
+      if (recipeEntry.ingredients.some(i => i.name === item.ingredient)) return;
+      if (isInPantry(item.ingredient)) { skipped++; return; }
+      recipeEntry.ingredients.push({name: item.ingredient, qty: item.qty, unit: item.unit||'', section: sec.title||''});
+      added++;
     });
   });
   saveGroceryData(data);
   groceryList = recipeEntry.ingredients;
   document.querySelectorAll('.rp-ing-cart-btn').forEach(btn => btn.classList.add('added'));
-  const msg = added > 0 ? added + ' ingredients added to Grocery List ✓' : 'All ingredients already in Grocery List';
+  let msg = added > 0 ? added + ' ingredient' + (added===1?'':'s') + ' added to Grocery List ✓' : 'All ingredients already in list';
+  if (skipped > 0) msg += ' · ' + skipped + ' skipped (already in pantry 🫙)';
   showToast(msg);
-  // Show link to grocery page
   if (added > 0) {
-    setTimeout(() => showToast('<a href="grocery.html" style="color:var(--accent)">View Grocery List →</a>', true), 1500);
+    setTimeout(() => showToast('<a href="grocery.html" style="color:var(--accent)">View Grocery List →</a>', true), 1800);
   }
 }
 
