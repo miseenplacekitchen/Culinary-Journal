@@ -1696,6 +1696,57 @@ function showToast(msg) {
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 2800);
 }
+
+// ── BRIDGE: SHOW COOK HISTORY FOR THIS RECIPE ──────────────────
+(function addCookBridge() {
+  if (!recipe || !recipe.id) return;
+  var s; try { s = JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch(_) {}
+  if (!s || !s.access_token) return;
+  var SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+  var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+  fetch(SUPA_URL+'/rest/v1/cooking_events?recipe_id=eq.'+recipe.id+'&select=id,cooked_at,rating&order=cooked_at.desc', {
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+s.access_token}
+  }).then(function(r){ return r.ok ? r.json() : []; }).then(function(events) {
+    if (!events || !events.length) return;
+    var count = events.length;
+        var msgs = ['You cooked this once.', 'You\'ve cooked this '+count+' times.', 'You\'ve cooked this '+count+' times — becoming a regular.', 'You\'ve cooked this '+count+' times. A family favourite.'];
+    var msg = count === 1 ? msgs[0] : count < 5 ? msgs[1] : count < 10 ? msgs[2] : msgs[3];
+    var banner = document.createElement('div');
+    banner.style.cssText = 'max-width:900px;margin:10px auto 0;padding:0 20px';
+    var inner = document.createElement('div');
+    inner.style.cssText = 'background:rgba(196,151,59,.08);border:1px solid rgba(196,151,59,.3);border-radius:10px;padding:10px 16px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);display:flex;align-items:center;justify-content:space-between;gap:12px';
+    var left = document.createElement('span');
+    left.innerHTML = '<span style="color:var(--accent)">🍳</span> ' + msg;
+    var link = document.createElement('a');
+    link.href = 'culinary-life.html';
+    link.style.cssText = 'color:var(--accent);text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap';
+    link.textContent = 'View culinary life →';
+    inner.appendChild(left); inner.appendChild(link);
+    banner.appendChild(inner);
+    // Insert after the back-to-recipes link
+    var backLink = document.querySelector('a[href="recipes.html"]');
+    if (backLink && backLink.parentNode) {
+      backLink.parentNode.insertAdjacentElement('afterend', banner);
+    }
+    // Log this as a view (not a cook)
+  }).catch(function(){});
+  // Add "Log a Cook" button to the recipe page
+  setTimeout(function() {
+    var actionsEl = document.querySelector('.rp-actions') || document.querySelector('.rp-header');
+    if (!actionsEl) return;
+    var logBtn = document.createElement('button');
+    logBtn.style.cssText = 'padding:8px 16px;background:none;border:1px solid var(--accent-border);border-radius:9px;font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;transition:all .15s;margin-left:8px';
+    logBtn.textContent = '🍳 Log a Cook';
+    logBtn.addEventListener('click', function() {
+      // Navigate to culinary life with recipe pre-filled
+      localStorage.setItem('tcj_log_prefill', JSON.stringify({name:recipe.recipe_name||'', id:recipe.id}));
+      window.location.href = 'culinary-life.html';
+    });
+    logBtn.addEventListener('mouseover', function(){ this.style.background='rgba(196,151,59,.1)'; });
+    logBtn.addEventListener('mouseout',  function(){ this.style.background='none'; });
+    actionsEl.appendChild(logBtn);
+  }, 600);
+})();
 </script>
 
 <!-- QR Code Modal -->

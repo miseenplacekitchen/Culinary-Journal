@@ -45,12 +45,13 @@ var CJ_SECTIONS = [
   },
   {
     id:'personal', label:'Personal', emoji:'📓',
-    pages:['diary.html','my-dashboard.html','collections.html','profile.html','site-settings.html','user.html'],
+    pages:['diary.html','my-dashboard.html','culinary-life.html','collections.html','profile.html','site-settings.html','user.html'],
     links:[
-      {href:'diary.html',        emoji:'📓', label:'My Diary'},
-      {href:'my-dashboard.html', emoji:'🏠', label:'My Kitchen'},
-      {href:'collections.html',  emoji:'📁', label:'Collections'},
-      {href:'profile.html',      emoji:'👤', label:'My Profile'},
+      {href:'culinary-life.html', emoji:'✨', label:'My Culinary Life'},
+      {href:'diary.html',         emoji:'📓', label:'My Diary'},
+      {href:'my-dashboard.html',  emoji:'🏠', label:'My Kitchen'},
+      {href:'collections.html',   emoji:'📁', label:'Collections'},
+      {href:'profile.html',       emoji:'👤', label:'My Profile'},
     ]
   }
 ];
