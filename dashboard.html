@@ -121,6 +121,37 @@
     .ap-review-msg.success { background: rgba(76,175,118,0.15); color: #4caf76; }
     .ap-review-msg.error   { background: rgba(220,80,80,0.15);  color: #dc5050; }
 
+
+    /* ── INGREDIENT MANAGEMENT ────────────────── */
+    .ing-toolbar { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; align-items:center; }
+    .ing-add-btn { display:inline-flex; align-items:center; gap:6px; font-family:"DM Sans",sans-serif; font-size:13px; font-weight:500; color:#fff; background:var(--accent); border:none; border-radius:8px; padding:9px 18px; cursor:pointer; margin-left:auto; }
+    .ing-add-btn:hover { opacity:0.85; }
+    .ing-cat-filter { font-family:"DM Sans",sans-serif; font-size:12px; padding:7px 12px; border-radius:20px; border:1px solid var(--border); background:var(--text-ghost); color:var(--text-high); outline:none; cursor:pointer; }
+    .ing-cat-filter:focus { border-color:var(--accent); }
+    .ing-count { font-family:"DM Sans",sans-serif; font-size:12px; color:var(--text-mid); }
+
+    /* Ingredient modal */
+    .ing-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; display:none; align-items:center; justify-content:center; padding:20px; overflow-y:auto; backdrop-filter:blur(4px); }
+    .ing-modal-overlay.open { display:flex; }
+    .ing-modal { background:var(--bg); border:1px solid var(--border); border-radius:16px; width:100%; max-width:700px; margin:auto; overflow:hidden; }
+    .ing-modal-head { padding:22px 26px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .ing-modal-title { font-family:"Cormorant Garamond",serif; font-size:1.4rem; font-weight:600; color:var(--text-high); }
+    .ing-modal-close { background:none; border:1px solid var(--border); border-radius:8px; padding:5px 11px; font-size:16px; cursor:pointer; color:var(--text-mid); }
+    .ing-modal-body { padding:22px 26px; display:grid; grid-template-columns:1fr 1fr; gap:14px; max-height:65vh; overflow-y:auto; }
+    .ing-modal-body .full { grid-column:1/-1; }
+    .ing-field label { display:block; font-family:"DM Sans",sans-serif; font-size:10px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-mid); margin-bottom:5px; }
+    .ing-field input, .ing-field select, .ing-field textarea { width:100%; font-family:"DM Sans",sans-serif; font-size:13px; color:var(--text-high); background:var(--text-ghost); border:1px solid var(--border); border-radius:8px; padding:8px 12px; outline:none; box-sizing:border-box; }
+    .ing-field input:focus, .ing-field select:focus, .ing-field textarea:focus { border-color:var(--accent); }
+    .ing-field textarea { resize:vertical; min-height:72px; }
+    .ing-modal-foot { padding:16px 26px; border-top:1px solid var(--border); display:flex; gap:10px; align-items:center; background:var(--text-ghost); }
+    .ing-save-btn { flex:1; padding:11px; background:var(--accent); border:none; border-radius:9px; color:#fff; font-family:"DM Sans",sans-serif; font-size:14px; font-weight:600; cursor:pointer; }
+    .ing-save-btn:hover { opacity:0.85; }
+    .ing-cancel-btn { padding:11px 20px; background:none; border:1px solid var(--border); border-radius:9px; color:var(--text-mid); font-family:"DM Sans",sans-serif; font-size:13px; cursor:pointer; }
+    .ing-del-btn { padding:11px 20px; background:none; border:1px solid #dc5050; border-radius:9px; color:#dc5050; font-family:"DM Sans",sans-serif; font-size:13px; cursor:pointer; }
+    .ing-msg { font-family:"DM Sans",sans-serif; font-size:12px; padding:6px 12px; border-radius:7px; display:none; }
+    .ing-msg.ok  { background:rgba(76,175,118,0.15); color:#4caf76; }
+    .ing-msg.err { background:rgba(220,80,80,0.15);  color:#dc5050; }
+
     /* ── ACCESS DENIED ── */
     .ap-denied { display: flex; align-items: center; justify-content: center; min-height: 100vh; text-align: center; }
     .ap-denied-box { max-width: 400px; padding: 40px; }
@@ -176,6 +207,11 @@
       <button class="ap-nav-item" id="nav-rejected" onclick="switchView('rejected')">
         ❌ Rejected
       </button>
+      <div class="ap-nav-label" style="margin-top:20px">Ingredients</div>
+      <button class="ap-nav-item" id="nav-ingredients" onclick="switchView('ingredients')">
+        🥕 All Ingredients <span class="ap-nav-badge" id="badge-ingredients" style="display:none">0</span>
+      </button>
+
       <div class="ap-nav-label" style="margin-top:20px">Site</div>
       <a href="recipes.html" class="ap-nav-item" style="text-decoration:none">📖 View Site</a>
       <a href="index.html"   class="ap-nav-item" style="text-decoration:none">🏠 Homepage</a>
@@ -238,6 +274,133 @@
       </table>
     </div>
   </main>
+</div>
+
+
+<!-- INGREDIENTS VIEW -->
+<div id="view-ingredients" style="display:none">
+  <div class="ap-page-title">Ingredients</div>
+  <div class="ap-page-sub">Browse, add and edit the ingredient database.</div>
+
+  <div class="ing-toolbar">
+    <input type="text" class="ap-search" id="ing-search" placeholder="Search by name or alias..." oninput="ingSearch()" style="max-width:260px">
+    <select class="ing-cat-filter" id="ing-cat" onchange="ingSearch()">
+      <option value="">All Categories</option>
+      <option>Baking</option><option>Grains, Pasta &amp; Noodles</option>
+      <option>Breads &amp; Flatbreads</option><option>Packaged &amp; Convenience</option>
+      <option>Meat</option><option>Poultry</option><option>Seafood</option>
+      <option>Dairy &amp; Eggs</option><option>Plant-Based</option>
+      <option>Vegetables</option><option>Fruits</option><option>Herbs</option>
+      <option>Spices</option><option>Oils &amp; Fats</option>
+      <option>Legumes &amp; Pulses</option><option>Nuts &amp; Seeds</option>
+      <option>Condiments &amp; Sauces</option><option>Vinegars</option>
+      <option>Sweeteners</option><option>Canned &amp; Preserved</option>
+      <option>Alcohol &amp; Cooking Wine</option><option>Stocks &amp; Broths</option>
+    </select>
+    <span class="ing-count" id="ing-count"></span>
+    <button class="ing-add-btn" onclick="openIngModal(null)">+ Add Ingredient</button>
+  </div>
+
+  <div class="ap-table-wrap">
+    <table class="ap-table" id="ing-table">
+      <thead>
+        <tr>
+          <th>ID</th><th>Name</th><th>Also Known As</th>
+          <th>Category</th><th>Sub Category</th>
+          <th>Allergen</th><th>Vegan</th><th>Veg</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="ing-tbody">
+        <tr><td colspan="9" class="ap-empty-row">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div style="display:flex;gap:10px;margin-top:16px;align-items:center;justify-content:center;" id="ing-pagination"></div>
+</div>
+
+<!-- INGREDIENT ADD/EDIT MODAL -->
+<div class="ing-modal-overlay" id="ing-modal">
+  <div class="ing-modal">
+    <div class="ing-modal-head">
+      <div class="ing-modal-title" id="ing-modal-title">Add Ingredient</div>
+      <button class="ing-modal-close" onclick="closeIngModal()">✕</button>
+    </div>
+    <div class="ing-modal-body">
+      <input type="hidden" id="ing-id">
+      <div class="ing-field full">
+        <label>Ingredient Name *</label>
+        <input id="ing-name" type="text" placeholder="e.g. Plain Flour">
+      </div>
+      <div class="ing-field">
+        <label>Also Known As</label>
+        <input id="ing-aka" type="text" placeholder="e.g. All-Purpose Flour">
+      </div>
+      <div class="ing-field">
+        <label>Category *</label>
+        <select id="ing-category">
+          <option value="">— Select —</option>
+          <option>Baking</option><option>Grains, Pasta &amp; Noodles</option>
+          <option>Breads &amp; Flatbreads</option><option>Packaged &amp; Convenience</option>
+          <option>Meat</option><option>Poultry</option><option>Seafood</option>
+          <option>Dairy &amp; Eggs</option><option>Plant-Based</option>
+          <option>Vegetables</option><option>Fruits</option><option>Herbs</option>
+          <option>Spices</option><option>Oils &amp; Fats</option>
+          <option>Legumes &amp; Pulses</option><option>Nuts &amp; Seeds</option>
+          <option>Condiments &amp; Sauces</option><option>Vinegars</option>
+          <option>Sweeteners</option><option>Canned &amp; Preserved</option>
+          <option>Alcohol &amp; Cooking Wine</option><option>Stocks &amp; Broths</option>
+        </select>
+      </div>
+      <div class="ing-field">
+        <label>Sub Category</label>
+        <input id="ing-subcat" type="text" placeholder="e.g. Wheat Flours">
+      </div>
+      <div class="ing-field">
+        <label>Standard Qty</label>
+        <input id="ing-qty" type="text" placeholder="e.g. 1/4 cup">
+      </div>
+      <div class="ing-field">
+        <label>Standard Weight (g or ml)</label>
+        <input id="ing-weight" type="number" placeholder="e.g. 30">
+      </div>
+      <div class="ing-field">
+        <label>Unit</label>
+        <input id="ing-unit" type="text" placeholder="e.g. cup">
+      </div>
+      <div class="ing-field">
+        <label>Liquid</label>
+        <select id="ing-liquid"><option>No</option><option>Yes</option></select>
+      </div>
+      <div class="ing-field">
+        <label>CJ Recommended Brand</label>
+        <input id="ing-brand" type="text" placeholder="e.g. Anchor">
+      </div>
+      <div class="ing-field">
+        <label>Allergen</label>
+        <input id="ing-allergen" type="text" placeholder="e.g. Gluten">
+      </div>
+      <div class="ing-field">
+        <label>Vegan</label>
+        <select id="ing-vegan"><option>Yes</option><option>No</option></select>
+      </div>
+      <div class="ing-field">
+        <label>Vegetarian</label>
+        <select id="ing-veg"><option>Yes</option><option>No</option></select>
+      </div>
+      <div class="ing-field full">
+        <label>Notes</label>
+        <textarea id="ing-notes" placeholder="Professional description of the ingredient..."></textarea>
+      </div>
+    </div>
+    <div class="ing-modal-foot">
+      <button class="ing-save-btn" onclick="saveIngredient()">Save Ingredient</button>
+      <button class="ing-cancel-btn" onclick="closeIngModal()">Cancel</button>
+      <button class="ing-del-btn" id="ing-del-btn" style="display:none" onclick="deleteIngredient()">Delete</button>
+      <span class="ing-msg" id="ing-msg"></span>
+    </div>
+  </div>
 </div>
 
 <!-- Review modal -->
@@ -384,6 +547,192 @@ async function init() {
 
 
 init();
+// ── INGREDIENT MANAGEMENT ────────────────────────────────────────
+const CATS = ["Baking","Grains, Pasta & Noodles","Breads & Flatbreads","Packaged & Convenience","Meat","Poultry","Seafood","Dairy & Eggs","Plant-Based","Vegetables","Fruits","Herbs","Spices","Oils & Fats","Legumes & Pulses","Nuts & Seeds","Condiments & Sauces","Vinegars","Sweeteners","Canned & Preserved","Alcohol & Cooking Wine","Stocks & Broths"];
+
+let ingPage = 1;
+const ING_PAGE_SIZE = 50;
+let ingSearchTimer = null;
+let allIngredients = [];
+
+function ingSearch() {
+  clearTimeout(ingSearchTimer);
+  ingSearchTimer = setTimeout(() => loadIngredients(1), 300);
+}
+
+async function loadIngredients(page) {
+  ingPage = page || 1;
+  const search = document.getElementById('ing-search')?.value.trim() || null;
+  const cat    = document.getElementById('ing-cat')?.value || null;
+  const tbody  = document.getElementById('ing-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="9" class="ap-empty-row">Loading...</td></tr>';
+
+  try {
+    const [rows, total] = await Promise.all([
+      rpc('admin_get_ingredients', {
+        p_search:   search || null,
+        p_category: cat    || null,
+        p_limit:    ING_PAGE_SIZE,
+        p_offset:   (ingPage - 1) * ING_PAGE_SIZE
+      }),
+      rpc('admin_count_ingredients', { p_search: search || null, p_category: cat || null })
+    ]);
+
+    const count = document.getElementById('ing-count');
+    if (count) count.textContent = total + ' ingredient' + (total === 1 ? '' : 's');
+
+    const badge = document.getElementById('badge-ingredients');
+    if (badge) { badge.textContent = total; badge.style.display = 'inline-block'; }
+
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="ap-empty-row">No ingredients found.</td></tr>';
+      renderIngPagination(0, total);
+      return;
+    }
+
+    tbody.innerHTML = rows.map(i => `
+      <tr onclick="openIngModal(${JSON.stringify(i).replace(/"/g,'&quot;')})">
+        <td style="font-size:11px;color:var(--text-mid)">${i.id}</td>
+        <td><div class="ap-recipe-name">${i.ingredient_name||''}</div></td>
+        <td><span class="ap-submitter">${i.also_known_as||''}</span></td>
+        <td><span class="ap-submitter">${i.category||''}</span></td>
+        <td><span class="ap-submitter">${i.sub_category||''}</span></td>
+        <td><span class="ap-submitter">${i.allergen||''}</span></td>
+        <td><span class="ap-status-pill ${i.vegan==='Yes'?'approved':'rejected'}">${i.vegan||''}</span></td>
+        <td><span class="ap-status-pill ${i.vegetarian==='Yes'?'approved':'rejected'}">${i.vegetarian||''}</span></td>
+        <td style="text-align:right"><button class="ap-filter-btn" style="font-size:11px" onclick="event.stopPropagation();openIngModal(${JSON.stringify(i).replace(/"/g,'&quot;')})">Edit</button></td>
+      </tr>`).join('');
+
+    renderIngPagination(ingPage, total);
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="9" class="ap-empty-row">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function renderIngPagination(page, total) {
+  const pages = Math.ceil(total / ING_PAGE_SIZE);
+  const el = document.getElementById('ing-pagination');
+  if (!el || pages <= 1) { if(el) el.innerHTML=''; return; }
+  let html = '';
+  for (let p = 1; p <= pages; p++) {
+    html += `<button onclick="loadIngredients(${p})"
+      style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:${p===page?'var(--accent)':'none'};color:${p===page?'#fff':'var(--text-mid)'};cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px">${p}</button>`;
+  }
+  el.innerHTML = html;
+}
+
+function openIngModal(ing) {
+  const modal = document.getElementById('ing-modal');
+  const title = document.getElementById('ing-modal-title');
+  const delBtn = document.getElementById('ing-del-btn');
+  const msg = document.getElementById('ing-msg');
+  if (msg) msg.style.display = 'none';
+
+  if (ing) {
+    title.textContent = 'Edit Ingredient';
+    document.getElementById('ing-id').value       = ing.id || '';
+    document.getElementById('ing-name').value     = ing.ingredient_name || '';
+    document.getElementById('ing-aka').value      = ing.also_known_as || '';
+    document.getElementById('ing-category').value = ing.category || '';
+    document.getElementById('ing-subcat').value   = ing.sub_category || '';
+    document.getElementById('ing-qty').value      = ing.standard_qty || '';
+    document.getElementById('ing-weight').value   = ing.standard_weight || '';
+    document.getElementById('ing-unit').value     = ing.unit || '';
+    document.getElementById('ing-liquid').value   = ing.liquid || 'No';
+    document.getElementById('ing-brand').value    = ing.cj_recommended_brand || '';
+    document.getElementById('ing-allergen').value = ing.allergen || '';
+    document.getElementById('ing-vegan').value    = ing.vegan || 'Yes';
+    document.getElementById('ing-veg').value      = ing.vegetarian || 'Yes';
+    document.getElementById('ing-notes').value    = ing.notes || '';
+    if (delBtn) delBtn.style.display = 'inline-block';
+  } else {
+    title.textContent = 'Add Ingredient';
+    ['ing-id','ing-name','ing-aka','ing-subcat','ing-qty','ing-weight','ing-unit','ing-brand','ing-allergen','ing-notes'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    document.getElementById('ing-category').value = '';
+    document.getElementById('ing-liquid').value   = 'No';
+    document.getElementById('ing-vegan').value    = 'Yes';
+    document.getElementById('ing-veg').value      = 'Yes';
+    if (delBtn) delBtn.style.display = 'none';
+  }
+  modal.classList.add('open');
+}
+
+function closeIngModal() {
+  document.getElementById('ing-modal').classList.remove('open');
+}
+
+async function saveIngredient() {
+  const msg     = document.getElementById('ing-msg');
+  const saveBtn = document.querySelector('.ing-save-btn');
+  const id      = document.getElementById('ing-id').value;
+  const name    = document.getElementById('ing-name').value.trim();
+  const cat     = document.getElementById('ing-category').value;
+
+  if (!name) { showIngMsg('Ingredient name is required.', false); return; }
+  if (!cat)  { showIngMsg('Category is required.', false); return; }
+
+  saveBtn.disabled = true; saveBtn.textContent = 'Saving...';
+
+  try {
+    await rpc('admin_upsert_ingredient', {
+      p_id:                  id ? parseInt(id) : null,
+      p_ingredient_name:     name,
+      p_also_known_as:       document.getElementById('ing-aka').value.trim(),
+      p_category:            cat,
+      p_sub_category:        document.getElementById('ing-subcat').value.trim(),
+      p_standard_qty:        document.getElementById('ing-qty').value.trim(),
+      p_standard_weight:     parseFloat(document.getElementById('ing-weight').value) || null,
+      p_unit:                document.getElementById('ing-unit').value.trim(),
+      p_liquid:              document.getElementById('ing-liquid').value,
+      p_cj_recommended_brand: document.getElementById('ing-brand').value.trim(),
+      p_allergen:            document.getElementById('ing-allergen').value.trim(),
+      p_vegan:               document.getElementById('ing-vegan').value,
+      p_vegetarian:          document.getElementById('ing-veg').value,
+      p_notes:               document.getElementById('ing-notes').value.trim()
+    });
+    showIngMsg(id ? '✓ Saved!' : '✓ Ingredient added!', true);
+    setTimeout(() => { closeIngModal(); loadIngredients(ingPage); }, 1000);
+  } catch(e) {
+    showIngMsg('Error: ' + e.message, false);
+  } finally {
+    saveBtn.disabled = false; saveBtn.textContent = 'Save Ingredient';
+  }
+}
+
+async function deleteIngredient() {
+  const id   = document.getElementById('ing-id').value;
+  const name = document.getElementById('ing-name').value;
+  if (!id) return;
+  if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+  try {
+    await rpc('admin_delete_ingredient', { p_id: parseInt(id) });
+    closeIngModal();
+    loadIngredients(ingPage);
+  } catch(e) {
+    showIngMsg('Error: ' + e.message, false);
+  }
+}
+
+function showIngMsg(text, ok) {
+  const el = document.getElementById('ing-msg');
+  if (!el) return;
+  el.textContent  = text;
+  el.className    = 'ing-msg ' + (ok ? 'ok' : 'err');
+  el.style.display = 'inline-block';
+}
+
+// Close ingredient modal on overlay click
+document.addEventListener('DOMContentLoaded', function() {
+  const overlay = document.getElementById('ing-modal');
+  if (overlay) overlay.addEventListener('click', function(e) {
+    if (e.target === this) closeIngModal();
+  });
+});
+
+
 </script>
 </body>
 </html>
