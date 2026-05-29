@@ -1,5 +1,32 @@
 // ── PAGE GUARD LOADER ────────────────────────────────────────────
 // Loads page-guard.js once on every page that includes nav-init.js
+
+// ── CANONICAL TAB NAVIGATION ────────────────────────────────────
+// Single source of truth for all navigation tabs.
+// Edit here to update every page simultaneously.
+var CJ_TABS = [
+  { href: 'index.html',         emoji: '🏠', label: 'Home' },
+  { href: 'recipes.html',       emoji: '📖', label: 'Recipes' },
+  { href: 'meal-planner.html',  emoji: '🗓', label: 'Meal Planner' },
+  { href: 'pantry.html',        emoji: '🫙', label: 'Pantry & Fridge' },
+  { href: 'grocery.html',       emoji: '🛒', label: 'Grocery List' },
+  { href: 'table-planner.html', emoji: '🪑', label: 'Table Planner' },
+  { href: 'print-studio.html',  emoji: '🖨', label: 'Print Studio' },
+  { href: 'diary.html',         emoji: '📓', label: 'Diary' },
+  { href: 'profile.html',       emoji: '👤', label: 'My Profile' },
+];
+
+function buildTabNav() {
+  var tabNavInner = document.querySelector('.tab-nav-inner');
+  if (!tabNavInner) return;
+  var page = window.location.pathname.split('/').pop() || 'index.html';
+  tabNavInner.innerHTML = CJ_TABS.map(function(t) {
+    var isActive = t.href === page;
+    return '<a class="tab' + (isActive ? ' active' : '') + '" href="' + t.href + '">'
+      + t.emoji + ' ' + t.label + '</a>';
+  }).join('');
+}
+
 (function() {
   if (window.__pgLoaded) return;
   window.__pgLoaded = true;
@@ -139,6 +166,7 @@
   handleOAuthCallback();
 
   function init() {
+    buildTabNav();   // Sync tab labels/emojis from canonical definition above
     var host = document.getElementById('nav-btns') || document.querySelector('[data-nav-host]');
     if (!host) return;
     injectStyles();
