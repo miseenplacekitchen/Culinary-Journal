@@ -1,3 +1,13 @@
+// ── PAGE GUARD LOADER ────────────────────────────────────────────
+// Loads page-guard.js once on every page that includes nav-init.js
+(function() {
+  if (window.__pgLoaded) return;
+  window.__pgLoaded = true;
+  var s = document.createElement('script');
+  s.src = (document.querySelector('base') ? '' : '') + 'page-guard.js';
+  document.head.appendChild(s);
+})();
+
 /* ═══════════════════════════════════════════════════════════════
    THE CULINARY JOURNAL — nav-init.js  (shared top-right nav)
 

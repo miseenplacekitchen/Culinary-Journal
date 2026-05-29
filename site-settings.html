@@ -176,6 +176,30 @@
     </div>
 
     <!-- Quick Links -->
+    <!-- ═══ PAGE VISIBILITY ════════════════════════════════════════ -->
+    <div class="bp-section">
+      <div class="bp-sec-title">Page Visibility</div>
+      <p style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:16px;line-height:1.6">
+        Control access to each page. Changes take effect within 5 minutes for all visitors.
+        <strong style="color:var(--text-high)">You as admin always retain access regardless of setting.</strong>
+      </p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px" id="pv-status-legend">
+        <div style="display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)"><span style="color:#4caf76">🟢</span> Live — accessible to everyone</div>
+        <div style="display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)"><span>🔵</span> Members only — must be logged in</div>
+        <div style="display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)"><span style="color:var(--accent)">🔴</span> Admin only — only you can see it</div>
+        <div style="display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)"><span>⚫</span> Offline — maintenance, nobody in</div>
+      </div>
+
+      <div id="pv-loading" style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid)">Loading page settings...</div>
+      <div id="pv-table" style="display:none"></div>
+
+      <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="bp-btn bp-btn-primary" onclick="savePageVisibility()">Save All Page Settings</button>
+        <span id="pv-msg" style="font-family:'DM Sans',sans-serif;font-size:12px;color:#4caf76;display:none">✓ Saved</span>
+      </div>
+    </div>
+
     <div class="bp-section">
       <div class="bp-sec-title">Quick Links</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -249,6 +273,11 @@ function saveSiteSettings() {
   showMsg('bp-settings-msg', '✓ Settings saved.', true);
 }
 
+async function initAdmin() {
+  loadSavedSettings();
+  await loadPageVisibility();
+}
+
 function loadSavedSettings() {
   const s = getSettings();
   if (s.default_theme) document.getElementById('bp-theme').value = s.default_theme;
@@ -272,7 +301,152 @@ async function init() {
   loadSavedSettings();
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', async function() {
+  var session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+  var profile  = JSON.parse(localStorage.getItem('tcj_profile')||'null');
+  var isAdminUser = profile && (profile.is_admin === true || profile.email === 'miseenplacekitchen.official@gmail.com');
+  if (!session || !isAdminUser) {
+    document.getElementById('bp-denied').style.display = 'block';
+    return;
+  }
+  document.getElementById('bp-main').style.display = 'block';
+  await initAdmin();
+});
+
+// ── PAGE VISIBILITY ──────────────────────────────────────────────
+const MANAGED_PAGES = [
+  {id:'recipes',         label:'Browse Recipes',       icon:'📖'},
+  {id:'recipe-page',     label:'Recipe Pages',          icon:'🍳'},
+  {id:'submit-recipe',   label:'Submit Recipe',         icon:'📝'},
+  {id:'search',          label:'Global Search',         icon:'🔍'},
+  {id:'my-dashboard',    label:'My Kitchen (Dashboard)',icon:'🏠'},
+  {id:'profile',         label:'User Profile',          icon:'👤'},
+  {id:'grocery',         label:'Grocery List',          icon:'🛒'},
+  {id:'meal-planner',    label:'Meal Planner',          icon:'🗓'},
+  {id:'pantry',          label:'Pantry & Fridge',       icon:'🫙'},
+  {id:'collections',     label:'Collections',           icon:'📁'},
+  {id:'family-profiles', label:'Family Profiles',       icon:'👨‍👩‍👧'},
+  {id:'table-planner',   label:'Table Planner',         icon:'🪑'},
+  {id:'print-studio',    label:'Print Studio',          icon:'🖨'},
+  {id:'chefs',           label:'Chef Directory',        icon:'👨‍🍳'},
+  {id:'baby',            label:'Baby & Toddler',        icon:'👶'},
+  {id:'preservation',    label:'Preservation Library',  icon:'🫙'},
+  {id:'conversions',     label:'Conversion Tools',      icon:'⚖️'},
+];
+
+var currentPageSettings = {};
+
+async function loadPageVisibility() {
+  try {
+    var res = await fetch(
+      'https://kzywmodvfbyexqgipcjt.supabase.co/rest/v1/rpc/get_page_settings',
+      {method:'POST', headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM','Content-Type':'application/json'}, body:'{}'}
+    );
+    var rows = res.ok ? await res.json() : [];
+    rows.forEach(function(r){ currentPageSettings[r.page_id] = {visibility:r.visibility, message:r.message||''}; });
+    renderPageTable();
+    document.getElementById('pv-loading').style.display = 'none';
+    document.getElementById('pv-table').style.display   = 'block';
+  } catch(e) {
+    document.getElementById('pv-loading').textContent = 'Error loading page settings: ' + e.message;
+  }
+}
+
+var STATUS_ICON = {'live':'🟢', 'members-only':'🔵', 'admin-only':'🔴', 'offline':'⚫'};
+var STATUS_LABEL = {'live':'Live', 'members-only':'Members Only', 'admin-only':'Admin Only', 'offline':'Offline'};
+
+function renderPageTable() {
+  var table = document.getElementById('pv-table');
+  if (!table) return;
+  table.innerHTML = '';
+  var tbl = document.createElement('table');
+  tbl.style.cssText = 'width:100%;border-collapse:collapse';
+  var thead = document.createElement('thead');
+  thead.innerHTML = '<tr>' +
+    '<th style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid);padding:8px 10px;border-bottom:1px solid var(--border);text-align:left">Page</th>' +
+    '<th style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid);padding:8px 10px;border-bottom:1px solid var(--border);text-align:left">Visibility</th>' +
+    '<th style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid);padding:8px 10px;border-bottom:1px solid var(--border);text-align:left">Custom Message (optional)</th>' +
+    '</tr>';
+  tbl.appendChild(thead);
+  var tbody = document.createElement('tbody');
+  MANAGED_PAGES.forEach(function(page) {
+    var s = currentPageSettings[page.id] || {visibility:'live',message:''};
+    var vis = s.visibility || 'live';
+    var tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+    // Name cell
+    var tdName = document.createElement('td');
+    tdName.style.cssText = 'padding:10px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high)';
+    tdName.textContent = page.icon + ' ' + page.label;
+    tr.appendChild(tdName);
+    // Visibility dropdown
+    var tdVis = document.createElement('td');
+    tdVis.style.padding = '10px';
+    var sel = document.createElement('select');
+    sel.id = 'pv-vis-' + page.id;
+    sel.style.cssText = 'font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text-high);outline:none;cursor:pointer';
+    [['live','🟢 Live'],['members-only','🔵 Members Only'],['admin-only','🔴 Admin Only'],['offline','⚫ Offline']].forEach(function(opt) {
+      var o = document.createElement('option');
+      o.value = opt[0]; o.textContent = opt[1];
+      if (vis === opt[0]) o.selected = true;
+      sel.appendChild(o);
+    });
+    tdVis.appendChild(sel);
+    tr.appendChild(tdVis);
+    // Message input
+    var tdMsg = document.createElement('td');
+    tdMsg.style.padding = '10px';
+    var inp = document.createElement('input');
+    inp.id = 'pv-msg-' + page.id;
+    inp.type = 'text';
+    inp.value = s.message || '';
+    inp.placeholder = 'e.g. Coming back soon!';
+    inp.style.cssText = 'width:100%;box-sizing:border-box;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text-high);outline:none';
+    tdMsg.appendChild(inp);
+    tr.appendChild(tdMsg);
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);
+  table.appendChild(tbl);
+}
+
+
+async function savePageVisibility() {
+  var session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+  if (!session) { alert('Not signed in.'); return; }
+  var headers = {
+    'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM',
+    'Content-Type':'application/json',
+    'Authorization':'Bearer '+session.access_token
+  };
+  var errors = 0;
+  for (var i=0; i<MANAGED_PAGES.length; i++) {
+    var page = MANAGED_PAGES[i];
+    var visEl = document.getElementById('pv-vis-' + page.id);
+    var msgEl = document.getElementById('pv-msg-' + page.id);
+    if (!visEl) continue;
+    try {
+      var res = await fetch('https://kzywmodvfbyexqgipcjt.supabase.co/rest/v1/rpc/set_page_visibility', {
+        method:'POST', headers:headers,
+        body:JSON.stringify({p_page_id:page.id, p_visibility:visEl.value, p_message:msgEl?msgEl.value.trim():''})
+      });
+      if (!res.ok) errors++;
+    } catch(_) { errors++; }
+  }
+  // Invalidate cache
+  try { sessionStorage.removeItem('tcj_page_vis'); } catch(_) {}
+  var msgEl = document.getElementById('pv-msg');
+  if (errors) {
+    msgEl.textContent = errors + ' error(s) saving. Try again.';
+    msgEl.style.color = '#dc5050';
+  } else {
+    msgEl.textContent = '✓ All page settings saved';
+    msgEl.style.color = '#4caf76';
+  }
+  msgEl.style.display = 'inline';
+  setTimeout(function(){ msgEl.style.display='none'; }, 3000);
+}
+
 </script>
 </body>
 </html>
