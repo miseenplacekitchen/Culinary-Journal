@@ -86,7 +86,8 @@
     <a class="tab" href="grocery.html">🛒 Grocery List</a>
     <a class="tab" href="table-planner.html">🪑 Table Planner</a>
     <a class="tab" href="print-studio.html">🖨 Print Studio</a>
-    <a class="tab" href="profile.html">👤 My Profile</a>
+    <a class="tab" href="diary.html">📓 Diary</a>
+  <a class="tab" href="profile.html">👤 My Profile</a>
   </div></div>
 
   <div class="recipes-top">
@@ -158,7 +159,10 @@
 
   <div class="cr-section">
     <div class="cr-header">
-      <div class="cr-title">Community Recipes</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div class="cr-title">Community Recipes</div>
+        <a href="recipe-page.html" style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--accent);text-decoration:none;border:1px solid rgba(196,151,59,.3);border-radius:20px;padding:4px 12px;transition:all .15s" onmouseover="this.style.background='rgba(196,151,59,.1)'" onmouseout="this.style.background='none'">👁 See a sample recipe →</a>
+      </div>
       <div class="cr-filters" id="cr-dietary-filters">
         <button class="cr-filter active" onclick="filterCommunity('',this)">All</button>
         <button class="cr-filter" onclick="filterCommunity('Vegan',this)">🌿 Vegan</button>
@@ -194,7 +198,7 @@
 //  SUPABASE CONFIG
 // ══════════════════════════════════════════════════════════
 const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPA_KEY = 'sb_publishable_rAjMRvy0qKszgP8fu3oRiA_5iWPVwob';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
 
 async function supaFetch(table, params) {
   const url = SUPA_URL + '/rest/v1/' + table + '?' + params + '&apikey=' + SUPA_KEY;
@@ -491,7 +495,96 @@ async function openDish(id, dishes) {
     console.error(e);
     g.innerHTML = '<div class="loading">Could not load recipes. Please refresh.</div>';
   }
+
+  // Load submitted community recipes for this dish/category below the style cards
+  loadDishRecipes(dish.name, curCatName);
 }
+
+async function loadDishRecipes(dishName, categoryName) {
+  var wrap = document.getElementById('styles-view');
+  var prev = document.getElementById('dish-community-section');
+  if (prev) prev.remove();
+
+  var section = document.createElement('div');
+  section.id = 'dish-community-section';
+  section.style.marginTop = '28px';
+  var hdr = document.createElement('div');
+  hdr.style.cssText = 'font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);margin-bottom:12px';
+  hdr.textContent = 'Community Recipes';
+  section.appendChild(hdr);
+  var cardsGrid = document.createElement('div');
+  cardsGrid.id = 'dish-recipe-cards';
+  cardsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px';
+  cardsGrid.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading...</div>';
+  section.appendChild(cardsGrid);
+  if (wrap) wrap.appendChild(section);
+
+  try {
+    var res = await fetch(
+      SUPA_URL + '/rest/v1/rpc/get_approved_recipes',
+      { method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+        body: JSON.stringify({p_category: categoryName, p_limit: 12}) }
+    );
+    var recipes = res.ok ? await res.json() : [];
+    var dishLower = dishName.toLowerCase();
+    var matching = recipes.filter(function(r){
+      var rname = (r.recipe_name||'').toLowerCase();
+      return rname.indexOf(dishLower) > -1 || dishLower.indexOf(rname.split(' ')[0]) > -1;
+    });
+    var toShow = matching.length ? matching : recipes;
+    var cardsEl = document.getElementById('dish-recipe-cards');
+    if (!cardsEl) return;
+    if (!toShow.length) {
+      cardsEl.innerHTML = '';
+      var empty = document.createElement('div');
+      empty.style.cssText = 'grid-column:1/-1;text-align:center;padding:24px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)';
+      empty.innerHTML = '🍳 No community recipes yet for this category.<br>';
+      var submitLink = document.createElement('a');
+      submitLink.href = 'submit-recipe.html';
+      submitLink.style.cssText = 'color:var(--accent);text-decoration:none;font-weight:600;margin-top:8px;display:inline-block';
+      submitLink.textContent = '+ Be the first to submit one →';
+      empty.appendChild(submitLink);
+      cardsEl.appendChild(empty);
+      return;
+    }
+    var CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
+    cardsEl.innerHTML = '';
+    toShow.forEach(function(r) {
+      var card = document.createElement('a');
+      card.href = 'recipe-page.html?id=' + r.id;
+      card.style.cssText = 'display:block;text-decoration:none;background:var(--text-ghost);border:1px solid var(--border);border-radius:11px;overflow:hidden;transition:border-color .15s';
+      card.addEventListener('mouseover', function(){ this.style.borderColor='var(--accent)'; });
+      card.addEventListener('mouseout',  function(){ this.style.borderColor='var(--border)'; });
+      if (r.image_url) {
+        var img = document.createElement('img');
+        img.src = r.image_url; img.loading = 'lazy';
+        img.style.cssText = 'width:100%;height:110px;object-fit:cover;display:block';
+        card.appendChild(img);
+      } else {
+        var emoji = CAT_EMOJI[r.category] || '🍳';
+        var ph = document.createElement('div');
+        ph.style.cssText = 'height:110px;display:flex;align-items:center;justify-content:center;font-size:32px;background:var(--text-ghost)';
+        ph.textContent = emoji;
+        card.appendChild(ph);
+      }
+      var info = document.createElement('div');
+      info.style.cssText = 'padding:10px 12px';
+      var name = document.createElement('div');
+      name.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:.95rem;font-weight:700;color:var(--text-high);margin-bottom:2px';
+      name.textContent = r.recipe_name || '';
+      var meta = document.createElement('div');
+      meta.style.cssText = 'font-family:DM Sans,sans-serif;font-size:10px;color:var(--text-mid)';
+      meta.textContent = (r.origin_country ? r.origin_country + ' · ' : '') + (r.spice_level||'');
+      info.appendChild(name); info.appendChild(meta);
+      card.appendChild(info);
+      cardsEl.appendChild(card);
+    });
+  } catch(e) {
+    var c = document.getElementById('dish-recipe-cards');
+    if (c) { c.innerHTML = ''; var err = document.createElement('div'); err.style.cssText='font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)'; err.textContent='Could not load community recipes.'; c.appendChild(err); }
+  }
+}
+
 
 function renderTags(tags) {
   if (!tags || !tags.length) return '';

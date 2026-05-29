@@ -1905,6 +1905,115 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 
 
+
+// ── EMAIL NOTIFICATION ────────────────────────────────────────────
+// Called after approve/reject. Gets user email, shows a modal
+// with a ready-to-send email that Betty can send from her email client.
+function showEmailNotification(recipe, status, notes) {
+  var subject = status === 'approved'
+    ? 'Your recipe "' + (recipe.recipe_name||'') + '" is now live! 🎉'
+    : 'Update needed for "' + (recipe.recipe_name||'') + '"';
+  var body = status === 'approved'
+    ? 'Hi there,\n\nWonderful news — your recipe "' + (recipe.recipe_name||'') + '" has been reviewed and approved. It is now live on The Culinary Journal for everyone to discover and enjoy!\n\nView your recipe: https://www.theculinaryjournal.site/recipe-page.html?id=' + (recipe.id||'') + '\n\nThank you for contributing to our community.\n\nWarm regards,\nBetty\nThe Culinary Journal'
+    : 'Hi there,\n\nThank you for submitting "' + (recipe.recipe_name||'') + '" to The Culinary Journal.\n\nAfter review, we have a few suggestions before it can go live:\n\n' + (notes || 'Please check the recipe details and resubmit.') + '\n\nYou can edit and resubmit your recipe here: https://www.theculinaryjournal.site/my-dashboard.html\n\nWe look forward to seeing your updated recipe!\n\nWarm regards,\nBetty\nThe Culinary Journal';
+
+  // Get the submitter email
+  if (recipe.user_id) {
+    rpc('admin_get_submitter', { p_user_id: recipe.user_id }).then(function(email) {
+      if (email && typeof email === 'string' && email.includes('@')) {
+        showEmailModal(email, subject, body, recipe.recipe_name, status);
+      } else {
+        showEmailModal('', subject, body, recipe.recipe_name, status);
+      }
+    }).catch(function() {
+      showEmailModal('', subject, body, recipe.recipe_name, status);
+    });
+  }
+}
+
+function showEmailModal(toEmail, subject, body, recipeName, status) {
+  var icon   = status === 'approved' ? '✅' : '📝';
+  var modal = document.createElement('div');
+  modal.id = 'email-notif-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)';
+
+  var box = document.createElement('div');
+  box.style.cssText = 'background:var(--bg,#0f1011);border:1px solid var(--border,rgba(255,255,255,.1));border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto';
+
+  // Header
+  var head = document.createElement('div');
+  head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border,rgba(255,255,255,.1))';
+  var htitle = document.createElement('div');
+  htitle.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:1.1rem;font-weight:700;color:var(--text-high,#e8e5e0)';
+  htitle.textContent = icon + ' Notify User';
+  var hclose = document.createElement('button');
+  hclose.style.cssText = 'background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);width:30px;height:30px;cursor:pointer;font-size:14px';
+  hclose.textContent = '✕';
+  hclose.onclick = function(){ modal.remove(); };
+  head.appendChild(htitle); head.appendChild(hclose);
+
+  // Body
+  var bd = document.createElement('div');
+  bd.style.cssText = 'padding:20px 22px;display:flex;flex-direction:column;gap:12px';
+
+  // Email status
+  var emailInfo = document.createElement('div');
+  if (toEmail) {
+    emailInfo.style.cssText = 'background:rgba(76,175,118,.1);border:1px solid rgba(76,175,118,.3);border-radius:9px;padding:10px 14px;font-family:DM Sans,sans-serif;font-size:12px;color:#4caf76';
+    emailInfo.textContent = '📧 Submitter: ' + toEmail;
+  } else {
+    emailInfo.style.cssText = 'background:rgba(220,80,80,.1);border:1px solid rgba(220,80,80,.3);border-radius:9px;padding:10px 14px;font-family:DM Sans,sans-serif;font-size:12px;color:#dc5050';
+    emailInfo.textContent = '⚠ Could not retrieve submitter email — copy the template below.';
+  }
+
+  // Subject row
+  var subjWrap = document.createElement('div');
+  var subjLbl  = document.createElement('div');
+  subjLbl.style.cssText = 'font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid);margin-bottom:5px';
+  subjLbl.textContent = 'Subject';
+  var subjVal = document.createElement('div');
+  subjVal.style.cssText = 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high);background:var(--text-ghost,rgba(255,255,255,.04));border:1px solid var(--border);border-radius:8px;padding:9px 12px';
+  subjVal.textContent = subject;
+  subjWrap.appendChild(subjLbl); subjWrap.appendChild(subjVal);
+
+  // Body textarea
+  var bodyWrap = document.createElement('div');
+  var bodyLbl  = document.createElement('div');
+  bodyLbl.style.cssText = subjLbl.style.cssText;
+  bodyLbl.textContent = 'Email Body';
+  var bodyTa = document.createElement('textarea');
+  bodyTa.id = 'email-body-ta';
+  bodyTa.readOnly = true;
+  bodyTa.value = body;
+  bodyTa.style.cssText = 'width:100%;box-sizing:border-box;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high);background:var(--text-ghost);border:1px solid var(--border);border-radius:8px;padding:9px 12px;min-height:180px;resize:vertical;line-height:1.6;outline:none';
+  bodyWrap.appendChild(bodyLbl); bodyWrap.appendChild(bodyTa);
+
+  // Buttons
+  var btns = document.createElement('div');
+  btns.style.cssText = 'display:flex;gap:10px';
+  if (toEmail) {
+    var sendBtn = document.createElement('a');
+    sendBtn.href = 'mailto:' + toEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+    sendBtn.style.cssText = 'flex:1;display:block;padding:11px;background:var(--accent,#c4973b);color:#fff;text-decoration:none;border-radius:9px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;text-align:center';
+    sendBtn.textContent = '📧 Open in Email Client';
+    btns.appendChild(sendBtn);
+  }
+  var copyBtn = document.createElement('button');
+  copyBtn.style.cssText = 'flex:1;padding:11px;border:1px solid var(--border);border-radius:9px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;color:var(--text-mid);background:none;cursor:pointer';
+  copyBtn.textContent = 'Copy Template';
+  copyBtn.onclick = function(){
+    var ta = document.getElementById('email-body-ta');
+    if (ta) { ta.select(); document.execCommand('copy'); copyBtn.textContent = '✓ Copied!'; }
+  };
+  btns.appendChild(copyBtn);
+
+  bd.appendChild(emailInfo); bd.appendChild(subjWrap); bd.appendChild(bodyWrap); bd.appendChild(btns);
+  box.appendChild(head); box.appendChild(bd);
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+  modal.addEventListener('click', function(e){ if(e.target===this) this.remove(); });
+}
+
 </script>
 </body>
 </html>
