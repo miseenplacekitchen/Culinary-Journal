@@ -58,6 +58,68 @@
     .ps-empty-icon { font-size:48px; margin-bottom:12px; }
     .ps-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--text-high); margin-bottom:8px; }
 
+
+    /* ── LAYOUT STYLES ───────────── */
+
+    /* Classic Index Card */
+    .ps-card.layout-classic-card { font-family:Georgia,serif; background:#fffef9; }
+    .ps-card.layout-classic-card .ps-card-title { font-family:Georgia,serif; }
+    .ps-card.layout-classic-card .ps-watermark { font-family:Georgia,serif; }
+
+    /* Classic Cookbook */
+    .ps-card.layout-cookbook { background:#faf7f0; border:none; box-shadow:none; outline:2px solid #c4973b; outline-offset:-4px; }
+    .ps-card.layout-cookbook .ps-card-title { font-family:Georgia,serif; font-size:1.6rem; border-bottom:1px solid #c4973b; padding-bottom:6px; margin-bottom:10px; }
+    .ps-card.layout-cookbook .ps-watermark { font-family:Georgia,serif; color:rgba(196,151,59,0.5); }
+    .ps-card.layout-cookbook .ps-section-head { color:#c4973b; border-bottom:0.5px solid #e8d5a0; padding-bottom:2px; }
+    .ps-card.layout-cookbook .ps-ing-qty { color:#8b6914; }
+
+    /* Rustic Newspaper */
+    .ps-card.layout-rustic { background:#f5f0e8; font-family:'Times New Roman',serif; border:2px solid #5c4a2a; border-radius:0; }
+    .ps-card.layout-rustic .ps-card-title { font-family:'Times New Roman',serif; font-size:1.5rem; text-transform:uppercase; letter-spacing:0.05em; text-align:center; border-bottom:3px double #5c4a2a; padding-bottom:8px; margin-bottom:10px; }
+    .ps-card.layout-rustic .ps-card-subtitle { font-family:'Times New Roman',serif; text-align:center; }
+    .ps-card.layout-rustic .ps-watermark { font-family:'Times New Roman',serif; color:rgba(92,74,42,0.4); text-transform:uppercase; letter-spacing:0.1em; }
+    .ps-card.layout-rustic .ps-section-head { font-family:'Times New Roman',serif; text-transform:uppercase; letter-spacing:0.12em; border-bottom:1px solid #5c4a2a; }
+    .ps-card.layout-rustic .ps-ing-qty { color:#5c4a2a; }
+    .ps-card.layout-rustic .ps-step-num { color:#5c4a2a; }
+    .ps-card.layout-rustic .ps-card-meta { font-family:'Times New Roman',serif; border-bottom:1px solid #5c4a2a; }
+
+    /* Modern Minimal */
+    .ps-card.layout-minimal { background:#ffffff; border:none; box-shadow:0 1px 3px rgba(0,0,0,0.06); border-radius:0; font-family:'Helvetica Neue',Arial,sans-serif; }
+    .ps-card.layout-minimal .ps-card-title { font-family:'Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:1.1rem; letter-spacing:-0.02em; color:#111; text-transform:none; }
+    .ps-card.layout-minimal .ps-card-subtitle { font-family:'Helvetica Neue',Arial,sans-serif; font-style:normal; color:#888; font-size:0.8rem; }
+    .ps-card.layout-minimal .ps-watermark { font-family:'Helvetica Neue',Arial,sans-serif; font-size:8px; letter-spacing:0.2em; text-transform:uppercase; color:rgba(0,0,0,0.15); }
+    .ps-card.layout-minimal .ps-section-head { color:#111; font-size:8px; letter-spacing:0.2em; }
+    .ps-card.layout-minimal .ps-ing-qty { color:#555; font-weight:700; }
+    .ps-card.layout-minimal .ps-ing-item { font-size:10px; color:#333; }
+    .ps-card.layout-minimal .ps-step { font-size:10px; color:#333; }
+    .ps-card.layout-minimal .ps-card-meta { color:#888; border-bottom:2px solid #111; }
+
+    /* Botanical */
+    .ps-card.layout-botanical { background:#f4f8f1; border:1px solid #7a9e6c; }
+    .ps-card.layout-botanical .ps-card-title { font-family:'Palatino Linotype',Georgia,serif; color:#2d5016; }
+    .ps-card.layout-botanical .ps-card-subtitle { color:#5a7a40; }
+    .ps-card.layout-botanical .ps-watermark { font-family:'Palatino Linotype',Georgia,serif; color:rgba(122,158,108,0.4); }
+    .ps-card.layout-botanical .ps-section-head { color:#5a7a40; border-bottom:0.5px solid #7a9e6c; padding-bottom:2px; }
+    .ps-card.layout-botanical .ps-ing-qty { color:#5a7a40; font-weight:600; }
+    .ps-card.layout-botanical .ps-step-num { color:#5a7a40; }
+    .ps-card.layout-botanical .ps-card-meta { border-bottom:1px solid #7a9e6c; color:#5a7a40; }
+    .ps-card.layout-botanical::before { content:'❧'; position:absolute; top:6px; right:10px; font-size:14px; color:rgba(122,158,108,0.3); }
+
+    /* Warm Candlelit */
+    .ps-card.layout-candlelit { background:linear-gradient(135deg,#2c1a0e 0%,#1a0f07 100%); color:#e8d5b0; border:1px solid #8b6914; }
+    .ps-card.layout-candlelit .ps-card-title { color:#e8d5b0; font-family:'Palatino Linotype',Georgia,serif; }
+    .ps-card.layout-candlelit .ps-card-subtitle { color:#c4973b; }
+    .ps-card.layout-candlelit .ps-watermark { color:rgba(196,151,59,0.35); }
+    .ps-card.layout-candlelit .ps-section-head { color:#c4973b; border-bottom:0.5px solid rgba(196,151,59,0.3); padding-bottom:2px; }
+    .ps-card.layout-candlelit .ps-ing-qty { color:#c4973b; font-weight:600; }
+    .ps-card.layout-candlelit .ps-ing-item { color:#e8d5b0; }
+    .ps-card.layout-candlelit .ps-step { color:#e8d5b0; }
+    .ps-card.layout-candlelit .ps-step-num { color:#c4973b; }
+    .ps-card.layout-candlelit .ps-card-meta { color:#a08060; border-bottom:1px solid rgba(196,151,59,0.3); }
+    .ps-card.layout-candlelit .ps-card-num { color:rgba(196,151,59,0.5); }
+    @media print {
+      .ps-card.layout-candlelit { background:#2c1a0e!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    }
     /* Print styles */
     @media print {
       nav, .ps-sidebar, .ps-preview-header, body > *:not(.page-bg), .page-bg > *:not(.ps-wrap) { display:none!important; }
@@ -84,6 +146,18 @@
         <button class="ps-opt-btn" data-size="3x5" onclick="setSize('3x5',this)">3×5 inch — Compact</button>
         <button class="ps-opt-btn" data-size="a5" onclick="setSize('a5',this)">A5 — Half Page</button>
         <button class="ps-opt-btn" data-size="a4" onclick="setSize('a4',this)">A4 — Full Page</button>
+      </div>
+    </div>
+
+    <div class="ps-section">
+      <div class="ps-section-title">Layout Style</div>
+      <div class="ps-btn-group">
+        <button class="ps-opt-btn active" data-layout="classic-card" onclick="setLayout('classic-card',this)">Classic Index Card</button>
+        <button class="ps-opt-btn" data-layout="cookbook" onclick="setLayout('cookbook',this)">Classic Cookbook</button>
+        <button class="ps-opt-btn" data-layout="rustic" onclick="setLayout('rustic',this)">Rustic Newspaper</button>
+        <button class="ps-opt-btn" data-layout="minimal" onclick="setLayout('minimal',this)">Modern Minimal</button>
+        <button class="ps-opt-btn" data-layout="botanical" onclick="setLayout('botanical',this)">Botanical</button>
+        <button class="ps-opt-btn" data-layout="candlelit" onclick="setLayout('candlelit',this)">Warm Candlelit</button>
       </div>
     </div>
 
@@ -134,6 +208,15 @@ function fmtQty(v){ if(!v)return''; let s=String(v); Object.keys(FRACTIONS).forE
 
 let currentSize = '4x6';
 let currentRecipe = null;
+
+let currentLayout = 'classic-card';
+
+function setLayout(layout, btn) {
+  currentLayout = layout;
+  document.querySelectorAll('.ps-opt-btn[data-layout]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildCards();
+}
 
 function setSize(size, btn) {
   currentSize = size;
@@ -220,7 +303,7 @@ function buildCards() {
 
   document.getElementById('ps-card-count').textContent = cards.length + ' card' + (cards.length>1?'s':'');
   container.innerHTML = cards.map((content, i) =>
-    `<div class="ps-card size-${currentSize}">
+    `<div class="ps-card size-${currentSize} layout-${currentLayout}">
       ${content}
       <div class="ps-card-num">Card ${i+1} of ${cards.length}</div>
     </div>`

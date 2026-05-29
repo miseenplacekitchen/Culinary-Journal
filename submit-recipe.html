@@ -2,12 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="manifest" href="site.webmanifest">
-  <meta name="theme-color" content="#DEA82B">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="The Culinary Journal">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Submit a Recipe — The Culinary Journal</title>
   <link rel="stylesheet" href="style.css">
@@ -823,14 +817,32 @@
     <!-- 1. PASTE & PARSE -->
     <div class="sr-section" id="section-paste">
       <div class="sr-section-title">Paste Recipe Text <span>Optional</span></div>
+
       <div class="sr-field">
-        <label class="sr-label">Paste from Instagram caption or any source</label>
-        <textarea class="sr-input sr-paste-textarea" id="paste-input" maxlength="20000" placeholder="Paste the recipe text here and we will try to parse it automatically into the fields below..."></textarea>
+        <label class="sr-label">Recipe URL <span style="font-weight:400;text-transform:none;color:var(--text-muted)">(optional — paste a website link to auto-fill the source)</span></label>
+        <input class="sr-input" type="url" id="source-url-input" placeholder="https://www.example.com/recipe/..." oninput="detectUrlPaste(this.value)" style="font-size:13px">
+        <div id="url-detect-msg" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-muted);margin-top:4px;display:none"></div>
       </div>
-      <button class="sr-parse-btn" onclick="parseRecipe()">
-        ✦ Parse Recipe
-      </button>
+
+      <div class="sr-field">
+        <label class="sr-label">Paste recipe text here</label>
+        <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:6px">Works with Instagram captions, website text, cookbook transcriptions, voice-to-text, or any format. The smarter the paste, the less you need to fix.</div>
+        <textarea class="sr-input sr-paste-textarea" id="paste-input" maxlength="20000" placeholder="Paste the full recipe here — ingredients, steps, everything. The parser will separate them automatically..."></textarea>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="sr-parse-btn" onclick="parseRecipe()">
+          ✦ Parse Recipe
+        </button>
+        <button type="button" onclick="clearPaste()" style="font-family:'DM Sans',sans-serif;font-size:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;text-decoration:underline">Clear</button>
+      </div>
       <div class="sr-parse-result" id="parse-result"></div>
+      <div id="parse-tips" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-muted);margin-top:12px;line-height:1.7;display:none">
+        <strong style="color:var(--text-high)">Tips for better results:</strong><br>
+        • Include "Ingredients" and "Method" or "Instructions" headings<br>
+        • Each ingredient on its own line works best<br>
+        • Numbers at the start of steps are auto-detected<br>
+        • Section headers like "For the sauce:" are recognised
+      </div>
     </div>
 
     <!-- 2. RECIPE DETAILS -->
@@ -2129,6 +2141,54 @@ function renumberSteps(container) {
 }
 
 // ── PARSE RECIPE ──────────────────────────────────────
+
+// ── IMPROVED PASTE AREA HELPERS ───────────────────────────────────
+function clearPaste() {
+  document.getElementById('paste-input').value = '';
+  document.getElementById('parse-result').style.display = 'none';
+  document.getElementById('parse-tips').style.display = 'none';
+  document.getElementById('source-url-input').value = '';
+  document.getElementById('url-detect-msg').style.display = 'none';
+}
+
+function detectUrlPaste(url) {
+  const msgEl = document.getElementById('url-detect-msg');
+  if (!url || !url.startsWith('http')) { msgEl.style.display='none'; return; }
+  // Auto-fill credit URL fields
+  const creditUrl = document.getElementById('credit-url');
+  if (creditUrl && !creditUrl.value) creditUrl.value = url;
+  // Detect source type
+  const srcOriginal = document.getElementById('source-original');
+  const srcSomewhere = document.getElementById('source-somewhere');
+  if (srcSomewhere) srcSomewhere.checked = true;
+  // Detect platform and show message
+  let platform = 'website';
+  if (url.includes('instagram.com'))  platform = 'Instagram';
+  if (url.includes('facebook.com'))   platform = 'Facebook';
+  if (url.includes('tiktok.com'))     platform = 'TikTok';
+  if (url.includes('youtube.com'))    platform = 'YouTube';
+  if (url.includes('pinterest.com'))  platform = 'Pinterest';
+  msgEl.textContent = '✓ ' + platform + ' link detected — source will be credited. Paste the recipe text below.';
+  msgEl.style.display = 'block';
+  msgEl.style.color = 'var(--accent)';
+}
+
+// Show parse tips when user starts typing in paste area
+document.addEventListener('DOMContentLoaded', function() {
+  const ta = document.getElementById('paste-input');
+  if (ta) {
+    ta.addEventListener('input', function() {
+      document.getElementById('parse-tips').style.display = this.value.length > 50 ? 'block' : 'none';
+    });
+    // Better paste detection — show tips immediately on paste
+    ta.addEventListener('paste', function() {
+      setTimeout(function() {
+        document.getElementById('parse-tips').style.display = 'block';
+      }, 50);
+    });
+  }
+});
+
 function parseRecipe() {
   const text = document.getElementById('paste-input').value.trim();
   if (!text) return;

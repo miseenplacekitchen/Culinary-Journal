@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .sr-wrap  { max-width:860px; margin:0 auto; padding:32px 20px 80px; }
+
+    /* Search bar */
+    .sr-bar-wrap { position:relative; margin-bottom:12px; }
+    .sr-bar { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:16px; padding:16px 56px 16px 20px; border:2px solid var(--border); border-radius:14px; background:var(--text-ghost); color:var(--text-high); outline:none; transition:border-color 0.15s; }
+    .sr-bar:focus { border-color:var(--accent); }
+    .sr-bar::placeholder { color:var(--text-mid); }
+    .sr-icon { position:absolute; right:18px; top:50%; transform:translateY(-50%); font-size:20px; color:var(--text-mid); pointer-events:none; }
+    .sr-clear { position:absolute; right:18px; top:50%; transform:translateY(-50%); background:none; border:none; font-size:18px; color:var(--text-mid); cursor:pointer; display:none; }
+    .sr-clear:hover { color:var(--text-high); }
+
+    /* Filters */
+    .sr-filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px; align-items:center; }
+    .sr-filter { padding:6px 14px; border-radius:20px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); cursor:pointer; white-space:nowrap; }
+    .sr-filter:hover { border-color:var(--accent); color:var(--accent); }
+    .sr-filter.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:500; }
+
+    /* Section labels */
+    .sr-section-label { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-mid); margin:28px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+
+    /* Recipe results */
+    .sr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
+    .sr-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; overflow:hidden; text-decoration:none; display:block; transition:transform 0.15s,border-color 0.15s; }
+    .sr-card:hover { transform:translateY(-2px); border-color:var(--accent-border); }
+    .sr-card-img { height:120px; display:flex; align-items:center; justify-content:center; font-size:36px; border-bottom:1px solid var(--border); overflow:hidden; background:var(--text-ghost); }
+    .sr-card-img img { width:100%; height:100%; object-fit:cover; }
+    .sr-card-body { padding:12px 14px; }
+    .sr-card-name { font-family:'Cormorant Garamond',serif; font-size:1rem; font-weight:600; color:var(--text-high); margin-bottom:4px; }
+    .sr-card-meta { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); display:flex; gap:6px; flex-wrap:wrap; }
+    .sr-card-tag  { padding:2px 7px; background:rgb(from var(--accent) r g b / 0.1); border-radius:4px; color:var(--accent); font-size:10px; }
+
+    /* Ingredient results */
+    .sr-ing-list { display:flex; flex-direction:column; gap:8px; }
+    .sr-ing-item { display:flex; align-items:center; gap:12px; padding:10px 14px; background:var(--text-ghost); border:1px solid var(--border); border-radius:10px; text-decoration:none; }
+    .sr-ing-item:hover { border-color:var(--accent-border); }
+    .sr-ing-name { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-high); flex:1; }
+    .sr-ing-cat  { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+    .sr-ing-pill { font-family:'DM Sans',sans-serif; font-size:10px; padding:2px 8px; border-radius:4px; }
+    .sr-ing-pill.vegan { background:rgba(76,175,118,0.12); color:#4caf76; }
+
+    /* Empty/initial states */
+    .sr-empty  { text-align:center; padding:60px 20px; }
+    .sr-start  { text-align:center; padding:40px 20px; }
+    .sr-empty-icon { font-size:40px; margin-bottom:10px; }
+    .sr-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--text-high); margin-bottom:6px; }
+    .sr-empty-sub   { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
+    .sr-count { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); }
+  </style>
+</head>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+
+<div class="sr-wrap">
+  <div style="margin-bottom:24px">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:700;color:var(--text-high);margin-bottom:16px">Search The Culinary Journal</div>
+    <div class="sr-bar-wrap">
+      <input class="sr-bar" type="text" id="sr-input" placeholder="Search recipes, ingredients, cuisines..." autocomplete="off" oninput="handleSearch(this.value)">
+      <span class="sr-icon" id="sr-icon">🔍</span>
+      <button class="sr-clear" id="sr-clear" onclick="clearSearch()">✕</button>
+    </div>
+    <div class="sr-filters" id="sr-filters" style="display:none">
+      <span class="sr-count" id="sr-count"></span>
+      <button class="sr-filter active" onclick="setTab('all',this)">All</button>
+      <button class="sr-filter" onclick="setTab('recipes',this)">Recipes</button>
+      <button class="sr-filter" onclick="setTab('ingredients',this)">Ingredients</button>
+      <button class="sr-filter" onclick="setTab('vegan',this)">🌿 Vegan</button>
+      <button class="sr-filter" onclick="setTab('gluten-free',this)">🌾 Gluten Free</button>
+    </div>
+  </div>
+
+  <div id="sr-start" class="sr-start">
+    <div class="sr-empty-icon">🔍</div>
+    <div class="sr-empty-title">What are you looking for?</div>
+    <div class="sr-empty-sub">Search recipes by name, category, country, dietary needs,<br>or find any ingredient in the database.</div>
+  </div>
+
+  <div id="sr-results" style="display:none"></div>
+</div>
+
+<script src="nav-init.js"></script>
+<script>
+const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+const CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
+
+let searchTimer = null;
+let lastQuery = '';
+let allResults = {recipes:[], ingredients:[]};
+let activeTab = 'all';
+
+function handleSearch(val) {
+  const q = val.trim();
+  document.getElementById('sr-clear').style.display = q ? 'block' : 'none';
+  document.getElementById('sr-icon').style.display  = q ? 'none'  : 'block';
+  if (!q) { clearSearch(); return; }
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(function() { doSearch(q); }, 280);
+}
+
+function clearSearch() {
+  document.getElementById('sr-input').value = '';
+  document.getElementById('sr-clear').style.display = 'none';
+  document.getElementById('sr-icon').style.display  = 'block';
+  document.getElementById('sr-start').style.display = 'block';
+  document.getElementById('sr-results').style.display = 'none';
+  document.getElementById('sr-filters').style.display = 'none';
+  allResults = {recipes:[], ingredients:[]};
+}
+
+function setTab(tab, btn) {
+  activeTab = tab;
+  document.querySelectorAll('.sr-filter').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  renderResults();
+}
+
+async function doSearch(q) {
+  if (q === lastQuery) return;
+  lastQuery = q;
+  document.getElementById('sr-start').style.display = 'none';
+  document.getElementById('sr-results').style.display = 'block';
+  document.getElementById('sr-filters').style.display = 'flex';
+  document.getElementById('sr-results').innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:20px 0">Searching...</div>';
+
+  const [recipes, ingredients] = await Promise.all([
+    searchRecipes(q),
+    searchIngredients(q)
+  ]);
+
+  allResults = {recipes: recipes||[], ingredients: ingredients||[]};
+  const total = allResults.recipes.length + allResults.ingredients.length;
+  document.getElementById('sr-count').textContent = total + ' result' + (total===1?'':'s') + ' for "' + q + '"';
+  renderResults();
+}
+
+async function searchRecipes(q) {
+  try {
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_approved_recipes', {
+      method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({p_search:q, p_limit:20})
+    });
+    return res.ok ? await res.json() : [];
+  } catch(_) { return []; }
+}
+
+async function searchIngredients(q) {
+  try {
+    const enc = encodeURIComponent(q);
+    const res = await fetch(
+      SUPA_URL + '/rest/v1/ingredients?or=(Ingredient Name.ilike.*' + enc + '*,Also Known As.ilike.*' + enc + '*)&select=ID,Ingredient Name,Also Known As,Category,Allergen,Vegan (Yes/No)&limit=12',
+      {headers:{'apikey':SUPA_KEY}}
+    );
+    return res.ok ? await res.json() : [];
+  } catch(_) { return []; }
+}
+
+function renderResults() {
+  const el = document.getElementById('sr-results');
+  let recipes = allResults.recipes;
+  let ingredients = allResults.ingredients;
+
+  if (activeTab === 'vegan')       recipes = recipes.filter(function(r){return (r.dietary_tags||[]).includes('Vegan');});
+  if (activeTab === 'gluten-free') recipes = recipes.filter(function(r){return (r.dietary_tags||[]).includes('Gluten Free');});
+  if (activeTab === 'recipes')     ingredients = [];
+  if (activeTab === 'ingredients') recipes = [];
+
+  if (!recipes.length && !ingredients.length) {
+    el.innerHTML = '<div class="sr-empty"><div class="sr-empty-icon">🤷</div><div class="sr-empty-title">No results found</div><div class="sr-empty-sub">Try different keywords, or <a href="submit-recipe.html" style="color:var(--accent)">submit this recipe</a> to start the collection.</div></div>';
+    return;
+  }
+
+  let html = '';
+
+  if (recipes.length) {
+    html += '<div class="sr-section-label">Recipes (' + recipes.length + ')</div><div class="sr-grid">';
+    recipes.forEach(function(r) {
+      const emoji = CAT_EMOJI[r.category] || '🍳';
+      const tags  = (r.dietary_tags||[]).slice(0,2).map(function(t){return '<span class="sr-card-tag">'+t+'</span>';}).join('');
+      html += '<a class="sr-card" href="recipe-page.html?id=' + r.id + '">' +
+        '<div class="sr-card-img">' + (r.image_url?'<img src="'+r.image_url+'" loading="lazy">':emoji) + '</div>' +
+        '<div class="sr-card-body"><div class="sr-card-name">' + (r.recipe_name||'') + '</div>' +
+        '<div class="sr-card-meta">' + (r.category?'<span>'+r.category+'</span>':'') + (r.origin_country?'<span>'+r.origin_country+'</span>':'') + tags + '</div></div></a>';
+    });
+    html += '</div>';
+  }
+
+  if (ingredients.length) {
+    html += '<div class="sr-section-label">Ingredients (' + ingredients.length + ')</div><div class="sr-ing-list">';
+    ingredients.forEach(function(i) {
+      const isVegan = i['Vegan (Yes/No)'] === 'Yes';
+      html += '<div class="sr-ing-item">' +
+        '<div style="flex:1"><div class="sr-ing-name">' + (i['Ingredient Name']||'') + '</div>' +
+        (i['Also Known As']?'<div class="sr-ing-cat">Also known as: '+i['Also Known As']+'</div>':'') +
+        '<div class="sr-ing-cat">' + (i['Category']||'') + (i['Allergen']?' · Contains: '+i['Allergen']:'') + '</div></div>' +
+        (isVegan?'<span class="sr-ing-pill vegan">Vegan</span>':'') + '</div>';
+    });
+    html += '</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+// Check for URL params (e.g. search.html?q=chicken)
+document.addEventListener('DOMContentLoaded', function() {
+  const params = new URLSearchParams(window.location.search);
+  const q = params.get('q');
+  if (q) {
+    document.getElementById('sr-input').value = q;
+    handleSearch(q);
+  }
+});
+</script>
+</body>
+</html>

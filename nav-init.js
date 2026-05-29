@@ -129,9 +129,23 @@
   handleOAuthCallback();
 
   function init() {
-    var host = document.getElementById('nav-btns');
+    var host = document.getElementById('nav-btns') || document.querySelector('[data-nav-host]');
     if (!host) return;
     injectStyles();
+
+    // Inject search icon into nav logo area
+    var navLogo = document.querySelector('.nav-logo');
+    if (navLogo && !document.getElementById('cj-search-btn')) {
+      var searchBtn = document.createElement('a');
+      searchBtn.id = 'cj-search-btn';
+      searchBtn.href = 'search.html';
+      searchBtn.title = 'Search';
+      searchBtn.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;background:none;color:var(--text-mid);text-decoration:none;font-size:16px;margin-left:8px;transition:color 0.15s,background 0.15s;border:1px solid var(--border)';
+      searchBtn.innerHTML = '🔍';
+      searchBtn.addEventListener('mouseover', function(){this.style.color='var(--accent)';this.style.borderColor='var(--accent)';});
+      searchBtn.addEventListener('mouseout',  function(){this.style.color='var(--text-mid)';this.style.borderColor='var(--border)';});
+      navLogo.parentNode.insertBefore(searchBtn, host);
+    }
 
     var session = null, profile = {};
     try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
