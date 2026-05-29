@@ -53,6 +53,18 @@
     .tp-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
 
     /* ── LAYOUT CANVAS ──────────────────────────────── */
+
+    .tp-table-square { border-radius:10px; background:var(--bg); border:2px solid var(--accent); }
+    .tp-table-oval   { border-radius:50%; background:var(--bg); border:2px solid var(--accent); }
+    .tp-table-lshape { border-radius:8px; background:var(--bg); border:2px solid var(--accent); position:relative; }
+    .tp-table-lshape::after { content:''; position:absolute; bottom:-2px; right:-2px; width:55%; height:55%; background:var(--bg); border:2px solid var(--accent); border-top:none; border-left:none; border-radius:0 0 8px 0; }
+    /* Dining style colour tints */
+    .dining-formal .tp-table-el   { border-color:#c4973b; }
+    .dining-buffet .tp-table-el   { border-color:#4caf76; }
+    .dining-outdoor .tp-table-el  { border-color:#8bc34a; }
+    .dining-casual .tp-table-el   { border-color:var(--accent); }
+    /* Dish placement overlay */
+    .tp-dish-badge { position:absolute; top:-9px; right:-9px; background:var(--accent); color:#fff; font-size:9px; border-radius:10px; padding:1px 6px; font-family:DM Sans,sans-serif; font-weight:700; z-index:5; white-space:nowrap; }
     .tp-canvas-wrap { position:relative; }
     .tp-canvas-toolbar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
     .tp-canvas { position:relative; width:100%; height:520px; background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; overflow:hidden; touch-action:none; }
@@ -184,10 +196,22 @@
     <button class="tp-tab" onclick="switchTab('guests',this)">👥 Guests</button>
     <button class="tp-tab" onclick="switchTab('seating',this)">🪑 Seating</button>
     <button class="tp-tab" onclick="switchTab('print',this)">🖨 Print</button>
+    <button class="tp-tab" onclick="switchTab('dishes',this)">🍽 Dish Placement</button>
   </div>
 
   <!-- LAYOUT TAB -->
   <div id="tab-layout" class="tp-tab-content">
+    <!-- Dining Style -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid)">Dining Style:</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="dining-style-btns">
+        <button class="tp-btn tp-btn-ghost" style="font-size:11px;padding:5px 12px" data-style="casual" onclick="setDiningStyle('casual',this)">Casual</button>
+        <button class="tp-btn tp-btn-ghost" style="font-size:11px;padding:5px 12px" data-style="formal" onclick="setDiningStyle('formal',this)">Formal</button>
+        <button class="tp-btn tp-btn-ghost" style="font-size:11px;padding:5px 12px" data-style="buffet" onclick="setDiningStyle('buffet',this)">Buffet</button>
+        <button class="tp-btn tp-btn-ghost" style="font-size:11px;padding:5px 12px" data-style="outdoor" onclick="setDiningStyle('outdoor',this)">Outdoor</button>
+      </div>
+    </div>
+
     <div class="tp-canvas-toolbar">
       <button class="tp-btn tp-btn-primary tp-btn-sm" onclick="openAddTableModal()">+ Add Table</button>
       <button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="autoArrange()">↻ Auto Arrange</button>
@@ -253,6 +277,13 @@
       </div>
     </div>
   </div>
+
+    <!-- DISH PLACEMENT TAB -->
+    <div id="tab-dishes" class="tp-tab-content" style="display:none">
+      <p style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:20px">Smart placement rules based on your dining style and guest positions.</p>
+      <div id="dish-placement-content"></div>
+    </div>
+
 </div>
 
 </div><!-- .tp-wrap -->
@@ -294,6 +325,9 @@
         <select class="tp-input tp-select" id="tm-shape">
           <option value="round">Round</option>
           <option value="rect">Rectangular</option>
+          <option value="square">Square</option>
+          <option value="oval">Oval</option>
+          <option value="lshape">L-Shape</option>
         </select>
       </div>
       <div class="tp-field"><label class="tp-label">Seats</label>
@@ -460,6 +494,11 @@ function renderEventsList(events) {
 async function openEvent(ev) {
   currentEvent = ev;
   currentLayout = (ev.layout && ev.layout.tables) ? ev.layout : {tables:[]};
+  // Restore dining style
+  if (currentLayout.dining_style) {
+    var dsBtn = document.querySelector('[data-style="'+currentLayout.dining_style+'"]');
+    if (dsBtn) setDiningStyle(currentLayout.dining_style, dsBtn);
+  }
   document.getElementById('view-events').style.display = 'none';
   document.getElementById('view-workspace').style.display = 'block';
   document.getElementById('ws-name').textContent = ev.name;
@@ -486,6 +525,7 @@ function switchTab(name, btn) {
   if (tab) tab.style.display = 'block';
   if (name==='seating') renderSeating();
   if (name==='print')   renderPrint();
+  if (name==='dishes')  renderDishPlacement();
   if (name==='guests')  renderGuestStats();
 }
 
@@ -503,10 +543,10 @@ function renderLayout() {
 function createTableEl(t) {
   const canvas = document.getElementById('layout-canvas');
   const el = document.createElement('div');
-  el.className = 'tp-table-el ' + (t.shape==='round' ? 'tp-table-round' : 'tp-table-rect');
+  el.className = 'tp-table-el ' + getTableClass(t.shape||'rect');
   el.dataset.tableId = t.id;
-  const w = t.shape==='round' ? TABLE_SIZES.round : TABLE_SIZES.rect_w;
-  const h = t.shape==='round' ? TABLE_SIZES.round : TABLE_SIZES.rect_h;
+  const w = TABLE_W[t.shape||'rect'] || 100;
+  const h = TABLE_H[t.shape||'rect'] || 70;
   el.style.cssText = 'width:'+w+'px;height:'+h+'px;left:'+t.x+'px;top:'+t.y+'px;';
 
   const assignedCount = currentGuests.filter(function(g){return g.seat_assignment && g.seat_assignment.startsWith(t.id+':');}).length;
@@ -574,8 +614,8 @@ function onDragMove(clientX, clientY) {
   const table = currentLayout.tables.find(function(t){return t.id===dragState.tableId;});
   if (!table) return;
   const el = document.querySelector('[data-table-id="' + table.id + '"]');
-  const w = table.shape==='round' ? TABLE_SIZES.round : TABLE_SIZES.rect_w;
-  const h = table.shape==='round' ? TABLE_SIZES.round : TABLE_SIZES.rect_h;
+  const w = TABLE_W[table.shape||'rect'] || 100;
+  const h = TABLE_H[table.shape||'rect'] || 70;
   const canvasW = rect.width;
   const canvasH = rect.height;
   table.x = Math.max(0, Math.min(canvasW - w, clientX - rect.left - dragState.offsetX));
@@ -1046,6 +1086,128 @@ function openModal(id) {
 function closeModal(id) {
   const el = document.getElementById(id);
   if (el) el.classList.remove('open');
+}
+
+
+// ── DINING STYLE ────────────────────────────────────────────────
+let currentDiningStyle = 'casual';
+function setDiningStyle(style, btn) {
+  currentDiningStyle = style;
+  document.querySelectorAll('[data-style]').forEach(function(b){
+    b.className = b.dataset.style===style ? 'tp-btn tp-btn-primary' : 'tp-btn tp-btn-ghost';
+    b.style.cssText = 'font-size:11px;padding:5px 12px';
+  });
+  const canvas = document.getElementById('layout-canvas');
+  ['casual','formal','buffet','outdoor'].forEach(function(s){ canvas.classList.remove('dining-'+s); });
+  canvas.classList.add('dining-'+style);
+  if (currentEvent) {
+    const layout = currentLayout;
+    layout.dining_style = style;
+    rpc('save_event_layout',{p_id:currentEvent.id,p_layout:layout}).catch(function(){});
+  }
+  if (document.getElementById('tab-dishes').style.display !== 'none') renderDishPlacement();
+}
+
+// ── TABLE SHAPES ────────────────────────────────────────────────
+const TABLE_W = {round:80,rect:120,square:90,oval:110,lshape:100,rect_w:120,rect_h:70};
+const TABLE_H = {round:80,rect:70, square:90,oval:70, lshape:90};
+
+function getTableClass(shape) {
+  return shape==='round'?'tp-table-round':shape==='square'?'tp-table-square':shape==='oval'?'tp-table-oval':shape==='lshape'?'tp-table-lshape':'tp-table-rect';
+}
+
+// ── DIETARY CARD LINK ────────────────────────────────────────────
+function copyDietaryLink(guestId, guestName) {
+  const url = 'https://www.theculinaryjournal.site/dietary-card.html?token=' + guestId;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function() {
+      showToast('Dietary card link for ' + guestName + ' copied to clipboard! 📋', false);
+    });
+  } else {
+    prompt('Copy this link and send to ' + guestName + ':', url);
+  }
+}
+
+function showToast(msg, isError) {
+  let toast = document.getElementById('tp-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'tp-toast';
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px 18px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high);z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,0.3);max-width:400px;text-align:center';
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = msg;
+  toast.style.display = 'block';
+  toast.style.borderColor = isError ? 'rgba(220,80,80,0.4)' : 'var(--accent-border)';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(function(){ toast.style.display='none'; }, 3000);
+}
+
+// ── DISH PLACEMENT ───────────────────────────────────────────────
+const DISH_RULES = {
+  casual: [
+    {emoji:'🍲',label:'Shared dishes',rule:'Centre of each table — within easy reach of all'},
+    {emoji:'🍽',label:'Individual plates',rule:'Directly in front of each seat'},
+    {emoji:'🥖',label:'Bread & rolls',rule:'Left side — bread plate is always left'},
+    {emoji:'🧂',label:'Salt & pepper',rule:'Centre of table, one set per 4 guests'},
+    {emoji:'🥤',label:'Drinks',rule:'Top right of each place setting'},
+    {emoji:'🫙',label:'Condiments',rule:'Next to the dish they complement'},
+  ],
+  formal: [
+    {emoji:'🍽',label:'Individual plates',rule:'Centre of place setting, 1 inch from table edge'},
+    {emoji:'🥂',label:'Glasses',rule:'Water glass top right; wine glass to its right'},
+    {emoji:'🍞',label:'Bread plate',rule:'Top left of place setting'},
+    {emoji:'🫙',label:'Sauces & gravies',rule:'Passed family-style; not left on table'},
+    {emoji:'🌷',label:'Centrepiece',rule:'Centre — must not obstruct sight lines across table'},
+    {emoji:'🍯',label:'Butter',rule:'Bread plate, removed before main course'},
+  ],
+  buffet: [
+    {emoji:'🔥',label:'Hot mains',rule:'Back of buffet table — furthest from guests (heat retention)'},
+    {emoji:'🥗',label:'Cold dishes & salads',rule:'Front of buffet table — closest to guests'},
+    {emoji:'🍞',label:'Breads & rolls',rule:'Far left end — first items guests encounter'},
+    {emoji:'🍰',label:'Desserts',rule:'Separate table — prevents crowding at main buffet'},
+    {emoji:'🥣',label:'Serving utensils',rule:'One per dish, resting on dish edge — never in food'},
+    {emoji:'🏷',label:'Labels',rule:'In front of each dish — list top 9 allergens clearly'},
+  ],
+  outdoor: [
+    {emoji:'🔥',label:'BBQ mains',rule:'Directly from grill to plate — never sit on table'},
+    {emoji:'🧊',label:'Cold items',rule:'Keep in cooler/insulated containers until served'},
+    {emoji:'🌽',label:'Shared sides',rule:'Covered with lids or foil until ready — prevents insects'},
+    {emoji:'🥤',label:'Drinks',rule:'Separate drinks station away from food — reduces crowding'},
+    {emoji:'🫙',label:'Condiments',rule:'Squeeze bottles preferred over open dishes outdoors'},
+    {emoji:'🧴',label:'Sunscreen & bug spray',rule:'Separate table — never near food or plates'},
+  ]
+};
+
+function renderDishPlacement() {
+  const el = document.getElementById('dish-placement-content');
+  if (!el) return;
+  const rules = DISH_RULES[currentDiningStyle] || DISH_RULES.casual;
+  const styleLabel = {casual:'Casual',formal:'Formal / Fine Dining',buffet:'Buffet',outdoor:'Outdoor'}[currentDiningStyle]||'Casual';
+
+  // Guest allergy warnings if any
+  const allergyWarnings = [];
+  currentGuests.forEach(function(g) {
+    const allergens = (g.dietary_requirements||[]).filter(function(d){return d.toLowerCase().includes('allergy');});
+    if (allergens.length) allergyWarnings.push({name:g.name, allergens, seat:g.seat_assignment});
+  });
+
+  el.innerHTML =
+    '<div style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:14px">'+styleLabel+' Placement Rules</div>'+
+    rules.map(function(r){
+      return '<div style="display:flex;gap:12px;padding:11px 0;border-bottom:1px solid rgba(from var(--border) r g b / 0.5)">'+
+        '<div style="font-size:20px;flex-shrink:0">'+r.emoji+'</div>'+
+        '<div><div style="font-family:DM Sans,sans-serif;font-size:13px;font-weight:500;color:var(--text-high);margin-bottom:2px">'+r.label+'</div>'+
+        '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)">'+r.rule+'</div></div></div>';
+    }).join('')+
+    (allergyWarnings.length ?
+      '<div style="margin-top:20px;font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#dc5050;margin-bottom:10px">⚠ Guest Allergy Warnings</div>'+
+      allergyWarnings.map(function(w){
+        var seat = w.seat ? ' ('+getSeatLabel(w.seat)+')' : ' (unseated)';
+        return '<div style="background:rgba(220,80,80,0.07);border:1px solid rgba(220,80,80,0.2);border-radius:9px;padding:10px 14px;margin-bottom:8px;font-family:DM Sans,sans-serif;font-size:13px">'+
+          '<strong style="color:var(--text-high)">'+w.name+'</strong>'+seat+' — '+w.allergens.map(function(a){return a.replace(' allergy','');}).join(', ')+'</div>';
+      }).join('') : ''
+    );
 }
 
 // ── INIT ─────────────────────────────────────────────────────────

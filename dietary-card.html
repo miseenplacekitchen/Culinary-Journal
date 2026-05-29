@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dietary Requirements — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); display:flex; align-items:flex-start; justify-content:center; padding:40px 20px 80px; }
+    .dc-card  { background:var(--text-ghost); border:1px solid var(--border); border-radius:18px; width:100%; max-width:520px; overflow:hidden; }
+    .dc-header { background:var(--bg); border-bottom:1px solid var(--border); padding:28px 32px; text-align:center; }
+    .dc-logo  { font-family:'Cormorant Garamond',serif; font-size:1rem; color:var(--accent); letter-spacing:0.06em; margin-bottom:16px; }
+    .dc-event { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:700; color:var(--text-high); margin-bottom:4px; }
+    .dc-date  { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); }
+    .dc-body  { padding:28px 32px; }
+    .dc-greeting { font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:600; color:var(--text-high); margin-bottom:6px; }
+    .dc-intro    { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-bottom:24px; line-height:1.6; }
+    .dc-section  { margin-bottom:20px; }
+    .dc-section-title { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); margin-bottom:10px; }
+    .dc-checks { display:flex; flex-wrap:wrap; gap:7px; }
+    .dc-check  { display:flex; align-items:center; gap:6px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; cursor:pointer; transition:all 0.15s; }
+    .dc-check:has(input:checked) { background:rgb(from var(--accent) r g b / 0.1); border-color:rgb(from var(--accent) r g b / 0.35); color:var(--text-high); }
+    .dc-check input { accent-color:var(--accent); }
+    .dc-none  { display:flex; align-items:center; gap:6px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; cursor:pointer; }
+    .dc-none:has(input:checked) { background:rgba(76,175,118,0.1); border-color:rgba(76,175,118,0.35); }
+    .dc-field { margin-bottom:16px; }
+    .dc-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-mid); margin-bottom:5px; display:block; }
+    .dc-textarea { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:10px 12px; border:1px solid var(--border); border-radius:9px; background:var(--bg); color:var(--text-high); outline:none; resize:vertical; }
+    .dc-textarea:focus { border-color:var(--accent); }
+    .dc-submit { width:100%; padding:14px; background:var(--accent); border:none; border-radius:10px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; color:#fff; cursor:pointer; margin-top:8px; }
+    .dc-submit:hover { opacity:0.88; }
+    .dc-privacy { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); text-align:center; margin-top:12px; line-height:1.5; }
+    /* States */
+    #dc-loading, #dc-error, #dc-success { display:none; padding:40px 32px; text-align:center; }
+    #dc-loading .dc-icon, #dc-error .dc-icon, #dc-success .dc-icon { font-size:40px; margin-bottom:12px; }
+    .dc-state-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; color:var(--text-high); margin-bottom:6px; }
+    .dc-state-sub   { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); line-height:1.6; }
+  </style>
+</head>
+<body class="page-bg">
+
+<div class="dc-card">
+  <!-- Loading -->
+  <div id="dc-loading">
+    <div class="dc-icon">⏳</div>
+    <div class="dc-state-title">Loading your card...</div>
+  </div>
+
+  <!-- Error -->
+  <div id="dc-error">
+    <div class="dc-icon">⚠️</div>
+    <div class="dc-state-title">Link not found</div>
+    <div class="dc-state-sub">This dietary card link is not valid or has expired. Please contact the host for a new link.</div>
+  </div>
+
+  <!-- Already submitted -->
+  <div id="dc-already">
+    <div style="padding:40px 32px;text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">✅</div>
+      <div class="dc-state-title">Already submitted</div>
+      <div class="dc-state-sub" id="dc-already-msg">Your dietary requirements have already been received. Contact the host if you need to make changes.</div>
+    </div>
+  </div>
+
+  <!-- Success -->
+  <div id="dc-success">
+    <div class="dc-icon">🎉</div>
+    <div class="dc-state-title">Thank you!</div>
+    <div class="dc-state-sub">Your dietary requirements have been sent to the host. They will make sure everything is prepared with your needs in mind.</div>
+    <div style="margin-top:16px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)">You can close this page.</div>
+  </div>
+
+  <!-- Form -->
+  <div id="dc-form">
+    <div class="dc-header">
+      <div class="dc-logo">🍽 The Culinary Journal</div>
+      <div class="dc-event" id="dc-event-name">Event</div>
+      <div class="dc-date" id="dc-event-date"></div>
+    </div>
+    <div class="dc-body">
+      <div class="dc-greeting" id="dc-greeting">Hello!</div>
+      <div class="dc-intro">The host would like to know your dietary requirements so they can make sure there's something delicious for you. This only takes a minute — please tick everything that applies.</div>
+
+      <div class="dc-section">
+        <div class="dc-section-title">Dietary Preference</div>
+        <div class="dc-checks" id="dc-diet-checks">
+          <label class="dc-check"><input type="checkbox" value="Vegan"> 🌿 Vegan</label>
+          <label class="dc-check"><input type="checkbox" value="Vegetarian"> 🥕 Vegetarian</label>
+          <label class="dc-check"><input type="checkbox" value="Gluten Free"> 🌾 Gluten Free</label>
+          <label class="dc-check"><input type="checkbox" value="Dairy Free"> 🥛 Dairy Free</label>
+          <label class="dc-check"><input type="checkbox" value="Halal"> ☪ Halal</label>
+          <label class="dc-check"><input type="checkbox" value="Kosher"> ✡ Kosher</label>
+          <label class="dc-check"><input type="checkbox" value="Nut Free"> 🥜 Nut Free</label>
+          <label class="dc-check"><input type="checkbox" value="Egg Free"> 🥚 Egg Free</label>
+          <label class="dc-check"><input type="checkbox" value="Shellfish Free"> 🦐 Shellfish Free</label>
+        </div>
+      </div>
+
+      <div class="dc-section">
+        <div class="dc-section-title">Allergies (select all that apply)</div>
+        <div class="dc-checks" id="dc-allergy-checks">
+          <label class="dc-check"><input type="checkbox" value="Gluten allergy"> Gluten / Wheat</label>
+          <label class="dc-check"><input type="checkbox" value="Dairy allergy"> Dairy</label>
+          <label class="dc-check"><input type="checkbox" value="Egg allergy"> Eggs</label>
+          <label class="dc-check"><input type="checkbox" value="Nut allergy"> Tree Nuts</label>
+          <label class="dc-check"><input type="checkbox" value="Peanut allergy"> Peanuts</label>
+          <label class="dc-check"><input type="checkbox" value="Fish allergy"> Fish</label>
+          <label class="dc-check"><input type="checkbox" value="Shellfish allergy"> Shellfish</label>
+          <label class="dc-check"><input type="checkbox" value="Soy allergy"> Soy</label>
+          <label class="dc-check"><input type="checkbox" value="Sesame allergy"> Sesame</label>
+        </div>
+      </div>
+
+      <div class="dc-section">
+        <div class="dc-section-title">Spice Preference</div>
+        <div class="dc-checks">
+          <label class="dc-check"><input type="radio" name="spice" value="No spice"> No spice please</label>
+          <label class="dc-check"><input type="radio" name="spice" value="Mild"> 😌 Mild</label>
+          <label class="dc-check"><input type="radio" name="spice" value="Medium" checked> 🌶 Medium</label>
+          <label class="dc-check"><input type="radio" name="spice" value="Hot"> 🌶🌶 Hot</label>
+          <label class="dc-check"><input type="radio" name="spice" value="Very Hot"> 🌶🌶🌶 Very Hot</label>
+        </div>
+      </div>
+
+      <div class="dc-field">
+        <label class="dc-label">Anything else the host should know?</label>
+        <textarea class="dc-textarea" id="dc-notes" rows="3" placeholder="e.g. I don't eat pork, I'm pregnant, I have a severe nut allergy — please keep all nuts away from my plate..."></textarea>
+      </div>
+
+      <label class="dc-none" style="margin-bottom:12px">
+        <input type="checkbox" id="dc-no-requirements" onchange="toggleNoReqs(this.checked)" style="accent-color:#4caf76">
+        <span>✓ No dietary requirements — I eat everything</span>
+      </label>
+
+      <button class="dc-submit" onclick="submitCard()">Send my dietary requirements →</button>
+      <div class="dc-privacy">Your information is shared only with your host and used solely to plan the menu. It is not stored or used for any other purpose.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+
+function show(id) {
+  ['dc-loading','dc-error','dc-already','dc-success','dc-form'].forEach(function(s){
+    document.getElementById(s).style.display = s===id ? 'block' : 'none';
+  });
+}
+
+function toggleNoReqs(checked) {
+  document.querySelectorAll('#dc-diet-checks input, #dc-allergy-checks input').forEach(function(cb){
+    cb.disabled = checked; if(checked) cb.checked = false;
+  });
+}
+
+async function loadCard() {
+  show('dc-loading');
+  const params = new URLSearchParams(window.location.search);
+  const token  = params.get('token');
+  if (!token) { show('dc-error'); return; }
+  try {
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_guest_card', {
+      method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+      body: JSON.stringify({p_token: token})
+    });
+    if (!res.ok) { show('dc-error'); return; }
+    const rows = await res.json();
+    if (!rows || !rows.length) { show('dc-error'); return; }
+    const card = rows[0];
+
+    if (card.already_submitted) {
+      document.getElementById('dc-already-msg').textContent =
+        'Your dietary requirements for ' + card.event_name + ' have already been received. Contact your host if you need to make changes.';
+      show('dc-already');
+      return;
+    }
+
+    document.getElementById('dc-event-name').textContent = card.event_name || 'Your Event';
+    if (card.event_date) {
+      const d = new Date(card.event_date);
+      document.getElementById('dc-event-date').textContent = d.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    }
+    document.getElementById('dc-greeting').textContent = 'Hello, ' + (card.guest_name||'Guest') + '!';
+
+    // Pre-check existing dietary requirements if any
+    const existing = card.dietary_requirements || [];
+    if (existing.length) {
+      document.querySelectorAll('#dc-diet-checks input, #dc-allergy-checks input').forEach(function(cb){
+        if (existing.includes(cb.value)) cb.checked = true;
+      });
+    }
+
+    show('dc-form');
+  } catch(e) { show('dc-error'); }
+}
+
+async function submitCard() {
+  const params = new URLSearchParams(window.location.search);
+  const token  = params.get('token');
+  if (!token) return;
+
+  const noReqs = document.getElementById('dc-no-requirements').checked;
+  const dietary = noReqs ? ['No dietary requirements'] : [
+    ...([...document.querySelectorAll('#dc-diet-checks input:checked')].map(function(i){return i.value;})),
+    ...([...document.querySelectorAll('#dc-allergy-checks input:checked')].map(function(i){return i.value;}))
+  ];
+  const spiceEl = document.querySelector('input[name="spice"]:checked');
+  if (spiceEl && spiceEl.value !== 'Medium') dietary.push('Spice: ' + spiceEl.value);
+  const notes = document.getElementById('dc-notes').value.trim();
+  if (notes) dietary.push('Note: ' + notes);
+
+  try {
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/submit_guest_dietary', {
+      method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+      body: JSON.stringify({p_token: token, p_dietary: dietary})
+    });
+    if (!res.ok) { alert('Something went wrong. Please try again.'); return; }
+    show('dc-success');
+  } catch(e) { alert('Error submitting. Please try again.'); }
+}
+
+document.addEventListener('DOMContentLoaded', loadCard);
+</script>
+</body>
+</html>

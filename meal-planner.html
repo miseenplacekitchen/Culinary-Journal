@@ -43,6 +43,16 @@
     .mp-grid-row:last-child .mp-slot,
     .mp-grid-row:last-child .mp-row-label { border-bottom:none; }
 
+
+    .mp-mode-bar { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; align-items:center; }
+    .mp-mode-btn { padding:8px 16px; border-radius:20px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; color:var(--text-mid); cursor:pointer; }
+    .mp-mode-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .mp-mode-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .mp-conflict-badge { display:inline-block; background:rgba(220,80,80,0.1); border:1px solid rgba(220,80,80,0.3); border-radius:4px; font-family:'DM Sans',sans-serif; font-size:10px; color:#dc5050; padding:1px 6px; margin-left:4px; }
+    .mp-member-flags { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
+    .mp-member-flag { font-size:10px; padding:1px 7px; border-radius:4px; background:rgba(240,168,48,0.1); color:#f0a830; font-family:'DM Sans',sans-serif; }
+    .mp-member-flag.ok { background:rgba(76,175,118,0.1); color:#4caf76; }
+    .mp-member-flag.warn { background:rgba(220,80,80,0.1); color:#dc5050; }
     .mp-slot-empty { width:100%; height:100%; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:8px; border:1px dashed rgba(from var(--border) r g b / 0.4); min-height:78px; transition:all 0.15s; }
     .mp-slot-empty:hover { border-color:var(--accent); background:rgb(from var(--accent) r g b / 0.06); }
     .mp-slot-add { font-size:18px; color:var(--text-mid); }
@@ -102,6 +112,17 @@
       </div>
     </div>
   </div>
+
+  <!-- Mode & Family panel -->
+  <div class="mp-mode-bar">
+    <span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid)">Cooking for:</span>
+    <button class="mp-mode-btn active" data-mode="individual" onclick="setMode('individual',this)">👤 Individual</button>
+    <button class="mp-mode-btn" data-mode="couple" onclick="setMode('couple',this)">💑 Couple</button>
+    <button class="mp-mode-btn" data-mode="family" onclick="setMode('family',this)">👨‍👩‍👧‍👦 Family</button>
+    <button class="mp-mode-btn" data-mode="group" onclick="setMode('group',this)">🎉 Group</button>
+    <span id="mp-conflict-summary" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)"></span>
+  </div>
+  <div id="mp-family-flags" style="display:none;background:var(--text-ghost);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-family:'DM Sans',sans-serif;font-size:12px"></div>
 
   <div class="mp-grid" id="mp-grid"></div>
 
@@ -234,8 +255,10 @@ function renderCalendar() {
         const card = document.createElement('div');
         card.className = 'mp-recipe-card';
         const emoji = CAT_EMOJI[recipe.category] || '🍽';
-        card.innerHTML = '<div class="mp-recipe-name">' + emoji + ' ' + recipe.name + '</div>' +
+        var conflicts = checkRecipeConflicts(recipe);
+      card.innerHTML = '<div class="mp-recipe-name">' + emoji + ' ' + recipe.name + '</div>' +
           '<div class="mp-recipe-cat">' + (recipe.category||'') + '</div>' +
+          (conflicts.length ? '<div class="mp-member-flags">' + conflicts.slice(0,2).map(function(c){return '<span class="mp-member-flag warn">⚠ '+c+'</span>';}).join('') + '</div>' : '') +
           '<button class="mp-recipe-remove" title="Remove">×</button>';
         card.querySelector('.mp-recipe-remove').addEventListener('click', function(e) {
           e.stopPropagation(); clearSlot(day, meal); renderCalendar();
@@ -278,6 +301,92 @@ function renderSummary() {
     '<div class="mp-summary-stat"><div class="mp-summary-num">' + unique + '</div><div class="mp-summary-label">Unique Recipes</div></div>' +
     '<div class="mp-summary-stat"><div class="mp-summary-num">' + days + '</div><div class="mp-summary-label">Days Covered</div></div>' +
     '</div>';
+}
+
+
+// ── MODES & FAMILY PROFILES ─────────────────────────────────────
+let currentMode = 'individual';
+let familyProfiles = [];
+
+function setMode(mode, btn) {
+  currentMode = mode;
+  document.querySelectorAll('.mp-mode-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  const familyPanel = document.getElementById('mp-family-flags');
+  if (mode === 'family' || mode === 'couple') {
+    renderFamilyFlags();
+    familyPanel.style.display = 'block';
+  } else {
+    familyPanel.style.display = 'none';
+  }
+  updateConflictSummary();
+}
+
+async function loadFamilyProfiles() {
+  const session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+  if (!session) return;
+  try {
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_my_family_profiles', {
+      method:'POST', headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json'},
+      body:JSON.stringify({})
+    });
+    if (res.ok) familyProfiles = await res.json() || [];
+    updateConflictSummary();
+  } catch(_) {}
+}
+
+function renderFamilyFlags() {
+  const el = document.getElementById('mp-family-flags');
+  if (!familyProfiles.length) {
+    el.innerHTML = '<span style="color:var(--text-mid)">No family profiles set up yet. <a href="family-profiles.html" style="color:var(--accent)">Add profiles →</a></span>';
+    return;
+  }
+  const REL_EMOJI = {self:'👤',partner:'💑',child:'👦',toddler:'🧒',baby:'👶',elderly:'👴',regular_guest:'👤',other:'👤'};
+  const SPICE_ICONS = {none:'🚫',mild:'😌',medium:'🌶',hot:'🌶🌶',very_hot:'🌶🌶🌶'};
+  el.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:8px">Cooking for these people:</div>' +
+    familyProfiles.map(function(p) {
+      const emoji = REL_EMOJI[p.relationship]||'👤';
+      const diets = (p.dietary_needs||[]).concat(p.allergies||[]).slice(0,3);
+      const spiceIcon = SPICE_ICONS[p.spice_preference]||'🌶';
+      return '<div style="display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:5px 10px;margin:3px">' +
+        '<span>'+emoji+'</span><span style="font-weight:500;color:var(--text-high)">'+p.name+'</span>' +
+        (diets.length ? '<span style="color:#dc5050;font-size:10px">⚠ '+diets.join(', ')+'</span>' : '') +
+        '<span title="Spice preference">'+spiceIcon+'</span></div>';
+    }).join('');
+}
+
+function checkRecipeConflicts(recipe) {
+  if (!familyProfiles.length || currentMode === 'individual') return [];
+  const conflicts = [];
+  const spiceMap = {none:0,mild:1,medium:2,hot:3,very_hot:4};
+  const recipeSpice = typeof recipe.spice_level === 'number' ? recipe.spice_level : 2;
+  familyProfiles.forEach(function(p) {
+    const maxSpice = spiceMap[p.spice_preference||'medium'] || 2;
+    if (recipeSpice > maxSpice) conflicts.push(p.name + ' prefers less spice');
+    (p.dietary_needs||[]).forEach(function(d) {
+      if (d==='Vegan' && !((recipe.dietary_tags||[]).includes('Vegan'))) conflicts.push(p.name + ' is Vegan');
+      if (d==='Vegetarian' && !((recipe.dietary_tags||[]).includes('Vegetarian')) && !((recipe.dietary_tags||[]).includes('Vegan'))) conflicts.push(p.name + ' is Vegetarian');
+      if (d==='Gluten Free' && !((recipe.dietary_tags||[]).includes('Gluten Free'))) conflicts.push(p.name + ' needs Gluten Free');
+    });
+  });
+  return [...new Set(conflicts)];
+}
+
+function updateConflictSummary() {
+  const el = document.getElementById('mp-conflict-summary');
+  if (!el) return;
+  if (currentMode === 'individual' || !familyProfiles.length) { el.textContent = ''; return; }
+  el.textContent = familyProfiles.length + ' profile' + (familyProfiles.length===1?'':'s') + ' loaded';
+}
+
+// ── PANTRY-AWARE GROCERY (override from recipe-page) ─────────────
+function getPantryItems() {
+  try { return JSON.parse(localStorage.getItem('tcj_pantry')||'[]'); }
+  catch(_) { return []; }
+}
+function isInPantry(name) {
+  var n = name.toLowerCase().trim();
+  return getPantryItems().some(function(p){ return p.name && p.name.toLowerCase().trim()===n && (p.qty||0)>0; });
 }
 
 // ── RECIPE PICKER ────────────────────────────────────────────────
@@ -346,18 +455,21 @@ async function addToGrocery() {
       const [recipe] = await res.json();
       if (!recipe) continue;
       const ingredients = [];
+      let skipped = 0;
       (recipe.ingredients||[]).forEach(function(sec) {
         (sec.items||[]).forEach(function(ing) {
+          if (isInPantry(ing.ingredient)) { skipped++; return; }
           ingredients.push({name:ing.ingredient, qty:ing.qty, unit:ing.unit||'', section:sec.section||sec.title||''});
         });
       });
-      data.recipes.push({id:recipe.id, name:recipe.recipe_name, servings:recipe.servings||1, ingredients});
+      data.recipes.push({id:recipe.id, name:recipe.recipe_name, servings:recipe.servings||1, ingredients, pantry_skipped:skipped});
       added++;
     } catch(_) {}
   }
   localStorage.setItem('tcj_grocery', JSON.stringify(data));
   if (added > 0) {
-    alert(added + ' recipe(s) added to your grocery list!');
+    const pantrySkipped = data.recipes.reduce(function(t,r){return t+(r.pantry_skipped||0);},0);
+  alert(added + ' recipe(s) added to your grocery list!' + (pantrySkipped?' '+pantrySkipped+' ingredient(s) skipped — already in your pantry 🫙.':''));
     window.location.href = 'grocery.html';
   } else {
     alert('All planned recipes are already in your grocery list.');
@@ -382,6 +494,7 @@ async function loadRecipes() {
 document.addEventListener('DOMContentLoaded', function() {
   renderCalendar();
   loadRecipes();
+  loadFamilyProfiles();
   document.getElementById('mp-modal').addEventListener('click', function(e) {
     if (e.target === this) closePicker();
   });
