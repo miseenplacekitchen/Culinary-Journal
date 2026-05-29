@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Diary — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <style>
+    .dj-wrap { max-width:1100px; margin:0 auto; padding:28px 20px 60px; }
+
+    /* ── Top bar ── */
+    .dj-topbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:28px; }
+    .dj-heading { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:700; color:var(--text-high); }
+    .dj-heading span { color:var(--accent); font-style:italic; }
+    .dj-new-btn { padding:10px 22px; background:var(--accent); color:#fff; border:none; border-radius:10px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:filter .15s; }
+    .dj-new-btn:hover { filter:brightness(.9); }
+
+    /* ── Stats row ── */
+    .dj-stats { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:24px; }
+    .dj-stat { flex:1; min-width:100px; background:var(--text-ghost); border:1px solid var(--border); border-radius:10px; padding:14px 16px; text-align:center; }
+    .dj-stat-num { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--accent); }
+    .dj-stat-lbl { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--text-mid); margin-top:2px; }
+
+    /* ── Layout ── */
+    .dj-layout { display:grid; grid-template-columns:300px 1fr; gap:20px; }
+    @media(max-width:768px){ .dj-layout { grid-template-columns:1fr; } }
+
+    /* ── Calendar sidebar ── */
+    .dj-cal-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+    .dj-cal-nav { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--border); }
+    .dj-cal-month { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:700; color:var(--text-high); }
+    .dj-cal-arrow { background:none; border:1px solid var(--border); border-radius:7px; color:var(--text-mid); font-size:14px; width:30px; height:30px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .dj-cal-arrow:hover { border-color:var(--accent); color:var(--accent); }
+    .dj-cal-grid { padding:12px; }
+    .dj-cal-days { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:6px; }
+    .dj-cal-dow  { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; text-align:center; color:var(--text-mid); padding:4px 0; letter-spacing:.05em; }
+    .dj-cal-cell { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-family:'DM Sans',sans-serif; font-size:11px; border-radius:7px; cursor:pointer; position:relative; transition:all .15s; color:var(--text-high); }
+    .dj-cal-cell:hover { background:rgba(var(--accent-rgb,196,151,59),.15); }
+    .dj-cal-cell.other-month { color:var(--text-ghost); cursor:default; }
+    .dj-cal-cell.other-month:hover { background:none; }
+    .dj-cal-cell.has-entry::after { content:''; position:absolute; bottom:3px; left:50%; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; background:var(--accent); }
+    .dj-cal-cell.selected { background:var(--accent); color:#fff; font-weight:600; }
+    .dj-cal-cell.selected::after { background:#fff; }
+    .dj-cal-cell.today:not(.selected) { border:1.5px solid var(--accent); }
+    .dj-cal-today-btn { width:100%; padding:10px; background:none; border:none; border-top:1px solid var(--border); font-family:'DM Sans',sans-serif; font-size:12px; color:var(--accent); cursor:pointer; }
+    .dj-cal-today-btn:hover { background:var(--text-ghost); }
+
+    /* ── Search ── */
+    .dj-search-wrap { padding:12px; border-top:1px solid var(--border); }
+    .dj-search { width:100%; box-sizing:border-box; padding:8px 12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-high); outline:none; }
+    .dj-search:focus { border-color:var(--accent); }
+
+    /* ── Entry types filter ── */
+    .dj-type-filter { padding:12px; border-top:1px solid var(--border); display:flex; flex-wrap:wrap; gap:5px; }
+    .dj-type-pill { padding:4px 10px; border-radius:20px; border:1px solid var(--border); font-family:'DM Sans',sans-serif; font-size:10px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:all .15s; background:none; }
+    .dj-type-pill.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+    /* ── Main panel ── */
+    .dj-main { display:flex; flex-direction:column; gap:16px; }
+
+    /* ── Entry cards ── */
+    .dj-entries { display:flex; flex-direction:column; gap:12px; }
+    .dj-entry { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; overflow:hidden; cursor:pointer; transition:border-color .15s; }
+    .dj-entry:hover { border-color:var(--accent-border, rgba(196,151,59,.4)); }
+    .dj-entry-head { display:flex; align-items:flex-start; justify-content:space-between; padding:14px 16px 8px; gap:12px; }
+    .dj-entry-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .dj-entry-date { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; color:var(--accent); }
+    .dj-type-badge { padding:2px 8px; border-radius:20px; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:.05em; }
+    .dj-entry-mood { font-size:16px; line-height:1; }
+    .dj-entry-title { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:700; color:var(--text-high); padding:0 16px; margin-bottom:6px; }
+    .dj-entry-preview { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); padding:0 16px 12px; line-height:1.6; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .dj-entry-tags { display:flex; flex-wrap:wrap; gap:4px; padding:0 16px 12px; }
+    .dj-entry-tag { padding:2px 8px; background:rgba(196,151,59,.1); border-radius:20px; font-family:'DM Sans',sans-serif; font-size:10px; color:var(--accent); }
+
+    /* ── Empty state ── */
+    .dj-empty { text-align:center; padding:60px 20px; }
+    .dj-empty-icon { font-size:48px; margin-bottom:12px; }
+    .dj-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:700; color:var(--text-high); margin-bottom:6px; }
+    .dj-empty-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
+
+    /* ── Modal ── */
+    .dj-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+    .dj-modal.open { display:flex; }
+    .dj-modal-box { background:var(--surface,var(--bg)); border:1px solid var(--border); border-radius:18px; width:100%; max-width:680px; max-height:90vh; overflow-y:auto; }
+    .dj-modal-head { display:flex; align-items:center; justify-content:space-between; padding:20px 24px 16px; border-bottom:1px solid var(--border); }
+    .dj-modal-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:700; color:var(--text-high); }
+    .dj-modal-close { background:none; border:1px solid var(--border); border-radius:8px; color:var(--text-mid); font-size:16px; width:32px; height:32px; cursor:pointer; }
+    .dj-modal-body { padding:20px 24px; display:flex; flex-direction:column; gap:14px; }
+    .dj-field { display:flex; flex-direction:column; gap:5px; }
+    .dj-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--text-mid); }
+    .dj-input, .dj-textarea, .dj-select { background:var(--bg); border:1px solid var(--border); border-radius:9px; padding:10px 12px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); outline:none; }
+    .dj-input:focus, .dj-textarea:focus, .dj-select:focus { border-color:var(--accent); }
+    .dj-textarea { min-height:180px; resize:vertical; line-height:1.7; }
+    .dj-select { cursor:pointer; }
+    .dj-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    @media(max-width:500px){ .dj-row { grid-template-columns:1fr; } }
+
+    /* Mood picker */
+    .dj-mood-row { display:flex; flex-wrap:wrap; gap:6px; }
+    .dj-mood-btn { font-size:22px; padding:6px; border-radius:8px; border:1.5px solid transparent; cursor:pointer; background:none; transition:all .15s; line-height:1; }
+    .dj-mood-btn:hover { border-color:var(--border); background:var(--text-ghost); }
+    .dj-mood-btn.selected { border-color:var(--accent); background:rgba(196,151,59,.1); }
+
+    .dj-modal-foot { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+    .dj-btn { padding:10px 22px; border-radius:9px; border:none; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; }
+    .dj-btn-primary { background:var(--accent); color:#fff; }
+    .dj-btn-secondary { background:var(--text-ghost); color:var(--text-mid); border:1px solid var(--border); }
+    .dj-btn-danger { background:rgba(220,80,80,.1); color:#dc5050; border:1px solid rgba(220,80,80,.3); }
+    .dj-btn:hover { filter:brightness(.92); }
+
+    /* View mode for reading */
+    .dj-view-content { font-family:'DM Sans',sans-serif; font-size:14px; line-height:1.8; color:var(--text-high); white-space:pre-wrap; }
+    .dj-view-title { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:700; color:var(--text-high); margin-bottom:4px; }
+    .dj-view-date { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--accent); margin-bottom:16px; }
+    .dj-view-divider { height:1px; background:var(--border); margin:16px 0; }
+  </style>
+</head>
+<body class="page-bg cj-body">
+
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"><div class="tab-nav-inner">
+  <a class="tab" href="index.html">🏠 Home</a>
+  <a class="tab" href="recipes.html">📖 Recipes</a>
+  <a class="tab" href="meal-planner.html">🗓 Meal Planner</a>
+  <a class="tab" href="pantry.html">🫙 Pantry &amp; Fridge</a>
+  <a class="tab" href="grocery.html">🛒 Grocery List</a>
+  <a class="tab" href="table-planner.html">🪑 Table Planner</a>
+  <a class="tab" href="print-studio.html">🖨 Print Studio</a>
+  <a class="tab active" href="diary.html">📓 Diary</a>
+  <a class="tab" href="diary.html">📓 Diary</a>
+  <a class="tab" href="profile.html">👤 My Profile</a>
+</div></div>
+
+<div class="dj-wrap">
+
+  <div class="dj-topbar">
+    <div>
+      <div class="dj-heading">My <span>Diary</span></div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin-top:2px">A private space to think, reflect and remember</div>
+    </div>
+    <button class="dj-new-btn" onclick="openNewEntry()">+ New Entry</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="dj-stats" id="dj-stats">
+    <div class="dj-stat"><div class="dj-stat-num" id="stat-total">—</div><div class="dj-stat-lbl">Total Entries</div></div>
+    <div class="dj-stat"><div class="dj-stat-num" id="stat-month">—</div><div class="dj-stat-lbl">This Month</div></div>
+    <div class="dj-stat"><div class="dj-stat-num" id="stat-streak">—</div><div class="dj-stat-lbl">Day Streak</div></div>
+  </div>
+
+  <div class="dj-layout">
+
+    <!-- Left: Calendar + Filters -->
+    <div>
+      <div class="dj-cal-card">
+        <div class="dj-cal-nav">
+          <button class="dj-cal-arrow" onclick="changeMonth(-1)">←</button>
+          <div class="dj-cal-month" id="cal-month-label"></div>
+          <button class="dj-cal-arrow" onclick="changeMonth(1)">→</button>
+        </div>
+        <div class="dj-cal-grid">
+          <div class="dj-cal-days" id="cal-dow"></div>
+          <div class="dj-cal-days" id="cal-cells" style="grid-template-columns:repeat(7,1fr)"></div>
+        </div>
+        <button class="dj-cal-today-btn" onclick="goToday()">Today</button>
+        <!-- Search -->
+        <div class="dj-search-wrap">
+          <input class="dj-search" id="dj-search" placeholder="🔍 Search entries…" oninput="handleSearch(this.value)">
+        </div>
+        <!-- Entry type filter -->
+        <div class="dj-type-filter" id="type-filters">
+          <button class="dj-type-pill active" onclick="filterType('',this)">All</button>
+          <button class="dj-type-pill" onclick="filterType('general',this)">📝 General</button>
+          <button class="dj-type-pill" onclick="filterType('recipe',this)">🍳 Recipe</button>
+          <button class="dj-type-pill" onclick="filterType('event',this)">🎉 Event</button>
+          <button class="dj-type-pill" onclick="filterType('reflection',this)">💭 Reflection</button>
+          <button class="dj-type-pill" onclick="filterType('goals',this)">🎯 Goals</button>
+          <button class="dj-type-pill" onclick="filterType('gratitude',this)">🙏 Gratitude</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Entries -->
+    <div class="dj-main">
+      <div class="dj-entries" id="dj-entries">
+        <div class="dj-empty">
+          <div class="dj-empty-icon">📓</div>
+          <div class="dj-empty-title">Loading your diary…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create / Edit Modal -->
+<div class="dj-modal" id="dj-modal">
+  <div class="dj-modal-box">
+    <div class="dj-modal-head">
+      <div class="dj-modal-title" id="modal-title">New Entry</div>
+      <button class="dj-modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="dj-modal-body">
+      <input type="hidden" id="entry-id">
+      <div class="dj-row">
+        <div class="dj-field">
+          <label class="dj-label">Date</label>
+          <input class="dj-input" type="date" id="entry-date">
+        </div>
+        <div class="dj-field">
+          <label class="dj-label">Entry Type</label>
+          <select class="dj-select" id="entry-type">
+            <option value="general">📝 General</option>
+            <option value="recipe">🍳 Recipe Notes</option>
+            <option value="event">🎉 Event</option>
+            <option value="reflection">💭 Reflection</option>
+            <option value="goals">🎯 Goals</option>
+            <option value="gratitude">🙏 Gratitude</option>
+          </select>
+        </div>
+      </div>
+      <div class="dj-field">
+        <label class="dj-label">Title</label>
+        <input class="dj-input" id="entry-title" placeholder="What's on your mind?">
+      </div>
+      <div class="dj-field">
+        <label class="dj-label">How are you feeling?</label>
+        <div class="dj-mood-row" id="mood-row"></div>
+      </div>
+      <div class="dj-field">
+        <label class="dj-label">Entry</label>
+        <textarea class="dj-textarea" id="entry-content" placeholder="Write freely — this is your space…"></textarea>
+      </div>
+      <div class="dj-field">
+        <label class="dj-label">Tags (comma separated)</label>
+        <input class="dj-input" id="entry-tags" placeholder="e.g. cooking, travel, family">
+      </div>
+    </div>
+    <div class="dj-modal-foot">
+      <button class="dj-btn dj-btn-danger" id="delete-btn" style="display:none;margin-right:auto" onclick="deleteEntry()">Delete</button>
+      <button class="dj-btn dj-btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="dj-btn dj-btn-primary" onclick="saveEntry()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- View Modal (read mode) -->
+<div class="dj-modal" id="dj-view">
+  <div class="dj-modal-box">
+    <div class="dj-modal-head">
+      <div class="dj-modal-title">Entry</div>
+      <div style="display:flex;gap:8px">
+        <button class="dj-btn dj-btn-secondary" style="padding:6px 14px;font-size:12px" onclick="editFromView()">Edit</button>
+        <button class="dj-modal-close" onclick="closeView()">✕</button>
+      </div>
+    </div>
+    <div class="dj-modal-body">
+      <div id="view-mood" style="font-size:28px;margin-bottom:4px"></div>
+      <div class="dj-view-title" id="view-title"></div>
+      <div class="dj-view-date" id="view-date"></div>
+      <div class="dj-view-divider"></div>
+      <div class="dj-view-content" id="view-content"></div>
+      <div id="view-tags" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:12px"></div>
+    </div>
+  </div>
+</div>
+
+<script src="nav-init.js"></script>
+<script>
+const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+
+const MOODS = ['😊','😄','🥰','😌','🤔','😐','😴','😢','😤','🤩','😎','🫶','✨','💪','🙏'];
+const TYPE_LABELS  = {general:'General',recipe:'Recipe Notes',event:'Event',reflection:'Reflection',goals:'Goals',gratitude:'Gratitude'};
+const TYPE_EMOJIS  = {general:'📝',recipe:'🍳',event:'🎉',reflection:'💭',goals:'🎯',gratitude:'🙏'};
+const TYPE_COLOURS = {general:'rgba(126,145,163,.2)',recipe:'rgba(196,151,59,.15)',event:'rgba(76,175,118,.15)',reflection:'rgba(124,99,172,.15)',goals:'rgba(244,144,54,.15)',gratitude:'rgba(232,99,142,.15)'};
+
+let currentYear, currentMonth, allEntries = [], filteredEntries = [], activeType = '', selectedDate = null, viewingEntry = null;
+
+// ── Helpers ─────────────────────────────────────────────────────
+function getSession(){ try{return JSON.parse(localStorage.getItem('tcj_session')||'null');}catch(_){return null;} }
+async function rpc(fn,params){
+  const s = getSession();
+  const h = {'apikey':SUPA_KEY,'Content-Type':'application/json'};
+  if(s && s.access_token) h['Authorization']='Bearer '+s.access_token;
+  const r = await fetch(SUPA_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:h,body:JSON.stringify(params||{})});
+  if(!r.ok){ const e=await r.json().catch(()=>{}); throw new Error(e?.message||r.status); }
+  return r.json();
+}
+function fmtDate(d){ const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+// ── Mood picker ──────────────────────────────────────────────────
+function buildMoodPicker(){
+  const row = document.getElementById('mood-row');
+  row.innerHTML = MOODS.map(m=>`<button class="dj-mood-btn" data-mood="${m}" onclick="selectMood('${m}')">${m}</button>`).join('');
+}
+function selectMood(m){
+  document.querySelectorAll('.dj-mood-btn').forEach(b=>b.classList.toggle('selected', b.dataset.mood===m));
+}
+function getSelectedMood(){ const b=document.querySelector('.dj-mood-btn.selected'); return b?b.dataset.mood:''; }
+function setMood(m){ document.querySelectorAll('.dj-mood-btn').forEach(b=>b.classList.toggle('selected',b.dataset.mood===m)); }
+
+// ── Stats ────────────────────────────────────────────────────────
+async function loadStats(){
+  try{
+    const stats = await rpc('get_diary_stats',{});
+    document.getElementById('stat-total').textContent  = stats.total  || 0;
+    document.getElementById('stat-month').textContent  = stats.this_month || 0;
+    document.getElementById('stat-streak').textContent = (stats.streak||0) + (stats.streak===1?' day':' days');
+  }catch(_){ document.getElementById('stat-streak').textContent = '—'; }
+}
+
+// ── Calendar ─────────────────────────────────────────────────────
+function buildCalendar(){
+  const DAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const dowEl = document.getElementById('cal-dow');
+  if(!dowEl.children.length){
+    dowEl.innerHTML = DAYS.map(d=>`<div class="dj-cal-dow">${d}</div>`).join('');
+  }
+  const label = document.getElementById('cal-month-label');
+  label.textContent = new Date(currentYear, currentMonth, 1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+
+  const cells = document.getElementById('cal-cells');
+  cells.innerHTML = '';
+  const first = new Date(currentYear, currentMonth, 1).getDay();
+  const days  = new Date(currentYear, currentMonth+1, 0).getDate();
+  const today = todayStr();
+
+  // Pad start
+  for(let i=0;i<first;i++){
+    const d = new Date(currentYear, currentMonth, 1-first+i);
+    cells.insertAdjacentHTML('beforeend',`<div class="dj-cal-cell other-month">${d.getDate()}</div>`);
+  }
+  // This month
+  for(let d=1;d<=days;d++){
+    const ds = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const hasEntry = allEntries.some(e=>e.entry_date===ds);
+    const isToday  = ds===today;
+    const isSel    = ds===selectedDate;
+    cells.insertAdjacentHTML('beforeend',
+      `<div class="dj-cal-cell${hasEntry?' has-entry':''}${isToday?' today':''}${isSel?' selected':''}" onclick="selectDay('${ds}')">${d}</div>`
+    );
+  }
+  // Pad end
+  const remaining = 7 - ((first + days) % 7 || 7);
+  for(let i=1;i<=remaining&&remaining<7;i++){
+    cells.insertAdjacentHTML('beforeend',`<div class="dj-cal-cell other-month">${i}</div>`);
+  }
+}
+
+function selectDay(ds){
+  selectedDate = ds;
+  buildCalendar();
+  applyFilters();
+}
+function changeMonth(dir){
+  currentMonth += dir;
+  if(currentMonth < 0){ currentMonth=11; currentYear--; }
+  if(currentMonth > 11){ currentMonth=0;  currentYear++; }
+  selectedDate = null;
+  loadEntries();
+}
+function goToday(){
+  const n = new Date();
+  currentYear  = n.getFullYear();
+  currentMonth = n.getMonth();
+  selectedDate = todayStr();
+  loadEntries();
+}
+
+// ── Load entries ─────────────────────────────────────────────────
+async function loadEntries(){
+  try{
+    allEntries = await rpc('get_my_diary_entries',{p_year:currentYear,p_month:currentMonth+1}) || [];
+    buildCalendar();
+    applyFilters();
+    loadStats();
+  }catch(e){
+    renderEntries([]);
+  }
+}
+
+// ── Filter & render ──────────────────────────────────────────────
+function filterType(type, btn){
+  activeType = type;
+  document.querySelectorAll('.dj-type-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+function handleSearch(q){
+  if(!q.trim()){ loadEntries(); return; }
+  rpc('search_my_diary',{p_query:q.trim()}).then(res=>{
+    allEntries = res||[];
+    buildCalendar();
+    applyFilters();
+  }).catch(()=>{});
+}
+function applyFilters(){
+  filteredEntries = allEntries.filter(e=>{
+    if(activeType && e.entry_type !== activeType) return false;
+    if(selectedDate && e.entry_date !== selectedDate) return false;
+    return true;
+  });
+  renderEntries(filteredEntries);
+}
+function renderEntries(entries){
+  const el = document.getElementById('dj-entries');
+  if(!entries.length){
+    el.innerHTML = `<div class="dj-empty">
+      <div class="dj-empty-icon">${selectedDate ? '📅' : '📓'}</div>
+      <div class="dj-empty-title">${selectedDate ? 'No entries for this day' : 'No entries yet'}</div>
+      <div class="dj-empty-sub">${selectedDate ? 'Click "+ New Entry" to write something.' : 'Start writing — your first entry is one click away.'}</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = entries.map(e=>{
+    const colour = TYPE_COLOURS[e.entry_type]||TYPE_COLOURS.general;
+    const emoji  = TYPE_EMOJIS[e.entry_type]||'📝';
+    const label  = TYPE_LABELS[e.entry_type]||'General';
+    const tags   = (e.tags||[]).map(t=>`<span class="dj-entry-tag">${t}</span>`).join('');
+    const preview = (e.content||'').slice(0,120).replace(/\n/g,' ');
+    return `<div class="dj-entry" onclick="viewEntry(${JSON.stringify(e.id)})">
+      <div class="dj-entry-head">
+        <div class="dj-entry-meta">
+          <span class="dj-entry-date">${fmtDate(e.entry_date)}</span>
+          <span class="dj-type-badge" style="background:${colour}">${emoji} ${label}</span>
+        </div>
+        ${e.mood?`<span class="dj-entry-mood">${e.mood}</span>`:''}
+      </div>
+      ${e.title?`<div class="dj-entry-title">${e.title}</div>`:''}
+      ${preview?`<div class="dj-entry-preview">${preview}${e.content.length>120?'…':''}</div>`:''}
+      ${tags?`<div class="dj-entry-tags">${tags}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── New entry ────────────────────────────────────────────────────
+function openNewEntry(){
+  document.getElementById('entry-id').value    = '';
+  document.getElementById('entry-date').value  = selectedDate || todayStr();
+  document.getElementById('entry-type').value  = 'general';
+  document.getElementById('entry-title').value = '';
+  document.getElementById('entry-content').value = '';
+  document.getElementById('entry-tags').value  = '';
+  document.querySelectorAll('.dj-mood-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('delete-btn').style.display = 'none';
+  document.getElementById('modal-title').textContent  = 'New Entry';
+  document.getElementById('dj-modal').classList.add('open');
+}
+function closeModal(){ document.getElementById('dj-modal').classList.remove('open'); }
+
+// ── Save entry ───────────────────────────────────────────────────
+async function saveEntry(){
+  const id      = document.getElementById('entry-id').value || null;
+  const date    = document.getElementById('entry-date').value;
+  const title   = document.getElementById('entry-title').value.trim();
+  const content = document.getElementById('entry-content').value.trim();
+  const type    = document.getElementById('entry-type').value;
+  const mood    = getSelectedMood();
+  const tagsRaw = document.getElementById('entry-tags').value;
+  const tags    = tagsRaw.split(',').map(t=>t.trim()).filter(Boolean);
+  if(!date){ alert('Please select a date.'); return; }
+  try{
+    await rpc('upsert_diary_entry',{p_id:id||null,p_date:date,p_title:title,p_content:content,p_type:type,p_mood:mood,p_tags:tags,p_is_private:true});
+    closeModal();
+    loadEntries();
+  }catch(e){ alert('Could not save: '+e.message); }
+}
+
+// ── View entry ───────────────────────────────────────────────────
+function viewEntry(id){
+  const e = allEntries.find(x=>x.id===id);
+  if(!e) return;
+  viewingEntry = e;
+  document.getElementById('view-mood').textContent    = e.mood||'';
+  document.getElementById('view-title').textContent   = e.title||'Untitled';
+  document.getElementById('view-date').textContent    = fmtDate(e.entry_date) + ' · ' + (TYPE_EMOJIS[e.entry_type]||'📝') + ' ' + (TYPE_LABELS[e.entry_type]||'General');
+  document.getElementById('view-content').textContent = e.content||'';
+  const tagsEl = document.getElementById('view-tags');
+  tagsEl.innerHTML = (e.tags||[]).map(t=>`<span class="dj-entry-tag">${t}</span>`).join('');
+  document.getElementById('dj-view').classList.add('open');
+}
+function closeView(){ document.getElementById('dj-view').classList.remove('open'); viewingEntry=null; }
+function editFromView(){
+  if(!viewingEntry) return;
+  closeView();
+  const e = viewingEntry;
+  document.getElementById('entry-id').value      = e.id;
+  document.getElementById('entry-date').value    = e.entry_date;
+  document.getElementById('entry-type').value    = e.entry_type||'general';
+  document.getElementById('entry-title').value   = e.title||'';
+  document.getElementById('entry-content').value = e.content||'';
+  document.getElementById('entry-tags').value    = (e.tags||[]).join(', ');
+  setMood(e.mood||'');
+  document.getElementById('delete-btn').style.display = 'inline-block';
+  document.getElementById('modal-title').textContent  = 'Edit Entry';
+  document.getElementById('dj-modal').classList.add('open');
+}
+
+// ── Delete entry ─────────────────────────────────────────────────
+async function deleteEntry(){
+  const id = document.getElementById('entry-id').value;
+  if(!id) return;
+  if(!confirm('Delete this entry? This cannot be undone.')) return;
+  try{
+    await rpc('delete_diary_entry',{p_id:id});
+    closeModal();
+    loadEntries();
+  }catch(e){ alert('Could not delete: '+e.message); }
+}
+
+// ── Init ─────────────────────────────────────────────────────────
+(function init(){
+  const now = new Date();
+  currentYear  = now.getFullYear();
+  currentMonth = now.getMonth();
+  selectedDate = todayStr();
+  buildMoodPicker();
+  loadEntries();
+  // Close modals on backdrop click
+  document.getElementById('dj-modal').addEventListener('click', function(e){ if(e.target===this) closeModal(); });
+  document.getElementById('dj-view').addEventListener('click',  function(e){ if(e.target===this) closeView();  });
+  // Keyboard shortcut: N = new entry
+  document.addEventListener('keydown', e=>{ if(e.key==='n'&&!e.target.matches('input,textarea,select')) openNewEntry(); });
+})();
+</script>
+</body>
+</html>
