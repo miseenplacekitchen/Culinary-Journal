@@ -204,25 +204,25 @@
     /* Only the ingredient modal form fields — NOT table inline selects */
     .ing-modal-body input,
     .ing-modal-body textarea {
-      background: var(--bg) !important;
-      color: var(--text-high) !important;
-      border-color: var(--border) !important;
+      background: var(--bg);
+      color: var(--text-high);
+      border-color: var(--border);
     }
     .ing-modal-body select {
-      background: var(--bg) !important;
-      color: var(--text-high) !important;
-      border-color: var(--border) !important;
+      background: var(--bg);
+      color: var(--text-high);
+      border-color: var(--border);
       -webkit-appearance: auto;
       appearance: auto;
     }
     .ing-modal-body select option { background: var(--bg); color: var(--text-high); }
-    .ing-modal-foot input, .ing-modal-foot select { background: var(--bg) !important; color: var(--text-high) !important; }
-    .ing-cat-filter { background: var(--bg) !important; color: var(--text-high) !important; }
+    .ing-modal-foot input, .ing-modal-foot select { background: var(--bg); color: var(--text-high); }
+    .ing-cat-filter { background: var(--bg); color: var(--text-high); }
     .ing-cat-filter option { background: var(--bg); color: var(--text-high); }
-    .ap-search { background: var(--bg) !important; color: var(--text-high) !important; }
+    .ap-search { background: var(--bg); color: var(--text-high); }
     .ap-search::placeholder { color: var(--text-mid); }
-    .bulk-field-sel, .bulk-val-input { background: var(--bg) !important; color: var(--text-high) !important; }
-    .ap-reviewer-notes { background: var(--bg) !important; color: var(--text-high) !important; }
+    .bulk-field-sel, .bulk-val-input { background: var(--bg); color: var(--text-high); }
+    .ap-reviewer-notes { background: var(--bg); color: var(--text-high); }
 
     /* ── INGREDIENT MANAGEMENT ────────────────── */
     .ing-toolbar { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; align-items:center; }
@@ -378,20 +378,6 @@
     <!-- INGREDIENTS VIEW -->
     <div id="view-ingredients" style="display:none">
       <div class="ing-toolbar">
-        <input type="text" class="ap-search" id="ing-search" placeholder="Search by name or alias..." oninput="ingSearch()" style="max-width:260px">
-        <select class="ing-cat-filter" id="ing-cat" onchange="ingSearch()">
-          <option value="">All Categories</option>
-          <option>Baking</option><option>Grains, Pasta &amp; Noodles</option>
-          <option>Breads &amp; Flatbreads</option><option>Packaged &amp; Convenience</option>
-          <option>Meat</option><option>Poultry</option><option>Seafood</option>
-          <option>Dairy &amp; Eggs</option><option>Plant-Based</option>
-          <option>Vegetables</option><option>Fruits</option><option>Herbs</option>
-          <option>Spices</option><option>Oils &amp; Fats</option>
-          <option>Legumes &amp; Pulses</option><option>Nuts &amp; Seeds</option>
-          <option>Condiments &amp; Sauces</option><option>Vinegars</option>
-          <option>Sweeteners</option><option>Canned &amp; Preserved</option>
-          <option>Alcohol &amp; Cooking Wine</option><option>Stocks &amp; Broths</option>
-        </select>
         <span class="ing-count" id="ing-count"></span>
         <div style="display:flex;gap:8px;margin-left:auto;align-items:center">
           <button class="ing-add-btn" onclick="openIngModal(null)">+ Add Ingredient</button>
@@ -960,6 +946,21 @@ document.getElementById('ap-modal').addEventListener('click', function(e) {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
 init();
+// ── FRACTION DISPLAY ─────────────────────────────────────────────
+const FRACTIONS = {
+  '1/8':'⅛','1/4':'¼','3/8':'⅜','1/2':'½',
+  '5/8':'⅝','2/3':'⅔','3/4':'¾','7/8':'⅞','1/3':'⅓'
+};
+function formatQty(val) {
+  if (!val) return '';
+  let s = String(val);
+  Object.keys(FRACTIONS).forEach(function(f) {
+    s = s.replace(new RegExp(f.replace('/','[/]'),'g'), FRACTIONS[f]);
+  });
+  return s;
+}
+
+
 // ── DROPDOWN THEME FIX — reads actual computed values ───────────
 function getThemeColors() {
   const cs = getComputedStyle(document.body);
@@ -976,45 +977,52 @@ function applyThemeColors(el) {
   const c = getThemeColors();
   const isDark = !document.body.className.match(/theme-(cream-gold|pure-white|soft-linen|sage-cream|blush-rose|silver-morning|lemon-fresh|spring-blossom|summer-citrus|christmas|easter|wedding-white|baby-shower|old-cookbook|bridal-blush|pure-petals|full-bloom|heaven)/);
   const scheme = isDark ? 'dark' : 'light';
+
+  // Apply to the container itself
+  el.style.setProperty('background-color', c.bg, 'important');
+  el.style.setProperty('color', c.fg, 'important');
+
+  // Apply to all form elements
   el.querySelectorAll('input, textarea').forEach(function(f) {
-    f.style.backgroundColor = c.bg;
-    f.style.color = c.fg;
-    f.style.borderColor = c.border;
+    f.style.setProperty('background-color', c.bg, 'important');
+    f.style.setProperty('color', c.fg, 'important');
+    f.style.setProperty('border-color', c.border, 'important');
     f.style.colorScheme = scheme;
   });
   el.querySelectorAll('select').forEach(function(s) {
-    s.style.backgroundColor = c.bg;
-    s.style.color = c.fg;
-    s.style.borderColor = c.border;
+    s.style.setProperty('background-color', c.bg, 'important');
+    s.style.setProperty('color', c.fg, 'important');
+    s.style.setProperty('border-color', c.border, 'important');
     s.style.colorScheme = scheme;
     Array.from(s.options).forEach(function(o) {
-      o.style.backgroundColor = c.bg;
-      o.style.color = c.fg;
+      o.style.setProperty('background-color', c.bg, 'important');
+      o.style.setProperty('color', c.fg, 'important');
     });
   });
-  // Panel/modal backgrounds
-  el.style.backgroundColor = c.bg;
-  el.style.color = c.fg;
-  el.style.borderColor = c.border;
+  // Labels inside filter panels
+  el.querySelectorAll('label').forEach(function(l) {
+    l.style.setProperty('color', c.fg, 'important');
+  });
 }
+
 
 function fixDropdownTheme() {
   const c = getThemeColors();
   const isDark = !document.body.className.match(/theme-(cream-gold|pure-white|soft-linen|sage-cream|blush-rose|silver-morning|lemon-fresh|spring-blossom|summer-citrus|christmas|easter|wedding-white|baby-shower|old-cookbook|bridal-blush|pure-petals|full-bloom|heaven)/);
   const scheme = isDark ? 'dark' : 'light';
-  document.querySelectorAll('.ing-modal-body select, .ing-modal-body input, .ing-modal-body textarea, .ing-cat-filter, .bulk-field-sel, .bulk-val-input, .ap-search, .col-filter-search, .col-filter-option input').forEach(function(el) {
+  document.querySelectorAll(
+    '.ing-modal-body select, .ing-modal-body input, .ing-modal-body textarea, ' +
+    '.ing-cat-filter, .bulk-field-sel, .bulk-val-input, .ap-search, ' +
+    '.col-filter-search, .inline-input, .inline-select'
+  ).forEach(function(el) {
+    el.style.setProperty('background-color', c.bg, 'important');
+    el.style.setProperty('color', c.fg, 'important');
+    el.style.colorScheme = scheme;
     if (el.tagName === 'SELECT') {
-      el.style.backgroundColor = c.bg;
-      el.style.color = c.fg;
-      el.style.colorScheme = scheme;
       Array.from(el.options).forEach(function(o) {
-        o.style.backgroundColor = c.bg;
-        o.style.color = c.fg;
+        o.style.setProperty('background-color', c.bg, 'important');
+        o.style.setProperty('color', c.fg, 'important');
       });
-    } else {
-      el.style.backgroundColor = c.bg;
-      el.style.color = c.fg;
-      el.style.colorScheme = scheme;
     }
   });
 }
@@ -1092,7 +1100,8 @@ function renderIngFiltered() {
     const vals = _ingColFilters[col];
     if (vals && vals.length) {
       data = data.filter(function(row) {
-        return vals.includes(String(row[col] || ''));
+        const v = col.startsWith('extra:') ? (row.extra_fields ? String(row.extra_fields[col.slice(6)]||'') : '') : String(row[col]||'');
+        return vals.includes(v);
       });
     }
   });
@@ -1123,7 +1132,10 @@ function openColFilter(e, col) {
   closeColFilter();
 
   const vals = {};
-  _ingAllData.forEach(function(row) { vals[String(row[col]||'')] = true; });
+  _ingAllData.forEach(function(row) {
+    const v = col.startsWith('extra:') ? (row.extra_fields ? String(row.extra_fields[col.slice(6)]||'') : '') : String(row[col]||'');
+    vals[v] = true;
+  });
   const unique = Object.keys(vals).sort();
   const active = _ingColFilters[col] || [];
 
@@ -1240,22 +1252,38 @@ async function exportCsv() {
   const btn = document.querySelector('[onclick="exportCsv()"]');
   if (btn) { btn.textContent = '⏳ Exporting...'; btn.disabled = true; }
   try {
-    const search = (document.getElementById('ing-search')?.value || '').trim() || null;
-    const cat    = document.getElementById('ing-cat')?.value || null;
-    const rows   = await rpc('admin_export_ingredients', { p_search: search || null, p_category: cat || null });
+    const rows = await rpc('admin_export_ingredients', { p_search: null, p_category: null });
     if (!rows.length) { alert('No ingredients to export.'); return; }
 
-    const cols = ['ID','Ingredient Name','Also Known As','Category','Sub Category',
+    // Get all extra_fields keys across all rows
+    const extraKeys = [];
+    const extraKeySeen = {};
+    rows.forEach(function(r) {
+      if (r.extra_fields && typeof r.extra_fields === 'object') {
+        Object.keys(r.extra_fields).forEach(function(k) {
+          if (!extraKeySeen[k]) { extraKeySeen[k] = true; extraKeys.push(k); }
+        });
+      }
+    });
+
+    const stdCols = ['ID','Ingredient Name','Also Known As','Category','Sub Category',
       'Standard Qty','Standard Weight (g or ml)','Unit','Liquid (Yes/No)',
       'CJ Recommended Brand','Allergen','Vegan (Yes/No)','Vegetarian (Yes/No)','Notes'];
+    const allCols = stdCols.concat(extraKeys);
 
     const escape = function(v) {
       const s = String(v == null ? '' : v);
       return s.includes(',') || s.includes('"') || s.includes('\n')
         ? '"' + s.replace(/"/g,'""') + '"' : s;
     };
-    const csv = [cols.join(',')].concat(
-      rows.map(function(r) { return cols.map(function(c) { return escape(r[c]); }).join(','); })
+
+    const csv = [allCols.join(',')].concat(
+      rows.map(function(r) {
+        return allCols.map(function(c) {
+          if (stdCols.includes(c)) return escape(r[c]);
+          return escape(r.extra_fields ? (r.extra_fields[c] || '') : '');
+        }).join(',');
+      })
     ).join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -1271,6 +1299,7 @@ async function exportCsv() {
     if (btn) { btn.textContent = '⬇ Export CSV'; btn.disabled = false; }
   }
 }
+
 
 // ── CUSTOM FIELDS ─────────────────────────────────────────────────
 let _customFields = {};
@@ -1353,22 +1382,90 @@ async function loadUnitsAutocomplete() {
 
 
 
+function getExtraFieldKeys(rows) {
+  const keys = {};
+  rows.forEach(function(r) {
+    if (r.extra_fields && typeof r.extra_fields === 'object') {
+      Object.keys(r.extra_fields).forEach(function(k) { keys[k] = true; });
+    }
+  });
+  return Object.keys(keys);
+}
+
+function buildDynamicHeader(extraKeys) {
+  const thead = document.querySelector('#ing-tbody')?.closest('table')?.querySelector('thead tr');
+  if (!thead) return;
+  // Remove old dynamic columns
+  thead.querySelectorAll('.th-dynamic').forEach(function(el) { el.remove(); });
+  const editTh = document.getElementById('th-edit');
+  extraKeys.forEach(function(k) {
+    const th = document.createElement('th');
+    th.className = 'sortable-col th-dynamic';
+    th.style.cursor = 'pointer';
+    th.style.whiteSpace = 'nowrap';
+    th.innerHTML = k + ' <span class="sort-icon" data-col="extra:' + k + '">⇅</span>' +
+      ' <button class="col-filter-btn" title="Filter">▼</button>';
+    th.querySelector('.sort-icon').addEventListener('click', function(e) {
+      e.stopPropagation(); sortIngBy('extra:' + k);
+    });
+    th.addEventListener('click', function() { sortIngBy('extra:' + k); });
+    th.querySelector('.col-filter-btn').addEventListener('click', function(e) {
+      e.stopPropagation(); openColFilter(e, 'extra:' + k);
+    });
+    if (editTh) thead.insertBefore(th, editTh);
+    else thead.appendChild(th);
+  });
+  // Update column visibility panel dynamically
+  updateColVisPanel(extraKeys);
+}
+
+function updateColVisPanel(extraKeys) {
+  const panel = document.getElementById('col-vis-panel');
+  if (!panel) return;
+  // Remove old dynamic rows
+  panel.querySelectorAll('.col-vis-dynamic').forEach(function(el) { el.remove(); });
+  extraKeys.forEach(function(k) {
+    const lbl = document.createElement('label');
+    lbl.className = 'col-vis-row col-vis-dynamic';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = true;
+    cb.addEventListener('change', function() {
+      document.querySelectorAll('.ing-col-extra-' + k.replace(/[^a-z0-9]/gi,'_')).forEach(function(td) {
+        td.style.display = cb.checked ? '' : 'none';
+      });
+      document.querySelectorAll('.th-dynamic').forEach(function(th) {
+        if (th.textContent.includes(k)) th.style.display = cb.checked ? '' : 'none';
+      });
+    });
+    lbl.appendChild(cb);
+    lbl.appendChild(document.createTextNode(' ' + k));
+    panel.appendChild(lbl);
+  });
+}
+
+function getRowExtraVal(row, key) {
+  if (!row.extra_fields) return '';
+  return String(row.extra_fields[key] || '');
+}
+
 function renderIngRows(rows) {
   const tbody = document.getElementById('ing-tbody');
   if (!tbody) return;
   window._ingRows = {};
   rows.forEach(function(i) { window._ingRows[i["ID"]] = i; });
 
+  // Build dynamic columns from extra_fields
+  const extraKeys = getExtraFieldKeys(rows);
+  buildDynamicHeader(extraKeys);
+
   if (!rows.length) {
     tbody.innerHTML = '<tr><td colspan="10" class="ap-empty-row">No ingredients found.</td></tr>';
     return;
   }
 
-  // Build rows using DOM to avoid string escaping issues
   tbody.innerHTML = '';
   rows.forEach(function(i) {
     const id = i["ID"];
-    const esc = function(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
     const tr = document.createElement('tr');
     tr.id = 'ing-row-' + id;
 
@@ -1433,8 +1530,19 @@ function renderIngRows(rows) {
     tdVeg.addEventListener('click', function(e) { inlineCell(e, id, "Vegetarian (Yes/No)", 'yesno'); });
     tr.appendChild(tdVeg);
 
+    // Dynamic extra_fields columns
+    extraKeys.forEach(function(k) {
+      const td = document.createElement('td');
+      td.className = 'editable-cell ing-col-extra-' + k.replace(/[^a-z0-9]/gi,'_');
+      td.textContent = getRowExtraVal(i, k);
+      td.title = 'Click to edit';
+      td.addEventListener('click', function(e) { inlineCell(e, id, 'extra:' + k, 'text'); });
+      tr.appendChild(td);
+    });
+
     // Edit button
     const tdEdit = document.createElement('td');
+    tdEdit.id = 'th-edit-' + id;
     const editBtn = document.createElement('button');
     editBtn.className = 'ap-filter-btn'; editBtn.style.fontSize = '11px';
     editBtn.textContent = 'Edit';
@@ -1520,7 +1628,7 @@ function openIngModal(ing) {
   if (msg) msg.style.display = 'none';
   if (ing) {
     document.getElementById('ing-modal-title').textContent = 'Edit Ingredient';
-    document.getElementById('ing-id').value       = ing.id||'';
+    document.getElementById('ing-id').value       = String(ing['ID']||'');
     document.getElementById('ing-name').value     = ing["Ingredient Name"]||'';
     document.getElementById('ing-aka').value      = ing["Also Known As"]||'';
     document.getElementById('ing-category').value = ing["Category"]||'';
@@ -1698,7 +1806,13 @@ function inlineCell(e, id, field, type) {
   const td = e.currentTarget;
   if (td.querySelector('input,select')) return;
   const ing = window._ingRows && window._ingRows[id];
-  const currentVal = ing ? (ing[field] || '') : td.textContent.trim();
+  let currentVal;
+  if (field.startsWith('extra:')) {
+    const k = field.slice(6);
+    currentVal = ing && ing.extra_fields ? (ing.extra_fields[k] || '') : '';
+  } else {
+    currentVal = ing ? (ing[field] || '') : td.textContent.trim();
+  }
   const origHTML = td.innerHTML;
 
   if (type === 'text') {
@@ -1714,6 +1828,7 @@ function inlineCell(e, id, field, type) {
     });
     input.addEventListener('click', function(ev) { ev.stopPropagation(); });
     td.innerHTML = '';
+    applyThemeColors(td);
     td.appendChild(input);
     input.focus();
 
@@ -1735,6 +1850,7 @@ function inlineCell(e, id, field, type) {
     });
     sel.addEventListener('click', function(ev) { ev.stopPropagation(); });
     td.innerHTML = '';
+    applyThemeColors(td);
     td.appendChild(sel);
     sel.focus();
   }
@@ -1755,6 +1871,21 @@ async function saveInlineField(id, field, value, td) {
     'Unit':                'p_unit',
     'Notes':               'p_notes'
   };
+  // Handle extra_fields columns
+  if (field.startsWith('extra:')) {
+    const k = field.slice(6);
+    try {
+      const ing = window._ingRows && window._ingRows[id];
+      const ef = Object.assign({}, (ing && ing.extra_fields) || {});
+      ef[k] = value;
+      await rpc('admin_upsert_ingredient', { p_id: id, p_ingredient_name: ing ? (ing['Ingredient Name']||'') : '', p_extra_fields: ef });
+      if (window._ingRows && window._ingRows[id]) {
+        window._ingRows[id].extra_fields = ef;
+      }
+      td.textContent = value; td.className = 'editable-cell';
+    } catch(err) { console.error(err); }
+    return;
+  }
   const param = paramMap[field];
   if (!param) return;
   try {
@@ -1830,8 +1961,28 @@ function handleCsvFile(file) {
         showCsvError('No data rows found in the CSV.');
         return;
       }
-      csvData = results.data;
-      showCsvPreview(csvData);
+      // Separate standard columns from extra columns
+      const STANDARD_COLS = ['ID','Ingredient Name','Also Known As','Category',
+        'Sub Category','Standard Qty','Standard Weight (g or ml)','Unit',
+        'Liquid (Yes/No)','CJ Recommended Brand','Allergen','Vegan (Yes/No)',
+        'Vegetarian (Yes/No)','Notes'];
+      const allCols = results.data.length > 0 ? Object.keys(results.data[0]) : [];
+      const extraCols = allCols.filter(function(c) { return !STANDARD_COLS.includes(c); });
+      // Map extra columns into extra_fields JSONB
+      csvData = results.data.map(function(row) {
+        const mapped = {};
+        STANDARD_COLS.forEach(function(c) { if (row[c] !== undefined) mapped[c] = row[c]; });
+        if (extraCols.length) {
+          mapped.extra_fields = {};
+          extraCols.forEach(function(c) { if (row[c] !== undefined && row[c] !== '') mapped.extra_fields[c] = row[c]; });
+        }
+        return mapped;
+      });
+      showCsvPreview(results.data); // Show original data in preview
+      if (extraCols.length) {
+        document.getElementById('csv-row-count').textContent +=
+          ' — ' + extraCols.length + ' extra column(s) will be stored as custom fields: ' + extraCols.join(', ');
+      }
     },
     error: function(e) { showCsvError('Error reading file: ' + e.message); }
   });
