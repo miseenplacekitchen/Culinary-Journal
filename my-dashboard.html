@@ -32,6 +32,23 @@
 
     /* Recipe cards */
     .ud-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+
+    .an-section { margin-bottom:28px; }
+    .an-sec-title { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); margin-bottom:12px; }
+    .an-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+    .an-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+    .an-card-label { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-bottom:4px; }
+    .an-card-value { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:700; color:var(--accent); line-height:1.1; }
+    .an-bar-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+    .an-bar-label { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-high); width:160px; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .an-bar { flex:1; height:7px; background:var(--text-ghost); border-radius:4px; overflow:hidden; }
+    .an-bar-fill { height:100%; background:var(--accent); border-radius:4px; transition:width 0.4s; }
+    .an-bar-count { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--accent); font-weight:600; width:24px; text-align:right; }
+    .an-recent-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; }
+    .an-recent-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:9px; padding:10px 12px; text-decoration:none; display:block; }
+    .an-recent-card:hover { border-color:var(--accent-border); }
+    .an-recent-name { font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; color:var(--text-high); margin-bottom:2px; }
+    .an-recent-time { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); }
     .ud-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; overflow:hidden; transition:transform 0.15s,border-color 0.15s; cursor:pointer; }
     .ud-card:hover { transform:translateY(-2px); border-color:var(--accent-border); }
     .ud-card-img { height:140px; background:var(--text-ghost); display:flex; align-items:center; justify-content:center; font-size:40px; border-bottom:1px solid var(--border); overflow:hidden; position:relative; }
@@ -39,6 +56,19 @@
     .ud-card-body { padding:14px 16px; }
     .ud-card-name { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:600; color:var(--text-high); margin-bottom:4px; }
     .ud-card-meta { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+
+    .an-card       { background:var(--text-ghost); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+    .an-card-label { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-bottom:4px; }
+    .an-card-value { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:700; color:var(--accent); line-height:1.1; }
+    .an-bar-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+    .an-bar-label { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-high); width:160px; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .an-bar { flex:1; height:7px; background:var(--text-ghost); border-radius:4px; overflow:hidden; }
+    .an-bar-fill { height:100%; background:var(--accent); border-radius:4px; }
+    .an-bar-count { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--accent); font-weight:600; width:24px; text-align:right; }
+    .an-recent-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:9px; padding:10px 12px; text-decoration:none; display:block; }
+    .an-recent-card:hover { border-color:var(--accent-border); }
+    .an-recent-name { font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; color:var(--text-high); margin-bottom:2px; }
+    .an-recent-time { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); }
     .ud-card-status { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; }
     .status-pending  { background:rgba(255,193,7,0.15); color:#ffc107; border:1px solid rgba(255,193,7,0.3); }
     .status-approved { background:rgba(76,175,118,0.15); color:#4caf76; border:1px solid rgba(76,175,118,0.3); }
@@ -79,9 +109,16 @@
     <button class="ud-tab" onclick="switchTab('approved',this)">Published</button>
     <button class="ud-tab" onclick="switchTab('rejected',this)">Needs Work</button>
     <button class="ud-tab" onclick="switchTab('drafts',this)">Drafts</button>
+    <button class="ud-tab" onclick="switchTab('analytics',this)">📊 Analytics</button>
   </div>
 
   <div id="ud-grid" class="ud-grid"></div>
+
+<!-- Analytics panel -->
+<div id="tab-analytics" style="display:none">
+  <div id="analytics-panel"></div>
+</div>
+
 </div>
 
 <!-- Login prompt -->
@@ -218,6 +255,46 @@ function renderDrafts() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// ── USER ANALYTICS ─────────────────────────────────────────────
+var VIEWED_KEY = 'tcj_viewed';
+function getRecentlyViewed() {
+  try { return JSON.parse(localStorage.getItem(VIEWED_KEY)||'[]'); } catch(_) { return []; }
+}
+function renderAnalytics() {
+  var panel = document.getElementById('analytics-panel');
+  if (!panel) return;
+  var recipes  = allRecipes || [];
+  var approved = recipes.filter(function(r){return r.status==='approved';});
+  var pending  = recipes.filter(function(r){return r.status==='pending';});
+  var rejected = recipes.filter(function(r){return r.status==='rejected';});
+  var recent   = getRecentlyViewed();
+
+  var catCounts = {};
+  recipes.forEach(function(r){ if (r.category) catCounts[r.category] = (catCounts[r.category]||0)+1; });
+  var cats = Object.entries(catCounts).sort(function(a,b){return b[1]-a[1];});
+  var maxCat = cats.length ? cats[0][1] : 1;
+  var catBars = cats.slice(0,8).map(function(c){
+    return '<div class="an-bar-row"><div class="an-bar-label">'+c[0]+'</div><div class="an-bar"><div class="an-bar-fill" style="width:'+Math.round(c[1]/maxCat*100)+'%"></div></div><div class="an-bar-count">'+c[1]+'</div></div>';
+  }).join('');
+
+  var recentCards = recent.slice(0,8).map(function(v){
+    var mins = Math.round((Date.now()-v.ts)/60000);
+    var when = mins < 60 ? mins+'m ago' : mins < 1440 ? Math.round(mins/60)+'h ago' : Math.round(mins/1440)+'d ago';
+    return '<a href="recipe-page.html?id='+v.id+'" class="an-recent-card"><div class="an-recent-name">'+v.name+'</div><div class="an-recent-time">Viewed '+when+'</div></a>';
+  }).join('');
+
+  panel.innerHTML =
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px">'+
+      '<div class="an-card"><div class="an-card-label">Total submitted</div><div class="an-card-value">'+recipes.length+'</div></div>'+
+      '<div class="an-card"><div class="an-card-label">Published</div><div class="an-card-value" style="color:#4caf76">'+approved.length+'</div></div>'+
+      '<div class="an-card"><div class="an-card-label">Under review</div><div class="an-card-value" style="color:#f0a830">'+pending.length+'</div></div>'+
+      '<div class="an-card"><div class="an-card-label">Categories</div><div class="an-card-value">'+cats.length+'</div></div>'+
+    '</div>'+
+    (cats.length ? '<div class="an-sec-title" style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:12px">Your Categories</div>'+catBars+'<br>' : '')+
+    (recent.length ? '<div class="an-sec-title" style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:12px">Recently Viewed</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">'+recentCards+'</div>' : '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Visit some recipes and they will appear here as recently viewed.</div>');
+}
+
 </script>
 </body>
 </html>

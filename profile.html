@@ -266,6 +266,13 @@
       color: var(--accent);
       font-weight: 600;
     }
+
+    .pref-checks { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+    .pref-check  { display:flex; align-items:center; gap:5px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-high); background:var(--text-ghost); border:1px solid var(--border); border-radius:7px; padding:5px 10px; cursor:pointer; }
+    .pref-check input { accent-color:var(--accent); }
+    .pref-check:has(input:checked) { background:rgb(from var(--accent) r g b / 0.1); border-color:rgb(from var(--accent) r g b / 0.3); }
+    .pref-label  { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-mid); margin-bottom:6px; margin-top:14px; }
+    .pref-label:first-child { margin-top:0; }
     .theme-btn {
       padding: 8px 16px;
       border-radius: 7px;
@@ -541,6 +548,66 @@
 
 
       <!-- ── DANGER ZONE ── -->
+
+      <section class="pcard">
+        <h2 class="pcard-title">Dietary &amp; Health Preferences</h2>
+        <p class="pcard-desc">Personalise your experience. These are used to filter recipes and flag potential conflicts.</p>
+
+        <div class="pref-label">Dietary Preference</div>
+        <div class="pref-checks" id="pref-dietary">
+          <label class="pref-check"><input type="checkbox" value="Vegan"> 🌿 Vegan</label>
+          <label class="pref-check"><input type="checkbox" value="Vegetarian"> 🥕 Vegetarian</label>
+          <label class="pref-check"><input type="checkbox" value="Gluten Free"> 🌾 Gluten Free</label>
+          <label class="pref-check"><input type="checkbox" value="Dairy Free"> 🥛 Dairy Free</label>
+          <label class="pref-check"><input type="checkbox" value="Halal"> ☪ Halal</label>
+          <label class="pref-check"><input type="checkbox" value="Kosher"> ✡ Kosher</label>
+          <label class="pref-check"><input type="checkbox" value="Nut Free"> 🥜 Nut Free</label>
+          <label class="pref-check"><input type="checkbox" value="Shellfish Free"> 🦐 Shellfish Free</label>
+          <label class="pref-check"><input type="checkbox" value="Egg Free"> 🥚 Egg Free</label>
+        </div>
+
+        <div class="pref-label">Allergies</div>
+        <div class="pref-checks" id="pref-allergies">
+          <label class="pref-check"><input type="checkbox" value="Gluten"> Gluten / Wheat</label>
+          <label class="pref-check"><input type="checkbox" value="Dairy"> Dairy</label>
+          <label class="pref-check"><input type="checkbox" value="Eggs"> Eggs</label>
+          <label class="pref-check"><input type="checkbox" value="Tree Nuts"> Tree Nuts</label>
+          <label class="pref-check"><input type="checkbox" value="Peanuts"> Peanuts</label>
+          <label class="pref-check"><input type="checkbox" value="Fish"> Fish</label>
+          <label class="pref-check"><input type="checkbox" value="Shellfish"> Shellfish</label>
+          <label class="pref-check"><input type="checkbox" value="Soy"> Soy</label>
+          <label class="pref-check"><input type="checkbox" value="Sesame"> Sesame</label>
+          <label class="pref-check"><input type="checkbox" value="Sulphites"> Sulphites</label>
+          <label class="pref-check"><input type="checkbox" value="Mustard"> Mustard</label>
+        </div>
+
+        <div class="pref-label">Health Conditions</div>
+        <div class="pref-checks" id="pref-health">
+          <label class="pref-check"><input type="checkbox" value="Diabetic"> 🩺 Diabetic</label>
+          <label class="pref-check"><input type="checkbox" value="High Cholesterol"> ❤️ High Cholesterol</label>
+          <label class="pref-check"><input type="checkbox" value="High Blood Pressure"> 💊 High Blood Pressure</label>
+          <label class="pref-check"><input type="checkbox" value="Weight Management"> ⚖️ Weight Management</label>
+          <label class="pref-check"><input type="checkbox" value="Fitness Focused"> 💪 Fitness Focused</label>
+          <label class="pref-check"><input type="checkbox" value="New Mom"> 👶 New Mom / Breastfeeding</label>
+          <label class="pref-check"><input type="checkbox" value="Elderly"> 👴 Elderly / Soft Foods</label>
+        </div>
+
+        <div class="pref-label">Cooking Style</div>
+        <div class="pref-checks" id="pref-style">
+          <label class="pref-check"><input type="radio" name="cooking-style" value="Home Cook"> 🧑‍🍳 Home Cook</label>
+          <label class="pref-check"><input type="radio" name="cooking-style" value="Entertainer"> 🎉 Entertainer &amp; Host</label>
+          <label class="pref-check"><input type="radio" name="cooking-style" value="Baker"> 🍞 Baker</label>
+          <label class="pref-check"><input type="radio" name="cooking-style" value="Event Planner"> 💒 Wedding &amp; Event Planner</label>
+          <label class="pref-check"><input type="radio" name="cooking-style" value="Health Focused"> 🥗 Health Focused</label>
+          <label class="pref-check"><input type="radio" name="cooking-style" value="Quick Meals"> ⏱ Quick Meals</label>
+        </div>
+
+        <div style="margin-top:18px;display:flex;align-items:center;gap:12px">
+          <button class="pbtn" onclick="savePreferences()">Save Preferences</button>
+          <span id="pref-msg" style="font-family:'DM Sans',sans-serif;font-size:12px;color:#4caf76;display:none">✓ Preferences saved</span>
+        </div>
+      </section>
+
       <section class="pcard" style="border-color:rgba(220,80,80,0.3)">
         <h2 class="pcard-title" style="color:#dc5050">Danger Zone</h2>
         <p class="pcard-desc">These actions are permanent and cannot be undone without contacting support.</p>
@@ -809,6 +876,7 @@ async function init() {
     }
 
     hydrateUI();
+  hydratePreferences();
     renderAllThemes();
     PROFILE.preview_theme = PROFILE.theme_preference || 'midnight-slate';
     applyTheme(PROFILE.preview_theme);
@@ -1215,6 +1283,47 @@ if (document.readyState === 'loading') {
 } else {
   init();
 }
+
+// ── DIETARY & HEALTH PREFERENCES ─────────────────────────────────
+function hydratePreferences() {
+  var setChecks = function(containerId, values) {
+    var vals = values || [];
+    document.querySelectorAll('#' + containerId + ' input[type="checkbox"]').forEach(function(cb) {
+      cb.checked = vals.includes(cb.value);
+    });
+  };
+  setChecks('pref-dietary',   PROFILE.dietary_preferences);
+  setChecks('pref-allergies',  PROFILE.allergies);
+  setChecks('pref-health',    PROFILE.health_conditions);
+  var style = PROFILE.cooking_style || '';
+  if (style) {
+    var radio = document.querySelector('input[name="cooking-style"][value="' + style + '"]');
+    if (radio) radio.checked = true;
+  }
+}
+
+async function savePreferences() {
+  var getChecked = function(containerId) {
+    return [...document.querySelectorAll('#' + containerId + ' input:checked')].map(function(i){return i.value;});
+  };
+  var styleEl = document.querySelector('input[name="cooking-style"]:checked');
+  var style   = styleEl ? styleEl.value : '';
+  try {
+    await callRPC('update_my_preferences', {
+      p_dietary_preferences: getChecked('pref-dietary'),
+      p_allergies:           getChecked('pref-allergies'),
+      p_health_conditions:   getChecked('pref-health'),
+      p_cooking_style:       style
+    });
+    PROFILE.dietary_preferences = getChecked('pref-dietary');
+    PROFILE.allergies            = getChecked('pref-allergies');
+    PROFILE.health_conditions    = getChecked('pref-health');
+    PROFILE.cooking_style        = style;
+    var msg = document.getElementById('pref-msg');
+    if (msg) { msg.style.display = 'inline'; setTimeout(function(){ msg.style.display='none'; }, 3000); }
+  } catch(e) { alert('Error saving preferences: ' + (e.message||e)); }
+}
+
 </script>
 
 <!-- Deactivation Modal -->
