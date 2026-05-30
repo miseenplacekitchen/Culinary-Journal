@@ -1279,6 +1279,10 @@ async function loadUserMgmt(statusFilter) {
       const initials = ((u.full_name||u.username||'?').split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2));
       const joined = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
       const statusColor = u.account_status === 'pending' ? '#d4a017' : u.account_status === 'deactivated' ? '#dc5050' : '#4caf76';
+      const avatarHtml = u.avatar_url
+        ? '<img src="' + escT(u.avatar_url) + '" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid var(--border);flex-shrink:0">' +
+          '<div style="display:none;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8a6a28);align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">' + initials + '</div>'
+        : '<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8a6a28);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">' + initials + '</div>';
       const actions = u.account_status === 'pending'
         ? '<button data-uid="' + u.id + '" onclick="approveUser(this.dataset.uid,this)" style="padding:6px 14px;background:#2e7d4f;border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px">Approve</button>' +
           '<button data-uid="' + u.id + '" onclick="declineUser(this.dataset.uid,this)" style="padding:6px 14px;background:none;border:1px solid #dc5050;border-radius:7px;color:#dc5050;font-size:12px;font-weight:600;cursor:pointer">Decline</button>'
@@ -1288,7 +1292,7 @@ async function loadUserMgmt(statusFilter) {
           : '<button data-uid="' + u.id + '" onclick="reactivateUser(this.dataset.uid,this)" style="padding:6px 14px;background:none;border:1px solid #4caf76;border-radius:7px;color:#4caf76;font-size:12px;cursor:pointer">Reactivate</button>';
       return '<tr>' +
         '<td class="ap-td"><div style="display:flex;align-items:center;gap:10px">' +
-        '<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8a6a28);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">' + initials + '</div>' +
+        avatarHtml +
         '<div><div style="font-weight:500;color:var(--text-high)">' + escT(u.full_name||u.username) + '</div><div style="font-size:11px;color:var(--text-mid)">@' + escT(u.username||'') + '</div></div>' +
         '</div></td>' +
         '<td class="ap-td" style="font-size:13px">' + escT(u.email) + '</td>' +
