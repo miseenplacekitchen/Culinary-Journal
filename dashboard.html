@@ -1848,7 +1848,7 @@ function renderIngRows(rows) {
         td.title=fmtVal;
         tdWrap.appendChild(div);
         td.appendChild(tdWrap);
-      } else if(stdCfg&&stdCfg.edit==='yesno'||colKey==='Vegan (Yes/No)'||colKey==='Vegetarian (Yes/No)'){
+      } else if(stdCfg&&(stdCfg.type==='yesno'||stdCfg.edit==='yesno')){
         td.className='editable-cell'+(pending?' cell-pending':'');
         const span=document.createElement('span');
         span.className='ap-status-pill '+(displayVal==='Yes'?'approved':'rejected');
@@ -1876,7 +1876,7 @@ function renderIngRows(rows) {
         tdWrap.textContent=fmtVal;
         td.title=fmtVal||'Click to edit';
         td.appendChild(tdWrap);
-        const editType=(stdCfg&&stdCfg.edit==='select')?'select':'text';
+        const editType=stdCfg&&stdCfg.edit==='select'?'select':stdCfg&&stdCfg.type==='number'?'number':'text';
         if(editType==='select'){
           td.addEventListener('click',function(e){inlineCell(e,id,colKey,'select');});
         } else {
@@ -1933,14 +1933,41 @@ function inlineCell(e,id,field,type){
 
   if(type==='number'){
     const origStyle=td.getAttribute('style')||'';
-    const ni=document.createElement('input');ni.type='number';ni.className='inline-input';
+    const ni=document.createElement('input');
+    ni.type='text'; // use text so we control exactly what's accepted
+    ni.inputMode='decimal';
+    ni.className='inline-input';
     ni.style.cssText='width:100%;max-width:120px;font-family:DM Sans,sans-serif;font-size:12px;padding:4px 8px;border:1px solid var(--accent);border-radius:5px;background:var(--bg);color:var(--text-high);outline:none;box-sizing:border-box';
     ni.value=currentVal;
+    // Reject non-numeric characters as they're typed
+    ni.addEventListener('input',function(){
+      var v=this.value;
+      // Allow: digits, one decimal point, one leading minus
+      var clean=v.replace(/[^0-9.\-]/g,'');
+      // Only one decimal point
+      var parts=clean.split('.');
+      if(parts.length>2)clean=parts[0]+'.'+parts.slice(1).join('');
+      if(clean!==v)this.value=clean;
+    });
+    function commitNum(val){
+      var v=val.trim();
+      if(v===''){commitChange('');return;}
+      var n=parseFloat(v);
+      if(isNaN(n)){
+        // invalid — revert without saving
+        td.setAttribute('style',origStyle);td.innerHTML=origHTML;
+        td.className='editable-cell'+(td.classList.contains('cell-pending')?' cell-pending':'');
+        return;
+      }
+      // Round to max 2 decimal places
+      var formatted=parseFloat(n.toFixed(2)).toString();
+      commitChange(formatted);
+    }
     ni.addEventListener('keydown',function(ev){
-      if(ev.key==='Enter'){ev.preventDefault();commitChange(this.value);return;}
+      if(ev.key==='Enter'){ev.preventDefault();commitNum(this.value);return;}
       if(ev.key==='Escape'){td.setAttribute('style',origStyle);td.innerHTML=origHTML;td.className='editable-cell'+(td.classList.contains('cell-pending')?' cell-pending':'');}
     });
-    ni.addEventListener('blur',function(){commitChange(this.value);});
+    ni.addEventListener('blur',function(){commitNum(this.value);});
     ni.addEventListener('click',function(ev){ev.stopPropagation();});
     td.innerHTML='';td.appendChild(ni);ni.focus();ni.select();
   } else if(type==='text'){
