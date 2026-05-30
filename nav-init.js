@@ -77,77 +77,102 @@ function canonicalizeLogo() {
 function buildSectionNav() {
   var tabNav = document.querySelector('.tab-nav');
   if (!tabNav) return;
+
   var page = (window.location.pathname.split('/').pop() || 'index.html');
   var isHome = (page === 'index.html' || page === '');
   var activeSection = null;
-  CJ_SECTIONS.forEach(function(s){ if (s.pages.indexOf(page) > -1) activeSection = s.id; });
+  CJ_SECTIONS.forEach(function(s){
+    if (s.pages.indexOf(page) > -1) activeSection = s.id;
+  });
   if (activeSection) document.body.classList.add('section-' + activeSection);
 
-  var inner = document.createElement('div');
-  inner.className = 'sec-nav';
-  inner.setAttribute('role','navigation');
-  inner.setAttribute('aria-label','Main navigation');
+  // ── Single shared dropdown appended to body ──────────────────
+  // Bypasses ALL parent overflow/clipping issues completely
+  var DROPDOWN = document.createElement('div');
+  DROPDOWN.id = 'sec-nav-global-dropdown';
+  DROPDOWN.style.cssText = [
+    'position:fixed',
+    'background:var(--overlay-dark,rgba(15,16,17,.97))',
+    'border:1px solid var(--border)',
+    'border-radius:12px',
+    'padding:6px',
+    'min-width:210px',
+    'box-shadow:0 12px 40px rgba(0,0,0,.6)',
+    'z-index:99999',
+    'display:none',
+    'backdrop-filter:blur(16px)',
+    '-webkit-backdrop-filter:blur(16px)'
+  ].join(';');
+  document.body.appendChild(DROPDOWN);
 
-  // Home
-  var homeA = document.createElement('a');
-  homeA.href = 'index.html';
-  homeA.className = 'sec-nav-home' + (isHome ? ' active' : '');
-  homeA.innerHTML = '🏠 Home';
-  inner.appendChild(homeA);
+  var openBtn = null;
 
-  // Sections
-  CJ_SECTIONS.forEach(function(section) {
-    var isActive = (activeSection === section.id);
-    var item = document.createElement('div');
-    item.className = 'sec-nav-item';
-
-    // Section label: click toggles the dropdown
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'sec-nav-btn' + (isActive ? ' active' : '');
-    btn.setAttribute('aria-haspopup','true');
-    btn.setAttribute('aria-expanded', item.classList.contains('open') ? 'true' : 'false');
-    btn.innerHTML = section.emoji + ' ' + section.label;
-    btn.addEventListener('click', function(e){
-      e.stopPropagation();
-      var isOpen = item.classList.contains('open');
-      document.querySelectorAll('.sec-nav-item.open').forEach(function(el){
-        el.classList.remove('open');
-        var b = el.querySelector('.sec-nav-btn'); if(b) b.setAttribute('aria-expanded','false');
-      });
-      if (!isOpen) {
-        item.classList.add('open');
-        btn.setAttribute('aria-expanded','true');
-      }
-    });
-    // No chevron — label click IS the toggle
-
-    var dropdown = document.createElement('div');
-    dropdown.className = 'sec-nav-dropdown';
-    dropdown.setAttribute('role','menu');
-    section.links.forEach(function(link){
+  function showDropdown(btn, section) {
+    DROPDOWN.innerHTML = '';
+    section.links.forEach(function(link) {
       var isLinkActive = (link.href === page);
       var a = document.createElement('a');
       a.href = link.href;
-      a.className = 'sec-nav-link' + (isLinkActive ? ' active' : '');
-      a.setAttribute('role','menuitem');
-      a.innerHTML = '<span class="sec-nav-link-icon">' + link.emoji + '</span>' + link.label;
-      dropdown.appendChild(a);
+      a.style.cssText = 'display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;color:' + (isLinkActive ? 'var(--accent)' : 'var(--text-mid)') + ';text-decoration:none;white-space:nowrap;transition:background .15s';
+      a.innerHTML = '<span style="font-size:14px;flex-shrink:0">' + link.emoji + '</span>' + link.label;
+      a.addEventListener('mouseover', function(){ this.style.background='rgba(255,255,255,.05)'; this.style.color='var(--text-high)'; });
+      a.addEventListener('mouseout',  function(){ this.style.background=''; this.style.color = (isLinkActive ? 'var(--accent)' : 'var(--text-mid)'); });
+      DROPDOWN.appendChild(a);
     });
-    item.appendChild(btn);
-    item.appendChild(dropdown);
-    inner.appendChild(item);
+
+    var rect = btn.getBoundingClientRect();
+    DROPDOWN.style.top  = (rect.bottom + 8) + 'px';
+    DROPDOWN.style.left = rect.left + 'px';
+    DROPDOWN.style.display = 'block';
+    openBtn = btn;
+    btn.style.color = 'var(--accent)';
+  }
+
+  function hideDropdown() {
+    DROPDOWN.style.display = 'none';
+    if (openBtn) { openBtn.style.color = ''; openBtn = null; }
+  }
+
+  // ── Build nav inner ──────────────────────────────────────────
+  var inner = document.createElement('div');
+  inner.style.cssText = 'display:flex;align-items:center;height:100%;gap:2px';
+
+  // Home link
+  var homeA = document.createElement('a');
+  homeA.href = 'index.html';
+  homeA.style.cssText = 'display:flex;align-items:center;gap:6px;padding:10px 14px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:500;color:' + (isHome ? 'var(--accent)' : 'var(--text-low)') + ';text-decoration:none;border-radius:8px;white-space:nowrap;transition:color .2s';
+  homeA.textContent = '🏠 Home';
+  inner.appendChild(homeA);
+
+  // Section buttons
+  CJ_SECTIONS.forEach(function(section) {
+    var isActive = (activeSection === section.id);
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.style.cssText = 'display:flex;align-items:center;gap:6px;padding:10px 14px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:' + (isActive ? '600' : '500') + ';color:' + (isActive ? 'var(--accent)' : 'var(--text-low)') + ';background:none;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;transition:color .2s';
+    btn.innerHTML = section.emoji + ' ' + section.label;
+
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (DROPDOWN.style.display !== 'none' && openBtn === btn) {
+        hideDropdown();
+      } else {
+        showDropdown(btn, section);
+      }
+    });
+
+    inner.appendChild(btn);
+  });
+
+  // Close on outside click
+  document.addEventListener('click', function(e) {
+    if (!DROPDOWN.contains(e.target) && e.target !== openBtn) {
+      hideDropdown();
+    }
   });
 
   tabNav.innerHTML = '';
   tabNav.appendChild(inner);
-
-  document.addEventListener('click', function(){
-    document.querySelectorAll('.sec-nav-item.open').forEach(function(el){
-      el.classList.remove('open');
-      var b = el.querySelector('.sec-nav-btn'); if(b) b.setAttribute('aria-expanded','false');
-    });
-  });
 }
 
 // ── PAGE GUARD LOADER ────────────────────────────────────────────
