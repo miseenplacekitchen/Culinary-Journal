@@ -2001,6 +2001,42 @@ function renameExtraColumn(oldName) {
 }
 
 
+// ── DELETE CUSTOM COLUMN ─────────────────────────────────────────
+function deleteExtraColumn(name) {
+  if (!confirm('Delete column "' + name + '"? This removes it from the table. Any values stored for this column are NOT deleted from the database.')) return;
+
+  // 1. Remove from _extraColKeys
+  _extraColKeys = _extraColKeys.filter(function(k){ return k !== name; });
+
+  // 2. Remove from _colVis
+  delete _colVis['extra:' + name];
+
+  // 3. Remove from column order in localStorage
+  var order = JSON.parse(localStorage.getItem('tcj_col_order') || '[]');
+  order = order.filter(function(k){ return k !== 'extra:' + name; });
+  localStorage.setItem('tcj_col_order', JSON.stringify(order));
+
+  // 4. Remove from stored extra col list
+  var stored = JSON.parse(localStorage.getItem('tcj_extra_cols') || '[]');
+  stored = stored.filter(function(k){ return k !== name; });
+  localStorage.setItem('tcj_extra_cols', JSON.stringify(stored));
+
+  // 5. Remove from any active column filters
+  delete _ingColFilters['extra:' + name];
+
+  // 6. Remove from pending changes
+  Object.keys(_pendingChanges).forEach(function(id) {
+    if (_pendingChanges[id]) delete _pendingChanges[id]['extra:' + name];
+  });
+
+  // 7. Rebuild
+  buildTableHeader();
+  buildColVisPanel();
+  renderIngFiltered();
+  updateSaveBtn();
+}
+
+
 // ── COLUMN VISIBILITY PANEL ──────────────────────────────────────
 function buildColVisPanel(){
   const panel=document.getElementById('col-vis-panel');
@@ -2030,7 +2066,13 @@ function buildColVisPanel(){
     renBtn.textContent='Rename';
     renBtn.style.cssText='font-family:DM Sans,sans-serif;font-size:10px;padding:2px 8px;border-radius:5px;border:1px solid var(--border);background:none;color:var(--text-mid);cursor:pointer;margin-left:6px;flex-shrink:0';
     renBtn.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();renameExtraColumn(k);});
-    lbl.appendChild(left);lbl.appendChild(renBtn);panel.appendChild(lbl);
+    const delBtn2=document.createElement('button');
+    delBtn2.textContent='Delete';
+    delBtn2.style.cssText='font-family:DM Sans,sans-serif;font-size:10px;padding:2px 8px;border-radius:5px;border:1px solid #dc5050;background:none;color:#dc5050;cursor:pointer;margin-left:4px;flex-shrink:0';
+    delBtn2.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();deleteExtraColumn(k);});
+    const btnGroup=document.createElement('div');btnGroup.style.cssText='display:flex;align-items:center;flex-shrink:0';
+    btnGroup.appendChild(renBtn);btnGroup.appendChild(delBtn2);
+    lbl.appendChild(left);lbl.appendChild(btnGroup);panel.appendChild(lbl);
   });
   applyThemeColors(panel);
 }
