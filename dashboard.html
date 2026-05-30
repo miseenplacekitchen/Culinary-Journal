@@ -1,4 +1,8 @@
 <!DOCTYPE html>
+                  <div id="recycle-bin-list">
+            <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);padding:20px 0">Loading&#8230;</div>
+          </div>
+        </div>TYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -504,6 +508,7 @@
         </button>
         <button class="ap-inner-tab"        id="itab-brands"   onclick="switchIngTab('brands')">Brand Mapping</button>
         <button class="ap-inner-tab"        id="itab-analytics" onclick="switchIngTab('analytics')">📊 Analytics</button>
+        <button class="ap-inner-tab" id="itab-recycle"   onclick="switchIngTab('recycle')">🗑 Recycle Bin</button>
       </div>
 
       <!-- ALL INGREDIENTS panel (existing content moves here) -->
@@ -622,6 +627,14 @@
           <div class="ap-stat"><div class="ap-stat-num" id="ia-categories">22</div><div class="ap-stat-label">Categories</div></div>
           <div class="ap-stat pending"><div class="ap-stat-num" id="ia-pending">—</div><div class="ap-stat-label">Pending Review</div></div>
           <div class="ap-stat"><div class="ap-stat-num" id="ia-brands">—</div><div class="ap-stat-label">Brand Mappings</div></div>
+        </div>
+        <div id="ipanel-recycle" style="display:none">
+          <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:16px">
+            Deleted columns are renamed (e.g. <span style="color:var(--accent);font-style:italic">Deleted1ColumnName</span>) and stored here. Restore to bring a column back, or permanently delete to clear the data from all ingredients.
+          </div>
+          <div id="recycle-bin-list">
+            <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);padding:20px 0">Loading&#8230;</div>
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px 20px">
@@ -1337,12 +1350,111 @@ async function loadIngAnalytics() {
 // ── INGREDIENTS TABS ─────────────────────────────────────────────
 var currentIngTab = 'all';
 
+
+// ── RECYCLE BIN ───────────────────────────────────────────────────
+async function loadIngRecycleBin() {
+  const list = document.getElementById('recycle-bin-list');
+  if (!list) return;
+  list.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:16px 0">Loading…</div>';
+  try {
+    const rows = await rpc('admin_get_deleted_extra_fields', {});
+    if (!rows || !rows.length) {
+      list.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:16px 0">Recycle Bin is empty.</div>';
+      return;
+    }
+    // Group by original name (strip Deleted{n} prefix)
+    const groups = {};
+    rows.forEach(function(r) {
+      var m = r.field_name.match(/^Deleted(\d+)(.+)$/);
+      if (!m) return;
+      var base = m[2], n = parseInt(m[1]);
+      if (!groups[base]) groups[base] = [];
+      groups[base].push({ key: r.field_name, n: n, count: r.ingredient_count });
+    });
+    list.innerHTML = '';
+    // Header
+    var hdr = document.createElement('div');
+    hdr.style.cssText = 'display:grid;grid-template-columns:1fr 80px 80px 160px;gap:0 12px;align-items:center;margin-bottom:6px;padding:0 4px';
+    ['COLUMN','DELETION','ROWS','ACTIONS'].forEach(function(t){
+      var h=document.createElement('div');
+      h.style.cssText='font-family:DM Sans,sans-serif;font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid)';
+      h.textContent=t;hdr.appendChild(h);
+    });
+    list.appendChild(hdr);
+    Object.keys(groups).sort().forEach(function(base) {
+      groups[base].sort(function(a,b){return b.n-a.n;}).forEach(function(item) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:grid;grid-template-columns:1fr 80px 80px 160px;gap:0 12px;align-items:center;padding:8px 4px;border-top:1px solid rgba(255,255,255,0.06)';
+        // Column name
+        var nameDiv = document.createElement('div');
+        nameDiv.style.cssText = 'font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high)';
+        nameDiv.textContent = base;
+        // Deletion number
+        var nDiv = document.createElement('div');
+        nDiv.style.cssText = 'font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid)';
+        nDiv.textContent = '#' + item.n;
+        // Row count
+        var cDiv = document.createElement('div');
+        cDiv.style.cssText = 'font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid)';
+        cDiv.textContent = item.count + ' row' + (item.count===1?'':'s');
+        // Actions
+        var actDiv = document.createElement('div');
+        actDiv.style.cssText = 'display:flex;gap:6px';
+        // Restore button
+        var restoreBtn = document.createElement('button');
+        restoreBtn.textContent = 'Restore';
+        restoreBtn.style.cssText = 'padding:5px 12px;background:none;border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-family:DM Sans,sans-serif;font-size:11px;font-weight:600;cursor:pointer';
+        restoreBtn.addEventListener('click', (function(key, baseName) {
+          return function() { restoreDeletedColumn(key, baseName); };
+        })(item.key, base));
+        // Delete permanently button
+        var permBtn = document.createElement('button');
+        permBtn.textContent = 'Delete';
+        permBtn.style.cssText = 'padding:5px 12px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-family:DM Sans,sans-serif;font-size:11px;font-weight:600;cursor:pointer';
+        permBtn.addEventListener('click', (function(key, baseName, cnt) {
+          return function() { permanentlyDeleteColumn(key, baseName, cnt); };
+        })(item.key, base, item.count));
+        actDiv.appendChild(restoreBtn); actDiv.appendChild(permBtn);
+        row.appendChild(nameDiv); row.appendChild(nDiv); row.appendChild(cDiv); row.appendChild(actDiv);
+        list.appendChild(row);
+      });
+    });
+  } catch(e) {
+    list.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050;padding:16px 0">Error: ' + esc(e.message) + '</div>';
+  }
+}
+
+async function restoreDeletedColumn(deletedKey, originalName) {
+  if (!confirm('Restore column "' + originalName + '"?\nAll ' + deletedKey + ' data will become visible again under "' + originalName + '".')) return;
+  try {
+    await rpc('admin_rename_extra_field', { p_old_key: deletedKey, p_new_key: originalName });
+    // Add back to _extraColKeys
+    if (!_extraColKeys.includes(originalName)) {
+      _extraColKeys.push(originalName);
+      var stored = JSON.parse(localStorage.getItem('tcj_extra_cols') || '[]');
+      if (!stored.includes(originalName)) { stored.push(originalName); localStorage.setItem('tcj_extra_cols', JSON.stringify(stored)); }
+      _colVis['extra:' + originalName] = true;
+    }
+    await loadIngredients(ingPage);
+    loadIngRecycleBin();
+    buildColVisPanel();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function permanentlyDeleteColumn(deletedKey, originalName, count) {
+  if (!confirm('PERMANENTLY delete all "' + originalName + '" data?\n' + count + ' ingredient row' + (count===1?'':'s') + ' will be affected.\nThis cannot be undone.')) return;
+  try {
+    await rpc('admin_delete_extra_field', { p_key: deletedKey });
+    loadIngRecycleBin();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
 function switchIngTab(tab) {
   currentIngTab = tab;
   document.querySelectorAll('.ap-inner-tab[id^="itab-"]').forEach(function(t) {
     t.classList.toggle('active', t.id === 'itab-' + tab);
   });
-  ['all','pending','brands','analytics'].forEach(function(p) {
+  ['all','pending','brands','analytics','recycle'].forEach(function(p) {
     var el = document.getElementById('ipanel-' + p);
     if (el) el.style.display = p === tab ? 'block' : 'none';
   });
@@ -1350,6 +1462,7 @@ function switchIngTab(tab) {
   if (tab === 'pending')   loadIngPending();
   if (tab === 'brands')    loadBrandMappings();
   if (tab === 'analytics') loadIngAnalytics();
+  if (tab === 'recycle')   loadIngRecycleBin();
 }
 
 async function loadIngPending() {
@@ -2040,13 +2153,6 @@ function confirmAddColumn(){
   }
   const checked=document.querySelector('input[name="nctype"]:checked');
   const colType=checked?checked.value:'text';
-  // If previously deleted, warn that old data will reappear
-  var deleted=JSON.parse(localStorage.getItem('tcj_deleted_extra_cols')||'[]');
-  if(deleted.includes(name)){
-    if(!confirm('Column "'+name+'" was previously deleted.\nAny values stored for it will reappear.\nContinue?'))return;
-    deleted=deleted.filter(function(d){return d!==name;});
-    localStorage.setItem('tcj_deleted_extra_cols',JSON.stringify(deleted));
-  }
   _extraColKeys.push(name);
   _extraColTypes[name]=colType;
   _colVis['extra:'+name]=true;
@@ -2116,45 +2222,53 @@ function renameExtraColumn(oldName) {
 
 // ── DELETE CUSTOM COLUMN ─────────────────────────────────────────
 function deleteExtraColumn(name) {
-  if (!confirm('Delete column "' + name + '"? This removes it from the table. Any values stored for this column are NOT deleted from the database.')) return;
+  if (!confirm('Delete column "' + name + '"?\n\nThe column will be removed from the table. Its data will be renamed and moved to the Recycle Bin — nothing is permanently lost.')) return;
 
-  // 1. Remove from _extraColKeys
-  _extraColKeys = _extraColKeys.filter(function(k){ return k !== name; });
+  // Find next available Deleted{n}Name slot
+  var n = 1;
+  var allKeys = [];
+  _ingAllData.forEach(function(r) {
+    if (r.extra_fields) Object.keys(r.extra_fields).forEach(function(k) { allKeys.push(k); });
+  });
+  while (allKeys.includes('Deleted' + n + name)) n++;
+  var renamedTo = 'Deleted' + n + name;
 
-  // 2. Remove from _colVis
+  // Rename in Supabase (one query across all ingredients)
+  rpc('admin_rename_extra_field', { p_old_key: name, p_new_key: renamedTo })
+    .then(function(count) {
+      console.log('Renamed "' + name + '" → "' + renamedTo + '" in ' + (count||0) + ' ingredients');
+    })
+    .catch(function(e) { console.warn('Rename error:', e.message); });
+
+  // Also rename in local data immediately (no reload needed)
+  _ingAllData.forEach(function(r) {
+    if (r.extra_fields && r.extra_fields.hasOwnProperty(name)) {
+      r.extra_fields[renamedTo] = r.extra_fields[name];
+      delete r.extra_fields[name];
+    }
+  });
+
+  // Remove from _extraColKeys, _colVis, _extraColTypes
+  _extraColKeys = _extraColKeys.filter(function(k) { return k !== name; });
   delete _colVis['extra:' + name];
+  delete _extraColTypes[name];
 
-  // 3. Remove from column order in localStorage
+  // Update localStorage
   var order = JSON.parse(localStorage.getItem('tcj_col_order') || '[]');
-  order = order.filter(function(k){ return k !== 'extra:' + name; });
-  localStorage.setItem('tcj_col_order', JSON.stringify(order));
-
-  // 4. Remove from stored extra col list and types
+  localStorage.setItem('tcj_col_order', JSON.stringify(order.filter(function(k) { return k !== 'extra:' + name; })));
   var stored = JSON.parse(localStorage.getItem('tcj_extra_cols') || '[]');
-  stored = stored.filter(function(k){ return k !== name; });
-  localStorage.setItem('tcj_extra_cols', JSON.stringify(stored));
+  localStorage.setItem('tcj_extra_cols', JSON.stringify(stored.filter(function(k) { return k !== name; })));
   var types = JSON.parse(localStorage.getItem('tcj_extra_col_types') || '{}');
   delete types[name];
   localStorage.setItem('tcj_extra_col_types', JSON.stringify(types));
-  delete _extraColTypes[name];
 
-  // 5. Remove from any active column filters
-  delete _ingColFilters['extra:' + name];
-
-  // 6. Remove from pending changes
+  // Clear pending changes for this column
   Object.keys(_pendingChanges).forEach(function(id) {
     if (_pendingChanges[id]) delete _pendingChanges[id]['extra:' + name];
   });
+  delete _ingColFilters['extra:' + name];
 
-  // 7. Track as deleted so it won't reappear in Edit modal
-  var deleted = JSON.parse(localStorage.getItem('tcj_deleted_extra_cols') || '[]');
-  if (!deleted.includes(name)) { deleted.push(name); localStorage.setItem('tcj_deleted_extra_cols', JSON.stringify(deleted)); }
-
-  // 8. Rebuild
-  buildTableHeader();
-  buildColVisPanel();
-  renderIngFiltered();
-  updateSaveBtn();
+  buildTableHeader(); buildColVisPanel(); renderIngFiltered(); updateSaveBtn();
 }
 
 
@@ -2315,11 +2429,10 @@ function openIngModal(ing){
     document.getElementById('ing-notes').value    =ing['Notes']||'';
     var rawEF=Object.assign({},ing.extra_fields||{});
     _customFieldTypes={};
-    var _deletedCols=JSON.parse(localStorage.getItem('tcj_deleted_extra_cols')||'[]');
-    // Extract type metadata, strip deleted column data and _t_ keys
+    // Extract type metadata and strip Deleted* renamed keys from modal view
     Object.keys(rawEF).forEach(function(k){
       if(k.startsWith('_t_')){_customFieldTypes[k.slice(3)]=rawEF[k];delete rawEF[k];}
-      else if(_deletedCols.includes(k)){delete rawEF[k];} // hide deleted column data
+      else if(/^Deleted\d+/.test(k)){delete rawEF[k];} // hide recycle bin data
     });
     _customFields=rawEF;
     // Ensure all global +Column columns appear in the modal
