@@ -8,7 +8,7 @@
 // The dropdown (sub-pages) appears on hover; the chevron toggles it for touch/keyboard.
 var CJ_SECTIONS = [
   {
-    id:'knowledge', label:'Knowledge', emoji:'📖', primaryPage:'recipes.html',
+    id:'knowledge', label:'Recipes', emoji:'📖', primaryPage:'recipes.html',
     pages:['recipes.html','chefs.html','search.html','baby.html','preservation.html','conversions.html','dietary-card.html'],
     links:[
       {href:'recipes.html',      emoji:'📖', label:'Browse Recipes'},
@@ -37,7 +37,7 @@ var CJ_SECTIONS = [
     ]
   },
   {
-    id:'publishing', label:'Publishing', emoji:'🖨', primaryPage:'print-studio.html',
+    id:'publishing', label:'Publish', emoji:'🖨', primaryPage:'print-studio.html',
     pages:['print-studio.html','submit-recipe.html','draft-recipes.html'],
     links:[
       {href:'print-studio.html',  emoji:'🖨', label:'Print Studio'},
@@ -46,7 +46,7 @@ var CJ_SECTIONS = [
     ]
   },
   {
-    id:'personal', label:'Personal', emoji:'📓', primaryPage:'diary.html',
+    id:'personal', label:'My Journal', emoji:'📓', primaryPage:'diary.html',
     pages:['diary.html','my-dashboard.html','culinary-life.html','collections.html','profile.html','site-settings.html','user.html'],
     links:[
       {href:'culinary-life.html', emoji:'✨', label:'My Culinary Life'},
@@ -235,7 +235,8 @@ function buildSectionNav() {
         + 'text-decoration:none;text-align:left;transition:background .15s}'
       + '.cj-menu-item:hover{background:var(--card-bg)}'
       + '.cj-menu-item svg{width:15px;height:15px;opacity:.7;flex-shrink:0}'
-      + '.cj-menu-danger{color:#e07070}.cj-menu-danger svg{opacity:.85}';
+      + '.cj-menu-danger{color:#e07070}.cj-menu-danger svg{opacity:.85}'
+      + '.sec-nav{display:flex;align-items:center;height:100%;gap:2px;flex-wrap:nowrap;overflow-x:auto}'+'.sec-nav::-webkit-scrollbar{display:none}'+'.sec-nav-home{display:flex;align-items:center;gap:6px;padding:10px 14px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:500;color:var(--text-low);text-decoration:none;border-radius:8px;transition:all .2s;white-space:nowrap}'+'.sec-nav-home:hover,.sec-nav-home.active{color:var(--accent);background:var(--accent-glow)}'+'.sec-nav-item{position:relative;display:flex;align-items:center}'+'.sec-nav-btn{display:flex;align-items:center;gap:6px;padding:10px 12px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:500;color:var(--text-low);text-decoration:none;border-radius:8px;transition:all .2s;white-space:nowrap}'+'.sec-nav-btn:hover,.sec-nav-btn.active{color:var(--accent);background:var(--accent-glow)}'+'.sec-nav-chevron-btn{background:none;border:none;padding:4px 6px;cursor:pointer;color:var(--text-low);border-radius:6px;display:flex;align-items:center;transition:all .2s}'+'.sec-nav-chevron{font-size:10px;display:inline-block;transition:transform .2s}'+'.sec-nav-item.open .sec-nav-chevron{transform:rotate(180deg)}'+'.sec-nav-dropdown{position:absolute;top:calc(100% + 8px);left:0;min-width:210px;background:var(--overlay-dark,rgba(15,16,17,.97));border:1px solid var(--border);border-radius:12px;padding:6px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 12px 40px rgba(0,0,0,.6);display:none;z-index:5000}'+'.sec-nav-item:hover .sec-nav-dropdown,.sec-nav-item.open .sec-nav-dropdown{display:block}'+'.sec-nav-link{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);text-decoration:none;transition:all .15s;white-space:nowrap}'+'.sec-nav-link:hover{background:rgba(255,255,255,.05);color:var(--text-high)}'+'.sec-nav-link.active{color:var(--accent);background:var(--accent-glow)}'+'.sec-nav-link-icon{font-size:14px;flex-shrink:0}'+'@media(max-width:768px){.sec-nav-btn,.sec-nav-home{padding:8px 8px;font-size:12px}.sec-nav-dropdown{position:fixed;bottom:0;left:0;right:0;top:auto;border-radius:16px 16px 0 0;max-height:60vh;overflow-y:auto}}';
     var s = document.createElement('style');
     s.id = 'cj-nav-style';
     s.textContent = css;

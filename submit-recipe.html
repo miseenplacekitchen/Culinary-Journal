@@ -2915,6 +2915,119 @@ function cancelSubmission() {
   try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch(_) {}
 }
 
+// ── RESTORE DRAFT ──────────────────────────────────────────────
+// Populates the form from a saved draft JSON string.
+function restoreDraft(raw) {
+  if (!raw) return;
+  let d;
+  try { d = JSON.parse(raw); } catch(_) { return; }
+  if (!d) return;
+
+  const setVal = (id, v) => {
+    if (v === null || v === undefined) return;
+    const el = document.getElementById(id);
+    if (el) el.value = v;
+  };
+  const setRadio = (name, val) => {
+    if (!val) return;
+    const el = document.querySelector('input[name="'+name+'"][value="'+val+'"]');
+    if (el) el.checked = true;
+  };
+  const checkAll = (arr, attr) => {
+    (arr||[]).forEach(v => {
+      const el = document.querySelector('input['+attr+'="'+v+'"]');
+      if (el) el.checked = true;
+    });
+  };
+
+  // Basic fields
+  setVal('recipe-name', d.recipe_name);
+  setVal('native-title', d.native_title);
+  setVal('introduction', d.introduction);
+  setVal('prep-time', d.prep_time_minutes);
+  setVal('cook-time', d.cook_time_minutes);
+  setVal('servings', d.servings);
+  setVal('cooking-notes', d.cooking_notes);
+  setVal('personal-notes', d.personal_notes);
+  setVal('credit-name', d.credit_name);
+  setVal('credit-handle', d.credit_handle);
+  setVal('credit-url', d.credit_url);
+
+  // Radio buttons
+  setRadio('category',   d.category);
+  setRadio('spice',      d.spice_level);
+  setRadio('sweet',      d.sweet_level);
+  setRadio('source-type', d.source_type || 'Original');
+  setRadio('visibility', d.visibility || 'Public');
+  setRadio('difficulty', d.difficulty);
+
+  // Origin dropdowns
+  if (d.origin_continent) {
+    window.fContinent = d.origin_continent;
+    const cc = document.getElementById('origin-continent');
+    if (cc) { cc.value = d.origin_continent; cc.dispatchEvent(new Event('change')); }
+  }
+  setTimeout(function() {
+    if (d.origin_country) {
+      window.fCountry = d.origin_country;
+      const co = document.getElementById('origin-country');
+      if (co) { co.value = d.origin_country; co.dispatchEvent(new Event('change')); }
+    }
+    if (d.origin_state) {
+      window.fState = d.origin_state;
+      const st = document.getElementById('origin-state');
+      if (st) st.value = d.origin_state;
+    }
+  }, 200);
+
+  // Tags
+  checkAll(d.dietary_tags,      'data-tag');
+  checkAll(d.health_tags,       'data-tag');
+  checkAll(d.occasion_tags,     'data-tag');
+  checkAll(d.style_tags,        'data-tag');
+  checkAll(d.meal_type_tags,    'data-tag');
+  checkAll(d.flavor_profile_tags, 'data-tag');
+
+  // Image
+  if (d.image_url) {
+    window.uploadedImageUrl = d.image_url;
+    const pr = document.getElementById('img-preview');
+    if (pr) { pr.src = d.image_url; pr.style.display = 'block'; }
+  }
+
+  // Ingredients — restore into existing sections or build new ones
+  if (d.ingredients && d.ingredients.length) {
+    setTimeout(function() {
+      try {
+        // Clear existing ingredient sections
+        const secWrap = document.getElementById('ingredient-sections');
+        if (secWrap) {
+          secWrap.innerHTML = '';
+          d.ingredients.forEach(function(sec) {
+            if (typeof addIngredientSection === 'function') addIngredientSection(sec);
+          });
+        }
+      } catch(_) {}
+    }, 300);
+  }
+
+  // Method/procedure
+  if (d.method && d.method.length) {
+    setTimeout(function() {
+      try {
+        const methWrap = document.getElementById('method-sections');
+        if (methWrap) {
+          methWrap.innerHTML = '';
+          d.method.forEach(function(sec) {
+            if (typeof addMethodSection === 'function') addMethodSection(sec);
+          });
+        }
+      } catch(_) {}
+    }, 300);
+  }
+}
+
+
 function loadDraftSilent() {
   // ── EDIT MODE: load rejected recipe by ?id= ──────────────────
   const editId = new URLSearchParams(window.location.search).get('id');
