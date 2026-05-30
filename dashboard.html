@@ -1746,7 +1746,14 @@ function renderIngFiltered() {
   }
   renderIngRows(data);
   const countEl=document.getElementById('ing-count');
-  if(countEl&&_ingAllData.length!==data.length)countEl.textContent=data.length+' shown (filtered from '+_ingAllData.length+')';
+  if(countEl){
+    const activeFilters=Object.keys(_ingColFilters).length;
+    if(activeFilters>0&&_ingAllData.length!==data.length){
+      countEl.textContent=data.length+' shown (filtered from '+_ingAllData.length+')';
+    } else {
+      countEl.textContent=_ingAllData.length+' ingredient'+((_ingAllData.length===1)?'':'s');
+    }
+  }
 }
 
 // ── RENDER ROWS ──────────────────────────────────────────────────
@@ -1970,8 +1977,11 @@ function openColFilter(e,col){
   foot.appendChild(ab);foot.appendChild(cb2);
   panel.appendChild(title);panel.appendChild(search);panel.appendChild(opts);panel.appendChild(foot);
   document.body.appendChild(panel);_activeFilterPanel=panel;
-  const rect=e.target.getBoundingClientRect();
-  panel.style.top=(rect.bottom+4)+'px';panel.style.left=Math.min(rect.left,window.innerWidth-260)+'px';
+  // Find the actual button element regardless of click target nesting
+  const btn=e.target.closest('.col-filter-btn')||e.target;
+  const rect=btn.getBoundingClientRect();
+  panel.style.top=(rect.bottom+4)+'px';
+  panel.style.left=Math.min(rect.left,window.innerWidth-260)+'px';
   setTimeout(function(){document.addEventListener('click',closeColFilterOnOutside);applyThemeColors(panel);},10);
 }
 function filterColOptions(input){const q=input.value.toLowerCase();document.querySelectorAll('#col-filter-opts .col-filter-option').forEach(function(el){el.style.display=el.textContent.toLowerCase().includes(q)?'':'none';});}
@@ -1981,7 +1991,14 @@ function applyColFilter(col){
   document.querySelectorAll('[data-col="'+col+'"] .col-filter-btn').forEach(function(b){b.classList.toggle('active',checked.length>0);});
   closeColFilter();renderIngFiltered();
 }
-function clearColFilter(col){delete _ingColFilters[col];closeColFilter();renderIngFiltered();}
+function clearColFilter(col){
+  delete _ingColFilters[col];
+  // Remove active highlight from the column header filter button
+  document.querySelectorAll('[data-col="'+col+'"] .col-filter-btn')
+    .forEach(function(b){ b.classList.remove('active'); });
+  closeColFilter();
+  renderIngFiltered();
+}
 function closeColFilter(){const p=document.getElementById('col-filter-panel');if(p)p.remove();_activeFilterPanel=null;document.removeEventListener('click',closeColFilterOnOutside);}
 function closeColFilterOnOutside(e){const p=document.getElementById('col-filter-panel');if(p&&!p.contains(e.target))closeColFilter();}
 
