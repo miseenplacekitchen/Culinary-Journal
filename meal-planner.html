@@ -148,6 +148,11 @@
         <div class="mp-week-label" id="week-label"></div>
         <button class="mp-week-btn" onclick="nextWeek()">Next →</button>
       </div>
+      <div id="mp-month-nav" style="display:none;align-items:center;gap:8px">
+        <button class="mp-week-btn" onclick="changeMonthView(-1)">← Prev</button>
+        <div id="mth-label" style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--text-high);min-width:130px;text-align:center"></div>
+        <button class="mp-week-btn" onclick="changeMonthView(1)">Next →</button>
+      </div>
       <div class="mp-actions">
         <button class="mp-btn mp-btn-ghost" onclick="clearWeek()">Clear Week</button>
         <button class="mp-btn mp-btn-primary" onclick="addToGrocery()">🛒 Add to Grocery List</button>
@@ -569,23 +574,8 @@ function setView(v, btn) {
     if (summary) summary.style.display = 'none';
     if (weekNav) weekNav.style.display = 'none';
     if (monthEl) monthEl.style.display = 'block';
-    var wl = document.getElementById('week-label');
-    var inner = document.createElement('span');
-    inner.id = 'mth-nav-inner';
-    inner.style.cssText = 'display:flex;align-items:center;gap:8px';
-    var btnPrev = document.createElement('button');
-    btnPrev.textContent = '←';
-    btnPrev.style.cssText = 'background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);width:28px;height:28px;cursor:pointer;font-size:13px';
-    btnPrev.onclick = function(){ changeMonthView(-1); };
-    var lbl = document.createElement('span');
-    lbl.id = 'mth-label';
-    lbl.style.cssText = 'font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;color:var(--text-high);min-width:130px;text-align:center';
-    var btnNext = document.createElement('button');
-    btnNext.textContent = '→';
-    btnNext.style.cssText = 'background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);width:28px;height:28px;cursor:pointer;font-size:13px';
-    btnNext.onclick = function(){ changeMonthView(1); };
-    inner.appendChild(btnPrev); inner.appendChild(lbl); inner.appendChild(btnNext);
-    wl.innerHTML = ''; wl.appendChild(inner);
+    var monthNav = document.getElementById('mp-month-nav');
+    if (monthNav) monthNav.style.display = 'flex';
     buildMonthView();
   } else {
     if (weekEl)  weekEl.style.display  = '';
@@ -593,6 +583,8 @@ function setView(v, btn) {
     if (summary) summary.style.display = '';
     if (weekNav) weekNav.style.display = '';
     if (monthEl) monthEl.style.display = 'none';
+    var monthNav = document.getElementById('mp-month-nav');
+    if (monthNav) monthNav.style.display = 'none';
     renderWeek();
   }
 }
