@@ -1452,6 +1452,54 @@ async function dismissIngredient(id, btn) {
   } catch(e) { btn.disabled=false; btn.textContent='Dismiss'; alert('Error: '+e.message); }
 }
 
+
+// ── INGREDIENT UTILITY FUNCTIONS ────────────────────────────────
+// These apply theme colours to dynamically created dropdowns/inputs
+// and format quantity values for display
+
+function fixDropdownTheme() {
+  // Apply CSS variable colours to select elements (browser quirk — CSS vars
+  // don't cascade into <select> option backgrounds in some browsers)
+  var bg     = getComputedStyle(document.body).getPropertyValue('--bg').trim()     || '#0f1011';
+  var fg     = getComputedStyle(document.body).getPropertyValue('--text-high').trim() || '#ffffff';
+  var border = getComputedStyle(document.body).getPropertyValue('--border').trim() || 'rgba(255,255,255,0.1)';
+  document.querySelectorAll('.ing-modal-overlay select, .col-filter-panel select, #ing-modal select').forEach(function(sel) {
+    sel.style.background    = bg;
+    sel.style.color         = fg;
+    sel.style.borderColor   = border;
+  });
+}
+
+function applyThemeColors(container) {
+  if (!container) return;
+  var bg     = getComputedStyle(document.body).getPropertyValue('--bg').trim()     || '#0f1011';
+  var fg     = getComputedStyle(document.body).getPropertyValue('--text-high').trim() || '#ffffff';
+  var border = getComputedStyle(document.body).getPropertyValue('--border').trim() || 'rgba(255,255,255,0.1)';
+  container.querySelectorAll('input, select, textarea').forEach(function(el) {
+    el.style.background  = bg;
+    el.style.color       = fg;
+    el.style.borderColor = border;
+  });
+}
+
+function fmtQty(val) {
+  // Format quantity strings — return as-is, they're already human-readable
+  // (values like "¼ cup", "1 tbsp", "2-3" etc.)
+  if (val === null || val === undefined || val === '') return '';
+  return String(val);
+}
+
+function getThemeColors() {
+  var style  = getComputedStyle(document.body);
+  return {
+    accent:   style.getPropertyValue('--accent').trim()     || '#C4973B',
+    textMid:  style.getPropertyValue('--text-mid').trim()   || 'rgba(255,255,255,0.5)',
+    textHigh: style.getPropertyValue('--text-high').trim()  || '#ffffff',
+    border:   style.getPropertyValue('--border').trim()     || 'rgba(255,255,255,0.1)',
+    bg:       style.getPropertyValue('--bg').trim()         || '#0f1011'
+  };
+}
+
 const STD_COLS = [
   {key:'Ingredient Name',           label:'Ingredient Name',    type:'text'},
   {key:'Also Known As',             label:'Also Known As',      type:'text'},
