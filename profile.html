@@ -125,18 +125,61 @@
       margin-bottom: 22px;
       border-bottom: 0.5px solid var(--border);
     }
+    .acct-avatar-wrap {
+      position: relative;
+      width: 72px; height: 72px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
     .acct-avatar {
-      width: 56px; height: 56px;
+      width: 72px; height: 72px;
       border-radius: 50%;
       background: linear-gradient(135deg, var(--accent) 0%, #8a6a28 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       font-family: 'Playfair Display', serif;
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 700;
       color: #fff;
       flex-shrink: 0;
+      overflow: hidden;
+      object-fit: cover;
+      border: 2px solid var(--border);
+      transition: border-color .2s;
+    }
+    .acct-avatar img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+    .acct-avatar-wrap:hover .acct-avatar { border-color: var(--accent); }
+    .acct-avatar-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: rgba(0,0,0,.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .acct-avatar-wrap:hover .acct-avatar-overlay { opacity: 1; }
+    .acct-avatar-overlay-icon {
+      font-size: 20px;
+    }
+    .acct-avatar-uploading {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: rgba(0,0,0,.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      color: #fff;
     }
     .acct-meta-name {
       font-family: 'Playfair Display', serif;
@@ -426,7 +469,15 @@
         <p class="pcard-desc">Your name and username are visible only to you for now.</p>
 
         <div class="acct-id">
-          <div class="acct-avatar" id="acct-avatar">?</div>
+          <div class="acct-avatar-wrap" onclick="triggerAvatarUpload()" title="Change photo">
+            <div class="acct-avatar" id="acct-avatar">?</div>
+            <div class="acct-avatar-overlay">
+              <span class="acct-avatar-overlay-icon">📷</span>
+            </div>
+            <div class="acct-avatar-uploading" id="avatar-uploading">Saving…</div>
+            <input type="file" id="avatar-file-input" accept="image/jpeg,image/png,image/webp"
+              style="display:none" onchange="handleAvatarSelect(event)">
+          </div>
           <div>
             <div class="acct-meta-name" id="acct-display-name">—</div>
             <div class="acct-meta-since" id="acct-since">Member since —</div>
@@ -618,23 +669,20 @@
         </div>
       </section>
 
-      <section class="pcard" style="border-color:rgba(220,80,80,0.3)">
-        <h2 class="pcard-title" style="color:#dc5050">Danger Zone</h2>
-        <p class="pcard-desc">These actions are permanent and cannot be undone without contacting support.</p>
-
+      <section class="pcard">
+        <h2 class="pcard-title">Sign Out</h2>
+        <p class="pcard-desc">Sign out of your account on this device. Your recipes, diary, and collections remain saved.</p>
         <div class="pmsg" id="danger-msg"></div>
+        <button class="pbtn" onclick="signOut()" style="background:none;border:1px solid var(--border);color:var(--text-mid);margin-top:8px">Sign Out</button>
+      </section>
 
-        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:16px">
-          <div style="flex:1;min-width:240px;padding:16px;background:rgba(220,80,80,0.06);border:1px solid rgba(220,80,80,0.2);border-radius:10px">
-            <div style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--text-high);margin-bottom:4px">Sign Out</div>
-            <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:12px">Sign out of your account on this device.</div>
-            <button class="pbtn" onclick="signOut()" style="background:none;border:1px solid var(--border);color:var(--text-mid)">Sign Out</button>
-          </div>
-          <div style="flex:1;min-width:240px;padding:16px;background:rgba(220,80,80,0.06);border:1px solid rgba(220,80,80,0.2);border-radius:10px">
-            <div style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:#dc5050;margin-bottom:4px">Deactivate Account</div>
-            <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:12px">Deactivates your account. Your data is preserved — contact support to reactivate.</div>
-            <button class="pbtn" onclick="showDeactivateModal()" style="background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);color:#dc5050">Deactivate Account</button>
-          </div>
+      <section class="pcard" style="border-color:rgba(220,80,80,0.15)">
+        <h2 class="pcard-title">Account Management</h2>
+        <p class="pcard-desc">This action is permanent and cannot be self-reversed. Contact support to reactivate a deactivated account.</p>
+        <div style="margin-top:14px;padding:16px 18px;background:rgba(220,80,80,0.04);border:1px solid rgba(220,80,80,0.15);border-radius:11px;max-width:420px">
+          <div style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:#dc5050;margin-bottom:4px">Deactivate Account</div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:14px">Your recipes, diary entries, and collections are preserved. You will not be able to sign in until your account is reactivated by support.</div>
+          <button class="pbtn" onclick="showDeactivateModal()" style="background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);color:#dc5050">Deactivate Account</button>
         </div>
       </section>
 
@@ -755,6 +803,82 @@ function loadSession() {
     return null;
   } catch (_) { return null; }
 }
+
+// ── AVATAR UPLOAD ───────────────────────────────────────────────
+function triggerAvatarUpload() {
+  document.getElementById('avatar-file-input').click();
+}
+
+async function handleAvatarSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    alert('Image must be under 5MB.');
+    return;
+  }
+
+  // Show preview immediately
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const avatarEl = document.getElementById('acct-avatar');
+    avatarEl.innerHTML = '<img src="' + ev.target.result + '" alt="Profile photo">';
+  };
+  reader.readAsDataURL(file);
+
+  // Upload to Supabase Storage
+  const uploading = document.getElementById('avatar-uploading');
+  if (uploading) uploading.style.display = 'flex';
+
+  try {
+    const ext  = file.name.split('.').pop().toLowerCase() || 'jpg';
+    const path = SESSION.user_id + '/avatar.' + ext;
+
+    const uploadRes = await fetch(
+      SUPA_URL + '/storage/v1/object/avatars/' + path,
+      {
+        method:  'POST',
+        headers: {
+          'apikey':        SUPA_KEY,
+          'Authorization': 'Bearer ' + SESSION.access_token,
+          'Content-Type':  file.type,
+          'x-upsert':      'true'
+        },
+        body: file
+      }
+    );
+
+    if (!uploadRes.ok) {
+      // If bucket missing — fall back to base64 stored in profile
+      await saveAvatarBase64(file);
+      return;
+    }
+
+    const publicUrl = SUPA_URL + '/storage/v1/object/public/avatars/' + path;
+    await callRPC('update_avatar_url', { p_url: publicUrl });
+    if (PROFILE) PROFILE.avatar_url = publicUrl;
+
+  } catch(err) {
+    // Silently fall back to base64 if storage fails
+    await saveAvatarBase64(file);
+  } finally {
+    if (uploading) uploading.style.display = 'none';
+  }
+}
+
+async function saveAvatarBase64(file) {
+  return new Promise(function(resolve) {
+    const r = new FileReader();
+    r.onload = async function(ev) {
+      try {
+        await callRPC('update_avatar_url', { p_url: ev.target.result });
+        if (PROFILE) PROFILE.avatar_url = ev.target.result;
+      } catch(_) {}
+      resolve();
+    };
+    r.readAsDataURL(file);
+  });
+}
+
 
 function signOut() {
   try {
@@ -995,7 +1119,12 @@ function hydrateUI() {
     name.trim().split(/\s+/).map(function (w) { return w[0]; }).join('').slice(0, 2)
     || (PROFILE.username || '').slice(0, 2)
   ).toUpperCase();
-  document.getElementById('acct-avatar').textContent = initials || '?';
+  const avatarEl = document.getElementById('acct-avatar');
+  if (PROFILE.avatar_url) {
+    avatarEl.innerHTML = '<img src="' + PROFILE.avatar_url + '" alt="Profile photo">';
+  } else {
+    avatarEl.textContent = initials || '?';
+  }
   document.getElementById('acct-display-name').textContent = name || PROFILE.username || '—';
   { const _nu = document.getElementById('nav-username'); if (_nu) _nu.textContent = PROFILE.username || ''; }
 
