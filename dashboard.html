@@ -24,6 +24,26 @@
     .ap-nav   { padding: 16px 10px; flex: 1; }
     .ap-nav-label { font-family: "DM Sans", sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-mid); padding: 0 10px; margin: 14px 0 6px; }
     .ap-nav-item  { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-mid); cursor: pointer; transition: all 0.15s; margin-bottom: 2px; border: none; background: none; width: 100%; text-align: left; }
+    /* Collapsible groups */
+    .ap-nav-group { margin-bottom: 2px; }
+    .ap-nav-group-btn {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 12px; border-radius: 8px;
+      font-family: "DM Sans", sans-serif; font-size: 12px; font-weight: 700;
+      letter-spacing: .07em; text-transform: uppercase;
+      color: var(--text-mid); cursor: pointer; transition: all 0.15s;
+      border: none; background: none; width: 100%; text-align: left;
+      margin-top: 16px;
+    }
+    .ap-nav-group-btn:hover { color: var(--text-high); background: var(--text-ghost); }
+    .ap-nav-group-btn.has-active { color: var(--accent); }
+    .ap-nav-group-chevron { font-size: 10px; transition: transform .2s; opacity: .6; }
+    .ap-nav-group.open > .ap-nav-group-btn .ap-nav-group-chevron { transform: rotate(180deg); }
+    .ap-nav-group-children { display: none; padding-left: 8px; }
+    .ap-nav-group.open > .ap-nav-group-children { display: block; }
+    .ap-nav-child { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-mid); cursor: pointer; transition: all 0.15s; margin-bottom: 1px; border: none; background: none; width: 100%; text-align: left; border-left: 2px solid transparent; }
+    .ap-nav-child:hover { background: var(--text-ghost); color: var(--text-high); }
+    .ap-nav-child.active { background: rgb(from var(--accent) r g b / 0.10); color: var(--accent); font-weight: 500; border-left-color: var(--accent); }
     .ap-nav-item:hover  { background: var(--text-ghost); color: var(--text-high); }
     .ap-nav-item.active { background: rgb(from var(--accent) r g b / 0.12); color: var(--accent); font-weight: 500; }
     .ap-nav-badge { margin-left: auto; background: var(--accent); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 20px; min-width: 20px; text-align: center; }
@@ -302,44 +322,72 @@
       <div class="ap-logo-sub">Admin Panel</div>
     </div>
     <nav class="ap-nav">
-      <button class="ap-nav-item active" id="nav-dashboard" onclick="switchView('dashboard')" style="margin-bottom:8px;font-weight:600">
+      <!-- Dashboard — standalone -->
+      <button class="ap-nav-item active" id="nav-dashboard" onclick="switchView('dashboard')" style="margin-bottom:4px;font-weight:600">
         🏠 Dashboard
       </button>
 
-      <div class="ap-nav-label">Recipes</div>
-      <button class="ap-nav-item" id="nav-pending" onclick="switchView('pending')">
-        📋 Pending Review <span class="ap-nav-badge" id="badge-pending">0</span>
-      </button>
-      <button class="ap-nav-item" id="nav-all" onclick="switchView('all')">
-        📖 All Recipes
-      </button>
-      <button class="ap-nav-item" id="nav-approved" onclick="switchView('approved')">
-        ✅ Approved
-      </button>
-      <button class="ap-nav-item" id="nav-rejected" onclick="switchView('rejected')">
-        ❌ Rejected
-      </button>
-      <div class="ap-nav-label" style="margin-top:20px">Ingredients</div>
-      <button class="ap-nav-item" id="nav-ingredients" onclick="switchView('ingredients')">
-        🥕 All Ingredients <span class="ap-nav-badge" id="badge-ingredients" style="display:none">0</span>
-      </button>
+      <!-- Recipe Management group -->
+      <div class="ap-nav-group open" id="group-recipes">
+        <button class="ap-nav-group-btn" onclick="toggleGroup('group-recipes')">
+          Recipe Management
+          <span class="ap-nav-group-chevron">▾</span>
+        </button>
+        <div class="ap-nav-group-children">
+          <button class="ap-nav-child" id="nav-all" onclick="switchView('all')">
+            📖 All Recipes
+          </button>
+          <button class="ap-nav-child" id="nav-pending" onclick="switchView('pending')">
+            📋 Pending Review <span class="ap-nav-badge" id="badge-pending">0</span>
+          </button>
+          <button class="ap-nav-child" id="nav-approved" onclick="switchView('approved')">
+            ✅ Approved
+          </button>
+          <button class="ap-nav-child" id="nav-rejected" onclick="switchView('rejected')">
+            ❌ Rejected
+          </button>
+        </div>
+      </div>
 
-      <div class="ap-nav-label" style="margin-top:20px">Users</div>
-      <button class="ap-nav-item" id="nav-pending-users" onclick="switchView('pending-users')">
-        ⏳ Pending Approval <span class="ap-nav-badge" id="badge-pending-users">0</span>
-      </button>
-      <button class="ap-nav-item" id="nav-users" onclick="switchView('users')">
-        👥 All Members <span class="ap-nav-badge" id="badge-users" style="display:none">0</span>
-      </button>
+      <!-- User Management group -->
+      <div class="ap-nav-group" id="group-users">
+        <button class="ap-nav-group-btn" onclick="toggleGroup('group-users')">
+          User Management
+          <span class="ap-nav-group-chevron">▾</span>
+        </button>
+        <div class="ap-nav-group-children">
+          <button class="ap-nav-child" id="nav-pending-users" onclick="switchView('pending-users')">
+            ⏳ Pending Approval <span class="ap-nav-badge" id="badge-pending-users">0</span>
+          </button>
+          <button class="ap-nav-child" id="nav-users" onclick="switchView('users')">
+            👥 All Members
+          </button>
+        </div>
+      </div>
 
-      <div class="ap-nav-label" style="margin-top:20px">Analytics</div>
-      <button class="ap-nav-item" id="nav-analytics" onclick="switchView('analytics')">
+      <!-- Ingredients group -->
+      <div class="ap-nav-group" id="group-ingredients">
+        <button class="ap-nav-group-btn" onclick="toggleGroup('group-ingredients')">
+          Ingredients
+          <span class="ap-nav-group-chevron">▾</span>
+        </button>
+        <div class="ap-nav-group-children">
+          <button class="ap-nav-child" id="nav-ingredients" onclick="switchView('ingredients')">
+            🥕 All Ingredients
+          </button>
+        </div>
+      </div>
+
+      <!-- Analytics — standalone -->
+      <button class="ap-nav-item" id="nav-analytics" onclick="switchView('analytics')" style="margin-top:8px">
         📊 Analytics
       </button>
 
-      <div class="ap-nav-label" style="margin-top:20px">Site</div>
-      <a href="recipes.html" class="ap-nav-item" style="text-decoration:none">📖 View Site</a>
-      <a href="index.html"   class="ap-nav-item" style="text-decoration:none">🏠 Homepage</a>
+      <!-- Site links -->
+      <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border);margin-top:20px">
+        <a href="/" class="ap-nav-item" style="text-decoration:none;font-size:12px">📖 View Site</a>
+        <a href="index.html" class="ap-nav-item" style="text-decoration:none;font-size:12px">🏠 Homepage</a>
+      </div>
     </nav>
     <div class="ap-side-foot">
       <div class="ap-side-user">
@@ -1047,6 +1095,31 @@ function renderTable(recipes) {
 function filterTable() { renderTable(allRecipes); }
 
 // ── Navigation ────────────────────────────────────────────────────
+
+// ── SIDEBAR GROUP TOGGLE ──────────────────────────────────────────
+function toggleGroup(groupId) {
+  var g = document.getElementById(groupId);
+  if (g) g.classList.toggle('open');
+}
+
+function openGroupForView(view) {
+  var map = {
+    'all':'group-recipes','pending':'group-recipes',
+    'approved':'group-recipes','rejected':'group-recipes',
+    'pending-users':'group-users','users':'group-users',
+    'ingredients':'group-ingredients'
+  };
+  var gid = map[view];
+  if (gid) {
+    var g = document.getElementById(gid);
+    if (g) g.classList.add('open');
+    // Mark group button as has-active
+    document.querySelectorAll('.ap-nav-group-btn').forEach(function(b){ b.classList.remove('has-active'); });
+    var gb = g ? g.querySelector('.ap-nav-group-btn') : null;
+    if (gb) gb.classList.add('has-active');
+  }
+}
+
 function switchView(view) {
   currentView = view;
   document.querySelectorAll('.ap-nav-item').forEach(el => el.classList.remove('active'));
