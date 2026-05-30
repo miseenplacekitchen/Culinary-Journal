@@ -737,7 +737,8 @@
       </div>
     </div>
 
-  </main>
+    <div id="col-vis-panel" class="col-vis-panel"></div>
+</main>
 </div>
 
 <div class="ap-modal-overlay" id="ap-modal">
@@ -1926,6 +1927,58 @@ function addNewColumn(){
   buildTableHeader();buildColVisPanel();renderIngFiltered();
 }
 
+// ── RENAME CUSTOM COLUMN ─────────────────────────────────────────
+function renameExtraColumn(oldName) {
+  const newName = (prompt('Rename column "' + oldName + '" to:', oldName) || '').trim();
+  if (!newName || newName === oldName) return;
+  if (STD_COLS.find(function(c){ return c.key === newName; }) || _extraColKeys.includes(newName)) {
+    alert('A column with that name already exists.'); return;
+  }
+
+  // 1. Update _extraColKeys
+  var idx = _extraColKeys.indexOf(oldName);
+  if (idx > -1) _extraColKeys[idx] = newName;
+
+  // 2. Update _colVis
+  var wasVisible = _colVis['extra:' + oldName] !== false;
+  delete _colVis['extra:' + oldName];
+  _colVis['extra:' + newName] = wasVisible;
+
+  // 3. Update column order in localStorage
+  var order = JSON.parse(localStorage.getItem('tcj_col_order') || '[]');
+  var oi = order.indexOf('extra:' + oldName);
+  if (oi > -1) order[oi] = 'extra:' + newName;
+  localStorage.setItem('tcj_col_order', JSON.stringify(order));
+
+  // 4. Update stored extra col names in localStorage
+  var stored = JSON.parse(localStorage.getItem('tcj_extra_cols') || '[]');
+  var si = stored.indexOf(oldName);
+  if (si > -1) stored[si] = newName;
+  localStorage.setItem('tcj_extra_cols', JSON.stringify(stored));
+
+  // 5. Rename the key in all loaded ingredient data
+  _ingAllData.forEach(function(row) {
+    if (row.extra_fields && row.extra_fields.hasOwnProperty(oldName)) {
+      row.extra_fields[newName] = row.extra_fields[oldName];
+      delete row.extra_fields[oldName];
+    }
+  });
+
+  // 6. Update any pending changes
+  Object.keys(_pendingChanges).forEach(function(id) {
+    if (_pendingChanges[id] && _pendingChanges[id]['extra:' + oldName] !== undefined) {
+      _pendingChanges[id]['extra:' + newName] = _pendingChanges[id]['extra:' + oldName];
+      delete _pendingChanges[id]['extra:' + oldName];
+    }
+  });
+
+  // 7. Rebuild
+  buildTableHeader();
+  buildColVisPanel();
+  renderIngFiltered();
+}
+
+
 // ── COLUMN VISIBILITY PANEL ──────────────────────────────────────
 function buildColVisPanel(){
   const panel=document.getElementById('col-vis-panel');
@@ -1941,7 +1994,22 @@ function buildColVisPanel(){
     lbl.appendChild(cb);lbl.appendChild(document.createTextNode(' '+label));panel.appendChild(lbl);
   };
   STD_COLS.forEach(function(c){addRow(c.key,c.label);});
-  _extraColKeys.forEach(function(k){addRow('extra:'+k,k);});
+  _extraColKeys.forEach(function(k){
+    // Build row manually so we can add a rename button
+    const lbl=document.createElement('label');lbl.className='col-vis-row';lbl.style.justifyContent='space-between';
+    const left=document.createElement('div');left.style.cssText='display:flex;align-items:center;gap:7px';
+    const cb=document.createElement('input');cb.type='checkbox';cb.checked=_colVis['extra:'+k]!==false;
+    cb.addEventListener('change',function(){
+      _colVis['extra:'+k]=cb.checked;
+      document.querySelectorAll('[data-col="extra:'+k+'"]').forEach(function(el){el.style.display=cb.checked?'':'none';});
+    });
+    left.appendChild(cb);left.appendChild(document.createTextNode(' '+k));
+    const renBtn=document.createElement('button');
+    renBtn.textContent='Rename';
+    renBtn.style.cssText='font-family:DM Sans,sans-serif;font-size:10px;padding:2px 8px;border-radius:5px;border:1px solid var(--border);background:none;color:var(--text-mid);cursor:pointer;margin-left:6px;flex-shrink:0';
+    renBtn.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();renameExtraColumn(k);});
+    lbl.appendChild(left);lbl.appendChild(renBtn);panel.appendChild(lbl);
+  });
   applyThemeColors(panel);
 }
 
