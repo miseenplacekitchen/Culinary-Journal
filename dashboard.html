@@ -1643,9 +1643,11 @@ async function loadIngredients(page) {
       rpc('admin_count_ingredients',{p_search:null,p_category:null})
     ]);
     _ingAllData = rows;
-    const extraSeen = {};
-    rows.forEach(function(r){if(r.extra_fields&&typeof r.extra_fields==='object')Object.keys(r.extra_fields).forEach(function(k){extraSeen[k]=true;});});
-    _extraColKeys = Object.keys(extraSeen);
+    // localStorage is the source of truth for which columns exist.
+    // Scanning extra_fields causes deleted columns to reappear and
+    // leaks _t_ type metadata keys as visible columns.
+    _extraColKeys = JSON.parse(localStorage.getItem('tcj_extra_cols') || '[]')
+      .filter(function(k){ return k && !k.startsWith('_t_') && !k.startsWith('_'); });
     _extraColTypes = JSON.parse(localStorage.getItem('tcj_extra_col_types')||'{}');
     _extraColKeys.forEach(function(k){if(_colVis['extra:'+k]===undefined)_colVis['extra:'+k]=true;});
     const countEl = document.getElementById('ing-count');
