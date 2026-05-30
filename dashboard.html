@@ -1232,7 +1232,41 @@ async function loadBrandMappings() {
 }
 
 function openBrandModal(row) {
-  alert('Brand mapping editor coming soon. You can add mappings via Supabase directly for now.');
+  const isEdit = row && row.id;
+  const title  = isEdit ? 'Edit Brand Mapping' : 'Add Brand Mapping';
+  const html   = '<div style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px" id="brand-modal-overlay" onclick="if(event.target===this)this.remove()">' +
+    '<div style="background:var(--surface-2,#1a1b1e);border:1px solid var(--border);border-radius:14px;padding:28px;width:100%;max-width:440px">' +
+    '<h3 style="font-family:Cormorant Garamond,serif;font-size:1.2rem;color:var(--text-high);margin:0 0 20px">' + title + '</h3>' +
+    '<div style="display:flex;flex-direction:column;gap:12px">' +
+    '<div><label style="font-family:DM Sans,sans-serif;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:5px">Brand Name</label>' +
+    '<input id="bm-brand" class="ap-search" placeholder="e.g. Dalda" value="' + (row ? escT(row.brand_name||'') : '') + '" style="width:100%"></div>' +
+    '<div><label style="font-family:DM Sans,sans-serif;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:5px">Generic Name</label>' +
+    '<input id="bm-generic" class="ap-search" placeholder="e.g. Ghee" value="' + (row ? escT(row.generic_name||'') : '') + '" style="width:100%"></div>' +
+    '<div><label style="font-family:DM Sans,sans-serif;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:5px">Category</label>' +
+    '<input id="bm-category" class="ap-search" placeholder="e.g. Oils & Fats" value="' + (row ? escT(row.category||'') : '') + '" style="width:100%"></div>' +
+    '<div><label style="font-family:DM Sans,sans-serif;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-mid);display:block;margin-bottom:5px">Notes (optional)</label>' +
+    '<input id="bm-notes" class="ap-search" placeholder="Any additional notes" value="' + (row ? escT(row.notes||'') : '') + '" style="width:100%"></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:10px;margin-top:20px">' +
+    '<button onclick="saveBrandMapping(' + (isEdit ? row.id : 'null') + ')" style="flex:1;padding:11px;background:var(--accent);border:none;border-radius:9px;color:#fff;font-family:DM Sans,sans-serif;font-size:14px;font-weight:600;cursor:pointer">Save</button>' +
+    '<button onclick="closeBrandModal()" style="padding:11px 18px;background:none;border:1px solid var(--border);border-radius:9px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:14px;cursor:pointer">Cancel</button>' +
+    '</div></div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function closeBrandModal() { var o=document.getElementById("brand-modal-overlay"); if(o)o.remove(); }
+
+async function saveBrandMapping(id) {
+  const brand   = (document.getElementById('bm-brand')||{}).value||'';
+  const generic = (document.getElementById('bm-generic')||{}).value||'';
+  const cat     = (document.getElementById('bm-category')||{}).value||'';
+  const notes   = (document.getElementById('bm-notes')||{}).value||'';
+  if (!brand || !generic) { alert('Brand name and generic name are required.'); return; }
+  try {
+    await rpc('admin_upsert_brand_mapping', { p_id: id||null, p_brand_name:brand, p_generic_name:generic, p_category:cat, p_notes:notes });
+    document.getElementById('brand-modal-overlay').remove();
+    loadBrandMappings();
+  } catch(e) { alert('Error: '+e.message); }
 }
 async function deleteBrandMapping(id, btn) {
   if (!confirm('Delete this brand mapping?')) return;
@@ -1240,8 +1274,24 @@ async function deleteBrandMapping(id, btn) {
   try { await rpc('admin_delete_brand_mapping', { p_id: id }); loadBrandMappings(); }
   catch(e) { btn.disabled=false; alert('Error: '+e.message); }
 }
-async function approveIngredient(id, btn) { btn.disabled=true; btn.textContent='Added'; loadIngPending(); }
-async function dismissIngredient(id, btn) { btn.disabled=true; btn.closest('tr').remove(); }
+async function approveIngredient(id, btn) {
+  btn.disabled=true; btn.textContent='Adding…';
+  try {
+    await rpc('admin_resolve_pending_ingredient', { p_id: parseInt(id), p_action: 'added' });
+    btn.textContent='Added';
+    setTimeout(loadIngPending, 600);
+  } catch(e) { btn.disabled=false; btn.textContent='Add'; alert('Error: '+e.message); }
+}
+async function dismissIngredient(id, btn) {
+  btn.disabled=true; btn.textContent='Dismissing…';
+  try {
+    await rpc('admin_resolve_pending_ingredient', { p_id: parseInt(id), p_action: 'dismissed' });
+    btn.closest('tr').remove();
+    const remaining = document.getElementById('ing-pending-tbody').querySelectorAll('tr[id]').length;
+    const pb = document.getElementById('itab-badge-pending');
+    if (pb) pb.textContent = Math.max(0, parseInt(pb.textContent||0) - 1);
+  } catch(e) { btn.disabled=false; btn.textContent='Dismiss'; alert('Error: '+e.message); }
+}
 
 // ── ANALYTICS RENDERERS ───────────────────────────────────────────
 function renderBarChart(containerId, data, colorVar) {
