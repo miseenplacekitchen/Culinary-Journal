@@ -1326,7 +1326,8 @@ function escT(s) {
 function switchView(view) {
   currentView = view;
   document.querySelectorAll('.ap-nav-item').forEach(el => el.classList.remove('active'));
-  const btn = document.getElementById('nav-' + view);
+  const btnId = view === 'recipe-mgmt' ? 'nav-recipe-mgmt' : view === 'user-mgmt' ? 'nav-user-mgmt' : 'nav-' + view;
+  const btn = document.getElementById(btnId);
   if (btn) btn.classList.add('active');
 
   // All views
@@ -1343,16 +1344,22 @@ function switchView(view) {
   const isIng       = view === 'ingredients';
   const isUsers     = view === 'users';
   const isAnalytics = view === 'analytics';
+  const isDashboard = view === 'dashboard';
+  const isRecipeMgmt= view === 'recipe-mgmt';
+  const isUserMgmt  = view === 'user-mgmt';
 
+  // Old recipe table only shows for legacy recipe views
   if (statsEl)   statsEl.style.display   = isRecipe ? 'grid' : 'none';
   if (filtersEl) filtersEl.style.display = isRecipe ? 'flex' : 'none';
   if (tableEl)   tableEl.style.display   = isRecipe ? 'block': 'none';
 
-  // Null-safe: missing views don't crash the entire panel
   function showIfExists(id, show) {
     const el = document.getElementById(id);
     if (el) el.style.display = show ? 'block' : 'none';
   }
+  showIfExists('view-dashboard',   isDashboard);
+  showIfExists('view-recipe-mgmt', isRecipeMgmt);
+  showIfExists('view-user-mgmt',   isUserMgmt);
   showIfExists('view-ingredients', isIng);
   showIfExists('view-users',       isUsers);
   showIfExists('view-analytics',   isAnalytics);
@@ -1360,7 +1367,9 @@ function switchView(view) {
   const titles = {
     pending:'Pending Review', all:'All Recipes',
     approved:'Approved Recipes', rejected:'Rejected Recipes',
-    ingredients:'Ingredients', users:'Users', analytics:'Analytics'
+    ingredients:'Ingredients', users:'Users', analytics:'Analytics',
+    dashboard:'Dashboard', 'recipe-mgmt':'Recipe Management',
+    'user-mgmt':'User Management'
   };
   const subs = {
     pending:'Recipes waiting for your approval.',
@@ -1369,7 +1378,10 @@ function switchView(view) {
     rejected:'Recipes that were not approved.',
     ingredients:'Browse, add and edit the ingredient database.',
     users:'Manage user accounts.',
-    analytics:'Site performance and recipe statistics.'
+    analytics:'Site performance and recipe statistics.',
+    dashboard:'Overview of site activity.',
+    'recipe-mgmt':'Review, approve and manage all submitted recipes.',
+    'user-mgmt':'Manage member registrations and accounts.'
   };
   document.getElementById('page-title').textContent = titles[view] || 'Dashboard';
   document.getElementById('page-sub').textContent   = subs[view]   || '';
