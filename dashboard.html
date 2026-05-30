@@ -1786,7 +1786,7 @@ function renderIngRows(rows) {
     chk.type='checkbox';chk.className='ing-check ing-row-check';chk.dataset.id=id;
     chk.addEventListener('click',updateBulkToolbar);
     const chkWrap=document.createElement('div');
-    chkWrap.style.cssText='height:36px;display:flex;align-items:center;justify-content:center';
+    chkWrap.style.cssText='height:36px;display:flex;align-items:center;justify-content:center;overflow:hidden';
     chkWrap.appendChild(chk);
     tdChk.appendChild(chkWrap);tr.appendChild(tdChk);
 
@@ -1794,7 +1794,7 @@ function renderIngRows(rows) {
     const tdId=document.createElement('td');
     tdId.style.cssText='padding:0;width:36px';
     const idWrap=document.createElement('div');
-    idWrap.style.cssText='height:36px;display:flex;align-items:center;padding:0 8px;font-size:11px;color:var(--text-mid);white-space:nowrap';
+    idWrap.style.cssText='height:36px;display:flex;align-items:center;padding:0 8px;font-size:11px;color:var(--text-mid);white-space:nowrap;overflow:hidden';
     idWrap.textContent=id;
     tdId.appendChild(idWrap);tr.appendChild(tdId);
 
@@ -1810,7 +1810,7 @@ function renderIngRows(rows) {
       td.dataset.col=colKey;
       td.style.cssText='padding:0;vertical-align:middle;'+((!vis)?'display:none':'');
       const tdWrap=document.createElement('div');
-      tdWrap.style.cssText='height:36px;display:flex;align-items:center;overflow:hidden;padding:0 8px;box-sizing:border-box';
+      tdWrap.style.cssText='height:36px;display:flex;align-items:center;overflow:hidden;padding:0 8px;box-sizing:border-box;white-space:nowrap';
 
       // Check for pending change
       const pending=_pendingChanges[id]&&_pendingChanges[id][isExtra?colKey:colKey];
@@ -1857,7 +1857,7 @@ function renderIngRows(rows) {
     const tdEdit=document.createElement('td');
     tdEdit.style.cssText='padding:0';
     const editWrap=document.createElement('div');
-    editWrap.style.cssText='height:36px;display:flex;align-items:center;padding:0 4px';
+    editWrap.style.cssText='height:36px;display:flex;align-items:center;padding:0 4px;overflow:hidden';
     const editBtn=document.createElement('button');
     editBtn.className='ap-filter-btn';editBtn.style.fontSize='11px';editBtn.textContent='Edit';
     editBtn.addEventListener('click',function(e){e.stopPropagation();openIngModal(window._ingRows[id]);});
@@ -1887,10 +1887,13 @@ function inlineCell(e,id,field,type){
     td.classList.add('cell-pending');
     // Update display
     if(field==='Vegan (Yes/No)'||field==='Vegetarian (Yes/No)'){
-      td.innerHTML='<span class="ap-status-pill '+(newVal==='Yes'?'approved':'rejected')+'">'+newVal+'</span>';
+      const yw=document.createElement('div');yw.style.cssText='height:36px;display:flex;align-items:center;padding:0 8px';yw.innerHTML='<span class="ap-status-pill '+(newVal==='Yes'?'approved':'rejected')+'">'+newVal+'</span>';td.innerHTML='';td.style.padding='0';td.appendChild(yw);
     } else {
       const stdCfg=STD_COLS.find(function(c){return c.key===field;});
-      td.textContent=(stdCfg&&stdCfg.fmt==='qty')?fmtQty(newVal):newVal;
+      const dv=document.createElement('div');
+      dv.style.cssText='height:36px;display:flex;align-items:center;overflow:hidden;padding:0 8px;white-space:nowrap';
+      dv.textContent=(stdCfg&&stdCfg.fmt==='qty')?fmtQty(newVal):newVal;
+      td.innerHTML='';td.style.padding='0';td.appendChild(dv);
     }
     td.className='editable-cell cell-pending';
   }
@@ -2128,6 +2131,10 @@ function openIngModal(ing){
     document.getElementById('ing-veg').value      =ing['Vegetarian (Yes/No)']||'Yes';
     document.getElementById('ing-notes').value    =ing['Notes']||'';
     _customFields=Object.assign({},ing.extra_fields||{});
+    // Ensure all global +Column columns appear in the modal
+    _extraColKeys.forEach(function(k){
+      if(!_customFields.hasOwnProperty(k)) _customFields[k]='';
+    });
     if(delBtn)delBtn.style.display='inline-block';
   }else{
     document.getElementById('ing-modal-title').textContent='Add Ingredient';
@@ -2183,10 +2190,24 @@ function renderCustomFieldsList(){
   if(!keys.length){const msg=document.createElement('div');msg.style.cssText='font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)';msg.textContent='No custom fields. Click + Add Field.';container.appendChild(msg);return;}
   keys.forEach(function(k){
     const row=document.createElement('div');row.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:8px';
+    const isGlobal=_extraColKeys.includes(k);
+    if(isGlobal){
+      // Global column: show locked name label + editable value
+      const lbl=document.createElement('div');
+      lbl.style.cssText='flex:1;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,0.04);color:var(--accent);display:flex;align-items:center;gap:5px';
+      lbl.innerHTML='<span style="font-size:9px;opacity:0.6">COL</span> '+k;
+      const vi2=document.createElement('input');
+      vi2.style.cssText='flex:2;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';
+      vi2.value=String(_customFields[k]||'');vi2.placeholder='Value for '+k;
+      vi2.addEventListener('change',function(){_customFields[k]=this.value;});
+      row.appendChild(lbl);row.appendChild(vi2);
+    } else {
     const ki=document.createElement('input');ki.style.cssText='flex:1;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';ki.value=k;ki.placeholder='Field name';ki.addEventListener('change',function(){renameCustomField(k,this.value);});
     const vi=document.createElement('input');vi.style.cssText='flex:2;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';vi.value=String(_customFields[k]||'');vi.placeholder='Value';vi.addEventListener('change',function(){_customFields[k]=this.value;});
     const db=document.createElement('button');db.style.cssText='padding:4px 8px;background:none;border:1px solid #dc5050;border-radius:5px;color:#dc5050;cursor:pointer;font-size:12px';db.textContent='×';db.addEventListener('click',function(){removeCustomField(k);});
-    row.appendChild(ki);row.appendChild(vi);row.appendChild(db);container.appendChild(row);
+    row.appendChild(ki);row.appendChild(vi);row.appendChild(db);
+    }
+    container.appendChild(row);
   });
 }
 function addCustomField(){const key='Field '+(Object.keys(_customFields).length+1);_customFields[key]='';renderCustomFieldsList();}
