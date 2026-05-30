@@ -325,8 +325,11 @@
       </button>
 
       <div class="ap-nav-label" style="margin-top:20px">Users</div>
+      <button class="ap-nav-item" id="nav-pending-users" onclick="switchView('pending-users')">
+        ⏳ Pending Approval <span class="ap-nav-badge" id="badge-pending-users">0</span>
+      </button>
       <button class="ap-nav-item" id="nav-users" onclick="switchView('users')">
-        👥 All Users <span class="ap-nav-badge" id="badge-users" style="display:none">0</span>
+        👥 All Members <span class="ap-nav-badge" id="badge-users" style="display:none">0</span>
       </button>
 
       <div class="ap-nav-label" style="margin-top:20px">Analytics</div>
@@ -521,6 +524,28 @@
         </table>
       </div>
       <div id="user-pagination" style="margin-top:12px;display:flex;gap:8px;justify-content:center"></div>
+    </div>
+
+    <!-- PENDING USERS VIEW -->
+    <div id="view-pending-users" style="display:none">
+      <div class="ing-toolbar" style="margin-bottom:16px">
+        <span style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid)" id="pending-users-count">Loading…</span>
+      </div>
+      <div style="overflow-x:auto;border:1px solid var(--border);border-radius:12px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border)">
+              <th class="ap-th">Member</th>
+              <th class="ap-th">Email</th>
+              <th class="ap-th">Registered</th>
+              <th class="ap-th">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="pending-users-tbody">
+            <tr><td colspan="4" class="ap-empty-row">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- ANALYTICS VIEW -->
@@ -831,6 +856,75 @@ function signOut() {
 
 // ── Stats ─────────────────────────────────────────────────────────
 
+
+// ── PENDING USER APPROVALS ────────────────────────────────────────
+async function loadPendingUsers() {
+  const tbody = document.getElementById('pending-users-tbody');
+  const countEl = document.getElementById('pending-users-count');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="4" class="ap-empty-row">Loading…</td></tr>';
+  try {
+    const users = await rpc('admin_get_users', { p_search: null, p_limit: 100, p_offset: 0, p_status: 'pending' });
+    if (!users || !users.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="ap-empty-row">No pending registrations — all caught up.</td></tr>';
+      if (countEl) countEl.textContent = '0 pending registrations';
+      document.getElementById('badge-pending-users').textContent = '0';
+      return;
+    }
+    if (countEl) countEl.textContent = users.length + ' pending registration' + (users.length === 1 ? '' : 's');
+    document.getElementById('badge-pending-users').textContent = users.length;
+    tbody.innerHTML = users.map(function(u) {
+      const initials = ((u.full_name || u.username || '?').split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2));
+      const joined = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
+      return '<tr>' +
+        '<td class="ap-td"><div style="display:flex;align-items:center;gap:10px">' +
+        '<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8a6a28);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">' + initials + '</div>' +
+        '<div><div style="font-weight:500;color:var(--text-high)">' + escH(u.full_name||u.username) + '</div>' +
+        '<div style="font-size:11px;color:var(--text-mid)">@' + escH(u.username||'') + '</div></div></div></td>' +
+        '<td class="ap-td">' + escH(u.email) + '</td>' +
+        '<td class="ap-td">' + joined + '</td>' +
+        '<td class="ap-td"><div style="display:flex;gap:8px">' +
+        '<button data-uid="' + u.id + '" onclick="approveUser(this.dataset.uid,this)" ' +
+        'style="padding:7px 16px;background:#2e7d4f;border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer">Approve</button>' +
+        '<button data-uid="' + u.id + '" onclick="declineUser(this.dataset.uid,this)" ' +
+        'style="padding:7px 16px;background:none;border:1px solid #dc5050;border-radius:8px;color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer">Decline</button>' +
+        '</div></td>' +
+        '</tr>';
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="4" class="ap-empty-row">Error: ' + escH(e.message) + '</td></tr>';
+  }
+}
+
+async function approveUser(userId, btn) {
+  btn.disabled = true; btn.textContent = 'Approving…';
+  try {
+    await rpc('admin_approve_user', { p_user_id: userId });
+    btn.closest('tr').remove();
+    const remaining = document.getElementById('pending-users-tbody').querySelectorAll('tr').length;
+    document.getElementById('badge-pending-users').textContent = remaining;
+    if (remaining === 0) {
+      document.getElementById('pending-users-tbody').innerHTML =
+        '<tr><td colspan="4" class="ap-empty-row">No pending registrations — all caught up.</td></tr>';
+    }
+  } catch(e) { btn.disabled=false; btn.textContent='Approve'; alert('Error: '+e.message); }
+}
+
+async function declineUser(userId, btn) {
+  if (!confirm('Decline this registration? The user will not be able to sign in.')) return;
+  btn.disabled = true; btn.textContent = 'Declining…';
+  try {
+    await rpc('admin_deactivate_user', { p_user_id: userId });
+    btn.closest('tr').querySelector('button').textContent = 'Declined';
+    btn.closest('tr').style.opacity = '0.4';
+    btn.remove();
+  } catch(e) { btn.disabled=false; btn.textContent='Decline'; alert('Error: '+e.message); }
+}
+
+function escH(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 // ── DASHBOARD HOME ────────────────────────────────────────────────
 async function loadDashboard() {
   try {
@@ -1005,7 +1099,8 @@ function switchView(view) {
   document.getElementById('page-sub').textContent   = subs[view]   || '';
 
   if (isIng)       { loadIngredients(1); return; }
-  if (view === 'dashboard') { loadDashboard(); return; }
+  if (view === 'dashboard')     { loadDashboard(); return; }
+  if (view === 'pending-users') { loadPendingUsers(); return; }
   if (isUsers)     { loadUsers(1); return; }
   if (isAnalytics) { loadAnalytics(); return; }
   loadRecipes(view === 'all' ? null : view);
@@ -1127,6 +1222,7 @@ async function reviewRecipe(newStatus) {
       .filter(Boolean).map(t => `<span class="ap-modal-meta-tag">${t}</span>`).join('') + statusPill(newStatus);
     // Refresh list and stats
     await loadStats();
+    try { const pc = await rpc('admin_count_pending_users',{}); const pb = document.getElementById('badge-pending-users'); if(pb) pb.textContent = pc||0; } catch(_){}
     await loadRecipes(currentView === 'all' ? null : currentView);
     // In-app notification
     if ((newStatus === 'approved' || newStatus === 'rejected') && currentRecipe.user_id) {

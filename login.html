@@ -541,7 +541,13 @@ async function doLogin() {
         ? 'No account found with that email.'
         : 'Username not found. Please check and try again.');
     }
-    if (info[0].is_active === false) throw new Error('This account has been deactivated.');
+    const accountStatus = info[0].account_status || 'active';
+    if (accountStatus === 'pending') {
+      throw new Error('Your account is awaiting admin approval. You will receive an email once approved.');
+    }
+    if (info[0].is_active === false || accountStatus === 'deactivated') {
+      throw new Error('This account has been deactivated. Contact support to reactivate it.');
+    }
 
     const email    = info[0].email;
     const username = info[0].username;
