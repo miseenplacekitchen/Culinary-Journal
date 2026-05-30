@@ -2221,8 +2221,8 @@ function renameExtraColumn(oldName) {
 
 
 // ── DELETE CUSTOM COLUMN ─────────────────────────────────────────
-function deleteExtraColumn(name) {
-  if (!confirm('Delete column "' + name + '"?\n\nThe column will be removed from the table. Its data will be renamed and moved to the Recycle Bin — nothing is permanently lost.')) return;
+async function deleteExtraColumn(name) {
+  if (!confirm('Delete column "' + name + '"?\n\nThe column will be removed from the table. Its data will be renamed and moved to the Recycle Bin.')) return;
 
   // Find next available Deleted{n}Name slot
   var n = 1;
@@ -2233,14 +2233,15 @@ function deleteExtraColumn(name) {
   while (allKeys.includes('Deleted' + n + name)) n++;
   var renamedTo = 'Deleted' + n + name;
 
-  // Rename in Supabase (one query across all ingredients)
-  rpc('admin_rename_extra_field', { p_old_key: name, p_new_key: renamedTo })
-    .then(function(count) {
-      console.log('Renamed "' + name + '" → "' + renamedTo + '" in ' + (count||0) + ' ingredients');
-    })
-    .catch(function(e) { console.warn('Rename error:', e.message); });
+  // Rename in Supabase — AWAIT so Recycle Bin is accurate immediately
+  try {
+    var count = await rpc('admin_rename_extra_field', { p_old_key: name, p_new_key: renamedTo });
+    console.log('Renamed "' + name + '" to "' + renamedTo + '" in ' + (count||0) + ' rows');
+  } catch(e) {
+    alert('Could not rename column data: ' + e.message + '\nColumn removed from table but data may not be in Recycle Bin.');
+  }
 
-  // Also rename in local data immediately (no reload needed)
+  // Update local data immediately
   _ingAllData.forEach(function(r) {
     if (r.extra_fields && r.extra_fields.hasOwnProperty(name)) {
       r.extra_fields[renamedTo] = r.extra_fields[name];
@@ -2262,13 +2263,15 @@ function deleteExtraColumn(name) {
   delete types[name];
   localStorage.setItem('tcj_extra_col_types', JSON.stringify(types));
 
-  // Clear pending changes for this column
   Object.keys(_pendingChanges).forEach(function(id) {
     if (_pendingChanges[id]) delete _pendingChanges[id]['extra:' + name];
   });
   delete _ingColFilters['extra:' + name];
 
   buildTableHeader(); buildColVisPanel(); renderIngFiltered(); updateSaveBtn();
+
+  // If Recycle Bin tab is active, refresh it now
+  if (currentIngTab === 'recycle') loadIngRecycleBin();
 }
 
 
