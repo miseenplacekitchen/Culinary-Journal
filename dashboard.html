@@ -1810,7 +1810,9 @@ function renderIngRows(rows) {
       td.dataset.col=colKey;
       td.style.cssText='padding:0;vertical-align:middle;'+((!vis)?'display:none':'');
       const tdWrap=document.createElement('div');
-      tdWrap.style.cssText='height:36px;display:flex;align-items:center;overflow:hidden;padding:0 8px;box-sizing:border-box;white-space:nowrap';
+      // Set max-width per column type — Notes gets more space, others capped at 180px
+      const _mw=colKey==='Notes'?'240px':colKey==='Ingredient Name'?'220px':colKey==='Also Known As'?'180px':'160px';
+      tdWrap.style.cssText='height:36px;display:flex;align-items:center;overflow:hidden;padding:0 8px;box-sizing:border-box;white-space:nowrap;max-width:'+_mw;
 
       // Check for pending change
       const pending=_pendingChanges[id]&&_pendingChanges[id][isExtra?colKey:colKey];
@@ -1826,6 +1828,7 @@ function renderIngRows(rows) {
         const div=document.createElement('div');
         div.className=(colKey==='Ingredient Name')?'ap-recipe-name':'ap-submitter';
         div.textContent=fmtVal;
+        td.title=fmtVal;
         tdWrap.appendChild(div);
         td.appendChild(tdWrap);
       } else if(stdCfg&&stdCfg.edit==='yesno'||colKey==='Vegan (Yes/No)'||colKey==='Vegetarian (Yes/No)'){
@@ -1839,13 +1842,13 @@ function renderIngRows(rows) {
       } else if(isExtra){
         td.className='editable-cell'+(pending?' cell-pending':'');
         tdWrap.textContent=fmtVal;
-        td.title='Click to edit';
+        td.title=fmtVal||'Click to edit';
         td.appendChild(tdWrap);
         td.addEventListener('click',function(e){inlineCell(e,id,colKey,'text');});
       } else {
         td.className='editable-cell'+(pending?' cell-pending':'');
-        td.title='Click to edit';
         tdWrap.textContent=fmtVal;
+        td.title=fmtVal||'Click to edit';
         td.appendChild(tdWrap);
         const editType=(stdCfg&&stdCfg.edit==='select')?'select':'text';
         td.addEventListener('click',function(e){inlineCell(e,id,colKey,editType);});
