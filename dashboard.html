@@ -75,7 +75,7 @@
     .ap-search:focus { border-color: var(--accent); }
 
     /* ── RECIPE TABLE ── */
-    .ap-table-wrap { background: var(--text-ghost); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .ap-table-wrap { background: var(--text-ghost); border: 1px solid var(--border); border-radius: 14px; overflow-x: auto; overflow-y: visible; }
     .ap-table { width: 100%; border-collapse: collapse; }
     .ap-table th { font-family: "DM Sans", sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-mid); padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
     .ap-table td { padding: 6px 10px !important; border-bottom: 1px solid rgba(255,255,255,0.06); vertical-align: middle; font-family: "DM Sans", sans-serif; font-size: 13px; line-height: 1.3; }
@@ -1572,7 +1572,11 @@ async function saveAllChanges() {
   for (const id in _pendingChanges) {
     const changes = _pendingChanges[id];
     const ing = window._ingRows && window._ingRows[id];
-    const params = {p_id: parseInt(id), p_ingredient_name: ing ? (ing['Ingredient Name']||'') : ''};
+    // Seed params with ALL current field values so nothing gets wiped
+    const params = { p_id: parseInt(id) };
+    Object.keys(PARAM_MAP).forEach(function(field) {
+      params[PARAM_MAP[field]] = ing ? (ing[field] !== undefined ? ing[field] : '') : '';
+    });
     const ef = Object.assign({}, (ing&&ing.extra_fields)||{});
     let hasExtra = false;
     for (const field in changes) {
@@ -1581,7 +1585,7 @@ async function saveAllChanges() {
         hasExtra = true;
       } else {
         const pm = PARAM_MAP[field];
-        if (pm) params[pm] = changes[field].new;
+        if (pm) params[pm] = changes[field].new; // override with new value
       }
     }
     if (hasExtra) params.p_extra_fields = ef;
