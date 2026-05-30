@@ -541,10 +541,10 @@ async function doLogin() {
         ? 'No account found with that email.'
         : 'Username not found. Please check and try again.');
     }
-    if (!info[0].profile_is_active) throw new Error('This account has been deactivated.');
+    if (info[0].is_active === false) throw new Error('This account has been deactivated.');
 
-    const email    = info[0].profile_email;
-    const username = info[0].profile_username;
+    const email    = info[0].email;
+    const username = info[0].username;
 
     // Sign in with email + password
     const data = await supaAuth('token?grant_type=password', { email, password });
