@@ -78,7 +78,7 @@
     .ap-table-wrap { background: var(--text-ghost); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
     .ap-table { width: 100%; border-collapse: collapse; }
     .ap-table th { font-family: "DM Sans", sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-mid); padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
-    .ap-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); vertical-align: middle; font-family: "DM Sans", sans-serif; font-size: 13px; }
+    .ap-table td { padding: 6px 10px !important; border-bottom: 1px solid rgba(255,255,255,0.06); vertical-align: middle; font-family: "DM Sans", sans-serif; font-size: 13px; line-height: 1.3; }
     .ap-table tr:last-child td { border-bottom: none; }
     .ap-table tr:hover td { background: rgb(from var(--accent) r g b / 0.04); }
     .ap-table tr { cursor: pointer; height: auto; max-height: 48px; }
@@ -1764,9 +1764,11 @@ function renderIngRows(rows) {
     const tr=document.createElement('tr');
     tr.id='ing-row-'+id;
     tr.dataset.id=id;
+    tr.style.cssText='height:44px;max-height:44px';
 
     // Checkbox
     const tdChk=document.createElement('td');
+    tdChk.style.padding='6px 8px 6px 12px';
     tdChk.addEventListener('click',function(e){e.stopPropagation();});
     const chk=document.createElement('input');
     chk.type='checkbox';chk.className='ing-check ing-row-check';chk.dataset.id=id;
@@ -1775,7 +1777,7 @@ function renderIngRows(rows) {
 
     // ID
     const tdId=document.createElement('td');
-    tdId.style.cssText='font-size:11px;color:var(--text-mid)';
+    tdId.style.cssText='font-size:11px;color:var(--text-mid);padding:6px 10px;white-space:nowrap';
     tdId.textContent=id;tr.appendChild(tdId);
 
     // Data columns in current order
@@ -1788,6 +1790,7 @@ function renderIngRows(rows) {
 
       const td=document.createElement('td');
       td.dataset.col=colKey;
+      td.style.padding='6px 10px';
       if(!vis)td.style.display='none';
 
       // Check for pending change
