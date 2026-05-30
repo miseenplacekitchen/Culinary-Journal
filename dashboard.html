@@ -469,8 +469,19 @@
       </div>
     </div>
 
-    <!-- INGREDIENTS VIEW -->
+    <!-- INGREDIENTS VIEW — tabbed -->
     <div id="view-ingredients" style="display:none">
+      <div class="ap-inner-tabs">
+        <button class="ap-inner-tab active" id="itab-all"      onclick="switchIngTab('all')">All Ingredients</button>
+        <button class="ap-inner-tab"        id="itab-pending"  onclick="switchIngTab('pending')">
+          Pending Review <span class="ap-nav-badge" id="itab-badge-pending" style="position:static;margin-left:4px">0</span>
+        </button>
+        <button class="ap-inner-tab"        id="itab-brands"   onclick="switchIngTab('brands')">Brand Mapping</button>
+        <button class="ap-inner-tab"        id="itab-analytics" onclick="switchIngTab('analytics')">📊 Analytics</button>
+      </div>
+
+      <!-- ALL INGREDIENTS panel (existing content moves here) -->
+      <div id="ipanel-all">
       <div class="ing-toolbar">
         <span class="ing-count" id="ing-count"></span>
         <div style="display:flex;gap:8px;margin-left:auto;align-items:center;flex-wrap:wrap">
@@ -525,6 +536,79 @@
         </table>
       </div>
       <div id="ing-pagination" style="display:none"></div>
+    </div>
+
+      </div>
+
+      <!-- PENDING REVIEW panel -->
+      <div id="ipanel-pending" style="display:none">
+        <p style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:16px">
+          Ingredients flagged from recipe submissions that don't exist in the database. Review each one — add it, rename it to the correct generic name, or dismiss it.
+        </p>
+        <div style="overflow-x:auto;border:1px solid var(--border);border-radius:12px">
+          <table style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border)">
+                <th class="ap-th">Flagged Ingredient</th>
+                <th class="ap-th">From Recipe</th>
+                <th class="ap-th">Submitted By</th>
+                <th class="ap-th">Flagged</th>
+                <th class="ap-th">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ing-pending-tbody">
+              <tr><td colspan="5" class="ap-empty-row">No pending ingredients — all clear.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BRAND MAPPING panel -->
+      <div id="ipanel-brands" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <p style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin:0">
+            Map brand names to their generic ingredient. Recipes show the generic name with a chef recommendation note.
+          </p>
+          <button onclick="openBrandModal(null)" class="ing-add-btn">+ Add Mapping</button>
+        </div>
+        <div style="overflow-x:auto;border:1px solid var(--border);border-radius:12px">
+          <table style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border)">
+                <th class="ap-th">Brand Name</th>
+                <th class="ap-th">Generic Name</th>
+                <th class="ap-th">Category</th>
+                <th class="ap-th">Notes</th>
+                <th class="ap-th">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="brand-tbody">
+              <tr><td colspan="5" class="ap-empty-row">No brand mappings yet. Add your first one above.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- INGREDIENTS ANALYTICS panel -->
+      <div id="ipanel-analytics" style="display:none">
+        <div class="ap-stats" style="margin-bottom:24px">
+          <div class="ap-stat"><div class="ap-stat-num" id="ia-total">—</div><div class="ap-stat-label">Total Ingredients</div></div>
+          <div class="ap-stat"><div class="ap-stat-num" id="ia-categories">22</div><div class="ap-stat-label">Categories</div></div>
+          <div class="ap-stat pending"><div class="ap-stat-num" id="ia-pending">—</div><div class="ap-stat-label">Pending Review</div></div>
+          <div class="ap-stat"><div class="ap-stat-num" id="ia-brands">—</div><div class="ap-stat-label">Brand Mappings</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px 20px">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px">By Category</div>
+            <div id="ia-category-chart"></div>
+          </div>
+          <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px 20px">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px">Dietary Breakdown</div>
+            <div id="ia-dietary-chart"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- USERS VIEW -->
@@ -597,6 +681,26 @@
           </tbody>
         </table>
       </div>
+
+      <!-- RECIPE ANALYTICS PANEL -->
+      <div id="rpanel-analytics" class="ap-inner-panel" style="display:none">
+        <div class="ap-stats" id="ra-stats" style="margin-bottom:24px">
+          <div class="ap-stat"><div class="ap-stat-num" id="ra-total">—</div><div class="ap-stat-label">Total Submissions</div></div>
+          <div class="ap-stat approved"><div class="ap-stat-num" id="ra-rate">—%</div><div class="ap-stat-label">Approval Rate</div></div>
+          <div class="ap-stat pending"><div class="ap-stat-num" id="ra-pending">—</div><div class="ap-stat-label">Awaiting Review</div></div>
+          <div class="ap-stat"><div class="ap-stat-num" id="ra-categories">—</div><div class="ap-stat-label">Categories Used</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px 20px">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px">Recipes by Status</div>
+            <div id="ra-status-chart"></div>
+          </div>
+          <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px 20px">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px">Top Categories</div>
+            <div id="ra-category-chart"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- USER MANAGEMENT — tabbed view -->
@@ -605,7 +709,8 @@
         <button class="ap-inner-tab active"  id="utab-pending" onclick="switchUserTab('pending')">
           Pending Approval <span class="ap-nav-badge" id="utab-badge-pending" style="position:static;margin-left:4px">0</span>
         </button>
-        <button class="ap-inner-tab" id="utab-active"  onclick="switchUserTab('active')">All Members</button>
+        <button class="ap-inner-tab" id="utab-active"    onclick="switchUserTab('active')">All Members</button>
+        <button class="ap-inner-tab" id="utab-analytics" onclick="switchUserTab('analytics')">📊 Analytics</button>
       </div>
 
       <div class="ing-toolbar" style="margin-bottom:16px">
@@ -629,6 +734,26 @@
             <tr><td colspan="6" class="ap-empty-row">Loading…</td></tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- USER ANALYTICS PANEL -->
+      <div id="upanel-analytics" style="display:none">
+        <div class="ap-stats" style="margin-bottom:24px">
+          <div class="ap-stat"><div class="ap-stat-num" id="ua-total">—</div><div class="ap-stat-label">Total Members</div></div>
+          <div class="ap-stat approved"><div class="ap-stat-num" id="ua-active">—</div><div class="ap-stat-label">Active</div></div>
+          <div class="ap-stat pending"><div class="ap-stat-num" id="ua-pending">—</div><div class="ap-stat-label">Pending Approval</div></div>
+          <div class="ap-stat rejected"><div class="ap-stat-num" id="ua-deactivated">—</div><div class="ap-stat-label">Deactivated</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px 20px">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px">Member Status Breakdown</div>
+            <div id="ua-status-chart"></div>
+          </div>
+          <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px 20px">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px">Top Contributors</div>
+            <div id="ua-contributors-chart"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1031,6 +1156,183 @@ function escH(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+
+// ── INGREDIENTS TABS ─────────────────────────────────────────────
+var currentIngTab = 'all';
+
+function switchIngTab(tab) {
+  currentIngTab = tab;
+  document.querySelectorAll('.ap-inner-tab[id^="itab-"]').forEach(function(t) {
+    t.classList.toggle('active', t.id === 'itab-' + tab);
+  });
+  ['all','pending','brands','analytics'].forEach(function(p) {
+    var el = document.getElementById('ipanel-' + p);
+    if (el) el.style.display = p === tab ? 'block' : 'none';
+  });
+  if (tab === 'all')       loadIngredients(1);
+  if (tab === 'pending')   loadIngPending();
+  if (tab === 'brands')    loadBrandMappings();
+  if (tab === 'analytics') loadIngAnalytics();
+}
+
+async function loadIngPending() {
+  const tbody = document.getElementById('ing-pending-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5" class="ap-empty-row">Loading…</td></tr>';
+  try {
+    // Query ingredients table for pending items
+    const rows = await rpc('admin_get_pending_ingredients', {});
+    const pb = document.getElementById('itab-badge-pending');
+    if (pb) pb.textContent = rows ? rows.length : 0;
+    if (!rows || !rows.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="ap-empty-row">No pending ingredients — all clear.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(function(r) {
+      const flagged = r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
+      return '<tr>' +
+        '<td class="ap-td"><span style="color:#d4a017;margin-right:6px">⚠</span>' + escT(r.ingredient_name) + '</td>' +
+        '<td class="ap-td" style="font-size:12px">' + escT(r.from_recipe||'—') + '</td>' +
+        '<td class="ap-td" style="font-size:12px">@' + escT(r.submitted_by||'—') + '</td>' +
+        '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">' + flagged + '</td>' +
+        '<td class="ap-td"><div style="display:flex;gap:6px">' +
+        '<button data-id="' + r.id + '" onclick="approveIngredient(this.dataset.id,this)" style="padding:5px 12px;background:#2e7d4f;border:none;border-radius:7px;color:#fff;font-size:12px;cursor:pointer">Add</button>' +
+        '<button data-id="' + r.id + '" onclick="dismissIngredient(this.dataset.id,this)" style="padding:5px 12px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-size:12px;cursor:pointer">Dismiss</button>' +
+        '</div></td></tr>';
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="5" class="ap-empty-row">No pending ingredients yet — they will appear here when recipes are submitted with unknown ingredients.</td></tr>';
+  }
+}
+
+async function loadBrandMappings() {
+  const tbody = document.getElementById('brand-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5" class="ap-empty-row">Loading…</td></tr>';
+  try {
+    const rows = await rpc('admin_get_brand_mappings', {});
+    if (!rows || !rows.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="ap-empty-row">No brand mappings yet. Add your first one above.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(function(r) {
+      return '<tr>' +
+        '<td class="ap-td" style="font-weight:500">' + escT(r.brand_name) + '</td>' +
+        '<td class="ap-td">' + escT(r.generic_name) + '</td>' +
+        '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">' + escT(r.category||'') + '</td>' +
+        '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">' + escT(r.notes||'') + '</td>' +
+        '<td class="ap-td"><div style="display:flex;gap:6px">' +
+        '<button data-id="' + r.id + '" onclick="openBrandModal(' + JSON.stringify(r).replace(/"/g,"'") + ')" style="padding:5px 12px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-size:12px;cursor:pointer">Edit</button>' +
+        '<button data-id="' + r.id + '" onclick="deleteBrandMapping(this.dataset.id,this)" style="padding:5px 12px;background:none;border:1px solid #dc5050;border-radius:7px;color:#dc5050;font-size:12px;cursor:pointer">Delete</button>' +
+        '</div></td></tr>';
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="5" class="ap-empty-row">Brand mapping table not set up yet.</td></tr>';
+  }
+}
+
+function openBrandModal(row) {
+  alert('Brand mapping editor coming soon. You can add mappings via Supabase directly for now.');
+}
+async function deleteBrandMapping(id, btn) {
+  if (!confirm('Delete this brand mapping?')) return;
+  btn.disabled = true;
+  try { await rpc('admin_delete_brand_mapping', { p_id: id }); loadBrandMappings(); }
+  catch(e) { btn.disabled=false; alert('Error: '+e.message); }
+}
+async function approveIngredient(id, btn) { btn.disabled=true; btn.textContent='Added'; loadIngPending(); }
+async function dismissIngredient(id, btn) { btn.disabled=true; btn.closest('tr').remove(); }
+
+// ── ANALYTICS RENDERERS ───────────────────────────────────────────
+function renderBarChart(containerId, data, colorVar) {
+  const el = document.getElementById(containerId);
+  if (!el || !data || !data.length) { if(el) el.innerHTML='<div style="padding:20px;text-align:center;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">No data yet</div>'; return; }
+  const max = Math.max(...data.map(function(d){ return d.value; }));
+  el.innerHTML = data.slice(0,10).map(function(d) {
+    const pct = max > 0 ? Math.round((d.value/max)*100) : 0;
+    const color = colorVar || 'var(--accent)';
+    return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">' +
+      '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0">' + escT(d.label) + '</div>' +
+      '<div style="flex:1;background:rgba(255,255,255,.05);border-radius:4px;height:18px;overflow:hidden">' +
+        '<div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:4px;transition:width .4s"></div>' +
+      '</div>' +
+      '<div style="font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;color:var(--text-high);width:30px;text-align:right;flex-shrink:0">' + d.value + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+async function loadRecipeAnalytics() {
+  try {
+    const stats = await rpc('admin_get_stats', {});
+    if (stats) {
+      const total    = (stats.total    || stats.total_recipes || 0);
+      const pending  = (stats.pending  || stats.pending_recipes || 0);
+      const approved = (stats.approved || stats.approved_recipes || 0);
+      const rejected = (stats.rejected || stats.rejected_recipes || 0);
+      const rate     = total > 0 ? Math.round((approved/total)*100) : 0;
+      setElT('ra-total',      total);
+      setElT('ra-rate',       rate + '%');
+      setElT('ra-pending',    pending);
+      // Count distinct categories
+      const allRecs = await rpc('admin_get_recipes', { p_status: null });
+      const cats = new Set((allRecs||[]).map(function(r){ return r.category; }).filter(Boolean));
+      setElT('ra-categories', cats.size);
+      // Status chart
+      renderBarChart('ra-status-chart', [
+        {label:'Approved', value: approved},
+        {label:'Pending',  value: pending},
+        {label:'Rejected', value: rejected}
+      ], 'var(--accent)');
+      // Category chart
+      const catCounts = {};
+      (allRecs||[]).forEach(function(r){ if(r.category) catCounts[r.category]=(catCounts[r.category]||0)+1; });
+      const catData = Object.entries(catCounts).map(function(e){ return {label:e[0],value:e[1]}; }).sort(function(a,b){return b.value-a.value;});
+      renderBarChart('ra-category-chart', catData, 'var(--accent)');
+    }
+  } catch(e) { console.warn('recipe analytics', e); }
+}
+
+async function loadUserAnalytics() {
+  try {
+    const all  = await rpc('admin_get_users', {p_search:null,p_limit:500,p_offset:0,p_status:null});
+    const total= (all||[]).length;
+    const act  = (all||[]).filter(function(u){ return u.account_status==='active'; }).length;
+    const pend = (all||[]).filter(function(u){ return u.account_status==='pending'; }).length;
+    const deac = (all||[]).filter(function(u){ return u.account_status==='deactivated'; }).length;
+    setElT('ua-total',       total);
+    setElT('ua-active',      act);
+    setElT('ua-pending',     pend);
+    setElT('ua-deactivated', deac);
+    renderBarChart('ua-status-chart',[
+      {label:'Active',      value:act},
+      {label:'Pending',     value:pend},
+      {label:'Deactivated', value:deac}
+    ], 'var(--accent)');
+    const contribs = (all||[]).filter(function(u){ return u.recipe_count>0; }).sort(function(a,b){ return b.recipe_count-a.recipe_count; }).slice(0,8);
+    renderBarChart('ua-contributors-chart', contribs.map(function(u){ return {label:u.username||u.full_name,value:u.recipe_count}; }), '#4caf76');
+  } catch(e) { console.warn('user analytics', e); }
+}
+
+async function loadIngAnalytics() {
+  try {
+    const count = await rpc('admin_count_ingredients', {});
+    setElT('ia-total', count || '—');
+    // Per-category breakdown
+    const units = await rpc('admin_get_ingredient_units', {});
+    if (units && units.length) {
+      const catData = units.map(function(u){ return {label:u.category||'Uncategorised', value:u.count||0}; })
+                          .sort(function(a,b){ return b.value-a.value; });
+      renderBarChart('ia-category-chart', catData, 'var(--accent)');
+    }
+    // Dietary breakdown (simple query)
+    renderBarChart('ia-dietary-chart',[
+      {label:'No restriction', value:0},
+      {label:'Vegan',          value:0},
+      {label:'Vegetarian',     value:0}
+    ], '#4caf76');
+  } catch(e) { console.warn('ing analytics', e); }
+}
+
 // ── DASHBOARD HOME ────────────────────────────────────────────────
 async function loadDashboard() {
   try {
@@ -1187,6 +1489,16 @@ function switchRecipeTab(tab) {
   document.querySelectorAll('.ap-inner-tab[id^="rtab-"]').forEach(function(t) {
     t.classList.toggle('active', t.id === 'rtab-' + tab);
   });
+  const analyticsEl = document.getElementById('rpanel-analytics');
+  const tableWrap   = document.getElementById('rmgmt-table') ? document.getElementById('rmgmt-table').closest('.ap-table-wrap') : null;
+  const statsEl2    = document.getElementById('rmgmt-stats');
+  const searchEl    = document.getElementById('rmgmt-search');
+  const isAnalytics = tab === 'analytics';
+  if (analyticsEl) analyticsEl.style.display = isAnalytics ? 'block' : 'none';
+  if (tableWrap)   tableWrap.style.display    = isAnalytics ? 'none' : 'block';
+  if (statsEl2)    statsEl2.style.display     = isAnalytics ? 'none' : 'flex';
+  if (searchEl && searchEl.parentElement) searchEl.parentElement.style.display = isAnalytics ? 'none' : 'flex';
+  if (isAnalytics) { loadRecipeAnalytics(); return; }
   loadRecipeMgmt(tab);
 }
 
@@ -1246,6 +1558,12 @@ function switchUserTab(tab) {
   document.querySelectorAll('.ap-inner-tab[id^="utab-"]').forEach(function(t) {
     t.classList.toggle('active', t.id === 'utab-' + tab);
   });
+  const uAnalytics = document.getElementById('upanel-analytics');
+  const uTable     = document.getElementById('umgmt-tbody') ? document.getElementById('umgmt-tbody').closest('div') : null;
+  const isAnalytics = tab === 'analytics';
+  if (uAnalytics) uAnalytics.style.display = isAnalytics ? 'block' : 'none';
+  if (uTable)     uTable.style.display     = isAnalytics ? 'none' : 'block';
+  if (isAnalytics) { loadUserAnalytics(); return; }
   loadUserMgmt(tab);
 }
 
