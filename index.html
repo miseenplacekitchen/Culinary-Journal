@@ -733,6 +733,81 @@
 
 </div>
 
+
+<script>
+// ── OAUTH CALLBACK HANDLER ────────────────────────────────────────
+// When Google OAuth redirects back, the URL contains:
+// #access_token=...&refresh_token=...&type=recovery|signup etc.
+// We read these, store in tcj_session, then clean the URL.
+(function handleOAuthCallback() {
+  var hash = window.location.hash;
+  if (!hash || hash.indexOf('access_token') === -1) return;
+
+  var params = {};
+  hash.replace(/^#/, '').split('&').forEach(function(pair) {
+    var kv = pair.split('=');
+    params[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || '');
+  });
+
+  if (!params.access_token) return;
+
+  var SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+  var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+
+  // Get user info from the token
+  fetch(SUPA_URL + '/auth/v1/user', {
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + params.access_token
+    }
+  }).then(function(r) { return r.ok ? r.json() : null; })
+  .then(function(user) {
+    if (!user || !user.id) return;
+
+    // Get username from profile
+    return fetch(SUPA_URL + '/rest/v1/rpc/get_my_profile', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + params.access_token,
+        'Content-Type': 'application/json'
+      },
+      body: '{}'
+    }).then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(rows) {
+      var profile = Array.isArray(rows) ? rows[0] : rows;
+      var username = (profile && profile.username) || user.email.split('@')[0];
+
+      // Store in tcj_session format
+      var session = {
+        access_token:  params.access_token,
+        refresh_token: params.refresh_token || '',
+        user_id:       user.id,
+        username:      username
+      };
+      localStorage.setItem('tcj_session', JSON.stringify(session));
+
+      if (profile) {
+        localStorage.setItem('tcj_profile', JSON.stringify(profile));
+        if (profile.theme_preference && profile.theme_preference !== 'midnight-slate') {
+          localStorage.setItem('tcj_theme', profile.theme_preference);
+        }
+        // Admin redirect
+        if (profile.is_admin) {
+          window.location.href = 'dashboard.html';
+          return;
+        }
+      }
+      // Clean the hash from URL
+      history.replaceState(null, '', window.location.pathname);
+    });
+  }).catch(function() {
+    // If anything fails, clean hash and continue as normal
+    history.replaceState(null, '', window.location.pathname);
+  });
+})();
+</script>
+
 <script src="nav-init.js"></script>
 <script>
 // Load live recipe count from Supabase

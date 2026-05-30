@@ -727,11 +727,32 @@ let PROFILE = null;
 ═══════════════════════════════════════════════════ */
 function loadSession() {
   try {
+    // Primary: our custom session format
     const raw = localStorage.getItem('tcj_session');
-    if (!raw) return null;
-    const s = JSON.parse(raw);
-    if (!s || typeof s !== 'object') return null;
-    return s;
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && s.access_token && s.user_id) return s;
+    }
+    // Fallback: check Supabase native session format
+    // (used after Google OAuth before callback handler runs)
+    const supaKey = 'sb-kzywmodvfbyexqgipcjt-auth-token';
+    const supaRaw = localStorage.getItem(supaKey);
+    if (supaRaw) {
+      const supa = JSON.parse(supaRaw);
+      if (supa && supa.access_token && supa.user && supa.user.id) {
+        // Convert to our format on the fly
+        const converted = {
+          access_token:  supa.access_token,
+          refresh_token: supa.refresh_token || '',
+          user_id:       supa.user.id,
+          username:      supa.user.user_metadata?.username || supa.user.email.split('@')[0]
+        };
+        // Persist in our format so future pages work
+        localStorage.setItem('tcj_session', JSON.stringify(converted));
+        return converted;
+      }
+    }
+    return null;
   } catch (_) { return null; }
 }
 
@@ -846,6 +867,34 @@ function showFatalError(title, detail, showRetry) {
   ls.appendChild(box);
 }
 
+
+/* ═══════════════════════════════════════════════════
+   TOKEN REFRESH — silently gets a new access token
+   using the stored refresh_token before giving up
+═══════════════════════════════════════════════════ */
+async function refreshSession() {
+  try {
+    const s = loadSession();
+    if (!s || !s.refresh_token) return false;
+    const res = await fetch(SUPA_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method:  'POST',
+      headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ refresh_token: s.refresh_token })
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    if (!data.access_token) return false;
+    // Update stored session with new tokens
+    const updated = Object.assign({}, s, {
+      access_token:  data.access_token,
+      refresh_token: data.refresh_token || s.refresh_token
+    });
+    localStorage.setItem('tcj_session', JSON.stringify(updated));
+    SESSION = updated;
+    return true;
+  } catch(_) { return false; }
+}
+
 /* ═══════════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════════ */
@@ -866,7 +915,17 @@ async function init() {
   }
 
   try {
-    const rows = await callRPC('get_my_profile', {});
+    let rows = await callRPC('get_my_profile', {});
+    // If we got a 401, try refreshing the token once then retry
+    if (rows && rows.status === 401) {
+      const refreshed = await refreshSession();
+      if (!refreshed) {
+        showFatalError('Your session has expired',
+          'It has been a while since you signed in. Please sign in again.', false);
+        return;
+      }
+      rows = await callRPC('get_my_profile', {});
+    }
     if (!Array.isArray(rows) || rows.length === 0) {
       showFatalError('Profile not found',
         'You are signed in, but no matching profile row exists for your account.\n\n' +
@@ -896,6 +955,26 @@ async function init() {
     document.getElementById('profile-content').style.display = 'block';
   } catch (err) {
     if (err && err.status === 401) {
+      // Try refreshing the session once before showing the error
+      const refreshed = await refreshSession().catch(() => false);
+      if (refreshed) {
+        // Retry init from the profile fetch
+        try {
+          const rows2 = await callRPC('get_my_profile', {});
+          if (Array.isArray(rows2) && rows2.length > 0) {
+            PROFILE = rows2[0];
+            hydrateUI();
+            hydratePreferences();
+            renderAllThemes();
+            PROFILE.preview_theme = PROFILE.theme_preference || 'midnight-slate';
+            applyTheme(PROFILE.preview_theme);
+            updateThemeActions();
+            document.getElementById('loading-state').style.display = 'none';
+            document.getElementById('profile-content').style.display = 'block';
+            return;
+          }
+        } catch(_) {}
+      }
       showFatalError('Your session has expired',
         'It has been a while since you signed in. Please sign in again.',
         false);
