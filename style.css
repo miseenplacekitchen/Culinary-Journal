@@ -607,7 +607,7 @@ body {
 /* ── INNER PAGE BODY ── */
 .cj-body {
   min-height: 100vh;
-  background: var(--bg, #0f1011);
+  /* background intentionally NOT set here — body background is themed correctly */
   color: var(--text-high);
 }
 
@@ -1105,6 +1105,7 @@ body.section-personal  .cj-page-title { color: var(--section-accent); }
    THEME OVERRIDES — all 47 themes
 ═══════════════════════════════════════════════════ */
 body.theme-midnight-black {
+  --bg: #000000;
   --overlay-dark:  rgba(0,0,0,0.96);
   --overlay-mid:   rgba(0,0,0,0.82);
   --overlay-light: rgba(0,0,0,0.92);
@@ -1114,6 +1115,7 @@ body.theme-midnight-black {
 }
 body.theme-midnight-black .page-bg { background-color: #000; }
 body.theme-dark-forest {
+  --bg: #0b1410;
   --accent: #6b8e5a;
   --accent-border: rgba(107,142,90,0.4);
   --accent-glow: rgba(107,142,90,0.14);
@@ -1124,6 +1126,7 @@ body.theme-dark-forest {
 }
 body.theme-dark-forest .page-bg { background-color: #0b1410; }
 body.theme-cream-gold {
+  --bg: #fdf6e3;
   --accent: #b8860b;
   --accent-border: rgba(184,134,11,0.45);
   --accent-glow: rgba(184,134,11,0.10);
@@ -1144,6 +1147,7 @@ body.theme-cream-gold {
 }
 body.theme-cream-gold .page-bg { background-color: #fdf6e3; }
 body.theme-pure-white {
+  --bg: #ffffff;
   --accent: #9b7028;
   --accent-border: rgba(155,112,40,0.4);
   --accent-glow: rgba(155,112,40,0.08);
@@ -1164,6 +1168,7 @@ body.theme-pure-white {
 }
 body.theme-pure-white .page-bg { background-color: #ffffff; }
 body.theme-spring-blossom {
+  --bg: #fdeef2;
   --accent: #c47b8f;
   --accent-border: rgba(196,123,143,0.45);
   --accent-glow: rgba(196,123,143,0.12);
@@ -1184,6 +1189,7 @@ body.theme-spring-blossom {
 }
 body.theme-spring-blossom .page-bg { background-color: #fdeef2; }
 body.theme-autumn-harvest {
+  --bg: #1a0e08;
   --accent: #d97c3c;
   --accent-border: rgba(217,124,60,0.45);
   --accent-glow: rgba(217,124,60,0.14);
@@ -1197,6 +1203,7 @@ body.theme-autumn-harvest .page-bg { background-color: #1a0e08; }
 
 /* ── DARK (remaining 4) ─────────────────────────── */
 body.theme-dark-bordeaux {
+  --bg: #1a0a0e;
   --accent: #c05060;
   --accent-border: rgba(192,80,96,0.45);
   --accent-glow: rgba(192,80,96,0.14);
@@ -1208,6 +1215,7 @@ body.theme-dark-bordeaux {
 body.theme-dark-bordeaux .page-bg { background-color: #1a0a0e; }
 
 body.theme-dark-navy {
+  --bg: #08111e;
   --accent: #70a0d0;
   --accent-border: rgba(112,160,208,0.45);
   --accent-glow: rgba(112,160,208,0.14);
@@ -1219,6 +1227,7 @@ body.theme-dark-navy {
 body.theme-dark-navy .page-bg { background-color: #08111e; }
 
 body.theme-dark-chocolate {
+  --bg: #180e08;
   --accent: #c08868;
   --accent-border: rgba(192,136,104,0.45);
   --accent-glow: rgba(192,136,104,0.14);
@@ -1230,6 +1239,7 @@ body.theme-dark-chocolate {
 body.theme-dark-chocolate .page-bg { background-color: #180e08; }
 
 body.theme-dark-obsidian {
+  --bg: #0a0a14;
   --accent: #9888c0;
   --accent-border: rgba(152,136,192,0.45);
   --accent-glow: rgba(152,136,192,0.14);
@@ -1242,6 +1252,7 @@ body.theme-dark-obsidian .page-bg { background-color: #0a0a14; }
 
 /* ── LIGHT (remaining 5) ────────────────────────── */
 body.theme-soft-linen {
+  --bg: #f5f0e8;
   --accent: #a08868;
   --accent-border: rgba(160,136,104,0.45);
   --accent-glow: rgba(160,136,104,0.10);
@@ -1258,6 +1269,7 @@ body.theme-soft-linen {
 body.theme-soft-linen .page-bg { background-color: #f5f0e8; }
 
 body.theme-sage-cream {
+  --bg: #f4f1e8;
   --accent: #8a9d7a;
   --accent-border: rgba(138,157,122,0.45);
   --accent-glow: rgba(138,157,122,0.10);
@@ -1274,6 +1286,7 @@ body.theme-sage-cream {
 body.theme-sage-cream .page-bg { background-color: #f4f1e8; }
 
 body.theme-blush-rose {
+  --bg: #fbeae5;
   --accent: #c47b8f;
   --accent-border: rgba(196,123,143,0.45);
   --accent-glow: rgba(196,123,143,0.10);
@@ -1290,6 +1303,7 @@ body.theme-blush-rose {
 body.theme-blush-rose .page-bg { background-color: #fbeae5; }
 
 body.theme-silver-morning {
+  --bg: #f0f2f5;
   --accent: #7a8898;
   --accent-border: rgba(122,136,152,0.45);
   --accent-glow: rgba(122,136,152,0.10);
@@ -1306,6 +1320,7 @@ body.theme-silver-morning {
 body.theme-silver-morning .page-bg { background-color: #f0f2f5; }
 
 body.theme-lemon-fresh {
+  --bg: #fdfbe8;
   --accent: #c8a838;
   --accent-border: rgba(200,168,56,0.45);
   --accent-glow: rgba(200,168,56,0.10);
@@ -1323,6 +1338,7 @@ body.theme-lemon-fresh .page-bg { background-color: #fdfbe8; }
 
 /* ── SEASONAL (remaining 2) ─────────────────────── */
 body.theme-summer-citrus {
+  --bg: #fff8e0;
   --accent: #e08820;
   --accent-border: rgba(224,136,32,0.45);
   --accent-glow: rgba(224,136,32,0.10);
@@ -1339,6 +1355,7 @@ body.theme-summer-citrus {
 body.theme-summer-citrus .page-bg { background-color: #fff8e0; }
 
 body.theme-winter-frost {
+  --bg: #e8f0f5;
   --accent: #6890b0;
   --accent-border: rgba(104,144,176,0.45);
   --accent-glow: rgba(104,144,176,0.10);
@@ -1356,6 +1373,7 @@ body.theme-winter-frost .page-bg { background-color: #e8f0f5; }
 
 /* ── FESTIVE (6) ──────────────────────────────── */
 body.theme-christmas {
+  --bg: #1a0a0a;
   --accent: #c83838;
   --accent-border: rgba(200,56,56,0.45);
   --accent-glow: rgba(200,56,56,0.14);
@@ -1366,6 +1384,7 @@ body.theme-christmas {
 body.theme-christmas .page-bg { background-color: #1a0a0a; }
 
 body.theme-diwali {
+  --bg: #1f0a05;
   --accent: #e8a020;
   --accent-border: rgba(232,160,32,0.45);
   --accent-glow: rgba(232,160,32,0.14);
@@ -1376,6 +1395,7 @@ body.theme-diwali {
 body.theme-diwali .page-bg { background-color: #1f0a05; }
 
 body.theme-ramadan {
+  --bg: #0a1418;
   --accent: #80a8c0;
   --accent-border: rgba(128,168,192,0.45);
   --accent-glow: rgba(128,168,192,0.14);
@@ -1386,6 +1406,7 @@ body.theme-ramadan {
 body.theme-ramadan .page-bg { background-color: #0a1418; }
 
 body.theme-new-year {
+  --bg: #000814;
   --accent: #d4af37;
   --accent-border: rgba(212,175,55,0.45);
   --accent-glow: rgba(212,175,55,0.14);
@@ -1396,6 +1417,7 @@ body.theme-new-year {
 body.theme-new-year .page-bg { background-color: #000814; }
 
 body.theme-onam {
+  --bg: #fff5e0;
   --accent: #e08020;
   --accent-border: rgba(224,128,32,0.45);
   --accent-glow: rgba(224,128,32,0.10);
@@ -1412,6 +1434,7 @@ body.theme-onam {
 body.theme-onam .page-bg { background-color: #fff5e0; }
 
 body.theme-easter {
+  --bg: #fbf2e8;
   --accent: #b884b0;
   --accent-border: rgba(184,132,176,0.45);
   --accent-glow: rgba(184,132,176,0.10);
@@ -1445,6 +1468,7 @@ body.theme-wedding-white {
 body.theme-wedding-white .page-bg { background-color: #ffffff; }
 
 body.theme-birthday-cake {
+  --bg: #fff0f8;
   --accent: #e878a8;
   --accent-border: rgba(232,120,168,0.45);
   --accent-glow: rgba(232,120,168,0.10);
