@@ -145,7 +145,8 @@ body {
   background: var(--tab-bg);
   border-bottom: 0.5px solid var(--border);
   backdrop-filter: blur(8px);
-  overflow-x: auto;
+  overflow: visible;
+  position: relative;
 }
 .tab-nav::-webkit-scrollbar { display: none; }
 .tab-nav-inner { display: flex; padding: 0 40px; }
