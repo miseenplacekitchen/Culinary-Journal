@@ -1768,17 +1768,23 @@ function renderIngRows(rows) {
 
     // Checkbox
     const tdChk=document.createElement('td');
-    tdChk.style.padding='6px 8px 6px 12px';
+    tdChk.style.cssText='padding:0;width:36px';
     tdChk.addEventListener('click',function(e){e.stopPropagation();});
     const chk=document.createElement('input');
     chk.type='checkbox';chk.className='ing-check ing-row-check';chk.dataset.id=id;
     chk.addEventListener('click',updateBulkToolbar);
-    tdChk.appendChild(chk);tr.appendChild(tdChk);
+    const chkWrap=document.createElement('div');
+    chkWrap.style.cssText='height:36px;display:flex;align-items:center;justify-content:center';
+    chkWrap.appendChild(chk);
+    tdChk.appendChild(chkWrap);tr.appendChild(tdChk);
 
     // ID
     const tdId=document.createElement('td');
-    tdId.style.cssText='font-size:11px;color:var(--text-mid);padding:6px 10px;white-space:nowrap';
-    tdId.textContent=id;tr.appendChild(tdId);
+    tdId.style.cssText='padding:0;width:36px';
+    const idWrap=document.createElement('div');
+    idWrap.style.cssText='height:36px;display:flex;align-items:center;padding:0 8px;font-size:11px;color:var(--text-mid);white-space:nowrap';
+    idWrap.textContent=id;
+    tdId.appendChild(idWrap);tr.appendChild(tdId);
 
     // Data columns in current order
     colOrder.forEach(function(colKey){
@@ -1790,8 +1796,9 @@ function renderIngRows(rows) {
 
       const td=document.createElement('td');
       td.dataset.col=colKey;
-      td.style.padding='6px 10px';
-      if(!vis)td.style.display='none';
+      td.style.cssText='padding:0;vertical-align:middle;'+((!vis)?'display:none':'');
+      const tdWrap=document.createElement('div');
+      tdWrap.style.cssText='height:36px;display:flex;align-items:center;overflow:hidden;padding:0 8px;box-sizing:border-box';
 
       // Check for pending change
       const pending=_pendingChanges[id]&&_pendingChanges[id][isExtra?colKey:colKey];
@@ -1807,23 +1814,27 @@ function renderIngRows(rows) {
         const div=document.createElement('div');
         div.className=(colKey==='Ingredient Name')?'ap-recipe-name':'ap-submitter';
         div.textContent=fmtVal;
-        td.appendChild(div);
+        tdWrap.appendChild(div);
+        td.appendChild(tdWrap);
       } else if(stdCfg&&stdCfg.edit==='yesno'||colKey==='Vegan (Yes/No)'||colKey==='Vegetarian (Yes/No)'){
         td.className='editable-cell'+(pending?' cell-pending':'');
         const span=document.createElement('span');
         span.className='ap-status-pill '+(displayVal==='Yes'?'approved':'rejected');
         span.textContent=displayVal;
-        td.appendChild(span);
+        tdWrap.appendChild(span);
+        td.appendChild(tdWrap);
         td.addEventListener('click',function(e){inlineCell(e,id,colKey,'yesno');});
       } else if(isExtra){
         td.className='editable-cell'+(pending?' cell-pending':'');
-        td.textContent=fmtVal;
+        tdWrap.textContent=fmtVal;
         td.title='Click to edit';
+        td.appendChild(tdWrap);
         td.addEventListener('click',function(e){inlineCell(e,id,colKey,'text');});
       } else {
         td.className='editable-cell'+(pending?' cell-pending':'');
         td.title='Click to edit';
-        td.textContent=fmtVal;
+        tdWrap.textContent=fmtVal;
+        td.appendChild(tdWrap);
         const editType=(stdCfg&&stdCfg.edit==='select')?'select':'text';
         td.addEventListener('click',function(e){inlineCell(e,id,colKey,editType);});
       }
@@ -1832,10 +1843,13 @@ function renderIngRows(rows) {
 
     // Edit button
     const tdEdit=document.createElement('td');
+    tdEdit.style.cssText='padding:0';
+    const editWrap=document.createElement('div');
+    editWrap.style.cssText='height:36px;display:flex;align-items:center;padding:0 4px';
     const editBtn=document.createElement('button');
     editBtn.className='ap-filter-btn';editBtn.style.fontSize='11px';editBtn.textContent='Edit';
     editBtn.addEventListener('click',function(e){e.stopPropagation();openIngModal(window._ingRows[id]);});
-    tdEdit.appendChild(editBtn);tr.appendChild(tdEdit);
+    editWrap.appendChild(editBtn);tdEdit.appendChild(editWrap);tr.appendChild(tdEdit);
     tbody.appendChild(tr);
   });
   setTimeout(fixDropdownTheme,10);
