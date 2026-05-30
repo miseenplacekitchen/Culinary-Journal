@@ -2040,6 +2040,13 @@ function confirmAddColumn(){
   }
   const checked=document.querySelector('input[name="nctype"]:checked');
   const colType=checked?checked.value:'text';
+  // If previously deleted, warn that old data will reappear
+  var deleted=JSON.parse(localStorage.getItem('tcj_deleted_extra_cols')||'[]');
+  if(deleted.includes(name)){
+    if(!confirm('Column "'+name+'" was previously deleted.\nAny values stored for it will reappear.\nContinue?'))return;
+    deleted=deleted.filter(function(d){return d!==name;});
+    localStorage.setItem('tcj_deleted_extra_cols',JSON.stringify(deleted));
+  }
   _extraColKeys.push(name);
   _extraColTypes[name]=colType;
   _colVis['extra:'+name]=true;
@@ -2139,7 +2146,11 @@ function deleteExtraColumn(name) {
     if (_pendingChanges[id]) delete _pendingChanges[id]['extra:' + name];
   });
 
-  // 7. Rebuild
+  // 7. Track as deleted so it won't reappear in Edit modal
+  var deleted = JSON.parse(localStorage.getItem('tcj_deleted_extra_cols') || '[]');
+  if (!deleted.includes(name)) { deleted.push(name); localStorage.setItem('tcj_deleted_extra_cols', JSON.stringify(deleted)); }
+
+  // 8. Rebuild
   buildTableHeader();
   buildColVisPanel();
   renderIngFiltered();
@@ -2304,9 +2315,11 @@ function openIngModal(ing){
     document.getElementById('ing-notes').value    =ing['Notes']||'';
     var rawEF=Object.assign({},ing.extra_fields||{});
     _customFieldTypes={};
-    // Extract type metadata (_t_ prefix) from extra_fields
+    var _deletedCols=JSON.parse(localStorage.getItem('tcj_deleted_extra_cols')||'[]');
+    // Extract type metadata, strip deleted column data and _t_ keys
     Object.keys(rawEF).forEach(function(k){
       if(k.startsWith('_t_')){_customFieldTypes[k.slice(3)]=rawEF[k];delete rawEF[k];}
+      else if(_deletedCols.includes(k)){delete rawEF[k];} // hide deleted column data
     });
     _customFields=rawEF;
     // Ensure all global +Column columns appear in the modal
@@ -2371,67 +2384,116 @@ function showIngMsg(text,ok){const el=document.getElementById('ing-msg');if(!el)
 
 // ── CUSTOM FIELDS ────────────────────────────────────────────────
 function renderCustomFieldsList(){
-  const container=document.getElementById('ing-custom-fields-list');if(!container)return;
-  container.innerHTML='';const keys=Object.keys(_customFields);
-  if(!keys.length){const msg=document.createElement('div');msg.style.cssText='font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)';msg.textContent='No custom fields. Click + Add Field.';container.appendChild(msg);return;}
-  keys.forEach(function(k){
-    if(k.startsWith('_t_'))return; // skip type metadata
-    const row=document.createElement('div');row.className='cf-row';row.style.cssText='display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap';
-    const isGlobal=_extraColKeys.includes(k);
-    if(isGlobal){
-      // Global column: show locked name label + editable value
-      const lbl=document.createElement('div');
-      lbl.style.cssText='flex:1;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,0.04);color:var(--accent);display:flex;align-items:center;gap:5px';
-      lbl.innerHTML='<span style="font-size:9px;opacity:0.6">COL</span> '+k;
-      const vi2=document.createElement('input');
-      vi2.style.cssText='flex:2;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';
-      vi2.value=String(_customFields[k]||'');vi2.placeholder='Value for '+k;
-      vi2.addEventListener('change',function(){_customFields[k]=this.value;});
-      row.appendChild(lbl);row.appendChild(vi2);
-    } else {
-    const ki=document.createElement('input');
-    ki.dataset.role='name';
-    ki.style.cssText='flex:1;min-width:90px;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';
-    ki.value=k;ki.placeholder='Field name';
-    ki.addEventListener('change',function(){renameCustomField(k,this.value);});
-    // Type selector
-    const ts=document.createElement('select');
-    ts.style.cssText='font-family:DM Sans,sans-serif;font-size:11px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-mid);outline:none;cursor:pointer';
-    ['text','yesno','number'].forEach(function(t){
-      const o=document.createElement('option');o.value=t;
-      o.textContent=t==='text'?'Text':t==='yesno'?'Yes / No':'Number';
-      o.selected=(_customFieldTypes[k]||'text')===t;
-      ts.appendChild(o);
-    });
-    ts.addEventListener('change',function(){
-      _customFieldTypes[k]=this.value;
-      // Rebuild just this row so value input updates
-      renderCustomFieldsList();
-    });
-    // Value input — depends on type
-    const cft=_customFieldTypes[k]||'text';
-    var vi;
-    if(cft==='yesno'){
-      vi=document.createElement('select');
-      vi.style.cssText='flex:2;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';
-      ['','Yes','No'].forEach(function(o){var opt=document.createElement('option');opt.value=o;opt.textContent=o||'—';if((_customFields[k]||'')=== o)opt.selected=true;vi.appendChild(opt);});
-      vi.addEventListener('change',function(){_customFields[k]=this.value;});
-    } else {
-      vi=document.createElement('input');
-      vi.type=cft==='number'?'number':'text';
-      vi.style.cssText='flex:2;min-width:80px;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';
-      vi.value=String(_customFields[k]||'');vi.placeholder='Value';
-      vi.addEventListener('change',function(){_customFields[k]=this.value;});
-    }
-    const db=document.createElement('button');
-    db.style.cssText='padding:4px 8px;background:none;border:1px solid #dc5050;border-radius:5px;color:#dc5050;cursor:pointer;font-size:12px;flex-shrink:0';
-    db.textContent='×';
-    db.addEventListener('click',function(){removeCustomField(k);});
-    row.appendChild(ki);row.appendChild(ts);row.appendChild(vi);row.appendChild(db);
-    }
-    container.appendChild(row);
+  const container=document.getElementById('ing-custom-fields-list');
+  if(!container)return;
+  container.innerHTML='';
+  const keys=Object.keys(_customFields).filter(function(k){return !k.startsWith('_t_');});
+  const globals=keys.filter(function(k){return _extraColKeys.includes(k);});
+  const customs=keys.filter(function(k){return !_extraColKeys.includes(k);});
+
+  if(!globals.length&&!customs.length){
+    const msg=document.createElement('div');
+    msg.style.cssText='font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);padding:4px 0';
+    msg.textContent='No custom fields. Click + Add Field.';
+    container.appendChild(msg);return;
+  }
+
+  // Header row
+  const hdr=document.createElement('div');
+  hdr.style.cssText='display:grid;grid-template-columns:minmax(80px,1fr) 88px minmax(80px,2fr) 28px;gap:0 8px;align-items:center;margin-bottom:4px';
+  ['FIELD NAME','TYPE','VALUE',''].forEach(function(t){
+    const h=document.createElement('div');
+    h.style.cssText='font-family:DM Sans,sans-serif;font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid);padding:0 2px';
+    h.textContent=t;container.appendChild(h);
   });
+  // Oops — append header cells to a header row div instead
+  container.innerHTML='';
+  hdr.innerHTML='';
+  ['FIELD NAME','TYPE','VALUE',''].forEach(function(t){
+    const h=document.createElement('div');
+    h.style.cssText='font-family:DM Sans,sans-serif;font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid);padding:2px 4px';
+    h.textContent=t;hdr.appendChild(h);
+  });
+  container.appendChild(hdr);
+
+  function makeRow(k,isGlobal){
+    const row=document.createElement('div');
+    row.className='cf-row';
+    row.style.cssText='display:grid;grid-template-columns:minmax(80px,1fr) 88px minmax(80px,2fr) 28px;gap:4px 8px;align-items:center;margin-bottom:5px';
+
+    // Column A: Name
+    var nameEl;
+    if(isGlobal){
+      nameEl=document.createElement('div');
+      nameEl.style.cssText='font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,0.04);color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:4px';
+      nameEl.innerHTML='<span style="font-size:8px;opacity:0.55;font-weight:700;flex-shrink:0">COL</span><span style="overflow:hidden;text-overflow:ellipsis">'+k+'</span>';
+    } else {
+      nameEl=document.createElement('input');
+      nameEl.dataset.role='name';
+      nameEl.style.cssText='width:100%;font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;box-sizing:border-box';
+      nameEl.value=k;nameEl.placeholder='Field name';
+      nameEl.addEventListener('change',function(){renameCustomField(k,this.value);});
+    }
+
+    // Column B: Type
+    var typeEl;
+    if(isGlobal){
+      const ct=_extraColTypes[k]||'text';
+      typeEl=document.createElement('div');
+      typeEl.style.cssText='font-family:DM Sans,sans-serif;font-size:11px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,0.04);color:var(--text-mid);text-align:center';
+      typeEl.textContent=ct==='yesno'?'Yes / No':ct==='number'?'Number':'Text';
+    } else {
+      typeEl=document.createElement('select');
+      typeEl.style.cssText='width:100%;font-family:DM Sans,sans-serif;font-size:11px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-mid);outline:none;cursor:pointer;box-sizing:border-box';
+      ['text','yesno','number'].forEach(function(t){
+        const o=document.createElement('option');o.value=t;
+        o.textContent=t==='text'?'Text':t==='yesno'?'Yes / No':'Number';
+        o.selected=(_customFieldTypes[k]||'text')===t;
+        typeEl.appendChild(o);
+      });
+      typeEl.addEventListener('change',function(){_customFieldTypes[k]=this.value;renderCustomFieldsList();});
+    }
+
+    // Column C: Value
+    const cft=isGlobal?(_extraColTypes[k]||'text'):(_customFieldTypes[k]||'text');
+    var valEl;
+    if(cft==='yesno'){
+      valEl=document.createElement('select');
+      valEl.style.cssText='width:100%;font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;box-sizing:border-box';
+      ['','Yes','No'].forEach(function(o){var opt=document.createElement('option');opt.value=o;opt.textContent=o||'—';if((_customFields[k]||'')===o)opt.selected=true;valEl.appendChild(opt);});
+      valEl.addEventListener('change',function(){_customFields[k]=this.value;});
+    } else {
+      valEl=document.createElement('input');
+      valEl.type=cft==='number'?'number':'text';
+      valEl.style.cssText='width:100%;font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;box-sizing:border-box';
+      valEl.value=String(_customFields[k]||'');
+      valEl.placeholder=isGlobal?'Value for '+k:'Value';
+      valEl.addEventListener('change',function(){_customFields[k]=this.value;});
+    }
+
+    // Column D: Delete (custom only)
+    var delEl=document.createElement('div'); // placeholder for globals
+    if(!isGlobal){
+      delEl=document.createElement('button');
+      delEl.style.cssText='width:24px;height:24px;background:none;border:1px solid #dc5050;border-radius:5px;color:#dc5050;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0';
+      delEl.textContent='×';
+      delEl.addEventListener('click',function(){removeCustomField(k);});
+    }
+
+    row.appendChild(nameEl);row.appendChild(typeEl);row.appendChild(valEl);row.appendChild(delEl);
+    container.appendChild(row);
+  }
+
+  // Render global columns first, then custom per-ingredient fields
+  globals.forEach(function(k){makeRow(k,true);});
+  if(globals.length&&customs.length){
+    const sep=document.createElement('div');
+    sep.style.cssText='border-top:1px solid var(--border);margin:6px 0;grid-column:1/-1';
+    container.appendChild(sep);
+  }
+  customs.forEach(function(k){makeRow(k,false);});
 }
+
 function addCustomField(){
   // Generate a unique default name
   var n=1;
