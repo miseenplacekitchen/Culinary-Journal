@@ -1451,6 +1451,43 @@ async function dismissIngredient(id, btn) {
     if (pb) pb.textContent = Math.max(0, parseInt(pb.textContent||0) - 1);
   } catch(e) { btn.disabled=false; btn.textContent='Dismiss'; alert('Error: '+e.message); }
 }
+
+const STD_COLS = [
+  {key:'Ingredient Name',           label:'Ingredient Name',    type:'text'},
+  {key:'Also Known As',             label:'Also Known As',      type:'text'},
+  {key:'Category',                  label:'Category',           type:'category'},
+  {key:'Sub Category',              label:'Sub Category',       type:'text'},
+  {key:'Standard Qty',              label:'Standard Qty',       type:'text'},
+  {key:'Standard Weight (g or ml)', label:'Weight (g/ml)',      type:'number'},
+  {key:'Unit',                      label:'Unit',               type:'text'},
+  {key:'Liquid (Yes/No)',           label:'Liquid',             type:'yesno'},
+  {key:'CJ Recommended Brand',      label:'CJ Brand',           type:'text'},
+  {key:'Allergen',                  label:'Allergen',           type:'text'},
+  {key:'Vegan (Yes/No)',            label:'Vegan',              type:'yesno'},
+  {key:'Vegetarian (Yes/No)',       label:'Vegetarian',         type:'yesno'},
+  {key:'Notes',                     label:'Notes',              type:'text'}
+];
+const CATS_LIST = [
+  'Baking','Grains, Pasta & Noodles','Breads & Flatbreads','Packaged & Convenience',
+  'Meat','Poultry','Seafood','Dairy & Eggs','Plant-Based','Vegetables','Fruits',
+  'Herbs','Spices','Oils & Fats','Legumes & Pulses','Nuts & Seeds',
+  'Condiments & Sauces','Vinegars','Sweeteners','Canned & Preserved',
+  'Alcohol & Cooking Wine','Stocks & Broths'
+];
+const STANDARD = [
+  'ID','Ingredient Name','Also Known As','Category','Sub Category',
+  'Standard Qty','Standard Weight (g or ml)','Unit','Liquid (Yes/No)',
+  'CJ Recommended Brand','Allergen','Vegan (Yes/No)','Vegetarian (Yes/No)','Notes'
+];
+
+let _ingAllData = [];
+let _extraColKeys = [];
+let _colVis = {};
+let _ingColFilters = {};
+let _ingSortCol = 'ID';
+let _ingSortDir = 'asc';
+let _pendingChanges = {};
+let _ingRows = {};
 let ingPage = 1;
 const ING_PAGE_SIZE = 1000;
 let selectedIds = new Set();
