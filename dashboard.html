@@ -1844,14 +1844,18 @@ function renderIngRows(rows) {
         tdWrap.textContent=fmtVal;
         td.title=fmtVal||'Click to edit';
         td.appendChild(tdWrap);
-        td.addEventListener('click',function(e){inlineCell(e,id,colKey,'text');});
+        td.addEventListener('dblclick',function(e){inlineCell(e,id,colKey,'text');});
       } else {
         td.className='editable-cell'+(pending?' cell-pending':'');
         tdWrap.textContent=fmtVal;
         td.title=fmtVal||'Click to edit';
         td.appendChild(tdWrap);
         const editType=(stdCfg&&stdCfg.edit==='select')?'select':'text';
-        td.addEventListener('click',function(e){inlineCell(e,id,colKey,editType);});
+        if(editType==='select'){
+          td.addEventListener('click',function(e){inlineCell(e,id,colKey,'select');});
+        } else {
+          td.addEventListener('dblclick',function(e){inlineCell(e,id,colKey,'text');});
+        }
       }
       tr.appendChild(td);
     });
@@ -1896,21 +1900,29 @@ function inlineCell(e,id,field,type){
       const dv=document.createElement('div');
       dv.style.cssText='height:36px;display:flex;align-items:center;overflow:hidden;padding:0 8px;white-space:nowrap';
       dv.textContent=(stdCfg&&stdCfg.fmt==='qty')?fmtQty(newVal):newVal;
-      td.innerHTML='';td.style.padding='0';td.appendChild(dv);
+      td.innerHTML='';td.removeAttribute('style');td.style.padding='0';td.appendChild(dv);
     }
     td.className='editable-cell cell-pending';
   }
 
   if(type==='text'){
-    const input=document.createElement('input');
-    input.className='inline-input';input.value=currentVal;
-    input.addEventListener('keydown',function(ev){
-      if(ev.key==='Enter'){ev.preventDefault();commitChange(this.value);return;}
-      if(ev.key==='Escape'){td.innerHTML=origHTML;td.className='editable-cell'+(td.classList.contains('cell-pending')?' cell-pending':'');}
+    // Expand cell into wrapping textarea — compact view restores on save/cancel
+    const origStyle=td.getAttribute('style')||'';
+    const ta=document.createElement('textarea');
+    ta.className='inline-input';
+    ta.style.cssText='width:100%;min-width:200px;min-height:72px;resize:vertical;white-space:pre-wrap;word-break:break-word;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 8px;border:1px solid var(--accent);border-radius:5px;background:var(--bg);color:var(--text-high);outline:none;box-sizing:border-box;line-height:1.5';
+    ta.value=currentVal;
+    // Expand the td to fit the textarea
+    td.style.cssText='padding:4px;vertical-align:top;min-width:220px;background:var(--bg)';
+    ta.addEventListener('keydown',function(ev){
+      if(ev.key==='Enter'&&!ev.shiftKey){ev.preventDefault();commitChange(this.value.trim());return;}
+      if(ev.key==='Escape'){td.setAttribute('style',origStyle);td.innerHTML=origHTML;td.className='editable-cell'+(td.classList.contains('cell-pending')?' cell-pending':'');}
     });
-    input.addEventListener('blur',function(){commitChange(this.value);});
-    input.addEventListener('click',function(ev){ev.stopPropagation();});
-    td.innerHTML='';td.appendChild(input);applyThemeColors(td);input.focus();
+    ta.addEventListener('blur',function(){commitChange(this.value.trim());});
+    ta.addEventListener('click',function(ev){ev.stopPropagation();});
+    ta.addEventListener('dblclick',function(ev){ev.stopPropagation();});
+    td.innerHTML='';td.appendChild(ta);applyThemeColors(td);
+    ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
   } else {
     const sel=document.createElement('select');sel.className='inline-select';
     const opts=type==='yesno'?['Yes','No']:CATS_LIST;
