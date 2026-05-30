@@ -389,7 +389,7 @@
     <div class="ap-page-sub"   id="page-sub">Recipes waiting for your approval before going live.</div>
 
     <!-- Stats -->
-    <div class="ap-stats">
+    <div class="ap-stats" id="legacy-recipe-stats">
       <div class="ap-stat pending">
         <div class="ap-stat-num"  id="stat-pending">—</div>
         <div class="ap-stat-label">Pending</div>
@@ -409,7 +409,7 @@
     </div>
 
     <!-- Filters & search -->
-    <div class="ap-filters">
+    <div class="ap-filters" id="legacy-recipe-filters">
       <input type="text" class="ap-search" id="ap-search" placeholder="Search by recipe name..." oninput="filterTable()">
     </div>
 
@@ -1401,7 +1401,7 @@ async function loadDashboard() {
 
   try {
     // Recent submissions
-    const recipes = await rpc('admin_get_recipes', {p_status: null, p_limit: 5, p_offset: 0});
+    const recipes = await rpc('admin_get_recipes', {p_status: null});
     const rEl = document.getElementById('dash-recent-recipes');
     if (rEl && recipes && recipes.length) {
       rEl.innerHTML = recipes.map(r => {
@@ -1708,33 +1708,34 @@ function switchView(view) {
     'view-users':       ['users'],
     'view-analytics':   ['analytics'],
   };
-  const statsEl   = document.querySelector('.ap-stats');
-  const filtersEl = document.querySelector('.ap-filters');
-  const tableEl   = document.getElementById('recipe-table-wrap');
-
-  const isRecipe    = ['pending','all','approved','rejected'].includes(view);
+  // New view routing — no more legacy querySelector (caused class collision)
   const isIng       = view === 'ingredients';
   const isUsers     = view === 'users';
   const isAnalytics = view === 'analytics';
   const isDashboard = view === 'dashboard';
   const isRecipeMgmt= view === 'recipe-mgmt';
   const isUserMgmt  = view === 'user-mgmt';
+  const isLegacy    = ['pending','all','approved','rejected'].includes(view);
 
-  // Old recipe table only shows for legacy recipe views
-  if (statsEl)   statsEl.style.display   = isRecipe ? 'grid' : 'none';
-  if (filtersEl) filtersEl.style.display = isRecipe ? 'flex' : 'none';
-  if (tableEl)   tableEl.style.display   = isRecipe ? 'block': 'none';
+  // Only manipulate the legacy recipe elements when using legacy routes
+  const legacyStats   = document.getElementById('legacy-recipe-stats');
+  const legacyFilters = document.getElementById('legacy-recipe-filters');
+  const legacyTable   = document.getElementById('recipe-table-wrap');
+  if (legacyStats)   legacyStats.style.display   = isLegacy ? 'grid'  : 'none';
+  if (legacyFilters) legacyFilters.style.display = isLegacy ? 'flex'  : 'none';
+  if (legacyTable)   legacyTable.style.display   = isLegacy ? 'block' : 'none';
 
   function showIfExists(id, show) {
     const el = document.getElementById(id);
     if (el) el.style.display = show ? 'block' : 'none';
   }
-  showIfExists('view-dashboard',   isDashboard);
-  showIfExists('view-recipe-mgmt', isRecipeMgmt);
-  showIfExists('view-user-mgmt',   isUserMgmt);
-  showIfExists('view-ingredients', isIng);
-  showIfExists('view-users',       isUsers);
-  showIfExists('view-analytics',   isAnalytics);
+  showIfExists('view-dashboard',     isDashboard);
+  showIfExists('view-recipe-mgmt',   isRecipeMgmt);
+  showIfExists('view-user-mgmt',     isUserMgmt);
+  showIfExists('view-ingredients',   isIng);
+  showIfExists('view-users',         isUsers);
+  showIfExists('view-analytics',     isAnalytics);
+  showIfExists('view-pending-users', false);
 
   const titles = {
     pending:'Pending Review', all:'All Recipes',
