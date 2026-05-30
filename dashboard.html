@@ -516,7 +516,7 @@
           <button class="ing-add-btn" onclick="exportCsv()" style="background:none;border:1px solid var(--accent);color:var(--accent);">⬇ Export CSV</button>
           <button class="ing-add-btn" id="ing-save-btn" onclick="saveAllChanges()" style="background:none;border:1px solid var(--border);color:var(--text-mid);opacity:0.6">💾 Save Changes</button>
           <button class="ing-add-btn" id="col-vis-btn" onclick="toggleColVisPanel()" style="background:none;border:1px solid var(--border);color:var(--text-mid);">⚙ Columns</button>
-          <button class="ing-add-btn" onclick="addNewColumn()" style="background:none;border:1px solid var(--border);color:var(--text-mid);" title="Add a new custom column">+ Column</button>
+          <button class="ing-add-btn" id="add-col-btn" onclick="addNewColumn(event)" style="background:none;border:1px solid var(--border);color:var(--text-mid);" title="Add a new custom column">+ Column</button>
         </div>
         <a id="ing-template-link" style="display:none"></a>
       </div>
@@ -738,6 +738,22 @@
     </div>
 
     <div id="col-vis-panel" class="col-vis-panel"></div>
+
+  <!-- ADD COLUMN PANEL -->
+  <div id="add-col-panel" style="display:none;position:fixed;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:18px 20px;z-index:9998;box-shadow:0 8px 32px rgba(0,0,0,0.45);min-width:230px">
+    <div style="font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;color:var(--text-high);margin-bottom:12px">New Column</div>
+    <input id="new-col-name-input" placeholder="Column name" style="width:100%;box-sizing:border-box;font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text-high);outline:none;margin-bottom:12px" onkeydown="if(event.key==='Enter')confirmAddColumn()">
+    <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid);margin-bottom:8px">Type</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="text" checked style="accent-color:var(--accent)"> Text</label>
+      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="yesno" style="accent-color:var(--accent)"> Yes / No</label>
+      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="number" style="accent-color:var(--accent)"> Number</label>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="confirmAddColumn()" style="flex:1;padding:8px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Add Column</button>
+      <button onclick="closeAddColPanel()" style="padding:8px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">Cancel</button>
+    </div>
+  </div>
 </main>
 </div>
 
@@ -1630,6 +1646,7 @@ async function loadIngredients(page) {
     const extraSeen = {};
     rows.forEach(function(r){if(r.extra_fields&&typeof r.extra_fields==='object')Object.keys(r.extra_fields).forEach(function(k){extraSeen[k]=true;});});
     _extraColKeys = Object.keys(extraSeen);
+    _extraColTypes = JSON.parse(localStorage.getItem('tcj_extra_col_types')||'{}');
     _extraColKeys.forEach(function(k){if(_colVis['extra:'+k]===undefined)_colVis['extra:'+k]=true;});
     const countEl = document.getElementById('ing-count');
     if(countEl)countEl.textContent = total+' ingredient'+(total===1?'':'s');
@@ -1841,10 +1858,19 @@ function renderIngRows(rows) {
         td.addEventListener('click',function(e){inlineCell(e,id,colKey,'yesno');});
       } else if(isExtra){
         td.className='editable-cell'+(pending?' cell-pending':'');
-        tdWrap.textContent=fmtVal;
-        td.title=fmtVal||'Click to edit';
-        td.appendChild(tdWrap);
-        td.addEventListener('dblclick',function(e){inlineCell(e,id,colKey,'text');});
+        const xType=_extraColTypes[extraKey]||'text';
+        if(xType==='yesno'){
+          const sp=document.createElement('span');
+          sp.className='ap-status-pill '+(displayVal==='Yes'?'approved':displayVal==='No'?'rejected':'');
+          sp.textContent=displayVal||'—';
+          tdWrap.appendChild(sp);td.appendChild(tdWrap);
+          td.addEventListener('click',function(e){inlineCell(e,id,colKey,'yesno');});
+        } else {
+          tdWrap.textContent=fmtVal;
+          td.title=fmtVal||'Double-click to edit';
+          td.appendChild(tdWrap);
+          td.addEventListener('dblclick',function(e){inlineCell(e,id,colKey,xType==='number'?'number':'text');});
+        }
       } else {
         td.className='editable-cell'+(pending?' cell-pending':'');
         tdWrap.textContent=fmtVal;
@@ -1905,7 +1931,19 @@ function inlineCell(e,id,field,type){
     td.className='editable-cell cell-pending';
   }
 
-  if(type==='text'){
+  if(type==='number'){
+    const origStyle=td.getAttribute('style')||'';
+    const ni=document.createElement('input');ni.type='number';ni.className='inline-input';
+    ni.style.cssText='width:100%;max-width:120px;font-family:DM Sans,sans-serif;font-size:12px;padding:4px 8px;border:1px solid var(--accent);border-radius:5px;background:var(--bg);color:var(--text-high);outline:none;box-sizing:border-box';
+    ni.value=currentVal;
+    ni.addEventListener('keydown',function(ev){
+      if(ev.key==='Enter'){ev.preventDefault();commitChange(this.value);return;}
+      if(ev.key==='Escape'){td.setAttribute('style',origStyle);td.innerHTML=origHTML;td.className='editable-cell'+(td.classList.contains('cell-pending')?' cell-pending':'');}
+    });
+    ni.addEventListener('blur',function(){commitChange(this.value);});
+    ni.addEventListener('click',function(ev){ev.stopPropagation();});
+    td.innerHTML='';td.appendChild(ni);ni.focus();ni.select();
+  } else if(type==='text'){
     // Expand cell into wrapping textarea — compact view restores on save/cancel
     const origStyle=td.getAttribute('style')||'';
     const ta=document.createElement('textarea');
@@ -1935,17 +1973,52 @@ function inlineCell(e,id,field,type){
 }
 
 // ── ADD NEW COLUMN ───────────────────────────────────────────────
-function addNewColumn(){
-  const name=(prompt('Enter name for new column:')||'').trim();
-  if(!name)return;
+function addNewColumn(e){
+  const panel=document.getElementById('add-col-panel');
+  if(!panel)return;
+  document.getElementById('new-col-name-input').value='';
+  const radios=panel.querySelectorAll('input[name="nctype"]');
+  radios.forEach(function(r){r.checked=r.value==='text';});
+  const btn=e.currentTarget||e.target;
+  const rect=btn.getBoundingClientRect();
+  panel.style.top=(rect.bottom+6)+'px';
+  panel.style.right=(window.innerWidth-rect.right)+'px';
+  panel.style.left='auto';
+  panel.style.display='block';
+  applyThemeColors(panel);
+  setTimeout(function(){
+    document.getElementById('new-col-name-input').focus();
+    document.addEventListener('click',closeAddColPanelOutside);
+  },10);
+}
+
+function closeAddColPanel(){
+  const p=document.getElementById('add-col-panel');
+  if(p)p.style.display='none';
+  document.removeEventListener('click',closeAddColPanelOutside);
+}
+
+function closeAddColPanelOutside(e){
+  const p=document.getElementById('add-col-panel');
+  if(p&&!p.contains(e.target)&&e.target.id!=='add-col-btn'){closeAddColPanel();}
+}
+
+function confirmAddColumn(){
+  const name=(document.getElementById('new-col-name-input').value||'').trim();
+  if(!name){document.getElementById('new-col-name-input').focus();return;}
   if(STD_COLS.find(function(c){return c.key===name;})||_extraColKeys.includes(name)){
     alert('A column with that name already exists.');return;
   }
+  const checked=document.querySelector('input[name="nctype"]:checked');
+  const colType=checked?checked.value:'text';
   _extraColKeys.push(name);
+  _extraColTypes[name]=colType;
   _colVis['extra:'+name]=true;
-  // Store in localStorage so it persists until reload
   const stored=JSON.parse(localStorage.getItem('tcj_extra_cols')||'[]');
   if(!stored.includes(name)){stored.push(name);localStorage.setItem('tcj_extra_cols',JSON.stringify(stored));}
+  const types=JSON.parse(localStorage.getItem('tcj_extra_col_types')||'{}');
+  types[name]=colType;localStorage.setItem('tcj_extra_col_types',JSON.stringify(types));
+  closeAddColPanel();
   buildTableHeader();buildColVisPanel();renderIngFiltered();
 }
 
@@ -1972,11 +2045,15 @@ function renameExtraColumn(oldName) {
   if (oi > -1) order[oi] = 'extra:' + newName;
   localStorage.setItem('tcj_col_order', JSON.stringify(order));
 
-  // 4. Update stored extra col names in localStorage
+  // 4. Update stored extra col names and types in localStorage
   var stored = JSON.parse(localStorage.getItem('tcj_extra_cols') || '[]');
   var si = stored.indexOf(oldName);
   if (si > -1) stored[si] = newName;
   localStorage.setItem('tcj_extra_cols', JSON.stringify(stored));
+  var types = JSON.parse(localStorage.getItem('tcj_extra_col_types') || '{}');
+  if (types[oldName]) { types[newName] = types[oldName]; delete types[oldName]; }
+  localStorage.setItem('tcj_extra_col_types', JSON.stringify(types));
+  if (_extraColTypes[oldName]) { _extraColTypes[newName] = _extraColTypes[oldName]; delete _extraColTypes[oldName]; }
 
   // 5. Rename the key in all loaded ingredient data
   _ingAllData.forEach(function(row) {
@@ -2016,10 +2093,14 @@ function deleteExtraColumn(name) {
   order = order.filter(function(k){ return k !== 'extra:' + name; });
   localStorage.setItem('tcj_col_order', JSON.stringify(order));
 
-  // 4. Remove from stored extra col list
+  // 4. Remove from stored extra col list and types
   var stored = JSON.parse(localStorage.getItem('tcj_extra_cols') || '[]');
   stored = stored.filter(function(k){ return k !== name; });
   localStorage.setItem('tcj_extra_cols', JSON.stringify(stored));
+  var types = JSON.parse(localStorage.getItem('tcj_extra_col_types') || '{}');
+  delete types[name];
+  localStorage.setItem('tcj_extra_col_types', JSON.stringify(types));
+  delete _extraColTypes[name];
 
   // 5. Remove from any active column filters
   delete _ingColFilters['extra:' + name];
@@ -2062,6 +2143,11 @@ function buildColVisPanel(){
       document.querySelectorAll('[data-col="extra:'+k+'"]').forEach(function(el){el.style.display=cb.checked?'':'none';});
     });
     left.appendChild(cb);left.appendChild(document.createTextNode(' '+k));
+    const typeBadge=document.createElement('span');
+    const colT=_extraColTypes[k]||'text';
+    typeBadge.textContent=colT==='yesno'?'Y/N':colT==='number'?'#':'T';
+    typeBadge.style.cssText='font-family:DM Sans,sans-serif;font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,0.08);color:var(--text-mid);margin-left:4px;font-weight:600';
+    left.appendChild(typeBadge);
     const renBtn=document.createElement('button');
     renBtn.textContent='Rename';
     renBtn.style.cssText='font-family:DM Sans,sans-serif;font-size:10px;padding:2px 8px;border-radius:5px;border:1px solid var(--border);background:none;color:var(--text-mid);cursor:pointer;margin-left:6px;flex-shrink:0';
@@ -2187,10 +2273,17 @@ function openIngModal(ing){
     document.getElementById('ing-vegan').value    =ing['Vegan (Yes/No)']||'Yes';
     document.getElementById('ing-veg').value      =ing['Vegetarian (Yes/No)']||'Yes';
     document.getElementById('ing-notes').value    =ing['Notes']||'';
-    _customFields=Object.assign({},ing.extra_fields||{});
+    var rawEF=Object.assign({},ing.extra_fields||{});
+    _customFieldTypes={};
+    // Extract type metadata (_t_ prefix) from extra_fields
+    Object.keys(rawEF).forEach(function(k){
+      if(k.startsWith('_t_')){_customFieldTypes[k.slice(3)]=rawEF[k];delete rawEF[k];}
+    });
+    _customFields=rawEF;
     // Ensure all global +Column columns appear in the modal
     _extraColKeys.forEach(function(k){
       if(!_customFields.hasOwnProperty(k)) _customFields[k]='';
+      if(!_customFieldTypes[k]) _customFieldTypes[k]=_extraColTypes[k]||'text';
     });
     if(delBtn)delBtn.style.display='inline-block';
   }else{
@@ -2198,7 +2291,7 @@ function openIngModal(ing){
     ['ing-id','ing-name','ing-aka','ing-subcat','ing-qty','ing-weight','ing-unit','ing-brand','ing-allergen','ing-notes'].forEach(function(id){const el=document.getElementById(id);if(el)el.value='';});
     document.getElementById('ing-category').value='';document.getElementById('ing-liquid').value='No';
     document.getElementById('ing-vegan').value='Yes';document.getElementById('ing-veg').value='Yes';
-    _customFields={};if(delBtn)delBtn.style.display='none';
+    _customFields={};_customFieldTypes={};if(delBtn)delBtn.style.display='none';
   }
   const modal=document.getElementById('ing-modal');modal.classList.add('open');
   loadUnitsAutocomplete();renderCustomFieldsList();
@@ -2225,7 +2318,14 @@ async function saveIngredient(){
       p_vegan:document.getElementById('ing-vegan').value,
       p_vegetarian:document.getElementById('ing-veg').value,
       p_notes:document.getElementById('ing-notes').value.trim(),
-      p_extra_fields:Object.keys(_customFields).length?_customFields:null
+      p_extra_fields:(function(){
+        var ef=Object.assign({},_customFields);
+        // Store field types as _t_ metadata keys
+        Object.keys(_customFieldTypes).forEach(function(k){
+          if(ef.hasOwnProperty(k)&&_customFieldTypes[k]!=='text')ef['_t_'+k]=_customFieldTypes[k];
+        });
+        return Object.keys(ef).length?ef:null;
+      })()
     });
     showIngMsg(id?'✓ Saved!':'✓ Added!',true);
     setTimeout(function(){closeIngModal();loadIngredients(ingPage);},900);
@@ -2246,7 +2346,8 @@ function renderCustomFieldsList(){
   container.innerHTML='';const keys=Object.keys(_customFields);
   if(!keys.length){const msg=document.createElement('div');msg.style.cssText='font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)';msg.textContent='No custom fields. Click + Add Field.';container.appendChild(msg);return;}
   keys.forEach(function(k){
-    const row=document.createElement('div');row.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:8px';
+    if(k.startsWith('_t_'))return; // skip type metadata
+    const row=document.createElement('div');row.className='cf-row';row.style.cssText='display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap';
     const isGlobal=_extraColKeys.includes(k);
     if(isGlobal){
       // Global column: show locked name label + editable value
@@ -2259,15 +2360,61 @@ function renderCustomFieldsList(){
       vi2.addEventListener('change',function(){_customFields[k]=this.value;});
       row.appendChild(lbl);row.appendChild(vi2);
     } else {
-    const ki=document.createElement('input');ki.style.cssText='flex:1;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';ki.value=k;ki.placeholder='Field name';ki.addEventListener('change',function(){renameCustomField(k,this.value);});
-    const vi=document.createElement('input');vi.style.cssText='flex:2;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';vi.value=String(_customFields[k]||'');vi.placeholder='Value';vi.addEventListener('change',function(){_customFields[k]=this.value;});
-    const db=document.createElement('button');db.style.cssText='padding:4px 8px;background:none;border:1px solid #dc5050;border-radius:5px;color:#dc5050;cursor:pointer;font-size:12px';db.textContent='×';db.addEventListener('click',function(){removeCustomField(k);});
-    row.appendChild(ki);row.appendChild(vi);row.appendChild(db);
+    const ki=document.createElement('input');
+    ki.dataset.role='name';
+    ki.style.cssText='flex:1;min-width:90px;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';
+    ki.value=k;ki.placeholder='Field name';
+    ki.addEventListener('change',function(){renameCustomField(k,this.value);});
+    // Type selector
+    const ts=document.createElement('select');
+    ts.style.cssText='font-family:DM Sans,sans-serif;font-size:11px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-mid);outline:none;cursor:pointer';
+    ['text','yesno','number'].forEach(function(t){
+      const o=document.createElement('option');o.value=t;
+      o.textContent=t==='text'?'Text':t==='yesno'?'Yes / No':'Number';
+      o.selected=(_customFieldTypes[k]||'text')===t;
+      ts.appendChild(o);
+    });
+    ts.addEventListener('change',function(){
+      _customFieldTypes[k]=this.value;
+      // Rebuild just this row so value input updates
+      renderCustomFieldsList();
+    });
+    // Value input — depends on type
+    const cft=_customFieldTypes[k]||'text';
+    var vi;
+    if(cft==='yesno'){
+      vi=document.createElement('select');
+      vi.style.cssText='flex:2;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';
+      ['','Yes','No'].forEach(function(o){var opt=document.createElement('option');opt.value=o;opt.textContent=o||'—';if((_customFields[k]||'')=== o)opt.selected=true;vi.appendChild(opt);});
+      vi.addEventListener('change',function(){_customFields[k]=this.value;});
+    } else {
+      vi=document.createElement('input');
+      vi.type=cft==='number'?'number':'text';
+      vi.style.cssText='flex:2;min-width:80px;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';
+      vi.value=String(_customFields[k]||'');vi.placeholder='Value';
+      vi.addEventListener('change',function(){_customFields[k]=this.value;});
+    }
+    const db=document.createElement('button');
+    db.style.cssText='padding:4px 8px;background:none;border:1px solid #dc5050;border-radius:5px;color:#dc5050;cursor:pointer;font-size:12px;flex-shrink:0';
+    db.textContent='×';
+    db.addEventListener('click',function(){removeCustomField(k);});
+    row.appendChild(ki);row.appendChild(ts);row.appendChild(vi);row.appendChild(db);
     }
     container.appendChild(row);
   });
 }
-function addCustomField(){const key='Field '+(Object.keys(_customFields).length+1);_customFields[key]='';renderCustomFieldsList();}
+function addCustomField(){
+  // Generate a unique default name
+  var n=1;
+  while(_customFields.hasOwnProperty('Field '+n)||_customFields.hasOwnProperty('Field '+n)) n++;
+  var key='Field '+n;
+  _customFields[key]='';
+  _customFieldTypes[key]='text'; // default type
+  renderCustomFieldsList();
+  // Focus the newly added name input
+  var rows=document.querySelectorAll('#ing-custom-fields-list .cf-row');
+  if(rows.length){var lastInput=rows[rows.length-1].querySelector('input[data-role="name"]');if(lastInput){lastInput.focus();lastInput.select();}}
+}
 function renameCustomField(oldKey,newKey){if(oldKey===newKey||!newKey.trim())return;const val=_customFields[oldKey];delete _customFields[oldKey];_customFields[newKey.trim()]=val;renderCustomFieldsList();}
 function removeCustomField(key){delete _customFields[key];renderCustomFieldsList();}
 
