@@ -588,7 +588,13 @@ async function doLogin() {
 
     showMsg('Welcome back, ' + username + '! Redirecting...', 'success');
     setTimeout(() => {
-      window.location.href = isAdmin ? 'dashboard.html' : 'index.html';
+      const params = new URLSearchParams(window.location.search);
+      const returnTo = params.get('return_to');
+      if (returnTo && /^[a-z0-9_\-]+\.html$/i.test(returnTo)) {
+        window.location.href = returnTo;
+      } else {
+        window.location.href = isAdmin ? 'dashboard.html' : 'index.html';
+      }
     }, 1000);
 
   } catch(e) {

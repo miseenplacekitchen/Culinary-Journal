@@ -901,16 +901,8 @@ async function refreshSession() {
 async function init() {
   SESSION = loadSession();
 
-  if (!SESSION) {
-    showFatalError('Not signed in',
-      'No session was found in your browser. Please sign in to view your profile.',
-      false);
-    return;
-  }
-  if (!SESSION.access_token || !SESSION.user_id) {
-    showFatalError('Session is incomplete',
-      'Your saved session is missing required fields. Sign in again to refresh it.',
-      false);
+  if (!SESSION || !SESSION.access_token || !SESSION.user_id) {
+    window.location.href = 'login.html?return_to=profile.html';
     return;
   }
 
@@ -955,10 +947,9 @@ async function init() {
     document.getElementById('profile-content').style.display = 'block';
   } catch (err) {
     if (err && err.status === 401) {
-      // Try refreshing the session once before showing the error
+      // Try token refresh first
       const refreshed = await refreshSession().catch(() => false);
       if (refreshed) {
-        // Retry init from the profile fetch
         try {
           const rows2 = await callRPC('get_my_profile', {});
           if (Array.isArray(rows2) && rows2.length > 0) {
@@ -975,6 +966,11 @@ async function init() {
           }
         } catch(_) {}
       }
+      // Refresh failed — send to login and come straight back
+      window.location.href = 'login.html?return_to=profile.html';
+      return;
+    }
+    if (false) { // dead branch kept for structure
       showFatalError('Your session has expired',
         'It has been a while since you signed in. Please sign in again.',
         false);
