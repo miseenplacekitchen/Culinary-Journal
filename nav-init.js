@@ -46,7 +46,7 @@ var CJ_SECTIONS = [
     ]
   },
   {
-    id:'personal', label:'My Journal', emoji:'📓', primaryPage:'diary.html',
+    id:'personal', label:'True North', emoji:'📓', primaryPage:'diary.html',
     pages:['diary.html','my-dashboard.html','culinary-life.html','collections.html','profile.html','site-settings.html','user.html'],
     links:[
       {href:'culinary-life.html', emoji:'✨', label:'My Culinary Life'},
