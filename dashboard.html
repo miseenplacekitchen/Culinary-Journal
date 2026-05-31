@@ -2707,8 +2707,22 @@ async function loadBrandsTable(tbody,container){
   try{
     var rows=await rpc('admin_get_brand_mappings',{});
     if(!rows||!rows.length){
-      tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--text-mid)">No brand mappings yet. Click + Add Mapping to get started.</td></tr>';
-      return;
+      // Auto-seed from All Ingredients on first load
+      tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--text-mid)">Importing brands from All Ingredients…</td></tr>';
+      try{
+        var synced=await rpc('admin_sync_brands_from_ingredients',{});
+        if(synced>0){
+          var status=document.getElementById('brand-status');
+          if(status){status.textContent='✓ '+synced+' brand'+(synced===1?'':'s')+' loaded from All Ingredients';setTimeout(function(){status.textContent='';},4000);}
+          rows=await rpc('admin_get_brand_mappings',{});
+        } else {
+          tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--text-mid)">No brands found in All Ingredients. Add a CJ Recommended Brand to any ingredient first.</td></tr>';
+          return;
+        }
+      }catch(e){
+        tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--text-mid)">No brand mappings yet. Click + Add Mapping to get started.</td></tr>';
+        return;
+      }
     }
     tbody.innerHTML='';
     rows.forEach(function(r,i){
