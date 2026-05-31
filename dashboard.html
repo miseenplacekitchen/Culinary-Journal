@@ -990,9 +990,12 @@ async function init() {
   } catch(e) {}
   if (!isAdmin) { document.getElementById('screen-denied').style.display='flex'; document.getElementById('screen-main').style.display='none'; return; }
   document.getElementById('screen-denied').style.display = 'none';
-  document.getElementById('screen-main').style.display   = 'flex';
+  // Restore saved position BEFORE showing screen-main — no bounce possible
+  var _sv = localStorage.getItem('tcj_active_view')    || 'dashboard';
+  var _it = localStorage.getItem('tcj_active_ing_tab') || 'all';
   document.querySelectorAll('[id^="v-"]').forEach(function(el){el.style.display='none';});
-  switchView('dashboard');
+  switchView(_sv, _it);
+  document.getElementById('screen-main').style.display = 'flex';
   // Load stats in background — don't block the view restore
   rpc('admin_get_stats',{}).then(function(st){ if(st) setEl('badge-pending', st.pending||0); }).catch(function(){});
   rpc('admin_count_pending_users',{}).then(function(pc){ setEl('badge-pending-users', pc||0); }).catch(function(){});
@@ -1005,7 +1008,8 @@ function signOut() {
 
 const ALL_VIEWS = ['dashboard','recipe-mgmt','user-mgmt','ingredients','analytics'];
 
-function switchView(view) {
+function switchView(view, ingTab) {
+  localStorage.setItem('tcj_active_view', view);
   document.querySelectorAll('.ap-nav-item').forEach(function(el) { el.classList.remove('active'); });
   const nb = document.getElementById('nav-' + view);
   if (nb) nb.classList.add('active');
@@ -1017,7 +1021,7 @@ function switchView(view) {
   if (view === 'dashboard')   loadDashboard();
   if (view === 'recipe-mgmt') switchRecipeTab('all');
   if (view === 'user-mgmt')   switchUserTab('pending');
-  if (view === 'ingredients') { loadImSettings(); switchIngTab('all'); }
+  if (view === 'ingredients') { loadImSettings(); switchIngTab(ingTab||'all'); }
   if (view === 'analytics')   loadAnalytics();
 }
 
@@ -2654,6 +2658,7 @@ async function permanentlyDeleteColumn(deletedKey, originalName, count) {
 
 function switchIngTab(tab) {
   currentIngTab = tab;
+  localStorage.setItem('tcj_active_ing_tab', tab);
   document.querySelectorAll('.ap-inner-tab[id^="itab-"]').forEach(function(t) {
     t.classList.toggle('active', t.id === 'itab-' + tab);
   });
