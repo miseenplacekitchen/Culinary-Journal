@@ -2659,7 +2659,7 @@ async function buildBrandsTab(container){
   syncBtn.title='Pulls CJ Recommended Brand values from every ingredient and creates brand mappings automatically. Skips brands already mapped.';
   syncBtn.style.cssText="padding:6px 14px;background:none;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);cursor:pointer";
   syncBtn.addEventListener('click',async function(){
-    if(!confirm('This will import all CJ Recommended Brand values from your ingredients into Brand Mapping.\n\nExisting mappings will not be overwritten. Continue?'))return;
+    if(!confirm('This will sync all CJ Recommended Brand values from All Ingredients into Brand Mapping.\n\nNew brands will be added. Existing mappings will be updated with the latest ingredient data. Continue?'))return;
     syncBtn.disabled=true;syncBtn.textContent='Syncing…';
     try{
       var n=await rpc('admin_sync_brands_from_ingredients',{});
