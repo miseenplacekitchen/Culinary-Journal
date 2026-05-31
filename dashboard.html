@@ -1730,6 +1730,7 @@ function buildCategoriesTab(container, _dirty){
   }
   renderRows();
   container.appendChild(grid);
+  container.appendChild(makeImportExportBar(exportCategoriesCSV,importCategoriesCSV,'Categories & Sub Categories'));
 
   // Add new
   var addRow=document.createElement('div');addRow.style.cssText='display:flex;gap:8px;margin-top:10px';
