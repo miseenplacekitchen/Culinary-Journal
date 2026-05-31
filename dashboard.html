@@ -1620,16 +1620,16 @@ function buildRefDataTab(container){
 
   // Sub-tab bar
   var SUB=[
+    {key:'brands',        label:'Brand Mapping'},
     {key:'categories',    label:'Categories'},
     {key:'subcategories', label:'Sub Categories'},
     {key:'units',         label:'Units'},
-    {key:'currencies',    label:'Currencies'},
-    {key:'brands',        label:'Brand Mapping'}
+    {key:'currencies',    label:'Currencies'}
   ];
   var subBar=document.createElement('div');
   subBar.style.cssText='display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap';
   var subPanels={};
-  var activeSub='categories';
+  var activeSub='brands';
 
   SUB.forEach(function(s){
     var btn=document.createElement('button');
