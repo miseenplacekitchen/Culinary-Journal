@@ -1695,7 +1695,9 @@ async function loadIngRecycleBin() {
       groups[base].sort(function(a,b){return b.n-a.n;}).forEach(function(item) {
         var meta = JSON.parse(localStorage.getItem('tcj_deleted_meta') || '{}');
         var dm   = meta[item.key] || {};
-        var dDate   = dm.deletedAt ? new Date(dm.deletedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) + ', ' + new Date(dm.deletedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '—';
+        var _MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var _d=dm.deletedAt?new Date(dm.deletedAt):null;
+        var dDate=_d?(_d.getDate()+' '+_MONTHS[_d.getMonth()]+' '+_d.getFullYear()):'\u2014';
         var dSource = dm.source  || 'All Ingredients';
         var dType   = typeLabel(dm.colType || 'text');
 
