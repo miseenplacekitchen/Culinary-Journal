@@ -1417,7 +1417,11 @@ function loadIMInterface(){
 
   // ── TAB: Recycle Bin ─────────────────────────────────────────
   topPanels['recycle'].innerHTML='<div style="'+_imS.label+';padding:8px 0">Loading\u2026</div>';
-  loadIngRecycleBinInto(topPanels['recycle']);
+  if(activeTop==='recycle') loadIngRecycleBinInto(topPanels['recycle']);
+
+  // ── Trigger load for restored active tab ─────────────────────
+  if(activeTop==='audit')    loadAuditTrail(topPanels['audit']);
+  if(activeTop==='analytics') loadAnalytics();
 
   // ── TAB: Audit Trail ─────────────────────────────────────────
   var _atWrap=document.createElement('div');
