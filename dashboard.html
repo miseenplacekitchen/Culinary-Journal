@@ -2851,7 +2851,7 @@ function openBrandForm(r){
     if(!brand||!generic){alert('Brand Name and Generic Name are required.');return;}
     saveBtn.disabled=true;saveBtn.textContent='Saving…';
     try{
-      await rpc('admin_upsert_brand_mapping',{
+      var _ingUpdated=await rpc('admin_upsert_brand_mapping',{
         p_id:isEdit?r.id:0,
         p_brand_name:brand,
         p_generic_name:generic,
@@ -2860,10 +2860,8 @@ function openBrandForm(r){
         p_notes:fNotes.value.trim()||null,
         p_active:fActive.value==='Yes'
       });
-      // Update CJ Recommended Brand on matching ingredient
-      var _updatedRows=await rpc('admin_update_cj_brand_v2',{p_ingredient_name:generic,p_brand:brand});
-      if(!_updatedRows||_updatedRows===0){
-        alert('Brand saved. Note: No matching ingredient found for "'+generic+'" — CJ Recommended Brand was not updated in All Ingredients. Check the Ingredient Name matches exactly.');
+      if(_ingUpdated===0){
+        alert('Brand mapping saved, but no ingredient named "'+generic+'" was found in All Ingredients. The CJ Recommended Brand column was not updated. Check the Ingredient Name spelling.');
       }
       wrap.innerHTML='';wrap.style.display='none';
       var status=document.getElementById('brand-status');
