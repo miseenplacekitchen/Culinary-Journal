@@ -993,12 +993,11 @@ async function init() {
   document.getElementById('screen-main').style.display   = 'flex';
   try { const st = await rpc('admin_get_stats',{}); if(st){ setEl('badge-pending', st.pending||0); } } catch(e) {}
   try { const pc = await rpc('admin_count_pending_users',{}); setEl('badge-pending-users', pc||0); } catch(e) {}
-  var _savedView = localStorage.getItem('tcj_active_view') || 'dashboard';
+  var _savedView   = localStorage.getItem('tcj_active_view')    || 'dashboard';
   var _savedIngTab = localStorage.getItem('tcj_active_ing_tab') || 'all';
-  switchView(_savedView);
-  if(_savedView === 'ingredients' && _savedIngTab !== 'all'){
-    setTimeout(function(){ switchIngTab(_savedIngTab); }, 300);
-  }
+  // Hide all view panels instantly to prevent flash
+  document.querySelectorAll('[id^="v-"]').forEach(function(el){el.style.display='none';});
+  switchView(_savedView, _savedIngTab);
 }
 
 function signOut() {
@@ -1008,7 +1007,7 @@ function signOut() {
 
 const ALL_VIEWS = ['dashboard','recipe-mgmt','user-mgmt','ingredients','analytics'];
 
-function switchView(view) {
+function switchView(view, ingTab) {
   localStorage.setItem('tcj_active_view', view);
   document.querySelectorAll('.ap-nav-item').forEach(function(el) { el.classList.remove('active'); });
   const nb = document.getElementById('nav-' + view);
@@ -1021,7 +1020,7 @@ function switchView(view) {
   if (view === 'dashboard')   loadDashboard();
   if (view === 'recipe-mgmt') switchRecipeTab('all');
   if (view === 'user-mgmt')   switchUserTab('pending');
-  if (view === 'ingredients') { loadImSettings(); switchIngTab('all'); }
+  if (view === 'ingredients') { loadImSettings(); switchIngTab(ingTab||'all'); }
   if (view === 'analytics')   loadAnalytics();
 }
 
@@ -2208,11 +2207,10 @@ function loadIngRecycleBinInto(container){
 
 // ── Audit Trail Tab ──────────────────────────────────────────────
 function loadAuditTrail(container){
-  container.innerHTML='<div style="'+_imS.label+';padding:8px 0">Loading\u2026</div>';
+  container.innerHTML='<div style="'+_imS.label+';padding:8px 0">Loading…</div>';
   rpc('admin_get_audit_log',{p_limit:500,p_offset:0}).then(function(rows){
     container.innerHTML='';
 
-    // Export buttons
     var exportBar=document.createElement('div');exportBar.style.cssText='display:flex;gap:8px;margin-bottom:14px';
     var csvBtn=document.createElement('button');csvBtn.textContent='⬇ Export CSV';csvBtn.style.cssText=_imS.btn+';background:none;border:1px solid var(--border);color:var(--text-mid);padding:6px 14px';
     var pdfBtn=document.createElement('button');pdfBtn.textContent='⬇ Export PDF';pdfBtn.style.cssText=csvBtn.style.cssText;
@@ -2224,21 +2222,38 @@ function loadAuditTrail(container){
       var empty=document.createElement('div');empty.style.cssText=_imS.label+';padding:8px 0';empty.textContent='No audit entries yet.';container.appendChild(empty);return;
     }
 
-    var COLS=[{l:'Timestamp',w:'160px'},{l:'Admin',w:'160px'},{l:'Section',w:'200px'},{l:'Action',w:'160px'},{l:'Target',w:'160px'},{l:'Old Value',w:'minmax(120px,1fr)'},{l:'New Value',w:'minmax(120px,1fr)'}];
+    var COLS=[
+      {l:'Timestamp', w:'160px'},
+      {l:'Admin',     w:'160px'},
+      {l:'Section',   w:'200px'},
+      {l:'Action',    w:'160px'},
+      {l:'Target',    w:'160px'},
+      {l:'Old Value', w:'minmax(120px,1fr)'},
+      {l:'New Value', w:'minmax(120px,1fr)'}
+    ];
     var tpl=COLS.map(function(c){return c.w;}).join(' ');
-    var hdr=document.createElement('div');hdr.style.cssText='display:grid;grid-template-columns:'+tpl+';gap:0 8px;align-items:center;padding-bottom:6px;border-bottom:1px solid var(--border);margin-bottom:4px';
-    COLS.forEach(function(c){var h=document.createElement('div');h.style.cssText=_imS.hdr;h.textContent=c.l;hdr.appendChild(h);});
-    container.appendChild(hdr);
-
     var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    var tableWrap=document.createElement('div');
+    tableWrap.style.cssText='overflow-x:auto';
+
+    var inner=document.createElement('div');
+    inner.style.cssText='min-width:1100px';
+
+    var hdr=document.createElement('div');
+    hdr.style.cssText='display:grid;grid-template-columns:'+tpl+';gap:0 8px;align-items:center;padding-bottom:6px;border-bottom:1px solid var(--border);margin-bottom:4px';
+    COLS.forEach(function(c){var h=document.createElement('div');h.style.cssText=_imS.hdr;h.textContent=c.l;hdr.appendChild(h);});
+    inner.appendChild(hdr);
+
     rows.forEach(function(r){
       var d=new Date(r.created_at);
       var _pad=function(n){return n<10?'0'+n:String(n);};
       var ts=d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear()+' '+_pad(d.getHours())+':'+_pad(d.getMinutes())+':'+_pad(d.getSeconds());
-      var row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:'+tpl+';gap:0 8px;align-items:start;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)';
+      var row=document.createElement('div');
+      row.style.cssText='display:grid;grid-template-columns:'+tpl+';gap:0 8px;align-items:start;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)';
       var cs="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);word-break:break-word";
       var cs2="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-high);word-break:break-word";
-      function cell(t,s){var d=document.createElement('div');d.style.cssText=s||cs;d.textContent=t||'—';return d;}
+      function cell(t,s){var el=document.createElement('div');el.style.cssText=s||cs;el.textContent=t||'—';return el;}
       row.appendChild(cell(ts,cs));
       row.appendChild(cell(r.admin_name,cs2));
       row.appendChild(cell(r.tab,cs));
@@ -2246,16 +2261,16 @@ function loadAuditTrail(container){
       row.appendChild(cell(r.target,cs));
       row.appendChild(cell(r.old_value,cs));
       row.appendChild(cell(r.new_value,cs));
-      var rowWrap=document.createElement('div');rowWrap.style.cssText='min-width:1100px';
-      Object.assign(rowWrap.style,{display:'grid','grid-template-columns':tpl,gap:'0 8px','align-items':'start',padding:'6px 0','border-bottom':'1px solid rgba(255,255,255,0.04)'});
-      row.style.minWidth='1100px';
-      tableWrap.appendChild(row);
+      inner.appendChild(row);
     });
+
+    tableWrap.appendChild(inner);
     container.appendChild(tableWrap);
   }).catch(function(e){
-    container.innerHTML='<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:12px;padding:8px 0">Error loading audit trail: '+esc(e.message)+'</div>';
+    container.innerHTML='<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:12px;padding:8px 0">Error loading audit trail: '+escT(e.message)+'</div>';
   });
 }
+
 
 function exportAuditCSV(rows){
   var headers=['Timestamp','Admin','Tab','Action','Target','Old Value','New Value','Details'];
