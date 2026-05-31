@@ -3237,11 +3237,11 @@ function inlineCell(e,id,field,type){
     const wrap=document.createElement('div'); wrap.style.cssText='display:flex;gap:4px;align-items:center';
     var curParts=(currentVal&&currentVal.indexOf(':')>-1)?currentVal.split(':'):['AUD',''];
     var cSel=document.createElement('select');
-    cSel.style.cssText='padding:4px 6px;border:1px solid var(--accent);border-radius:5px;background:var(--bg);color:var(--text-high);font-family:DM Sans,sans-serif;font-size:12px;outline:none';
-    ['AUD','USD','GBP','EUR','INR','SGD','NZD','CAD','JPY','AED'].forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;o.selected=curParts[0]===c;cSel.appendChild(o);});
+    cSel.style.cssText='width:72px;flex-shrink:0;padding:4px 4px;border:1px solid var(--accent);border-radius:5px;background:var(--bg);color:var(--text-high);font-family:DM Sans,sans-serif;font-size:12px;outline:none';
+    getCurrencies().forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;o.selected=curParts[0]===c;cSel.appendChild(o);});
     var cAmt=document.createElement('input'); cAmt.type='text'; cAmt.inputMode='decimal';
     cAmt.value=curParts[1]||''; cAmt.placeholder='0.00';
-    cAmt.style.cssText='width:80px;padding:4px 8px;border:1px solid var(--accent);border-radius:5px;background:var(--bg);color:var(--text-high);font-family:DM Sans,sans-serif;font-size:12px;outline:none';
+    cAmt.style.cssText='flex:1;min-width:90px;padding:4px 8px;border:1px solid var(--accent);border-radius:5px;background:var(--bg);color:var(--text-high);font-family:DM Sans,sans-serif;font-size:12px;outline:none';
     cAmt.addEventListener('keydown',function(ev){var ok=['Backspace','Delete','ArrowLeft','ArrowRight','Tab','.','Enter','Escape'];if(ok.includes(ev.key)||ev.key>='0'&&ev.key<='9'||ev.ctrlKey||ev.metaKey)return;ev.preventDefault();});
     function commitCurrency(){
       var amt=parseFloat(cAmt.value||0).toFixed(2);
@@ -3878,11 +3878,11 @@ function renderCustomFieldsList(){
       valEl=document.createElement('div'); valEl.style.cssText='display:flex;gap:4px;align-items:center;width:100%';
       var _cp=((_customFields[k]||'').indexOf(':')>-1)?(_customFields[k]||'').split(':'):['AUD',''];
       var _cSel=document.createElement('select');
-      _cSel.style.cssText='padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);font-family:DM Sans,sans-serif;font-size:11px;outline:none';
+      _cSel.style.cssText='width:72px;flex-shrink:0;padding:4px 4px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);font-family:DM Sans,sans-serif;font-size:11px;outline:none';
       getCurrencies().forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;o.selected=_cp[0]===c;_cSel.appendChild(o);});
       var _cAmt=document.createElement('input'); _cAmt.type='text'; _cAmt.inputMode='decimal';
-      _cAmt.value=_cp[1]||''; _cAmt.placeholder='0.00';
-      _cAmt.style.cssText='flex:1;font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';
+      _cAmt.value=_cp[1]||''; _cAmt.placeholder='Enter amount e.g. 12.00';
+      _cAmt.style.cssText='flex:1;min-width:80px;font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--accent);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';
       _cAmt.addEventListener('keydown',function(ev){var ok=['Backspace','Delete','ArrowLeft','ArrowRight','Tab','.','Enter','Escape'];if(ok.includes(ev.key)||ev.key>='0'&&ev.key<='9'||ev.ctrlKey||ev.metaKey)return;ev.preventDefault();});
       var _saveCurr=function(){_customFields[k]=_cSel.value+':'+_cAmt.value;};
       _cSel.addEventListener('change',_saveCurr); _cAmt.addEventListener('change',_saveCurr);
