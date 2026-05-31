@@ -2320,7 +2320,7 @@ let STD_COLS = [
   {key:'Vegetarian (Yes/No)',       label:'Vegetarian',         type:'yesno'},
   {key:'Notes',                     label:'Notes',              type:'text'}
 ];
-const CATS_LIST = [
+let CATS_LIST = [
   'Baking','Grains, Pasta & Noodles','Breads & Flatbreads','Packaged & Convenience',
   'Meat','Poultry','Seafood','Dairy & Eggs','Plant-Based','Vegetables','Fruits',
   'Herbs','Spices','Oils & Fats','Legumes & Pulses','Nuts & Seeds',
@@ -2342,7 +2342,7 @@ let _ingSortDir = 'asc';
 let _pendingChanges = {};
 let _ingRows = {};
 let ingPage = 1;
-const ING_PAGE_SIZE = 1000;
+let ING_PAGE_SIZE = 1000;
 let selectedIds = new Set();
 
 // ── PENDING CHANGES SYSTEM ───────────────────────────────────────
