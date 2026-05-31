@@ -2618,31 +2618,291 @@ async function loadIngPending() {
   }
 }
 
-async function loadBrandMappings() {
-  const tbody = document.getElementById('brand-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="5" class="ap-empty-row">Loading…</td></tr>';
-  try {
-    const rows = await rpc('admin_get_brand_mappings', {});
-    if (!rows || !rows.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="ap-empty-row">No brand mappings yet. Add your first one above.</td></tr>';
+async // ── Brand Mapping Tab ─────────────────────────────────────────────
+// Supabase-backed. Table: brand_mappings
+// Columns: ID | Brand Name | Generic Name | Category | Sub Category | Notes | Active | Actions
+
+async function buildBrandsTab(container){
+  container.innerHTML='';
+
+  // Header bar: Import / Export / Add New
+  var headerBar=document.createElement('div');
+  headerBar.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap';
+
+  // Export
+  var expBtn=document.createElement('button');
+  expBtn.textContent='⬇ Export CSV';
+  expBtn.style.cssText="padding:6px 14px;background:none;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);cursor:pointer";
+  expBtn.addEventListener('click',exportBrandsCSV);
+
+  // Import
+  var impBtn=document.createElement('button');
+  impBtn.textContent='⬆ Import CSV';
+  impBtn.style.cssText="padding:6px 14px;background:none;border:1px solid var(--accent);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--accent);cursor:pointer";
+  var brandFileIn=document.createElement('input');brandFileIn.type='file';brandFileIn.accept='.csv';brandFileIn.style.display='none';
+  brandFileIn.addEventListener('change',function(){
+    if(!this.files[0])return;
+    Papa.parse(this.files[0],{header:true,skipEmptyLines:true,complete:function(r){importBrandsCSV(r.data,r.meta.fields||[],container);}});
+    this.value='';
+  });
+  impBtn.addEventListener('click',function(){brandFileIn.click();});
+
+  // Add New
+  var addBtn=document.createElement('button');
+  addBtn.textContent='+ Add Mapping';
+  addBtn.style.cssText="padding:6px 16px;background:var(--accent);border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;color:#fff;cursor:pointer";
+  addBtn.addEventListener('click',function(){openBrandForm(null,container);});
+
+  headerBar.appendChild(expBtn);headerBar.appendChild(impBtn);headerBar.appendChild(brandFileIn);headerBar.appendChild(addBtn);
+  container.appendChild(headerBar);
+
+  // Form area (hidden by default)
+  var formWrap=document.createElement('div');
+  formWrap.id='brand-form-wrap';formWrap.style.display='none';
+  container.appendChild(formWrap);
+
+  // Status
+  var statusEl=document.createElement('div');
+  statusEl.id='brand-status';statusEl.style.cssText="font-family:'DM Sans',sans-serif;font-size:12px;color:#4caf76;min-height:20px;margin-bottom:8px";
+  container.appendChild(statusEl);
+
+  // Table
+  var tableWrap=document.createElement('div');tableWrap.style.cssText='overflow-x:auto';
+  var tbl=document.createElement('table');
+  tbl.style.cssText='width:100%;border-collapse:collapse;font-family:DM Sans,sans-serif;font-size:12px';
+  var thead=document.createElement('thead');
+  var COLS=['ID','Brand Name','Generic Name','Category','Sub Category','Notes','Active','Actions'];
+  thead.innerHTML='<tr>'+COLS.map(function(h){
+    return '<th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);white-space:nowrap">'+h+'</th>';
+  }).join('')+'</tr>';
+  var tbody=document.createElement('tbody');tbody.id='brand-tbody';
+  tbl.appendChild(thead);tbl.appendChild(tbody);tableWrap.appendChild(tbl);
+  container.appendChild(tableWrap);
+
+  await loadBrandsTable(tbody,container);
+}
+
+async function loadBrandsTable(tbody,container){
+  if(!tbody)tbody=document.getElementById('brand-tbody');
+  tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--text-mid)">Loading…</td></tr>';
+  try{
+    var rows=await rpc('admin_get_brand_mappings',{});
+    if(!rows||!rows.length){
+      tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--text-mid)">No brand mappings yet. Click + Add Mapping to get started.</td></tr>';
       return;
     }
-    tbody.innerHTML = rows.map(function(r) {
-      return '<tr>' +
-        '<td class="ap-td" style="font-weight:500">' + escT(r.brand_name) + '</td>' +
-        '<td class="ap-td">' + escT(r.generic_name) + '</td>' +
-        '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">' + escT(r.category||'') + '</td>' +
-        '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">' + escT(r.notes||'') + '</td>' +
-        '<td class="ap-td"><div style="display:flex;gap:6px">' +
-        '<button data-id="' + r.id + '" onclick="openBrandModal(' + JSON.stringify(r).replace(/"/g,"'") + ')" style="padding:5px 12px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-size:12px;cursor:pointer">Edit</button>' +
-        '<button data-id="' + r.id + '" onclick="deleteBrandMapping(this.dataset.id,this)" style="padding:5px 12px;background:none;border:1px solid #dc5050;border-radius:7px;color:#dc5050;font-size:12px;cursor:pointer">Delete</button>' +
-        '</div></td></tr>';
-    }).join('');
-  } catch(e) {
-    tbody.innerHTML = '<tr><td colspan="5" class="ap-empty-row">Brand mapping table not set up yet.</td></tr>';
+    tbody.innerHTML='';
+    rows.forEach(function(r,i){
+      var tr=document.createElement('tr');
+      tr.style.cssText='border-bottom:1px solid var(--border);transition:background 0.1s';
+      tr.addEventListener('mouseenter',function(){this.style.background='rgba(255,255,255,0.03)';});
+      tr.addEventListener('mouseleave',function(){this.style.background='';});
+      function td(val,bold){
+        var t=document.createElement('td');
+        t.style.cssText='padding:8px 10px;color:var(--text-'+(bold?'high':'mid')+');white-space:nowrap;overflow:hidden;max-width:160px;text-overflow:ellipsis';
+        t.textContent=val||'—';t.title=val||'';return t;
+      }
+      var activePill=document.createElement('span');
+      activePill.style.cssText='padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:'+(r.active?'rgba(76,175,118,0.15)':'rgba(220,80,80,0.15)')+';color:'+(r.active?'#4caf76':'#dc5050');
+      activePill.textContent=r.active?'Yes':'No';
+      var actTd=document.createElement('td');actTd.style.cssText='padding:8px 10px';actTd.appendChild(activePill);
+
+      var actionTd=document.createElement('td');actionTd.style.cssText='padding:8px 10px';
+      var editBtn=document.createElement('button');
+      editBtn.textContent='Edit';
+      editBtn.style.cssText='padding:4px 10px;background:none;border:1px solid var(--border);border-radius:5px;color:var(--text-mid);font-size:11px;cursor:pointer;margin-right:4px';
+      editBtn.addEventListener('click',function(){openBrandForm(r,tbody.closest('[id]')?document.getElementById(tbody.closest('[id]').id).parentElement:null);});
+      var delBtn=document.createElement('button');
+      delBtn.textContent='Delete';
+      delBtn.style.cssText='padding:4px 10px;background:none;border:1px solid #dc5050;border-radius:5px;color:#dc5050;font-size:11px;cursor:pointer';
+      delBtn.addEventListener('click',function(){deleteBrandRow(r.id,tbody,null);});
+      actionTd.appendChild(editBtn);actionTd.appendChild(delBtn);
+
+      tr.appendChild(td(r.id));
+      tr.appendChild(td(r.brand_name,true));
+      tr.appendChild(td(r.generic_name,true));
+      tr.appendChild(td(r.category));
+      tr.appendChild(td(r.sub_category));
+      tr.appendChild(td(r.notes));
+      tr.appendChild(actTd);
+      tr.appendChild(actionTd);
+      tbody.appendChild(tr);
+    });
+  }catch(e){
+    tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:#dc5050">'+escT(e.message||'Failed to load brand mappings.')+'</td></tr>';
   }
 }
+
+function openBrandForm(r,container){
+  var wrap=document.getElementById('brand-form-wrap');
+  if(!wrap)return;
+  wrap.innerHTML='';wrap.style.display='block';
+  var isEdit=r&&r.id;
+  var form=document.createElement('div');
+  form.style.cssText='background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px';
+
+  var title=document.createElement('div');
+  title.style.cssText="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px";
+  title.textContent=isEdit?'Edit Brand Mapping':'Add Brand Mapping';
+  form.appendChild(title);
+
+  var grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px';
+
+  function field(lbl,val,ph,required){
+    var w=document.createElement('div');
+    var l=document.createElement('div');l.style.cssText=_imS.label+';margin-bottom:4px';l.textContent=lbl+(required?' *':'');
+    var inp=document.createElement('input');inp.type='text';inp.value=val||'';inp.placeholder=ph||'';
+    inp.style.cssText=_imS.inp;
+    w.appendChild(l);w.appendChild(inp);grid.appendChild(w);
+    return inp;
+  }
+  function selectField(lbl,opts,val){
+    var w=document.createElement('div');
+    var l=document.createElement('div');l.style.cssText=_imS.label+';margin-bottom:4px';l.textContent=lbl;
+    var sel=document.createElement('select');sel.style.cssText=_imS.sel;
+    var blank=document.createElement('option');blank.value='';blank.textContent='— Select —';sel.appendChild(blank);
+    opts.forEach(function(o){var opt=document.createElement('option');opt.value=o;opt.textContent=o;opt.selected=val===o;sel.appendChild(opt);});
+    w.appendChild(l);w.appendChild(sel);grid.appendChild(w);
+    return sel;
+  }
+
+  var fBrand   = field('Brand Name',      r&&r.brand_name,   'e.g. Dalda',         true);
+  var fGeneric = field('Generic Name',    r&&r.generic_name, 'e.g. Ghee',          true);
+  var fCat     = selectField('Category',  getCats(),         r&&r.category);
+  var fSubCat  = selectField('Sub Category', [], r&&r.sub_category);
+
+  // Populate sub-cats based on selected category
+  function updateSubCats(){
+    var cat=fCat.value;var subs=getSubCats()[cat]||[];
+    fSubCat.innerHTML='';
+    var blank=document.createElement('option');blank.value='';blank.textContent='— Select —';fSubCat.appendChild(blank);
+    subs.forEach(function(s){var o=document.createElement('option');o.value=s;o.textContent=s;o.selected=(r&&r.sub_category)===s;fSubCat.appendChild(o);});
+  }
+  fCat.addEventListener('change',updateSubCats);
+  updateSubCats();
+
+  form.appendChild(grid);
+
+  // Notes full width
+  var notesRow=document.createElement('div');notesRow.style.cssText='display:grid;grid-template-columns:1fr 80px;gap:10px;margin-bottom:14px;align-items:start';
+  var notesWrap=document.createElement('div');
+  var notesLbl=document.createElement('div');notesLbl.style.cssText=_imS.label+';margin-bottom:4px';notesLbl.textContent='Notes';
+  var fNotes=document.createElement('textarea');fNotes.value=r&&r.notes||'';fNotes.placeholder='Optional notes about this brand mapping…';
+  fNotes.style.cssText=_imS.inp+';height:60px;resize:vertical';
+  notesWrap.appendChild(notesLbl);notesWrap.appendChild(fNotes);
+
+  var activeWrap=document.createElement('div');
+  var activeLbl=document.createElement('div');activeLbl.style.cssText=_imS.label+';margin-bottom:4px';activeLbl.textContent='Active';
+  var fActive=document.createElement('select');fActive.style.cssText=_imS.sel;
+  ['Yes','No'].forEach(function(v){var o=document.createElement('option');o.value=v;o.textContent=v;var _av=(r?(r.active!==false):true); o.selected=(_av===(v==='Yes'));fActive.appendChild(o);});
+  activeWrap.appendChild(activeLbl);activeWrap.appendChild(fActive);
+
+  notesRow.appendChild(notesWrap);notesRow.appendChild(activeWrap);
+  form.appendChild(notesRow);
+
+  // Buttons
+  var btnRow=document.createElement('div');btnRow.style.cssText='display:flex;gap:8px';
+  var saveBtn=document.createElement('button');
+  saveBtn.textContent=isEdit?'Save Changes':'Add Mapping';
+  saveBtn.style.cssText="padding:8px 20px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer";
+  var cancelBtn=document.createElement('button');
+  cancelBtn.textContent='Cancel';
+  cancelBtn.style.cssText="padding:8px 16px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer";
+  cancelBtn.addEventListener('click',function(){wrap.innerHTML='';wrap.style.display='none';});
+
+  saveBtn.addEventListener('click',async function(){
+    var brand=fBrand.value.trim();var generic=fGeneric.value.trim();
+    if(!brand||!generic){alert('Brand Name and Generic Name are required.');return;}
+    saveBtn.disabled=true;saveBtn.textContent='Saving…';
+    try{
+      await rpc('admin_upsert_brand_mapping',{
+        p_id:isEdit?r.id:0,
+        p_brand_name:brand,
+        p_generic_name:generic,
+        p_category:fCat.value||null,
+        p_sub_category:fSubCat.value||null,
+        p_notes:fNotes.value.trim()||null,
+        p_active:fActive.value==='Yes'
+      });
+      wrap.innerHTML='';wrap.style.display='none';
+      var status=document.getElementById('brand-status');
+      if(status){status.textContent='✓ '+(isEdit?'Updated':'Added')+': '+brand+' → '+generic;setTimeout(function(){status.textContent='';},3000);}
+      var tbody=document.getElementById('brand-tbody');
+      if(tbody)await loadBrandsTable(tbody,null);
+      auditLog('IM Interface > Reference Data','Brand Mapping '+(isEdit?'Updated':'Added'),null,isEdit?r.brand_name:null,brand,generic+' ('+fCat.value+')');
+    }catch(e){alert('Save failed: '+e.message);saveBtn.disabled=false;saveBtn.textContent=isEdit?'Save Changes':'Add Mapping';}
+  });
+
+  btnRow.appendChild(saveBtn);btnRow.appendChild(cancelBtn);
+  form.appendChild(btnRow);
+  wrap.appendChild(form);
+  fBrand.focus();
+}
+
+async function deleteBrandRow(id,tbody,container){
+  if(!confirm('Delete this brand mapping?'))return;
+  try{
+    await rpc('admin_delete_brand_mapping',{p_id:id});
+    if(tbody)await loadBrandsTable(tbody,container);
+    auditLog('IM Interface > Reference Data','Brand Mapping Deleted',null,String(id),null,null);
+  }catch(e){alert('Delete failed: '+e.message);}
+}
+
+async function exportBrandsCSV(){
+  try{
+    var rows=await rpc('admin_get_brand_mappings',{});
+    var out=[['ID','Brand Name','Generic Name','Category','Sub Category','Notes','Active']];
+    (rows||[]).forEach(function(r){
+      out.push([r.id,r.brand_name,r.generic_name,r.category||'',r.sub_category||'',r.notes||'',r.active?'Yes':'No']);
+    });
+    _downloadCSV('brand-mappings.csv',out);
+    auditLog('IM Interface > Reference Data','Export','Brand Mappings',null,null,(out.length-1)+' rows');
+  }catch(e){alert('Export failed: '+e.message);}
+}
+
+async function importBrandsCSV(data,fields,container){
+  if(!data||!data.length){alert('No data found in CSV.');return;}
+  var fMap={};(fields||[]).forEach(function(f){fMap[f.toLowerCase().replace(/[\s_]/g,'')]=f;});
+  var brandCol=fMap['brandname']||fMap['brand']||fields[1];
+  var genCol  =fMap['genericname']||fMap['generic']||fields[2];
+  var catCol  =fMap['category']||fields[3];
+  var subCol  =fMap['subcategory']||fields[4];
+  var noteCol =fMap['notes']||fields[5];
+  var actCol  =fMap['active']||fields[6];
+
+  var rows=[];
+  data.forEach(function(row){
+    var brand=(row[brandCol]||'').trim();var gen=(row[genCol]||'').trim();
+    if(!brand||!gen)return;
+    rows.push({brand_name:brand,generic_name:gen,category:(row[catCol]||'').trim()||null,sub_category:(row[subCol]||'').trim()||null,notes:(row[noteCol]||'').trim()||null,active:(row[actCol]||'Yes').trim()!=='No'});
+  });
+
+  showImportPreview('Import Brand Mappings',
+    rows.length+' brand mappings found in CSV.\n\nMerge adds new mappings and updates existing ones (matched by brand name).\nReplace clears all existing mappings and loads only this file.',
+    async function(){
+      try{
+        var n=await rpc('admin_bulk_upsert_brand_mappings',{p_rows:rows});
+        var tbody=document.getElementById('brand-tbody');
+        if(tbody)await loadBrandsTable(tbody,null);
+        auditLog('IM Interface','Import Brand Mappings',null,null,null,n+' mappings upserted');
+      }catch(e){alert('Import failed: '+e.message);}
+    },
+    async function(){
+      if(!confirm('This will DELETE all existing brand mappings and replace them. Are you sure?'))return;
+      try{
+        await rpc('admin_delete_all_brand_mappings',{});
+        var n=await rpc('admin_bulk_upsert_brand_mappings',{p_rows:rows});
+        var tbody=document.getElementById('brand-tbody');
+        if(tbody)await loadBrandsTable(tbody,null);
+        auditLog('IM Interface','Import Replace Brand Mappings',null,null,null,n+' mappings replaced');
+      }catch(e){alert('Import failed: '+e.message);}
+    }
+  );
+}
+
+
+// loadBrandMappings replaced by buildBrandsTab
 
 function openBrandModal(row) {
   const isEdit = row && row.id;
