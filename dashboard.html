@@ -2405,7 +2405,13 @@ function inlineCell(e,id,field,type){
     ni.className='inline-input';
     ni.style.cssText='width:100%;max-width:120px;font-family:DM Sans,sans-serif;font-size:12px;padding:4px 8px;border:1px solid var(--accent);border-radius:5px;background:var(--bg);color:var(--text-high);outline:none;box-sizing:border-box';
     ni.value=currentVal;
-    // Reject non-numeric characters as they're typed
+    // Block non-numeric keys before they reach the input
+    ni.addEventListener('keydown',function(ev){
+      var ok=['Backspace','Delete','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Tab','Home','End','Enter','Escape','.','-'];
+      if(ok.includes(ev.key)||ev.key>='0'&&ev.key<='9'||ev.ctrlKey||ev.metaKey)return;
+      ev.preventDefault();
+    });
+    // Secondary guard for paste — strips anything non-numeric
     ni.addEventListener('input',function(){
       var v=this.value;
       // Allow: digits, one decimal point, one leading minus
@@ -2418,15 +2424,14 @@ function inlineCell(e,id,field,type){
     function commitNum(val){
       var v=val.trim();
       if(v===''){commitChange('');return;}
-      var n=parseFloat(v);
-      if(isNaN(n)){
-        // invalid — revert without saving
+      // Strict test — must be a clean number with optional leading minus and one decimal point
+      // Rejects anything like '30g', '1a2', '12.3.4' entirely — no stripping
+      if(!/^-?\d*\.?\d+$/.test(v)){
         td.setAttribute('style',origStyle);td.innerHTML=origHTML;
         td.className='editable-cell'+(td.classList.contains('cell-pending')?' cell-pending':'');
         return;
       }
-      // Round to max 2 decimal places
-      var formatted=parseFloat(n.toFixed(2)).toString();
+      var formatted=parseFloat(parseFloat(v).toFixed(2)).toString();
       commitChange(formatted);
     }
     ni.addEventListener('keydown',function(ev){
