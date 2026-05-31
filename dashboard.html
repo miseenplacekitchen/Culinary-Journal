@@ -3433,8 +3433,17 @@ async function exportCsv(){
   try{
     const rows=await rpc('admin_export_ingredients',{p_search:null,p_category:null});
     if(!rows.length){alert('Nothing to export.');return;}
+    // Only export active custom columns — exclude type metadata (_t_) and Recycle Bin (Deleted*)
+    const _activeCols=JSON.parse(localStorage.getItem('tcj_extra_cols')||'[]');
     const extraKeys=[],seen={};
-    rows.forEach(function(r){if(r.extra_fields&&typeof r.extra_fields==='object')Object.keys(r.extra_fields).forEach(function(k){if(!seen[k]){seen[k]=true;extraKeys.push(k);}});});
+    rows.forEach(function(r){
+      if(r.extra_fields&&typeof r.extra_fields==='object')
+        Object.keys(r.extra_fields).forEach(function(k){
+          if(!seen[k]&&_activeCols.includes(k)){seen[k]=true;extraKeys.push(k);}
+        });
+    });
+    // Add any active columns not yet seen (columns with no values yet)
+    _activeCols.forEach(function(k){if(!seen[k]){seen[k]=true;extraKeys.push(k);}});
     const stdCols=['ID','Ingredient Name','Also Known As','Category','Sub Category','Standard Qty','Standard Weight (g or ml)','Unit','Liquid (Yes/No)','CJ Recommended Brand','Allergen','Vegan (Yes/No)','Vegetarian (Yes/No)','Notes'];
     const allCols=stdCols.concat(extraKeys);
     const esc=function(v){const s=String(v==null?'':v);return(s.includes(',')||s.includes('"')||s.includes('\n'))?'"'+s.replace(/"/g,'""')+'"':s;};
