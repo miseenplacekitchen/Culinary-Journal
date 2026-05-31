@@ -2492,6 +2492,9 @@ function confirmAddColumn(){
   _extraColKeys.push(name);
   _extraColTypes[name]=colType;
   _colVis['extra:'+name]=true;
+  // Track in ever-created list so Edit modal can filter deleted columns
+  var _ever=JSON.parse(localStorage.getItem('tcj_ever_global_cols')||'[]');
+  if(!_ever.includes(name)){_ever.push(name);localStorage.setItem('tcj_ever_global_cols',JSON.stringify(_ever));}
   const stored=JSON.parse(localStorage.getItem('tcj_extra_cols')||'[]');
   if(!stored.includes(name)){stored.push(name);localStorage.setItem('tcj_extra_cols',JSON.stringify(stored));}
   const types=JSON.parse(localStorage.getItem('tcj_extra_col_types')||'{}');
@@ -2573,6 +2576,7 @@ async function deleteExtraColumn(name) {
   try {
     var count = await rpc('admin_rename_extra_field', { p_old_key: name, p_new_key: renamedTo });
     console.log('Renamed "' + name + '" to "' + renamedTo + '" in ' + (count||0) + ' rows');
+    var _renameCount = count || 0;
     // Store deletion metadata in localStorage
     var meta = JSON.parse(localStorage.getItem('tcj_deleted_meta') || '{}');
     meta[renamedTo] = {
@@ -2615,6 +2619,13 @@ async function deleteExtraColumn(name) {
   delete _ingColFilters['extra:' + name];
 
   buildTableHeader(); buildColVisPanel(); renderIngFiltered(); updateSaveBtn();
+
+  // Show result toast
+  var _toast = document.getElementById('ing-delete-toast');
+  if (!_toast) { _toast = document.createElement('div'); _toast.id='ing-delete-toast'; _toast.style.cssText='position:fixed;bottom:24px;right:24px;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:12px 20px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high);z-index:99999;box-shadow:0 4px 24px rgba(0,0,0,0.4);max-width:320px'; document.body.appendChild(_toast); }
+  _toast.textContent = _renameCount > 0 ? '✓ Column deleted. ' + _renameCount + ' ingredient value' + (_renameCount===1?'':'s') + ' moved to Recycle Bin.' : '⚠ Column deleted. No saved values found — nothing added to Recycle Bin.';
+  _toast.style.display = 'block';
+  setTimeout(function(){ _toast.style.display='none'; }, 4000);
 
   // If Recycle Bin tab is active, refresh it now
   if (currentIngTab === 'recycle') loadIngRecycleBin();
@@ -2778,10 +2789,16 @@ function openIngModal(ing){
     document.getElementById('ing-notes').value    =ing['Notes']||'';
     var rawEF=Object.assign({},ing.extra_fields||{});
     _customFieldTypes={};
-    // Extract type metadata and strip Deleted* renamed keys from modal view
+    // Filter extra_fields:
+    // - remove _t_ type metadata
+    // - remove Deleted* renamed keys (recycle bin data)
+    // - remove keys that WERE global columns but have since been deleted
+    var _everGlobal=JSON.parse(localStorage.getItem('tcj_ever_global_cols')||'[]');
+    var _activeGlobal=JSON.parse(localStorage.getItem('tcj_extra_cols')||'[]');
     Object.keys(rawEF).forEach(function(k){
       if(k.startsWith('_t_')){_customFieldTypes[k.slice(3)]=rawEF[k];delete rawEF[k];}
-      else if(/^Deleted\d+/.test(k)){delete rawEF[k];} // hide recycle bin data
+      else if(/^Deleted\d+/.test(k)){delete rawEF[k];}
+      else if(_everGlobal.includes(k)&&!_activeGlobal.includes(k)){delete rawEF[k];} // was global, now deleted
     });
     _customFields=rawEF;
     // Ensure all global +Column columns appear in the modal
