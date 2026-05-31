@@ -2860,6 +2860,7 @@ function openBrandForm(r){
         p_notes:fNotes.value.trim()||null,
         p_active:fActive.value==='Yes'
       });
+      await rpc('admin_update_cj_brand',{p_ingredient_name:generic,p_brand:brand});
       wrap.innerHTML='';wrap.style.display='none';
       var status=document.getElementById('brand-status');
       if(status){status.textContent='✓ '+(isEdit?'Updated':'Added')+': '+brand+' → '+generic;setTimeout(function(){status.textContent='';},3000);}
