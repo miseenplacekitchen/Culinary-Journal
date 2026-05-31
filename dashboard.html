@@ -2690,9 +2690,14 @@ async function buildBrandsTab(container){
   var tbl=document.createElement('table');
   tbl.style.cssText='width:100%;border-collapse:collapse;font-family:DM Sans,sans-serif;font-size:12px';
   var thead=document.createElement('thead');
-  var COLS=['ID','Brand Name','Generic Name','Category','Sub Category','Notes','Active','Actions'];
+  var COLS=['ID','Brand Name','Ingredient Name','Category','Sub Category','Notes','Active','Actions'];
+  var _bTips={
+    'Active':'Active = Yes means this brand mapping is live and will be used in recipe parsing and grocery lists. Active = No hides it without deleting it.',
+    'Actions':'Edit a mapping to correct it, or delete it permanently.'
+  };
   thead.innerHTML='<tr>'+COLS.map(function(h){
-    return '<th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);white-space:nowrap">'+h+'</th>';
+    var tip=_bTips[h]?(' title="'+_bTips[h]+'" style="cursor:help;border-bottom:1px dotted var(--text-mid)"'):'';
+    return '<th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);white-space:nowrap"><span'+tip+'>'+h+'</span></th>';
   }).join('')+'</tr>';
   var tbody=document.createElement('tbody');tbody.id='brand-tbody';
   tbl.appendChild(thead);tbl.appendChild(tbody);tableWrap.appendChild(tbl);
@@ -2707,20 +2712,19 @@ async function loadBrandsTable(tbody,container){
   try{
     var rows=await rpc('admin_get_brand_mappings',{});
     if(!rows||!rows.length){
-      // Auto-seed from All Ingredients on first load
       tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--text-mid)">Importing brands from All Ingredients…</td></tr>';
       try{
         var synced=await rpc('admin_sync_brands_from_ingredients',{});
-        if(synced>0){
+        rows=await rpc('admin_get_brand_mappings',{});
+        if(rows&&rows.length){
           var status=document.getElementById('brand-status');
           if(status){status.textContent='✓ '+synced+' brand'+(synced===1?'':'s')+' loaded from All Ingredients';setTimeout(function(){status.textContent='';},4000);}
-          rows=await rpc('admin_get_brand_mappings',{});
         } else {
-          tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--text-mid)">No brands found in All Ingredients. Add a CJ Recommended Brand to any ingredient first.</td></tr>';
+          tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--text-mid)">No CJ Recommended Brand values found in All Ingredients yet.</td></tr>';
           return;
         }
       }catch(e){
-        tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--text-mid)">No brand mappings yet. Click + Add Mapping to get started.</td></tr>';
+        tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:#dc5050">Could not sync brands: '+escT(e.message)+'</td></tr>';
         return;
       }
     }
