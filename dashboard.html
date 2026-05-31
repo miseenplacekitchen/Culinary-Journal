@@ -2851,7 +2851,7 @@ function openBrandForm(r){
     if(!brand||!generic){alert('Brand Name and Generic Name are required.');return;}
     saveBtn.disabled=true;saveBtn.textContent='Saving…';
     try{
-      await rpc('admin_upsert_brand_mapping',{
+      await rpc('admin_brand_upsert',{
         p_id:isEdit?r.id:0,
         p_brand_name:brand,
         p_generic_name:generic,
