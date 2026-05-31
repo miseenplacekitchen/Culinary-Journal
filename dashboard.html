@@ -1635,14 +1635,14 @@ function buildColumnSettingsTab(container){
   var sm=document.createElement('span');sm.style.cssText='font-family:DM Sans,sans-serif;font-size:12px;color:#4caf76;display:none';sm.textContent='✓ Saved';
   sb.addEventListener('click',function(){
     saveImSettings(settings);
-    // Show prominent toast
-    var t=document.getElementById('ing-delete-toast');
-    if(!t){t=document.createElement('div');t.id='ing-delete-toast';
-      t.style.cssText='position:fixed;bottom:24px;right:24px;background:#1a2e1a;border:1px solid #4caf76;border-radius:10px;padding:14px 22px;font-family:DM Sans,sans-serif;font-size:13px;color:#4caf76;z-index:99999;box-shadow:0 4px 24px rgba(0,0,0,0.5);font-weight:600';
-      document.body.appendChild(t);}
-    t.textContent='✓ Column settings saved';
-    t.style.display='block';
-    setTimeout(function(){t.style.display='none';},3000);
+    sb.textContent='✓ Saved';
+    sb.style.background='#2d5a2d';
+    sb.disabled=true;
+    setTimeout(function(){
+      sb.textContent='Save Column Settings';
+      sb.style.background='var(--accent)';
+      sb.disabled=false;
+    },2500);
   });
   var rb=document.createElement('button');rb.textContent='Reset to Defaults';rb.style.cssText=_imS.btn+';background:none;border:1px solid var(--border);color:var(--text-mid);padding:10px 18px';
   rb.addEventListener('click',function(){if(!confirm('Reset all column settings to defaults?'))return;localStorage.removeItem('tcj_im_settings');location.reload();});
