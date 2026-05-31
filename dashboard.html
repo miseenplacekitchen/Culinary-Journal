@@ -1599,10 +1599,10 @@ function importCategoriesCSV(data, fields){
 // ── Units Export ─────────────────────────────────────────────────
 function exportUnitsCSV(){
   var units=getUnits().slice().sort();var meta=getUnitMeta();
-  var rows=[['ID','Unit','Measurement Type','Min','Max','Decimal Places','Required','Active','Notes']];
+  var rows=[['ID','Unit','Measurement Type','Min','Max','Decimal Places','Required','Active','Description','Notes']];
   units.forEach(function(u,i){
     var m=meta[u]||{};
-    rows.push([i+1,u,m.mtype||'Other',m.min!=null?m.min:'',m.max!=null?m.max:'',m.decimals!=null?m.decimals:'',m.required||'No',m.active||'Yes','']);
+    rows.push([i+1,u,m.mtype||'Other',m.min!=null?m.min:'',m.max!=null?m.max:'',m.decimals!=null?m.decimals:'',m.required||'No',m.active||'Yes',m.description||'','']);
   });
   _downloadCSV('units.csv',rows);
   auditLog('IM Interface > Reference Data','Export','Units',null,null,units.length+' units exported');
@@ -1619,6 +1619,7 @@ function importUnitsCSV(data, fields){
   var decCol=fMap['decimalplaces']||fMap['decimals']||fields[5];
   var reqCol=fMap['required']||fields[6];
   var actCol=fMap['active']||fields[7];
+  var descCol=fMap['description']||fields[8];
 
   var newUnits=[];var newMeta={};
   data.forEach(function(row){
@@ -1630,7 +1631,8 @@ function importUnitsCSV(data, fields){
       max:row[maxCol]!==undefined&&row[maxCol]!==''?parseFloat(row[maxCol]):null,
       decimals:row[decCol]!==undefined&&row[decCol]!==''?parseInt(row[decCol]):null,
       required:(row[reqCol]||'No').trim(),
-      active:(row[actCol]||'Yes').trim()
+      active:(row[actCol]||'Yes').trim(),
+      description:descCol&&row[descCol]?(row[descCol]||'').trim():''
     };
   });
   newUnits.sort();
@@ -1754,6 +1756,11 @@ function buildRefDataTab(container){
 
 // ── CATEGORIES TAB ───────────────────────────────────────────────
 function buildCategoriesTab(container, _dirty){
+  var _catSyncBar=document.createElement('div');_catSyncBar.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:10px';
+  var _catSyncBtn=document.createElement('button');_catSyncBtn.textContent='⧳ Sync from All Ingredients';_catSyncBtn.style.cssText=_imS.btn+';background:none;border:1px solid var(--accent);color:var(--accent);padding:6px 14px';
+  var _catSyncMsg=document.createElement('span');_catSyncMsg.style.cssText='font-family:DM Sans,sans-serif;font-size:11px;color:#4caf76';
+  _catSyncBtn.addEventListener('click',function(){_catSyncBtn.disabled=true;_catSyncBtn.textContent='Syncing…';syncRefDataFromIngredients(['categories','subcategories'],function(msg){_catSyncMsg.textContent=msg;_catSyncBtn.textContent='⧳ Sync from All Ingredients';_catSyncBtn.disabled=false;setTimeout(function(){_catSyncMsg.textContent='';},4000);});});
+  _catSyncBar.appendChild(_catSyncBtn);_catSyncBar.appendChild(_catSyncMsg);container.appendChild(_catSyncBar);
   container.appendChild(makeImportExportBar(exportCategoriesCSV,importCategoriesCSV,'Categories \u0026 Sub Categories'));
   var cats = getCats().slice().sort();
   var meta = getCatMeta();
@@ -1806,7 +1813,14 @@ function buildCategoriesTab(container, _dirty){
       var del=document.createElement('button');del.textContent='×';del.style.cssText=_imS.delBtn;
       del.addEventListener('click',function(){
         if(!confirm('Delete category "'+cat+'"? This cannot be undone.'))return;
-        cats.splice(i,1);delete meta[cat];_imSet('tcj_cats',cats);_imSet('tcj_cat_meta',meta);CATS_LIST.length=0;cats.forEach(function(c){CATS_LIST.push(c);});renderRows();_dirty.categories=false;
+        cats.splice(i,1);delete meta[cat];
+        _imSet('tcj_cats',cats);_imSet('tcj_cat_meta',meta);
+        CATS_LIST.length=0;cats.forEach(function(c){CATS_LIST.push(c);});
+        renderRows();_dirty.categories=false;
+        rpc('admin_clear_ingredient_category',{p_category:cat}).then(function(n){
+          if(n>0) alert('ℹ '+n+' ingredient'+(n===1?' has':' have')+' had their Category cleared from "'+cat+'". Please update them in All Ingredients.');
+          auditLog('IM Interface > Reference Data','Category Deleted',cat,cat,null,'Cleared from '+n+' ingredients');
+        }).catch(function(e){console.error('Category cascade failed:',e);});
       });
       grid.appendChild(idDiv);grid.appendChild(ni);grid.appendChild(reqSel);grid.appendChild(actSel);grid.appendChild(del);
     });
@@ -1901,13 +1915,18 @@ function buildSubCategoriesTab(container, _dirty){
 
 // ── UNITS TAB ────────────────────────────────────────────────────
 function buildUnitsTab(container, _dirty){
+  var _unitSyncBar=document.createElement('div');_unitSyncBar.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:10px';
+  var _unitSyncBtn=document.createElement('button');_unitSyncBtn.textContent='⧳ Sync from All Ingredients';_unitSyncBtn.style.cssText=_imS.btn+';background:none;border:1px solid var(--accent);color:var(--accent);padding:6px 14px';
+  var _unitSyncMsg=document.createElement('span');_unitSyncMsg.style.cssText='font-family:DM Sans,sans-serif;font-size:11px;color:#4caf76';
+  _unitSyncBtn.addEventListener('click',function(){_unitSyncBtn.disabled=true;_unitSyncBtn.textContent='Syncing…';syncRefDataFromIngredients(['units'],function(msg){_unitSyncMsg.textContent=msg;_unitSyncBtn.textContent='⧳ Sync from All Ingredients';_unitSyncBtn.disabled=false;setTimeout(function(){_unitSyncMsg.textContent='';},4000);});});
+  _unitSyncBar.appendChild(_unitSyncBtn);_unitSyncBar.appendChild(_unitSyncMsg);container.appendChild(_unitSyncBar);
   container.appendChild(makeImportExportBar(exportUnitsCSV,importUnitsCSV,'Units'));
   var units=getUnits().slice().sort();
   var meta=getUnitMeta();
   var MTYPE=['Weight','Volume','Count','Other'];
 
   var grid=document.createElement('div');
-  grid.style.cssText='display:grid;grid-template-columns:40px 100px 100px 70px 70px 70px 70px 70px 36px;gap:4px 8px;align-items:center';
+  grid.style.cssText='display:grid;grid-template-columns:40px 100px 100px 70px 70px 70px 70px 70px 1fr 36px;gap:4px 8px;align-items:center';
   var _unitHdrTips={
     'TYPE':'Measurement type: Weight (g/kg/oz/lb), Volume (ml/l/cup), Count (piece/clove), or Other.',
     'MIN':'Minimum valid value for this unit. Leave blank for no minimum.',
@@ -1916,16 +1935,17 @@ function buildUnitsTab(container, _dirty){
     'REQUIRED':'Required = Yes means the Unit field becomes a strict dropdown — the admin must select from this list.',
     'ACTIVE':'Active = No hides this unit from all dropdowns without deleting it.'
   };
-  ['ID','UNIT','TYPE','MIN','MAX','DECIMALS','REQUIRED','ACTIVE',''].forEach(function(h){
+  _unitHdrTips['DESCRIPTION']='A short description of what this unit is and how it is used.';
+  ['ID','UNIT','TYPE','MIN','MAX','DECIMALS','REQUIRED','ACTIVE','DESCRIPTION',''].forEach(function(h){
     var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;
     if(_unitHdrTips[h]){_tipOn(d,_unitHdrTips[h]);}
     grid.appendChild(d);
   });
 
   function renderUnits(){
-    while(grid.children.length>9) grid.removeChild(grid.lastChild);
+    while(grid.children.length>10) grid.removeChild(grid.lastChild);
     units.sort().forEach(function(unit,i){
-      var m=meta[unit]||{mtype:'Other',required:'No',active:'Yes'};
+      var m=meta[unit]||{mtype:'Other',required:'No',active:'Yes',description:''};
       var idDiv=document.createElement('div');idDiv.style.cssText=_imS.hdr+';text-align:center';idDiv.textContent=i+1;
       var ni=document.createElement('input');ni.type='text';ni.value=unit;ni.style.cssText=_imS.inp;
       ni.addEventListener('change',function(){
@@ -1956,7 +1976,9 @@ function buildUnitsTab(container, _dirty){
       actSel.addEventListener('change',function(){if(!meta[unit])meta[unit]={};meta[unit].active=this.value;_dirty.units=true;});
       var del=document.createElement('button');del.textContent='×';del.style.cssText=_imS.delBtn;
       del.addEventListener('click',function(){if(!confirm('Delete unit "'+unit+'"?'))return;units.splice(i,1);delete meta[unit];_imSet('tcj_units',units);_imSet('tcj_unit_meta',meta);renderUnits();_dirty.units=false;});
-      grid.appendChild(idDiv);grid.appendChild(ni);grid.appendChild(mSel);grid.appendChild(minF);grid.appendChild(maxF);grid.appendChild(decF);grid.appendChild(reqSel);grid.appendChild(actSel);grid.appendChild(del);
+      var descF=document.createElement('input');descF.type='text';descF.value=m.description||'';descF.placeholder='e.g. Metric cup (250ml)';descF.style.cssText=_imS.inp;
+      descF.addEventListener('change',function(){if(!meta[unit])meta[unit]={};meta[unit].description=this.value.trim();_dirty.units=true;});
+      grid.appendChild(idDiv);grid.appendChild(ni);grid.appendChild(mSel);grid.appendChild(minF);grid.appendChild(maxF);grid.appendChild(decF);grid.appendChild(reqSel);grid.appendChild(actSel);grid.appendChild(descF);grid.appendChild(del);
     });
   }
   renderUnits();container.appendChild(grid);
@@ -2960,11 +2982,14 @@ function openBrandForm(r){
 }
 
 async function deleteBrandRow(id,tbody,container){
-  if(!confirm('Delete this brand mapping?'))return;
+  if(!confirm('Delete this brand mapping? The CJ Recommended Brand will also be cleared from any matching ingredients.'))return;
   try{
-    await rpc('admin_delete_brand_mapping',{p_id:id});
+    var cleared=await rpc('admin_delete_brand_mapping',{p_id:parseInt(id)});
     if(tbody)await loadBrandsTable(tbody);
-    auditLog('IM Interface > Reference Data','Brand Mapping Deleted',null,String(id),null,null);
+    var msg=cleared>0?' '+cleared+' ingredient'+(cleared===1?'':'s')+' updated.':'';
+    var status=document.getElementById('brand-status');
+    if(status){status.textContent='✓ Brand deleted.'+msg;setTimeout(function(){status.textContent='';},4000);}
+    auditLog('IM Interface > Reference Data','Brand Mapping Deleted',null,String(id),null,'Cleared from '+cleared+' ingredients');
   }catch(e){alert('Delete failed: '+e.message);}
 }
 
@@ -3332,6 +3357,42 @@ function buildPaginationControls(total){
   info.style.cssText = "font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);margin-left:8px;align-self:center";
   info.textContent = 'Page '+ingPage+' of '+totalPages;
   wrap.appendChild(info);
+}
+
+// ── Sync Reference Data from All Ingredients ─────────────────────
+async function syncRefDataFromIngredients(types, onDone){
+  try{
+    var data = await rpc('admin_get_ingredient_distinct_values',{});
+    var added = {categories:0, subcategories:0, units:0};
+    if(types.includes('categories') && data.categories){
+      var cats=getCats();
+      data.categories.forEach(function(c){if(c&&!cats.includes(c)){cats.push(c);added.categories++;}});
+      if(added.categories>0){_imSet('tcj_cats',cats.sort());CATS_LIST.length=0;cats.forEach(function(c){CATS_LIST.push(c);});}
+    }
+    if(types.includes('subcategories') && data.subcategories){
+      var subs=getSubCats();
+      data.subcategories.forEach(function(s){
+        if(!s) return;
+        // Try to match to a category — add to "Uncategorised" if no match
+        var placed=false;
+        Object.keys(subs).forEach(function(cat){if(subs[cat]&&!subs[cat].includes(s)){/* can't auto-place without knowing category */}});
+        if(!placed){ if(!subs['Uncategorised'])subs['Uncategorised']=[]; if(!subs['Uncategorised'].includes(s)){subs['Uncategorised'].push(s);added.subcategories++;} }
+      });
+      if(added.subcategories>0) _imSet('tcj_subcats',subs);
+    }
+    if(types.includes('units') && data.units){
+      var units=getUnits();
+      data.units.forEach(function(u){if(u&&!units.includes(u)){units.push(u);added.units++;}});
+      if(added.units>0) _imSet('tcj_units',units.sort());
+    }
+    var msgs=[];
+    if(added.categories>0) msgs.push(added.categories+' categor'+(added.categories===1?'y':'ies'));
+    if(added.subcategories>0) msgs.push(added.subcategories+' sub categor'+(added.subcategories===1?'y':'ies'));
+    if(added.units>0) msgs.push(added.units+' unit'+(added.units===1?'':'s'));
+    var summary = msgs.length>0 ? '✓ Added: '+msgs.join(', ') : '✓ Already up to date — nothing new to add.';
+    if(onDone) onDone(summary);
+    loadIMInterface();
+  }catch(e){ alert('Sync failed: '+e.message); }
 }
 
 async function loadIngredients(page) {
