@@ -1634,15 +1634,21 @@ function buildColumnSettingsTab(container){
   var sb=document.createElement('button');sb.textContent='Save Column Settings';sb.style.cssText=_imS.btn+';background:var(--accent);color:#fff;padding:10px 24px';
   var sm=document.createElement('span');sm.style.cssText='font-family:DM Sans,sans-serif;font-size:12px;color:#4caf76;display:none';sm.textContent='✓ Saved';
   sb.addEventListener('click',function(){
-    saveImSettings(settings);
-    sb.textContent='✓ Saved';
-    sb.style.background='#2d5a2d';
-    sb.disabled=true;
-    setTimeout(function(){
+    sb.textContent='Saving...';
+    try{
+      saveImSettings(settings);
+      sb.textContent='✓ Saved';
+      sb.style.background='#2d5a2d';
+      sb.disabled=true;
+      setTimeout(function(){
+        sb.textContent='Save Column Settings';
+        sb.style.background='var(--accent)';
+        sb.disabled=false;
+      },2500);
+    }catch(e){
       sb.textContent='Save Column Settings';
-      sb.style.background='var(--accent)';
-      sb.disabled=false;
-    },2500);
+      alert('Save failed: '+e.message);
+    }
   });
   var rb=document.createElement('button');rb.textContent='Reset to Defaults';rb.style.cssText=_imS.btn+';background:none;border:1px solid var(--border);color:var(--text-mid);padding:10px 18px';
   rb.addEventListener('click',function(){if(!confirm('Reset all column settings to defaults?'))return;localStorage.removeItem('tcj_im_settings');location.reload();});
