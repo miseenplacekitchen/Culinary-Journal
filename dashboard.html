@@ -3109,10 +3109,15 @@ function renderIngRows(rows) {
         } else {
           // Format display value based on column type
           var _dispVal=fmtVal;
-          if(xType==='currency'&&fmtVal&&fmtVal.indexOf(':')>-1){
-            var _cp=fmtVal.split(':'); _dispVal=_cp[0]+' '+parseFloat(_cp[1]||0).toFixed(2);
+          // Detect currency format (e.g. AUD:1234) by value pattern OR column type
+          if(fmtVal&&/^[A-Z]{2,3}:[\d.]+$/.test(String(fmtVal))){
+            var _cp=String(fmtVal).split(':');
+            _dispVal=_cp[0]+' '+parseFloat(_cp[1]||0).toFixed(2);
+          } else if((xType==='currency')&&fmtVal&&String(fmtVal).indexOf(':')>-1){
+            var _cp2=String(fmtVal).split(':');
+            _dispVal=_cp2[0]+' '+parseFloat(_cp2[1]||0).toFixed(2);
           } else if(xType==='percentage'&&fmtVal){
-            _dispVal=fmtVal+'%';
+            _dispVal=String(fmtVal).replace('%','')+'%';
           }
           tdWrap.textContent=_dispVal;
           td.title=_dispVal||'Double-click to edit';
