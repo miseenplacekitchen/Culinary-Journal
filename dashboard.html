@@ -1355,7 +1355,7 @@ function loadIMInterface(){
   buildRefDataTab(topPanels['refdata']);
 
   // ── TAB: Column Settings ─────────────────────────────────────
-  buildColumnSettingsTab(topPanels['colsettings']);
+  // Column Settings now inside IDM sub-tabs
 
   // ── TAB: Recycle Bin ─────────────────────────────────────────
   topPanels['recycle'].innerHTML='<div style="'+_imS.label+';padding:8px 0">Loading\u2026</div>';
@@ -1624,8 +1624,7 @@ function buildRefDataTab(container){
     {key:'categories',    label:'Categories'},
     {key:'subcategories', label:'Sub Categories'},
     {key:'units',         label:'Units'},
-    {key:'currencies',    label:'Currencies'},
-    {key:'colsettings',   label:'Column Settings'}
+    {key:'currencies',    label:'Currencies'}
   ];
   var subBar=document.createElement('div');
   subBar.style.cssText='display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap';
@@ -1684,6 +1683,7 @@ function buildRefDataTab(container){
   buildUnitsTab(subPanels['units'], _dirty);
   buildCurrenciesTab(subPanels['currencies'], _dirty);
   buildBrandsTab(subPanels['brands'], _dirty);
+  buildColumnSettingsTab(subPanels['colsettings']);
 }
 
 // ── CATEGORIES TAB ───────────────────────────────────────────────
