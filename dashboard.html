@@ -1400,6 +1400,7 @@ function loadIMInterface(){
       Object.keys(topPanels).forEach(function(k){ topPanels[k].style.display=k===td.key?'block':'none'; });
       if(td.key==='recycle') loadIngRecycleBinInto(topPanels['recycle']);
       if(td.key==='audit')   loadAuditTrail(topPanels['audit']);
+      if(td.key==='analytics') loadIngAnalytics(topPanels['analytics']);
     });
     if(td.key===activeTop){ btn.style.borderBottomColor='var(--accent)'; btn.style.color='var(--accent)'; }
     topBar.appendChild(btn);
@@ -1424,7 +1425,7 @@ function loadIMInterface(){
 
   // ── Trigger load for restored active tab ─────────────────────
   if(activeTop==='audit')    loadAuditTrail(topPanels['audit']);
-  if(activeTop==='analytics') loadAnalytics();
+  if(activeTop==='analytics') loadIngAnalytics(topPanels['analytics']);
 
   // ── TAB: Audit Trail ─────────────────────────────────────────
   var _atWrap=document.createElement('div');
@@ -2524,25 +2525,197 @@ async function loadUserAnalytics() {
   } catch(e) { console.warn('user analytics', e); }
 }
 
-async function loadIngAnalytics() {
-  try {
-    const count = await rpc('admin_count_ingredients', {});
-    setElT('ia-total', count || '—');
-    // Per-category breakdown
-    const units = await rpc('admin_get_ingredient_units', {});
-    if (units && units.length) {
-      const catData = units.map(function(u){ return {label:u.category||'Uncategorised', value:u.count||0}; })
-                          .sort(function(a,b){ return b.value-a.value; });
-      renderBarChart('ia-category-chart', catData, 'var(--accent)');
+async // ── Ingredient Analytics ──────────────────────────────────────────
+async function loadIngAnalytics(container) {
+  var el = container || document.getElementById('ia-panel');
+  if (!el) return;
+  el.innerHTML = '<div style="padding:40px;text-align:center;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading analytics\u2026</div>';
+
+  var data;
+  try { data = await rpc('admin_get_ingredient_analytics', {}); }
+  catch(e) { el.innerHTML='<div style="padding:20px;color:#dc5050;font-family:DM Sans,sans-serif">Error: '+escT(e.message)+'</div>'; return; }
+
+  var total = parseInt(data.total) || 0;
+  el.innerHTML = '';
+
+  var css = {
+    card:   'background:var(--card-bg,rgba(255,255,255,0.04));border:1px solid var(--border);border-radius:12px;padding:20px 24px',
+    label:  "font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px",
+    title:  "font-family:'Cormorant Garamond',serif;font-size:1.05rem;font-weight:700;color:var(--text-high);margin-bottom:16px",
+    num:    "font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:700;color:var(--accent);line-height:1",
+    sub:    "font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);margin-top:4px"
+  };
+
+  function el_(tag, style, text) {
+    var e = document.createElement(tag);
+    if (style) e.style.cssText = style;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  // ── Summary Cards ─────────────────────────────────────────────
+  var comp = data.completeness || {};
+  var compFields = Object.keys(comp);
+  var compTotal  = compFields.reduce(function(s, k) { return s + (parseInt(comp[k]) || 0); }, 0);
+  var compMax    = compFields.length * total;
+  var compPct    = compMax > 0 ? Math.round(compTotal / compMax * 100) : 0;
+
+  var cards = [
+    { icon: '\ud83e\uddc2', num: total,                        label: 'Total Ingredients' },
+    { icon: '\ud83c\udff7\ufe0f', num: parseInt(data.with_brand)||0,  label: 'Brands Mapped',  sub: total>0?Math.round((parseInt(data.with_brand)||0)/total*100)+'% coverage':'' },
+    { icon: '\ud83d\udc9a', num: parseInt(data.vegan)||0,      label: 'Vegan',          sub: total>0?Math.round((parseInt(data.vegan)||0)/total*100)+'% of total':'' },
+    { icon: '\u2705',        num: compPct+'%',                  label: 'Data Completion', sub: compTotal+' of '+compMax+' fields filled' }
+  ];
+
+  var cardRow = el_('div', 'display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px');
+  cards.forEach(function(c) {
+    var card = el_('div', css.card);
+    card.appendChild(el_('div', 'font-size:1.6rem;margin-bottom:8px', c.icon));
+    card.appendChild(el_('div', css.num, String(c.num)));
+    card.appendChild(el_('div', css.label, c.label));
+    if (c.sub) card.appendChild(el_('div', css.sub, c.sub));
+    cardRow.appendChild(card);
+  });
+  el.appendChild(cardRow);
+
+  // ── Two column layout ─────────────────────────────────────────
+  var cols = el_('div', 'display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px');
+
+  // ── Category Distribution ─────────────────────────────────────
+  var catCard = el_('div', css.card+';grid-column:span 2');
+  catCard.appendChild(el_('div', css.title, 'Ingredients by Category'));
+  if (data.by_category && data.by_category.length) {
+    var maxCat = data.by_category[0].count;
+    var catGrid = el_('div', 'display:grid;grid-template-columns:160px 1fr 40px;gap:6px 10px;align-items:center');
+    data.by_category.forEach(function(c) {
+      var pct = maxCat > 0 ? (c.count / maxCat * 100) : 0;
+      catGrid.appendChild(el_('div', "font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-high);text-align:right;padding-right:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis", c.name || 'Uncategorised'));
+      var barWrap = el_('div', 'background:rgba(255,255,255,0.06);border-radius:4px;height:16px;overflow:hidden');
+      var bar = el_('div', 'height:100%;border-radius:4px;background:var(--accent);transition:width 0.4s;width:'+pct+'%');
+      barWrap.appendChild(bar); catGrid.appendChild(barWrap);
+      catGrid.appendChild(el_('div', "font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)", String(c.count)));
+    });
+    catCard.appendChild(catGrid);
+  }
+  el.appendChild(catCard);
+
+  // ── Dietary Profile ───────────────────────────────────────────
+  var dietCard = el_('div', css.card);
+  dietCard.appendChild(el_('div', css.title, 'Dietary Profile'));
+  var vegan = parseInt(data.vegan) || 0;
+  var veg   = parseInt(data.vegetarian) || 0;
+  var neither = total - Math.max(vegan, veg);
+  var dietData = [
+    { label: 'Vegan',        count: vegan,   color: '#4caf76' },
+    { label: 'Vegetarian',   count: veg,     color: '#81c784' },
+    { label: 'Non-Veg',      count: Math.max(0, neither), color: '#C4973B' },
+    { label: 'Liquid',       count: parseInt(data.liquid)||0, color: '#5B8FD4' }
+  ];
+  dietData.forEach(function(d) {
+    var pct = total > 0 ? Math.round(d.count / total * 100) : 0;
+    var row = el_('div', 'display:flex;align-items:center;gap:10px;margin-bottom:10px');
+    var dot = el_('div', 'width:10px;height:10px;border-radius:50%;flex-shrink:0;background:'+d.color);
+    var lbl = el_('div', "font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-high);flex:1", d.label);
+    var bar = el_('div', 'flex:2;background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden');
+    var fill = el_('div', 'height:100%;border-radius:4px;background:'+d.color+';width:'+pct+'%');
+    var cnt = el_('div', "font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);width:60px;text-align:right", d.count+' ('+pct+'%)');
+    bar.appendChild(fill);
+    row.appendChild(dot); row.appendChild(lbl); row.appendChild(bar); row.appendChild(cnt);
+    dietCard.appendChild(row);
+  });
+  cols.appendChild(dietCard);
+
+  // ── Top Units ─────────────────────────────────────────────────
+  var unitCard = el_('div', css.card);
+  unitCard.appendChild(el_('div', css.title, 'Top Units Used'));
+  if (data.by_unit && data.by_unit.length) {
+    var maxUnit = data.by_unit[0].count;
+    var unitColors = ['#C4973B','#5B8FD4','#4caf76','#E86D4A','#9B59B6','#1ABC9C','#E74C3C','#F39C12','#3498DB','#2ECC71','#E67E22','#9C27B0','#00BCD4','#FF5722','#607D8B'];
+    data.by_unit.forEach(function(u, i) {
+      var pct = maxUnit > 0 ? (u.count / maxUnit * 100) : 0;
+      var color = unitColors[i % unitColors.length];
+      var row = el_('div', 'display:grid;grid-template-columns:80px 1fr 36px;align-items:center;gap:8px;margin-bottom:6px');
+      row.appendChild(el_('div', "font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-high);text-align:right", u.name));
+      var bw = el_('div', 'background:rgba(255,255,255,0.06);border-radius:4px;height:14px;overflow:hidden');
+      bw.appendChild(el_('div', 'height:100%;border-radius:4px;background:'+color+';width:'+pct+'%', ''));
+      row.appendChild(bw);
+      row.appendChild(el_('div', "font-family:'DM Sans',sans-serif;font-size:10px;color:var(--text-mid)", String(u.count)));
+      unitCard.appendChild(row);
+    });
+  } else { unitCard.appendChild(el_('div', css.sub, 'No unit data yet.')); }
+  cols.appendChild(unitCard);
+  el.appendChild(cols);
+
+  // ── Allergen + Data Completeness row ─────────────────────────
+  var row2 = el_('div', 'display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px');
+
+  // Allergen Distribution
+  var algCard = el_('div', css.card);
+  algCard.appendChild(el_('div', css.title, 'Allergen Distribution'));
+  if (data.by_allergen && data.by_allergen.length) {
+    var maxAlg = data.by_allergen[0].count;
+    data.by_allergen.forEach(function(a) {
+      var pct = maxAlg > 0 ? (a.count / maxAlg * 100) : 0;
+      var row = el_('div', 'display:grid;grid-template-columns:120px 1fr 36px;align-items:center;gap:8px;margin-bottom:6px');
+      row.appendChild(el_('div', "font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-high);text-align:right", a.name));
+      var bw = el_('div', 'background:rgba(255,255,255,0.06);border-radius:4px;height:14px;overflow:hidden');
+      bw.appendChild(el_('div', 'height:100%;border-radius:4px;background:#E86D4A;width:'+pct+'%', ''));
+      row.appendChild(bw);
+      row.appendChild(el_('div', "font-family:'DM Sans',sans-serif;font-size:10px;color:var(--text-mid)", String(a.count)));
+      algCard.appendChild(row);
+    });
+  } else { algCard.appendChild(el_('div', css.sub, 'No allergen data yet.')); }
+  row2.appendChild(algCard);
+
+  // Data Completeness
+  var compCard = el_('div', css.card);
+  compCard.appendChild(el_('div', css.title, 'Data Completeness'));
+  Object.keys(comp).forEach(function(field) {
+    var filled = parseInt(comp[field]) || 0;
+    var pct    = total > 0 ? Math.round(filled / total * 100) : 0;
+    var color  = pct >= 90 ? '#4caf76' : pct >= 60 ? '#C4973B' : '#dc5050';
+    var row = el_('div', 'display:grid;grid-template-columns:130px 1fr 40px;align-items:center;gap:8px;margin-bottom:8px');
+    row.appendChild(el_('div', "font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-high)", field));
+    var bw = el_('div', 'background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden');
+    bw.appendChild(el_('div', 'height:100%;border-radius:4px;background:'+color+';width:'+pct+'%', ''));
+    row.appendChild(bw);
+    row.appendChild(el_('div', "font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;color:"+color, pct+'%'));
+    compCard.appendChild(row);
+  });
+  row2.appendChild(compCard);
+  el.appendChild(row2);
+
+  // ── Needs Attention Table ─────────────────────────────────────
+  if (data.needs_attention && data.needs_attention.length) {
+    var attCard = el_('div', css.card);
+    attCard.appendChild(el_('div', css.title, '\u26a0\ufe0f Needs Attention ('+data.needs_attention.length+' ingredients missing Category or Unit)'));
+    var tbl = el_('div', 'display:grid;grid-template-columns:50px 1fr 120px 120px;gap:0 8px');
+    ['ID','Ingredient Name','Category','Unit'].forEach(function(h) {
+      tbl.appendChild(el_('div', "font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;color:var(--text-mid);text-transform:uppercase;letter-spacing:0.08em;padding-bottom:8px;border-bottom:1px solid var(--border)", h));
+    });
+    data.needs_attention.forEach(function(r) {
+      var rowStyle = "font-family:'DM Sans',sans-serif;font-size:12px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04)";
+      tbl.appendChild(el_('div', rowStyle+';color:var(--text-mid)', String(r.ID||r.id)));
+      tbl.appendChild(el_('div', rowStyle+';color:var(--text-high)', r['Ingredient Name']||r.ingredient_name||''));
+      var catStyle = rowStyle + (r.missing_cat ? ';color:#dc5050;font-weight:600' : ';color:var(--text-mid)');
+      tbl.appendChild(el_('div', catStyle, r.missing_cat ? '\u2715 Missing' : (r.Category||r.category||'\u2014')));
+      var unitStyle = rowStyle + (r.missing_unit ? ';color:#dc5050;font-weight:600' : ';color:var(--text-mid)');
+      tbl.appendChild(el_('div', unitStyle, r.missing_unit ? '\u2715 Missing' : (r.Unit||r.unit||'\u2014')));
+    });
+    attCard.appendChild(tbl);
+    if (data.needs_attention.length === 20) {
+      attCard.appendChild(el_('div', 'font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid);margin-top:10px', 'Showing first 20. Fix these and run again to see more.'));
     }
-    // Dietary breakdown (simple query)
-    renderBarChart('ia-dietary-chart',[
-      {label:'No restriction', value:0},
-      {label:'Vegan',          value:0},
-      {label:'Vegetarian',     value:0}
-    ], '#4caf76');
-  } catch(e) { console.warn('ing analytics', e); }
+    el.appendChild(attCard);
+  } else {
+    var allGood = el_('div', css.card+';text-align:center;padding:24px');
+    allGood.appendChild(el_('div', 'font-size:2rem;margin-bottom:8px', '\u2705'));
+    allGood.appendChild(el_('div', "font-family:'DM Sans',sans-serif;font-size:13px;color:#4caf76", 'All ingredients have a Category and Unit. Great work!'));
+    el.appendChild(allGood);
+  }
 }
+
+
 // ── INGREDIENTS TABS ─────────────────────────────────────────────
 var currentIngTab = 'all';
 
