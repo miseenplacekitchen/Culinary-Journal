@@ -1171,7 +1171,10 @@ let _imSettings = {};
 function _imGet(key, def) {
   try { var v=localStorage.getItem(key); return v?JSON.parse(v):def; } catch(e){return def;}
 }
-function _imSet(key,val){ localStorage.setItem(key,JSON.stringify(val)); }
+function _imSet(key,val){
+  try{ localStorage.setItem(key,JSON.stringify(val)); }
+  catch(e){ console.error('Storage save failed for key '+key+':',e); }
+}
 function getUnits(){ return _imGet('tcj_units',['cup','tbsp','tsp','ml','l','g','kg','oz','lb','piece','bunch','clove','leaf','sprig','pinch','slice','sheet','can','bottle','packet','whole']); }
 function getCats(){ return _imGet('tcj_cats',['Baking','Grains, Pasta & Noodles','Breads & Flatbreads','Packaged & Convenience','Meat','Poultry','Seafood','Dairy & Eggs','Plant-Based','Vegetables','Fruits','Herbs','Spices','Oils & Fats','Legumes & Pulses','Nuts & Seeds','Condiments & Sauces','Vinegars','Sweeteners','Canned & Preserved','Alcohol & Cooking Wine','Stocks & Broths']); }
 function getSubCats(){
@@ -1803,7 +1806,7 @@ function buildCategoriesTab(container, _dirty){
       var del=document.createElement('button');del.textContent='×';del.style.cssText=_imS.delBtn;
       del.addEventListener('click',function(){
         if(!confirm('Delete category "'+cat+'"? This cannot be undone.'))return;
-        cats.splice(i,1);delete meta[cat];renderRows();_dirty.categories=true;
+        cats.splice(i,1);delete meta[cat];_imSet('tcj_cats',cats);_imSet('tcj_cat_meta',meta);CATS_LIST.length=0;cats.forEach(function(c){CATS_LIST.push(c);});renderRows();_dirty.categories=false;
       });
       grid.appendChild(idDiv);grid.appendChild(ni);grid.appendChild(reqSel);grid.appendChild(actSel);grid.appendChild(del);
     });
@@ -1873,7 +1876,7 @@ function buildSubCategoriesTab(container, _dirty){
       ['Yes','No'].forEach(function(v){var o=document.createElement('option');o.value=v;o.textContent=v;actSel.appendChild(o);});
       actSel.addEventListener('change',function(){_dirty.subcategories=true;});
       var del=document.createElement('button');del.textContent='×';del.style.cssText=_imS.delBtn;
-      del.addEventListener('click',function(){arr.splice(i,1);subs[cat]=arr;renderSubs(cat);_dirty.subcategories=true;});
+      del.addEventListener('click',function(){arr.splice(i,1);subs[cat]=arr;_imSet('tcj_subcats',subs);renderSubs(cat);_dirty.subcategories=false;});
       grid2.appendChild(idDiv);grid2.appendChild(ni);grid2.appendChild(reqSel);grid2.appendChild(actSel);grid2.appendChild(del);
     });
     subPanel.appendChild(grid2);
@@ -1952,7 +1955,7 @@ function buildUnitsTab(container, _dirty){
       ['Yes','No'].forEach(function(v){var o=document.createElement('option');o.value=v;o.textContent=v;o.selected=(m.active||'Yes')===v;actSel.appendChild(o);});
       actSel.addEventListener('change',function(){if(!meta[unit])meta[unit]={};meta[unit].active=this.value;_dirty.units=true;});
       var del=document.createElement('button');del.textContent='×';del.style.cssText=_imS.delBtn;
-      del.addEventListener('click',function(){if(!confirm('Delete unit "'+unit+'"?'))return;units.splice(i,1);delete meta[unit];renderUnits();_dirty.units=true;});
+      del.addEventListener('click',function(){if(!confirm('Delete unit "'+unit+'"?'))return;units.splice(i,1);delete meta[unit];_imSet('tcj_units',units);_imSet('tcj_unit_meta',meta);renderUnits();_dirty.units=false;});
       grid.appendChild(idDiv);grid.appendChild(ni);grid.appendChild(mSel);grid.appendChild(minF);grid.appendChild(maxF);grid.appendChild(decF);grid.appendChild(reqSel);grid.appendChild(actSel);grid.appendChild(del);
     });
   }
@@ -1998,7 +2001,7 @@ function buildCurrenciesTab(container, _dirty){
       ['Yes','No'].forEach(function(v){var o=document.createElement('option');o.value=v;o.textContent=v;o.selected=(m.active||'Yes')===v;actSel.appendChild(o);});
       actSel.addEventListener('change',function(){if(!currMeta[c])currMeta[c]={};currMeta[c].active=this.value;_dirty.currencies=true;});
       var del=document.createElement('button');del.textContent='×';del.style.cssText=_imS.delBtn;
-      del.addEventListener('click',function(){currencies.splice(i,1);delete currMeta[c];renderCurrs();_dirty.currencies=true;});
+      del.addEventListener('click',function(){currencies.splice(i,1);delete currMeta[c];_imSet('tcj_currencies',currencies);_imSet('tcj_curr_meta',currMeta);renderCurrs();_dirty.currencies=false;});
       grid.appendChild(idD);grid.appendChild(codeI);grid.appendChild(nameI);grid.appendChild(actSel);grid.appendChild(del);
     });
   }
@@ -2801,21 +2804,8 @@ async function loadBrandsTable(tbody){
   try{
     var rows=await rpc('admin_get_brand_mappings',{});
     if(!rows||!rows.length){
-      tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--text-mid)">Importing brands from All Ingredients…</td></tr>';
-      try{
-        var synced=await rpc('admin_sync_brands_from_ingredients',{});
-        rows=await rpc('admin_get_brand_mappings',{});
-        if(rows&&rows.length){
-          var status=document.getElementById('brand-status');
-          if(status){status.textContent='✓ '+synced+' brand'+(synced===1?'':'s')+' loaded from All Ingredients';setTimeout(function(){status.textContent='';},4000);}
-        } else {
-          tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--text-mid)">No CJ Recommended Brand values found in All Ingredients yet.</td></tr>';
-          return;
-        }
-      }catch(e){
-        tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:#dc5050">Could not sync brands: '+escT(e.message)+'</td></tr>';
-        return;
-      }
+      tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--text-mid)">No brand mappings yet. Use the ⧳ Sync button to import from All Ingredients.</td></tr>';
+      return;
     }
     tbody.innerHTML='';
     rows.forEach(function(r,i){
