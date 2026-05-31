@@ -2758,7 +2758,7 @@ let STD_COLS = [
   {key:'Ingredient Name',           label:'Ingredient Name',    type:'text'},
   {key:'Also Known As',             label:'Also Known As',      type:'text'},
   {key:'Category',                  label:'Category',           type:'category', edit:'select'},
-  {key:'Sub Category',              label:'Sub Category',       type:'text'},
+  {key:'Sub Category',              label:'Sub Category',       type:'text', edit:'select'},
   {key:'Standard Qty',              label:'Standard Qty',       type:'text'},
   {key:'Standard Weight (g or ml)', label:'Weight (g/ml)',      type:'number'},
   {key:'Unit',                      label:'Unit',               type:'text'},
@@ -3163,8 +3163,6 @@ function renderIngRows(rows) {
           if(colKey==='Unit'){
             var _um=getUnitMeta(); var _unitRequired=Object.values(_um).some(function(m){return m&&m.required==='Yes';});
             _iType=_unitRequired?'select':'suggest';
-          } else if(colKey==='Sub Category'){
-            _iType='select'; // Always dropdown from managed sub-categories
           }
           td.addEventListener('dblclick',(function(t){return function(e){inlineCell(e,id,colKey,t);};}(_iType)));
         }
