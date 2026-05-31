@@ -1663,7 +1663,7 @@ async function loadIngRecycleBin() {
     list.innerHTML = '';
     // Header
     var hdr = document.createElement('div');
-    hdr.style.cssText = 'display:grid;grid-template-columns:1fr 80px 80px 160px;gap:0 12px;align-items:center;margin-bottom:6px;padding:0 4px';
+    hdr.style.cssText = 'display:grid;grid-template-columns:2fr 80px 80px 160px;gap:0 12px;align-items:center;margin-bottom:6px;padding:0 4px';
     ['COLUMN','DELETION','ROWS','ACTIONS'].forEach(function(t){
       var h=document.createElement('div');
       h.style.cssText='font-family:DM Sans,sans-serif;font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid)';
@@ -1673,11 +1673,25 @@ async function loadIngRecycleBin() {
     Object.keys(groups).sort().forEach(function(base) {
       groups[base].sort(function(a,b){return b.n-a.n;}).forEach(function(item) {
         var row = document.createElement('div');
-        row.style.cssText = 'display:grid;grid-template-columns:1fr 80px 80px 160px;gap:0 12px;align-items:center;padding:8px 4px;border-top:1px solid rgba(255,255,255,0.06)';
-        // Column name
+        row.style.cssText = 'display:grid;grid-template-columns:2fr 80px 80px 160px;gap:0 12px;align-items:center;padding:10px 4px;border-top:1px solid rgba(255,255,255,0.06)';
+        // Column name + metadata
+        var deletedMeta = JSON.parse(localStorage.getItem('tcj_deleted_meta') || '{}');
+        var dm = deletedMeta[item.key] || {};
+        var dDate = dm.deletedAt ? new Date(dm.deletedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) + ' ' + new Date(dm.deletedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '—';
+        var dSource = dm.source || 'All Ingredients';
         var nameDiv = document.createElement('div');
-        nameDiv.style.cssText = 'font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high)';
-        nameDiv.textContent = base;
+        var nameLine = document.createElement('div');
+        nameLine.style.cssText = 'font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;color:var(--text-high);margin-bottom:2px';
+        nameLine.textContent = base;
+        var renamedLine = document.createElement('div');
+        renamedLine.style.cssText = 'font-family:DM Sans,sans-serif;font-size:10px;color:var(--accent);font-style:italic;margin-bottom:1px';
+        renamedLine.textContent = 'Stored as: ' + item.key;
+        var metaLine = document.createElement('div');
+        metaLine.style.cssText = 'font-family:DM Sans,sans-serif;font-size:10px;color:var(--text-mid)';
+        metaLine.textContent = 'Source: ' + dSource + ' · Deleted: ' + dDate;
+        nameDiv.appendChild(nameLine);
+        nameDiv.appendChild(renamedLine);
+        nameDiv.appendChild(metaLine);
         // Deletion number
         var nDiv = document.createElement('div');
         nDiv.style.cssText = 'font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid)';
@@ -1717,6 +1731,7 @@ async function restoreDeletedColumn(deletedKey, originalName) {
   if (!confirm('Restore column "' + originalName + '"?\nAll ' + deletedKey + ' data will become visible again under "' + originalName + '".')) return;
   try {
     await rpc('admin_rename_extra_field', { p_old_key: deletedKey, p_new_key: originalName });
+    var meta = JSON.parse(localStorage.getItem('tcj_deleted_meta') || '{}'); delete meta[deletedKey]; localStorage.setItem('tcj_deleted_meta', JSON.stringify(meta));
     // Add back to _extraColKeys
     if (!_extraColKeys.includes(originalName)) {
       _extraColKeys.push(originalName);
@@ -1731,6 +1746,7 @@ async function restoreDeletedColumn(deletedKey, originalName) {
 }
 
 async function permanentlyDeleteColumn(deletedKey, originalName, count) {
+  var meta = JSON.parse(localStorage.getItem('tcj_deleted_meta') || '{}'); delete meta[deletedKey]; localStorage.setItem('tcj_deleted_meta', JSON.stringify(meta));
   if (!confirm('PERMANENTLY delete all "' + originalName + '" data?\n' + count + ' ingredient row' + (count===1?'':'s') + ' will be affected.\nThis cannot be undone.')) return;
   try {
     await rpc('admin_delete_extra_field', { p_key: deletedKey });
@@ -2527,6 +2543,15 @@ async function deleteExtraColumn(name) {
   try {
     var count = await rpc('admin_rename_extra_field', { p_old_key: name, p_new_key: renamedTo });
     console.log('Renamed "' + name + '" to "' + renamedTo + '" in ' + (count||0) + ' rows');
+    // Store deletion metadata in localStorage
+    var meta = JSON.parse(localStorage.getItem('tcj_deleted_meta') || '{}');
+    meta[renamedTo] = {
+      originalName: name,
+      renamedTo:    renamedTo,
+      deletedAt:    new Date().toISOString(),
+      source:       'All Ingredients'
+    };
+    localStorage.setItem('tcj_deleted_meta', JSON.stringify(meta));
   } catch(e) {
     alert('Could not rename column data: ' + e.message + '\nColumn removed from table but data may not be in Recycle Bin.');
   }
