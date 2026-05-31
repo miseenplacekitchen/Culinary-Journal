@@ -1418,11 +1418,17 @@ function buildCategoriesTab(container, _dirty){
 
   // Grid header
   var COLS=['ID','CATEGORY NAME','REQUIRED','ACTIVE','DELETE'];
+  var _catHdrTips={
+    'REQUIRED':'Required = Yes means any ingredient in this category must also select a Sub Category. Auto-set to Yes when sub-categories exist.',
+    'ACTIVE':'Active = No hides this category from all dropdowns without deleting it. Use to retire a category safely.'
+  };
   var grid=document.createElement('div');
   grid.style.cssText='display:grid;grid-template-columns:40px 1fr 90px 70px 36px;gap:4px 10px;align-items:center';
 
   COLS.forEach(function(h){
-    var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;grid.appendChild(d);
+    var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;
+    if(_catHdrTips[h]){d.title=_catHdrTips[h];d.style.cursor='help';d.style.borderBottom='1px dotted var(--text-mid)';}
+    grid.appendChild(d);
   });
 
   function renderRows(){
@@ -1507,9 +1513,10 @@ function buildSubCategoriesTab(container, _dirty){
     subs[cat]=arr;
 
     var COLS2=['ID','SUB-CATEGORY NAME','REQUIRED','ACTIVE','DELETE'];
+    var _subHdrTips={'REQUIRED':'Required = Yes means this sub-category must be selected when an ingredient uses its parent category.','ACTIVE':'Active = No hides this sub-category from dropdowns without deleting it.'};
     var grid2=document.createElement('div');
     grid2.style.cssText='display:grid;grid-template-columns:40px 1fr 90px 70px 36px;gap:4px 10px;align-items:center;margin-bottom:8px';
-    COLS2.forEach(function(h){var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;grid2.appendChild(d);});
+    COLS2.forEach(function(h){var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;if(_subHdrTips[h]){d.title=_subHdrTips[h];d.style.cursor='help';d.style.borderBottom='1px dotted var(--text-mid)';}grid2.appendChild(d);});
 
     arr.forEach(function(sub,i){
       var idDiv=document.createElement('div');idDiv.style.cssText=_imS.hdr+';text-align:center';idDiv.textContent=i+1;
@@ -1560,8 +1567,18 @@ function buildUnitsTab(container, _dirty){
 
   var grid=document.createElement('div');
   grid.style.cssText='display:grid;grid-template-columns:40px 100px 100px 70px 70px 70px 70px 70px 36px;gap:4px 8px;align-items:center';
+  var _unitHdrTips={
+    'TYPE':'Measurement type: Weight (g/kg/oz/lb), Volume (ml/l/cup), Count (piece/clove), or Other.',
+    'MIN':'Minimum valid value for this unit. Leave blank for no minimum.',
+    'MAX':'Maximum valid value for this unit. Leave blank for no maximum.',
+    'DECIMALS':'Number of decimal places allowed. 0 = whole numbers only.',
+    'REQUIRED':'Required = Yes means the Unit field becomes a strict dropdown — the admin must select from this list.',
+    'ACTIVE':'Active = No hides this unit from all dropdowns without deleting it.'
+  };
   ['ID','UNIT','TYPE','MIN','MAX','DECIMALS','REQUIRED','ACTIVE',''].forEach(function(h){
-    var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;grid.appendChild(d);
+    var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;
+    if(_unitHdrTips[h]){d.title=_unitHdrTips[h];d.style.cursor='help';d.style.borderBottom='1px dotted var(--text-mid)';}
+    grid.appendChild(d);
   });
 
   function renderUnits(){
