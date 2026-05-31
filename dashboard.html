@@ -1190,9 +1190,16 @@ function loadImSettings(){
 }
 
 function saveImSettings(settings){
-  _imSettings=settings; localStorage.setItem('tcj_im_settings',JSON.stringify(settings));
-  loadImSettings(); buildTableHeader(); buildColVisPanel(); renderIngFiltered();
-  auditLog('IM Interface > Column Settings','Settings Saved',null,null,null,'Column labels/types/visibility updated');
+  var _step='assign';
+  try{
+    _step='assign'; _imSettings=settings;
+    _step='localStorage'; localStorage.setItem('tcj_im_settings',JSON.stringify(settings));
+    _step='loadImSettings'; loadImSettings();
+    _step='buildTableHeader'; buildTableHeader();
+    _step='buildColVisPanel'; buildColVisPanel();
+    _step='renderIngFiltered'; renderIngFiltered();
+    _step='auditLog'; auditLog('IM Interface > Column Settings','Settings Saved',null,null,null,'Column labels/types/visibility updated');
+  }catch(e){ throw new Error(_step+': '+e.message); }
 }
 
 // ── Style helpers ────────────────────────────────────────────────
