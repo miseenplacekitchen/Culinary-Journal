@@ -2851,7 +2851,7 @@ function renderIngRows(rows) {
             var _um=getUnitMeta(); var _unitRequired=Object.values(_um).some(function(m){return m&&m.required==='Yes';});
             _iType=_unitRequired?'select':'suggest';
           } else if(colKey==='Sub Category'){
-            var _catName=ing&&ing['Category']||'';
+            var _catName=(i&&i['Category'])||'';
             var _cm=getCatMeta(); var _subRequired=_cm[_catName]&&_cm[_catName].required==='Yes';
             _iType=_subRequired?'select':'suggest';
           }
