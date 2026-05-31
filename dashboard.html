@@ -758,6 +758,9 @@
       <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="text" checked style="accent-color:var(--accent)"> Text</label>
       <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="yesno" style="accent-color:var(--accent)"> Yes / No</label>
       <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="number" style="accent-color:var(--accent)"> Number</label>
+      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="currency" style="accent-color:var(--accent)"> Currency</label>
+      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="percentage" style="accent-color:var(--accent)"> Percentage</label>
+      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="fraction" style="accent-color:var(--accent)"> Fraction</label>
     </div>
     <div style="display:flex;gap:8px">
       <button onclick="confirmAddColumn()" style="flex:1;padding:8px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Add Column</button>
@@ -1613,7 +1616,7 @@ function buildColumnSettingsTab(container){
   if(!settings.sortDir)settings.sortDir='asc';
 
   var LOCKED=['ID','Ingredient Name','Category'];
-  var TYPE_OPTS=[{value:'text',label:'Text'},{value:'yesno',label:'Yes / No'},{value:'number',label:'Number'},{value:'category',label:'Category'}];
+  var TYPE_OPTS=[{value:'text',label:'Text'},{value:'yesno',label:'Yes / No'},{value:'number',label:'Number'},{value:'currency',label:'Currency'},{value:'percentage',label:'Percentage'},{value:'fraction',label:'Fraction'},{value:'category',label:'Category'}];
 
   container.appendChild(makeExpandCollapseBar(container));
 
@@ -1660,7 +1663,7 @@ function buildColumnSettingsTab(container){
     _extraColKeys.forEach(function(k){
       var nd=document.createElement('div');nd.style.cssText=_imS.inp+';background:rgba(255,255,255,0.03);color:var(--accent)';nd.textContent=k;
       var ts=document.createElement('select');ts.style.cssText=_imS.sel;
-      [{value:'text',label:'Text'},{value:'yesno',label:'Yes/No'},{value:'number',label:'Number'}].forEach(function(opt){ var o=document.createElement('option');o.value=opt.value;o.textContent=opt.label;o.selected=(_extraColTypes[k]||'text')===opt.value;ts.appendChild(o); });
+      [{value:'text',label:'Text'},{value:'yesno',label:'Yes/No'},{value:'number',label:'Number'},{value:'currency',label:'Currency'},{value:'percentage',label:'Percentage'},{value:'fraction',label:'Fraction'}].forEach(function(opt){ var o=document.createElement('option');o.value=opt.value;o.textContent=opt.label;o.selected=(_extraColTypes[k]||'text')===opt.value;ts.appendChild(o); });
       ts.addEventListener('change',function(){ _extraColTypes[k]=this.value;var types=JSON.parse(localStorage.getItem('tcj_extra_col_types')||'{}');types[k]=this.value;localStorage.setItem('tcj_extra_col_types',JSON.stringify(types)); });
       var ri=document.createElement('input');ri.type='text';ri.placeholder='New name…';ri.style.cssText=_imS.inp;
       var acts=document.createElement('div');acts.style.cssText='display:flex;gap:4px';
@@ -2741,7 +2744,8 @@ function renderIngRows(rows) {
           tdWrap.textContent=fmtVal;
           td.title=fmtVal||'Double-click to edit';
           td.appendChild(tdWrap);
-          td.addEventListener('dblclick',function(e){inlineCell(e,id,colKey,xType==='number'?'number':'text');});
+          var _xEditType=xType==='number'?'number':xType==='currency'?'currency':xType==='percentage'?'percentage':xType==='fraction'?'fraction':xType==='yesno'?'yesno':'text';
+          td.addEventListener('dblclick',(function(t){return function(e){inlineCell(e,id,colKey,t);};}(_xEditType)));
         }
       } else {
         td.className='editable-cell'+(pending?' cell-pending':'');
@@ -2853,6 +2857,70 @@ function inlineCell(e,id,field,type){
     ni.addEventListener('blur',function(){commitNum(this.value);});
     ni.addEventListener('click',function(ev){ev.stopPropagation();});
     td.innerHTML='';td.appendChild(ni);ni.focus();ni.select();
+  } else if(type==='currency'){
+    // Currency edit: [code dropdown] [amount input]
+    const origStyle=td.getAttribute('style')||'';
+    const wrap=document.createElement('div'); wrap.style.cssText='display:flex;gap:4px;align-items:center';
+    var curParts=(currentVal&&currentVal.indexOf(':')>-1)?currentVal.split(':'):['AUD',''];
+    var cSel=document.createElement('select');
+    cSel.style.cssText='padding:4px 6px;border:1px solid var(--accent);border-radius:5px;background:var(--bg);color:var(--text-high);font-family:DM Sans,sans-serif;font-size:12px;outline:none';
+    ['AUD','USD','GBP','EUR','INR','SGD','NZD','CAD','JPY','AED'].forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;o.selected=curParts[0]===c;cSel.appendChild(o);});
+    var cAmt=document.createElement('input'); cAmt.type='text'; cAmt.inputMode='decimal';
+    cAmt.value=curParts[1]||''; cAmt.placeholder='0.00';
+    cAmt.style.cssText='width:80px;padding:4px 8px;border:1px solid var(--accent);border-radius:5px;background:var(--bg);color:var(--text-high);font-family:DM Sans,sans-serif;font-size:12px;outline:none';
+    cAmt.addEventListener('keydown',function(ev){var ok=['Backspace','Delete','ArrowLeft','ArrowRight','Tab','.','Enter','Escape'];if(ok.includes(ev.key)||ev.key>='0'&&ev.key<='9'||ev.ctrlKey||ev.metaKey)return;ev.preventDefault();});
+    function commitCurrency(){
+      var amt=parseFloat(cAmt.value||0).toFixed(2);
+      var val=cSel.value+':'+amt;
+      td.setAttribute('style',origStyle); td.innerHTML=origHTML;
+      td.className='editable-cell'+(td.classList.contains('cell-pending')?' cell-pending':'');
+      recordChange(id,field,currentVal,val);
+      td.classList.add('cell-pending');
+    }
+    cAmt.addEventListener('keydown',function(ev){if(ev.key==='Enter'){commitCurrency();}if(ev.key==='Escape'){td.setAttribute('style',origStyle);td.innerHTML=origHTML;}});
+    cAmt.addEventListener('blur',commitCurrency);
+    wrap.appendChild(cSel); wrap.appendChild(cAmt);
+    td.innerHTML=''; td.appendChild(wrap); cAmt.focus();
+
+  } else if(type==='percentage'){
+    // Percentage: number 0-100
+    const origStyle=td.getAttribute('style')||'';
+    const pi=document.createElement('input'); pi.type='text'; pi.inputMode='decimal';
+    pi.className='inline-input'; pi.style.cssText='width:70px;padding:5px 8px;border:1px solid var(--accent);border-radius:5px;background:var(--bg);color:var(--text-high);font-family:DM Sans,sans-serif;font-size:12px;outline:none';
+    pi.value=(currentVal||'').toString().replace('%','');
+    pi.addEventListener('keydown',function(ev){
+      var ok=['Backspace','Delete','ArrowLeft','ArrowRight','Tab','.','Enter','Escape'];
+      if(ok.includes(ev.key)||ev.key>='0'&&ev.key<='9'||ev.ctrlKey||ev.metaKey)return;
+      ev.preventDefault();
+    });
+    function commitPct(){
+      var v=parseFloat(pi.value||0);
+      if(isNaN(v))v=0; if(v>100)v=100; if(v<0)v=0;
+      td.setAttribute('style',origStyle); td.innerHTML=origHTML;
+      td.className='editable-cell'+(td.classList.contains('cell-pending')?' cell-pending':'');
+      recordChange(id,field,currentVal,String(v));
+      td.classList.add('cell-pending');
+    }
+    pi.addEventListener('keydown',function(ev){if(ev.key==='Enter'){commitPct();}if(ev.key==='Escape'){td.setAttribute('style',origStyle);td.innerHTML=origHTML;}});
+    pi.addEventListener('blur',commitPct);
+    td.innerHTML=''; td.appendChild(pi); pi.focus(); pi.select();
+
+  } else if(type==='fraction'){
+    // Fraction: text input accepting 1/4, 2/3, 1 1/2 format
+    const origStyle=td.getAttribute('style')||'';
+    const fi=document.createElement('input'); fi.type='text';
+    fi.className='inline-input'; fi.style.cssText='width:80px;padding:5px 8px;border:1px solid var(--accent);border-radius:5px;background:var(--bg);color:var(--text-high);font-family:DM Sans,sans-serif;font-size:12px;outline:none';
+    fi.value=currentVal||''; fi.placeholder='e.g. 1/4';
+    function commitFrac(){
+      var v=fi.value.trim();
+      td.setAttribute('style',origStyle); td.innerHTML=origHTML;
+      td.className='editable-cell'+(td.classList.contains('cell-pending')?' cell-pending':'');
+      if(v&&v!==currentVal){recordChange(id,field,currentVal,v);td.classList.add('cell-pending');}
+    }
+    fi.addEventListener('keydown',function(ev){if(ev.key==='Enter'){commitFrac();}if(ev.key==='Escape'){td.setAttribute('style',origStyle);td.innerHTML=origHTML;}});
+    fi.addEventListener('blur',commitFrac);
+    td.innerHTML=''; td.appendChild(fi); fi.focus(); fi.select();
+
   } else if(type==='suggest'){
     // Single-line input with datalist suggestions (Unit, Sub Category)
     const origStyle=td.getAttribute('style')||'';
@@ -3426,9 +3494,34 @@ function renderCustomFieldsList(){
       valEl.style.cssText='width:100%;font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;box-sizing:border-box';
       ['','Yes','No'].forEach(function(o){var opt=document.createElement('option');opt.value=o;opt.textContent=o||'—';if((_customFields[k]||'')===o)opt.selected=true;valEl.appendChild(opt);});
       valEl.addEventListener('change',function(){_customFields[k]=this.value;});
+    } else if(cft==='currency'){
+      valEl=document.createElement('div'); valEl.style.cssText='display:flex;gap:4px;align-items:center;width:100%';
+      var _cp=((_customFields[k]||'').indexOf(':')>-1)?(_customFields[k]||'').split(':'):['AUD',''];
+      var _cSel=document.createElement('select');
+      _cSel.style.cssText='padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);font-family:DM Sans,sans-serif;font-size:11px;outline:none';
+      ['AUD','USD','GBP','EUR','INR','SGD','NZD','CAD','JPY','AED'].forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;o.selected=_cp[0]===c;_cSel.appendChild(o);});
+      var _cAmt=document.createElement('input'); _cAmt.type='text'; _cAmt.inputMode='decimal';
+      _cAmt.value=_cp[1]||''; _cAmt.placeholder='0.00';
+      _cAmt.style.cssText='flex:1;font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';
+      _cAmt.addEventListener('keydown',function(ev){var ok=['Backspace','Delete','ArrowLeft','ArrowRight','Tab','.','Enter','Escape'];if(ok.includes(ev.key)||ev.key>='0'&&ev.key<='9'||ev.ctrlKey||ev.metaKey)return;ev.preventDefault();});
+      var _saveCurr=function(){_customFields[k]=_cSel.value+':'+_cAmt.value;};
+      _cSel.addEventListener('change',_saveCurr); _cAmt.addEventListener('change',_saveCurr);
+      valEl.appendChild(_cSel); valEl.appendChild(_cAmt);
+    } else if(cft==='percentage'){
+      valEl=document.createElement('input'); valEl.type='text'; valEl.inputMode='decimal';
+      valEl.style.cssText='width:100%;font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;box-sizing:border-box';
+      valEl.value=(_customFields[k]||'').toString().replace('%',''); valEl.placeholder='0–100';
+      valEl.addEventListener('keydown',function(ev){var ok=['Backspace','Delete','ArrowLeft','ArrowRight','Tab','.','Enter','Escape'];if(ok.includes(ev.key)||ev.key>='0'&&ev.key<='9'||ev.ctrlKey||ev.metaKey)return;ev.preventDefault();});
+      valEl.addEventListener('change',function(){var v=parseFloat(this.value||0);if(v>100)v=100;if(v<0)v=0;this.value=v;_customFields[k]=String(v);});
+    } else if(cft==='fraction'){
+      valEl=document.createElement('input'); valEl.type='text';
+      valEl.style.cssText='width:100%;font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;box-sizing:border-box';
+      valEl.value=_customFields[k]||''; valEl.placeholder='e.g. 1/4';
+      valEl.addEventListener('change',function(){_customFields[k]=this.value;});
     } else {
       valEl=document.createElement('input');
-      valEl.type=cft==='number'?'number':'text';
+      valEl.type='text'; // always text — number type allows 'e' natively
+      if(cft==='number') valEl.inputMode='decimal';
       valEl.style.cssText='width:100%;font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;box-sizing:border-box';
       valEl.value=String(_customFields[k]||'');
       valEl.placeholder=isGlobal?'Value for '+k:'Value';
