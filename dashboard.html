@@ -505,6 +505,7 @@
         <button class="ap-inner-tab"        id="itab-brands"   onclick="switchIngTab('brands')">Brand Mapping</button>
         <button class="ap-inner-tab"        id="itab-analytics" onclick="switchIngTab('analytics')">📊 Analytics</button>
         <button class="ap-inner-tab" id="itab-recycle"   onclick="switchIngTab('recycle')">🗑 Recycle Bin</button>
+        <button class="ap-inner-tab" id="itab-imsettings" onclick="switchIngTab('imsettings')">⚙ IM Interface</button>
       </div>
 
       <!-- ALL INGREDIENTS panel (existing content moves here) -->
@@ -629,6 +630,11 @@
             Deleted columns are renamed (e.g. <span style="color:var(--accent);font-style:italic">Deleted1ColumnName</span>) and stored here. Restore to bring a column back, or permanently delete to clear the data from all ingredients.
           </div>
           <div id="recycle-bin-list">
+            <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);padding:20px 0">Loading&#8230;</div>
+          </div>
+        </div>
+        <div id="ipanel-imsettings" style="display:none">
+          <div id="im-interface-content">
             <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);padding:20px 0">Loading&#8230;</div>
           </div>
         </div>
@@ -1004,7 +1010,7 @@ function switchView(view) {
   if (view === 'dashboard')   loadDashboard();
   if (view === 'recipe-mgmt') switchRecipeTab('all');
   if (view === 'user-mgmt')   switchUserTab('pending');
-  if (view === 'ingredients') switchIngTab('all');
+  if (view === 'ingredients') { loadImSettings(); switchIngTab('all'); }
   if (view === 'analytics')   loadAnalytics();
 }
 
@@ -1146,6 +1152,291 @@ function escH(s){ return esc(s); }
 function escT(s){ return esc(s); }
 
 document.addEventListener('DOMContentLoaded', init);
+
+
+// ── IM INTERFACE ─────────────────────────────────────────────────
+// Persisted settings for the ingredient table
+let _imSettings = {};
+
+function loadImSettings() {
+  try { _imSettings = JSON.parse(localStorage.getItem('tcj_im_settings') || '{}'); } catch(e) { _imSettings = {}; }
+  // Apply label/type overrides to STD_COLS
+  STD_COLS.forEach(function(col) {
+    var s = _imSettings.cols && _imSettings.cols[col.key];
+    if (s) {
+      if (s.label) col.label = s.label;
+      if (s.type)  col.type  = s.type;
+      if (typeof s.visible !== 'undefined') {
+        _colVis[col.key] = s.visible;
+      }
+    }
+  });
+  if (_imSettings.pageSize) ING_PAGE_SIZE = parseInt(_imSettings.pageSize) || 50;
+}
+
+function saveImSettings(settings) {
+  _imSettings = settings;
+  localStorage.setItem('tcj_im_settings', JSON.stringify(settings));
+  // Apply immediately
+  loadImSettings();
+  // Rebuild table
+  buildTableHeader();
+  buildColVisPanel();
+  renderIngFiltered();
+}
+
+function loadIMInterface() {
+  var el = document.getElementById('im-interface-content');
+  if (!el) return;
+
+  // Locked columns — type cannot be changed (key data integrity)
+  var LOCKED_TYPE = ['ID', 'Ingredient Name', 'Category'];
+  var TYPE_OPTIONS = [
+    {value:'text',     label:'Text'},
+    {value:'yesno',    label:'Yes / No'},
+    {value:'number',   label:'Number'},
+    {value:'category', label:'Category'}
+  ];
+
+  var settings = JSON.parse(localStorage.getItem('tcj_im_settings') || '{}');
+  if (!settings.cols) settings.cols = {};
+  if (!settings.pageSize) settings.pageSize = ING_PAGE_SIZE || 50;
+  if (!settings.sortCol) settings.sortCol = 'ID';
+  if (!settings.sortDir) settings.sortDir = 'asc';
+
+  el.innerHTML = '';
+
+  // ── Section helper ───────────────────────────────────────────
+  function section(title, subtitle) {
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'margin-bottom:28px';
+    var h = document.createElement('div');
+    h.style.cssText = "font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:700;color:var(--text-high);margin-bottom:4px";
+    h.textContent = title;
+    wrap.appendChild(h);
+    if (subtitle) {
+      var s = document.createElement('div');
+      s.style.cssText = "font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:14px";
+      s.textContent = subtitle;
+      wrap.appendChild(s);
+    }
+    el.appendChild(wrap);
+    return wrap;
+  }
+
+  // ── SECTION 1: Standard Column Configuration ─────────────────
+  var sec1 = section('Standard Columns',
+    'Control the display label, data type, and default visibility for each built-in column. The Key is fixed — it maps directly to the database.');
+
+  // Header
+  var grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:180px 1fr 110px 80px;gap:6px 12px;align-items:center';
+  ['KEY','DISPLAY LABEL','TYPE','VISIBLE'].forEach(function(t) {
+    var h = document.createElement('div');
+    h.style.cssText = "font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid);padding:2px 4px";
+    h.textContent = t;
+    grid.appendChild(h);
+  });
+
+  var ALL_COLS = [{key:'ID',label:'ID',type:'number'}].concat(STD_COLS);
+
+  ALL_COLS.forEach(function(col) {
+    var s = settings.cols[col.key] || {};
+    var locked = LOCKED_TYPE.includes(col.key) || col.key === 'ID';
+
+    // Key label
+    var keyDiv = document.createElement('div');
+    keyDiv.style.cssText = "font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,0.03);overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
+    keyDiv.textContent = col.key;
+    keyDiv.title = col.key;
+
+    // Label input
+    var labelInput = document.createElement('input');
+    labelInput.type = 'text';
+    labelInput.value = s.label || col.label;
+    labelInput.disabled = col.key === 'ID';
+    labelInput.style.cssText = "width:100%;box-sizing:border-box;font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none" + (col.key==='ID'?';opacity:0.4':'');
+    labelInput.addEventListener('change', function() {
+      if (!settings.cols[col.key]) settings.cols[col.key] = {};
+      settings.cols[col.key].label = this.value.trim() || col.label;
+    });
+
+    // Type select
+    var typeSelect = document.createElement('select');
+    typeSelect.disabled = locked;
+    typeSelect.style.cssText = "width:100%;box-sizing:border-box;font-family:'DM Sans',sans-serif;font-size:11px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;cursor:pointer" + (locked?';opacity:0.4':'');
+    TYPE_OPTIONS.forEach(function(opt) {
+      var o = document.createElement('option');
+      o.value = opt.value;
+      o.textContent = opt.label;
+      o.selected = (s.type || col.type) === opt.value;
+      typeSelect.appendChild(o);
+    });
+    typeSelect.addEventListener('change', function() {
+      if (!settings.cols[col.key]) settings.cols[col.key] = {};
+      settings.cols[col.key].type = this.value;
+    });
+
+    // Visible toggle
+    var visWrap = document.createElement('div');
+    visWrap.style.cssText = 'display:flex;align-items:center;justify-content:center';
+    if (col.key !== 'ID') {
+      var visChk = document.createElement('input');
+      visChk.type = 'checkbox';
+      visChk.style.cssText = 'width:16px;height:16px;accent-color:var(--accent);cursor:pointer';
+      var currentVis = typeof s.visible !== 'undefined' ? s.visible : (_colVis[col.key] !== false);
+      visChk.checked = currentVis;
+      visChk.addEventListener('change', function() {
+        if (!settings.cols[col.key]) settings.cols[col.key] = {};
+        settings.cols[col.key].visible = this.checked;
+      });
+      visWrap.appendChild(visChk);
+    } else {
+      var lockSpan = document.createElement('span');
+      lockSpan.textContent = '🔒';
+      lockSpan.style.cssText = 'font-size:11px;opacity:0.4';
+      visWrap.appendChild(lockSpan);
+    }
+
+    grid.appendChild(keyDiv);
+    grid.appendChild(labelInput);
+    grid.appendChild(typeSelect);
+    grid.appendChild(visWrap);
+  });
+
+  sec1.appendChild(grid);
+
+  // ── SECTION 2: Custom Columns ────────────────────────────────
+  var sec2 = section('Custom Columns',
+    'Columns you have added via + Column. Changes here are the same as using the Columns panel — kept here for convenience.');
+
+  if (_extraColKeys.length === 0) {
+    var noCustom = document.createElement('div');
+    noCustom.style.cssText = "font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);padding:8px 0";
+    noCustom.textContent = 'No custom columns added yet. Use + Column in the ingredient table to add one.';
+    sec2.appendChild(noCustom);
+  } else {
+    var custGrid = document.createElement('div');
+    custGrid.style.cssText = 'display:grid;grid-template-columns:1fr 110px 1fr 80px;gap:6px 12px;align-items:center';
+    ['NAME','TYPE','RENAME TO','ACTIONS'].forEach(function(t) {
+      var h = document.createElement('div');
+      h.style.cssText = "font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid);padding:2px 4px";
+      h.textContent = t; custGrid.appendChild(h);
+    });
+
+    _extraColKeys.forEach(function(k) {
+      var nameDiv = document.createElement('div');
+      nameDiv.style.cssText = "font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,0.03);color:var(--accent)";
+      nameDiv.textContent = k;
+
+      var tSel = document.createElement('select');
+      tSel.style.cssText = "width:100%;box-sizing:border-box;font-family:'DM Sans',sans-serif;font-size:11px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;cursor:pointer";
+      TYPE_OPTIONS.filter(function(o){return o.value!=='category';}).forEach(function(opt) {
+        var o = document.createElement('option');
+        o.value = opt.value; o.textContent = opt.label;
+        o.selected = (_extraColTypes[k] || 'text') === opt.value;
+        tSel.appendChild(o);
+      });
+      tSel.addEventListener('change', function() {
+        _extraColTypes[k] = this.value;
+        var types = JSON.parse(localStorage.getItem('tcj_extra_col_types') || '{}');
+        types[k] = this.value; localStorage.setItem('tcj_extra_col_types', JSON.stringify(types));
+      });
+
+      var renInput = document.createElement('input');
+      renInput.type = 'text'; renInput.value = ''; renInput.placeholder = 'New name…';
+      renInput.style.cssText = "width:100%;box-sizing:border-box;font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none";
+
+      var actDiv = document.createElement('div');
+      actDiv.style.cssText = 'display:flex;gap:5px';
+      var renBtn = document.createElement('button');
+      renBtn.textContent = 'Rename'; renBtn.title = 'Rename this column';
+      renBtn.style.cssText = "padding:4px 10px;background:none;border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";
+      renBtn.addEventListener('click', (function(key, inp) { return function() {
+        var nv = inp.value.trim();
+        if (!nv || nv === key) { inp.focus(); return; }
+        renameExtraColumn(key);
+        loadIMInterface();
+      };})(k, renInput));
+      var delBtn = document.createElement('button');
+      delBtn.textContent = '🗑'; delBtn.title = 'Delete this column';
+      delBtn.style.cssText = "padding:4px 8px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";
+      delBtn.addEventListener('click', (function(key) { return function() {
+        deleteExtraColumn(key);
+        loadIMInterface();
+      };})(k));
+      actDiv.appendChild(renBtn); actDiv.appendChild(delBtn);
+
+      custGrid.appendChild(nameDiv); custGrid.appendChild(tSel);
+      custGrid.appendChild(renInput); custGrid.appendChild(actDiv);
+    });
+    sec2.appendChild(custGrid);
+  }
+
+  // ── SECTION 3: Table Defaults ────────────────────────────────
+  var sec3 = section('Table Defaults', 'Settings that apply every time the ingredient table loads.');
+  var defGrid = document.createElement('div');
+  defGrid.style.cssText = 'display:grid;grid-template-columns:160px 1fr;gap:10px 16px;align-items:center;max-width:420px';
+
+  function addSetting(label, input) {
+    var lbl = document.createElement('div');
+    lbl.style.cssText = "font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)";
+    lbl.textContent = label;
+    defGrid.appendChild(lbl); defGrid.appendChild(input);
+  }
+
+  var pageSizeInput = document.createElement('input');
+  pageSizeInput.type = 'number'; pageSizeInput.min = '10'; pageSizeInput.max = '500'; pageSizeInput.step = '10';
+  pageSizeInput.value = settings.pageSize || 50;
+  pageSizeInput.style.cssText = "width:100px;font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none";
+  pageSizeInput.addEventListener('change', function() { settings.pageSize = parseInt(this.value)||50; });
+  addSetting('Rows per page', pageSizeInput);
+
+  var sortColSel = document.createElement('select');
+  sortColSel.style.cssText = "font-family:'DM Sans',sans-serif;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;cursor:pointer";
+  ['ID','Ingredient Name','Category','Sub Category'].forEach(function(c) {
+    var o = document.createElement('option'); o.value=c; o.textContent=c;
+    o.selected = settings.sortCol === c; sortColSel.appendChild(o);
+  });
+  sortColSel.addEventListener('change', function() { settings.sortCol = this.value; });
+  addSetting('Default sort by', sortColSel);
+
+  var sortDirSel = document.createElement('select');
+  sortDirSel.style.cssText = sortColSel.style.cssText;
+  [{v:'asc',l:'A → Z (ascending)'},{v:'desc',l:'Z → A (descending)'}].forEach(function(o) {
+    var opt = document.createElement('option'); opt.value=o.v; opt.textContent=o.l;
+    opt.selected = settings.sortDir === o.v; sortDirSel.appendChild(opt);
+  });
+  sortDirSel.addEventListener('change', function() { settings.sortDir = this.value; });
+  addSetting('Default direction', sortDirSel);
+
+  sec3.appendChild(defGrid);
+
+  // ── Save button ──────────────────────────────────────────────
+  var saveWrap = document.createElement('div');
+  saveWrap.style.cssText = 'margin-top:24px;display:flex;gap:10px;align-items:center';
+  var saveBtn = document.createElement('button');
+  saveBtn.textContent = 'Save Settings';
+  saveBtn.style.cssText = "padding:10px 24px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer";
+  var saveMsg = document.createElement('span');
+  saveMsg.style.cssText = "font-family:'DM Sans',sans-serif;font-size:12px;color:#4caf76;display:none";
+  saveMsg.textContent = '✓ Settings saved — table rebuilt';
+  saveBtn.addEventListener('click', function() {
+    saveImSettings(settings);
+    saveMsg.style.display = 'inline';
+    setTimeout(function() { saveMsg.style.display = 'none'; }, 2500);
+  });
+  var resetBtn = document.createElement('button');
+  resetBtn.textContent = 'Reset to Defaults';
+  resetBtn.style.cssText = "padding:10px 18px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer";
+  resetBtn.addEventListener('click', function() {
+    if (!confirm('Reset all IM Interface settings to defaults?')) return;
+    localStorage.removeItem('tcj_im_settings');
+    location.reload();
+  });
+  saveWrap.appendChild(saveBtn); saveWrap.appendChild(resetBtn); saveWrap.appendChild(saveMsg);
+  el.appendChild(saveWrap);
+}
 
 
 // ── TAB SWITCHERS (clean, no class collisions) ────────────────────
@@ -1450,7 +1741,7 @@ function switchIngTab(tab) {
   document.querySelectorAll('.ap-inner-tab[id^="itab-"]').forEach(function(t) {
     t.classList.toggle('active', t.id === 'itab-' + tab);
   });
-  ['all','pending','brands','analytics','recycle'].forEach(function(p) {
+  ['all','pending','brands','analytics','recycle','imsettings'].forEach(function(p) {
     var el = document.getElementById('ipanel-' + p);
     if (el) el.style.display = p === tab ? 'block' : 'none';
   });
@@ -1459,6 +1750,7 @@ function switchIngTab(tab) {
   if (tab === 'brands')    loadBrandMappings();
   if (tab === 'analytics') loadIngAnalytics();
   if (tab === 'recycle')   loadIngRecycleBin();
+  if (tab === 'imsettings') loadIMInterface();
 }
 
 async function loadIngPending() {
@@ -1627,7 +1919,7 @@ function getThemeColors() {
   };
 }
 
-const STD_COLS = [
+let STD_COLS = [
   {key:'Ingredient Name',           label:'Ingredient Name',    type:'text'},
   {key:'Also Known As',             label:'Also Known As',      type:'text'},
   {key:'Category',                  label:'Category',           type:'category'},
