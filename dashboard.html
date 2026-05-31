@@ -4098,21 +4098,28 @@ async function importCsv(){
   try{
     const total=await rpc('admin_bulk_upsert_ingredients',{p_rows:csvData});
 
-    // ── Sync new Categories and Sub Categories into IM Interface ──
+    // ── Sync new Categories, Sub Categories and Units into IM Interface ──
     var _existingCats=getCats(); var _existingSubs=getSubCats();
-    var _newCats=[]; var _newSubs={};
+    var _existingUnits=getUnits();
+    var _newCats=[]; var _newSubs={}; var _newUnits=[];
     csvData.forEach(function(row){
       var cat=(row['Category']||'').trim();
       var sub=(row['Sub Category']||'').trim();
-      if(!cat)return;
-      if(!_existingCats.includes(cat)&&!_newCats.includes(cat))_newCats.push(cat);
-      if(sub){
-        if(!_existingSubs[cat])_existingSubs[cat]=[];
-        if(!_existingSubs[cat].includes(sub)){
-          if(!_newSubs[cat])_newSubs[cat]=[];
-          _newSubs[cat].push(sub);
-          _existingSubs[cat].push(sub);
+      var unit=(row['Unit']||'').trim();
+      if(cat){
+        if(!_existingCats.includes(cat)&&!_newCats.includes(cat))_newCats.push(cat);
+        if(sub){
+          if(!_existingSubs[cat])_existingSubs[cat]=[];
+          if(!_existingSubs[cat].includes(sub)){
+            if(!_newSubs[cat])_newSubs[cat]=[];
+            _newSubs[cat].push(sub);
+            _existingSubs[cat].push(sub);
+          }
         }
+      }
+      if(unit&&!_existingUnits.includes(unit)&&!_newUnits.includes(unit)){
+        _newUnits.push(unit);
+        _existingUnits.push(unit);
       }
     });
     if(_newCats.length>0){
@@ -4123,9 +4130,11 @@ async function importCsv(){
     }
     var _totalNewSubs=Object.values(_newSubs).reduce(function(n,a){return n+a.length;},0);
     if(_totalNewSubs>0) _imSet('tcj_subcats',_existingSubs);
+    if(_newUnits.length>0){ _existingUnits.sort(); _imSet('tcj_units',_existingUnits); }
     var _syncMsg='';
     if(_newCats.length>0) _syncMsg+=' | '+_newCats.length+' new categor'+(_newCats.length===1?'y':'ies')+' added to IM Interface';
     if(_totalNewSubs>0) _syncMsg+=' | '+_totalNewSubs+' new sub-categor'+(_totalNewSubs===1?'y':'ies')+' added';
+    if(_newUnits.length>0) _syncMsg+=' | '+_newUnits.length+' new unit'+(_newUnits.length===1?'':'s')+' added to IM Interface';
     if(_syncMsg) auditLog('All Ingredients','CSV Import Sync',null,null,null,_syncMsg.slice(3));
 
     status.textContent='✓ '+total+' ingredient(s) imported.'+_syncMsg;
