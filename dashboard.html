@@ -2063,6 +2063,8 @@ function buildColumnSettingsTab(container){
 
     var ps=document.createElement('input');ps.type='number';ps.min='10';ps.max='500';ps.step='10';ps.value=settings.pageSize||50;ps.style.cssText=_imS.inp.replace('width:100%;','')+';width:100px';
     ps.addEventListener('change',function(){settings.pageSize=parseInt(this.value)||50;});
+    var psNote=document.createElement('div');psNote.style.cssText=_imS.label+';color:var(--text-mid);font-size:10px;grid-column:span 2;margin-top:-6px';psNote.textContent='Controls how many ingredients load at once. Default 1000 = load all.';
+dg.appendChild(psNote);
     addRow('Rows per page',ps);
 
     var sc=document.createElement('select');sc.style.cssText=_imS.sel.replace('width:100%;','')+';width:auto';
@@ -3193,7 +3195,7 @@ async function loadIngredients(page) {
   tbody.innerHTML = '<tr><td colspan="20" class="ap-empty-row">Loading...</td></tr>';
   try {
     const [rows, total] = await Promise.all([
-      rpc('admin_get_ingredients',{p_search:null,p_category:null,p_limit:1000,p_offset:0}),
+      rpc('admin_get_ingredients',{p_search:null,p_category:null,p_limit:ING_PAGE_SIZE,p_offset:0}),
       rpc('admin_count_ingredients',{p_search:null,p_category:null})
     ]);
     _ingAllData = rows;
