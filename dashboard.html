@@ -3157,19 +3157,6 @@ async function saveAllChanges() {
       saved++;
     }
   }
-  // Sync CJ Recommended Brand changes → Brand Mapping table
-  for(var _sid in _pendingChanges){
-    var _sChanges=_pendingChanges[_sid];
-    var _sCJField=_sChanges['CJ Recommended Brand'];
-    if(_sCJField&&_sCJField.new!==undefined){
-      var _sIng=window._ingRows&&window._ingRows[_sid];
-      var _sIngName=(_sIng&&_sIng['Ingredient Name'])||'';
-      var _sNewBrand=(_sCJField.new)||'';
-      if(_sIngName&&_sNewBrand){
-        try{ await rpc('admin_upsert_brand_mapping',{p_id:0,p_brand_name:_sNewBrand,p_generic_name:_sIngName,p_category:_sIng&&_sIng['Category']||null,p_sub_category:_sIng&&_sIng['Sub Category']||null,p_active:true}); }catch(_){}
-      }
-    }
-  }
   _pendingChanges = {};
   if (btn) { btn.disabled=false; updateSaveBtn(); }
   // Remove pending highlights
