@@ -2053,9 +2053,14 @@ async function saveAllChanges() {
         if (pm) params[pm] = changes[field].new; // override with new value
       }
     }
-    if (hasExtra) params.p_extra_fields = ef;
-    try { await rpc('admin_upsert_ingredient', params); saved++; }
-    catch(e) { console.error('Save error for id '+id+':', e.message); errors++; }
+    try {
+      await rpc('admin_upsert_ingredient', params);
+      // Save extra_fields separately — guaranteed to merge correctly
+      if (hasExtra && Object.keys(ef).length) {
+        await rpc('admin_save_extra_fields', { p_id: parseInt(id), p_extra_fields: ef });
+      }
+      saved++;
+    } catch(e) { console.error('Save error for id '+id+':', e.message); errors++; }
   }
   _pendingChanges = {};
   if (btn) { btn.disabled=false; updateSaveBtn(); }
