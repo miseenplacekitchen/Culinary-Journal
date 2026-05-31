@@ -1697,7 +1697,8 @@ async function loadIngRecycleBin() {
         var dm   = meta[item.key] || {};
         var _MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         var _d=dm.deletedAt?new Date(dm.deletedAt):null;
-        var dDate=_d?(_d.getDate()+' '+_MONTHS[_d.getMonth()]+' '+_d.getFullYear()):'\u2014';
+        var _pad=function(n){return n<10?'0'+n:String(n);};
+        var dDate=_d?(_d.getDate()+' '+_MONTHS[_d.getMonth()]+' '+_d.getFullYear()+' '+_pad(_d.getHours())+':'+_pad(_d.getMinutes())+':'+_pad(_d.getSeconds())):'\u2014';
         var dSource = dm.source  || 'All Ingredients';
         var dType   = typeLabel(dm.colType || 'text');
 
