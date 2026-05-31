@@ -1975,7 +1975,13 @@ function buildUnitsTab(container, _dirty){
       ['Yes','No'].forEach(function(v){var o=document.createElement('option');o.value=v;o.textContent=v;o.selected=(m.active||'Yes')===v;actSel.appendChild(o);});
       actSel.addEventListener('change',function(){if(!meta[unit])meta[unit]={};meta[unit].active=this.value;_dirty.units=true;});
       var del=document.createElement('button');del.textContent='×';del.style.cssText=_imS.delBtn;
-      del.addEventListener('click',function(){if(!confirm('Delete unit "'+unit+'"?'))return;units.splice(i,1);delete meta[unit];_imSet('tcj_units',units);_imSet('tcj_unit_meta',meta);renderUnits();_dirty.units=false;});
+      del.addEventListener('click',function(){if(!confirm('Delete unit "'+unit+'"?'))return;units.splice(i,1);delete meta[unit];
+        _imSet('tcj_units',units);_imSet('tcj_unit_meta',meta);
+        renderUnits();_dirty.units=false;
+        rpc('admin_rename_reference_value',{p_table:'ingredients',p_column:'Unit',p_old:unit,p_new:''}).then(function(n){
+          if(n>0) alert('ℹ '+n+' ingredient'+(n===1?' has':' have')+' had their Unit cleared from "'+unit+'". Please update them in All Ingredients.');
+          auditLog('IM Interface > Reference Data','Unit Deleted',unit,unit,null,'Cleared from '+n+' ingredients');
+        }).catch(function(e){console.error('Unit cascade failed:',e);});});
       var descF=document.createElement('input');descF.type='text';descF.value=m.description||'';descF.placeholder='e.g. Metric cup (250ml)';descF.style.cssText=_imS.inp;
       descF.addEventListener('change',function(){if(!meta[unit])meta[unit]={};meta[unit].description=this.value.trim();_dirty.units=true;});
       grid.appendChild(idDiv);grid.appendChild(ni);grid.appendChild(mSel);grid.appendChild(minF);grid.appendChild(maxF);grid.appendChild(decF);grid.appendChild(reqSel);grid.appendChild(actSel);grid.appendChild(descF);grid.appendChild(del);
