@@ -3107,8 +3107,15 @@ function renderIngRows(rows) {
           tdWrap.appendChild(sp);td.appendChild(tdWrap);
           td.addEventListener('click',function(e){inlineCell(e,id,colKey,'yesno');});
         } else {
-          tdWrap.textContent=fmtVal;
-          td.title=fmtVal||'Double-click to edit';
+          // Format display value based on column type
+          var _dispVal=fmtVal;
+          if(xType==='currency'&&fmtVal&&fmtVal.indexOf(':')>-1){
+            var _cp=fmtVal.split(':'); _dispVal=_cp[0]+' '+parseFloat(_cp[1]||0).toFixed(2);
+          } else if(xType==='percentage'&&fmtVal){
+            _dispVal=fmtVal+'%';
+          }
+          tdWrap.textContent=_dispVal;
+          td.title=_dispVal||'Double-click to edit';
           td.appendChild(tdWrap);
           var _xEditType=xType==='number'?'number':xType==='currency'?'currency':xType==='percentage'?'percentage':xType==='fraction'?'fraction':xType==='yesno'?'yesno':'text';
           td.addEventListener('dblclick',(function(t){return function(e){inlineCell(e,id,colKey,t);};}(_xEditType)));
