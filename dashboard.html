@@ -3110,6 +3110,7 @@ function renderIngRows(rows) {
           // Format display value based on column type
           var _dispVal=fmtVal;
           // Detect currency format (e.g. AUD:1234) by value pattern OR column type
+          console.log('RENDER extra col:',extraKey,'xType:',xType,'fmtVal:',fmtVal);
           if(fmtVal&&/^[A-Z]{2,3}:[\d.]+$/.test(String(fmtVal))){
             var _cp=String(fmtVal).split(':');
             _dispVal=_cp[0]+' '+parseFloat(_cp[1]||0).toFixed(2);
