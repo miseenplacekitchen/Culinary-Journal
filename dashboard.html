@@ -2661,7 +2661,7 @@ async function buildBrandsTab(container){
     try{
       var n=await rpc('admin_sync_brands_from_ingredients',{});
       var tbody=document.getElementById('brand-tbody');
-      if(tbody)await loadBrandsTable(tbody,null);
+      if(tbody)await loadBrandsTable(tbody);
       var status=document.getElementById('brand-status');
       if(status){status.textContent='✓ '+n+' brand'+(n===1?'':'s')+' imported from All Ingredients';setTimeout(function(){status.textContent='';},4000);}
       auditLog('IM Interface > Reference Data','Brand Sync',null,null,null,n+' brands synced from ingredients');
@@ -2700,10 +2700,10 @@ async function buildBrandsTab(container){
   tbl.appendChild(thead);tbl.appendChild(tbody);tableWrap.appendChild(tbl);
   container.appendChild(tableWrap);
 
-  await loadBrandsTable(tbody,container);
+  await loadBrandsTable(tbody);
 }
 
-async function loadBrandsTable(tbody,container){
+async function loadBrandsTable(tbody){
   if(!tbody)tbody=document.getElementById('brand-tbody');
   tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--text-mid)">Loading…</td></tr>';
   try{
@@ -2745,7 +2745,7 @@ async function loadBrandsTable(tbody,container){
       var editBtn=document.createElement('button');
       editBtn.textContent='Edit';
       editBtn.style.cssText='padding:4px 10px;background:none;border:1px solid var(--border);border-radius:5px;color:var(--text-mid);font-size:11px;cursor:pointer;margin-right:4px';
-      editBtn.addEventListener('click',function(){openBrandForm(r,tbody.closest('[id]')?document.getElementById(tbody.closest('[id]').id).parentElement:null);});
+      editBtn.addEventListener('click',function(){openBrandForm(r);});
       var delBtn=document.createElement('button');
       delBtn.textContent='Delete';
       delBtn.style.cssText='padding:4px 10px;background:none;border:1px solid #dc5050;border-radius:5px;color:#dc5050;font-size:11px;cursor:pointer';
@@ -2767,10 +2767,11 @@ async function loadBrandsTable(tbody,container){
   }
 }
 
-function openBrandForm(r,container){
+function openBrandForm(r){
   var wrap=document.getElementById('brand-form-wrap');
   if(!wrap)return;
   wrap.innerHTML='';wrap.style.display='block';
+  wrap.scrollIntoView({behavior:'smooth',block:'start'});
   var isEdit=r&&r.id;
   var form=document.createElement('div');
   form.style.cssText='background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px';
@@ -2863,7 +2864,8 @@ function openBrandForm(r,container){
       var status=document.getElementById('brand-status');
       if(status){status.textContent='✓ '+(isEdit?'Updated':'Added')+': '+brand+' → '+generic;setTimeout(function(){status.textContent='';},3000);}
       var tbody=document.getElementById('brand-tbody');
-      if(tbody)await loadBrandsTable(tbody,null);
+      var tbody=document.getElementById('brand-tbody');
+      if(tbody)await loadBrandsTable(tbody);
       auditLog('IM Interface > Reference Data','Brand Mapping '+(isEdit?'Updated':'Added'),null,isEdit?r.brand_name:null,brand,generic+' ('+fCat.value+')');
     }catch(e){alert('Save failed: '+e.message);saveBtn.disabled=false;saveBtn.textContent=isEdit?'Save Changes':'Add Mapping';}
   });
@@ -2878,7 +2880,7 @@ async function deleteBrandRow(id,tbody,container){
   if(!confirm('Delete this brand mapping?'))return;
   try{
     await rpc('admin_delete_brand_mapping',{p_id:id});
-    if(tbody)await loadBrandsTable(tbody,container);
+    if(tbody)await loadBrandsTable(tbody);
     auditLog('IM Interface > Reference Data','Brand Mapping Deleted',null,String(id),null,null);
   }catch(e){alert('Delete failed: '+e.message);}
 }
@@ -2918,7 +2920,7 @@ async function importBrandsCSV(data,fields,container){
       try{
         var n=await rpc('admin_bulk_upsert_brand_mappings',{p_rows:rows});
         var tbody=document.getElementById('brand-tbody');
-        if(tbody)await loadBrandsTable(tbody,null);
+        if(tbody)await loadBrandsTable(tbody);
         auditLog('IM Interface','Import Brand Mappings',null,null,null,n+' mappings upserted');
       }catch(e){alert('Import failed: '+e.message);}
     },
@@ -2928,7 +2930,7 @@ async function importBrandsCSV(data,fields,container){
         await rpc('admin_delete_all_brand_mappings',{});
         var n=await rpc('admin_bulk_upsert_brand_mappings',{p_rows:rows});
         var tbody=document.getElementById('brand-tbody');
-        if(tbody)await loadBrandsTable(tbody,null);
+        if(tbody)await loadBrandsTable(tbody);
         auditLog('IM Interface','Import Replace Brand Mappings',null,null,null,n+' mappings replaced');
       }catch(e){alert('Import failed: '+e.message);}
     }
