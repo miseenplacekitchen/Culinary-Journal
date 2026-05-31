@@ -983,7 +983,12 @@ async function init() {
   document.getElementById('screen-main').style.display   = 'flex';
   try { const st = await rpc('admin_get_stats',{}); if(st){ setEl('badge-pending', st.pending||0); } } catch(e) {}
   try { const pc = await rpc('admin_count_pending_users',{}); setEl('badge-pending-users', pc||0); } catch(e) {}
-  switchView('dashboard');
+  var _savedView = localStorage.getItem('tcj_active_view') || 'dashboard';
+  var _savedIngTab = localStorage.getItem('tcj_active_ing_tab') || 'all';
+  switchView(_savedView);
+  if(_savedView === 'ingredients' && _savedIngTab !== 'all'){
+    setTimeout(function(){ switchIngTab(_savedIngTab); }, 300);
+  }
 }
 
 function signOut() {
@@ -994,6 +999,7 @@ function signOut() {
 const ALL_VIEWS = ['dashboard','recipe-mgmt','user-mgmt','ingredients','analytics'];
 
 function switchView(view) {
+  localStorage.setItem('tcj_active_view', view);
   document.querySelectorAll('.ap-nav-item').forEach(function(el) { el.classList.remove('active'); });
   const nb = document.getElementById('nav-' + view);
   if (nb) nb.classList.add('active');
@@ -2579,6 +2585,7 @@ async function permanentlyDeleteColumn(deletedKey, originalName, count) {
 
 function switchIngTab(tab) {
   currentIngTab = tab;
+  localStorage.setItem('tcj_active_ing_tab', tab);
   document.querySelectorAll('.ap-inner-tab[id^="itab-"]').forEach(function(t) {
     t.classList.toggle('active', t.id === 'itab-' + tab);
   });
