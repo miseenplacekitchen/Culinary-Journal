@@ -1206,6 +1206,9 @@ function saveImSettings(settings){
   _imSettings=settings;
   localStorage.setItem('tcj_im_settings',JSON.stringify(settings));
   loadImSettings();
+  // Reload custom column types from localStorage in case IM Interface changed them
+  var _savedTypes=JSON.parse(localStorage.getItem('tcj_extra_col_types')||'{}');
+  Object.keys(_savedTypes).forEach(function(k){_extraColTypes[k]=_savedTypes[k];});
   buildTableHeader();
   buildColVisPanel();
   renderIngFiltered();
@@ -2027,7 +2030,7 @@ function buildColumnSettingsTab(container){
       var nd=document.createElement('div');nd.style.cssText=_imS.inp+';background:rgba(255,255,255,0.03);color:var(--accent)';nd.textContent=k;
       var ts=document.createElement('select');ts.style.cssText=_imS.sel;
       [{value:'text',label:'Text'},{value:'yesno',label:'Yes/No'},{value:'number',label:'Number'},{value:'currency',label:'Currency'},{value:'percentage',label:'Percentage'},{value:'fraction',label:'Fraction'}].forEach(function(opt){ var o=document.createElement('option');o.value=opt.value;o.textContent=opt.label;o.selected=(_extraColTypes[k]||'text')===opt.value;ts.appendChild(o); });
-      ts.addEventListener('change',function(){ _extraColTypes[k]=this.value;var types=JSON.parse(localStorage.getItem('tcj_extra_col_types')||'{}');types[k]=this.value;localStorage.setItem('tcj_extra_col_types',JSON.stringify(types)); });
+      ts.addEventListener('change',function(){ _extraColTypes[k]=this.value;var types=JSON.parse(localStorage.getItem('tcj_extra_col_types')||'{}');types[k]=this.value;localStorage.setItem('tcj_extra_col_types',JSON.stringify(types));buildTableHeader();renderIngFiltered(); });
       var ri=document.createElement('input');ri.type='text';ri.placeholder='New name…';ri.style.cssText=_imS.inp;
       var acts=document.createElement('div');acts.style.cssText='display:flex;gap:4px';
       var rb=document.createElement('button');rb.textContent='↩';rb.title='Rename';rb.style.cssText='padding:4px 8px;background:none;border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-size:11px;cursor:pointer';
@@ -3850,7 +3853,8 @@ function renderCustomFieldsList(){
       const ct=_extraColTypes[k]||'text';
       typeEl=document.createElement('div');
       typeEl.style.cssText='font-family:DM Sans,sans-serif;font-size:11px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,0.04);color:var(--text-mid);text-align:center';
-      typeEl.textContent=ct==='yesno'?'Yes / No':ct==='number'?'Number':'Text';
+      var _typeLabels={'text':'Text','yesno':'Yes / No','number':'Number','currency':'Currency','percentage':'Percentage','fraction':'Fraction'};
+      typeEl.textContent=_typeLabels[ct]||ct||'Text';
     } else {
       typeEl=document.createElement('select');
       typeEl.style.cssText='width:100%;font-family:DM Sans,sans-serif;font-size:11px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-mid);outline:none;cursor:pointer;box-sizing:border-box';
