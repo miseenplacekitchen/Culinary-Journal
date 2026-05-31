@@ -350,6 +350,16 @@
     padding:7px 12px;border-radius:7px;max-width:280px;pointer-events:none;
     box-shadow:0 4px 16px rgba(0,0,0,0.5);
   }
+
+  /* ── Resizable table columns ── */
+  .ap-table th { position:relative; }
+  .col-resizer {
+    position:absolute; right:0; top:0; bottom:0;
+    width:6px; cursor:col-resize; user-select:none;
+    background:transparent;
+    z-index:10;
+  }
+  .col-resizer:hover, .col-resizer.resizing { background:var(--accent); opacity:0.5; }
 </style>
 </head>
 <body>
@@ -1180,7 +1190,46 @@ function getCatMeta(){ return _imGet('tcj_cat_meta',{}); }
 function getSubMeta(){ return _imGet('tcj_sub_meta',{}); }
 
 function getAdminName(){
-  try{ return (window.currentUserProfile&&(currentUserProfile.name||currentUserProfile.username))||'Admin'; }catch(e){return 'Admin';}
+  try{
+    if(window.currentUserProfile&&(currentUserProfile.username||currentUserProfile.name))
+      return currentUserProfile.username||currentUserProfile.name;
+    if(window.session&&session.user&&session.user.email)
+      return session.user.email;
+    return 'Admin';
+  }catch(e){return 'Admin';}
+}
+
+
+// ── Column resize helper ─────────────────────────────────────────
+function makeColumnsResizable(table){
+  if(!table) return;
+  table.querySelectorAll('th').forEach(function(th){
+    if(th.querySelector('.col-resizer')) return; // already done
+    var resizer = document.createElement('div');
+    resizer.className = 'col-resizer';
+    th.appendChild(resizer);
+    var startX, startW;
+    resizer.addEventListener('mousedown', function(e){
+      startX = e.pageX;
+      startW = th.offsetWidth;
+      resizer.classList.add('resizing');
+      document.body.style.cursor = 'col-resize';
+      function onMove(e){
+        var w = Math.max(60, startW + (e.pageX - startX));
+        th.style.width = w+'px';
+        th.style.minWidth = w+'px';
+      }
+      function onUp(){
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = '';
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+      e.preventDefault();
+    });
+  });
 }
 
 function auditLog(tab,action,target,oldVal,newVal,details){
@@ -2122,11 +2171,13 @@ function loadIngRecycleBinInto(container){
   rpc('admin_get_deleted_extra_fields',{}).then(function(rows){
     if(!rows||!rows.length){container.innerHTML='<div style="'+_imS.label+';padding:8px 0">Recycle Bin is empty.</div>';return;}
     var groups={};
+    tableWrap.appendChild(hdr);
     rows.forEach(function(r){ var m=r.field_name.match(/^Deleted(\d+)(.+)$/);if(!m)return;var base=m[2],n=parseInt(m[1]);if(!groups[base])groups[base]=[];groups[base].push({key:r.field_name,n:n,count:parseInt(r.ingredient_count)||0}); });
     container.innerHTML='';
     var COLS=[{l:'Original Name',w:'1fr'},{l:'Stored As',w:'1.2fr'},{l:'Type',w:'70px'},{l:'Source',w:'110px'},{l:'Deleted On',w:'140px'},{l:'Rows',w:'50px'},{l:'Actions',w:'170px'}];
     var tpl=COLS.map(function(c){return c.w;}).join(' ');
-    var hdr=document.createElement('div');hdr.style.cssText='display:grid;grid-template-columns:'+tpl+';gap:0 8px;align-items:center;padding-bottom:6px;border-bottom:1px solid var(--border);margin-bottom:4px';
+    var tableWrap=document.createElement('div');tableWrap.style.cssText='overflow-x:auto;min-width:0';
+    var hdr=document.createElement('div');hdr.style.cssText='display:grid;grid-template-columns:'+tpl+';gap:0 8px;align-items:center;padding-bottom:6px;border-bottom:1px solid var(--border);margin-bottom:4px;min-width:1100px';
     COLS.forEach(function(c){ var h=document.createElement('div');h.style.cssText=_imS.hdr;h.textContent=c.l;hdr.appendChild(h); });
     container.appendChild(hdr);
     var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -2173,7 +2224,7 @@ function loadAuditTrail(container){
       var empty=document.createElement('div');empty.style.cssText=_imS.label+';padding:8px 0';empty.textContent='No audit entries yet.';container.appendChild(empty);return;
     }
 
-    var COLS=[{l:'Timestamp',w:'140px'},{l:'Admin',w:'100px'},{l:'Tab',w:'1fr'},{l:'Action',w:'100px'},{l:'Target',w:'1fr'},{l:'Old Value',w:'1fr'},{l:'New Value',w:'1fr'}];
+    var COLS=[{l:'Timestamp',w:'160px'},{l:'Admin',w:'160px'},{l:'Section',w:'200px'},{l:'Action',w:'160px'},{l:'Target',w:'160px'},{l:'Old Value',w:'minmax(120px,1fr)'},{l:'New Value',w:'minmax(120px,1fr)'}];
     var tpl=COLS.map(function(c){return c.w;}).join(' ');
     var hdr=document.createElement('div');hdr.style.cssText='display:grid;grid-template-columns:'+tpl+';gap:0 8px;align-items:center;padding-bottom:6px;border-bottom:1px solid var(--border);margin-bottom:4px';
     COLS.forEach(function(c){var h=document.createElement('div');h.style.cssText=_imS.hdr;h.textContent=c.l;hdr.appendChild(h);});
@@ -2195,8 +2246,12 @@ function loadAuditTrail(container){
       row.appendChild(cell(r.target,cs));
       row.appendChild(cell(r.old_value,cs));
       row.appendChild(cell(r.new_value,cs));
-      container.appendChild(row);
+      var rowWrap=document.createElement('div');rowWrap.style.cssText='min-width:1100px';
+      Object.assign(rowWrap.style,{display:'grid','grid-template-columns':tpl,gap:'0 8px','align-items':'start',padding:'6px 0','border-bottom':'1px solid rgba(255,255,255,0.04)'});
+      row.style.minWidth='1100px';
+      tableWrap.appendChild(row);
     });
+    container.appendChild(tableWrap);
   }).catch(function(e){
     container.innerHTML='<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:12px;padding:8px 0">Error loading audit trail: '+esc(e.message)+'</div>';
   });
