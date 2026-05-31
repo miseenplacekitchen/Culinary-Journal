@@ -504,7 +504,7 @@
         </button>
         <button class="ap-inner-tab"        id="itab-brands"   onclick="switchIngTab('brands')">Brand Mapping</button>
         <button class="ap-inner-tab"        id="itab-analytics" onclick="switchIngTab('analytics')">📊 Analytics</button>
-        <button class="ap-inner-tab" id="itab-recycle" onclick="switchIngTab('imsettings')" title="Recycle Bin is now in IM Interface">🗑 Recycle Bin → IM Interface</button>
+        
         <button class="ap-inner-tab" id="itab-imsettings" onclick="switchIngTab('imsettings')">⚙ IM Interface</button>
       </div>
 
@@ -1156,379 +1156,514 @@ function escT(s){ return esc(s); }
 document.addEventListener('DOMContentLoaded', init);
 
 
-// ── IM INTERFACE ─────────────────────────────────────────────────
+// ── IM INTERFACE — complete rebuild ──────────────────────────────
 let _imSettings = {};
 
-// Default units and categories stored in localStorage
 function _imGet(key, def) {
-  try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; }
+  try { var v=localStorage.getItem(key); return v?JSON.parse(v):def; } catch(e){return def;}
 }
-function _imSet(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+function _imSet(key,val){ localStorage.setItem(key,JSON.stringify(val)); }
+function getUnits(){ return _imGet('tcj_units',['cup','tbsp','tsp','ml','l','g','kg','oz','lb','piece','bunch','clove','leaf','sprig','pinch','slice','sheet','can','bottle','packet','whole']); }
+function getCats(){ return _imGet('tcj_cats',['Baking','Grains, Pasta & Noodles','Breads & Flatbreads','Packaged & Convenience','Meat','Poultry','Seafood','Dairy & Eggs','Plant-Based','Vegetables','Fruits','Herbs','Spices','Oils & Fats','Legumes & Pulses','Nuts & Seeds','Condiments & Sauces','Vinegars','Sweeteners','Canned & Preserved','Alcohol & Cooking Wine','Stocks & Broths']); }
+function getSubCats(){ return _imGet('tcj_subcats',{}); }
+function getUnitMeta(){ return _imGet('tcj_unit_meta',{}); }
+function getCatMeta(){ return _imGet('tcj_cat_meta',{}); }
+function getSubMeta(){ return _imGet('tcj_sub_meta',{}); }
 
-function getUnits() {
-  return _imGet('tcj_units', ['cup','tbsp','tsp','ml','l','g','kg','oz','lb','piece','bunch','clove','leaf','sprig','pinch','slice','sheet','can','bottle','packet','whole']);
-}
-function getCats() {
-  return _imGet('tcj_cats', ['Baking','Grains, Pasta & Noodles','Breads & Flatbreads','Packaged & Convenience','Meat','Poultry','Seafood','Dairy & Eggs','Plant-Based','Vegetables','Fruits','Herbs','Spices','Oils & Fats','Legumes & Pulses','Nuts & Seeds','Condiments & Sauces','Vinegars','Sweeteners','Canned & Preserved','Alcohol & Cooking Wine','Stocks & Broths']);
-}
-function getSubCats() {
-  return _imGet('tcj_subcats', {});
+function getAdminName(){
+  try{ return (window.currentUserProfile&&(currentUserProfile.name||currentUserProfile.username))||'Admin'; }catch(e){return 'Admin';}
 }
 
-function loadImSettings() {
-  try { _imSettings = JSON.parse(localStorage.getItem('tcj_im_settings') || '{}'); } catch(e) { _imSettings = {}; }
-  STD_COLS.forEach(function(col) {
-    var s = _imSettings.cols && _imSettings.cols[col.key];
-    if (s) {
-      if (s.label) col.label = s.label;
-      if (s.type)  col.type  = s.type;
-      if (typeof s.visible !== 'undefined') _colVis[col.key] = s.visible;
-    }
+function auditLog(tab,action,target,oldVal,newVal,details){
+  try{
+    rpc('admin_log_action',{
+      p_admin_name: getAdminName(),
+      p_tab: tab, p_action: action,
+      p_target: target||null,
+      p_old_value: oldVal!=null?String(oldVal):null,
+      p_new_value: newVal!=null?String(newVal):null,
+      p_details: details||null
+    }).catch(function(){});
+  }catch(e){}
+}
+
+function loadImSettings(){
+  try{ _imSettings=JSON.parse(localStorage.getItem('tcj_im_settings')||'{}'); }catch(e){_imSettings={};}
+  STD_COLS.forEach(function(col){
+    var s=_imSettings.cols&&_imSettings.cols[col.key];
+    if(s){ if(s.label)col.label=s.label; if(s.type)col.type=s.type; if(typeof s.visible!=='undefined')_colVis[col.key]=s.visible; }
   });
-  if (_imSettings.pageSize) ING_PAGE_SIZE = parseInt(_imSettings.pageSize) || 50;
-  // Sync STD_COLS with managed cats/units
-  CATS_LIST.length = 0;
-  getCats().forEach(function(c){ CATS_LIST.push(c); });
+  if(_imSettings.pageSize) ING_PAGE_SIZE=parseInt(_imSettings.pageSize)||50;
+  CATS_LIST.length=0; getCats().forEach(function(c){CATS_LIST.push(c);});
 }
 
-function saveImSettings(settings) {
-  _imSettings = settings;
-  localStorage.setItem('tcj_im_settings', JSON.stringify(settings));
-  loadImSettings();
-  buildTableHeader(); buildColVisPanel(); renderIngFiltered();
+function saveImSettings(settings){
+  _imSettings=settings; localStorage.setItem('tcj_im_settings',JSON.stringify(settings));
+  loadImSettings(); buildTableHeader(); buildColVisPanel(); renderIngFiltered();
+  auditLog('IM Interface > Column Settings','Settings Saved',null,null,null,'Column labels/types/visibility updated');
 }
 
-function loadIMInterface() {
-  var el = document.getElementById('im-interface-content');
-  if (!el) return;
-  el.innerHTML = '';
+// ── Style helpers ────────────────────────────────────────────────
+var _imS = {
+  label: "font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)",
+  hdr:   "font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid);padding:2px 4px",
+  inp:   "font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;width:100%;box-sizing:border-box",
+  sel:   "font-family:'DM Sans',sans-serif;font-size:11px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;cursor:pointer;width:100%;box-sizing:border-box",
+  btn:   "padding:5px 14px;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer",
+  delBtn:"padding:4px 8px;background:none;border:1px solid #dc5050;border-radius:5px;color:#dc5050;cursor:pointer;font-size:12px;flex-shrink:0"
+};
 
-  var settings = JSON.parse(localStorage.getItem('tcj_im_settings') || '{}');
-  if (!settings.cols) settings.cols = {};
-  if (!settings.pageSize) settings.pageSize = ING_PAGE_SIZE || 50;
-  if (!settings.sortCol) settings.sortCol = 'ID';
-  if (!settings.sortDir) settings.sortDir = 'asc';
+// ── Accordion helper ─────────────────────────────────────────────
+function makeAccordion(title, contentFn, startOpen, container){
+  var wrap=document.createElement('div');
+  wrap.style.cssText='margin-bottom:12px;border:1px solid var(--border);border-radius:10px;overflow:hidden';
+  wrap.dataset.accordion='1';
 
-  var LOCKED_TYPE = ['ID', 'Ingredient Name', 'Category'];
-  var TYPE_OPTIONS = [
-    {value:'text',label:'Text'},{value:'yesno',label:'Yes / No'},
-    {value:'number',label:'Number'},{value:'category',label:'Category'}
+  var hdr=document.createElement('div');
+  hdr.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.03);cursor:pointer;user-select:none';
+
+  var t=document.createElement('div');
+  t.style.cssText="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high)";
+  t.textContent=title;
+
+  var arr=document.createElement('span');
+  arr.style.cssText='font-size:14px;color:var(--text-mid);transition:transform 0.2s';
+  arr.textContent='▲';
+  if(startOpen===false){arr.textContent='▼';}
+
+  var body=document.createElement('div');
+  body.style.cssText='padding:14px';
+  if(startOpen===false) body.style.display='none';
+
+  hdr.addEventListener('click',function(){
+    var open=body.style.display!=='none';
+    body.style.display=open?'none':'block';
+    arr.textContent=open?'▼':'▲';
+  });
+
+  hdr.appendChild(t); hdr.appendChild(arr);
+  wrap.appendChild(hdr); wrap.appendChild(body);
+  if(container) container.appendChild(wrap);
+  contentFn(body);
+  return wrap;
+}
+
+// ── Expand All / Collapse All bar ────────────────────────────────
+function makeExpandCollapseBar(container){
+  var bar=document.createElement('div');
+  bar.style.cssText='display:flex;gap:8px;margin-bottom:14px;align-items:center';
+  function makeBtn(label, open){
+    var b=document.createElement('button');
+    b.textContent=label;
+    b.style.cssText='padding:4px 12px;background:none;border:1px solid var(--border);border-radius:6px;'+_imS.label+';cursor:pointer';
+    b.addEventListener('click',function(){
+      container.querySelectorAll('[data-accordion]').forEach(function(acc){
+        var body=acc.querySelector('div:last-child');
+        var arr=acc.querySelector('span');
+        if(body){ body.style.display=open?'block':'none'; }
+        if(arr){ arr.textContent=open?'▲':'▼'; }
+      });
+    });
+    return b;
+  }
+  bar.appendChild(makeBtn('Expand All',true));
+  bar.appendChild(makeBtn('Collapse All',false));
+  return bar;
+}
+
+// ── IM Interface main loader ─────────────────────────────────────
+function loadIMInterface(){
+  var el=document.getElementById('im-interface-content');
+  if(!el) return;
+  el.innerHTML='';
+
+  // ── Top-level tab bar ────────────────────────────────────────
+  var TAB_DEFS=[
+    {key:'refdata',    label:'Reference Data'},
+    {key:'colsettings',label:'Column Settings'},
+    {key:'recycle',    label:'Recycle Bin'},
+    {key:'audit',      label:'Audit Trail'}
   ];
 
-  // ── Accordion helper ─────────────────────────────────────────
-  function accordion(title, contentFn, startOpen) {
-    var wrap = document.createElement('div');
-    wrap.style.cssText = 'margin-bottom:16px;border:1px solid var(--border);border-radius:10px;overflow:hidden';
+  var topBar=document.createElement('div');
+  topBar.style.cssText='display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px';
+  var topPanels={};
+  var activeTop='refdata';
 
-    var hdr = document.createElement('div');
-    hdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,0.03);cursor:pointer;user-select:none";
-
-    var hTitle = document.createElement('div');
-    hTitle.style.cssText = "font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high)";
-    hTitle.textContent = title;
-
-    var toggle = document.createElement('span');
-    toggle.style.cssText = "font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);padding:2px 8px;border:1px solid var(--border);border-radius:5px";
-    toggle.textContent = startOpen !== false ? '▲ Collapse' : '▼ Expand';
-
-    var body = document.createElement('div');
-    body.style.cssText = 'padding:16px';
-    if (startOpen === false) body.style.display = 'none';
-
-    hdr.appendChild(hTitle); hdr.appendChild(toggle);
-    hdr.addEventListener('click', function() {
-      var open = body.style.display !== 'none';
-      body.style.display = open ? 'none' : 'block';
-      toggle.textContent = open ? '▼ Expand' : '▲ Collapse';
+  TAB_DEFS.forEach(function(td){
+    var btn=document.createElement('button');
+    btn.style.cssText="padding:9px 18px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--text-mid);margin-bottom:-1px;white-space:nowrap";
+    btn.textContent=td.label; btn.dataset.imtab=td.key;
+    btn.addEventListener('click',function(){
+      topBar.querySelectorAll('button').forEach(function(b){ b.style.borderBottomColor='transparent'; b.style.color='var(--text-mid)'; });
+      btn.style.borderBottomColor='var(--accent)'; btn.style.color='var(--accent)';
+      Object.keys(topPanels).forEach(function(k){ topPanels[k].style.display=k===td.key?'block':'none'; });
+      if(td.key==='recycle') loadIngRecycleBinInto(topPanels['recycle']);
+      if(td.key==='audit')   loadAuditTrail(topPanels['audit']);
     });
+    if(td.key===activeTop){ btn.style.borderBottomColor='var(--accent)'; btn.style.color='var(--accent)'; }
+    topBar.appendChild(btn);
 
-    wrap.appendChild(hdr); wrap.appendChild(body);
-    el.appendChild(wrap);
-    contentFn(body);
-  }
-
-  // ── SECTION 1: Main Tabs (Reference Data) ───────────────────
-  var tabSection = document.createElement('div');
-  tabSection.style.cssText = 'margin-bottom:20px';
-
-  var tabBar = document.createElement('div');
-  tabBar.style.cssText = 'display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px';
-
-  var tabPanels = {};
-  var activeImTab = 'units';
-
-  ['Units','Categories','Sub Categories','Recycle Bin'].forEach(function(tabName) {
-    var key = tabName.toLowerCase().replace(/ /g,'-');
-    var btn = document.createElement('button');
-    btn.style.cssText = "padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--text-mid);margin-bottom:-1px;white-space:nowrap";
-    btn.textContent = tabName;
-    btn.dataset.tab = key;
-    btn.addEventListener('click', function() {
-      tabBar.querySelectorAll('button').forEach(function(b){ b.style.borderBottomColor='transparent'; b.style.color='var(--text-mid)'; });
-      btn.style.borderBottomColor = 'var(--accent)'; btn.style.color = 'var(--accent)';
-      Object.keys(tabPanels).forEach(function(k){ tabPanels[k].style.display = k===key?'block':'none'; });
-    });
-    tabBar.appendChild(btn);
-
-    var panel = document.createElement('div');
-    panel.style.display = key===activeImTab?'block':'none';
-    tabPanels[key] = panel;
-    if (key===activeImTab) { btn.style.borderBottomColor='var(--accent)'; btn.style.color='var(--accent)'; }
+    var panel=document.createElement('div');
+    panel.style.display=td.key===activeTop?'block':'none';
+    topPanels[td.key]=panel;
   });
 
-  tabSection.appendChild(tabBar);
-  Object.values(tabPanels).forEach(function(p){ tabSection.appendChild(p); });
-  el.appendChild(tabSection);
+  el.appendChild(topBar);
+  Object.values(topPanels).forEach(function(p){ el.appendChild(p); });
 
-  // ── Units tab ────────────────────────────────────────────────
-  buildListManager(tabPanels['units'], 'tcj_units', getUnits(),
-    'Units available in the ingredient table Unit column.',
-    function(){ buildTableHeader(); renderIngFiltered(); });
+  // ── TAB: Reference Data ──────────────────────────────────────
+  buildRefDataTab(topPanels['refdata']);
 
-  // ── Categories tab ───────────────────────────────────────────
-  buildListManager(tabPanels['categories'], 'tcj_cats', getCats(),
-    'Ingredient categories. Changes apply immediately to the Category dropdown.',
-    function(){ CATS_LIST.length=0; getCats().forEach(function(c){CATS_LIST.push(c);}); buildTableHeader(); renderIngFiltered(); });
+  // ── TAB: Column Settings ─────────────────────────────────────
+  buildColumnSettingsTab(topPanels['colsettings']);
 
-  // ── Sub Categories tab ───────────────────────────────────────
-  buildSubCatManager(tabPanels['sub-categories']);
+  // ── TAB: Recycle Bin ─────────────────────────────────────────
+  topPanels['recycle'].innerHTML='<div style="'+_imS.label+';padding:8px 0">Loading\u2026</div>';
+  loadIngRecycleBinInto(topPanels['recycle']);
 
-  // ── Recycle Bin tab ──────────────────────────────────────────
-  loadIngRecycleBinInto(tabPanels['recycle-bin']);
-
-  // ── ACCORDION: Column Settings ───────────────────────────────
-  accordion('Standard Column Settings', function(body) {
-    var grid = document.createElement('div');
-    grid.style.cssText = 'display:grid;grid-template-columns:160px 1fr 110px 80px;gap:6px 12px;align-items:center';
-    ['KEY','DISPLAY LABEL','TYPE','VISIBLE'].forEach(function(t){
-      var h=document.createElement('div');
-      h.style.cssText="font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid);padding:2px 4px";
-      h.textContent=t; grid.appendChild(h);
-    });
-    var ALL_COLS = [{key:'ID',label:'ID',type:'number'}].concat(STD_COLS);
-    ALL_COLS.forEach(function(col) {
-      var s = settings.cols[col.key] || {};
-      var locked = LOCKED_TYPE.includes(col.key) || col.key==='ID';
-
-      var keyDiv=document.createElement('div');
-      keyDiv.style.cssText="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,0.03);overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
-      keyDiv.textContent=col.key; keyDiv.title=col.key;
-
-      var labelIn=document.createElement('input'); labelIn.type='text';
-      labelIn.value=s.label||col.label; labelIn.disabled=col.key==='ID';
-      labelIn.style.cssText="width:100%;box-sizing:border-box;font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none"+(col.key==='ID'?';opacity:0.4':'');
-      labelIn.addEventListener('change',function(){ if(!settings.cols[col.key])settings.cols[col.key]={};settings.cols[col.key].label=this.value.trim()||col.label; });
-
-      var typeSel=document.createElement('select'); typeSel.disabled=locked;
-      typeSel.style.cssText="width:100%;box-sizing:border-box;font-family:'DM Sans',sans-serif;font-size:11px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;cursor:pointer"+(locked?';opacity:0.4':'');
-      TYPE_OPTIONS.forEach(function(opt){ var o=document.createElement('option');o.value=opt.value;o.textContent=opt.label;o.selected=(s.type||col.type)===opt.value;typeSel.appendChild(o); });
-      typeSel.addEventListener('change',function(){ if(!settings.cols[col.key])settings.cols[col.key]={};settings.cols[col.key].type=this.value; });
-
-      var visWrap=document.createElement('div'); visWrap.style.cssText='display:flex;align-items:center;justify-content:center';
-      if(col.key!=='ID'){
-        var visChk=document.createElement('input'); visChk.type='checkbox';
-        visChk.style.cssText='width:16px;height:16px;accent-color:var(--accent);cursor:pointer';
-        visChk.checked=typeof s.visible!=='undefined'?s.visible:(_colVis[col.key]!==false);
-        visChk.addEventListener('change',function(){ if(!settings.cols[col.key])settings.cols[col.key]={};settings.cols[col.key].visible=this.checked; });
-        visWrap.appendChild(visChk);
-      } else {
-        var ls=document.createElement('span');ls.textContent='🔒';ls.style.cssText='font-size:11px;opacity:0.4';visWrap.appendChild(ls);
-      }
-      grid.appendChild(keyDiv);grid.appendChild(labelIn);grid.appendChild(typeSel);grid.appendChild(visWrap);
-    });
-    body.appendChild(grid);
-  });
-
-  // ── ACCORDION: Custom Columns ────────────────────────────────
-  accordion('Custom Columns', function(body) {
-    if (!_extraColKeys.length) {
-      var msg=document.createElement('div');
-      msg.style.cssText="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)";
-      msg.textContent='No custom columns yet. Use + Column in the ingredient table.';
-      body.appendChild(msg); return;
-    }
-    var cGrid=document.createElement('div');
-    cGrid.style.cssText='display:grid;grid-template-columns:1fr 110px 1fr 80px;gap:6px 12px;align-items:center';
-    ['NAME','TYPE','RENAME TO','ACTIONS'].forEach(function(t){
-      var h=document.createElement('div');
-      h.style.cssText="font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid);padding:2px 4px";
-      h.textContent=t; cGrid.appendChild(h);
-    });
-    _extraColKeys.forEach(function(k) {
-      var nd=document.createElement('div');
-      nd.style.cssText="font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,0.03);color:var(--accent)";
-      nd.textContent=k;
-
-      var tSel=document.createElement('select');
-      tSel.style.cssText="width:100%;box-sizing:border-box;font-family:'DM Sans',sans-serif;font-size:11px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;cursor:pointer";
-      [{value:'text',label:'Text'},{value:'yesno',label:'Yes/No'},{value:'number',label:'Number'}].forEach(function(opt){
-        var o=document.createElement('option');o.value=opt.value;o.textContent=opt.label;
-        o.selected=(_extraColTypes[k]||'text')===opt.value; tSel.appendChild(o);
-      });
-      tSel.addEventListener('change',function(){
-        _extraColTypes[k]=this.value;
-        var types=JSON.parse(localStorage.getItem('tcj_extra_col_types')||'{}');
-        types[k]=this.value; localStorage.setItem('tcj_extra_col_types',JSON.stringify(types));
-      });
-
-      var rIn=document.createElement('input'); rIn.type='text'; rIn.placeholder='New name…';
-      rIn.style.cssText="width:100%;box-sizing:border-box;font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none";
-
-      var acts=document.createElement('div'); acts.style.cssText='display:flex;gap:4px';
-      var rBtn=document.createElement('button'); rBtn.textContent='↩'; rBtn.title='Rename';
-      rBtn.style.cssText="padding:4px 8px;background:none;border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";
-      rBtn.addEventListener('click',(function(key,inp){return function(){
-        var nv=inp.value.trim(); if(!nv||nv===key){inp.focus();return;}
-        renameExtraColumn(key); loadIMInterface();
-      };})(k,rIn));
-      var dBtn=document.createElement('button'); dBtn.textContent='🗑'; dBtn.title='Delete';
-      dBtn.style.cssText="padding:4px 8px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";
-      dBtn.addEventListener('click',(function(key){return function(){deleteExtraColumn(key);loadIMInterface();};})(k));
-      acts.appendChild(rBtn); acts.appendChild(dBtn);
-
-      cGrid.appendChild(nd); cGrid.appendChild(tSel); cGrid.appendChild(rIn); cGrid.appendChild(acts);
-    });
-    body.appendChild(cGrid);
-  });
-
-  // ── ACCORDION: Table Defaults ────────────────────────────────
-  accordion('Table Defaults', function(body) {
-    var dGrid=document.createElement('div');
-    dGrid.style.cssText='display:grid;grid-template-columns:160px 1fr;gap:10px 16px;align-items:center;max-width:420px';
-    function addRow(label, input) {
-      var lbl=document.createElement('div');
-      lbl.style.cssText="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)";
-      lbl.textContent=label; dGrid.appendChild(lbl); dGrid.appendChild(input);
-    }
-    var psIn=document.createElement('input'); psIn.type='number'; psIn.min='10'; psIn.max='500'; psIn.step='10';
-    psIn.value=settings.pageSize||50;
-    psIn.style.cssText="width:100px;font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none";
-    psIn.addEventListener('change',function(){settings.pageSize=parseInt(this.value)||50;});
-    addRow('Rows per page', psIn);
-
-    var scSel=document.createElement('select');
-    scSel.style.cssText="font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;cursor:pointer";
-    ['ID','Ingredient Name','Category','Sub Category'].forEach(function(c){
-      var o=document.createElement('option');o.value=c;o.textContent=c;o.selected=settings.sortCol===c;scSel.appendChild(o);
-    });
-    scSel.addEventListener('change',function(){settings.sortCol=this.value;});
-    addRow('Default sort', scSel);
-
-    var sdSel=document.createElement('select'); sdSel.style.cssText=scSel.style.cssText;
-    [{v:'asc',l:'A → Z'},{v:'desc',l:'Z → A'}].forEach(function(o){
-      var opt=document.createElement('option');opt.value=o.v;opt.textContent=o.l;opt.selected=settings.sortDir===o.v;sdSel.appendChild(opt);
-    });
-    sdSel.addEventListener('change',function(){settings.sortDir=this.value;});
-    addRow('Direction', sdSel);
-    body.appendChild(dGrid);
-  }, false);
-
-  // ── Save / Reset ─────────────────────────────────────────────
-  var saveWrap=document.createElement('div'); saveWrap.style.cssText='margin-top:20px;display:flex;gap:10px;align-items:center';
-  var saveBtn=document.createElement('button');
-  saveBtn.textContent='Save Column Settings';
-  saveBtn.style.cssText="padding:10px 24px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer";
-  var saveMsg=document.createElement('span');
-  saveMsg.style.cssText="font-family:'DM Sans',sans-serif;font-size:12px;color:#4caf76;display:none";
-  saveMsg.textContent='✓ Saved';
-  saveBtn.addEventListener('click',function(){
-    saveImSettings(settings);
-    saveMsg.style.display='inline'; setTimeout(function(){saveMsg.style.display='none';},2000);
-  });
-  var resetBtn=document.createElement('button');
-  resetBtn.textContent='Reset to Defaults';
-  resetBtn.style.cssText="padding:10px 18px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer";
-  resetBtn.addEventListener('click',function(){if(!confirm('Reset all column settings to defaults?'))return;localStorage.removeItem('tcj_im_settings');location.reload();});
-  saveWrap.appendChild(saveBtn); saveWrap.appendChild(resetBtn); saveWrap.appendChild(saveMsg);
-  el.appendChild(saveWrap);
+  // ── TAB: Audit Trail ─────────────────────────────────────────
+  topPanels['audit'].innerHTML='<div style="'+_imS.label+';padding:8px 0">Click the Audit Trail tab to load.</div>';
 }
 
-// ── List manager (Units / Categories) ─────────────────────────
-function buildListManager(container, storageKey, items, description, onChange) {
-  var desc=document.createElement('div');
-  desc.style.cssText="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:12px";
-  desc.textContent=description; container.appendChild(desc);
+// ── Reference Data Tab ───────────────────────────────────────────
+function buildRefDataTab(container){
+  var SUB=[{key:'categories',label:'Categories'},{key:'subcategories',label:'Sub Categories'},{key:'units',label:'Units'}];
+  var subBar=document.createElement('div');
+  subBar.style.cssText='display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:14px';
+  var subPanels={};
+  var activeSub='categories';
 
-  var list=document.createElement('div'); list.style.cssText='display:flex;flex-direction:column;gap:6px;margin-bottom:12px';
-
-  function renderItems(arr) {
-    list.innerHTML='';
-    arr.forEach(function(item, i) {
-      var row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;gap:8px';
-      var inp=document.createElement('input'); inp.type='text'; inp.value=item;
-      inp.style.cssText="flex:1;font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none";
-      inp.addEventListener('change',function(){ arr[i]=this.value.trim(); _imSet(storageKey,arr); if(onChange)onChange(); });
-      var del=document.createElement('button'); del.textContent='×';
-      del.style.cssText='padding:4px 8px;background:none;border:1px solid #dc5050;border-radius:5px;color:#dc5050;cursor:pointer;font-size:12px;flex-shrink:0';
-      del.addEventListener('click',function(){ arr.splice(i,1); _imSet(storageKey,arr); renderItems(arr); if(onChange)onChange(); });
-      row.appendChild(inp); row.appendChild(del); list.appendChild(row);
+  SUB.forEach(function(s){
+    var btn=document.createElement('button');
+    btn.style.cssText="padding:7px 14px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--text-mid);margin-bottom:-1px";
+    btn.textContent=s.label; btn.dataset.subtab=s.key;
+    btn.addEventListener('click',function(){
+      subBar.querySelectorAll('button').forEach(function(b){ b.style.borderBottomColor='transparent'; b.style.color='var(--text-mid)'; });
+      btn.style.borderBottomColor='var(--accent)'; btn.style.color='var(--accent)';
+      Object.keys(subPanels).forEach(function(k){ subPanels[k].style.display=k===s.key?'block':'none'; });
     });
-  }
-  renderItems(items);
-  container.appendChild(list);
-
-  var addRow=document.createElement('div'); addRow.style.cssText='display:flex;gap:8px';
-  var newIn=document.createElement('input'); newIn.type='text'; newIn.placeholder='Add new…';
-  newIn.style.cssText="flex:1;font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none";
-  var addBtn=document.createElement('button'); addBtn.textContent='+ Add';
-  addBtn.style.cssText="padding:5px 14px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer";
-  addBtn.addEventListener('click',function(){
-    var v=newIn.value.trim(); if(!v)return;
-    items.push(v); _imSet(storageKey,items); renderItems(items); newIn.value=''; if(onChange)onChange();
+    if(s.key===activeSub){ btn.style.borderBottomColor='var(--accent)'; btn.style.color='var(--accent)'; }
+    subBar.appendChild(btn);
+    var panel=document.createElement('div');
+    panel.style.display=s.key===activeSub?'block':'none';
+    subPanels[s.key]=panel;
   });
-  newIn.addEventListener('keydown',function(ev){ if(ev.key==='Enter'){addBtn.click();} });
-  addRow.appendChild(newIn); addRow.appendChild(addBtn); container.appendChild(addRow);
+  container.appendChild(subBar);
+  Object.values(subPanels).forEach(function(p){ container.appendChild(p); });
+
+  buildCategoriesManager(subPanels['categories']);
+  buildSubCategoriesManager(subPanels['subcategories']);
+  buildUnitsManager(subPanels['units']);
 }
 
-// ── Sub-category manager ───────────────────────────────────────
-function buildSubCatManager(container) {
+function buildCategoriesManager(container){
+  var cats=getCats();
+  var meta=getCatMeta();
   var desc=document.createElement('div');
-  desc.style.cssText="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:12px";
+  desc.style.cssText=_imS.label+';margin-bottom:12px';
+  desc.textContent='Ingredient categories. Changes apply immediately to the Category dropdown.';
+  container.appendChild(desc);
+
+  // Grid header
+  var grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:1fr 90px 36px;gap:6px 8px;align-items:center';
+  ['CATEGORY NAME','REQUIRED',''].forEach(function(h){
+    var d=document.createElement('div'); d.style.cssText=_imS.hdr; d.textContent=h; grid.appendChild(d);
+  });
+
+  function renderCats(){
+    // Remove old rows (keep headers = first 3 children)
+    while(grid.children.length>3) grid.removeChild(grid.lastChild);
+    cats.forEach(function(cat,i){
+      var inp=document.createElement('input'); inp.type='text'; inp.value=cat;
+      inp.style.cssText=_imS.inp;
+      inp.addEventListener('change',function(){
+        var oldName=cats[i]; cats[i]=this.value.trim()||cat;
+        _imSet('tcj_cats',cats); CATS_LIST.length=0; cats.forEach(function(c){CATS_LIST.push(c);});
+        auditLog('IM Interface > Reference Data','Category Renamed',oldName,oldName,cats[i]);
+      });
+
+      var reqSel=document.createElement('select'); reqSel.style.cssText=_imS.sel;
+      ['Yes','No'].forEach(function(v){ var o=document.createElement('option');o.value=v;o.textContent=v;o.selected=(meta[cat]&&meta[cat].required)===v;reqSel.appendChild(o); });
+      reqSel.addEventListener('change',function(){ if(!meta[cat])meta[cat]={};meta[cat].required=this.value; _imSet('tcj_cat_meta',meta); });
+
+      var del=document.createElement('button'); del.textContent='×'; del.style.cssText=_imS.delBtn;
+      del.addEventListener('click',function(){
+        if(!confirm('Delete category "'+cat+'"?'))return;
+        auditLog('IM Interface > Reference Data','Category Deleted',cat,cat,null);
+        cats.splice(i,1); delete meta[cat]; _imSet('tcj_cats',cats); _imSet('tcj_cat_meta',meta);
+        CATS_LIST.length=0; cats.forEach(function(c){CATS_LIST.push(c);}); renderCats();
+      });
+      grid.appendChild(inp); grid.appendChild(reqSel); grid.appendChild(del);
+    });
+  }
+  renderCats();
+  container.appendChild(grid);
+
+  var addRow=document.createElement('div'); addRow.style.cssText='display:flex;gap:8px;margin-top:10px';
+  var ni=document.createElement('input'); ni.type='text'; ni.placeholder='Add new category…';
+  ni.style.cssText=_imS.inp;
+  var ab=document.createElement('button'); ab.textContent='+ Add';
+  ab.style.cssText=_imS.btn+';background:var(--accent);color:#fff';
+  ab.addEventListener('click',function(){
+    var v=ni.value.trim(); if(!v)return;
+    cats.push(v); _imSet('tcj_cats',cats); CATS_LIST.length=0; cats.forEach(function(c){CATS_LIST.push(c);});
+    auditLog('IM Interface > Reference Data','Category Added',v,null,v); renderCats(); ni.value='';
+  });
+  ni.addEventListener('keydown',function(ev){if(ev.key==='Enter')ab.click();});
+  addRow.appendChild(ni); addRow.appendChild(ab); container.appendChild(addRow);
+}
+
+function buildSubCategoriesManager(container){
+  var cats=getCats();
+  var subs=getSubCats();
+  var meta=getSubMeta();
+  var desc=document.createElement('div'); desc.style.cssText=_imS.label+';margin-bottom:10px';
   desc.textContent='Sub-categories per ingredient category. Select a category to manage its sub-categories.';
   container.appendChild(desc);
 
-  var cats=getCats();
-  var subs=getSubCats();
-
-  var selWrap=document.createElement('div'); selWrap.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:14px';
-  var lbl=document.createElement('div'); lbl.style.cssText="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)"; lbl.textContent='Category:';
-  var catSel=document.createElement('select');
-  catSel.style.cssText="font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;cursor:pointer";
+  var selRow=document.createElement('div'); selRow.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:12px';
+  var lbl=document.createElement('div'); lbl.style.cssText=_imS.label; lbl.textContent='Category:';
+  var catSel=document.createElement('select'); catSel.style.cssText=_imS.sel.replace('width:100%;','')+';width:auto;min-width:160px';
   cats.forEach(function(c){ var o=document.createElement('option');o.value=c;o.textContent=c;catSel.appendChild(o); });
-  selWrap.appendChild(lbl); selWrap.appendChild(catSel); container.appendChild(selWrap);
+  selRow.appendChild(lbl); selRow.appendChild(catSel); container.appendChild(selRow);
 
   var subPanel=document.createElement('div'); container.appendChild(subPanel);
 
-  function renderSubList(cat) {
+  function renderSubs(cat){
     subPanel.innerHTML='';
     var arr=subs[cat]||[];
-    buildListManager(subPanel,'__sub__'+cat,arr,'Sub-categories for '+cat+':',function(){
-      subs[cat]=_imGet('__sub__'+cat,[]);
-      _imSet('tcj_subcats',subs);
+    var hdrRow=document.createElement('div'); hdrRow.style.cssText='display:grid;grid-template-columns:1fr 36px;gap:6px 8px;align-items:center;margin-bottom:6px';
+    ['SUB-CATEGORY NAME',''].forEach(function(h){ var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;hdrRow.appendChild(d); });
+    subPanel.appendChild(hdrRow);
+
+    var grid=document.createElement('div'); grid.style.cssText='display:grid;grid-template-columns:1fr 36px;gap:6px 8px;align-items:center';
+    function renderRows(){
+      grid.innerHTML='';
+      arr.forEach(function(sub,i){
+        var inp=document.createElement('input'); inp.type='text'; inp.value=sub; inp.style.cssText=_imS.inp;
+        inp.addEventListener('change',function(){
+          var oldName=arr[i]; arr[i]=this.value.trim()||sub;
+          subs[cat]=arr; _imSet('tcj_subcats',subs);
+          auditLog('IM Interface > Reference Data','Sub-Category Renamed',cat+' > '+oldName,oldName,arr[i]);
+        });
+        var del=document.createElement('button'); del.textContent='×'; del.style.cssText=_imS.delBtn;
+        del.addEventListener('click',function(){
+          if(!confirm('Delete sub-category "'+sub+'"?'))return;
+          auditLog('IM Interface > Reference Data','Sub-Category Deleted',cat+' > '+sub,sub,null);
+          arr.splice(i,1); subs[cat]=arr; _imSet('tcj_subcats',subs); renderRows();
+        });
+        grid.appendChild(inp); grid.appendChild(del);
+      });
+    }
+    renderRows();
+    subPanel.appendChild(grid);
+
+    var addRow=document.createElement('div'); addRow.style.cssText='display:flex;gap:8px;margin-top:8px';
+    var ni=document.createElement('input'); ni.type='text'; ni.placeholder='Add new sub-category…'; ni.style.cssText=_imS.inp;
+    var ab=document.createElement('button'); ab.textContent='+ Add'; ab.style.cssText=_imS.btn+';background:var(--accent);color:#fff';
+    ab.addEventListener('click',function(){
+      var v=ni.value.trim(); if(!v)return;
+      arr.push(v); subs[cat]=arr; _imSet('tcj_subcats',subs);
+      auditLog('IM Interface > Reference Data','Sub-Category Added',cat+' > '+v,null,v);
+      renderRows(); ni.value='';
     });
+    ni.addEventListener('keydown',function(ev){if(ev.key==='Enter')ab.click();});
+    addRow.appendChild(ni); addRow.appendChild(ab); subPanel.appendChild(addRow);
   }
-  catSel.addEventListener('change',function(){ renderSubList(this.value); });
-  renderSubList(cats[0]||'');
+  catSel.addEventListener('change',function(){ renderSubs(this.value); });
+  renderSubs(cats[0]||'');
 }
 
-// ── Recycle Bin embedded in IM Interface ──────────────────────
-function loadIngRecycleBinInto(container) {
-  container.innerHTML='<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
+function buildUnitsManager(container){
+  var units=getUnits();
+  var meta=getUnitMeta();
+  var MTYPE=['Weight','Volume','Count','Other'];
+  var desc=document.createElement('div'); desc.style.cssText=_imS.label+';margin-bottom:12px';
+  desc.textContent='Units available in the ingredient table Unit column.';
+  container.appendChild(desc);
+
+  var grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:120px 100px 70px 70px 80px 36px;gap:6px 8px;align-items:center';
+  ['UNIT','MEASUREMENT','MIN','MAX','DECIMALS',''].forEach(function(h){
+    var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;grid.appendChild(d);
+  });
+
+  function renderUnits(){
+    while(grid.children.length>6) grid.removeChild(grid.lastChild);
+    units.forEach(function(unit,i){
+      var m=meta[unit]||{};
+      var ni=document.createElement('input');ni.type='text';ni.value=unit;ni.style.cssText=_imS.inp;
+      ni.addEventListener('change',function(){
+        var oldU=units[i]; units[i]=this.value.trim()||unit;
+        var oldMeta=meta[oldU]; delete meta[oldU]; meta[units[i]]=oldMeta||{};
+        _imSet('tcj_units',units); _imSet('tcj_unit_meta',meta);
+        auditLog('IM Interface > Reference Data','Unit Renamed',oldU,oldU,units[i]);
+      });
+
+      var mSel=document.createElement('select');mSel.style.cssText=_imS.sel;
+      MTYPE.forEach(function(t){ var o=document.createElement('option');o.value=t;o.textContent=t;o.selected=(m.mtype||'Other')===t;mSel.appendChild(o); });
+      mSel.addEventListener('change',function(){ if(!meta[unit])meta[unit]={};meta[unit].mtype=this.value;_imSet('tcj_unit_meta',meta); });
+
+      function numField(val,placeholder){
+        var f=document.createElement('input');f.type='text';f.inputMode='decimal';f.value=val!=null?val:'';f.placeholder=placeholder;
+        f.style.cssText=_imS.inp;
+        f.addEventListener('keydown',function(ev){
+          var ok=['Backspace','Delete','ArrowLeft','ArrowRight','Tab','.','-'];
+          if(!ok.includes(ev.key)&&!(ev.key>='0'&&ev.key<='9')&&!ev.ctrlKey&&!ev.metaKey)ev.preventDefault();
+        });
+        return f;
+      }
+
+      var minF=numField(m.min,'—');
+      minF.addEventListener('change',function(){ if(!meta[unit])meta[unit]={};meta[unit].min=this.value===''?null:parseFloat(this.value);_imSet('tcj_unit_meta',meta); });
+      var maxF=numField(m.max,'—');
+      maxF.addEventListener('change',function(){ if(!meta[unit])meta[unit]={};meta[unit].max=this.value===''?null:parseFloat(this.value);_imSet('tcj_unit_meta',meta); });
+      var decF=numField(m.decimals,'0');
+      decF.addEventListener('change',function(){ if(!meta[unit])meta[unit]={};meta[unit].decimals=this.value===''?null:parseInt(this.value);_imSet('tcj_unit_meta',meta); });
+
+      var del=document.createElement('button');del.textContent='×';del.style.cssText=_imS.delBtn;
+      del.addEventListener('click',function(){
+        if(!confirm('Delete unit "'+unit+'"?'))return;
+        auditLog('IM Interface > Reference Data','Unit Deleted',unit,unit,null);
+        units.splice(i,1); delete meta[unit]; _imSet('tcj_units',units); _imSet('tcj_unit_meta',meta); renderUnits();
+      });
+      grid.appendChild(ni);grid.appendChild(mSel);grid.appendChild(minF);grid.appendChild(maxF);grid.appendChild(decF);grid.appendChild(del);
+    });
+  }
+  renderUnits(); container.appendChild(grid);
+
+  var addRow=document.createElement('div');addRow.style.cssText='display:flex;gap:8px;margin-top:10px';
+  var ni=document.createElement('input');ni.type='text';ni.placeholder='Add new unit…';ni.style.cssText=_imS.inp;
+  var ab=document.createElement('button');ab.textContent='+ Add';ab.style.cssText=_imS.btn+';background:var(--accent);color:#fff';
+  ab.addEventListener('click',function(){
+    var v=ni.value.trim();if(!v)return;
+    units.push(v);_imSet('tcj_units',units);
+    auditLog('IM Interface > Reference Data','Unit Added',v,null,v); renderUnits(); ni.value='';
+  });
+  ni.addEventListener('keydown',function(ev){if(ev.key==='Enter')ab.click();});
+  addRow.appendChild(ni);addRow.appendChild(ab);container.appendChild(addRow);
+}
+
+// ── Column Settings Tab ──────────────────────────────────────────
+function buildColumnSettingsTab(container){
+  var settings=JSON.parse(localStorage.getItem('tcj_im_settings')||'{}');
+  if(!settings.cols)settings.cols={};
+  if(!settings.pageSize)settings.pageSize=ING_PAGE_SIZE||50;
+  if(!settings.sortCol)settings.sortCol='ID';
+  if(!settings.sortDir)settings.sortDir='asc';
+
+  var LOCKED=['ID','Ingredient Name','Category'];
+  var TYPE_OPTS=[{value:'text',label:'Text'},{value:'yesno',label:'Yes / No'},{value:'number',label:'Number'},{value:'category',label:'Category'}];
+
+  container.appendChild(makeExpandCollapseBar(container));
+
+  // Standard Columns
+  makeAccordion('Standard Column Settings', function(body){
+    var grid=document.createElement('div');
+    grid.style.cssText='display:grid;grid-template-columns:160px 1fr 110px 80px;gap:6px 12px;align-items:center';
+    ['KEY','DISPLAY LABEL','TYPE','VISIBLE'].forEach(function(t){ var h=document.createElement('div');h.style.cssText=_imS.hdr;h.textContent=t;grid.appendChild(h); });
+
+    var ALL=[{key:'ID',label:'ID',type:'number'}].concat(STD_COLS);
+    ALL.forEach(function(col){
+      var s=settings.cols[col.key]||{};
+      var locked=LOCKED.includes(col.key)||col.key==='ID';
+
+      var kd=document.createElement('div');kd.style.cssText=_imS.inp+';background:rgba(255,255,255,0.03);color:var(--text-mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';kd.textContent=col.key;kd.title=col.key;
+
+      var li=document.createElement('input');li.type='text';li.value=s.label||col.label;li.disabled=col.key==='ID';
+      li.style.cssText=_imS.inp+(col.key==='ID'?';opacity:0.4':'');
+      li.addEventListener('change',function(){ if(!settings.cols[col.key])settings.cols[col.key]={};settings.cols[col.key].label=this.value.trim()||col.label; });
+
+      var ts=document.createElement('select');ts.disabled=locked;ts.style.cssText=_imS.sel+(locked?';opacity:0.4':'');
+      TYPE_OPTS.forEach(function(opt){ var o=document.createElement('option');o.value=opt.value;o.textContent=opt.label;o.selected=(s.type||col.type)===opt.value;ts.appendChild(o); });
+      ts.addEventListener('change',function(){ if(!settings.cols[col.key])settings.cols[col.key]={};settings.cols[col.key].type=this.value; });
+
+      var vw=document.createElement('div');vw.style.cssText='display:flex;align-items:center;justify-content:center';
+      if(col.key!=='ID'){
+        var vc=document.createElement('input');vc.type='checkbox';vc.style.cssText='width:16px;height:16px;accent-color:var(--accent);cursor:pointer';
+        vc.checked=typeof s.visible!=='undefined'?s.visible:(_colVis[col.key]!==false);
+        vc.addEventListener('change',function(){ if(!settings.cols[col.key])settings.cols[col.key]={};settings.cols[col.key].visible=this.checked; });
+        vw.appendChild(vc);
+      } else { var lk=document.createElement('span');lk.textContent='🔒';lk.style.cssText='font-size:11px;opacity:0.4';vw.appendChild(lk); }
+      grid.appendChild(kd);grid.appendChild(li);grid.appendChild(ts);grid.appendChild(vw);
+    });
+    body.appendChild(grid);
+  }, true, container);
+
+  // Custom Columns
+  makeAccordion('Custom Columns', function(body){
+    if(!_extraColKeys.length){
+      var msg=document.createElement('div');msg.style.cssText=_imS.label;msg.textContent='No custom columns yet. Use + Column in the ingredient table.';body.appendChild(msg);return;
+    }
+    var cg=document.createElement('div');cg.style.cssText='display:grid;grid-template-columns:1fr 100px 1fr 70px;gap:6px 10px;align-items:center';
+    ['NAME','TYPE','RENAME TO','ACTIONS'].forEach(function(t){ var h=document.createElement('div');h.style.cssText=_imS.hdr;h.textContent=t;cg.appendChild(h); });
+    _extraColKeys.forEach(function(k){
+      var nd=document.createElement('div');nd.style.cssText=_imS.inp+';background:rgba(255,255,255,0.03);color:var(--accent)';nd.textContent=k;
+      var ts=document.createElement('select');ts.style.cssText=_imS.sel;
+      [{value:'text',label:'Text'},{value:'yesno',label:'Yes/No'},{value:'number',label:'Number'}].forEach(function(opt){ var o=document.createElement('option');o.value=opt.value;o.textContent=opt.label;o.selected=(_extraColTypes[k]||'text')===opt.value;ts.appendChild(o); });
+      ts.addEventListener('change',function(){ _extraColTypes[k]=this.value;var types=JSON.parse(localStorage.getItem('tcj_extra_col_types')||'{}');types[k]=this.value;localStorage.setItem('tcj_extra_col_types',JSON.stringify(types)); });
+      var ri=document.createElement('input');ri.type='text';ri.placeholder='New name…';ri.style.cssText=_imS.inp;
+      var acts=document.createElement('div');acts.style.cssText='display:flex;gap:4px';
+      var rb=document.createElement('button');rb.textContent='↩';rb.title='Rename';rb.style.cssText='padding:4px 8px;background:none;border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-size:11px;cursor:pointer';
+      rb.addEventListener('click',(function(key,inp){return function(){ var nv=inp.value.trim();if(!nv||nv===key){inp.focus();return;} renameExtraColumn(key);loadIMInterface(); };})(k,ri));
+      var db=document.createElement('button');db.textContent='🗑';db.title='Delete';db.style.cssText=_imS.delBtn;
+      db.addEventListener('click',(function(key){return function(){ deleteExtraColumn(key);loadIMInterface(); };})(k));
+      acts.appendChild(rb);acts.appendChild(db);
+      cg.appendChild(nd);cg.appendChild(ts);cg.appendChild(ri);cg.appendChild(acts);
+    });
+    body.appendChild(cg);
+  }, true, container);
+
+  // Table Defaults
+  makeAccordion('Table Defaults', function(body){
+    var dg=document.createElement('div');dg.style.cssText='display:grid;grid-template-columns:160px 1fr;gap:10px 16px;align-items:center;max-width:420px';
+    function addRow(label,input){ var l=document.createElement('div');l.style.cssText=_imS.label;l.textContent=label;dg.appendChild(l);dg.appendChild(input); }
+
+    var ps=document.createElement('input');ps.type='number';ps.min='10';ps.max='500';ps.step='10';ps.value=settings.pageSize||50;ps.style.cssText=_imS.inp.replace('width:100%;','')+';width:100px';
+    ps.addEventListener('change',function(){settings.pageSize=parseInt(this.value)||50;});
+    addRow('Rows per page',ps);
+
+    var sc=document.createElement('select');sc.style.cssText=_imS.sel.replace('width:100%;','')+';width:auto';
+    ['ID','Ingredient Name','Category','Sub Category'].forEach(function(c){ var o=document.createElement('option');o.value=c;o.textContent=c;o.selected=settings.sortCol===c;sc.appendChild(o); });
+    sc.addEventListener('change',function(){settings.sortCol=this.value;});
+    addRow('Default sort',sc);
+
+    var sd=document.createElement('select');sd.style.cssText=sc.style.cssText;
+    [{v:'asc',l:'A → Z'},{v:'desc',l:'Z → A'}].forEach(function(o){ var opt=document.createElement('option');opt.value=o.v;opt.textContent=o.l;opt.selected=settings.sortDir===o.v;sd.appendChild(opt); });
+    sd.addEventListener('change',function(){settings.sortDir=this.value;});
+    addRow('Direction',sd);
+    body.appendChild(dg);
+  }, false, container);
+
+  // Save / Reset
+  var sw=document.createElement('div');sw.style.cssText='margin-top:16px;display:flex;gap:10px;align-items:center';
+  var sb=document.createElement('button');sb.textContent='Save Column Settings';sb.style.cssText=_imS.btn+';background:var(--accent);color:#fff;padding:10px 24px';
+  var sm=document.createElement('span');sm.style.cssText='font-family:DM Sans,sans-serif;font-size:12px;color:#4caf76;display:none';sm.textContent='✓ Saved';
+  sb.addEventListener('click',function(){saveImSettings(settings);sm.style.display='inline';setTimeout(function(){sm.style.display='none';},2000);});
+  var rb=document.createElement('button');rb.textContent='Reset to Defaults';rb.style.cssText=_imS.btn+';background:none;border:1px solid var(--border);color:var(--text-mid);padding:10px 18px';
+  rb.addEventListener('click',function(){if(!confirm('Reset all column settings to defaults?'))return;localStorage.removeItem('tcj_im_settings');location.reload();});
+  sw.appendChild(sb);sw.appendChild(rb);sw.appendChild(sm);container.appendChild(sw);
+}
+
+// ── Recycle Bin (embedded) ───────────────────────────────────────
+function loadIngRecycleBinInto(container){
+  container.innerHTML='<div style="'+_imS.label+';padding:8px 0">Loading\u2026</div>';
   rpc('admin_get_deleted_extra_fields',{}).then(function(rows){
-    if(!rows||!rows.length){container.innerHTML='<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Recycle Bin is empty.</div>';return;}
+    if(!rows||!rows.length){container.innerHTML='<div style="'+_imS.label+';padding:8px 0">Recycle Bin is empty.</div>';return;}
     var groups={};
-    rows.forEach(function(r){var m=r.field_name.match(/^Deleted(\d+)(.+)$/);if(!m)return;var base=m[2],n=parseInt(m[1]);if(!groups[base])groups[base]=[];groups[base].push({key:r.field_name,n:n,count:parseInt(r.ingredient_count)||0});});
+    rows.forEach(function(r){ var m=r.field_name.match(/^Deleted(\d+)(.+)$/);if(!m)return;var base=m[2],n=parseInt(m[1]);if(!groups[base])groups[base]=[];groups[base].push({key:r.field_name,n:n,count:parseInt(r.ingredient_count)||0}); });
     container.innerHTML='';
-    var COLS=[{l:'Original Name',w:'1fr'},{l:'Stored As',w:'1.2fr'},{l:'Type',w:'70px'},{l:'Source',w:'110px'},{l:'Deleted On',w:'130px'},{l:'Rows',w:'50px'},{l:'Actions',w:'170px'}];
+    var COLS=[{l:'Original Name',w:'1fr'},{l:'Stored As',w:'1.2fr'},{l:'Type',w:'70px'},{l:'Source',w:'110px'},{l:'Deleted On',w:'140px'},{l:'Rows',w:'50px'},{l:'Actions',w:'170px'}];
     var tpl=COLS.map(function(c){return c.w;}).join(' ');
-    var hdr=document.createElement('div');hdr.style.cssText='display:grid;grid-template-columns:'+tpl+';gap:0 8px;align-items:center;margin-bottom:4px;padding-bottom:6px;border-bottom:1px solid var(--border)';
-    COLS.forEach(function(c){var h=document.createElement('div');h.style.cssText="font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid)";h.textContent=c.l;hdr.appendChild(h);});
+    var hdr=document.createElement('div');hdr.style.cssText='display:grid;grid-template-columns:'+tpl+';gap:0 8px;align-items:center;padding-bottom:6px;border-bottom:1px solid var(--border);margin-bottom:4px';
+    COLS.forEach(function(c){ var h=document.createElement('div');h.style.cssText=_imS.hdr;h.textContent=c.l;hdr.appendChild(h); });
     container.appendChild(hdr);
     var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     Object.keys(groups).sort().forEach(function(base){
       groups[base].sort(function(a,b){return b.n-a.n;}).forEach(function(item){
-        var meta=JSON.parse(localStorage.getItem('tcj_deleted_meta')||'{}');
-        var dm=meta[item.key]||{};
+        var dm=(JSON.parse(localStorage.getItem('tcj_deleted_meta')||'{}')||{})[item.key]||{};
         var _d=dm.deletedAt?new Date(dm.deletedAt):null;
         var _pad=function(n){return n<10?'0'+n:String(n);};
         var dDate=_d?(_d.getDate()+' '+MONTHS[_d.getMonth()]+' '+_d.getFullYear()+' '+_pad(_d.getHours())+':'+_pad(_d.getMinutes())+':'+_pad(_d.getSeconds())):'—';
@@ -1541,17 +1676,95 @@ function loadIngRecycleBinInto(container) {
         row.appendChild(cell(dDate,"font-family:'DM Sans',sans-serif;font-size:10px;color:var(--text-mid)"));
         row.appendChild(cell(item.count+' row'+(item.count===1?'':'s'),"font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)"));
         var acts=document.createElement('div');acts.style.cssText='display:flex;gap:4px';
-        var rb=document.createElement('button');rb.textContent='↺ Restore';
-        rb.style.cssText="padding:4px 10px;background:none;border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap";
+        var rb=document.createElement('button');rb.textContent='\u21ba Restore';rb.style.cssText="padding:4px 10px;background:none;border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap";
         rb.addEventListener('click',(function(k,b){return function(){restoreDeletedColumn(k,b);};})(item.key,base));
-        var db=document.createElement('button');db.textContent='Delete';
-        db.style.cssText="padding:4px 10px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;cursor:pointer";
+        var db=document.createElement('button');db.textContent='Delete';db.style.cssText="padding:4px 10px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;cursor:pointer";
         db.addEventListener('click',(function(k,b,c){return function(){permanentlyDeleteColumn(k,b,c);setTimeout(function(){loadIngRecycleBinInto(container);},1000);};})(item.key,base,item.count));
-        acts.appendChild(rb);acts.appendChild(db);row.appendChild(acts);
-        container.appendChild(row);
+        acts.appendChild(rb);acts.appendChild(db);row.appendChild(acts);container.appendChild(row);
       });
     });
   }).catch(function(e){container.innerHTML='<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:12px">Error: '+esc(e.message)+'</div>';});
+}
+
+// ── Audit Trail Tab ──────────────────────────────────────────────
+function loadAuditTrail(container){
+  container.innerHTML='<div style="'+_imS.label+';padding:8px 0">Loading\u2026</div>';
+  rpc('admin_get_audit_log',{p_limit:500,p_offset:0}).then(function(rows){
+    container.innerHTML='';
+
+    // Export buttons
+    var exportBar=document.createElement('div');exportBar.style.cssText='display:flex;gap:8px;margin-bottom:14px';
+    var csvBtn=document.createElement('button');csvBtn.textContent='⬇ Export CSV';csvBtn.style.cssText=_imS.btn+';background:none;border:1px solid var(--border);color:var(--text-mid);padding:6px 14px';
+    var pdfBtn=document.createElement('button');pdfBtn.textContent='⬇ Export PDF';pdfBtn.style.cssText=csvBtn.style.cssText;
+    csvBtn.addEventListener('click',function(){exportAuditCSV(rows);});
+    pdfBtn.addEventListener('click',function(){exportAuditPDF(rows);});
+    exportBar.appendChild(csvBtn);exportBar.appendChild(pdfBtn);container.appendChild(exportBar);
+
+    if(!rows||!rows.length){
+      var empty=document.createElement('div');empty.style.cssText=_imS.label+';padding:8px 0';empty.textContent='No audit entries yet.';container.appendChild(empty);return;
+    }
+
+    var COLS=[{l:'Timestamp',w:'140px'},{l:'Admin',w:'100px'},{l:'Tab',w:'1fr'},{l:'Action',w:'100px'},{l:'Target',w:'1fr'},{l:'Old Value',w:'1fr'},{l:'New Value',w:'1fr'}];
+    var tpl=COLS.map(function(c){return c.w;}).join(' ');
+    var hdr=document.createElement('div');hdr.style.cssText='display:grid;grid-template-columns:'+tpl+';gap:0 8px;align-items:center;padding-bottom:6px;border-bottom:1px solid var(--border);margin-bottom:4px';
+    COLS.forEach(function(c){var h=document.createElement('div');h.style.cssText=_imS.hdr;h.textContent=c.l;hdr.appendChild(h);});
+    container.appendChild(hdr);
+
+    var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    rows.forEach(function(r){
+      var d=new Date(r.created_at);
+      var _pad=function(n){return n<10?'0'+n:String(n);};
+      var ts=d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear()+' '+_pad(d.getHours())+':'+_pad(d.getMinutes())+':'+_pad(d.getSeconds());
+      var row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:'+tpl+';gap:0 8px;align-items:start;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)';
+      var cs="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);word-break:break-word";
+      var cs2="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-high);word-break:break-word";
+      function cell(t,s){var d=document.createElement('div');d.style.cssText=s||cs;d.textContent=t||'—';return d;}
+      row.appendChild(cell(ts,cs));
+      row.appendChild(cell(r.admin_name,cs2));
+      row.appendChild(cell(r.tab,cs));
+      row.appendChild(cell(r.action,cs2));
+      row.appendChild(cell(r.target,cs));
+      row.appendChild(cell(r.old_value,cs));
+      row.appendChild(cell(r.new_value,cs));
+      container.appendChild(row);
+    });
+  }).catch(function(e){
+    container.innerHTML='<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:12px;padding:8px 0">Error loading audit trail: '+esc(e.message)+'</div>';
+  });
+}
+
+function exportAuditCSV(rows){
+  var headers=['Timestamp','Admin','Tab','Action','Target','Old Value','New Value','Details'];
+  var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var lines=[headers.map(function(h){return '"'+h+'"';}).join(',')];
+  rows.forEach(function(r){
+    var d=new Date(r.created_at);
+    var _pad=function(n){return n<10?'0'+n:String(n);};
+    var ts=d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear()+' '+_pad(d.getHours())+':'+_pad(d.getMinutes())+':'+_pad(d.getSeconds());
+    lines.push([ts,r.admin_name,r.tab,r.action,r.target||'',r.old_value||'',r.new_value||'',r.details||''].map(function(v){return '"'+(String(v)).replace(/"/g,'""')+'"';}).join(','));
+  });
+  var blob=new Blob([lines.join('\n')],{type:'text/csv'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='audit-log-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function exportAuditPDF(rows){
+  var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var win=window.open('','_blank');
+  var html='<!DOCTYPE html><html><head><title>Audit Log</title><style>body{font-family:sans-serif;font-size:11px;margin:20px}h1{font-size:16px;margin-bottom:12px}table{width:100%;border-collapse:collapse}th{background:#333;color:#fff;padding:4px 8px;text-align:left;font-size:10px}td{padding:4px 8px;border-bottom:1px solid #eee;vertical-align:top}tr:nth-child(even)td{background:#f9f9f9}@media print{button{display:none}}</style></head><body>';
+  html+='<h1>The Culinary Journal — Audit Log</h1>';
+  html+='<p style="font-size:10px;color:#666">Exported '+new Date().toLocaleString()+'</p>';
+  html+='<button onclick="window.print()" style="margin-bottom:12px;padding:6px 14px;cursor:pointer">Print / Save as PDF</button>';
+  html+='<table><thead><tr><th>Timestamp</th><th>Admin</th><th>Tab</th><th>Action</th><th>Target</th><th>Old Value</th><th>New Value</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    var d=new Date(r.created_at);
+    var _pad=function(n){return n<10?'0'+n:String(n);};
+    var ts=d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear()+' '+_pad(d.getHours())+':'+_pad(d.getMinutes())+':'+_pad(d.getSeconds());
+    function esc2(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+    html+='<tr><td>'+esc2(ts)+'</td><td>'+esc2(r.admin_name)+'</td><td>'+esc2(r.tab)+'</td><td>'+esc2(r.action)+'</td><td>'+esc2(r.target||'')+'</td><td>'+esc2(r.old_value||'')+'</td><td>'+esc2(r.new_value||'')+'</td></tr>';
+  });
+  html+='</tbody></table></body></html>';
+  win.document.write(html); win.document.close();
 }
 
 
@@ -1877,6 +2090,7 @@ async function restoreDeletedColumn(deletedKey, originalName) {
   try {
     await rpc('admin_rename_extra_field', { p_old_key: deletedKey, p_new_key: originalName });
     var meta = JSON.parse(localStorage.getItem('tcj_deleted_meta') || '{}'); delete meta[deletedKey]; localStorage.setItem('tcj_deleted_meta', JSON.stringify(meta));
+    auditLog('IM Interface > Recycle Bin','Column Restored',originalName,deletedKey,originalName);
     // Add back to _extraColKeys
     if (!_extraColKeys.includes(originalName)) {
       _extraColKeys.push(originalName);
@@ -1895,6 +2109,7 @@ async function permanentlyDeleteColumn(deletedKey, originalName, count) {
   if (!confirm('PERMANENTLY delete all "' + originalName + '" data?\n' + count + ' ingredient row' + (count===1?'':'s') + ' will be affected.\nThis cannot be undone.')) return;
   try {
     await rpc('admin_delete_extra_field', { p_key: deletedKey });
+    auditLog('IM Interface > Recycle Bin','Column Permanently Deleted',originalName,deletedKey,null,'Removed from '+count+' ingredient rows');
     loadIngRecycleBin();
   } catch(e) { alert('Error: ' + e.message); }
 }
@@ -1904,7 +2119,7 @@ function switchIngTab(tab) {
   document.querySelectorAll('.ap-inner-tab[id^="itab-"]').forEach(function(t) {
     t.classList.toggle('active', t.id === 'itab-' + tab);
   });
-  ['all','pending','brands','analytics','recycle','imsettings'].forEach(function(p) {
+  ['all','pending','brands','analytics','imsettings'].forEach(function(p) {
     var el = document.getElementById('ipanel-' + p);
     if (el) el.style.display = p === tab ? 'block' : 'none';
   });
@@ -2716,6 +2931,7 @@ async function deleteExtraColumn(name) {
     var count = await rpc('admin_rename_extra_field', { p_old_key: name, p_new_key: renamedTo });
     console.log('Renamed "' + name + '" to "' + renamedTo + '" in ' + (count||0) + ' rows');
     var _renameCount = count || 0;
+    auditLog('All Ingredients > Columns','Column Deleted',name,name,renamedTo,'Renamed to '+renamedTo+' in '+_renameCount+' rows');
     // Store deletion metadata in localStorage
     var meta = JSON.parse(localStorage.getItem('tcj_deleted_meta') || '{}');
     meta[renamedTo] = {
