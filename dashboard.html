@@ -2860,6 +2860,8 @@ function openBrandForm(r){
         p_notes:fNotes.value.trim()||null,
         p_active:fActive.value==='Yes'
       });
+      // Write brand back to matching ingredient row in Supabase
+      await rpc('admin_update_cj_brand',{p_ingredient_name:generic,p_brand:brand});
       wrap.innerHTML='';wrap.style.display='none';
       var status=document.getElementById('brand-status');
       if(status){status.textContent='✓ '+(isEdit?'Updated':'Added')+': '+brand+' → '+generic;setTimeout(function(){status.textContent='';},3000);}
@@ -3153,6 +3155,19 @@ async function saveAllChanges() {
       }
     } else {
       saved++;
+    }
+  }
+  // Sync CJ Recommended Brand changes → Brand Mapping table
+  for(var _sid in _pendingChanges){
+    var _sChanges=_pendingChanges[_sid];
+    var _sCJField=_sChanges['CJ Recommended Brand'];
+    if(_sCJField&&_sCJField.new!==undefined){
+      var _sIng=window._ingRows&&window._ingRows[_sid];
+      var _sIngName=(_sIng&&_sIng['Ingredient Name'])||'';
+      var _sNewBrand=(_sCJField.new)||'';
+      if(_sIngName&&_sNewBrand){
+        try{ await rpc('admin_upsert_brand_mapping',{p_id:0,p_brand_name:_sNewBrand,p_generic_name:_sIngName,p_category:_sIng&&_sIng['Category']||null,p_sub_category:_sIng&&_sIng['Sub Category']||null,p_active:true}); }catch(_){}
+      }
     }
   }
   _pendingChanges = {};
