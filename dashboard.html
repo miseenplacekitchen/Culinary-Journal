@@ -2055,12 +2055,22 @@ async function saveAllChanges() {
     }
     try {
       await rpc('admin_upsert_ingredient', params);
-      // Save extra_fields separately — guaranteed to merge correctly
-      if (hasExtra && Object.keys(ef).length) {
+    } catch(e) {
+      console.error('Upsert error id '+id+':', e.message);
+      errors++; continue;
+    }
+    if (hasExtra && Object.keys(ef).length) {
+      try {
         await rpc('admin_save_extra_fields', { p_id: parseInt(id), p_extra_fields: ef });
+        saved++;
+      } catch(e) {
+        // Show the exact Supabase error so we can see what's failing
+        alert('Custom column save failed for row ' + id + ':\n\n' + e.message + '\n\nPlease screenshot this and report it.');
+        errors++;
       }
+    } else {
       saved++;
-    } catch(e) { console.error('Save error for id '+id+':', e.message); errors++; }
+    }
   }
   _pendingChanges = {};
   if (btn) { btn.disabled=false; updateSaveBtn(); }
