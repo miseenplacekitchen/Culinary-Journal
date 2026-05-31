@@ -2694,7 +2694,9 @@ function renderIngRows(rows) {
         if(editType==='select'){
           td.addEventListener('click',function(e){inlineCell(e,id,colKey,'select');});
         } else {
-          td.addEventListener('dblclick',function(e){inlineCell(e,id,colKey,'text');});
+          // Unit and Sub Category get suggest type — single-line input with managed list suggestions
+          var _iType=(colKey==='Unit'||colKey==='Sub Category')?'suggest':'text';
+          td.addEventListener('dblclick',(function(t){return function(e){inlineCell(e,id,colKey,t);};}(_iType)));
         }
       }
       tr.appendChild(td);
@@ -2793,7 +2795,39 @@ function inlineCell(e,id,field,type){
     ni.addEventListener('blur',function(){commitNum(this.value);});
     ni.addEventListener('click',function(ev){ev.stopPropagation();});
     td.innerHTML='';td.appendChild(ni);ni.focus();ni.select();
-  } else if(type==='text'){
+  } else if(type==='suggest'){
+    // Single-line input with datalist suggestions (Unit, Sub Category)
+    const origStyle=td.getAttribute('style')||'';
+    const inp=document.createElement('input');
+    inp.type='text'; inp.className='inline-input';
+    inp.style.cssText='width:100%;min-width:160px;font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--accent);border-radius:5px;background:var(--bg);color:var(--text-high);outline:none';
+    inp.value=currentVal||'';
+    // Attach datalist
+    var dlId='_il_dl_'+field.replace(/[^a-z0-9]/gi,'_');
+    var dl=document.getElementById(dlId);
+    if(!dl){dl=document.createElement('datalist');dl.id=dlId;document.body.appendChild(dl);}
+    dl.innerHTML='';
+    var _sugg=(field==='Unit'?getUnits():(field==='Sub Category'?(getSubCats()[(ing&&ing['Category'])||'']||[]):[]));
+    _sugg.forEach(function(s){var o=document.createElement('option');o.value=s;dl.appendChild(o);});
+    inp.setAttribute('list',dlId);
+    td.style.cssText='padding:2px;overflow:visible;position:relative;z-index:100';
+    td.innerHTML='';
+    td.appendChild(inp);
+    inp.focus(); inp.select();
+    function commitSuggest(v){
+      var nv=v.trim();
+      td.setAttribute('style',origStyle); td.innerHTML=origHTML;
+      td.className='editable-cell'+(td.classList.contains('cell-pending')?' cell-pending':'');
+      recordChange(id,field,currentVal,nv);
+      if(nv!==currentVal)td.classList.add('cell-pending');
+    }
+    inp.addEventListener('keydown',function(ev){
+      if(ev.key==='Enter'){ev.preventDefault();commitSuggest(this.value);}
+      if(ev.key==='Escape'){td.setAttribute('style',origStyle);td.innerHTML=origHTML;}
+    });
+    inp.addEventListener('blur',function(){commitSuggest(this.value);});
+  } else
+if(type==='text'){
     // Expand cell into wrapping textarea — compact view restores on save/cancel
     const origStyle=td.getAttribute('style')||'';
     const ta=document.createElement('textarea');
