@@ -2804,16 +2804,14 @@ function openIngModal(ing){
     document.getElementById('ing-notes').value    =ing['Notes']||'';
     var rawEF=Object.assign({},ing.extra_fields||{});
     _customFieldTypes={};
-    // Filter extra_fields:
-    // - remove _t_ type metadata
-    // - remove Deleted* renamed keys (recycle bin data)
-    // - remove keys that WERE global columns but have since been deleted
-    var _everGlobal=JSON.parse(localStorage.getItem('tcj_ever_global_cols')||'[]');
+    // Only keep keys that are:
+    // 1. Active global columns (in _extraColKeys)
+    // 2. Per-ingredient custom fields added this session (prefixed _cf_)
+    // Everything else — old test data, deleted columns — is hidden
     var _activeGlobal=JSON.parse(localStorage.getItem('tcj_extra_cols')||'[]');
     Object.keys(rawEF).forEach(function(k){
       if(k.startsWith('_t_')){_customFieldTypes[k.slice(3)]=rawEF[k];delete rawEF[k];}
-      else if(/^Deleted\d+/.test(k)){delete rawEF[k];}
-      else if(_everGlobal.includes(k)&&!_activeGlobal.includes(k)){delete rawEF[k];} // was global, now deleted
+      else if(!_activeGlobal.includes(k)&&!k.startsWith('_cf_')){delete rawEF[k];}
     });
     _customFields=rawEF;
     // Ensure all global +Column columns appear in the modal
