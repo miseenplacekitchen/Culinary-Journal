@@ -2061,8 +2061,12 @@ function buildColumnSettingsTab(container){
     var dg=document.createElement('div');dg.style.cssText='display:grid;grid-template-columns:160px 1fr;gap:10px 16px;align-items:center;max-width:420px';
     function addRow(label,input){ var l=document.createElement('div');l.style.cssText=_imS.label;l.textContent=label;dg.appendChild(l);dg.appendChild(input); }
 
-    var ps=document.createElement('input');ps.type='number';ps.min='10';ps.max='500';ps.step='10';
-    ps.value=settings.pageSize||50;ps.style.cssText=_imS.inp.replace('width:100%;','')+';width:100px';
+    var ps=document.createElement('select');ps.style.cssText=_imS.sel.replace('width:100%;','')+';width:120px';
+    [{v:25,l:'25'},{v:50,l:'50'},{v:100,l:'100'},{v:200,l:'200'},{v:500,l:'500'},{v:99999,l:'All'}].forEach(function(opt){
+      var o=document.createElement('option');o.value=opt.v;o.textContent=opt.l;
+      o.selected=(settings.pageSize||50)===opt.v;
+      ps.appendChild(o);
+    });
     ps.addEventListener('change',function(){settings.pageSize=parseInt(this.value)||50;});
     addRow('Rows per page',ps);
 
