@@ -985,19 +985,20 @@ async function init() {
     else {
       const rows = await rpc('get_my_profile', {});
       const pr = Array.isArray(rows) ? rows[0] : rows;
-      if (pr) { isAdmin = !!pr.is_admin; setEl('admin-name', pr.full_name || pr.username || 'Admin'); }
+      if (pr) { isAdmin = !!pr.is_admin; setEl('admin-name', pr.full_name || pr.username || 'Admin'); localStorage.setItem('tcj_profile', JSON.stringify(pr)); }
     }
   } catch(e) {}
   if (!isAdmin) { document.getElementById('screen-denied').style.display='flex'; document.getElementById('screen-main').style.display='none'; return; }
   document.getElementById('screen-denied').style.display = 'none';
   document.getElementById('screen-main').style.display   = 'flex';
-  try { const st = await rpc('admin_get_stats',{}); if(st){ setEl('badge-pending', st.pending||0); } } catch(e) {}
-  try { const pc = await rpc('admin_count_pending_users',{}); setEl('badge-pending-users', pc||0); } catch(e) {}
+  // Restore saved view IMMEDIATELY — before any async calls so there's no flash
   var _savedView   = localStorage.getItem('tcj_active_view')    || 'dashboard';
   var _savedIngTab = localStorage.getItem('tcj_active_ing_tab') || 'all';
-  // Hide all view panels instantly to prevent flash
   document.querySelectorAll('[id^="v-"]').forEach(function(el){el.style.display='none';});
   switchView(_savedView, _savedIngTab);
+  // Load stats in background — don't block the view restore
+  rpc('admin_get_stats',{}).then(function(st){ if(st) setEl('badge-pending', st.pending||0); }).catch(function(){});
+  rpc('admin_count_pending_users',{}).then(function(pc){ setEl('badge-pending-users', pc||0); }).catch(function(){});
 }
 
 function signOut() {
