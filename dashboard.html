@@ -2618,10 +2618,7 @@ async function loadIngPending() {
   }
 }
 
-async // ── Brand Mapping Tab ─────────────────────────────────────────────
-// Supabase-backed. Table: brand_mappings
-// Columns: ID | Brand Name | Generic Name | Category | Sub Category | Notes | Active | Actions
-
+// ── Brand Mapping Tab ─────────────────────────────────────────────
 async function buildBrandsTab(container){
   container.innerHTML='';
 
@@ -3186,9 +3183,15 @@ async function loadIngredients(page) {
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="20" class="ap-empty-row">Loading...</td></tr>';
   try {
+    // 30-second timeout — never hang forever on a slow RPC
+    function _withTimeout(promise, ms){
+      return Promise.race([promise, new Promise(function(_,reject){
+        setTimeout(function(){reject(new Error('Request timed out. Please check your connection and try again.'));},ms);
+      })]);
+    }
     const [rows, total] = await Promise.all([
-      rpc('admin_get_ingredients',{p_search:null,p_category:null,p_limit:1000,p_offset:0}),
-      rpc('admin_count_ingredients',{p_search:null,p_category:null})
+      _withTimeout(rpc('admin_get_ingredients',{p_search:null,p_category:null,p_limit:1000,p_offset:0}),30000),
+      _withTimeout(rpc('admin_count_ingredients',{p_search:null,p_category:null}),30000)
     ]);
     _ingAllData = rows;
     // localStorage is the source of truth for which columns exist.
