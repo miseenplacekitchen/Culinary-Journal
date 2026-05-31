@@ -502,9 +502,6 @@
         <button class="ap-inner-tab"        id="itab-pending"  onclick="switchIngTab('pending')">
           Pending Review <span class="ap-nav-badge" id="itab-badge-pending" style="position:static;margin-left:4px">0</span>
         </button>
-        <button class="ap-inner-tab"        id="itab-brands"   onclick="switchIngTab('brands')">Brand Mapping</button>
-        <button class="ap-inner-tab"        id="itab-analytics" onclick="switchIngTab('analytics')">📊 Analytics</button>
-        
         <button class="ap-inner-tab" id="itab-imsettings" onclick="switchIngTab('imsettings')">⚙ IM Interface</button>
       </div>
 
@@ -1278,6 +1275,7 @@ function loadIMInterface(){
   var TAB_DEFS=[
     {key:'refdata',    label:'Reference Data'},
     {key:'colsettings',label:'Column Settings'},
+    {key:'analytics',  label:'📊 Analytics'},
     {key:'recycle',    label:'Recycle Bin'},
     {key:'audit',      label:'Audit Trail'}
   ];
@@ -1306,31 +1304,6 @@ function loadIMInterface(){
     topPanels[td.key]=panel;
   });
 
-  // Save All button
-  var saveAllBar=document.createElement('div');
-  saveAllBar.style.cssText='display:flex;justify-content:flex-end;margin-bottom:14px';
-  var saveAllBtn=document.createElement('button');
-  saveAllBtn.textContent='💾 Save All';
-  saveAllBtn.style.cssText="padding:8px 20px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer";
-  saveAllBtn.addEventListener('click',function(){
-    // Save all Reference Data
-    var c=getCats(),s=getSubCats(),u=getUnits(),um=getUnitMeta();
-    _imSet('tcj_cats',c); _imSet('tcj_subcats',s); _imSet('tcj_units',u); _imSet('tcj_unit_meta',um);
-    CATS_LIST.length=0; c.forEach(function(cat){CATS_LIST.push(cat);});
-    // Save column settings
-    var colSettings=JSON.parse(localStorage.getItem('tcj_im_settings')||'{}');
-    saveImSettings(colSettings);
-    // Rebuild table
-    buildTableHeader(); buildColVisPanel(); renderIngFiltered();
-    auditLog('IM Interface','Save All',null,null,null,'All IM Interface settings saved');
-    saveAllBtn.textContent='✓ All Saved';
-    saveAllBtn.style.background='#2d5a2d';
-    saveAllBtn.disabled=true;
-    setTimeout(function(){saveAllBtn.textContent='💾 Save All';saveAllBtn.style.background='var(--accent)';saveAllBtn.disabled=false;},2500);
-  });
-  saveAllBar.appendChild(saveAllBtn);
-  el.appendChild(saveAllBar);
-
   el.appendChild(topBar);
   Object.values(topPanels).forEach(function(p){ el.appendChild(p); });
 
@@ -1357,305 +1330,371 @@ function loadIMInterface(){
 }
 
 // ── Reference Data Tab ───────────────────────────────────────────
+// ── REFERENCE DATA TAB - Complete rebuild ────────────────────────
+// Sub-tabs: Categories | Sub Categories | Units | Currencies | Brand Mapping
+// Each has: ID, alphabetical order, strategic columns, Save button
+// Save All per tab (not global)
+
 function buildRefDataTab(container){
-  // Add Expand All / Collapse All bar
-  container.appendChild(makeExpandCollapseBar(container));
+  // Track unsaved state per sub-tab
+  var _dirty = {categories:false, subcategories:false, units:false, currencies:false, brands:false};
 
-  // Categories as accordion
-  makeAccordion('Categories', function(body){
-    buildCategoriesManager(body);
-  }, true, container);
+  // Sub-tab bar
+  var SUB=[
+    {key:'categories',    label:'Categories'},
+    {key:'subcategories', label:'Sub Categories'},
+    {key:'units',         label:'Units'},
+    {key:'currencies',    label:'Currencies'},
+    {key:'brands',        label:'Brand Mapping'}
+  ];
+  var subBar=document.createElement('div');
+  subBar.style.cssText='display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap';
+  var subPanels={};
+  var activeSub='categories';
 
-  // Sub Categories as accordion
-  makeAccordion('Sub Categories', function(body){
-    buildSubCategoriesManager(body);
-  }, false, container);
+  SUB.forEach(function(s){
+    var btn=document.createElement('button');
+    btn.style.cssText="padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--text-mid);margin-bottom:-1px;white-space:nowrap";
+    btn.textContent=s.label; btn.dataset.subtab=s.key;
+    btn.addEventListener('click',function(){
+      // Prompt if dirty
+      if(_dirty[activeSub]){
+        if(!confirm('You have unsaved changes in '+activeSub+'. Leave without saving?')) return;
+        _dirty[activeSub]=false;
+      }
+      activeSub=s.key;
+      subBar.querySelectorAll('button').forEach(function(b){ b.style.borderBottomColor='transparent'; b.style.color='var(--text-mid)'; });
+      btn.style.borderBottomColor='var(--accent)'; btn.style.color='var(--accent)';
+      Object.keys(subPanels).forEach(function(k){ subPanels[k].style.display=k===s.key?'block':'none'; });
+    });
+    if(s.key===activeSub){ btn.style.borderBottomColor='var(--accent)'; btn.style.color='var(--accent)'; }
+    subBar.appendChild(btn);
+    var panel=document.createElement('div');
+    panel.style.display=s.key===activeSub?'block':'none';
+    subPanels[s.key]=panel;
+  });
+  container.appendChild(subBar);
+  Object.values(subPanels).forEach(function(p){ container.appendChild(p); });
 
-  // Currencies as accordion
-  makeAccordion('Currencies', function(body){
-    buildCurrenciesManager(body);
-  }, false, container);
+  // ── Save All Reference Data button ────────────────────────────
+  var saveAllWrap=document.createElement('div');
+  saveAllWrap.style.cssText='display:flex;justify-content:flex-end;margin-bottom:12px';
+  var saveAllBtn=document.createElement('button');
+  saveAllBtn.textContent='💾 Save All Reference Data';
+  saveAllBtn.title='Saves Categories, Sub Categories, Units, Currencies and Brand Mapping';
+  saveAllBtn.style.cssText="padding:7px 18px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer";
+  saveAllBtn.addEventListener('click',function(){
+    _imSet('tcj_cats',    getCats());
+    _imSet('tcj_subcats', getSubCats());
+    _imSet('tcj_units',   getUnits());
+    _imSet('tcj_currencies', getCurrencies());
+    _imSet('tcj_brands',  getBrands());
+    CATS_LIST.length=0; getCats().forEach(function(c){CATS_LIST.push(c);});
+    Object.keys(_dirty).forEach(function(k){_dirty[k]=false;});
+    buildTableHeader(); buildColVisPanel(); renderIngFiltered();
+    auditLog('IM Interface > Reference Data','Save All Reference Data',null,null,null,'All reference data saved');
+    saveAllBtn.textContent='✓ All Saved'; saveAllBtn.style.background='#2d5a2d'; saveAllBtn.disabled=true;
+    setTimeout(function(){saveAllBtn.textContent='💾 Save All Reference Data';saveAllBtn.style.background='var(--accent)';saveAllBtn.disabled=false;},2500);
+  });
+  saveAllWrap.appendChild(saveAllBtn);
+  container.insertBefore(saveAllWrap, subBar);
 
-  // Units as accordion
-  makeAccordion('Units', function(body){
-    buildUnitsManager(body);
-  }, false, container);
+  buildCategoriesTab(subPanels['categories'], _dirty);
+  buildSubCategoriesTab(subPanels['subcategories'], _dirty);
+  buildUnitsTab(subPanels['units'], _dirty);
+  buildCurrenciesTab(subPanels['currencies'], _dirty);
+  buildBrandsTab(subPanels['brands'], _dirty);
 }
 
+// ── CATEGORIES TAB ───────────────────────────────────────────────
+function buildCategoriesTab(container, _dirty){
+  var cats = getCats().slice().sort();
+  var meta = getCatMeta();
 
-function buildCategoriesManager(container){
-  var cats=getCats();
-  var meta=getCatMeta();
   var desc=document.createElement('div');
   desc.style.cssText=_imS.label+';margin-bottom:12px';
-  desc.textContent='Ingredient categories. Changes apply immediately to the Category dropdown.';
+  desc.textContent='Ingredient categories, sorted alphabetically. Required=Yes means Sub Category must be selected for ingredients in this category.';
   container.appendChild(desc);
 
   // Grid header
+  var COLS=['ID','CATEGORY NAME','REQUIRED','ACTIVE','DELETE'];
   var grid=document.createElement('div');
-  grid.style.cssText='display:grid;grid-template-columns:1fr 90px 36px;gap:6px 8px;align-items:center';
-  ['CATEGORY NAME','REQUIRED',''].forEach(function(h){
-    var d=document.createElement('div'); d.style.cssText=_imS.hdr; d.textContent=h; grid.appendChild(d);
+  grid.style.cssText='display:grid;grid-template-columns:40px 1fr 90px 70px 36px;gap:4px 10px;align-items:center';
+
+  COLS.forEach(function(h){
+    var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;grid.appendChild(d);
   });
 
-  function renderCats(){
-    // Remove old rows (keep headers = first 3 children)
-    while(grid.children.length>3) grid.removeChild(grid.lastChild);
-    cats.forEach(function(cat,i){
-      var inp=document.createElement('input'); inp.type='text'; inp.value=cat;
-      inp.style.cssText=_imS.inp;
-      inp.addEventListener('change',function(){
-        var oldName=cats[i]; cats[i]=this.value.trim()||cat;
-        _imSet('tcj_cats',cats); CATS_LIST.length=0; cats.forEach(function(c){CATS_LIST.push(c);});
-        auditLog('IM Interface > Reference Data','Category Renamed',oldName,oldName,cats[i]);
+  function renderRows(){
+    while(grid.children.length>5) grid.removeChild(grid.lastChild);
+    cats.sort().forEach(function(cat,i){
+      var m=meta[cat]||{required:'No',active:'Yes'};
+      // ID
+      var idDiv=document.createElement('div');idDiv.style.cssText=_imS.hdr+';color:var(--text-mid);text-align:center';idDiv.textContent=i+1;
+      // Name
+      var ni=document.createElement('input');ni.type='text';ni.value=cat;ni.style.cssText=_imS.inp;
+      ni.addEventListener('change',function(){
+        var oldName=cats[i]; var newName=this.value.trim();
+        if(!newName||newName===oldName)return;
+        // Propagate rename across ingredients in DB
+        rpc('admin_rename_reference_value',{p_table:'ingredients',p_column:'Category',p_old:oldName,p_new:newName}).then(function(n){
+          auditLog('IM Interface > Reference Data','Category Renamed',oldName,oldName,newName,'Updated '+n+' ingredients');
+        }).catch(function(){});
+        if(meta[oldName]){meta[newName]=meta[oldName];delete meta[oldName];}
+        cats[i]=newName;
+        _dirty.categories=true;
       });
-
-      var reqSel=document.createElement('select'); reqSel.style.cssText=_imS.sel;
-      ['Yes','No'].forEach(function(v){ var o=document.createElement('option');o.value=v;o.textContent=v;o.selected=(meta[cat]&&meta[cat].required)===v;reqSel.appendChild(o); });
-      reqSel.addEventListener('change',function(){ if(!meta[cat])meta[cat]={};meta[cat].required=this.value; _imSet('tcj_cat_meta',meta); });
-
-      var del=document.createElement('button'); del.textContent='×'; del.style.cssText=_imS.delBtn;
+      // Required
+      var reqSel=document.createElement('select');reqSel.style.cssText=_imS.sel;
+      ['No','Yes'].forEach(function(v){var o=document.createElement('option');o.value=v;o.textContent=v;o.selected=(m.required||'No')===v;reqSel.appendChild(o);});
+      reqSel.addEventListener('change',function(){if(!meta[cat])meta[cat]={};meta[cat].required=this.value;_dirty.categories=true;});
+      // Active
+      var actSel=document.createElement('select');actSel.style.cssText=_imS.sel;
+      ['Yes','No'].forEach(function(v){var o=document.createElement('option');o.value=v;o.textContent=v;o.selected=(m.active||'Yes')===v;actSel.appendChild(o);});
+      actSel.addEventListener('change',function(){if(!meta[cat])meta[cat]={};meta[cat].active=this.value;_dirty.categories=true;});
+      // Delete
+      var del=document.createElement('button');del.textContent='×';del.style.cssText=_imS.delBtn;
       del.addEventListener('click',function(){
-        if(!confirm('Delete category "'+cat+'"?'))return;
-        auditLog('IM Interface > Reference Data','Category Deleted',cat,cat,null);
-        cats.splice(i,1); delete meta[cat]; _imSet('tcj_cats',cats); _imSet('tcj_cat_meta',meta);
-        CATS_LIST.length=0; cats.forEach(function(c){CATS_LIST.push(c);}); renderCats();
+        if(!confirm('Delete category "'+cat+'"? This cannot be undone.'))return;
+        cats.splice(i,1);delete meta[cat];renderRows();_dirty.categories=true;
       });
-      grid.appendChild(inp); grid.appendChild(reqSel); grid.appendChild(del);
+      grid.appendChild(idDiv);grid.appendChild(ni);grid.appendChild(reqSel);grid.appendChild(actSel);grid.appendChild(del);
     });
   }
-  renderCats();
+  renderRows();
   container.appendChild(grid);
 
-  var addRow=document.createElement('div'); addRow.style.cssText='display:flex;gap:8px;margin-top:10px';
-  var ni=document.createElement('input'); ni.type='text'; ni.placeholder='Add new category…';
-  ni.style.cssText=_imS.inp;
-  var ab=document.createElement('button'); ab.textContent='+ Add';
-  ab.style.cssText=_imS.btn+';background:var(--accent);color:#fff';
-  ab.addEventListener('click',function(){
-    var v=ni.value.trim(); if(!v)return;
-    cats.push(v); _imSet('tcj_cats',cats); CATS_LIST.length=0; cats.forEach(function(c){CATS_LIST.push(c);});
-    auditLog('IM Interface > Reference Data','Category Added',v,null,v); renderCats(); ni.value='';
-  });
+  // Add new
+  var addRow=document.createElement('div');addRow.style.cssText='display:flex;gap:8px;margin-top:10px';
+  var ni=document.createElement('input');ni.type='text';ni.placeholder='Add new category…';ni.style.cssText=_imS.inp;
+  var ab=document.createElement('button');ab.textContent='+ Add';ab.style.cssText=_imS.btn+';background:var(--accent);color:#fff';
+  ab.addEventListener('click',function(){var v=ni.value.trim();if(!v||cats.includes(v))return;cats.push(v);cats.sort();renderRows();ni.value='';_dirty.categories=true;});
   ni.addEventListener('keydown',function(ev){if(ev.key==='Enter')ab.click();});
-  addRow.appendChild(ni); addRow.appendChild(ab); container.appendChild(addRow);
+  addRow.appendChild(ni);addRow.appendChild(ab);container.appendChild(addRow);
 
   // Save button
-  var saveBar=document.createElement('div');saveBar.style.cssText='margin-top:14px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);padding-top:12px';
-  var saveBtn=document.createElement('button');saveBtn.textContent='Save Categories';
-  saveBtn.style.cssText="padding:8px 20px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer";
-  var saveMsg=document.createElement('span');saveMsg.style.cssText="font-family:'DM Sans',sans-serif;font-size:12px;color:#4caf76;display:none";
-  saveBtn.addEventListener('click',function(){
-    _imSet('tcj_cats',cats);
-    CATS_LIST.length=0; cats.forEach(function(c){CATS_LIST.push(c);});
-    buildTableHeader(); buildColVisPanel(); renderIngFiltered();
+  var sb=makeSaveBtn('Save Categories',function(){
+    _imSet('tcj_cats',cats);_imSet('tcj_cat_meta',meta);
+    CATS_LIST.length=0;cats.sort().forEach(function(c){CATS_LIST.push(c);});
+    buildTableHeader();renderIngFiltered();
     auditLog('IM Interface > Reference Data','Categories Saved',null,null,null,cats.length+' categories');
-    saveBtn.textContent='✓ Saved';saveBtn.style.background='#2d5a2d';saveBtn.disabled=true;
-    setTimeout(function(){saveBtn.textContent='Save Categories';saveBtn.style.background='var(--accent)';saveBtn.disabled=false;},2500);
+    _dirty.categories=false;
   });
-  saveBar.appendChild(saveBtn);saveBar.appendChild(saveMsg);container.appendChild(saveBar);
+  container.appendChild(sb);
 }
 
-function buildSubCategoriesManager(container){
-  var cats=getCats();
+// ── SUB CATEGORIES TAB ───────────────────────────────────────────
+function buildSubCategoriesTab(container, _dirty){
+  var cats=getCats().slice().sort();
   var subs=getSubCats();
-  var meta=getSubMeta();
-  var desc=document.createElement('div'); desc.style.cssText=_imS.label+';margin-bottom:10px';
-  desc.textContent='Sub-categories per ingredient category. Select a category to manage its sub-categories.';
+  var desc=document.createElement('div');desc.style.cssText=_imS.label+';margin-bottom:10px';
+  desc.textContent='Sub-categories linked to each ingredient category. Select a category to manage its sub-categories.';
   container.appendChild(desc);
 
-  var selRow=document.createElement('div'); selRow.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:12px';
-  var lbl=document.createElement('div'); lbl.style.cssText=_imS.label; lbl.textContent='Category:';
-  var catSel=document.createElement('select'); catSel.style.cssText=_imS.sel.replace('width:100%;','')+';width:auto;min-width:160px';
-  cats.forEach(function(c){ var o=document.createElement('option');o.value=c;o.textContent=c;catSel.appendChild(o); });
-  selRow.appendChild(lbl); selRow.appendChild(catSel); container.appendChild(selRow);
+  var selRow=document.createElement('div');selRow.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:12px';
+  var lbl=document.createElement('div');lbl.style.cssText=_imS.label;lbl.textContent='Category:';
+  var catSel=document.createElement('select');catSel.style.cssText=_imS.sel.replace('width:100%;','')+';width:auto;min-width:180px';
+  cats.forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;catSel.appendChild(o);});
+  selRow.appendChild(lbl);selRow.appendChild(catSel);container.appendChild(selRow);
 
-  var subPanel=document.createElement('div'); container.appendChild(subPanel);
+  var subPanel=document.createElement('div');container.appendChild(subPanel);
 
   function renderSubs(cat){
     subPanel.innerHTML='';
-    var arr=subs[cat]||[];
-    var hdrRow=document.createElement('div'); hdrRow.style.cssText='display:grid;grid-template-columns:1fr 36px;gap:6px 8px;align-items:center;margin-bottom:6px';
-    ['SUB-CATEGORY NAME',''].forEach(function(h){ var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;hdrRow.appendChild(d); });
-    subPanel.appendChild(hdrRow);
+    if(!subs[cat])subs[cat]=[];
+    var arr=subs[cat].slice().sort();
+    subs[cat]=arr;
 
-    var grid=document.createElement('div'); grid.style.cssText='display:grid;grid-template-columns:1fr 36px;gap:6px 8px;align-items:center';
-    function renderRows(){
-      grid.innerHTML='';
-      arr.forEach(function(sub,i){
-        var inp=document.createElement('input'); inp.type='text'; inp.value=sub; inp.style.cssText=_imS.inp;
-        inp.addEventListener('change',function(){
-          var oldName=arr[i]; arr[i]=this.value.trim()||sub;
-          subs[cat]=arr; _imSet('tcj_subcats',subs);
-          auditLog('IM Interface > Reference Data','Sub-Category Renamed',cat+' > '+oldName,oldName,arr[i]);
-        });
-        var del=document.createElement('button'); del.textContent='×'; del.style.cssText=_imS.delBtn;
-        del.addEventListener('click',function(){
-          if(!confirm('Delete sub-category "'+sub+'"?'))return;
-          auditLog('IM Interface > Reference Data','Sub-Category Deleted',cat+' > '+sub,sub,null);
-          arr.splice(i,1); subs[cat]=arr; _imSet('tcj_subcats',subs); renderRows();
-        });
-        grid.appendChild(inp); grid.appendChild(del);
+    var COLS2=['ID','SUB-CATEGORY NAME','REQUIRED','ACTIVE','DELETE'];
+    var grid2=document.createElement('div');
+    grid2.style.cssText='display:grid;grid-template-columns:40px 1fr 90px 70px 36px;gap:4px 10px;align-items:center;margin-bottom:8px';
+    COLS2.forEach(function(h){var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;grid2.appendChild(d);});
+
+    arr.forEach(function(sub,i){
+      var idDiv=document.createElement('div');idDiv.style.cssText=_imS.hdr+';text-align:center';idDiv.textContent=i+1;
+      var ni=document.createElement('input');ni.type='text';ni.value=sub;ni.style.cssText=_imS.inp;
+      ni.addEventListener('change',function(){
+        var oldSub=arr[i];arr[i]=this.value.trim()||sub;
+        subs[cat]=arr;_dirty.subcategories=true;
+        auditLog('IM Interface > Reference Data','Sub-Category Renamed',cat+' > '+oldSub,oldSub,arr[i]);
       });
-    }
-    renderRows();
-    subPanel.appendChild(grid);
-
-    var addRow=document.createElement('div'); addRow.style.cssText='display:flex;gap:8px;margin-top:8px';
-    var ni=document.createElement('input'); ni.type='text'; ni.placeholder='Add new sub-category…'; ni.style.cssText=_imS.inp;
-    var ab=document.createElement('button'); ab.textContent='+ Add'; ab.style.cssText=_imS.btn+';background:var(--accent);color:#fff';
-    ab.addEventListener('click',function(){
-      var v=ni.value.trim(); if(!v)return;
-      arr.push(v); subs[cat]=arr; _imSet('tcj_subcats',subs);
-      auditLog('IM Interface > Reference Data','Sub-Category Added',cat+' > '+v,null,v);
-      renderRows(); ni.value='';
+      var reqSel=document.createElement('select');reqSel.style.cssText=_imS.sel;
+      ['No','Yes'].forEach(function(v){var o=document.createElement('option');o.value=v;o.textContent=v;reqSel.appendChild(o);});
+      reqSel.addEventListener('change',function(){_dirty.subcategories=true;});
+      var actSel=document.createElement('select');actSel.style.cssText=_imS.sel;
+      ['Yes','No'].forEach(function(v){var o=document.createElement('option');o.value=v;o.textContent=v;actSel.appendChild(o);});
+      actSel.addEventListener('change',function(){_dirty.subcategories=true;});
+      var del=document.createElement('button');del.textContent='×';del.style.cssText=_imS.delBtn;
+      del.addEventListener('click',function(){arr.splice(i,1);subs[cat]=arr;renderSubs(cat);_dirty.subcategories=true;});
+      grid2.appendChild(idDiv);grid2.appendChild(ni);grid2.appendChild(reqSel);grid2.appendChild(actSel);grid2.appendChild(del);
     });
-    ni.addEventListener('keydown',function(ev){if(ev.key==='Enter')ab.click();});
-    addRow.appendChild(ni); addRow.appendChild(ab); subPanel.appendChild(addRow);
+    subPanel.appendChild(grid2);
+
+    var addRow=document.createElement('div');addRow.style.cssText='display:flex;gap:8px;margin-bottom:10px';
+    var ni2=document.createElement('input');ni2.type='text';ni2.placeholder='Add sub-category…';ni2.style.cssText=_imS.inp;
+    var ab2=document.createElement('button');ab2.textContent='+ Add';ab2.style.cssText=_imS.btn+';background:var(--accent);color:#fff';
+    ab2.addEventListener('click',function(){var v=ni2.value.trim();if(!v)return;arr.push(v);arr.sort();subs[cat]=arr;renderSubs(cat);ni2.value='';_dirty.subcategories=true;});
+    ni2.addEventListener('keydown',function(ev){if(ev.key==='Enter')ab2.click();});
+    addRow.appendChild(ni2);addRow.appendChild(ab2);subPanel.appendChild(addRow);
+
+    var sb2=makeSaveBtn('Save Sub Categories',function(){
+      _imSet('tcj_subcats',subs);
+      auditLog('IM Interface > Reference Data','Sub-Categories Saved',cat,null,null,arr.length+' sub-categories');
+      _dirty.subcategories=false;
+    });
+    subPanel.appendChild(sb2);
   }
-  catSel.addEventListener('change',function(){ renderSubs(this.value); });
+  catSel.addEventListener('change',function(){renderSubs(this.value);});
   renderSubs(cats[0]||'');
-
-  var saveBar2=document.createElement('div');saveBar2.style.cssText='margin-top:14px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);padding-top:12px';
-  var saveBtn2=document.createElement('button');saveBtn2.textContent='Save Sub Categories';
-  saveBtn2.style.cssText="padding:8px 20px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer";
-  saveBtn2.addEventListener('click',function(){
-    _imSet('tcj_subcats',subs);
-    auditLog('IM Interface > Reference Data','Sub Categories Saved',null,null,null,'Sub categories saved');
-    saveBtn2.textContent='✓ Saved';saveBtn2.style.background='#2d5a2d';saveBtn2.disabled=true;
-    setTimeout(function(){saveBtn2.textContent='Save Sub Categories';saveBtn2.style.background='var(--accent)';saveBtn2.disabled=false;},2500);
-  });
-  saveBar2.appendChild(saveBtn2);container.appendChild(saveBar2);
 }
 
-function buildCurrenciesManager(container){
-  var currencies=getCurrencies();
-  var desc=document.createElement('div'); desc.style.cssText=_imS.label+';margin-bottom:12px';
-  desc.textContent='Currency codes available when using the Currency column type. Edit, add, or remove as needed.';
-  container.appendChild(desc);
-
-  var grid=document.createElement('div');
-  grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;margin-bottom:12px';
-
-  function renderCurrencies(){
-    grid.innerHTML='';
-    currencies.forEach(function(c,i){
-      var row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;gap:4px';
-      var inp=document.createElement('input'); inp.type='text'; inp.value=c;
-      inp.style.cssText=_imS.inp+';text-transform:uppercase;font-weight:600';
-      inp.addEventListener('change',function(){ currencies[i]=this.value.trim().toUpperCase(); });
-      var del=document.createElement('button'); del.textContent='×'; del.style.cssText=_imS.delBtn;
-      del.addEventListener('click',function(){ currencies.splice(i,1); renderCurrencies(); });
-      row.appendChild(inp); row.appendChild(del); grid.appendChild(row);
-    });
-  }
-  renderCurrencies();
-  container.appendChild(grid);
-
-  var addRow=document.createElement('div'); addRow.style.cssText='display:flex;gap:8px;margin-bottom:10px';
-  var ni=document.createElement('input'); ni.type='text'; ni.placeholder='Add currency code…';
-  ni.style.cssText=_imS.inp+'text-transform:uppercase';
-  var ab=document.createElement('button'); ab.textContent='+ Add'; ab.style.cssText=_imS.btn+';background:var(--accent);color:#fff';
-  ab.addEventListener('click',function(){ var v=ni.value.trim().toUpperCase(); if(!v)return; currencies.push(v); renderCurrencies(); ni.value=''; });
-  ni.addEventListener('keydown',function(ev){if(ev.key==='Enter')ab.click();});
-  addRow.appendChild(ni); addRow.appendChild(ab); container.appendChild(addRow);
-
-  var saveBar=document.createElement('div'); saveBar.style.cssText='display:flex;gap:8px;border-top:1px solid var(--border);padding-top:12px';
-  var saveBtn=document.createElement('button'); saveBtn.textContent='Save Currencies';
-  saveBtn.style.cssText="padding:8px 20px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer";
-  saveBtn.addEventListener('click',function(){
-    _imSet('tcj_currencies',currencies);
-    auditLog('IM Interface > Reference Data','Currencies Saved',null,null,null,currencies.length+' currencies');
-    saveBtn.textContent='✓ Saved'; saveBtn.style.background='#2d5a2d'; saveBtn.disabled=true;
-    setTimeout(function(){saveBtn.textContent='Save Currencies';saveBtn.style.background='var(--accent)';saveBtn.disabled=false;},2500);
-  });
-  saveBar.appendChild(saveBtn); container.appendChild(saveBar);
-}
-
-function buildUnitsManager(container){
-  var units=getUnits();
+// ── UNITS TAB ────────────────────────────────────────────────────
+function buildUnitsTab(container, _dirty){
+  var units=getUnits().slice().sort();
   var meta=getUnitMeta();
   var MTYPE=['Weight','Volume','Count','Other'];
-  var desc=document.createElement('div'); desc.style.cssText=_imS.label+';margin-bottom:12px';
-  desc.textContent='Units available in the ingredient table Unit column.';
+  var desc=document.createElement('div');desc.style.cssText=_imS.label+';margin-bottom:12px';
+  desc.textContent='Units of measurement. Sorted alphabetically. Required=Yes forces this unit to be selected from a dropdown.';
   container.appendChild(desc);
 
   var grid=document.createElement('div');
-  grid.style.cssText='display:grid;grid-template-columns:120px 100px 70px 70px 80px 36px;gap:6px 8px;align-items:center';
-  ['UNIT','MEASUREMENT','MIN','MAX','DECIMALS',''].forEach(function(h){
+  grid.style.cssText='display:grid;grid-template-columns:40px 100px 100px 70px 70px 70px 70px 70px 36px;gap:4px 8px;align-items:center';
+  ['ID','UNIT','TYPE','MIN','MAX','DECIMALS','REQUIRED','ACTIVE',''].forEach(function(h){
     var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;grid.appendChild(d);
   });
 
   function renderUnits(){
-    while(grid.children.length>6) grid.removeChild(grid.lastChild);
-    units.forEach(function(unit,i){
-      var m=meta[unit]||{};
+    while(grid.children.length>9) grid.removeChild(grid.lastChild);
+    units.sort().forEach(function(unit,i){
+      var m=meta[unit]||{mtype:'Other',required:'No',active:'Yes'};
+      var idDiv=document.createElement('div');idDiv.style.cssText=_imS.hdr+';text-align:center';idDiv.textContent=i+1;
       var ni=document.createElement('input');ni.type='text';ni.value=unit;ni.style.cssText=_imS.inp;
       ni.addEventListener('change',function(){
-        var oldU=units[i]; units[i]=this.value.trim()||unit;
-        var oldMeta=meta[oldU]; delete meta[oldU]; meta[units[i]]=oldMeta||{};
-        _imSet('tcj_units',units); _imSet('tcj_unit_meta',meta);
-        auditLog('IM Interface > Reference Data','Unit Renamed',oldU,oldU,units[i]);
+        var oldU=units[i];units[i]=this.value.trim()||unit;
+        var oldM=meta[oldU];if(oldM){meta[units[i]]=oldM;delete meta[oldU];}
+        // Propagate rename
+        rpc('admin_rename_reference_value',{p_table:'ingredients',p_column:'Unit',p_old:oldU,p_new:units[i]}).then(function(n){
+          auditLog('IM Interface > Reference Data','Unit Renamed',oldU,oldU,units[i],'Updated '+n+' ingredients');
+        }).catch(function(){});
+        _dirty.units=true;
       });
-
       var mSel=document.createElement('select');mSel.style.cssText=_imS.sel;
-      MTYPE.forEach(function(t){ var o=document.createElement('option');o.value=t;o.textContent=t;o.selected=(m.mtype||'Other')===t;mSel.appendChild(o); });
-      mSel.addEventListener('change',function(){ if(!meta[unit])meta[unit]={};meta[unit].mtype=this.value;_imSet('tcj_unit_meta',meta); });
-
-      function numField(val,placeholder){
-        var f=document.createElement('input');f.type='text';f.inputMode='decimal';f.value=val!=null?val:'';f.placeholder=placeholder;
-        f.style.cssText=_imS.inp;
-        f.addEventListener('keydown',function(ev){
-          var ok=['Backspace','Delete','ArrowLeft','ArrowRight','Tab','.','-'];
-          if(!ok.includes(ev.key)&&!(ev.key>='0'&&ev.key<='9')&&!ev.ctrlKey&&!ev.metaKey)ev.preventDefault();
-        });
+      MTYPE.forEach(function(t){var o=document.createElement('option');o.value=t;o.textContent=t;o.selected=(m.mtype||'Other')===t;mSel.appendChild(o);});
+      mSel.addEventListener('change',function(){if(!meta[unit])meta[unit]={};meta[unit].mtype=this.value;_dirty.units=true;});
+      function numF(val,ph){
+        var f=document.createElement('input');f.type='text';f.inputMode='decimal';f.value=val!=null?val:'';f.placeholder=ph;f.style.cssText=_imS.inp;
+        f.addEventListener('keydown',function(ev){var ok=['Backspace','Delete','ArrowLeft','ArrowRight','Tab','.','Enter','Escape'];if(ok.includes(ev.key)||ev.key>='0'&&ev.key<='9'||ev.ctrlKey||ev.metaKey)return;ev.preventDefault();});
         return f;
       }
-
-      var minF=numField(m.min,'—');
-      minF.addEventListener('change',function(){ if(!meta[unit])meta[unit]={};meta[unit].min=this.value===''?null:parseFloat(this.value);_imSet('tcj_unit_meta',meta); });
-      var maxF=numField(m.max,'—');
-      maxF.addEventListener('change',function(){ if(!meta[unit])meta[unit]={};meta[unit].max=this.value===''?null:parseFloat(this.value);_imSet('tcj_unit_meta',meta); });
-      var decF=numField(m.decimals,'0');
-      decF.addEventListener('change',function(){ if(!meta[unit])meta[unit]={};meta[unit].decimals=this.value===''?null:parseInt(this.value);_imSet('tcj_unit_meta',meta); });
-
+      var minF=numF(m.min,'—');minF.addEventListener('change',function(){if(!meta[unit])meta[unit]={};meta[unit].min=this.value===''?null:parseFloat(this.value);_dirty.units=true;});
+      var maxF=numF(m.max,'—');maxF.addEventListener('change',function(){if(!meta[unit])meta[unit]={};meta[unit].max=this.value===''?null:parseFloat(this.value);_dirty.units=true;});
+      var decF=numF(m.decimals,'0');decF.addEventListener('change',function(){if(!meta[unit])meta[unit]={};meta[unit].decimals=this.value===''?null:parseInt(this.value);_dirty.units=true;});
+      var reqSel=document.createElement('select');reqSel.style.cssText=_imS.sel;
+      ['No','Yes'].forEach(function(v){var o=document.createElement('option');o.value=v;o.textContent=v;o.selected=(m.required||'No')===v;reqSel.appendChild(o);});
+      reqSel.addEventListener('change',function(){if(!meta[unit])meta[unit]={};meta[unit].required=this.value;_dirty.units=true;});
+      var actSel=document.createElement('select');actSel.style.cssText=_imS.sel;
+      ['Yes','No'].forEach(function(v){var o=document.createElement('option');o.value=v;o.textContent=v;o.selected=(m.active||'Yes')===v;actSel.appendChild(o);});
+      actSel.addEventListener('change',function(){if(!meta[unit])meta[unit]={};meta[unit].active=this.value;_dirty.units=true;});
       var del=document.createElement('button');del.textContent='×';del.style.cssText=_imS.delBtn;
-      del.addEventListener('click',function(){
-        if(!confirm('Delete unit "'+unit+'"?'))return;
-        auditLog('IM Interface > Reference Data','Unit Deleted',unit,unit,null);
-        units.splice(i,1); delete meta[unit]; _imSet('tcj_units',units); _imSet('tcj_unit_meta',meta); renderUnits();
-      });
-      grid.appendChild(ni);grid.appendChild(mSel);grid.appendChild(minF);grid.appendChild(maxF);grid.appendChild(decF);grid.appendChild(del);
+      del.addEventListener('click',function(){if(!confirm('Delete unit "'+unit+'"?'))return;units.splice(i,1);delete meta[unit];renderUnits();_dirty.units=true;});
+      grid.appendChild(idDiv);grid.appendChild(ni);grid.appendChild(mSel);grid.appendChild(minF);grid.appendChild(maxF);grid.appendChild(decF);grid.appendChild(reqSel);grid.appendChild(actSel);grid.appendChild(del);
     });
   }
-  renderUnits(); container.appendChild(grid);
+  renderUnits();container.appendChild(grid);
 
   var addRow=document.createElement('div');addRow.style.cssText='display:flex;gap:8px;margin-top:10px';
-  var ni=document.createElement('input');ni.type='text';ni.placeholder='Add new unit…';ni.style.cssText=_imS.inp;
-  var ab=document.createElement('button');ab.textContent='+ Add';ab.style.cssText=_imS.btn+';background:var(--accent);color:#fff';
-  ab.addEventListener('click',function(){
-    var v=ni.value.trim();if(!v)return;
-    units.push(v);_imSet('tcj_units',units);
-    auditLog('IM Interface > Reference Data','Unit Added',v,null,v); renderUnits(); ni.value='';
-  });
-  ni.addEventListener('keydown',function(ev){if(ev.key==='Enter')ab.click();});
-  addRow.appendChild(ni);addRow.appendChild(ab);container.appendChild(addRow);
+  var ni2=document.createElement('input');ni2.type='text';ni2.placeholder='Add unit…';ni2.style.cssText=_imS.inp;
+  var ab2=document.createElement('button');ab2.textContent='+ Add';ab2.style.cssText=_imS.btn+';background:var(--accent);color:#fff';
+  ab2.addEventListener('click',function(){var v=ni2.value.trim();if(!v)return;units.push(v);units.sort();renderUnits();ni2.value='';_dirty.units=true;});
+  ni2.addEventListener('keydown',function(ev){if(ev.key==='Enter')ab2.click();});
+  addRow.appendChild(ni2);addRow.appendChild(ab2);container.appendChild(addRow);
 
-  var saveBar3=document.createElement('div');saveBar3.style.cssText='margin-top:14px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);padding-top:12px';
-  var saveBtn3=document.createElement('button');saveBtn3.textContent='Save Units';
-  saveBtn3.style.cssText="padding:8px 20px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer";
-  saveBtn3.addEventListener('click',function(){
-    _imSet('tcj_units',units); _imSet('tcj_unit_meta',meta);
-    // Refresh unit datalists in any open inline editors
-    document.querySelectorAll('[id^="_il_dl_Unit"]').forEach(function(dl){
-      dl.innerHTML=''; units.forEach(function(u){var o=document.createElement('option');o.value=u;dl.appendChild(o);});
-    });
+  var sb=makeSaveBtn('Save Units',function(){
+    _imSet('tcj_units',units);_imSet('tcj_unit_meta',meta);
     auditLog('IM Interface > Reference Data','Units Saved',null,null,null,units.length+' units');
-    saveBtn3.textContent='✓ Saved';saveBtn3.style.background='#2d5a2d';saveBtn3.disabled=true;
-    setTimeout(function(){saveBtn3.textContent='Save Units';saveBtn3.style.background='var(--accent)';saveBtn3.disabled=false;},2500);
+    _dirty.units=false;
   });
-  saveBar3.appendChild(saveBtn3);container.appendChild(saveBar3);
+  container.appendChild(sb);
 }
+
+// ── CURRENCIES TAB ───────────────────────────────────────────────
+function buildCurrenciesTab(container, _dirty){
+  var currencies=getCurrencies().slice().sort();
+  var desc=document.createElement('div');desc.style.cssText=_imS.label+';margin-bottom:12px';
+  desc.textContent='All ISO 4217 currency codes. Manage the list here — all currency dropdowns across the system use this list.';
+  container.appendChild(desc);
+
+  var grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:40px 80px 1fr 70px 36px;gap:4px 8px;align-items:center';
+  ['ID','CODE','FULL NAME','ACTIVE',''].forEach(function(h){var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;grid.appendChild(d);});
+
+  var currMeta=_imGet('tcj_curr_meta',{});
+
+  function renderCurrs(){
+    while(grid.children.length>5) grid.removeChild(grid.lastChild);
+    currencies.sort().forEach(function(c,i){
+      var m=currMeta[c]||{name:'',active:'Yes'};
+      var idD=document.createElement('div');idD.style.cssText=_imS.hdr+';text-align:center';idD.textContent=i+1;
+      var codeI=document.createElement('input');codeI.type='text';codeI.value=c;codeI.style.cssText=_imS.inp+';font-weight:600;text-transform:uppercase';
+      codeI.addEventListener('change',function(){var old=currencies[i];currencies[i]=this.value.trim().toUpperCase();var oldM=currMeta[old];if(oldM){currMeta[currencies[i]]=oldM;delete currMeta[old];}});
+      var nameI=document.createElement('input');nameI.type='text';nameI.value=m.name||'';nameI.placeholder='e.g. Australian Dollar';nameI.style.cssText=_imS.inp;
+      nameI.addEventListener('change',function(){if(!currMeta[c])currMeta[c]={};currMeta[c].name=this.value;_dirty.currencies=true;});
+      var actSel=document.createElement('select');actSel.style.cssText=_imS.sel;
+      ['Yes','No'].forEach(function(v){var o=document.createElement('option');o.value=v;o.textContent=v;o.selected=(m.active||'Yes')===v;actSel.appendChild(o);});
+      actSel.addEventListener('change',function(){if(!currMeta[c])currMeta[c]={};currMeta[c].active=this.value;_dirty.currencies=true;});
+      var del=document.createElement('button');del.textContent='×';del.style.cssText=_imS.delBtn;
+      del.addEventListener('click',function(){currencies.splice(i,1);delete currMeta[c];renderCurrs();_dirty.currencies=true;});
+      grid.appendChild(idD);grid.appendChild(codeI);grid.appendChild(nameI);grid.appendChild(actSel);grid.appendChild(del);
+    });
+  }
+  renderCurrs();container.appendChild(grid);
+
+  var addRow=document.createElement('div');addRow.style.cssText='display:flex;gap:8px;margin-top:10px';
+  var ni=document.createElement('input');ni.type='text';ni.placeholder='Code e.g. AUD';ni.style.cssText=_imS.inp.replace('width:100%;','')+';width:80px;text-transform:uppercase';
+  var nameI=document.createElement('input');nameI.type='text';nameI.placeholder='Full name e.g. Australian Dollar';nameI.style.cssText=_imS.inp;
+  var ab=document.createElement('button');ab.textContent='+ Add';ab.style.cssText=_imS.btn+';background:var(--accent);color:#fff';
+  ab.addEventListener('click',function(){var v=ni.value.trim().toUpperCase();if(!v||currencies.includes(v))return;currencies.push(v);if(nameI.value.trim())currMeta[v]={name:nameI.value.trim(),active:'Yes'};renderCurrs();ni.value='';nameI.value='';_dirty.currencies=true;});
+  ni.addEventListener('keydown',function(ev){if(ev.key==='Enter')ab.click();});
+  addRow.appendChild(ni);addRow.appendChild(nameI);addRow.appendChild(ab);container.appendChild(addRow);
+
+  var sb=makeSaveBtn('Save Currencies',function(){
+    _imSet('tcj_currencies',currencies);_imSet('tcj_curr_meta',currMeta);
+    auditLog('IM Interface > Reference Data','Currencies Saved',null,null,null,currencies.length+' currencies');
+    _dirty.currencies=false;
+  });
+  container.appendChild(sb);
+}
+
+// ── BRAND MAPPING TAB ────────────────────────────────────────────
+function buildBrandsTab(container, _dirty){
+  var desc=document.createElement('div');desc.style.cssText=_imS.label+';margin-bottom:12px';
+  desc.textContent='Map brand names to their generic ingredient name and category. Recipe cards show the generic name with a "Chef recommends [Brand]" note.';
+  container.appendChild(desc);
+  // Load existing brand mappings from the existing brand mapping system
+  loadBrandMappings(container);
+}
+
+// ── Save button helper ────────────────────────────────────────────
+function makeSaveBtn(label, fn){
+  var wrap=document.createElement('div');
+  wrap.style.cssText='margin-top:14px;border-top:1px solid var(--border);padding-top:12px';
+  var btn=document.createElement('button');
+  btn.textContent=label;
+  btn.style.cssText="padding:8px 20px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer";
+  btn.addEventListener('click',function(){
+    try{
+      fn();
+      btn.textContent='✓ Saved'; btn.style.background='#2d5a2d'; btn.disabled=true;
+      setTimeout(function(){btn.textContent=label;btn.style.background='var(--accent)';btn.disabled=false;},2500);
+    }catch(e){alert('Save failed: '+e.message);}
+  });
+  wrap.appendChild(btn);
+  return wrap;
+}
+
+function getBrands(){ return _imGet('tcj_brands',[]); }
+
+
 
 // ── Column Settings Tab ──────────────────────────────────────────
 function buildColumnSettingsTab(container){
@@ -2248,7 +2287,7 @@ function switchIngTab(tab) {
   document.querySelectorAll('.ap-inner-tab[id^="itab-"]').forEach(function(t) {
     t.classList.toggle('active', t.id === 'itab-' + tab);
   });
-  ['all','pending','brands','analytics','imsettings'].forEach(function(p) {
+  ['all','pending','imsettings'].forEach(function(p) {
     var el = document.getElementById('ipanel-' + p);
     if (el) el.style.display = p === tab ? 'block' : 'none';
   });
@@ -2807,7 +2846,15 @@ function renderIngRows(rows) {
           td.addEventListener('click',function(e){inlineCell(e,id,colKey,'select');});
         } else {
           // Unit and Sub Category get suggest type — single-line input with managed list suggestions
-          var _iType=(colKey==='Unit'||colKey==='Sub Category')?'suggest':'text';
+          var _iType='text';
+          if(colKey==='Unit'){
+            var _um=getUnitMeta(); var _unitRequired=Object.values(_um).some(function(m){return m&&m.required==='Yes';});
+            _iType=_unitRequired?'select':'suggest';
+          } else if(colKey==='Sub Category'){
+            var _catName=ing&&ing['Category']||'';
+            var _cm=getCatMeta(); var _subRequired=_cm[_catName]&&_cm[_catName].required==='Yes';
+            _iType=_subRequired?'select':'suggest';
+          }
           td.addEventListener('dblclick',(function(t){return function(e){inlineCell(e,id,colKey,t);};}(_iType)));
         }
       }
@@ -3023,7 +3070,13 @@ if(type==='text'){
     ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
   } else {
     const sel=document.createElement('select');sel.className='inline-select';
-    const opts=type==='yesno'?['Yes','No']:CATS_LIST;
+    var opts;
+    if(type==='yesno') opts=['Yes','No'];
+    else if(field==='Unit') opts=getUnits();
+    else if(field==='Sub Category'){
+      var _ingCat=(window._ingRows&&window._ingRows[id]&&window._ingRows[id]['Category'])||'';
+      opts=(getSubCats()[_ingCat]||[]).slice().sort();
+    } else opts=CATS_LIST;
     opts.forEach(function(o){const opt=document.createElement('option');opt.value=o;opt.textContent=o;if(o===currentVal)opt.selected=true;sel.appendChild(opt);});
     sel.addEventListener('change',function(){commitChange(this.value);});
     sel.addEventListener('blur',function(){if(!this._saved){td.innerHTML=origHTML;td.className='editable-cell'+(td.classList.contains('cell-pending')?' cell-pending':'');}});
