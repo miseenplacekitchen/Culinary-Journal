@@ -1318,11 +1318,10 @@ function loadIMInterface(){
 
   // ── Top-level tab bar ────────────────────────────────────────
   var TAB_DEFS=[
-    {key:'refdata',    label:'Reference Data'},
-    {key:'colsettings',label:'Column Settings'},
+    {key:'refdata',    label:'Ingredient Data Management'},
     {key:'analytics',  label:'📊 Analytics'},
-    {key:'recycle',    label:'Recycle Bin'},
-    {key:'audit',      label:'Audit Trail'}
+    {key:'audit',      label:'Audit Trail'},
+    {key:'recycle',    label:'Recycle Bin'}
   ];
 
   var topBar=document.createElement('div');
@@ -1621,10 +1620,12 @@ function buildRefDataTab(container){
   // Sub-tab bar
   var SUB=[
     {key:'brands',        label:'Brand Mapping'},
+    {key:'colsettings',   label:'Column Settings'},
     {key:'categories',    label:'Categories'},
     {key:'subcategories', label:'Sub Categories'},
     {key:'units',         label:'Units'},
-    {key:'currencies',    label:'Currencies'}
+    {key:'currencies',    label:'Currencies'},
+    {key:'colsettings',   label:'Column Settings'}
   ];
   var subBar=document.createElement('div');
   subBar.style.cssText='display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap';
