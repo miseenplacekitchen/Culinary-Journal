@@ -638,14 +638,7 @@
           </div>
         </div>
       </div>
-<div id="ipanel-recycle" style="display:none">
-          <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:16px">
-            Deleted columns are renamed (e.g. <span style="color:var(--accent);font-style:italic">Deleted1ColumnName</span>) and stored here. Restore to bring a column back, or permanently delete to clear the data from all ingredients.
-          </div>
-          <div id="recycle-bin-list">
-            <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);padding:20px 0">Loading&#8230;</div>
-          </div>
-        </div>
+
 <div id="ipanel-imsettings" style="display:none">
           <div id="im-interface-content">
             <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);padding:20px 0">Loading&#8230;</div>
@@ -1348,39 +1341,38 @@ function loadIMInterface(){
   loadIngRecycleBinInto(topPanels['recycle']);
 
   // ── TAB: Audit Trail ─────────────────────────────────────────
-  topPanels['audit'].innerHTML='<div style="'+_imS.label+';padding:8px 0">Click the Audit Trail tab to load.</div>';
+  var _atWrap=document.createElement('div');
+  var _atBar=makeExpandCollapseBar(_atWrap);
+  var _atContent=document.createElement('div');
+  _atContent.dataset.accordion='1';
+  _atContent.innerHTML='<div style="'+_imS.label+';padding:8px 0">Click the Audit Trail tab to load.</div>';
+  _atWrap.appendChild(_atBar); _atWrap.appendChild(_atContent);
+  topPanels['audit'].appendChild(_atWrap);
+  // override loadAuditTrail to target _atContent
+  topPanels['audit']._content = _atContent;
 }
 
 // ── Reference Data Tab ───────────────────────────────────────────
 function buildRefDataTab(container){
-  var SUB=[{key:'categories',label:'Categories'},{key:'subcategories',label:'Sub Categories'},{key:'units',label:'Units'}];
-  var subBar=document.createElement('div');
-  subBar.style.cssText='display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:14px';
-  var subPanels={};
-  var activeSub='categories';
+  // Add Expand All / Collapse All bar
+  container.appendChild(makeExpandCollapseBar(container));
 
-  SUB.forEach(function(s){
-    var btn=document.createElement('button');
-    btn.style.cssText="padding:7px 14px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--text-mid);margin-bottom:-1px";
-    btn.textContent=s.label; btn.dataset.subtab=s.key;
-    btn.addEventListener('click',function(){
-      subBar.querySelectorAll('button').forEach(function(b){ b.style.borderBottomColor='transparent'; b.style.color='var(--text-mid)'; });
-      btn.style.borderBottomColor='var(--accent)'; btn.style.color='var(--accent)';
-      Object.keys(subPanels).forEach(function(k){ subPanels[k].style.display=k===s.key?'block':'none'; });
-    });
-    if(s.key===activeSub){ btn.style.borderBottomColor='var(--accent)'; btn.style.color='var(--accent)'; }
-    subBar.appendChild(btn);
-    var panel=document.createElement('div');
-    panel.style.display=s.key===activeSub?'block':'none';
-    subPanels[s.key]=panel;
-  });
-  container.appendChild(subBar);
-  Object.values(subPanels).forEach(function(p){ container.appendChild(p); });
+  // Categories as accordion
+  makeAccordion('Categories', function(body){
+    buildCategoriesManager(body);
+  }, true, container);
 
-  buildCategoriesManager(subPanels['categories']);
-  buildSubCategoriesManager(subPanels['subcategories']);
-  buildUnitsManager(subPanels['units']);
+  // Sub Categories as accordion
+  makeAccordion('Sub Categories', function(body){
+    buildSubCategoriesManager(body);
+  }, false, container);
+
+  // Units as accordion
+  makeAccordion('Units', function(body){
+    buildUnitsManager(body);
+  }, false, container);
 }
+
 
 function buildCategoriesManager(container){
   var cats=getCats();
