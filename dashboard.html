@@ -1154,6 +1154,7 @@ function _imSet(key,val){ localStorage.setItem(key,JSON.stringify(val)); }
 function getUnits(){ return _imGet('tcj_units',['cup','tbsp','tsp','ml','l','g','kg','oz','lb','piece','bunch','clove','leaf','sprig','pinch','slice','sheet','can','bottle','packet','whole']); }
 function getCats(){ return _imGet('tcj_cats',['Baking','Grains, Pasta & Noodles','Breads & Flatbreads','Packaged & Convenience','Meat','Poultry','Seafood','Dairy & Eggs','Plant-Based','Vegetables','Fruits','Herbs','Spices','Oils & Fats','Legumes & Pulses','Nuts & Seeds','Condiments & Sauces','Vinegars','Sweeteners','Canned & Preserved','Alcohol & Cooking Wine','Stocks & Broths']); }
 function getSubCats(){ return _imGet('tcj_subcats',{}); }
+function getCurrencies(){ return _imGet('tcj_currencies',['AED', 'AFN', 'ALL', 'AMD', 'ANG', 'AOA', 'ARS', 'AUD', 'AWG', 'AZN', 'BAM', 'BBD', 'BDT', 'BGN', 'BHD', 'BIF', 'BMD', 'BND', 'BOB', 'BRL', 'BSD', 'BTN', 'BWP', 'BYN', 'BZD', 'CAD', 'CDF', 'CHF', 'CLP', 'CNY', 'COP', 'CRC', 'CUP', 'CVE', 'CZK', 'DJF', 'DKK', 'DOP', 'DZD', 'EGP', 'ERN', 'ETB', 'EUR', 'FJD', 'FKP', 'GBP', 'GEL', 'GHS', 'GIP', 'GMD', 'GNF', 'GTQ', 'GYD', 'HKD', 'HNL', 'HRK', 'HTG', 'HUF', 'IDR', 'ILS', 'INR', 'IQD', 'IRR', 'ISK', 'JMD', 'JOD', 'JPY', 'KES', 'KGS', 'KHR', 'KMF', 'KPW', 'KRW', 'KWD', 'KYD', 'KZT', 'LAK', 'LBP', 'LKR', 'LRD', 'LSL', 'LYD', 'MAD', 'MDL', 'MGA', 'MKD', 'MMK', 'MNT', 'MOP', 'MRU', 'MUR', 'MVR', 'MWK', 'MXN', 'MYR', 'MZN', 'NAD', 'NGN', 'NIO', 'NOK', 'NPR', 'NZD', 'OMR', 'PAB', 'PEN', 'PGK', 'PHP', 'PKR', 'PLN', 'PYG', 'QAR', 'RON', 'RSD', 'RUB', 'RWF', 'SAR', 'SBD', 'SCR', 'SDG', 'SEK', 'SGD', 'SHP', 'SLL', 'SOS', 'SRD', 'STN', 'SVC', 'SYP', 'SZL', 'THB', 'TJS', 'TMT', 'TND', 'TOP', 'TRY', 'TTD', 'TWD', 'TZS', 'UAH', 'UGX', 'USD', 'UYU', 'UZS', 'VES', 'VND', 'VUV', 'WST', 'XAF', 'XCD', 'XOF', 'XPF', 'YER', 'ZAR', 'ZMW', 'ZWL']); }
 function getUnitMeta(){ return _imGet('tcj_unit_meta',{}); }
 function getCatMeta(){ return _imGet('tcj_cat_meta',{}); }
 function getSubMeta(){ return _imGet('tcj_sub_meta',{}); }
@@ -1370,6 +1371,11 @@ function buildRefDataTab(container){
     buildSubCategoriesManager(body);
   }, false, container);
 
+  // Currencies as accordion
+  makeAccordion('Currencies', function(body){
+    buildCurrenciesManager(body);
+  }, false, container);
+
   // Units as accordion
   makeAccordion('Units', function(body){
     buildUnitsManager(body);
@@ -1520,6 +1526,50 @@ function buildSubCategoriesManager(container){
     setTimeout(function(){saveBtn2.textContent='Save Sub Categories';saveBtn2.style.background='var(--accent)';saveBtn2.disabled=false;},2500);
   });
   saveBar2.appendChild(saveBtn2);container.appendChild(saveBar2);
+}
+
+function buildCurrenciesManager(container){
+  var currencies=getCurrencies();
+  var desc=document.createElement('div'); desc.style.cssText=_imS.label+';margin-bottom:12px';
+  desc.textContent='Currency codes available when using the Currency column type. Edit, add, or remove as needed.';
+  container.appendChild(desc);
+
+  var grid=document.createElement('div');
+  grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;margin-bottom:12px';
+
+  function renderCurrencies(){
+    grid.innerHTML='';
+    currencies.forEach(function(c,i){
+      var row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;gap:4px';
+      var inp=document.createElement('input'); inp.type='text'; inp.value=c;
+      inp.style.cssText=_imS.inp+';text-transform:uppercase;font-weight:600';
+      inp.addEventListener('change',function(){ currencies[i]=this.value.trim().toUpperCase(); });
+      var del=document.createElement('button'); del.textContent='×'; del.style.cssText=_imS.delBtn;
+      del.addEventListener('click',function(){ currencies.splice(i,1); renderCurrencies(); });
+      row.appendChild(inp); row.appendChild(del); grid.appendChild(row);
+    });
+  }
+  renderCurrencies();
+  container.appendChild(grid);
+
+  var addRow=document.createElement('div'); addRow.style.cssText='display:flex;gap:8px;margin-bottom:10px';
+  var ni=document.createElement('input'); ni.type='text'; ni.placeholder='Add currency code…';
+  ni.style.cssText=_imS.inp+'text-transform:uppercase';
+  var ab=document.createElement('button'); ab.textContent='+ Add'; ab.style.cssText=_imS.btn+';background:var(--accent);color:#fff';
+  ab.addEventListener('click',function(){ var v=ni.value.trim().toUpperCase(); if(!v)return; currencies.push(v); renderCurrencies(); ni.value=''; });
+  ni.addEventListener('keydown',function(ev){if(ev.key==='Enter')ab.click();});
+  addRow.appendChild(ni); addRow.appendChild(ab); container.appendChild(addRow);
+
+  var saveBar=document.createElement('div'); saveBar.style.cssText='display:flex;gap:8px;border-top:1px solid var(--border);padding-top:12px';
+  var saveBtn=document.createElement('button'); saveBtn.textContent='Save Currencies';
+  saveBtn.style.cssText="padding:8px 20px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer";
+  saveBtn.addEventListener('click',function(){
+    _imSet('tcj_currencies',currencies);
+    auditLog('IM Interface > Reference Data','Currencies Saved',null,null,null,currencies.length+' currencies');
+    saveBtn.textContent='✓ Saved'; saveBtn.style.background='#2d5a2d'; saveBtn.disabled=true;
+    setTimeout(function(){saveBtn.textContent='Save Currencies';saveBtn.style.background='var(--accent)';saveBtn.disabled=false;},2500);
+  });
+  saveBar.appendChild(saveBtn); container.appendChild(saveBar);
 }
 
 function buildUnitsManager(container){
@@ -3477,10 +3527,9 @@ function renderCustomFieldsList(){
     } else {
       typeEl=document.createElement('select');
       typeEl.style.cssText='width:100%;font-family:DM Sans,sans-serif;font-size:11px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-mid);outline:none;cursor:pointer;box-sizing:border-box';
-      ['text','yesno','number'].forEach(function(t){
-        const o=document.createElement('option');o.value=t;
-        o.textContent=t==='text'?'Text':t==='yesno'?'Yes / No':'Number';
-        o.selected=(_customFieldTypes[k]||'text')===t;
+      [{v:'text',l:'Text'},{v:'yesno',l:'Yes / No'},{v:'number',l:'Number'},{v:'currency',l:'Currency'},{v:'percentage',l:'Percentage'},{v:'fraction',l:'Fraction'}].forEach(function(t){
+        const o=document.createElement('option');o.value=t.v;o.textContent=t.l;
+        o.selected=(_customFieldTypes[k]||'text')===t.v;
         typeEl.appendChild(o);
       });
       typeEl.addEventListener('change',function(){_customFieldTypes[k]=this.value;renderCustomFieldsList();});
@@ -3499,7 +3548,7 @@ function renderCustomFieldsList(){
       var _cp=((_customFields[k]||'').indexOf(':')>-1)?(_customFields[k]||'').split(':'):['AUD',''];
       var _cSel=document.createElement('select');
       _cSel.style.cssText='padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);font-family:DM Sans,sans-serif;font-size:11px;outline:none';
-      ['AUD','USD','GBP','EUR','INR','SGD','NZD','CAD','JPY','AED'].forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;o.selected=_cp[0]===c;_cSel.appendChild(o);});
+      getCurrencies().forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;o.selected=_cp[0]===c;_cSel.appendChild(o);});
       var _cAmt=document.createElement('input'); _cAmt.type='text'; _cAmt.inputMode='decimal';
       _cAmt.value=_cp[1]||''; _cAmt.placeholder='0.00';
       _cAmt.style.cssText='flex:1;font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none';
