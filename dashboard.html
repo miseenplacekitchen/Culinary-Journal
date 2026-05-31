@@ -1457,15 +1457,19 @@ function showImportPreview(title, summary, onMerge, onReplace){
 
 // ── Categories + Sub Categories Export ───────────────────────────
 function exportCategoriesCSV(){
-  var cats=getCats();var subs=getSubCats();
-  var rows=[['ID','Category','Sub Category','Notes']];
+  var cats=getCats(); var subs=getSubCats(); var meta=getCatMeta();
+  var rows=[['ID','Category','Category Required','Category Active','Sub Category','Notes']];
   var id=1;
   cats.slice().sort().forEach(function(cat){
+    var m=meta[cat]||{};
+    var hasSubs=(subs[cat]||[]).length>0;
+    var req=m.required||(hasSubs?'Yes':'No');
+    var act=m.active||'Yes';
     var catSubs=(subs[cat]||[]).slice().sort();
     if(catSubs.length===0){
-      rows.push([id++,cat,'','']);
+      rows.push([id++,cat,req,act,'','']);
     } else {
-      catSubs.forEach(function(sub){ rows.push([id++,cat,sub,'']); });
+      catSubs.forEach(function(sub){ rows.push([id++,cat,req,act,sub,'']); });
     }
   });
   _downloadCSV('categories-subcategories.csv',rows);
@@ -1479,15 +1483,22 @@ function importCategoriesCSV(data, fields){
   var fMap={};
   (fields||[]).forEach(function(f){ fMap[f.toLowerCase().replace(/\s/g,'')]=f; });
   var catCol=fMap['category']||fMap['cat']||fields[1];
-  var subCol=fMap['subcategory']||fMap['sub-category']||fMap['subcategories']||fields[2];
-  var noteCol=fMap['notes']||fMap['note']||fields[3];
+  var reqCol=fMap['categoryrequired']||fMap['required']||fields[2];
+  var actCol=fMap['categoryactive']||fMap['active']||fields[3];
+  var subCol=fMap['subcategory']||fMap['sub-category']||fMap['subcategories']||fields[4];
+  var noteCol=fMap['notes']||fMap['note']||fields[5];
 
-  var newCats={};
+  var newCats={}; var newMeta={};
   data.forEach(function(row){
     var cat=(row[catCol]||'').trim();
     var sub=(row[subCol]||'').trim();
+    var req=(row[reqCol]||'').trim()||null;
+    var act=(row[actCol]||'').trim()||null;
     if(!cat)return;
-    if(!newCats[cat])newCats[cat]=[];
+    if(!newCats[cat]){
+      newCats[cat]=[];
+      newMeta[cat]={required:req||'No',active:act||'Yes'};
+    }
     if(sub&&!newCats[cat].includes(sub))newCats[cat].push(sub);
   });
 
@@ -1498,13 +1509,14 @@ function importCategoriesCSV(data, fields){
   showImportPreview('Import Categories & Sub Categories', summary,
     function(){
       // Merge
-      var existing=getCats();var existingSubs=getSubCats();
+      var existing=getCats();var existingSubs=getSubCats();var existingMeta=getCatMeta();
       catList.forEach(function(cat){
         if(!existing.includes(cat))existing.push(cat);
         if(!existingSubs[cat])existingSubs[cat]=[];
         newCats[cat].forEach(function(s){ if(!existingSubs[cat].includes(s))existingSubs[cat].push(s); });
+        if(newMeta[cat])existingMeta[cat]=newMeta[cat];
       });
-      _imSet('tcj_cats',existing.sort());_imSet('tcj_subcats',existingSubs);
+      _imSet('tcj_cats',existing.sort());_imSet('tcj_subcats',existingSubs);_imSet('tcj_cat_meta',existingMeta);
       CATS_LIST.length=0;existing.sort().forEach(function(c){CATS_LIST.push(c);});
       auditLog('IM Interface','Import Merge','Categories & Sub Categories',null,null,catList.length+' cats merged');
       loadIMInterface();
@@ -1512,7 +1524,7 @@ function importCategoriesCSV(data, fields){
     function(){
       // Replace
       var newSubsStore={};catList.forEach(function(c){newSubsStore[c]=newCats[c].sort();});
-      _imSet('tcj_cats',catList);_imSet('tcj_subcats',newSubsStore);
+      _imSet('tcj_cats',catList);_imSet('tcj_subcats',newSubsStore);_imSet('tcj_cat_meta',newMeta);
       CATS_LIST.length=0;catList.forEach(function(c){CATS_LIST.push(c);});
       auditLog('IM Interface','Import Replace','Categories & Sub Categories',null,null,catList.length+' cats replaced');
       loadIMInterface();
