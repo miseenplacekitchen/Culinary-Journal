@@ -3074,8 +3074,20 @@ function renderIngRows(rows) {
 
       // Check for pending change
       const pending=_pendingChanges[id]&&_pendingChanges[id][isExtra?colKey:colKey];
-      const rawVal=isExtra?(i.extra_fields?String(i.extra_fields[extraKey]||''):''):String(i[colKey]||'');
-      const displayVal=pending?pending.new:rawVal;
+      var _rawStr=isExtra?(i.extra_fields?String(i.extra_fields[extraKey]||''):''):String(i[colKey]||'');
+      // Format currency values at source — ABC:1234 → ABC 1234.00
+      var rawVal=_rawStr;
+      if(isExtra&&/^[A-Z]{2,3}:[\d.]+$/.test(_rawStr)){
+        var _rp=_rawStr.split(':');
+        rawVal=_rp[0]+' '+parseFloat(_rp[1]||0).toFixed(2);
+      }
+      // Format pending new value too
+      var _pendingNew=pending?pending.new:null;
+      if(_pendingNew&&/^[A-Z]{2,3}:[\d.]+$/.test(String(_pendingNew))){
+        var _pp=String(_pendingNew).split(':');
+        _pendingNew=_pp[0]+' '+parseFloat(_pp[1]||0).toFixed(2);
+      }
+      const displayVal=pending?(_pendingNew||pending.new):rawVal;
       const fmtVal=(stdCfg&&stdCfg.fmt==='qty')?fmtQty(displayVal):displayVal;
 
       if(pending)td.classList.add('cell-pending');
@@ -3110,7 +3122,6 @@ function renderIngRows(rows) {
           // Format display value based on column type
           var _dispVal=fmtVal;
           // Detect currency format (e.g. AUD:1234) by value pattern OR column type
-          console.log('RENDER extra col:',extraKey,'xType:',xType,'fmtVal:',fmtVal);
           if(fmtVal&&/^[A-Z]{2,3}:[\d.]+$/.test(String(fmtVal))){
             var _cp=String(fmtVal).split(':');
             _dispVal=_cp[0]+' '+parseFloat(_cp[1]||0).toFixed(2);
