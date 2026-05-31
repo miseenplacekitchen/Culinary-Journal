@@ -342,6 +342,14 @@
     }
     .ap-inner-panel { display: none; }
     .ap-inner-panel.active { display: block; }
+
+  /* ── Custom tooltip ── */
+  .tcj-tip {
+    position:fixed;z-index:99999;background:#1e2a1e;border:1px solid #4caf76;
+    color:#e8f5e9;font-family:'DM Sans',sans-serif;font-size:11px;line-height:1.5;
+    padding:7px 12px;border-radius:7px;max-width:280px;pointer-events:none;
+    box-shadow:0 4px 16px rgba(0,0,0,0.5);
+  }
 </style>
 </head>
 <body>
@@ -1207,6 +1215,31 @@ function saveImSettings(settings){
 }
 
 // ── Style helpers ────────────────────────────────────────────────
+
+// ── Custom tooltip helper ─────────────────────────────────────────
+function _tipOn(el, text){
+  if(!text)return;
+  el.style.cursor='help';
+  el.style.borderBottom='1px dotted var(--text-mid)';
+  el.addEventListener('mouseenter',function(ev){
+    var tip=document.createElement('div');tip.className='tcj-tip';
+    tip.textContent=text;tip.id='_tcj_tip';document.body.appendChild(tip);
+    function moveTip(e){
+      var t=document.getElementById('_tcj_tip');
+      if(!t)return;
+      var x=e.clientX+14, y=e.clientY+14;
+      if(x+290>window.innerWidth)x=e.clientX-300;
+      t.style.left=x+'px'; t.style.top=y+'px';
+    }
+    document.addEventListener('mousemove',moveTip);
+    el._moveTip=moveTip;
+  });
+  el.addEventListener('mouseleave',function(){
+    var t=document.getElementById('_tcj_tip');if(t)t.remove();
+    if(el._moveTip)document.removeEventListener('mousemove',el._moveTip);
+  });
+}
+
 var _imS = {
   label: "font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)",
   hdr:   "font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid);padding:2px 4px",
@@ -1432,7 +1465,7 @@ function buildCategoriesTab(container, _dirty){
 
   COLS.forEach(function(h){
     var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;
-    if(_catHdrTips[h]){d.title=_catHdrTips[h];d.style.cursor='help';d.style.borderBottom='1px dotted var(--text-mid)';}
+    if(_catHdrTips[h]){_tipOn(d,_catHdrTips[h]);}
     grid.appendChild(d);
   });
 
@@ -1518,7 +1551,7 @@ function buildSubCategoriesTab(container, _dirty){
     var _subHdrTips={'REQUIRED':'Required = Yes means this sub-category must be selected when an ingredient uses its parent category.','ACTIVE':'Active = No hides this sub-category from dropdowns without deleting it.'};
     var grid2=document.createElement('div');
     grid2.style.cssText='display:grid;grid-template-columns:40px 1fr 90px 70px 36px;gap:4px 10px;align-items:center;margin-bottom:8px';
-    COLS2.forEach(function(h){var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;if(_subHdrTips[h]){d.title=_subHdrTips[h];d.style.cursor='help';d.style.borderBottom='1px dotted var(--text-mid)';}grid2.appendChild(d);});
+    COLS2.forEach(function(h){var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;if(_subHdrTips[h]){_tipOn(d,_subHdrTips[h]);}grid2.appendChild(d);});
 
     arr.forEach(function(sub,i){
       var idDiv=document.createElement('div');idDiv.style.cssText=_imS.hdr+';text-align:center';idDiv.textContent=i+1;
@@ -1576,7 +1609,7 @@ function buildUnitsTab(container, _dirty){
   };
   ['ID','UNIT','TYPE','MIN','MAX','DECIMALS','REQUIRED','ACTIVE',''].forEach(function(h){
     var d=document.createElement('div');d.style.cssText=_imS.hdr;d.textContent=h;
-    if(_unitHdrTips[h]){d.title=_unitHdrTips[h];d.style.cursor='help';d.style.borderBottom='1px dotted var(--text-mid)';}
+    if(_unitHdrTips[h]){_tipOn(d,_unitHdrTips[h]);}
     grid.appendChild(d);
   });
 
