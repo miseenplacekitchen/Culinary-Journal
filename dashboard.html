@@ -3324,16 +3324,42 @@ function inlineCell(e,id,field,type){
     td.innerHTML=''; td.appendChild(pi); pi.focus(); pi.select();
 
   } else if(type==='fraction'){
-    // Fraction: text input accepting 1/4, 2/3, 1 1/2 format
+    // Fraction: 1/4 | 1 1/2 | 3 | 0.5
     const origStyle=td.getAttribute('style')||'';
     const fi=document.createElement('input'); fi.type='text';
-    fi.className='inline-input'; fi.style.cssText='width:80px;padding:5px 8px;border:1px solid var(--accent);border-radius:5px;background:var(--bg);color:var(--text-high);font-family:DM Sans,sans-serif;font-size:12px;outline:none';
-    fi.value=currentVal||''; fi.placeholder='e.g. 1/4';
+    fi.className='inline-input'; fi.style.cssText='width:90px;padding:5px 8px;border:1px solid var(--accent);border-radius:5px;background:var(--bg);color:var(--text-high);font-family:DM Sans,sans-serif;font-size:12px;outline:none';
+    fi.value=currentVal||''; fi.placeholder='e.g. 1 1/4';
+    // Only allow digits, space, / and decimal point
+    fi.addEventListener('keydown',function(ev){
+      var ok=['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Enter','Escape','Home','End',' ','/','.',];
+      if(ok.includes(ev.key)||ev.key>='0'&&ev.key<='9'||ev.ctrlKey||ev.metaKey)return;
+      ev.preventDefault();
+    });
     function commitFrac(){
       var v=fi.value.trim();
       td.setAttribute('style',origStyle); td.innerHTML=origHTML;
       td.className='editable-cell'+(td.classList.contains('cell-pending')?' cell-pending':'');
-      if(v&&v!==currentVal){recordChange(id,field,currentVal,v);td.classList.add('cell-pending');}
+      if(!v){return;}
+      // Validate: whole number, decimal, simple fraction, or mixed number
+      var valid=/^\d+$/.test(v)||           // 3
+                /^\d+\.\d+$/.test(v)||     // 0.5
+                /^\d+\/\d+$/.test(v)||     // 1/4
+                /^\d+ \d+\/\d+$/.test(v); // 1 1/2
+      if(!valid){
+        // Flash red and revert
+        var _err=document.createElement('span');
+        _err.textContent='Use: 1/4  1 1/2  3  0.5';
+        _err.style.cssText='position:absolute;background:#8e2d2d;color:#fff;font-size:10px;padding:3px 8px;border-radius:5px;white-space:nowrap;z-index:9999;margin-top:2px;font-family:DM Sans,sans-serif';
+        td.style.position='relative'; td.appendChild(_err);
+        setTimeout(function(){if(_err.parentNode)_err.remove();},2000);
+        return;
+      }
+      // Validate denominator not zero
+      if(v.indexOf('/')>-1){
+        var denom=parseInt(v.split('/')[1]);
+        if(!denom){return;}
+      }
+      if(v!==currentVal){recordChange(id,field,currentVal,v);td.classList.add('cell-pending');}
     }
     fi.addEventListener('keydown',function(ev){if(ev.key==='Enter'){commitFrac();}if(ev.key==='Escape'){td.setAttribute('style',origStyle);td.innerHTML=origHTML;}});
     fi.addEventListener('blur',commitFrac);
@@ -3948,8 +3974,19 @@ function renderCustomFieldsList(){
     } else if(cft==='fraction'){
       valEl=document.createElement('input'); valEl.type='text';
       valEl.style.cssText='width:100%;font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text-high);outline:none;box-sizing:border-box';
-      valEl.value=_customFields[k]||''; valEl.placeholder='e.g. 1/4';
-      valEl.addEventListener('change',function(){_customFields[k]=this.value;});
+      valEl.value=_customFields[k]||''; valEl.placeholder='e.g. 1/4  1 1/2  3  0.5';
+      valEl.addEventListener('keydown',function(ev){
+        var ok=['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Enter','Escape','Home','End',' ','/','.',];
+        if(ok.includes(ev.key)||ev.key>='0'&&ev.key<='9'||ev.ctrlKey||ev.metaKey)return;
+        ev.preventDefault();
+      });
+      valEl.addEventListener('change',function(){
+        var v=this.value.trim();
+        var valid=/^\d+$/.test(v)||/^\d+\.\d+$/.test(v)||/^\d+\/\d+$/.test(v)||/^\d+ \d+\/\d+$/.test(v);
+        if(v&&!valid){this.style.borderColor='#dc5050';this.title='Use formats: 1/4  1 1/2  3  0.5';return;}
+        this.style.borderColor=''; this.title='';
+        _customFields[k]=v;
+      });
     } else {
       valEl=document.createElement('input');
       valEl.type='text'; // always text — number type allows 'e' natively
