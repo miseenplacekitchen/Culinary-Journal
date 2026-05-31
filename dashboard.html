@@ -840,17 +840,9 @@
       <div class="ing-field full"><label>Ingredient Name *</label><input id="ing-name" type="text" placeholder="e.g. Plain Flour"></div>
       <div class="ing-field"><label>Also Known As</label><input id="ing-aka" type="text" placeholder="e.g. All-Purpose Flour"></div>
       <div class="ing-field"><label>Category *</label>
-        <select id="ing-category"><option value="">— Select —</option>
-          <option>Baking</option><option>Grains, Pasta &amp; Noodles</option><option>Breads &amp; Flatbreads</option>
-          <option>Packaged &amp; Convenience</option><option>Meat</option><option>Poultry</option><option>Seafood</option>
-          <option>Dairy &amp; Eggs</option><option>Plant-Based</option><option>Vegetables</option><option>Fruits</option>
-          <option>Herbs</option><option>Spices</option><option>Oils &amp; Fats</option><option>Legumes &amp; Pulses</option>
-          <option>Nuts &amp; Seeds</option><option>Condiments &amp; Sauces</option><option>Vinegars</option>
-          <option>Sweeteners</option><option>Canned &amp; Preserved</option><option>Alcohol &amp; Cooking Wine</option>
-          <option>Stocks &amp; Broths</option>
-        </select>
+        <select id="ing-category"><option value="">— Select —</option></select>
       </div>
-      <div class="ing-field"><label>Sub Category</label><input id="ing-subcat" type="text" placeholder="e.g. Wheat Flours"></div>
+      <div class="ing-field"><label>Sub Category</label><input id="ing-subcat" type="text" placeholder="e.g. Wheat Flours" list="ing-subcats-list" autocomplete="off"><datalist id="ing-subcats-list"></datalist></div>
       <div class="ing-field"><label>Standard Qty</label><input id="ing-qty" type="text" placeholder="e.g. 1/4 cup"></div>
       <div class="ing-field"><label>Standard Weight (g or ml)</label><input id="ing-weight" type="text" inputmode="decimal" placeholder="e.g. 30" onkeydown="if(this._numKD)return;this._numKD=true;var _ok=['Backspace','Delete','ArrowLeft','ArrowRight','Tab','.','-'];if(!_ok.includes(event.key)&&!(event.key>='0'&&event.key<='9')&&!event.ctrlKey&&!event.metaKey)event.preventDefault();this._numKD=false"></div>
       <div class="ing-field"><label>Unit</label>
@@ -3131,7 +3123,29 @@ function openIngModal(ing){
     document.getElementById('ing-id').value       =String(ing['ID']||'');
     document.getElementById('ing-name').value     =ing['Ingredient Name']||'';
     document.getElementById('ing-aka').value      =ing['Also Known As']||'';
-    document.getElementById('ing-category').value =ing['Category']||'';
+    // Rebuild Category options from managed list
+    var _catSel=document.getElementById('ing-category');
+    var _catVal=ing['Category']||'';
+    _catSel.innerHTML='<option value="">— Select —</option>';
+    getCats().forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;_catSel.appendChild(o);});
+    _catSel.value=_catVal;
+
+    // Populate Unit datalist from managed units list
+    var _uList=document.getElementById('ing-units-list');
+    if(_uList){_uList.innerHTML='';getUnits().forEach(function(u){var o=document.createElement('option');o.value=u;_uList.appendChild(o);});}
+
+    // Populate Sub Category datalist based on category
+    function _rebuildSubcats(cat){
+      var _sList=document.getElementById('ing-subcats-list');
+      if(!_sList)return;
+      _sList.innerHTML='';
+      var subs=getSubCats()[cat]||[];
+      subs.forEach(function(s){var o=document.createElement('option');o.value=s;_sList.appendChild(o);});
+    }
+    _rebuildSubcats(_catVal);
+    _catSel.addEventListener('change',function(){_rebuildSubcats(this.value);},{ once:true });
+
+    document.getElementById('ing-category').value =_catVal;
     document.getElementById('ing-subcat').value   =ing['Sub Category']||'';
     document.getElementById('ing-qty').value      =fmtQty(ing['Standard Qty'])||'';
     document.getElementById('ing-weight').value   =ing['Standard Weight (g or ml)']||'';
