@@ -2864,8 +2864,8 @@ function openBrandForm(r){
       var status=document.getElementById('brand-status');
       if(status){status.textContent='✓ '+(isEdit?'Updated':'Added')+': '+brand+' → '+generic;setTimeout(function(){status.textContent='';},3000);}
       var tbody=document.getElementById('brand-tbody');
-      var tbody=document.getElementById('brand-tbody');
       if(tbody)await loadBrandsTable(tbody);
+      if(typeof loadIngredients==='function') await loadIngredients(ingPage||1);
       auditLog('IM Interface > Reference Data','Brand Mapping '+(isEdit?'Updated':'Added'),null,isEdit?r.brand_name:null,brand,generic+' ('+fCat.value+')');
     }catch(e){alert('Save failed: '+e.message);saveBtn.disabled=false;saveBtn.textContent=isEdit?'Save Changes':'Add Mapping';}
   });
