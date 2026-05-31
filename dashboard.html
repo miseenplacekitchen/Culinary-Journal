@@ -1309,6 +1309,31 @@ function loadIMInterface(){
     topPanels[td.key]=panel;
   });
 
+  // Save All button
+  var saveAllBar=document.createElement('div');
+  saveAllBar.style.cssText='display:flex;justify-content:flex-end;margin-bottom:14px';
+  var saveAllBtn=document.createElement('button');
+  saveAllBtn.textContent='💾 Save All';
+  saveAllBtn.style.cssText="padding:8px 20px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer";
+  saveAllBtn.addEventListener('click',function(){
+    // Save all Reference Data
+    var c=getCats(),s=getSubCats(),u=getUnits(),um=getUnitMeta();
+    _imSet('tcj_cats',c); _imSet('tcj_subcats',s); _imSet('tcj_units',u); _imSet('tcj_unit_meta',um);
+    CATS_LIST.length=0; c.forEach(function(cat){CATS_LIST.push(cat);});
+    // Save column settings
+    var colSettings=JSON.parse(localStorage.getItem('tcj_im_settings')||'{}');
+    saveImSettings(colSettings);
+    // Rebuild table
+    buildTableHeader(); buildColVisPanel(); renderIngFiltered();
+    auditLog('IM Interface','Save All',null,null,null,'All IM Interface settings saved');
+    saveAllBtn.textContent='✓ All Saved';
+    saveAllBtn.style.background='#2d5a2d';
+    saveAllBtn.disabled=true;
+    setTimeout(function(){saveAllBtn.textContent='💾 Save All';saveAllBtn.style.background='var(--accent)';saveAllBtn.disabled=false;},2500);
+  });
+  saveAllBar.appendChild(saveAllBtn);
+  el.appendChild(saveAllBar);
+
   el.appendChild(topBar);
   Object.values(topPanels).forEach(function(p){ el.appendChild(p); });
 
@@ -1413,6 +1438,21 @@ function buildCategoriesManager(container){
   });
   ni.addEventListener('keydown',function(ev){if(ev.key==='Enter')ab.click();});
   addRow.appendChild(ni); addRow.appendChild(ab); container.appendChild(addRow);
+
+  // Save button
+  var saveBar=document.createElement('div');saveBar.style.cssText='margin-top:14px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);padding-top:12px';
+  var saveBtn=document.createElement('button');saveBtn.textContent='Save Categories';
+  saveBtn.style.cssText="padding:8px 20px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer";
+  var saveMsg=document.createElement('span');saveMsg.style.cssText="font-family:'DM Sans',sans-serif;font-size:12px;color:#4caf76;display:none";
+  saveBtn.addEventListener('click',function(){
+    _imSet('tcj_cats',cats);
+    CATS_LIST.length=0; cats.forEach(function(c){CATS_LIST.push(c);});
+    buildTableHeader(); buildColVisPanel(); renderIngFiltered();
+    auditLog('IM Interface > Reference Data','Categories Saved',null,null,null,cats.length+' categories');
+    saveBtn.textContent='✓ Saved';saveBtn.style.background='#2d5a2d';saveBtn.disabled=true;
+    setTimeout(function(){saveBtn.textContent='Save Categories';saveBtn.style.background='var(--accent)';saveBtn.disabled=false;},2500);
+  });
+  saveBar.appendChild(saveBtn);saveBar.appendChild(saveMsg);container.appendChild(saveBar);
 }
 
 function buildSubCategoriesManager(container){
@@ -1474,6 +1514,17 @@ function buildSubCategoriesManager(container){
   }
   catSel.addEventListener('change',function(){ renderSubs(this.value); });
   renderSubs(cats[0]||'');
+
+  var saveBar2=document.createElement('div');saveBar2.style.cssText='margin-top:14px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);padding-top:12px';
+  var saveBtn2=document.createElement('button');saveBtn2.textContent='Save Sub Categories';
+  saveBtn2.style.cssText="padding:8px 20px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer";
+  saveBtn2.addEventListener('click',function(){
+    _imSet('tcj_subcats',subs);
+    auditLog('IM Interface > Reference Data','Sub Categories Saved',null,null,null,'Sub categories saved');
+    saveBtn2.textContent='✓ Saved';saveBtn2.style.background='#2d5a2d';saveBtn2.disabled=true;
+    setTimeout(function(){saveBtn2.textContent='Save Sub Categories';saveBtn2.style.background='var(--accent)';saveBtn2.disabled=false;},2500);
+  });
+  saveBar2.appendChild(saveBtn2);container.appendChild(saveBar2);
 }
 
 function buildUnitsManager(container){
@@ -1544,6 +1595,21 @@ function buildUnitsManager(container){
   });
   ni.addEventListener('keydown',function(ev){if(ev.key==='Enter')ab.click();});
   addRow.appendChild(ni);addRow.appendChild(ab);container.appendChild(addRow);
+
+  var saveBar3=document.createElement('div');saveBar3.style.cssText='margin-top:14px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);padding-top:12px';
+  var saveBtn3=document.createElement('button');saveBtn3.textContent='Save Units';
+  saveBtn3.style.cssText="padding:8px 20px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer";
+  saveBtn3.addEventListener('click',function(){
+    _imSet('tcj_units',units); _imSet('tcj_unit_meta',meta);
+    // Refresh unit datalists in any open inline editors
+    document.querySelectorAll('[id^="_il_dl_Unit"]').forEach(function(dl){
+      dl.innerHTML=''; units.forEach(function(u){var o=document.createElement('option');o.value=u;dl.appendChild(o);});
+    });
+    auditLog('IM Interface > Reference Data','Units Saved',null,null,null,units.length+' units');
+    saveBtn3.textContent='✓ Saved';saveBtn3.style.background='#2d5a2d';saveBtn3.disabled=true;
+    setTimeout(function(){saveBtn3.textContent='Save Units';saveBtn3.style.background='var(--accent)';saveBtn3.disabled=false;},2500);
+  });
+  saveBar3.appendChild(saveBtn3);container.appendChild(saveBar3);
 }
 
 // ── Column Settings Tab ──────────────────────────────────────────
