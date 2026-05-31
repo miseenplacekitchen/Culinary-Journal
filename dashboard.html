@@ -3087,17 +3087,29 @@ function renderIngRows(rows) {
       // Check for pending change
       const pending=_pendingChanges[id]&&_pendingChanges[id][isExtra?colKey:colKey];
       var _rawStr=isExtra?(i.extra_fields?String(i.extra_fields[extraKey]||''):''):String(i[colKey]||'');
-      // Format currency values at source — ABC:1234 → ABC 1234.00
+      // Format values at source based on column type
       var rawVal=_rawStr;
-      if(isExtra&&/^[A-Z]{2,3}:[\d.]+$/.test(_rawStr)){
-        var _rp=_rawStr.split(':');
-        rawVal=_rp[0]+' '+parseFloat(_rp[1]||0).toFixed(2);
+      if(isExtra){
+        var _xRawType=_extraColTypes[extraKey]||'text';
+        if(/^[A-Z]{2,3}:[\d.]+$/.test(_rawStr)){
+          // Currency: AUD:1234 → AUD 1234.00
+          var _rp=_rawStr.split(':');
+          rawVal=_rp[0]+' '+parseFloat(_rp[1]||0).toFixed(2);
+        } else if(_xRawType==='percentage'&&_rawStr!==''){
+          // Percentage: 5 → 5%
+          rawVal=_rawStr.replace('%','')+'%';
+        }
       }
       // Format pending new value too
       var _pendingNew=pending?pending.new:null;
-      if(_pendingNew&&/^[A-Z]{2,3}:[\d.]+$/.test(String(_pendingNew))){
-        var _pp=String(_pendingNew).split(':');
-        _pendingNew=_pp[0]+' '+parseFloat(_pp[1]||0).toFixed(2);
+      if(_pendingNew&&isExtra){
+        var _xPendType=_extraColTypes[extraKey]||'text';
+        if(/^[A-Z]{2,3}:[\d.]+$/.test(String(_pendingNew))){
+          var _pp=String(_pendingNew).split(':');
+          _pendingNew=_pp[0]+' '+parseFloat(_pp[1]||0).toFixed(2);
+        } else if(_xPendType==='percentage'){
+          _pendingNew=String(_pendingNew).replace('%','')+'%';
+        }
       }
       const displayVal=pending?(_pendingNew||pending.new):rawVal;
       const fmtVal=(stdCfg&&stdCfg.fmt==='qty')?fmtQty(displayVal):displayVal;
