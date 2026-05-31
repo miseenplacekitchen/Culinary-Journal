@@ -3097,7 +3097,7 @@ function renderIngRows(rows) {
           rawVal=_rp[0]+' '+parseFloat(_rp[1]||0).toFixed(2);
         } else if(_xRawType==='percentage'&&_rawStr!==''){
           // Percentage: 5 → 5%
-          rawVal=_rawStr.replace('%','')+'%';
+          rawVal=parseFloat(_rawStr.replace('%','')||0).toFixed(2)+'%';
         }
       }
       // Format pending new value too
@@ -3108,7 +3108,7 @@ function renderIngRows(rows) {
           var _pp=String(_pendingNew).split(':');
           _pendingNew=_pp[0]+' '+parseFloat(_pp[1]||0).toFixed(2);
         } else if(_xPendType==='percentage'){
-          _pendingNew=String(_pendingNew).replace('%','')+'%';
+          _pendingNew=parseFloat(String(_pendingNew).replace('%','')||0).toFixed(2)+'%';
         }
       }
       const displayVal=pending?(_pendingNew||pending.new):rawVal;
