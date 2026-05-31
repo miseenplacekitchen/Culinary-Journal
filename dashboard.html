@@ -1428,7 +1428,8 @@ function buildCategoriesTab(container, _dirty){
   function renderRows(){
     while(grid.children.length>5) grid.removeChild(grid.lastChild);
     cats.sort().forEach(function(cat,i){
-      var m=meta[cat]||{required:'No',active:'Yes'};
+      var _hasSubs=(getSubCats()[cat]||[]).length>0;
+      var m=meta[cat]||{required:_hasSubs?'Yes':'No',active:'Yes'};
       // ID
       var idDiv=document.createElement('div');idDiv.style.cssText=_imS.hdr+';color:var(--text-mid);text-align:center';idDiv.textContent=i+1;
       // Name
