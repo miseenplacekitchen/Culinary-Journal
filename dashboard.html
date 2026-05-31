@@ -2061,6 +2061,11 @@ function buildColumnSettingsTab(container){
     var dg=document.createElement('div');dg.style.cssText='display:grid;grid-template-columns:160px 1fr;gap:10px 16px;align-items:center;max-width:420px';
     function addRow(label,input){ var l=document.createElement('div');l.style.cssText=_imS.label;l.textContent=label;dg.appendChild(l);dg.appendChild(input); }
 
+    var ps=document.createElement('input');ps.type='number';ps.min='10';ps.max='500';ps.step='10';
+    ps.value=settings.pageSize||50;ps.style.cssText=_imS.inp.replace('width:100%;','')+';width:100px';
+    ps.addEventListener('change',function(){settings.pageSize=parseInt(this.value)||50;});
+    addRow('Rows per page',ps);
+
     var sc=document.createElement('select');sc.style.cssText=_imS.sel.replace('width:100%;','')+';width:auto';
     ['ID','Ingredient Name','Category','Sub Category'].forEach(function(c){ var o=document.createElement('option');o.value=c;o.textContent=c;o.selected=settings.sortCol===c;sc.appendChild(o); });
     sc.addEventListener('change',function(){settings.sortCol=this.value;});
@@ -3085,7 +3090,10 @@ let _ingSortDir = 'asc';
 let _pendingChanges = {};
 let _ingRows = {};
 let ingPage = 1;
-let ING_PAGE_SIZE = 1000;
+let ING_PAGE_SIZE = 50;
+let ingTotal      = 0;
+let _ingSearch    = null;
+let _ingCategoryFilter = null;
 let selectedIds = new Set();
 
 // ── PENDING CHANGES SYSTEM ───────────────────────────────────────
@@ -3182,17 +3190,86 @@ const PARAM_MAP = {
 };
 
 // ── LOAD ─────────────────────────────────────────────────────────
+// ── Pagination controls ───────────────────────────────────────────
+function buildPaginationControls(total){
+  var wrap = document.getElementById('ing-pagination');
+  if(!wrap) return;
+  wrap.innerHTML = '';
+  if(!total) return;
+
+  var totalPages = Math.ceil(total / ING_PAGE_SIZE);
+  if(totalPages <= 1){ wrap.style.display='none'; return; }
+  wrap.style.display = 'flex';
+
+  var style = "padding:6px 12px;background:none;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);cursor:pointer;transition:all 0.15s";
+  var activeStyle = style + ";background:var(--accent);border-color:var(--accent);color:#fff;cursor:default";
+
+  function btn(label, page, disabled, active){
+    var b = document.createElement('button');
+    b.textContent = label;
+    b.style.cssText = active ? activeStyle : style;
+    b.disabled = disabled || active;
+    if(!disabled && !active){
+      b.addEventListener('click', function(){ loadIngredients(page); });
+      b.addEventListener('mouseenter', function(){ if(!this.disabled) this.style.borderColor='var(--accent)'; this.style.color='var(--accent)'; });
+      b.addEventListener('mouseleave', function(){ if(!this.disabled) this.style.borderColor='var(--border)'; this.style.color='var(--text-mid)'; });
+    }
+    return b;
+  }
+
+  // Previous
+  wrap.appendChild(btn('← Prev', ingPage-1, ingPage<=1, false));
+
+  // Page numbers with ellipsis
+  var pages = [];
+  if(totalPages <= 7){
+    for(var i=1;i<=totalPages;i++) pages.push(i);
+  } else {
+    pages = [1,2];
+    if(ingPage > 4) pages.push('...');
+    for(var j=Math.max(3,ingPage-1); j<=Math.min(totalPages-2,ingPage+1); j++) pages.push(j);
+    if(ingPage < totalPages-3) pages.push('...');
+    pages.push(totalPages-1, totalPages);
+    pages = pages.filter(function(v,i,a){ return a.indexOf(v)===i; });
+  }
+
+  pages.forEach(function(p){
+    if(p === '...'){
+      var dots = document.createElement('span');
+      dots.textContent = '…';
+      dots.style.cssText = "padding:6px 4px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)";
+      wrap.appendChild(dots);
+    } else {
+      wrap.appendChild(btn(String(p), p, false, p===ingPage));
+    }
+  });
+
+  // Next
+  wrap.appendChild(btn('Next →', ingPage+1, ingPage>=totalPages, false));
+
+  // Page info
+  var info = document.createElement('span');
+  info.style.cssText = "font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);margin-left:8px;align-self:center";
+  info.textContent = 'Page '+ingPage+' of '+totalPages;
+  wrap.appendChild(info);
+}
+
 async function loadIngredients(page) {
   ingPage = page||1;
   const tbody = document.getElementById('ing-tbody');
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="20" class="ap-empty-row">Loading...</td></tr>';
   try {
+    var _ps = ING_PAGE_SIZE||50;
+    var _off = (ingPage-1)*_ps;
+    var _sc = _ingSortCol||'ID';
+    var _sd = _ingSortDir||'asc';
+    var _srch = _ingSearch||null;
+    var _cat  = _ingCategoryFilter||null;
     const [rows, total] = await Promise.all([
-      rpc('admin_get_ingredients',{p_search:null,p_category:null,p_limit:10000,p_offset:0}),
-      rpc('admin_count_ingredients',{p_search:null,p_category:null})
+      rpc('admin_get_ingredients',{p_search:_srch,p_category:_cat,p_limit:_ps,p_offset:_off,p_sort_col:_sc,p_sort_dir:_sd}),
+      rpc('admin_count_ingredients',{p_search:_srch,p_category:_cat})
     ]);
-    _ingAllData = rows;
     // localStorage is the source of truth for which columns exist.
     // Scanning extra_fields causes deleted columns to reappear and
     // leaks _t_ type metadata keys as visible columns.
@@ -3200,13 +3277,18 @@ async function loadIngredients(page) {
       .filter(function(k){ return k && !k.startsWith('_t_') && !k.startsWith('_'); });
     _extraColTypes = JSON.parse(localStorage.getItem('tcj_extra_col_types')||'{}');
     _extraColKeys.forEach(function(k){if(_colVis['extra:'+k]===undefined)_colVis['extra:'+k]=true;});
+    ingTotal = parseInt(total)||0;
+    _ingAllData = rows||[];
     const countEl = document.getElementById('ing-count');
-    if(countEl)countEl.textContent = total+' ingredient'+(total===1?'':'s');
+    var _start=((ingPage-1)*ING_PAGE_SIZE)+1;
+    var _end=Math.min(ingPage*ING_PAGE_SIZE, ingTotal);
+    if(countEl)countEl.textContent = ingTotal+' ingredient'+(ingTotal===1?'':'s')+(ingTotal>0?' (showing '+_start+'–'+_end+')':'');
     const badge = document.getElementById('badge-ingredients');
-    if(badge){badge.textContent=total;badge.style.display='inline-block';}
+    if(badge){badge.textContent=ingTotal;badge.style.display='inline-block';}
     buildTableHeader();
     buildColVisPanel();
     renderIngFiltered();
+    buildPaginationControls(ingTotal);
     updateSaveBtn();
     setTimeout(fixDropdownTheme,50);
   } catch(e) {
@@ -3296,7 +3378,7 @@ function sortIngBy(col) {
   document.querySelectorAll('.sort-icon').forEach(function(el){el.className='sort-icon';});
   const icon=document.querySelector('.sort-icon[data-col="'+col+'"]');
   if(icon)icon.className='sort-icon '+_ingSortDir;
-  renderIngFiltered();
+  loadIngredients(1);
 }
 
 function renderIngFiltered() {
@@ -3310,14 +3392,6 @@ function renderIngFiltered() {
       });
     }
   });
-  if(_ingSortCol){
-    data.sort(function(a,b){
-      const getV=function(r,c){if(c==='ID')return parseInt(r['ID'])||0;if(c.startsWith('extra:'))return String(r.extra_fields?(r.extra_fields[c.slice(6)]||''):'');return String(r[c]||'');};
-      const av=getV(a,_ingSortCol),bv=getV(b,_ingSortCol);
-      const cmp=(typeof av==='number')?av-bv:av.localeCompare(bv,undefined,{numeric:true});
-      return _ingSortDir==='asc'?cmp:-cmp;
-    });
-  }
   renderIngRows(data);
   const countEl=document.getElementById('ing-count');
   if(countEl){
