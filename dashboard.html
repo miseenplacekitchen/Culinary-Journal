@@ -1150,7 +1150,16 @@ function _imGet(key, def) {
 function _imSet(key,val){ localStorage.setItem(key,JSON.stringify(val)); }
 function getUnits(){ return _imGet('tcj_units',['cup','tbsp','tsp','ml','l','g','kg','oz','lb','piece','bunch','clove','leaf','sprig','pinch','slice','sheet','can','bottle','packet','whole']); }
 function getCats(){ return _imGet('tcj_cats',['Baking','Grains, Pasta & Noodles','Breads & Flatbreads','Packaged & Convenience','Meat','Poultry','Seafood','Dairy & Eggs','Plant-Based','Vegetables','Fruits','Herbs','Spices','Oils & Fats','Legumes & Pulses','Nuts & Seeds','Condiments & Sauces','Vinegars','Sweeteners','Canned & Preserved','Alcohol & Cooking Wine','Stocks & Broths']); }
-function getSubCats(){ return _imGet('tcj_subcats',{}); }
+function getSubCats(){
+  var _defaults={"Baking": ["Flour", "Sugar", "Leavening Agents", "Binding Agents", "Chocolate & Cocoa", "Starches", "Food Colouring", "Mixes & Pre-mixes"], "Grains, Pasta & Noodles": ["Rice", "Pasta", "Noodles", "Quinoa", "Oats", "Barley & Rye", "Couscous & Bulgur"], "Breads & Flatbreads": ["White Bread", "Wholegrain & Sourdough", "Flatbreads", "Wraps & Tortillas", "Crackers & Crispbreads", "Rolls & Buns"], "Packaged & Convenience": ["Canned Meals", "Instant Noodles", "Breakfast Cereals", "Frozen Meals", "Snack Foods", "Packet Mixes"], "Meat": ["Beef", "Pork", "Lamb", "Veal", "Game Meat", "Offal", "Processed & Cured Meat", "Mince & Ground"], "Poultry": ["Chicken", "Turkey", "Duck", "Quail & Goose", "Processed Poultry"], "Seafood": ["Fish \u2014 White", "Fish \u2014 Oily", "Prawns & Shrimp", "Crab & Lobster", "Squid & Octopus", "Mussels & Clams", "Oysters", "Smoked & Preserved Seafood"], "Dairy & Eggs": ["Milk", "Cream", "Butter", "Cheese \u2014 Hard", "Cheese \u2014 Soft", "Yoghurt", "Eggs", "Ice Cream & Frozen"], "Plant-Based": ["Tofu", "Tempeh", "Plant Milk", "Meat Alternatives", "Vegan Cheese", "Vegan Cream & Butter"], "Vegetables": ["Root Vegetables", "Leafy Greens", "Brassicas", "Alliums", "Nightshades", "Squash & Gourds", "Fungi", "Stems & Shoots", "Pods & Corn"], "Fruits": ["Citrus", "Stone Fruits", "Berries", "Tropical Fruits", "Melons", "Apples & Pears", "Dried Fruits", "Fruit Preserves"], "Herbs": ["Fresh Herbs", "Dried Herbs"], "Spices": ["Whole Spices", "Ground Spices", "Spice Blends", "Chilli & Pepper", "Salt & Pepper"], "Oils & Fats": ["Neutral Cooking Oils", "Olive Oil", "Specialty Oils", "Butter & Ghee", "Margarine & Shortening", "Animal Fats"], "Legumes & Pulses": ["Lentils", "Chickpeas", "Beans", "Peas", "Dried Legumes", "Canned Legumes"], "Nuts & Seeds": ["Tree Nuts", "Nut Butters & Pastes", "Seeds", "Seed Butters", "Mixed Nuts & Trail Mix"], "Condiments & Sauces": ["Tomato Based", "Soy & Asian Sauces", "Mustard & Mayonnaise", "Hot Sauces", "Dressings & Vinaigrettes", "Pestos & Relishes"], "Vinegars": ["White & Red Wine Vinegar", "Apple Cider Vinegar", "Rice Vinegar", "Balsamic Vinegar", "Malt Vinegar", "Specialty Vinegars"], "Sweeteners": ["White & Raw Sugar", "Brown & Muscovado Sugar", "Honey", "Maple & Agave Syrup", "Artificial Sweeteners", "Molasses & Treacle"], "Canned & Preserved": ["Canned Tomatoes", "Canned Vegetables", "Canned Fish", "Preserved Meats", "Pickles & Fermented", "Jams & Spreads"], "Alcohol & Cooking Wine": ["White Wine", "Red Wine", "Fortified Wine", "Beer", "Spirits & Liqueurs", "Non-Alcoholic Substitutes"], "Stocks & Broths": ["Chicken Stock", "Beef Stock", "Vegetable Stock", "Fish Stock", "Bone Broth", "Concentrated Stock Pastes"]};
+  var stored=_imGet('tcj_subcats',null);
+  if(stored===null){
+    // First load — seed defaults
+    _imSet('tcj_subcats',_defaults);
+    return _defaults;
+  }
+  return stored;
+}
 function getCurrencies(){ return _imGet('tcj_currencies',['AED', 'AFN', 'ALL', 'AMD', 'ANG', 'AOA', 'ARS', 'AUD', 'AWG', 'AZN', 'BAM', 'BBD', 'BDT', 'BGN', 'BHD', 'BIF', 'BMD', 'BND', 'BOB', 'BRL', 'BSD', 'BTN', 'BWP', 'BYN', 'BZD', 'CAD', 'CDF', 'CHF', 'CLP', 'CNY', 'COP', 'CRC', 'CUP', 'CVE', 'CZK', 'DJF', 'DKK', 'DOP', 'DZD', 'EGP', 'ERN', 'ETB', 'EUR', 'FJD', 'FKP', 'GBP', 'GEL', 'GHS', 'GIP', 'GMD', 'GNF', 'GTQ', 'GYD', 'HKD', 'HNL', 'HRK', 'HTG', 'HUF', 'IDR', 'ILS', 'INR', 'IQD', 'IRR', 'ISK', 'JMD', 'JOD', 'JPY', 'KES', 'KGS', 'KHR', 'KMF', 'KPW', 'KRW', 'KWD', 'KYD', 'KZT', 'LAK', 'LBP', 'LKR', 'LRD', 'LSL', 'LYD', 'MAD', 'MDL', 'MGA', 'MKD', 'MMK', 'MNT', 'MOP', 'MRU', 'MUR', 'MVR', 'MWK', 'MXN', 'MYR', 'MZN', 'NAD', 'NGN', 'NIO', 'NOK', 'NPR', 'NZD', 'OMR', 'PAB', 'PEN', 'PGK', 'PHP', 'PKR', 'PLN', 'PYG', 'QAR', 'RON', 'RSD', 'RUB', 'RWF', 'SAR', 'SBD', 'SCR', 'SDG', 'SEK', 'SGD', 'SHP', 'SLL', 'SOS', 'SRD', 'STN', 'SVC', 'SYP', 'SZL', 'THB', 'TJS', 'TMT', 'TND', 'TOP', 'TRY', 'TTD', 'TWD', 'TZS', 'UAH', 'UGX', 'USD', 'UYU', 'UZS', 'VES', 'VND', 'VUV', 'WST', 'XAF', 'XCD', 'XOF', 'XPF', 'YER', 'ZAR', 'ZMW', 'ZWL']); }
 function getUnitMeta(){ return _imGet('tcj_unit_meta',{}); }
 function getCatMeta(){ return _imGet('tcj_cat_meta',{}); }
@@ -1411,10 +1420,6 @@ function buildCategoriesTab(container, _dirty){
   var cats = getCats().slice().sort();
   var meta = getCatMeta();
 
-  var desc=document.createElement('div');
-  desc.style.cssText=_imS.label+';margin-bottom:12px';
-  desc.textContent='Ingredient categories, sorted alphabetically. Required=Yes means Sub Category must be selected for ingredients in this category.';
-  container.appendChild(desc);
 
   // Grid header
   var COLS=['ID','CATEGORY NAME','REQUIRED','ACTIVE','DELETE'];
@@ -1494,9 +1499,6 @@ function buildCategoriesTab(container, _dirty){
 function buildSubCategoriesTab(container, _dirty){
   var cats=getCats().slice().sort();
   var subs=getSubCats();
-  var desc=document.createElement('div');desc.style.cssText=_imS.label+';margin-bottom:10px';
-  desc.textContent='Sub-categories linked to each ingredient category. Select a category to manage its sub-categories.';
-  container.appendChild(desc);
 
   var selRow=document.createElement('div');selRow.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:12px';
   var lbl=document.createElement('div');lbl.style.cssText=_imS.label;lbl.textContent='Category:';
@@ -1561,9 +1563,6 @@ function buildUnitsTab(container, _dirty){
   var units=getUnits().slice().sort();
   var meta=getUnitMeta();
   var MTYPE=['Weight','Volume','Count','Other'];
-  var desc=document.createElement('div');desc.style.cssText=_imS.label+';margin-bottom:12px';
-  desc.textContent='Units of measurement. Sorted alphabetically. Required=Yes forces this unit to be selected from a dropdown.';
-  container.appendChild(desc);
 
   var grid=document.createElement('div');
   grid.style.cssText='display:grid;grid-template-columns:40px 100px 100px 70px 70px 70px 70px 70px 36px;gap:4px 8px;align-items:center';
@@ -1638,9 +1637,6 @@ function buildUnitsTab(container, _dirty){
 // ── CURRENCIES TAB ───────────────────────────────────────────────
 function buildCurrenciesTab(container, _dirty){
   var currencies=getCurrencies().slice().sort();
-  var desc=document.createElement('div');desc.style.cssText=_imS.label+';margin-bottom:12px';
-  desc.textContent='All ISO 4217 currency codes. Manage the list here — all currency dropdowns across the system use this list.';
-  container.appendChild(desc);
 
   var grid=document.createElement('div');
   grid.style.cssText='display:grid;grid-template-columns:40px 80px 1fr 70px 36px;gap:4px 8px;align-items:center';
@@ -1685,9 +1681,6 @@ function buildCurrenciesTab(container, _dirty){
 
 // ── BRAND MAPPING TAB ────────────────────────────────────────────
 function buildBrandsTab(container, _dirty){
-  var desc=document.createElement('div');desc.style.cssText=_imS.label+';margin-bottom:12px';
-  desc.textContent='Map brand names to their generic ingredient name and category. Recipe cards show the generic name with a "Chef recommends [Brand]" note.';
-  container.appendChild(desc);
   // Load existing brand mappings from the existing brand mapping system
   loadBrandMappings(container);
 }
