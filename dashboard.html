@@ -1672,6 +1672,7 @@ function buildRefDataTab(container){
 
 // ── CATEGORIES TAB ───────────────────────────────────────────────
 function buildCategoriesTab(container, _dirty){
+  container.appendChild(makeImportExportBar(exportCategoriesCSV,importCategoriesCSV,'Categories \u0026 Sub Categories'));
   var cats = getCats().slice().sort();
   var meta = getCatMeta();
 
@@ -1730,7 +1731,7 @@ function buildCategoriesTab(container, _dirty){
   }
   renderRows();
   container.appendChild(grid);
-  container.appendChild(makeImportExportBar(exportCategoriesCSV,importCategoriesCSV,'Categories & Sub Categories'));
+  
 
   // Add new
   var addRow=document.createElement('div');addRow.style.cssText='display:flex;gap:8px;margin-top:10px';
@@ -1753,6 +1754,7 @@ function buildCategoriesTab(container, _dirty){
 
 // ── SUB CATEGORIES TAB ───────────────────────────────────────────
 function buildSubCategoriesTab(container, _dirty){
+  container.appendChild(makeImportExportBar(exportCategoriesCSV,importCategoriesCSV,'Categories \u0026 Sub Categories'));
   var cats=getCats().slice().sort();
   var subs=getSubCats();
 
@@ -1761,7 +1763,7 @@ function buildSubCategoriesTab(container, _dirty){
   var catSel=document.createElement('select');catSel.style.cssText=_imS.sel.replace('width:100%;','')+';width:auto;min-width:180px';
   cats.forEach(function(c){var o=document.createElement('option');o.value=c;o.textContent=c;catSel.appendChild(o);});
   selRow.appendChild(lbl);selRow.appendChild(catSel);container.appendChild(selRow);
-  container.appendChild(makeImportExportBar(exportCategoriesCSV,importCategoriesCSV,'Categories & Sub Categories'));
+  
 
   var subPanel=document.createElement('div');container.appendChild(subPanel);
 
@@ -1817,6 +1819,7 @@ function buildSubCategoriesTab(container, _dirty){
 
 // ── UNITS TAB ────────────────────────────────────────────────────
 function buildUnitsTab(container, _dirty){
+  container.appendChild(makeImportExportBar(exportUnitsCSV,importUnitsCSV,'Units'));
   var units=getUnits().slice().sort();
   var meta=getUnitMeta();
   var MTYPE=['Weight','Volume','Count','Other'];
@@ -1875,7 +1878,7 @@ function buildUnitsTab(container, _dirty){
     });
   }
   renderUnits();container.appendChild(grid);
-  container.appendChild(makeImportExportBar(exportUnitsCSV,importUnitsCSV,'Units'));
+  
 
   var addRow=document.createElement('div');addRow.style.cssText='display:flex;gap:8px;margin-top:10px';
   var ni2=document.createElement('input');ni2.type='text';ni2.placeholder='Add unit…';ni2.style.cssText=_imS.inp;
@@ -1894,6 +1897,7 @@ function buildUnitsTab(container, _dirty){
 
 // ── CURRENCIES TAB ───────────────────────────────────────────────
 function buildCurrenciesTab(container, _dirty){
+  container.appendChild(makeImportExportBar(exportCurrenciesCSV,importCurrenciesCSV,'Currencies'));
   var currencies=getCurrencies().slice().sort();
 
   var grid=document.createElement('div');
@@ -1920,7 +1924,7 @@ function buildCurrenciesTab(container, _dirty){
     });
   }
   renderCurrs();container.appendChild(grid);
-  container.appendChild(makeImportExportBar(exportCurrenciesCSV,importCurrenciesCSV,'Currencies'));
+  
 
   var addRow=document.createElement('div');addRow.style.cssText='display:flex;gap:8px;margin-top:10px';
   var ni=document.createElement('input');ni.type='text';ni.placeholder='Code e.g. AUD';ni.style.cssText=_imS.inp.replace('width:100%;','')+';width:80px;text-transform:uppercase';
