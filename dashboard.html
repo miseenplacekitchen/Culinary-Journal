@@ -1187,10 +1187,12 @@ function getSubMeta(){ return _imGet('tcj_sub_meta',{}); }
 
 function getAdminName(){
   try{
-    if(window.currentUserProfile&&(currentUserProfile.username||currentUserProfile.name))
-      return currentUserProfile.username||currentUserProfile.name;
-    if(window.session&&session.user&&session.user.email)
-      return session.user.email;
+    var _p=JSON.parse(localStorage.getItem('tcj_profile')||'null');
+    if(_p&&_p.username) return _p.username;
+    if(_p&&_p.full_name) return _p.full_name;
+    if(_p&&_p.email) return _p.email;
+    var _s=JSON.parse(localStorage.getItem('tcj_session')||'null');
+    if(_s&&_s.user&&_s.user.email) return _s.user.email;
     return 'Admin';
   }catch(e){return 'Admin';}
 }
