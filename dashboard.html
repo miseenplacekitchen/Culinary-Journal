@@ -1384,7 +1384,7 @@ function loadIMInterface(){
   var topBar=document.createElement('div');
   topBar.style.cssText='display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px';
   var topPanels={};
-  var activeTop='refdata';
+  var activeTop=localStorage.getItem('tcj_active_im_tab')||'refdata';
 
   TAB_DEFS.forEach(function(td){
     var btn=document.createElement('button');
@@ -1393,6 +1393,7 @@ function loadIMInterface(){
     btn.addEventListener('click',function(){
       topBar.querySelectorAll('button').forEach(function(b){ b.style.borderBottomColor='transparent'; b.style.color='var(--text-mid)'; });
       btn.style.borderBottomColor='var(--accent)'; btn.style.color='var(--accent)';
+      localStorage.setItem('tcj_active_im_tab', td.key);
       Object.keys(topPanels).forEach(function(k){ topPanels[k].style.display=k===td.key?'block':'none'; });
       if(td.key==='recycle') loadIngRecycleBinInto(topPanels['recycle']);
       if(td.key==='audit')   loadAuditTrail(topPanels['audit']);
@@ -1686,7 +1687,7 @@ function buildRefDataTab(container){
   var subBar=document.createElement('div');
   subBar.style.cssText='display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap';
   var subPanels={};
-  var activeSub='brands';
+  var activeSub=localStorage.getItem('tcj_active_sub_tab')||'brands';
 
   SUB.forEach(function(s){
     var btn=document.createElement('button');
@@ -1699,6 +1700,7 @@ function buildRefDataTab(container){
         _dirty[activeSub]=false;
       }
       activeSub=s.key;
+      localStorage.setItem('tcj_active_sub_tab', s.key);
       subBar.querySelectorAll('button').forEach(function(b){ b.style.borderBottomColor='transparent'; b.style.color='var(--text-mid)'; });
       btn.style.borderBottomColor='var(--accent)'; btn.style.color='var(--accent)';
       Object.keys(subPanels).forEach(function(k){ subPanels[k].style.display=k===s.key?'block':'none'; });
