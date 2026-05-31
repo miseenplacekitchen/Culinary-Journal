@@ -2757,7 +2757,7 @@ function getThemeColors() {
 let STD_COLS = [
   {key:'Ingredient Name',           label:'Ingredient Name',    type:'text'},
   {key:'Also Known As',             label:'Also Known As',      type:'text'},
-  {key:'Category',                  label:'Category',           type:'category'},
+  {key:'Category',                  label:'Category',           type:'category', edit:'select'},
   {key:'Sub Category',              label:'Sub Category',       type:'text'},
   {key:'Standard Qty',              label:'Standard Qty',       type:'text'},
   {key:'Standard Weight (g or ml)', label:'Weight (g/ml)',      type:'number'},
@@ -3164,9 +3164,7 @@ function renderIngRows(rows) {
             var _um=getUnitMeta(); var _unitRequired=Object.values(_um).some(function(m){return m&&m.required==='Yes';});
             _iType=_unitRequired?'select':'suggest';
           } else if(colKey==='Sub Category'){
-            var _catName=(i&&i['Category'])||'';
-            var _cm=getCatMeta(); var _subRequired=_cm[_catName]&&_cm[_catName].required==='Yes';
-            _iType=_subRequired?'select':'suggest';
+            _iType='select'; // Always dropdown from managed sub-categories
           }
           td.addEventListener('dblclick',(function(t){return function(e){inlineCell(e,id,colKey,t);};}(_iType)));
         }
@@ -3385,11 +3383,19 @@ if(type==='text'){
     const sel=document.createElement('select');sel.className='inline-select';
     var opts;
     if(type==='yesno') opts=['Yes','No'];
-    else if(field==='Unit') opts=getUnits();
+    else if(field==='Unit'){
+      opts=getUnits().filter(function(u){
+        var m=getUnitMeta()[u]||{}; return m.active!=='No';
+      }).sort();
+    }
     else if(field==='Sub Category'){
       var _ingCat=(window._ingRows&&window._ingRows[id]&&window._ingRows[id]['Category'])||'';
       opts=(getSubCats()[_ingCat]||[]).slice().sort();
-    } else opts=CATS_LIST;
+      if(!opts.length) opts=Object.values(getSubCats()).reduce(function(a,b){return a.concat(b);}).sort();
+    }
+    else opts=CATS_LIST.filter(function(c){
+      var m=getCatMeta()[c]||{}; return m.active!=='No';
+    });
     opts.forEach(function(o){const opt=document.createElement('option');opt.value=o;opt.textContent=o;if(o===currentVal)opt.selected=true;sel.appendChild(opt);});
     sel.addEventListener('change',function(){commitChange(this.value);});
     sel.addEventListener('blur',function(){if(!this._saved){td.innerHTML=origHTML;td.className='editable-cell'+(td.classList.contains('cell-pending')?' cell-pending':'');}});
@@ -4044,8 +4050,39 @@ async function importCsv(){
   btn.disabled=true;btn.textContent='Importing...';status.textContent='';
   try{
     const total=await rpc('admin_bulk_upsert_ingredients',{p_rows:csvData});
-    status.textContent='✓ '+total+' ingredient(s) imported.';
-    setTimeout(function(){closeCsvModal();loadIngredients(1);},1200);
+
+    // ── Sync new Categories and Sub Categories into IM Interface ──
+    var _existingCats=getCats(); var _existingSubs=getSubCats();
+    var _newCats=[]; var _newSubs={};
+    csvData.forEach(function(row){
+      var cat=(row['Category']||'').trim();
+      var sub=(row['Sub Category']||'').trim();
+      if(!cat)return;
+      if(!_existingCats.includes(cat)&&!_newCats.includes(cat))_newCats.push(cat);
+      if(sub){
+        if(!_existingSubs[cat])_existingSubs[cat]=[];
+        if(!_existingSubs[cat].includes(sub)){
+          if(!_newSubs[cat])_newSubs[cat]=[];
+          _newSubs[cat].push(sub);
+          _existingSubs[cat].push(sub);
+        }
+      }
+    });
+    if(_newCats.length>0){
+      _newCats.forEach(function(c){_existingCats.push(c);});
+      _existingCats.sort();
+      _imSet('tcj_cats',_existingCats);
+      CATS_LIST.length=0;_existingCats.forEach(function(c){CATS_LIST.push(c);});
+    }
+    var _totalNewSubs=Object.values(_newSubs).reduce(function(n,a){return n+a.length;},0);
+    if(_totalNewSubs>0) _imSet('tcj_subcats',_existingSubs);
+    var _syncMsg='';
+    if(_newCats.length>0) _syncMsg+=' | '+_newCats.length+' new categor'+(_newCats.length===1?'y':'ies')+' added to IM Interface';
+    if(_totalNewSubs>0) _syncMsg+=' | '+_totalNewSubs+' new sub-categor'+(_totalNewSubs===1?'y':'ies')+' added';
+    if(_syncMsg) auditLog('All Ingredients','CSV Import Sync',null,null,null,_syncMsg.slice(3));
+
+    status.textContent='✓ '+total+' ingredient(s) imported.'+_syncMsg;
+    setTimeout(function(){closeCsvModal();loadIngredients(1);},1800);
   }catch(e){showCsvError('Import failed: '+e.message);btn.disabled=false;btn.textContent='Import';}
 }
 function downloadTemplate(){
