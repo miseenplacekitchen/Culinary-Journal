@@ -665,6 +665,10 @@
 
     <!-- SITE MANAGEMENT -->
     <div id="v-site-mgmt" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)">Changes are saved per tab. Use Save All to commit everything at once.</div>
+        <button id="sm-save-all-btn" onclick="smSaveAll()" style="padding:8px 20px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Save All</button>
+      </div>
       <div class="ap-inner-tabs">
         <button class="ap-inner-tab active" data-tab="sm-pages"    onclick="switchSMTab('sm-pages')">Pages</button>
         <button class="ap-inner-tab"        data-tab="sm-features"  onclick="switchSMTab('sm-features')">Features</button>
@@ -2829,8 +2833,8 @@ async function buildSMPages(container) {
       btn.addEventListener('click', (function(path, b) { return async function() {
         b.disabled=true; b.textContent='\u2026';
         try {
-          var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_pages?path=eq.'+encodeURIComponent(path),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({visibility:document.getElementById('smv-'+path).value,coming_soon:document.getElementById('smcs-'+path).checked})});
-          if(!r||!r.ok) throw new Error(r?r.status+': '+await r.text():'Session expired');
+          var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_pages?path=eq.'+encodeURIComponent(path),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({visibility:document.getElementById('smv-'+path).value,coming_soon:document.getElementById('smcs-'+path).checked})});
+          var rBody = await r.json(); if(!Array.isArray(rBody)||!rBody.length) throw new Error('Row not found — no changes saved');
           b.textContent='\u2713 Saved'; setTimeout(function(){var c=document.getElementById('upanel-sm-pages');if(c){c.dataset.built='';buildSMPages(c);}},1500);
         } catch(e){b.textContent='Save';b.disabled=false;alert('Save failed: '+e.message);}
       };})(p.path,btn));
@@ -2861,7 +2865,7 @@ async function buildSMFeatures(container) {
       var cb=document.createElement('input');cb.type='checkbox';cb.checked=!!f.enabled;cb.style.cssText='width:16px;height:16px;accent-color:var(--accent);cursor:pointer';
       cb.addEventListener('change',(function(key,s){return async function(){
         var prev=this.checked;
-        try{var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_features?key=eq.'+encodeURIComponent(key),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({enabled:this.checked})});
+        try{var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_features?key=eq.'+encodeURIComponent(key),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({enabled:this.checked})});
         if(!r||!r.ok)throw new Error(r?r.status+': '+await r.text():'Session expired');
         s.textContent=this.checked?'Enabled':'Disabled';s.style.color=this.checked?'#4caf76':'#dc5050';}
         catch(e){this.checked=!prev;alert('Toggle failed: '+e.message);}
@@ -2887,7 +2891,7 @@ async function buildSMAnnouncements(container) {
     var addBtn=document.createElement('button');addBtn.className='ing-add-btn';addBtn.textContent='Add Announcement';
     addBtn.addEventListener('click',async function(){
       var text=(document.getElementById('sm-ann-new-text').value||'').trim();if(!text)return;addBtn.disabled=true;
-      try{var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_announcements',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({text:text,type:document.getElementById('sm-ann-new-type').value,active:true})});
+      try{var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_announcements',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({text:text,type:document.getElementById('sm-ann-new-type').value,active:true})});
       if(!r||!r.ok)throw new Error(r?r.status+': '+await r.text():'Session expired');
       var c=document.getElementById('upanel-sm-ann');if(c){c.dataset.built='';buildSMAnnouncements(c);}}
       catch(e){addBtn.disabled=false;alert('Add failed: '+e.message);}
@@ -6639,6 +6643,128 @@ async function exportCsv(){
 // ═══════════════════════════════════════════════════
 // SITE MANAGEMENT + USER MANAGEMENT ADDITIONS
 // ═══════════════════════════════════════════════════
+
+async function smSaveAll() {
+  var btn = document.getElementById('sm-save-all-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving\u2026'; }
+  var errors = [];
+  var saved  = 0;
+
+  // ── Save Pages tab ──────────────────────────────────────────
+  var pagesPanel = document.getElementById('upanel-sm-pages');
+  if (pagesPanel && pagesPanel.dataset.built === '1') {
+    var rows = pagesPanel.querySelectorAll('tbody tr');
+    for (var i = 0; i < rows.length; i++) {
+      var tr = rows[i];
+      var pathEl = tr.querySelector('td:nth-child(2)');
+      if (!pathEl) continue;
+      var path = pathEl.textContent.trim();
+      var visEl  = document.getElementById('smv-' + path);
+      var csEl   = document.getElementById('smcs-' + path);
+      if (!visEl) continue;
+      try {
+        var r = await apiFetch(SUPABASE_URL + '/rest/v1/site_pages?path=eq.' + encodeURIComponent(path), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+          body: JSON.stringify({ visibility: visEl.value, coming_soon: csEl ? csEl.checked : false })
+        });
+        if (!r || !r.ok) throw new Error('Pages PATCH failed: ' + (r ? r.status : 'no response'));
+        var updated = await r.json();
+        if (!updated || !updated.length) throw new Error('Page not found: ' + path);
+        saved++;
+      } catch(e) { errors.push(e.message); }
+    }
+  }
+
+  // ── Save Features tab ───────────────────────────────────────
+  var featPanel = document.getElementById('upanel-sm-features');
+  if (featPanel && featPanel.dataset.built === '1') {
+    var cbs = featPanel.querySelectorAll('input[type="checkbox"]');
+    for (var j = 0; j < cbs.length; j++) {
+      var cb = cbs[j];
+      // Get the key from the nearest parent row's feature key
+      var row = cb.closest('div[style*="justify-content"]');
+      if (!row) continue;
+      var nameEl = row.querySelector('div[style*="font-weight:500"]');
+      if (!nameEl) continue;
+      // We store key on the cb via closure — get from onclick/change
+      // Instead find it from the feature name by checking against loaded features
+      // Skip — features are saved on toggle directly
+    }
+  }
+
+  // ── Save Settings tab ───────────────────────────────────────
+  var settPanel = document.getElementById('upanel-sm-settings');
+  if (settPanel && settPanel.dataset.built === '1') {
+    var fields = {
+      'maintenance_message': document.getElementById('ss-maintenance_message'),
+      'watermark_font':      document.getElementById('ss-watermark_font'),
+      'watermark_opacity':   document.getElementById('ss-watermark_opacity'),
+      'footer_copyright':    document.getElementById('ss-footer_copyright')
+    };
+    for (var key in fields) {
+      if (!fields[key]) continue;
+      try {
+        var r2 = await apiFetch(SUPABASE_URL + '/rest/v1/site_settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=representation' },
+          body: JSON.stringify({ key: key, value: fields[key].value || '' })
+        });
+        if (!r2 || !r2.ok) throw new Error('Setting save failed: ' + key);
+        saved++;
+      } catch(e) { errors.push(e.message); }
+    }
+  }
+
+  // ── Save Email Templates tab ────────────────────────────────
+  var emailPanel = document.getElementById('upanel-sm-email');
+  if (emailPanel && emailPanel.dataset.built === '1') {
+    var subjects = emailPanel.querySelectorAll('input[id^="em-s-"]');
+    for (var k = 0; k < subjects.length; k++) {
+      var subj = subjects[k];
+      var tkey = subj.id.replace('em-s-', '');
+      var bodyEl = document.getElementById('em-b-' + tkey);
+      if (!bodyEl) continue;
+      try {
+        var r3 = await apiFetch(SUPABASE_URL + '/rest/v1/email_templates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=representation' },
+          body: JSON.stringify({ key: tkey, subject: subj.value, body: bodyEl.value })
+        });
+        if (!r3 || !r3.ok) throw new Error('Email template save failed: ' + tkey);
+        saved++;
+      } catch(e) { errors.push(e.message); }
+    }
+  }
+
+  // ── Result ──────────────────────────────────────────────────
+  if (btn) {
+    if (errors.length === 0) {
+      btn.textContent = '\u2713 All Saved (' + saved + ')';
+      btn.style.background = '#4caf76';
+      setTimeout(function() {
+        btn.textContent = 'Save All';
+        btn.style.background = '';
+        btn.disabled = false;
+        // Reload loaded panels to confirm
+        ['sm-pages','sm-settings','sm-email'].forEach(function(tab) {
+          var c = document.getElementById('upanel-' + tab);
+          if (c && c.dataset.built === '1') {
+            c.dataset.built = '';
+            if (tab === 'sm-pages')    buildSMPages(c);
+            if (tab === 'sm-settings') buildSMSettings(c);
+            if (tab === 'sm-email')    buildSMEmail(c);
+          }
+        });
+      }, 2000);
+    } else {
+      btn.textContent = 'Save All (' + errors.length + ' failed)';
+      btn.style.background = '#dc5050';
+      btn.disabled = false;
+      alert('Save All completed with errors:\n\n' + errors.join('\n'));
+    }
+  }
+}
 
 function loadSiteManagement() {
   // Build tab bar with pure inline styles — no CSS classes
