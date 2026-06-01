@@ -1545,7 +1545,8 @@
 
 const SUPABASE_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
-const DRAFT_KEY = 'tcj_recipe_draft';
+const DRAFT_KEY        = 'tcj_recipe_draft';
+const DRAFTS_INDEX_KEY = 'tcj_drafts_index';
 
 let session = null;
 let allIngredients = [];
@@ -3012,13 +3013,14 @@ function countWords(s) { return (s||'').trim().split(/\s+/).filter(Boolean).leng
 
 // ── SHOW MESSAGE ──────────────────────────────────────────────────────────────
 function showMsg(msg, type) {
-  const el = document.getElementById('form-message');
-  if (!el) return;
+  // Try both element IDs — sr-msg is the live element, form-message was a legacy name
+  const el = document.getElementById('sr-msg') || document.getElementById('form-message');
+  if (!el) { console.warn('showMsg: no message element found'); return; }
   el.textContent = msg;
   el.className = 'sr-form-msg ' + (type || 'info');
   el.style.display = 'block';
-  if (type === 'success') setTimeout(() => { el.style.display='none'; }, 5000);
-  el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 5000);
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // ── COLLECT FORM DATA ─────────────────────────────────────────────────────────
@@ -3452,13 +3454,7 @@ function updateAutoSaveMsg() {
   if (el) { el.textContent = 'Draft saved ' + new Date().toLocaleTimeString(); }
 }
 
-function setupAutoSave() {
-  const fields = document.querySelectorAll('input:not([type=radio]):not([type=checkbox]), textarea, select');
-  fields.forEach(f => {
-    f.addEventListener('input',  () => { clearTimeout(autoSaveTimer); autoSaveTimer = setTimeout(saveDraft, 2000); });
-    f.addEventListener('change', () => { clearTimeout(autoSaveTimer); autoSaveTimer = setTimeout(saveDraft, 2000); });
-  });
-}
+// setupAutoSave() — handled by event delegation above
 
 // ── SESSION REFRESH ───────────────────────────────────────────────────────────
 async function refreshSessionIfNeeded() {
@@ -3831,7 +3827,10 @@ function saveNamedDraft(showToast) {
   window.history.replaceState({}, '', url.toString());
 
   updateAutoSaveMsg();
-  if (showToast) showMsg('\u2713 Draft saved.', 'success');
+  if (showToast) {
+    showMsg('\u2713 Draft saved. Returning to your drafts…', 'success');
+    setTimeout(function() { window.location.href = 'draft-recipes.html'; }, 1200);
+  }
 }
 
 // ── CANCEL SUBMISSION ──────────────────────────────────────────────────────
