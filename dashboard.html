@@ -382,7 +382,7 @@
       <button class="ap-nav-item" id="nav-user-mgmt" onclick="switchView('user-mgmt')">&#128101; User Management <span class="ap-nav-badge" id="badge-pending-users">0</span></button>
       <button class="ap-nav-item" id="nav-ingredients" onclick="switchView('ingredients')">&#129365; Ingredients</button>
       <button class="ap-nav-item" id="nav-analytics" onclick="switchView('analytics')">&#128202; Analytics</button>
-      <a href="site-management.html" class="ap-nav-item" style="text-decoration:none">&#9881;&#65039; Site Management</a>
+      <button class="ap-nav-item" id="nav-site-mgmt" onclick="switchView('site-mgmt')">&#9881;&#65039; Site Management</button>
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
         <a href="/" class="ap-nav-item" style="text-decoration:none;font-size:12px">View Site</a>
         <a href="index.html" class="ap-nav-item" style="text-decoration:none;font-size:12px">Homepage</a>
@@ -733,6 +733,26 @@
     </div>
 
 
+
+    <!-- SITE MANAGEMENT -->
+    <div id="v-site-mgmt" style="display:none">
+      <div class="ap-inner-tabs">
+        <button class="ap-inner-tab active" data-smtab="pages"         onclick="switchSMTab('pages')">Pages</button>
+        <button class="ap-inner-tab"        data-smtab="features"      onclick="switchSMTab('features')">Features</button>
+        <button class="ap-inner-tab"        data-smtab="announcements" onclick="switchSMTab('announcements')">Announcements</button>
+        <button class="ap-inner-tab"        data-smtab="content"       onclick="switchSMTab('content')">Content</button>
+        <button class="ap-inner-tab"        data-smtab="themes"        onclick="switchSMTab('themes')">Themes</button>
+        <button class="ap-inner-tab"        data-smtab="email"         onclick="switchSMTab('email')">Email Templates</button>
+        <button class="ap-inner-tab"        data-smtab="settings"      onclick="switchSMTab('settings')">Settings</button>
+      </div>
+      <div id="smpanel-pages"         class="sm-panel"></div>
+      <div id="smpanel-features"      class="sm-panel" style="display:none"></div>
+      <div id="smpanel-announcements" class="sm-panel" style="display:none"></div>
+      <div id="smpanel-content"       class="sm-panel" style="display:none"></div>
+      <div id="smpanel-themes"        class="sm-panel" style="display:none"></div>
+      <div id="smpanel-email"         class="sm-panel" style="display:none"></div>
+      <div id="smpanel-settings"      class="sm-panel" style="display:none"></div>
+    </div>
 
     <!-- ANALYTICS -->
     <div id="v-analytics" style="display:none">
@@ -1088,7 +1108,7 @@ function signOut() {
   window.location.href = 'login.html';
 }
 
-const ALL_VIEWS = ['dashboard','recipe-mgmt','user-mgmt','ingredients','analytics'];
+const ALL_VIEWS = ['dashboard','recipe-mgmt','user-mgmt','ingredients','analytics','site-mgmt'];
 
 function switchView(view, ingTab) {
   localStorage.setItem('tcj_active_view', view);
@@ -1109,6 +1129,7 @@ function switchView(view, ingTab) {
   if (view === 'user-mgmt')   switchUserTab(_savedUserTab);
   if (view === 'ingredients') { loadImSettings(); switchIngTab(ingTab||'all'); }
   if (view === 'analytics')   loadAnalytics();
+  if (view === 'site-mgmt')    loadSiteManagement();
 }
 
 // ── RECIPE MANAGEMENT ─────────────────────────────────────────────

@@ -7,6 +7,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="theme-init.js"></script>
+  <script>
+    // Apply admin theme immediately — reads from same keys as dashboard
+    (function(){
+      var theme = localStorage.getItem('tcj_theme') || 
+                  (function(){ try { var p=JSON.parse(localStorage.getItem('tcj_profile')||'null'); return p&&p.theme_preference||''; } catch(e){return '';} })() ||
+                  'Midnight Slate';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text-high); min-height: 100vh; }
