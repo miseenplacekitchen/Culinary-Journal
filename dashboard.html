@@ -7094,26 +7094,56 @@ function showCsvPreview(data){
 }
 function showCsvError(msg){const el=document.getElementById('csv-error');el.textContent=msg;el.style.display='block';document.getElementById('csv-import-btn').disabled=true;}
 async function importCsv(){
-  if(!csvData||!csvData.length)return;
-  const btn=document.getElementById('csv-import-btn'),status=document.getElementById('csv-status');
-  btn.disabled=true;btn.textContent='Importing...';status.textContent='';
-  try{
-    const total=await rpc('admin_bulk_upsert_ingredients',{p_rows:csvData});
+  if(!csvData||!csvData.length) return;
+  const btn    = document.getElementById('csv-import-btn');
+  const status = document.getElementById('csv-status');
+  btn.disabled = true;
+  status.textContent = '';
+
+  // ── Pre-flight: detect duplicate names inside the uploaded CSV ────────
+  const nameCounts = {};
+  csvData.forEach(function(row) {
+    const n = (row['Ingredient Name']||'').trim().toLowerCase();
+    if (n) nameCounts[n] = (nameCounts[n]||0) + 1;
+  });
+  const csvDupes = Object.keys(nameCounts).filter(function(n){ return nameCounts[n] > 1; });
+  if (csvDupes.length > 0) {
+    status.style.color = '#d4a017';
+    status.textContent = '⚠ ' + csvDupes.length + ' duplicate name' +
+      (csvDupes.length===1?'':'s') + ' in CSV (e.g. "' + csvDupes[0] + '"). ' +
+      'Last row for each name will be used. Proceeding…';
+  }
+
+  // ── Call the RPC ───────────────────────────────────────────────────────
+  try {
+    btn.textContent = 'Importing…';
+    const result = await rpc('admin_bulk_upsert_ingredients', { p_rows: csvData });
+
+    // RPC now returns { inserted, updated, skipped } — handle both formats
+    let inserted = 0, updated = 0;
+    if (result && typeof result === 'object' && !Array.isArray(result)) {
+      inserted = result.inserted || 0;
+      updated  = result.updated  || 0;
+    } else {
+      // Backwards compat: old RPC returned a plain integer
+      inserted = parseInt(result) || csvData.length;
+    }
 
     // ── Sync new Categories, Sub Categories and Units into IM Interface ──
-    var _existingCats=getCats(); var _existingSubs=getSubCats();
-    var _existingUnits=getUnits();
-    var _newCats=[]; var _newSubs={}; var _newUnits=[];
+    var _existingCats   = getCats();
+    var _existingSubs   = getSubCats();
+    var _existingUnits  = getUnits();
+    var _newCats=[], _newSubs={}, _newUnits=[];
     csvData.forEach(function(row){
-      var cat=(row['Category']||'').trim();
-      var sub=(row['Sub Category']||'').trim();
-      var unit=(row['Unit']||'').trim();
+      var cat  = (row['Category']    ||'').trim();
+      var sub  = (row['Sub Category']||'').trim();
+      var unit = (row['Unit']        ||'').trim();
       if(cat){
-        if(!_existingCats.includes(cat)&&!_newCats.includes(cat))_newCats.push(cat);
+        if(!_existingCats.includes(cat)&&!_newCats.includes(cat)) _newCats.push(cat);
         if(sub){
-          if(!_existingSubs[cat])_existingSubs[cat]=[];
+          if(!_existingSubs[cat]) _existingSubs[cat]=[];
           if(!_existingSubs[cat].includes(sub)){
-            if(!_newSubs[cat])_newSubs[cat]=[];
+            if(!_newSubs[cat]) _newSubs[cat]=[];
             _newSubs[cat].push(sub);
             _existingSubs[cat].push(sub);
           }
@@ -7130,18 +7160,34 @@ async function importCsv(){
       _imSet('tcj_cats',_existingCats);
       CATS_LIST.length=0;_existingCats.forEach(function(c){CATS_LIST.push(c);});
     }
-    var _totalNewSubs=Object.values(_newSubs).reduce(function(n,a){return n+a.length;},0);
-    if(_totalNewSubs>0) _imSet('tcj_subcats',_existingSubs);
-    if(_newUnits.length>0){ _existingUnits.sort(); _imSet('tcj_units',_existingUnits); }
-    var _syncMsg='';
-    if(_newCats.length>0) _syncMsg+=' | '+_newCats.length+' new categor'+(_newCats.length===1?'y':'ies')+' added to IM Interface';
-    if(_totalNewSubs>0) _syncMsg+=' | '+_totalNewSubs+' new sub-categor'+(_totalNewSubs===1?'y':'ies')+' added';
-    if(_newUnits.length>0) _syncMsg+=' | '+_newUnits.length+' new unit'+(_newUnits.length===1?'':'s')+' added to IM Interface';
-    if(_syncMsg) auditLog('All Ingredients','CSV Import Sync',null,null,null,_syncMsg.slice(3));
+    if(Object.keys(_newSubs).length>0){
+      _imSet('tcj_subcats',_existingSubs);
+    }
+    if(_newUnits.length>0){
+      _imSet('tcj_units',_existingUnits.sort());
+    }
 
-    status.textContent='✓ '+total+' ingredient(s) imported.'+_syncMsg;
-    setTimeout(function(){closeCsvModal();loadIngredients(1);},1800);
-  }catch(e){showCsvError('Import failed: '+e.message);btn.disabled=false;btn.textContent='Import';}
+    // ── Show result summary ────────────────────────────────────────────
+    status.style.color = '#4caf76';
+    var parts = [];
+    if (inserted > 0) parts.push(inserted + ' new ingredient' + (inserted===1?'':'s') + ' added');
+    if (updated  > 0) parts.push(updated  + ' existing ingredient' + (updated===1?'':'s') + ' updated');
+    if (!parts.length) parts.push('No changes — all ingredients already up to date');
+    status.textContent = '✓ ' + parts.join(', ') + '.';
+
+    closeCsvModal();
+    loadIngredients(1);
+    buildTableHeader();
+    renderIngFiltered();
+    var iPanel = document.getElementById('ipanel-all');
+    if(iPanel) { iPanel.dataset.built=''; }
+
+  } catch(e) {
+    status.style.color = '#dc5050';
+    status.textContent = 'Import failed: ' + e.message;
+    btn.disabled = false;
+    btn.textContent = 'Import';
+  }
 }
 function downloadTemplate(){
   const cols=['ID','Ingredient Name','Also Known As','Category','Sub Category','Standard Qty','Standard Weight (g or ml)','Unit','Liquid (Yes/No)','CJ Recommended Brand','Allergen','Vegan (Yes/No)','Vegetarian (Yes/No)','Notes'];
