@@ -746,7 +746,50 @@
       text-transform: uppercase; letter-spacing: 0.1em; padding: 6px 16px 8px; }
     .ing-move-wrap { position: relative; }
 
-  </style>
+  
+    /* ── DRAG TO REORDER ─────────────────────────────────── */
+    .drag-handle {
+      cursor: grab;
+      color: var(--text-mid);
+      font-size: 14px;
+      padding: 0 5px;
+      opacity: 0.45;
+      flex-shrink: 0;
+      user-select: none;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      transition: opacity 0.15s;
+    }
+    .drag-handle:hover { opacity: 1; color: var(--accent); }
+    .drag-handle:active { cursor: grabbing; }
+
+    /* Section-level drag handles sit in the section header */
+    .section-drag-handle {
+      cursor: grab;
+      color: var(--text-mid);
+      font-size: 13px;
+      padding: 0 8px 0 2px;
+      opacity: 0.4;
+      user-select: none;
+      flex-shrink: 0;
+      transition: opacity 0.15s;
+    }
+    .section-drag-handle:hover { opacity: 1; color: var(--accent); }
+    .section-drag-handle:active { cursor: grabbing; }
+
+    /* Item being dragged */
+    .dragging {
+      opacity: 0.35;
+      outline: 2px dashed var(--accent);
+      outline-offset: 2px;
+      border-radius: 6px;
+    }
+
+    /* Drop target indicator */
+    .drag-over-above { border-top: 2px solid var(--accent) !important; }
+    .drag-over-below { border-bottom: 2px solid var(--accent) !important; }
+</style>
   <script src="page-guard.js"></script>
 </head>
 <body class="cj-body">
@@ -1426,6 +1469,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   } catch(e) { console.error(e); }
   try { await loadIngredients(); } catch(e) { console.error('Ingredient load error:', e); }
   try { addIngSection('Ingredients'); } catch(e) { console.error(e); }
+  try { initSectionSorting(); } catch(e) { console.error('sort init', e); }
   try { addMethodSection('PREP WORK'); } catch(e) { console.error(e); }
   try { addMethodSection('DIRECTIONS'); } catch(e) { console.error(e); }
   try { loadDraftSilent(); } catch(e) { console.error(e); }
@@ -1884,6 +1928,7 @@ function addIngSection(name = '') {
   div.id = id;
   div.innerHTML = `
     <div class="ing-section-header">
+      <span class="section-drag-handle" title="Drag to reorder section">⠿</span>
       <input class="ing-section-name" type="text" maxlength="100" placeholder="Section name — e.g. For the Marinade" value="${name}">
       <button class="btn-remove-section" onclick="this.closest('.ing-section').remove()" title="Remove section">×</button>
     </div>
@@ -1900,6 +1945,8 @@ function addIngSection(name = '') {
   `;
   document.getElementById('ingredient-sections').appendChild(div);
   addIngRow(div.querySelector('.ing-rows'));
+  // Enable drag-to-reorder for rows within this section
+  makeSortable(div.querySelector('.ing-rows'), '.ing-row', null);
 }
 
 // ── ADD INGREDIENT ROW ────────────────────────────────
@@ -1913,6 +1960,7 @@ function addIngRow(container, qty='', unit='', name='', note='', cat='') {
   const esc = (s) => String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 
   row.innerHTML = `
+    <span class="drag-handle" title="Drag to reorder">⠿</span>
     <input class="ing-input" type="text" maxlength="20" placeholder="½" oninput="autoFraction(this)" onblur="autoFraction(this)" value="${esc(qty)}">
     <div class="ing-unit-wrap">
       <input class="ing-input ing-unit-input" type="text" list="units-datalist" maxlength="30" placeholder="unit" value="${esc(unit)}" oninput="validateUnit(this)">
@@ -2098,6 +2146,7 @@ function addMethodSection(name = '') {
   div.className = 'method-section';
   div.innerHTML = `
     <div class="method-section-header">
+      <span class="section-drag-handle" title="Drag to reorder section">⠿</span>
       <input class="method-section-name" type="text" maxlength="100" placeholder="Section name &mdash; e.g. PREP WORK, DIRECTIONS, MARINATING" value="${name ? name.toUpperCase() : ''}" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase">
       <button class="btn-remove-section" onclick="this.closest('.method-section').remove()" title="Remove section">×</button>
     </div>
@@ -2106,6 +2155,8 @@ function addMethodSection(name = '') {
   `;
   document.getElementById('method-sections').appendChild(div);
   addStep(div.querySelector('.step-rows'));
+  // Enable drag-to-reorder for steps within this section
+  makeSortable(div.querySelector('.step-rows'), '.step-row', function(c) { renumberSteps(c); });
 }
 
 // ── ADD STEP ──────────────────────────────────────────
@@ -2120,6 +2171,7 @@ function addStep(container, text = '') {
   const stepBody  = hasTitle ? text.substring(colonIdx + 1).trim() : text;
 
   row.innerHTML = `
+    <span class="drag-handle" title="Drag to reorder">⠿</span>
     <span class="step-number">${stepNum}</span>
     <div class="step-content-wrap" style="flex:1;display:flex;flex-direction:column;gap:6px">
       <input class="step-title-input" type="text" maxlength="80"
@@ -2288,6 +2340,85 @@ function detectUrlPaste(url) {
 }
 
 // Show parse tips when user starts typing in paste area
+// ── DRAG-TO-REORDER ──────────────────────────────────────────────────────
+// makeSortable: enables drag handles to reorder children within a container.
+// Only dragging from an element with class .drag-handle or .section-drag-handle works.
+function makeSortable(container, childSelector, onDrop) {
+  if (!container || container._sortable) return;
+  container._sortable = true;
+
+  let dragEl = null;
+
+  container.addEventListener('dragstart', function(e) {
+    const handle = e.target.closest('.drag-handle, .section-drag-handle');
+    if (!handle) { e.preventDefault(); return; }
+    dragEl = handle.closest(childSelector);
+    if (!dragEl) { e.preventDefault(); return; }
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text', ''); // Required for Firefox
+    setTimeout(function() { if (dragEl) dragEl.classList.add('dragging'); }, 0);
+  });
+
+  container.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    if (!dragEl) return;
+    e.dataTransfer.dropEffect = 'move';
+    const target = e.target.closest(childSelector);
+    if (!target || target === dragEl) return;
+    const rect = target.getBoundingClientRect();
+    // Insert before or after based on mouse position
+    if (e.clientY < rect.top + rect.height / 2) {
+      container.insertBefore(dragEl, target);
+    } else {
+      container.insertBefore(dragEl, target.nextSibling || null);
+    }
+  });
+
+  container.addEventListener('dragend', function() {
+    if (dragEl) {
+      dragEl.classList.remove('dragging');
+      dragEl.draggable = false;
+      dragEl = null;
+    }
+    if (onDrop) onDrop(container);
+    saveDraft();
+  });
+}
+
+// Make drag handles activate dragging on their parent row/section
+function enableHandleDrag(container, childSelector) {
+  container.addEventListener('mousedown', function(e) {
+    const handle = e.target.closest('.drag-handle, .section-drag-handle');
+    if (!handle) return;
+    const item = handle.closest(childSelector);
+    if (item) item.draggable = true;
+  });
+  container.addEventListener('dragend', function(e) {
+    const item = e.target.closest(childSelector);
+    if (item) item.draggable = false;
+  }, true);
+}
+
+function initSectionSorting() {
+  const ingHost    = document.getElementById('ingredient-sections');
+  const methHost   = document.getElementById('method-sections');
+
+  if (ingHost) {
+    makeSortable(ingHost, '.ing-section', null);
+    enableHandleDrag(ingHost, '.ing-section');
+    enableHandleDrag(ingHost, '.ing-row');
+  }
+  if (methHost) {
+    makeSortable(methHost, '.method-section', null);
+    enableHandleDrag(methHost, '.method-section');
+    enableHandleDrag(methHost, '.step-row');
+    // Renumber all steps after section reorder
+    methHost.addEventListener('dragend', function() {
+      document.querySelectorAll('.step-rows').forEach(function(c) { renumberSteps(c); });
+    });
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   const ta = document.getElementById('paste-input');
   if (ta) {
