@@ -2856,29 +2856,17 @@ function smSQLError(container, e) {
 }
 
 async function buildSMPages(container) {
-  container.innerHTML = '<div id="sm-status" style="font-family:DM Sans,sans-serif;font-size:13px;padding:16px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text-high)">Step 1: Starting fetch\u2026</div>';
-  var statusEl = container.querySelector('#sm-status');
-  function status(msg) { if(statusEl) statusEl.textContent = msg; }
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading pages\u2026</div>';
   try {
-    status('Step 2: Calling rpc admin_get_site_pages\u2026');
-    var pages;
-    try {
-      pages = await rpc('admin_get_site_pages', {});
-    } catch(fetchErr) {
-      container.innerHTML =
-        '<div style="padding:20px;background:rgba(220,80,80,0.12);border:1px solid rgba(220,80,80,0.5);border-radius:10px;font-family:DM Sans,sans-serif">' +
-        '<div style="font-size:14px;font-weight:700;color:#dc5050;margin-bottom:8px">RPC Failed</div>' +
-        '<div style="font-size:13px;color:var(--text-high);margin-bottom:8px">Error: ' + String(fetchErr.message).replace(/</g,'&lt;') + '</div>' +
-        '<div style="font-size:12px;color:var(--text-mid)">Make sure site_management.sql has been run in Supabase SQL Editor, and that you are logged in as admin.</div>' +
-        '</div>';
+    var res = await fetch(SUPABASE_URL + '/rest/v1/site_pages?order=sort_order', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Accept': 'application/json' }
+    });
+    if (!res.ok) throw new Error(res.status + ': ' + await res.text());
+    var pages = await res.json();
+    if (!Array.isArray(pages) || !pages.length) {
+      container.innerHTML = '<div style="padding:16px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">No pages found. Run site_management.sql in Supabase first.</div>';
       return;
     }
-    status('Step 3: Got response. Pages: ' + (Array.isArray(pages) ? pages.length : typeof pages));
-    if (!Array.isArray(pages) || pages.length === 0) {
-      container.innerHTML = '<div style="padding:16px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">No pages found in site_pages table. SQL may have run but INSERT statements did not complete.</div>';
-      return;
-    }
-    status('Step 4: Building table with ' + pages.length + ' pages\u2026');
     container.innerHTML = '';
     var wrap = document.createElement('div');
     wrap.style.cssText = 'overflow-x:auto;border:1px solid var(--border);border-radius:12px';
@@ -2901,117 +2889,162 @@ async function buildSMPages(container) {
       btn.textContent='Save'; btn.style.cssText="padding:5px 12px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";
       btn.addEventListener('click',(function(path,b){return async function(){
         b.disabled=true;b.textContent='\u2026';
-        try{await rpc('admin_update_site_page',{p_path:path,p_visibility:document.getElementById('smv-'+path).value,p_meta_title:document.getElementById('smmt-'+path).value||null,p_meta_desc:null,p_coming_soon:document.getElementById('smcs-'+path).checked});b.textContent='\u2713';setTimeout(function(){b.textContent='Save';b.disabled=false;},2000);}
-        catch(e){b.textContent='Save';b.disabled=false;alert('Error: '+e.message);}
+        try{
+          var r2=await fetch(SUPABASE_URL+'/rest/v1/site_pages?path=eq.'+encodeURIComponent(path),{
+            method:'PATCH',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json','Prefer':'return=minimal'},
+            body:JSON.stringify({visibility:document.getElementById('smv-'+path).value,meta_title:document.getElementById('smmt-'+path).value||null,coming_soon:document.getElementById('smcs-'+path).checked})
+          });
+          if(!r2.ok)throw new Error(r2.status);
+          b.textContent='\u2713';setTimeout(function(){b.textContent='Save';b.disabled=false;},2000);
+        }catch(e){b.textContent='Save';b.disabled=false;alert('Error: '+e.message);}
       };})(p.path,btn));
       tr.lastElementChild.appendChild(btn); tbody.appendChild(tr);
     });
     tbl.appendChild(tbody); wrap.appendChild(tbl); container.appendChild(wrap);
-  } catch(outerErr) {
-    container.innerHTML = '<div style="padding:20px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;color:#dc5050;font-size:13px">Unexpected error: ' + String(outerErr.message).replace(/</g,'&lt;') + '</div>';
+  } catch(e) {
+    container.innerHTML = '<div style="padding:20px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error loading pages:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>';
   }
 }
 
 async function buildSMFeatures(container) {
-  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
-  var features;
-  try { features = await rpc('admin_get_site_features', {}); }
-  catch(e) { smSQLError(container, e); return; }
-  if (!Array.isArray(features)) features = [];
-  container.innerHTML = '';
-  if (!features.length) { container.innerHTML='<div style="padding:20px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">No features found.</div>'; return; }
-  features.forEach(function(f) {
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:9px;margin-bottom:8px';
-    var info = document.createElement('div');
-    info.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;font-weight:500;color:var(--text-high)">'+f.name+'</div>'+
-      (f.description?'<div style="font-size:11px;color:var(--text-mid);margin-top:2px">'+f.description+'</div>':'');
-    var right = document.createElement('div'); right.style.cssText='display:flex;align-items:center;gap:10px';
-    var status = document.createElement('span');
-    status.style.cssText='font-size:11px;font-weight:600;color:'+(f.enabled?'#4caf76':'#dc5050');
-    status.textContent=f.enabled?'Enabled':'Disabled';
-    var cb=document.createElement('input');cb.type='checkbox';cb.checked=f.enabled;cb.style.cssText='width:16px;height:16px;accent-color:var(--accent);cursor:pointer';
-    cb.addEventListener('change',(function(key,st){return async function(){
-      try{await rpc('admin_toggle_site_feature',{p_key:key,p_enabled:this.checked});st.textContent=this.checked?'Enabled':'Disabled';st.style.color=this.checked?'#4caf76':'#dc5050';}
-      catch(e){this.checked=!this.checked;alert('Error: '+e.message);}
-    };})(f.key,status));
-    right.appendChild(status);right.appendChild(cb);row.appendChild(info);row.appendChild(right);container.appendChild(row);
-  });
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading features\u2026</div>';
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/site_features?order=sort_order', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Accept': 'application/json' }
+    });
+    if (!res.ok) throw new Error(res.status + ': ' + await res.text());
+    var features = await res.json();
+    if (!Array.isArray(features) || !features.length) {
+      container.innerHTML = '<div style="padding:16px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">No features found. Run site_management.sql first.</div>';
+      return;
+    }
+    container.innerHTML = '';
+    features.forEach(function(f) {
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:9px;margin-bottom:8px';
+      var info = document.createElement('div');
+      info.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;font-weight:500;color:var(--text-high)">'+(f.name||'')+'</div>'+
+        (f.description?'<div style="font-size:11px;color:var(--text-mid);margin-top:2px">'+(f.description||'')+'</div>':'');
+      var right = document.createElement('div'); right.style.cssText='display:flex;align-items:center;gap:10px';
+      var status = document.createElement('span');
+      status.style.cssText='font-size:11px;font-weight:600;color:'+(f.enabled?'#4caf76':'#dc5050');
+      status.textContent=f.enabled?'Enabled':'Disabled';
+      var cb=document.createElement('input');cb.type='checkbox';cb.checked=!!f.enabled;cb.style.cssText='width:16px;height:16px;accent-color:var(--accent);cursor:pointer';
+      cb.addEventListener('change',(function(key,st){return async function(){
+        try{
+          var r2=await fetch(SUPABASE_URL+'/rest/v1/site_features?key=eq.'+encodeURIComponent(key),{
+            method:'PATCH',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json','Prefer':'return=minimal'},
+            body:JSON.stringify({enabled:this.checked})
+          });
+          if(!r2.ok)throw new Error(r2.status);
+          st.textContent=this.checked?'Enabled':'Disabled';st.style.color=this.checked?'#4caf76':'#dc5050';
+        }catch(e){this.checked=!this.checked;alert('Error: '+e.message);}
+      };})(f.key,status));
+      right.appendChild(status);right.appendChild(cb);row.appendChild(info);row.appendChild(right);container.appendChild(row);
+    });
+  } catch(e) {
+    container.innerHTML = '<div style="padding:20px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>';
+  }
 }
 
 async function buildSMAnnouncements(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
-  var anns;
-  try { anns = await rpc('admin_get_announcements', {}); }
-  catch(e) { smSQLError(container, e); return; }
-  if (!Array.isArray(anns)) anns = [];
-  container.innerHTML = '';
-  var form=document.createElement('div');form.style.cssText='background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px';
-  form.innerHTML='<div style="font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px">New Announcement</div>'+
-    '<div style="display:grid;grid-template-columns:1fr 100px 140px;gap:10px;margin-bottom:10px">'+
-    '<input id="sm-ann-text" placeholder="Announcement text\u2026" style="padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)">'+
-    '<select id="sm-ann-type" style="padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)"><option value="info">Info</option><option value="success">Success</option><option value="warning">Warning</option><option value="error">Error</option></select>'+
-    '<input id="sm-ann-exp" type="datetime-local" style="padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)"></div>';
-  var addBtn=document.createElement('button');addBtn.className='ing-add-btn';addBtn.textContent='Add Announcement';
-  addBtn.addEventListener('click',async function(){
-    var text=(document.getElementById('sm-ann-text').value||'').trim();
-    if(!text){alert('Text required.');return;}
-    addBtn.disabled=true;addBtn.textContent='Saving\u2026';
-    try{await rpc('admin_save_announcement',{p_id:0,p_text:text,p_type:document.getElementById('sm-ann-type').value,p_active:true,p_expires_at:document.getElementById('sm-ann-exp').value||null});
-    var c=document.getElementById('upanel-sm-ann');if(c){c.dataset.built='';buildSMAnnouncements(c);}}
-    catch(e){addBtn.disabled=false;addBtn.textContent='Add Announcement';alert('Error: '+e.message);}
-  });
-  form.appendChild(addBtn);container.appendChild(form);
-  var TYPE_COLOR={info:'#5B8FD4',success:'#4caf76',warning:'#d4a017',error:'#dc5050'};
-  if(!anns.length){container.appendChild(Object.assign(document.createElement('div'),{style:'font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)',textContent:'No announcements yet.'}));return;}
-  anns.forEach(function(a){
-    var card=document.createElement('div');card.style.cssText='background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;justify-content:space-between';
-    var left=document.createElement('div');left.style.flex='1';
-    left.innerHTML='<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,0.2);color:'+(TYPE_COLOR[a.type]||'var(--text-mid)')+'">'+a.type.toUpperCase()+'</span>'+
-      '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high);margin-top:6px">'+a.text+'</div>';
-    var btns=document.createElement('div');btns.style.cssText='display:flex;gap:6px;flex-shrink:0';
-    var tBtn=document.createElement('button');tBtn.style.cssText="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";tBtn.textContent=a.active?'Deactivate':'Activate';
-    tBtn.addEventListener('click',async function(){try{await rpc('admin_save_announcement',{p_id:a.id,p_text:a.text,p_type:a.type,p_active:!a.active,p_expires_at:a.expires_at||null});var c=document.getElementById('upanel-sm-ann');if(c){c.dataset.built='';buildSMAnnouncements(c);}}catch(e){alert('Error: '+e.message);}});
-    var dBtn=document.createElement('button');dBtn.style.cssText="padding:4px 10px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";dBtn.textContent='Delete';
-    dBtn.addEventListener('click',async function(){if(!confirm('Delete?'))return;try{await rpc('admin_delete_announcement',{p_id:a.id});var c=document.getElementById('upanel-sm-ann');if(c){c.dataset.built='';buildSMAnnouncements(c);}}catch(e){alert('Error: '+e.message);}});
-    btns.appendChild(tBtn);btns.appendChild(dBtn);card.appendChild(left);card.appendChild(btns);container.appendChild(card);
-  });
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/site_announcements?order=created_at.desc', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Accept': 'application/json' }
+    });
+    if (!res.ok) throw new Error(res.status + ': ' + await res.text());
+    var anns = await res.json();
+    if (!Array.isArray(anns)) anns = [];
+    container.innerHTML = '';
+    var form=document.createElement('div');form.style.cssText='background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px';
+    form.innerHTML='<div style="font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px">New Announcement</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 100px;gap:10px;margin-bottom:10px">'+
+      '<input id="sm-ann-text" placeholder="Announcement text\u2026" style="padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)">'+
+      '<select id="sm-ann-type" style="padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)"><option value="info">Info</option><option value="success">Success</option><option value="warning">Warning</option><option value="error">Error</option></select></div>';
+    var addBtn=document.createElement('button');addBtn.className='ing-add-btn';addBtn.textContent='Add';
+    addBtn.addEventListener('click',async function(){
+      var text=(document.getElementById('sm-ann-text').value||'').trim();
+      if(!text)return;addBtn.disabled=true;
+      try{
+        var r2=await fetch(SUPABASE_URL+'/rest/v1/site_announcements',{
+          method:'POST',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json','Prefer':'return=minimal'},
+          body:JSON.stringify({text:text,type:document.getElementById('sm-ann-type').value,active:true})
+        });
+        if(!r2.ok)throw new Error(r2.status);
+        var c=document.getElementById('upanel-sm-ann');if(c){c.dataset.built='';buildSMAnnouncements(c);}
+      }catch(e){addBtn.disabled=false;alert('Error: '+e.message);}
+    });
+    form.appendChild(addBtn);container.appendChild(form);
+    if(!anns.length){container.innerHTML+='<div style="font-size:13px;color:var(--text-mid);padding:8px 0">No announcements yet.</div>';return;}
+    var TYPE_COLOR={info:'#5B8FD4',success:'#4caf76',warning:'#d4a017',error:'#dc5050'};
+    anns.forEach(function(a){
+      var card=document.createElement('div');card.style.cssText='background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;justify-content:space-between';
+      var left=document.createElement('div');left.style.flex='1';
+      left.innerHTML='<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,0.2);color:'+(TYPE_COLOR[a.type]||'var(--text-mid)')+'">'+(a.type||'').toUpperCase()+'</span>'+
+        '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high);margin-top:6px">'+(a.text||'')+'</div>';
+      var btns=document.createElement('div');btns.style.cssText='display:flex;gap:6px;flex-shrink:0';
+      var dBtn=document.createElement('button');dBtn.style.cssText="padding:4px 10px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-size:11px;cursor:pointer";dBtn.textContent='Delete';
+      dBtn.addEventListener('click',async function(){
+        if(!confirm('Delete?'))return;
+        try{var r2=await fetch(SUPABASE_URL+'/rest/v1/site_announcements?id=eq.'+a.id,{method:'DELETE',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+session.access_token}});
+        if(!r2.ok)throw new Error(r2.status);var c=document.getElementById('upanel-sm-ann');if(c){c.dataset.built='';buildSMAnnouncements(c);}}
+        catch(e){alert('Error: '+e.message);}
+      });
+      btns.appendChild(dBtn);card.appendChild(left);card.appendChild(btns);container.appendChild(card);
+    });
+  } catch(e) {
+    container.innerHTML = '<div style="padding:20px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>';
+  }
 }
 
 async function buildSMContent(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
-  var settings;
-  try { settings = await rpc('admin_get_site_settings', {}); }
-  catch(e) { smSQLError(container, e); return; }
-  if (!settings) settings = {};
-  container.innerHTML = '';
-  function mk(tag,s,t){var e=document.createElement(tag);if(s)e.style.cssText=s;if(t!==undefined)e.textContent=t;return e;}
-  var sec=mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');
-  sec.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px",'Homepage'));
-  [{key:'homepage_show_featured',label:'Show Featured Recipes',val:settings.homepage_show_featured},{key:'homepage_show_rotw',label:'Show Recipe of the Week',val:settings.homepage_show_rotw}].forEach(function(t){
-    var row=mk('div','display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)');
-    row.appendChild(mk('span',"font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high)",t.label));
-    var cb=document.createElement('input');cb.type='checkbox';cb.checked=t.val!=='false';cb.style.cssText='width:16px;height:16px;accent-color:var(--accent);cursor:pointer';
-    cb.addEventListener('change',(function(key){return async function(){try{await rpc('admin_save_site_setting',{p_key:key,p_value:String(this.checked)});}catch(e){this.checked=!this.checked;alert('Error: '+e.message);}}})(t.key));
-    row.appendChild(cb);sec.appendChild(row);
-  });
-  container.appendChild(sec);
-  var sec2=mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px');
-  sec2.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:4px",'Category Order'));
-  sec2.appendChild(mk('p',"font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:12px",'Reorder using arrows. Saves immediately.'));
-  var cats=[];try{cats=JSON.parse(settings.homepage_categories_order||'[]');}catch(_){}
-  var catList=mk('div','');
-  function renderCats(){catList.innerHTML='';cats.forEach(function(cat,i){
-    var row=mk('div','display:flex;align-items:center;gap:8px;padding:7px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;margin-bottom:5px');
-    row.appendChild(mk('span',"font-size:10px;color:var(--text-mid);width:18px;text-align:center",String(i+1)));
-    row.appendChild(mk('span',"font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-high);flex:1",cat));
-    var up=document.createElement('button');up.style.cssText="padding:2px 8px;background:none;border:1px solid var(--border);border-radius:5px;font-size:10px;color:var(--text-mid);cursor:pointer";up.textContent='\u25b2';
-    up.addEventListener('click',async function(){if(i>0){cats.splice(i-1,0,cats.splice(i,1)[0]);renderCats();await rpc('admin_save_site_setting',{p_key:'homepage_categories_order',p_value:JSON.stringify(cats)});}});
-    var dn=document.createElement('button');dn.style.cssText=up.style.cssText;dn.textContent='\u25bc';
-    dn.addEventListener('click',async function(){if(i<cats.length-1){cats.splice(i+1,0,cats.splice(i,1)[0]);renderCats();await rpc('admin_save_site_setting',{p_key:'homepage_categories_order',p_value:JSON.stringify(cats)});}});
-    row.appendChild(up);row.appendChild(dn);catList.appendChild(row);
-  });}
-  renderCats();sec2.appendChild(catList);container.appendChild(sec2);
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/site_settings?select=key,value', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Accept': 'application/json' }
+    });
+    if (!res.ok) throw new Error(res.status + ': ' + await res.text());
+    var rows = await res.json();
+    var settings = {};
+    if (Array.isArray(rows)) rows.forEach(function(r){ settings[r.key] = r.value; });
+    container.innerHTML = '';
+    function mk(tag,s,t){var e=document.createElement(tag);if(s)e.style.cssText=s;if(t!==undefined)e.textContent=t;return e;}
+    async function saveSetting(key, val) {
+      var r2 = await fetch(SUPABASE_URL+'/rest/v1/site_settings?key=eq.'+encodeURIComponent(key), {
+        method:'PATCH', headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify({value:val, updated_at: new Date().toISOString()})
+      });
+      if (!r2.ok) { var err = await r2.text(); throw new Error(r2.status+': '+err); }
+    }
+    var sec=mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');
+    sec.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px",'Homepage Display'));
+    [{key:'homepage_show_featured',label:'Show Featured Recipes'},{key:'homepage_show_rotw',label:'Show Recipe of the Week'}].forEach(function(t){
+      var row=mk('div','display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)');
+      row.appendChild(mk('span',"font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high)",t.label));
+      var cb=document.createElement('input');cb.type='checkbox';cb.checked=settings[t.key]!=='false';cb.style.cssText='width:16px;height:16px;accent-color:var(--accent);cursor:pointer';
+      cb.addEventListener('change',(function(key){return async function(){try{await saveSetting(key,String(this.checked));}catch(e){this.checked=!this.checked;alert('Error: '+e.message);}}})(t.key));
+      row.appendChild(cb);sec.appendChild(row);
+    });
+    container.appendChild(sec);
+    var sec2=mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px');
+    sec2.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px",'Category Order'));
+    var cats=[];try{cats=JSON.parse(settings.homepage_categories_order||'[]');}catch(_){}
+    var catList=mk('div','');
+    function renderCats(){catList.innerHTML='';cats.forEach(function(cat,i){
+      var row=mk('div','display:flex;align-items:center;gap:8px;padding:7px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;margin-bottom:5px');
+      row.appendChild(mk('span',"font-size:10px;color:var(--text-mid);width:18px",String(i+1)));
+      row.appendChild(mk('span',"font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-high);flex:1",cat));
+      var up=document.createElement('button');up.style.cssText="padding:2px 8px;background:none;border:1px solid var(--border);border-radius:5px;font-size:10px;color:var(--text-mid);cursor:pointer";up.textContent='\u25b2';
+      up.addEventListener('click',async function(){if(i>0){cats.splice(i-1,0,cats.splice(i,1)[0]);renderCats();try{await saveSetting('homepage_categories_order',JSON.stringify(cats));}catch(e){alert(e.message);}}});
+      var dn=document.createElement('button');dn.style.cssText=up.style.cssText;dn.textContent='\u25bc';
+      dn.addEventListener('click',async function(){if(i<cats.length-1){cats.splice(i+1,0,cats.splice(i,1)[0]);renderCats();try{await saveSetting('homepage_categories_order',JSON.stringify(cats));}catch(e){alert(e.message);}}});
+      row.appendChild(up);row.appendChild(dn);catList.appendChild(row);
+    });}
+    renderCats();sec2.appendChild(catList);container.appendChild(sec2);
+  } catch(e) {
+    container.innerHTML = '<div style="padding:20px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>';
+  }
 }
 
 async function buildSMThemes(container) {
