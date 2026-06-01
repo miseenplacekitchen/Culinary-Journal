@@ -553,7 +553,7 @@ function outsideNotifClick(e) {
 
 // ══════════════════════════════════════════════════════
 // FEEDBACK WIDGET — The Culinary Journal
-// Floating ✉ button on all pages except recipe-page + dashboard
+// Floating ✉ button on all pages except: recipe-page, dashboard, login
 // Submissions stored in Supabase feedback table.
 // Betty reviews from Admin Panel → User Management → Feedback.
 // ══════════════════════════════════════════════════════
