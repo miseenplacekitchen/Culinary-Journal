@@ -7110,7 +7110,7 @@ async function importCsv(){
 
   if (csvDupes.length > 0) {
     // Show a modal letting Betty review duplicates before proceeding
-    var proceed = await showCsvDupeModal(csvDupes, nameCounts);
+    var proceed = await showCsvDupeModal(csvDupes, nameCounts, csvData);
     if (!proceed) {
       // User chose to cancel — reset button and stop
       btn.disabled = false;
@@ -7120,7 +7120,7 @@ async function importCsv(){
     }
     // User chose to proceed — the RPC will keep the last row for each duplicate name
     status.style.color = '#d4a017';
-    status.textContent = 'Duplicates noted — last row for each name will be used. Importing…';
+    status.textContent = 'Duplicates noted — most complete row for each name will be used. Importing…';
   }
 
   // ── Call the RPC ───────────────────────────────────────────────────────
@@ -7194,7 +7194,7 @@ async function importCsv(){
 }
 
 // ── Duplicate review modal ────────────────────────────────────────────────────
-function showCsvDupeModal(dupes, counts) {
+function showCsvDupeModal(dupes, counts, allRows) {
   return new Promise(function(resolve) {
     // Build the overlay
     var overlay = document.createElement('div');
@@ -7231,20 +7231,68 @@ function showCsvDupeModal(dupes, counts) {
       return diff !== 0 ? diff : a.localeCompare(b);
     });
 
+    // Score a CSV row by how many key fields are filled in
+    var SCORE_FIELDS = ['Also Known As','Category','Sub Category','Unit',
+      'Standard Qty','Standard Weight (g or ml)','CJ Recommended Brand',
+      'Allergen','Vegan (Yes/No)','Vegetarian (Yes/No)','Notes'];
+    function scoreRow(r) {
+      return SCORE_FIELDS.reduce(function(n,f){
+        return n + ((r[f]||'').trim() ? 1 : 0);
+      }, 0);
+    }
+
     sorted.forEach(function(name) {
-      var row = document.createElement('div');
-      row.style.cssText = 'display:grid;grid-template-columns:1fr 60px;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,0.04);align-items:center';
-      var nameEl = document.createElement('div');
-      nameEl.style.cssText = 'font-size:13px;color:var(--text-high);text-transform:capitalize';
-      nameEl.textContent = name;
-      var countEl = document.createElement('div');
-      countEl.style.cssText = 'font-size:12px;font-weight:600;color:#d4a017;text-align:center;padding:2px 8px;background:rgba(212,160,23,0.12);border-radius:10px;justify-self:center';
-      countEl.textContent = '\u00d7' + counts[name];
-      row.appendChild(nameEl);
-      row.appendChild(countEl);
-      listWrap.appendChild(row);
+      var matchingRows = (allRows||[]).filter(function(r){
+        return (r['Ingredient Name']||'').trim().toLowerCase() === name;
+      });
+      var scored = matchingRows.map(function(r,i){ return {r:r, score:scoreRow(r), idx:i}; });
+      scored.sort(function(a,b){ return b.score - a.score || b.idx - a.idx; });
+
+      // Group header
+      var grpHdr = document.createElement('div');
+      grpHdr.style.cssText = 'padding:8px 14px 4px;background:rgba(255,255,255,0.04);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px';
+      var nameSpan = document.createElement('span');
+      nameSpan.style.cssText = 'font-size:13px;font-weight:600;color:var(--text-high);text-transform:capitalize;flex:1';
+      nameSpan.textContent = name;
+      var cntSpan = document.createElement('span');
+      cntSpan.style.cssText = 'font-size:11px;font-weight:600;color:#d4a017;padding:2px 8px;background:rgba(212,160,23,0.12);border-radius:10px';
+      cntSpan.textContent = counts[name] + ' copies';
+      grpHdr.appendChild(nameSpan);
+      grpHdr.appendChild(cntSpan);
+      listWrap.appendChild(grpHdr);
+
+      scored.forEach(function(item, si) {
+        var isKeep = si === 0;
+        var rowEl = document.createElement('div');
+        rowEl.style.cssText = 'padding:7px 14px 6px;border-bottom:1px solid rgba(255,255,255,0.03);background:' +
+          (isKeep ? 'rgba(76,175,118,0.06)' : 'rgba(220,80,80,0.04)');
+        var badge = document.createElement('div');
+        badge.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:3px';
+        var keepBadge = document.createElement('span');
+        var keepStyle = isKeep
+          ? 'background:rgba(76,175,118,0.2);color:#4caf76'
+          : 'background:rgba(220,80,80,0.15);color:#dc5050';
+        keepBadge.style.cssText = 'font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;flex-shrink:0;' + keepStyle;
+        keepBadge.textContent = isKeep ? 'KEEP' : 'DISCARD';
+        var scoreEl = document.createElement('span');
+        scoreEl.style.cssText = 'font-size:10px;color:var(--text-mid)';
+        scoreEl.textContent = item.score + ' / ' + SCORE_FIELDS.length + ' fields filled';
+        badge.appendChild(keepBadge);
+        badge.appendChild(scoreEl);
+        rowEl.appendChild(badge);
+        var fields = ['Category','Also Known As','Unit','Standard Qty','Notes'];
+        var parts = fields.map(function(f){ return (item.r[f]||'').trim(); }).filter(Boolean);
+        if (parts.length) {
+          var detail = document.createElement('div');
+          detail.style.cssText = 'font-size:11px;color:var(--text-mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+          detail.textContent = parts.join(' · ');
+          rowEl.appendChild(detail);
+        }
+        listWrap.appendChild(rowEl);
+      });
     });
-    box.appendChild(listWrap);
+
+        box.appendChild(listWrap);
 
     // Buttons
     var btns = document.createElement('div');
