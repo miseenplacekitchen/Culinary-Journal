@@ -3404,6 +3404,168 @@ async function buildFiHistory(container) {
   } catch(e){ container.dataset.built=''; container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>'; }
 }
 
+// ── FIND & REMOVE DUPLICATES ─────────────────────────────────────────────────
+async function loadIngDuplicates(container) {
+  if (!container) return;
+  container.innerHTML = '';
+
+  function mk(tag,s,t){var e=document.createElement(tag);if(s)e.style.cssText=s;if(t!==undefined)e.textContent=t;return e;}
+
+  // Header
+  var hdr = mk('div','margin-bottom:16px');
+  hdr.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:700;color:var(--text-high);margin-bottom:6px",'Duplicate Ingredient Finder'));
+  hdr.appendChild(mk('p',"font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin:0;line-height:1.6",
+    'Finds ingredient names that appear more than once (case-insensitive). '+
+    'The most complete record is kept — scored by how many fields are filled in. '+
+    'Lowest ID wins any tie.'));
+  container.appendChild(hdr);
+
+  // Scan button
+  var scanBtn = mk('button',"padding:9px 22px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-right:10px",'🔍 Scan for Duplicates');
+  var statusEl = mk('span',"font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid)",'');
+  var resultsEl = mk('div','margin-top:20px','');
+  container.appendChild(scanBtn);
+  container.appendChild(statusEl);
+  container.appendChild(resultsEl);
+
+  scanBtn.addEventListener('click', async function() {
+    scanBtn.disabled = true;
+    scanBtn.textContent = 'Scanning…';
+    statusEl.textContent = '';
+    resultsEl.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading all ingredients…</div>';
+
+    try {
+      // Fetch all ingredients (paginate if needed)
+      var allRows = [];
+      var page = 0, pageSize = 1000;
+      while (true) {
+        var res = await apiFetch(SUPABASE_URL + '/rest/v1/ingredients?select=id,"Ingredient Name","Category","Also Known As","Sub Category","CJ Recommended Brand","Allergen","Notes","Standard Qty","Unit"&order=id.asc&limit=' + pageSize + '&offset=' + (page * pageSize));
+        if (!res || !res.ok) throw new Error('Fetch failed: ' + (res ? res.status : 'no response'));
+        var rows = await res.json();
+        if (!Array.isArray(rows) || !rows.length) break;
+        allRows = allRows.concat(rows);
+        if (rows.length < pageSize) break;
+        page++;
+      }
+
+      statusEl.textContent = ' ' + allRows.length + ' ingredients loaded.';
+
+      // Group by lowercase name
+      var groups = {};
+      allRows.forEach(function(r) {
+        var key = (r['Ingredient Name'] || '').trim().toLowerCase();
+        if (!key) return;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(r);
+      });
+
+      // Find duplicates
+      var dupes = Object.values(groups).filter(function(g) { return g.length > 1; });
+
+      resultsEl.innerHTML = '';
+      if (!dupes.length) {
+        var ok = mk('div','padding:20px;background:rgba(76,175,118,0.1);border:1px solid rgba(76,175,118,0.3);border-radius:10px;font-family:DM Sans,sans-serif;font-size:14px;color:#4caf76;text-align:center','✓ No duplicates found. Your ingredient list is clean.');
+        resultsEl.appendChild(ok);
+        scanBtn.disabled = false;
+        scanBtn.textContent = '🔍 Scan for Duplicates';
+        return;
+      }
+
+      // Score completeness
+      function score(r) {
+        var fields = ['Category','Also Known As','Sub Category','CJ Recommended Brand','Allergen','Notes','Standard Qty','Unit'];
+        return fields.reduce(function(n, f) { return n + (r[f] && r[f] !== '' ? 1 : 0); }, 0);
+      }
+
+      // Sort each group: most complete first, then lowest ID
+      dupes.forEach(function(g) {
+        g.sort(function(a,b) { var sd = score(b) - score(a); return sd !== 0 ? sd : a.id - b.id; });
+      });
+
+      // Summary bar
+      var toDelete = dupes.reduce(function(n, g) { return n + g.length - 1; }, 0);
+      var sumBar = mk('div','display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:rgba(220,80,80,0.08);border:1px solid rgba(220,80,80,0.3);border-radius:10px;margin-bottom:16px;flex-wrap:wrap;gap:10px');
+      var sumText = mk('div','');
+      sumText.appendChild(mk('div',"font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;color:#dc5050", dupes.length + ' duplicate group' + (dupes.length===1?'':'s') + ' found — ' + toDelete + ' record' + (toDelete===1?' can':' can') + ' be removed'));
+      sumText.appendChild(mk('div',"font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-top:2px",'Green row = will be KEPT. Red rows = will be DELETED.'));
+      var delAllBtn = mk('button',"padding:9px 20px;background:#dc5050;border:none;border-radius:8px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer",'🗑 Remove All Duplicates');
+      delAllBtn.addEventListener('click', function() { removeAllDuplicates(dupes, resultsEl, delAllBtn, scanBtn); });
+      sumBar.appendChild(sumText);
+      sumBar.appendChild(delAllBtn);
+      resultsEl.appendChild(sumBar);
+
+      // Render each duplicate group
+      dupes.forEach(function(group, gi) {
+        var keepId = group[0].id;
+        var card = mk('div','background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden');
+        var cardHdr = mk('div','padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between');
+        cardHdr.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high)",group[0]['Ingredient Name']));
+        cardHdr.appendChild(mk('span',"font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)", group.length + ' copies'));
+        card.appendChild(cardHdr);
+
+        group.forEach(function(row, ri) {
+          var isKeep = row.id === keepId;
+          var rowEl = mk('div','display:grid;grid-template-columns:60px 1fr 120px 120px 100px 60px;gap:0 8px;align-items:center;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,0.03);background:' + (isKeep ? 'rgba(76,175,118,0.06)' : 'rgba(220,80,80,0.06)'));
+          function cell(t,s){var d=mk('div',"font-family:'DM Sans',sans-serif;font-size:11px;color:"+(s||'var(--text-mid)')+";overflow:hidden;text-overflow:ellipsis;white-space:nowrap");d.textContent=t||'—';return d;}
+          rowEl.appendChild(cell('ID #'+row.id, isKeep?'#4caf76':'#dc5050'));
+          rowEl.appendChild(cell(row['Ingredient Name'], isKeep?'var(--text-high)':'var(--text-mid)'));
+          rowEl.appendChild(cell(row['Category']));
+          rowEl.appendChild(cell(row['Also Known As']));
+          rowEl.appendChild(cell('Score: '+score(row), isKeep?'#4caf76':'var(--text-mid)'));
+          var badge = mk('div',"font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;text-align:center;background:"+(isKeep?'rgba(76,175,118,0.15)':'rgba(220,80,80,0.15)')+";color:"+(isKeep?'#4caf76':'#dc5050'), isKeep ? 'KEEP' : 'DELETE');
+          rowEl.appendChild(badge);
+          card.appendChild(rowEl);
+        });
+
+        resultsEl.appendChild(card);
+      });
+
+      scanBtn.disabled = false;
+      scanBtn.textContent = '🔍 Scan Again';
+    } catch(e) {
+      resultsEl.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
+      scanBtn.disabled = false;
+      scanBtn.textContent = '🔍 Scan for Duplicates';
+    }
+  });
+}
+
+async function removeAllDuplicates(dupes, resultsEl, delBtn, scanBtn) {
+  var toDelete = [];
+  dupes.forEach(function(group) {
+    // First item is kept (highest score + lowest id), rest are deleted
+    group.slice(1).forEach(function(r) { toDelete.push(r.id); });
+  });
+  if (!toDelete.length) return;
+  if (!confirm('Delete ' + toDelete.length + ' duplicate record' + (toDelete.length===1?'':'s') + '? This cannot be undone.')) return;
+  delBtn.disabled = true;
+  delBtn.textContent = 'Deleting…';
+  var errors = 0;
+  // Delete in batches of 50
+  for (var i = 0; i < toDelete.length; i += 50) {
+    var batch = toDelete.slice(i, i + 50);
+    var idList = batch.join(',');
+    try {
+      var res = await apiFetch(SUPABASE_URL + '/rest/v1/ingredients?id=in.(' + idList + ')', { method: 'DELETE' });
+      if (!res || !res.ok) errors++;
+    } catch(e) { errors++; }
+  }
+  if (errors === 0) {
+    auditLog('Ingredients Management > Find Duplicates', 'Duplicates Removed', null, null, toDelete.length + ' records deleted', null);
+    delBtn.textContent = '✓ Done';
+    delBtn.style.background = '#2d5a2d';
+    // Refresh ingredient table
+    var c = document.getElementById('ipanel-all');
+    if (c) loadIngredients(1);
+    // Re-scan
+    var scanBtn2 = resultsEl.previousElementSibling?.previousElementSibling;
+    resultsEl.innerHTML = '<div style="padding:20px;background:rgba(76,175,118,0.1);border:1px solid rgba(76,175,118,0.3);border-radius:10px;font-family:DM Sans,sans-serif;font-size:14px;color:#4caf76;text-align:center">✓ ' + toDelete.length + ' duplicate' + (toDelete.length===1?'':'s') + ' removed. Run scan again to confirm.</div>';
+  } else {
+    delBtn.textContent = 'Done with ' + errors + ' error(s)';
+    delBtn.disabled = false;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', init);
 
 
@@ -3621,6 +3783,7 @@ function loadIMInterface(){
   // ── Top-level tab bar ────────────────────────────────────────
   var TAB_DEFS=[
     {key:'refdata',    label:'Ingredient Data Management'},
+    {key:'duplicates', label:'🔍 Find Duplicates'},
     {key:'analytics',  label:'📊 Analytics'},
     {key:'audit',      label:'Audit Trail'},
     {key:'recycle',    label:'Recycle Bin'}
@@ -3640,7 +3803,8 @@ function loadIMInterface(){
       btn.style.borderBottomColor='var(--accent)'; btn.style.color='var(--accent)';
       localStorage.setItem('tcj_active_im_tab', td.key);
       Object.keys(topPanels).forEach(function(k){ topPanels[k].style.display=k===td.key?'block':'none'; });
-      if(td.key==='recycle') loadIngRecycleBinInto(topPanels['recycle']);
+      if(td.key==='recycle')    loadIngRecycleBinInto(topPanels['recycle']);
+      if(td.key==='duplicates') loadIngDuplicates(topPanels['duplicates']);
       if(td.key==='audit')   loadAuditTrail(topPanels['audit']);
       if(td.key==='analytics') loadIngAnalytics(topPanels['analytics']);
     });
@@ -3663,7 +3827,8 @@ function loadIMInterface(){
 
   // ── TAB: Recycle Bin ─────────────────────────────────────────
   topPanels['recycle'].innerHTML='<div style="'+_imS.label+';padding:8px 0">Loading\u2026</div>';
-  if(activeTop==='recycle') loadIngRecycleBinInto(topPanels['recycle']);
+  if(activeTop==='recycle')    loadIngRecycleBinInto(topPanels['recycle']);
+  if(activeTop==='duplicates') loadIngDuplicates(topPanels['duplicates']);
 
   // ── Trigger load for restored active tab ─────────────────────
   if(activeTop==='audit')    loadAuditTrail(topPanels['audit']);
