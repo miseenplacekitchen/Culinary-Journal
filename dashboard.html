@@ -1400,13 +1400,17 @@ function loadRMInterface() {
     {key: 'analytics',   label: '\uD83D\uDCCA Analytics'},
     {key: 'collections', label: 'Collections'},
     {key: 'featured',    label: '\u2b50 Featured'},
+    {key: 'nutrition',   label: 'Nutrition'},
     {key: 'printqueue',  label: 'Print Queue'},
     {key: 'audit',       label: 'Audit Trail'}
   ];
-  var topBar   = document.createElement('div');
-  topBar.style.cssText = 'display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px';
-  var rmPanels = {};
 
+  // Build top bar ONCE outside the loop
+  var topBar = document.createElement('div');
+  topBar.style.cssText = 'display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px';
+  el.appendChild(topBar);
+
+  var rmPanels = {};
   RM_TABS.forEach(function(td) {
     var btn = document.createElement('button');
     btn.style.cssText = "padding:9px 18px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--text-mid);margin-bottom:-1px;white-space:nowrap";
@@ -1417,13 +1421,12 @@ function loadRMInterface() {
     rmPanels[td.key] = panel;
     btn.addEventListener('click', (function(key, b) { return function() {
       localStorage.setItem('tcj_active_rm_tab', key);
-      topBar.querySelectorAll('button').forEach(function(x){ x.style.borderBottomColor = 'transparent'; x.style.color = 'var(--text-mid)'; });
-      b.style.borderBottomColor = 'var(--accent)'; b.style.color = 'var(--accent)';
-      Object.keys(rmPanels).forEach(function(k){ rmPanels[k].style.display = k === key ? 'block' : 'none'; });
+      topBar.querySelectorAll('button').forEach(function(x){ x.style.borderBottomColor='transparent'; x.style.color='var(--text-mid)'; });
+      b.style.borderBottomColor='var(--accent)'; b.style.color='var(--accent)';
+      Object.keys(rmPanels).forEach(function(k){ rmPanels[k].style.display = k===key?'block':'none'; });
       loadRMTab(key, rmPanels[key]);
     }; })(td.key, btn));
     topBar.appendChild(btn);
-    el.appendChild(topBar);
     el.appendChild(panel);
   });
   loadRMTab(savedTab, rmPanels[savedTab]);
@@ -6342,10 +6345,12 @@ async function loadSiteManagement() {
     {key:'settings',     label:'Settings'}
   ];
 
+  // Build top bar ONCE, append ONCE — outside the loop
   var topBar = document.createElement('div');
   topBar.style.cssText = 'display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:24px;flex-wrap:wrap';
-  var smPanels = {};
+  el.appendChild(topBar);
 
+  var smPanels = {};
   SM_TABS.forEach(function(td) {
     var btn = document.createElement('button');
     btn.style.cssText = "padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--text-mid);margin-bottom:-1px;white-space:nowrap";
@@ -6362,8 +6367,7 @@ async function loadSiteManagement() {
       loadSMTab(key, smPanels[key]);
     }; })(td.key, btn));
     topBar.appendChild(btn);
-    el.appendChild(topBar);
-    el.appendChild(panel);
+    el.appendChild(panel);  // panels appended after topBar, in order
   });
   loadSMTab(savedTab, smPanels[savedTab]);
 }
