@@ -733,8 +733,23 @@
     </div>
 
     <!-- SITE MANAGEMENT -->
-    <div id="v-site-mgmt" style="display:none;padding:0">
-      <div id="sm-content"></div>
+    <div id="v-site-mgmt" style="display:none">
+      <div class="ap-inner-tabs">
+        <button class="ap-inner-tab active" data-smtab="pages"         onclick="switchSMTab('pages')">Pages</button>
+        <button class="ap-inner-tab"        data-smtab="features"      onclick="switchSMTab('features')">Features</button>
+        <button class="ap-inner-tab"        data-smtab="announcements" onclick="switchSMTab('announcements')">Announcements</button>
+        <button class="ap-inner-tab"        data-smtab="content"       onclick="switchSMTab('content')">Content</button>
+        <button class="ap-inner-tab"        data-smtab="themes"        onclick="switchSMTab('themes')">Themes</button>
+        <button class="ap-inner-tab"        data-smtab="email"         onclick="switchSMTab('email')">Email Templates</button>
+        <button class="ap-inner-tab"        data-smtab="settings"      onclick="switchSMTab('settings')">Settings</button>
+      </div>
+      <div id="smpanel-pages"         class="sm-panel"></div>
+      <div id="smpanel-features"      class="sm-panel" style="display:none"></div>
+      <div id="smpanel-announcements" class="sm-panel" style="display:none"></div>
+      <div id="smpanel-content"       class="sm-panel" style="display:none"></div>
+      <div id="smpanel-themes"        class="sm-panel" style="display:none"></div>
+      <div id="smpanel-email"         class="sm-panel" style="display:none"></div>
+      <div id="smpanel-settings"      class="sm-panel" style="display:none"></div>
     </div>
 
     <!-- ANALYTICS -->
@@ -6327,49 +6342,27 @@ async function exportCsv(){
 // SITE MANAGEMENT + USER MANAGEMENT ADDITIONS
 // ═══════════════════════════════════════════════════
 
-async function loadSiteManagement() {
-  var el = document.getElementById('sm-content');
-  if (!el) return;
-  if (el.dataset.built === '1') return;
-  el.dataset.built = '1';
-  el.innerHTML = '';
+function loadSiteManagement() {
+  var saved = localStorage.getItem('tcj_active_sm_tab') || 'pages';
+  switchSMTab(saved);
+}
 
-  var savedTab = localStorage.getItem('tcj_active_sm_tab') || 'pages';
-  var SM_TABS = [
-    {key:'pages',        label:'Pages'},
-    {key:'features',     label:'Features'},
-    {key:'announcements',label:'Announcements'},
-    {key:'content',      label:'Content'},
-    {key:'themes',       label:'Themes'},
-    {key:'email',        label:'Email Templates'},
-    {key:'settings',     label:'Settings'}
-  ];
-
-  // Build top bar ONCE, append ONCE — outside the loop
-  var topBar = document.createElement('div');
-  topBar.style.cssText = 'display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:24px;flex-wrap:wrap';
-  el.appendChild(topBar);
-
-  var smPanels = {};
-  SM_TABS.forEach(function(td) {
-    var btn = document.createElement('button');
-    btn.style.cssText = "padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--text-mid);margin-bottom:-1px;white-space:nowrap";
-    btn.textContent = td.label;
-    if (td.key === savedTab) { btn.style.borderBottomColor = 'var(--accent)'; btn.style.color = 'var(--accent)'; }
-    var panel = document.createElement('div');
-    panel.style.display = td.key === savedTab ? 'block' : 'none';
-    smPanels[td.key] = panel;
-    btn.addEventListener('click', (function(key, b) { return function() {
-      localStorage.setItem('tcj_active_sm_tab', key);
-      topBar.querySelectorAll('button').forEach(function(x){ x.style.borderBottomColor='transparent'; x.style.color='var(--text-mid)'; });
-      b.style.borderBottomColor='var(--accent)'; b.style.color='var(--accent)';
-      Object.keys(smPanels).forEach(function(k){ smPanels[k].style.display = k===key?'block':'none'; });
-      loadSMTab(key, smPanels[key]);
-    }; })(td.key, btn));
-    topBar.appendChild(btn);
-    el.appendChild(panel);  // panels appended after topBar, in order
+function switchSMTab(tab) {
+  localStorage.setItem('tcj_active_sm_tab', tab);
+  document.querySelectorAll('#v-site-mgmt .ap-inner-tab').forEach(function(b){
+    b.classList.toggle('active', b.dataset.smtab === tab);
   });
-  loadSMTab(savedTab, smPanels[savedTab]);
+  document.querySelectorAll('.sm-panel').forEach(function(p){
+    p.style.display = 'none';
+  });
+  var panel = document.getElementById('smpanel-' + tab);
+  if (panel) {
+    panel.style.display = 'block';
+    if (!panel.dataset.loaded) {
+      panel.dataset.loaded = '1';
+      loadSMTab(tab, panel);
+    }
+  }
 }
 
 function loadSMTab(key, container) {
