@@ -559,7 +559,7 @@ function outsideNotifClick(e) {
 // ══════════════════════════════════════════════════════
 (function initFeedbackWidget() {
   var path = window.location.pathname;
-  if (path.includes('recipe-page') || path.includes('dashboard')) return;
+  if (path.includes('recipe-page') || path.includes('dashboard') || path.includes('login')) return;
 
   var SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
   var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
@@ -567,8 +567,8 @@ function outsideNotifClick(e) {
   var style = document.createElement('style');
   style.textContent = [
     /* Floating button */
-    '.tcj-fb-btn{position:fixed;bottom:24px;right:24px;z-index:8888;display:flex;align-items:center;gap:8px;padding:10px 20px;background:var(--accent,#C4973B);color:#fff;border:none;border-radius:50px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.35);transition:opacity .2s,transform .2s}',
-    '.tcj-fb-btn:hover{opacity:.88;transform:translateY(-2px)}',
+    '.tcj-fb-btn{position:fixed;bottom:24px;right:24px;z-index:8888;display:flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(255,255,255,0.1);color:var(--text-mid,rgba(255,255,255,0.5));border:1px solid rgba(255,255,255,0.15);border-radius:50px;font-family:"DM Sans",sans-serif;font-size:12px;font-weight:500;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.2);transition:all .2s;backdrop-filter:blur(6px)}',
+    '.tcj-fb-btn:hover{background:var(--accent,#C4973B);color:#fff;border-color:transparent;opacity:1;transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.3)}',
     /* Overlay + box */
     '.tcj-fb-ov{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9990;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}',
     '.tcj-fb-box{background:var(--bg,#0f1117);border:1px solid var(--border,rgba(255,255,255,.12));border-radius:14px;padding:28px 30px;width:92%;max-width:480px;font-family:"DM Sans",sans-serif}',
