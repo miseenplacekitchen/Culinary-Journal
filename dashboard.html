@@ -7108,25 +7108,47 @@ async function importCsv(){
   });
   const csvDupes = Object.keys(nameCounts).filter(function(n){ return nameCounts[n] > 1; });
 
+  var resolvedData = csvData;  // default: send all rows as-is
+
   if (csvDupes.length > 0) {
-    // Show a modal letting Betty review duplicates before proceeding
-    var proceed = await showCsvDupeModal(csvDupes, nameCounts, csvData);
-    if (!proceed) {
-      // User chose to cancel — reset button and stop
+    // Show modal — returns selections map or null if cancelled
+    var selections = await showCsvDupeModal(csvDupes, nameCounts, csvData);
+    if (selections === null) {
       btn.disabled = false;
       status.style.color = 'var(--text-mid)';
       status.textContent = 'Import cancelled — review your CSV and try again.';
       return;
     }
-    // User chose to proceed — the RPC will keep the last row for each duplicate name
+
+    // Build a deduplicated array using Betty's chosen rows
+    var dupeNames = new Set(csvDupes);
+    var seenDupes = new Set();
+    var deduped   = [];
+
+    csvData.forEach(function(row) {
+      var n = (row['Ingredient Name']||'').trim().toLowerCase();
+      if (dupeNames.has(n)) {
+        if (!seenDupes.has(n)) {
+          // Insert the chosen row (not the raw CSV row)
+          var sel = selections[n];
+          deduped.push(sel.rows[sel.keepIdx].r);
+          seenDupes.add(n);
+        }
+        // Other copies of this name are dropped
+      } else {
+        deduped.push(row);
+      }
+    });
+
+    resolvedData = deduped;
     status.style.color = '#d4a017';
-    status.textContent = 'Duplicates noted — most complete row for each name will be used. Importing…';
+    status.textContent = 'Selections confirmed. Importing…';
   }
 
   // ── Call the RPC ───────────────────────────────────────────────────────
   try {
     btn.textContent = 'Importing…';
-    const result = await rpc('admin_bulk_upsert_ingredients', { p_rows: csvData });
+    const result = await rpc('admin_bulk_upsert_ingredients', { p_rows: resolvedData });
 
     let inserted = 0, updated = 0;
     if (result && typeof result === 'object' && !Array.isArray(result)) {
@@ -7141,7 +7163,7 @@ async function importCsv(){
     var _existingSubs   = getSubCats();
     var _existingUnits  = getUnits();
     var _newCats=[], _newSubs={}, _newUnits=[];
-    csvData.forEach(function(row){
+    resolvedData.forEach(function(row){
       var cat  = (row['Category']    ||'').trim();
       var sub  = (row['Sub Category']||'').trim();
       var unit = (row['Unit']        ||'').trim();
@@ -7196,50 +7218,23 @@ async function importCsv(){
 // ── Duplicate review modal ────────────────────────────────────────────────────
 function showCsvDupeModal(dupes, counts, allRows) {
   return new Promise(function(resolve) {
-    // Build the overlay
-    var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)';
 
-    var box = document.createElement('div');
-    box.style.cssText = 'background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:28px 32px;max-width:560px;width:90%;font-family:"DM Sans",sans-serif;max-height:80vh;display:flex;flex-direction:column;gap:0';
-
-    // Title
-    var title = document.createElement('div');
-    title.style.cssText = "font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--text-high);margin-bottom:8px";
-    title.textContent = '\u26a0\ufe0f Duplicate Names in CSV';
-    box.appendChild(title);
-
-    // Subtitle
-    var sub = document.createElement('p');
-    sub.style.cssText = 'font-size:13px;color:var(--text-mid);margin:0 0 16px;line-height:1.6';
-    sub.textContent = dupes.length + ' ingredient name' + (dupes.length===1?' appears':' appear') +
-      ' more than once in your CSV. If you proceed, the last row for each duplicate name will be used and earlier rows ignored. Review the list below before deciding.';
-    box.appendChild(sub);
-
-    // Duplicate list — scrollable
-    var listWrap = document.createElement('div');
-    listWrap.style.cssText = 'overflow-y:auto;max-height:280px;border:1px solid var(--border);border-radius:8px;margin-bottom:20px;flex-shrink:1';
-
-    var listHdr = document.createElement('div');
-    listHdr.style.cssText = 'display:grid;grid-template-columns:1fr 60px;padding:7px 14px;background:rgba(255,255,255,0.04);border-bottom:1px solid var(--border);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);position:sticky;top:0';
-    listHdr.innerHTML = '<span>Ingredient Name</span><span style="text-align:center">Copies</span>';
-    listWrap.appendChild(listHdr);
-
-    // Sort: most copies first, then alphabetical
-    var sorted = dupes.slice().sort(function(a,b){
-      var diff = (counts[b]||0) - (counts[a]||0);
-      return diff !== 0 ? diff : a.localeCompare(b);
-    });
-
-    // Score a CSV row by how many key fields are filled in
     var SCORE_FIELDS = ['Also Known As','Category','Sub Category','Unit',
       'Standard Qty','Standard Weight (g or ml)','CJ Recommended Brand',
       'Allergen','Vegan (Yes/No)','Vegetarian (Yes/No)','Notes'];
+
     function scoreRow(r) {
       return SCORE_FIELDS.reduce(function(n,f){
         return n + ((r[f]||'').trim() ? 1 : 0);
       }, 0);
     }
+
+    // selections: name_lower → { rows: [...scored], keepIdx: 0 }
+    var selections = {};
+    var sorted = dupes.slice().sort(function(a,b){
+      var diff = (counts[b]||0) - (counts[a]||0);
+      return diff !== 0 ? diff : a.localeCompare(b);
+    });
 
     sorted.forEach(function(name) {
       var matchingRows = (allRows||[]).filter(function(r){
@@ -7247,27 +7242,64 @@ function showCsvDupeModal(dupes, counts, allRows) {
       });
       var scored = matchingRows.map(function(r,i){ return {r:r, score:scoreRow(r), idx:i}; });
       scored.sort(function(a,b){ return b.score - a.score || b.idx - a.idx; });
+      selections[name] = { rows: scored, keepIdx: 0 };
+    });
+
+    // Build overlay
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)';
+
+    var box = document.createElement('div');
+    box.style.cssText = 'background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:28px 32px;max-width:600px;width:92%;font-family:"DM Sans",sans-serif;max-height:86vh;display:flex;flex-direction:column;gap:0';
+
+    var title = document.createElement('div');
+    title.style.cssText = "font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--text-high);margin-bottom:6px";
+    title.textContent = '\u26a0\ufe0f Duplicate Names Found in CSV';
+    box.appendChild(title);
+
+    var sub = document.createElement('p');
+    sub.style.cssText = 'font-size:13px;color:var(--text-mid);margin:0 0 16px;line-height:1.6';
+    sub.innerHTML = dupes.length + ' name' + (dupes.length===1?' appears':' appear') + ' more than once. ' +
+      'The most complete row is pre-selected (green). ' +
+      'If the wrong one is highlighted, click <strong style="color:var(--text-high)">Use this one instead</strong> to switch. ' +
+      'Cancel to fix the CSV yourself.';
+    box.appendChild(sub);
+
+    // Scrollable list
+    var listWrap = document.createElement('div');
+    listWrap.style.cssText = 'overflow-y:auto;flex:1;border:1px solid var(--border);border-radius:8px;margin-bottom:18px';
+
+    // Render a single group
+    function renderGroup(name, groupEl) {
+      groupEl.innerHTML = '';
+      var sel = selections[name];
 
       // Group header
       var grpHdr = document.createElement('div');
-      grpHdr.style.cssText = 'padding:8px 14px 4px;background:rgba(255,255,255,0.04);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px';
+      grpHdr.style.cssText = 'padding:8px 14px;background:rgba(255,255,255,0.05);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)';
       var nameSpan = document.createElement('span');
       nameSpan.style.cssText = 'font-size:13px;font-weight:600;color:var(--text-high);text-transform:capitalize;flex:1';
       nameSpan.textContent = name;
       var cntSpan = document.createElement('span');
       cntSpan.style.cssText = 'font-size:11px;font-weight:600;color:#d4a017;padding:2px 8px;background:rgba(212,160,23,0.12);border-radius:10px';
-      cntSpan.textContent = counts[name] + ' copies';
+      cntSpan.textContent = sel.rows.length + ' copies';
       grpHdr.appendChild(nameSpan);
       grpHdr.appendChild(cntSpan);
-      listWrap.appendChild(grpHdr);
+      groupEl.appendChild(grpHdr);
 
-      scored.forEach(function(item, si) {
-        var isKeep = si === 0;
+      sel.rows.forEach(function(item, si) {
+        var isKeep = si === sel.keepIdx;
         var rowEl = document.createElement('div');
-        rowEl.style.cssText = 'padding:7px 14px 6px;border-bottom:1px solid rgba(255,255,255,0.03);background:' +
-          (isKeep ? 'rgba(76,175,118,0.06)' : 'rgba(220,80,80,0.04)');
+        rowEl.style.cssText = 'padding:9px 14px;border-bottom:1px solid rgba(255,255,255,0.03);background:' +
+          (isKeep ? 'rgba(76,175,118,0.07)' : 'rgba(220,80,80,0.04)') +
+          ';display:flex;align-items:flex-start;gap:10px';
+
+        // Left: badge + detail
+        var left = document.createElement('div');
+        left.style.cssText = 'flex:1;min-width:0';
+
         var badge = document.createElement('div');
-        badge.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:3px';
+        badge.style.cssText = 'display:flex;align-items:center;gap:7px;margin-bottom:3px';
         var keepBadge = document.createElement('span');
         var keepStyle = isKeep
           ? 'background:rgba(76,175,118,0.2);color:#4caf76'
@@ -7276,37 +7308,66 @@ function showCsvDupeModal(dupes, counts, allRows) {
         keepBadge.textContent = isKeep ? 'KEEP' : 'DISCARD';
         var scoreEl = document.createElement('span');
         scoreEl.style.cssText = 'font-size:10px;color:var(--text-mid)';
-        scoreEl.textContent = item.score + ' / ' + SCORE_FIELDS.length + ' fields filled';
+        scoreEl.textContent = item.score + '\u202f/\u202f' + SCORE_FIELDS.length + ' fields filled';
         badge.appendChild(keepBadge);
         badge.appendChild(scoreEl);
-        rowEl.appendChild(badge);
+        left.appendChild(badge);
+
         var fields = ['Category','Also Known As','Unit','Standard Qty','Notes'];
         var parts = fields.map(function(f){ return (item.r[f]||'').trim(); }).filter(Boolean);
         if (parts.length) {
           var detail = document.createElement('div');
           detail.style.cssText = 'font-size:11px;color:var(--text-mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-          detail.textContent = parts.join(' · ');
-          rowEl.appendChild(detail);
+          detail.textContent = parts.join(' \u00b7 ');
+          left.appendChild(detail);
         }
-        listWrap.appendChild(rowEl);
+
+        rowEl.appendChild(left);
+
+        // Right: switch button (only on discard rows)
+        if (!isKeep) {
+          var switchBtn = document.createElement('button');
+          switchBtn.textContent = 'Use this one instead';
+          switchBtn.style.cssText = 'padding:4px 11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-mid);font-family:"DM Sans",sans-serif;font-size:11px;cursor:pointer;flex-shrink:0;white-space:nowrap;margin-top:2px;transition:all 0.15s';
+          switchBtn.addEventListener('mouseenter', function(){ this.style.borderColor='var(--accent)';this.style.color='var(--accent)'; });
+          switchBtn.addEventListener('mouseleave', function(){ this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'; });
+          switchBtn.addEventListener('click', (function(n, idx, el) {
+            return function() {
+              selections[n].keepIdx = idx;
+              renderGroup(n, el);
+            };
+          })(name, si, groupEl));
+          rowEl.appendChild(switchBtn);
+        }
+
+        groupEl.appendChild(rowEl);
       });
+    }
+
+    sorted.forEach(function(name) {
+      var groupEl = document.createElement('div');
+      renderGroup(name, groupEl);
+      listWrap.appendChild(groupEl);
     });
 
-        box.appendChild(listWrap);
+    box.appendChild(listWrap);
 
     // Buttons
     var btns = document.createElement('div');
-    btns.style.cssText = 'display:flex;gap:10px';
+    btns.style.cssText = 'display:flex;gap:10px;flex-shrink:0';
 
     var cancelBtn = document.createElement('button');
     cancelBtn.textContent = 'Cancel \u2014 I\'ll fix the CSV first';
     cancelBtn.style.cssText = 'flex:1;padding:11px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-family:"DM Sans",sans-serif;font-size:13px;cursor:pointer';
-    cancelBtn.addEventListener('click', function(){ overlay.remove(); resolve(false); });
+    cancelBtn.addEventListener('click', function(){ overlay.remove(); resolve(null); });
 
     var proceedBtn = document.createElement('button');
-    proceedBtn.textContent = 'Proceed anyway';
+    proceedBtn.textContent = 'Looks good \u2014 proceed';
     proceedBtn.style.cssText = 'flex:1;padding:11px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:600;cursor:pointer';
-    proceedBtn.addEventListener('click', function(){ overlay.remove(); resolve(true); });
+    proceedBtn.addEventListener('click', function(){
+      overlay.remove();
+      resolve(selections);
+    });
 
     btns.appendChild(cancelBtn);
     btns.appendChild(proceedBtn);
