@@ -457,12 +457,15 @@ var SUPA_KEY_N = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 async function notifRpc(fn, params) {
   var session = JSON.parse(localStorage.getItem('tcj_session')||'null');
   if (!session) return null;
-  var res = await fetch(SUPA_URL_N + '/rest/v1/rpc/' + fn, {
-    method:'POST',
-    headers:{'apikey':SUPA_KEY_N,'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
-    body:JSON.stringify(params||{})
-  });
-  return res.ok ? res.json() : null;
+  try {
+    var res = await fetch(SUPA_URL_N + '/rest/v1/rpc/' + fn, {
+      method:'POST',
+      headers:{'apikey':SUPA_KEY_N,'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+      body:JSON.stringify(params||{})
+    });
+    if (!res.ok) return null;   // 404 = RPC not built yet, 401 = not authorised — both silent
+    return res.json();
+  } catch(_) { return null; }
 }
 
 async function loadNotifCount() {
