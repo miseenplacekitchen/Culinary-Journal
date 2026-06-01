@@ -1625,7 +1625,31 @@ window.addEventListener('DOMContentLoaded', async () => {
   try { initSectionSorting(); } catch(e) { console.error('sort init', e); }
   try { addMethodSection('PREP WORK'); } catch(e) { console.error(e); }
   try { addMethodSection('DIRECTIONS'); } catch(e) { console.error(e); }
-  try { loadDraftSilent(); } catch(e) { console.error(e); }
+  // Check for a specific draft ID in the URL — ?draft=ID
+  // If present, load that named draft; otherwise load the auto-save
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const draftId   = urlParams.get('draft');
+    if (draftId) {
+      const namedKey = 'tcj_draft_' + draftId;
+      const namedRaw = lsGet(namedKey);
+      if (namedRaw) {
+        // Load the specific named draft
+        const secWrap  = document.getElementById('ingredient-sections');
+        const methWrap = document.getElementById('method-sections');
+        if (secWrap)  { secWrap.innerHTML = '';  ingSectionCount = 0; }
+        if (methWrap) { methWrap.innerHTML = ''; methodSectionCount = 0; }
+        restoreDraft(namedRaw);
+        // Mark this draft as the active edit target
+        window._activeDraftId = draftId;
+      } else {
+        // Draft ID not found — fall back to auto-save
+        loadDraftSilent();
+      }
+    } else {
+      loadDraftSilent();
+    }
+  } catch(e) { console.error('Draft load error:', e); loadDraftSilent(); }
   try { setupSourceToggle(); } catch(e) { console.error(e); }
   try { setupAutoSave(); } catch(e) { console.error(e); }
 });
@@ -2120,30 +2144,17 @@ function addIngRow(container, qty='', unit='', name='', note='', cat='') {
     <span class="drag-handle" title="Drag to reorder">⠿</span>
     <input class="ing-input" type="text" maxlength="20" placeholder="½" oninput="autoFraction(this)" onblur="autoFraction(this)" value="${esc(qty)}">
     <div class="ing-unit-wrap">
-      <div class="ing-unit-picker${!unit||UNITS.includes(unit)?'':'" style=\"display:none\"'"}" onclick="toggleUnitPicker(this,event)" title="Pick a unit">
+      <div class="ing-unit-picker" style="${!unit||UNITS.includes(unit)?'':'display:none'}" onclick="toggleUnitPicker(this,event)" title="Pick a unit">
         <span class="ing-unit-picker-val${unit&&UNITS.includes(unit)?'':' placeholder'}" data-value="${UNITS.includes(unit)?esc(unit):''}">${unit&&UNITS.includes(unit)?esc(unit):'— unit —'}</span>
         <span class="ing-unit-arrow">▾</span>
       </div>
       <div class="ing-unit-dropdown" style="display:none">${unitDropdownHtml(unit)}</div>
       <input class="ing-unit-custom" type="text" maxlength="30" placeholder="type unit…"
-        value="${!unit||UNITS.includes(unit)?'':(unit?esc(unit):'')}"
-        style="${!unit||UNITS.includes(unit)?'display:none':''}" 
+        value="${!unit||UNITS.includes(unit)?'':esc(unit)}"
+        style="${!unit||UNITS.includes(unit)?'display:none':''}"
         oninput="validateUnit(this)" onblur="switchToUnitSelect(this)">
-      <span class="ing-unknown-unit-badge" style="display:none" title="Not in standard list — admin will review on submit">⚠</span>
+      <span class="ing-unknown-unit-badge" style="display:none" title="Not in standard list — admin will review">⚠</span>
     </div>
-    <div class="ing-name-wrap">
-      <input class="ing-input ing-name-input" type="text" maxlength="80" placeholder="Search ingredients…" value="${esc(name)}" oninput="searchIngredients(this)" onfocus="searchIngredients(this)" onclick="searchIngredients(this)" onblur="hideAC(this)" autocomplete="off">
-      <div class="ing-autocomplete"></div>
-      <span class="ing-unknown-badge" style="display:none">⚠ New ingredient — not in our database (will be reviewed by admin)</span>
-    </div>
-    <select class="ing-cat-select" onchange="onCategoryChange(this)" onkeydown="if(event.key==='Delete'||event.key==='Backspace'){this.value='';onCategoryChange(this);event.preventDefault();}" title="Pick a category — press Delete to clear">${categoryOptionsHtml(cat)}</select>
-    <input class="ing-input ing-note-col" type="text" maxlength="120" placeholder="e.g. finely chopped" value="${esc(note)}">
-    <div class="ing-move-wrap">
-      <button class="btn-move-row" onclick="toggleMoveMenu(this,'ingredients')" title="Move to another section">⇄</button>
-      <div class="move-menu" style="display:none"></div>
-    </div>
-    <button class="btn-remove-row" onclick="this.closest('.ing-row').remove()">×</button>
-  `;
   container.appendChild(row);
 
   // If this row was pre-filled (parser, draft restore, etc.), validate it
