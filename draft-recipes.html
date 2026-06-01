@@ -260,7 +260,7 @@ function loadDrafts() {
           <div class="dr-card-meta">${category}${saved}</div>
           <div class="dr-card-actions">
             <a href="submit-recipe.html?draft=${draft.id}" class="dr-btn dr-btn-edit">✎ Continue Editing</a>
-            <button class="dr-btn dr-btn-delete" onclick="event.stopPropagation(); askDelete('${draft.id}', '${(draft.recipe_name||'this draft').replace(/'/g,"\\'")}')">🗑</button>
+            <button class="dr-btn dr-btn-delete" onclick="event.stopPropagation(); askDelete('${draft.id}', '${(draft.recipe_name||'this draft').replace(/'/g,"\\'")}')" title="Delete Draft" aria-label="Delete Draft">🗑</button>
           </div>
         </div>
       </div>`;
