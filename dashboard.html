@@ -384,6 +384,7 @@
       <button class="ap-nav-item" id="nav-ingredients" onclick="switchView('ingredients')">&#129365; Ingredients</button>
       <button class="ap-nav-item" id="nav-analytics" onclick="switchView('analytics')">&#128202; Analytics</button>
       <button class="ap-nav-item" id="nav-site-mgmt" onclick="switchView('site-mgmt')">&#9881;&#65039; Site Management</button>
+      <button class="ap-nav-item" id="nav-finance" onclick="switchView('finance')">&#128176; Finance</button>
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
         <a href="/" class="ap-nav-item" style="text-decoration:none;font-size:12px">View Site</a>
         <a href="index.html" class="ap-nav-item" style="text-decoration:none;font-size:12px">Homepage</a>
@@ -688,6 +689,18 @@
     </div>
 
     <!-- ANALYTICS -->
+    <div id="v-finance" style="display:none">
+      <div class="ap-inner-tabs" style="margin-bottom:20px">
+        <button class="ap-inner-tab active" data-tab="fi-overview"    onclick="switchFinanceTab('fi-overview')">Overview</button>
+        <button class="ap-inner-tab"        data-tab="fi-members"     onclick="switchFinanceTab('fi-members')">Member Tiers</button>
+        <button class="ap-inner-tab"        data-tab="fi-pricing"     onclick="switchFinanceTab('fi-pricing')">Pricing</button>
+        <button class="ap-inner-tab"        data-tab="fi-history"     onclick="switchFinanceTab('fi-history')">History</button>
+      </div>
+      <div id="upanel-fi-overview"  data-panel="fi-overview"  style="padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
+      <div id="upanel-fi-members"   data-panel="fi-members"   style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
+      <div id="upanel-fi-pricing"   data-panel="fi-pricing"   style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
+      <div id="upanel-fi-history"   data-panel="fi-history"   style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
+    </div>
     <div id="v-analytics" style="display:none">
       <div id="analytics-content">
         <div class="ap-empty-row" style="padding:40px;text-align:center">Loading analytics&#8230;</div>
@@ -1060,7 +1073,7 @@ function signOut() {
   window.location.href = 'login.html';
 }
 
-const ALL_VIEWS = ['dashboard','recipe-mgmt','user-mgmt','ingredients','analytics','site-mgmt'];
+const ALL_VIEWS = ['dashboard','recipe-mgmt','user-mgmt','ingredients','analytics','site-mgmt','finance'];
 
 function switchView(view, ingTab) {
   localStorage.setItem('tcj_active_view', view);
@@ -1068,8 +1081,8 @@ function switchView(view, ingTab) {
   const nb = document.getElementById('nav-' + view);
   if (nb) nb.classList.add('active');
   ALL_VIEWS.forEach(function(v) { const el = document.getElementById('v-' + v); if (el) el.style.display = (v===view)?'block':'none'; });
-  const titles = { 'dashboard':'Dashboard', 'recipe-mgmt':'Recipe Management', 'user-mgmt':'User Management', 'ingredients':'Ingredients', 'analytics':'Analytics', 'site-mgmt':'Site Management' };
-  const subs   = { 'dashboard':'Overview of site activity.', 'recipe-mgmt':'Review, approve and manage all submitted recipes.', 'user-mgmt':'Manage member registrations and accounts.', 'ingredients':'Browse, add and edit the ingredient database.', 'analytics':'Site performance and statistics.', 'site-mgmt':'Control pages, features, announcements, themes, email templates and site settings.' };
+  const titles = { 'dashboard':'Dashboard', 'recipe-mgmt':'Recipe Management', 'user-mgmt':'User Management', 'ingredients':'Ingredients', 'analytics':'Analytics', 'site-mgmt':'Site Management', 'finance':'Finance Management' };
+  const subs   = { 'dashboard':'Overview of site activity.', 'recipe-mgmt':'Review, approve and manage all submitted recipes.', 'user-mgmt':'Manage member registrations and accounts.', 'ingredients':'Browse, add and edit the ingredient database.', 'analytics':'Site performance and statistics.', 'site-mgmt':'Control pages, features, announcements, themes, email templates and site settings.', 'finance':'Manage membership tiers, subscriptions, pricing and revenue.' };
   setEl('page-title', titles[view] || view);
   setEl('page-sub',   subs[view]   || '');
   if (view === 'dashboard')   loadDashboard();
@@ -1082,6 +1095,7 @@ function switchView(view, ingTab) {
   if (view === 'ingredients') { loadImSettings(); switchIngTab(ingTab||'all'); }
   if (view === 'analytics')   loadAnalytics();
   if (view === 'site-mgmt')   { var _smt=localStorage.getItem('tcj_active_sm_tab')||'sm-pages'; switchSMTab(_smt); }
+  if (view === 'finance')     { switchFinanceTab(localStorage.getItem('tcj_active_finance_tab')||'fi-overview'); }
 }
 
 // ── RECIPE MANAGEMENT ─────────────────────────────────────────────
@@ -3031,6 +3045,263 @@ async function buildSMSettings(container) {
   } catch(e){container.dataset.built='';container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>';}
 }
 
+
+// ═══════════════════════════════════════════════════════════════
+// FINANCE MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+
+function switchFinanceTab(tab) {
+  try {
+    localStorage.setItem('tcj_active_finance_tab', tab);
+    document.querySelectorAll('#v-finance .ap-inner-tab').forEach(function(t){
+      t.classList.toggle('active', t.dataset.tab === tab);
+    });
+    ['fi-overview','fi-members','fi-pricing','fi-history'].forEach(function(p){
+      var el = document.getElementById('upanel-' + p);
+      if (el) el.style.display = p === tab ? 'block' : 'none';
+    });
+    var container = document.getElementById('upanel-' + tab);
+    if (!container || container.dataset.built === '1') return;
+    container.dataset.built = 'loading';
+    if (tab === 'fi-overview') buildFiOverview(container);
+    else if (tab === 'fi-members')  buildFiMembers(container);
+    else if (tab === 'fi-pricing')  buildFiPricing(container);
+    else if (tab === 'fi-history')  buildFiHistory(container);
+  } catch(e) { alert('Finance tab error: ' + e.message); }
+}
+
+async function buildFiOverview(container) {
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
+  try {
+    var stats = await rpc('admin_get_tier_stats', {});
+    var settings_res = await apiFetch(SUPABASE_URL + '/rest/v1/site_settings?select=key,value&key=in.(price_premium_monthly,price_event_monthly,currency_symbol)');
+    var S = {};
+    if (settings_res && settings_res.ok) {
+      var rows = await settings_res.json();
+      if (Array.isArray(rows)) rows.forEach(function(r){ S[r.key] = r.value; });
+    }
+    var cur = S.currency_symbol || '$';
+    var prem_price = S.price_premium_monthly || '4.00';
+    var evt_price  = S.price_event_monthly   || '12.00';
+
+    // Estimated MRR
+    var mrr = (parseFloat(prem_price) * (stats.premium||0)) + (parseFloat(evt_price) * (stats.event||0));
+
+    container.innerHTML = '';
+    function mk(tag,s,t){var e=document.createElement(tag);if(s)e.style.cssText=s;if(t!==undefined)e.textContent=t;return e;}
+
+    // Stat cards
+    var statsRow = mk('div','display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px');
+    [
+      { label:'Total Active Members', value: (stats.total||0).toLocaleString(), accent: false },
+      { label:'Free Members',         value: (stats.free||0).toLocaleString(),  accent: false },
+      { label:'Premium Members',      value: (stats.premium||0).toLocaleString(), accent: true },
+      { label:'Event Tier Members',   value: (stats.event||0).toLocaleString(),   accent: true },
+      { label:'Est. Monthly Revenue', value: cur + mrr.toFixed(2),               accent: true }
+    ].forEach(function(s){
+      var card = mk('div','background:rgba(255,255,255,0.04);border:1px solid '+(s.accent?'var(--accent)':'var(--border)')+';border-radius:12px;padding:18px 20px');
+      card.appendChild(mk('div','font-family:Cormorant Garamond,serif;font-size:1.7rem;font-weight:700;color:'+(s.accent?'var(--accent)':'var(--text-high)'),s.value));
+      card.appendChild(mk('div','font-size:11px;color:var(--text-mid);margin-top:4px;text-transform:uppercase;letter-spacing:0.06em',s.label));
+      statsRow.appendChild(card);
+    });
+    container.appendChild(statsRow);
+
+    // Tier breakdown bar
+    var total = (stats.total||0) || 1;
+    var freePct    = Math.round((stats.free||0)    / total * 100);
+    var premPct    = Math.round((stats.premium||0) / total * 100);
+    var evtPct     = Math.round((stats.event||0)   / total * 100);
+    var barCard = mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px');
+    barCard.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px",'Membership Breakdown'));
+    var bar = mk('div','display:flex;height:10px;border-radius:10px;overflow:hidden;margin-bottom:12px');
+    if (freePct > 0) { var s1=mk('div','flex:'+freePct+';background:var(--border)'); bar.appendChild(s1); }
+    if (premPct > 0) { var s2=mk('div','flex:'+premPct+';background:var(--accent)'); bar.appendChild(s2); }
+    if (evtPct  > 0) { var s3=mk('div','flex:'+evtPct+';background:#5B8FD4');        bar.appendChild(s3); }
+    barCard.appendChild(bar);
+    var legend = mk('div','display:flex;gap:20px;flex-wrap:wrap');
+    [{label:'Free',color:'var(--border)',pct:freePct},{label:'Premium',color:'var(--accent)',pct:premPct},{label:'Event',color:'#5B8FD4',pct:evtPct}].forEach(function(l){
+      var item=mk('div','display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-mid)');
+      var dot=mk('div','width:10px;height:10px;border-radius:50%;background:'+l.color+';flex-shrink:0');
+      item.appendChild(dot); item.appendChild(document.createTextNode(l.label+' '+l.pct+'%'));
+      legend.appendChild(item);
+    });
+    barCard.appendChild(legend);
+    container.appendChild(barCard);
+
+    // Pricing info card
+    var priceCard = mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px');
+    priceCard.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px",'Current Pricing'));
+    [
+      {tier:'Premium', monthly: cur+prem_price, annual: cur+(parseFloat(prem_price)*10).toFixed(2), desc:'Unlimited recipes, AI features, full print studio'},
+      {tier:'Event / Wedding', monthly: cur+evt_price, annual: cur+(parseFloat(evt_price)*10).toFixed(2), desc:'Everything in Premium + event planning, seating, guest cards'}
+    ].forEach(function(p){
+      var row=mk('div','display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05)');
+      var left=mk('div','');
+      left.appendChild(mk('div',"font-size:13px;font-weight:600;color:var(--text-high)",p.tier));
+      left.appendChild(mk('div',"font-size:11px;color:var(--text-mid);margin-top:2px",p.desc));
+      var right=mk('div','text-align:right;flex-shrink:0;padding-left:16px');
+      right.appendChild(mk('div',"font-size:16px;font-weight:700;color:var(--accent)",p.monthly+'/mo'));
+      right.appendChild(mk('div',"font-size:11px;color:var(--text-mid)",p.annual+'/yr'));
+      row.appendChild(left); row.appendChild(right); priceCard.appendChild(row);
+    });
+    container.appendChild(priceCard);
+
+    container.dataset.built = '1';
+  } catch(e) { container.dataset.built=''; container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>'; }
+}
+
+async function buildFiMembers(container) {
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
+  try {
+    var res = await apiFetch(SUPABASE_URL + '/rest/v1/profiles?select=id,username,full_name,email,subscription_tier,is_active&order=subscription_tier.desc,created_at.desc&limit=100');
+    if (!res||!res.ok) throw new Error(res?res.status+': '+await res.text():'Session expired');
+    var members = await res.json();
+    if (!Array.isArray(members)||!members.length) { container.innerHTML='<div style="padding:16px;font-size:13px;color:var(--text-mid)">No members found.</div>'; return; }
+
+    container.innerHTML = '';
+    function mk(tag,s,t){var e=document.createElement(tag);if(s)e.style.cssText=s;if(t!==undefined)e.textContent=t;return e;}
+
+    // Search + filter
+    var toolbar = mk('div','display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap');
+    var search = mk('input','flex:1;min-width:180px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)');
+    search.placeholder = 'Search by name or email\u2026';
+    var filter = mk('select','padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)');
+    ['All Tiers','free','premium','event'].forEach(function(t){var o=document.createElement('option');o.value=t==='All Tiers'?'':t;o.textContent=t==='All Tiers'?'All Tiers':t.charAt(0).toUpperCase()+t.slice(1);filter.appendChild(o);});
+    toolbar.appendChild(search); toolbar.appendChild(filter);
+    container.appendChild(toolbar);
+
+    var wrap = mk('div','overflow-x:auto;border:1px solid var(--border);border-radius:12px');
+    var tbl  = document.createElement('table'); tbl.className='ap-table';
+    tbl.innerHTML = '<thead><tr style="border-bottom:1px solid var(--border)"><th class="ap-th">Member</th><th class="ap-th">Email</th><th class="ap-th">Current Tier</th><th class="ap-th">Change Tier</th><th class="ap-th">Save</th></tr></thead>';
+    var tbody = document.createElement('tbody');
+
+    var TIER_COLOR = { free:'var(--text-mid)', premium:'var(--accent)', event:'#5B8FD4' };
+
+    function renderRow(m) {
+      var tr = document.createElement('tr'); tr.style.borderBottom='1px solid rgba(255,255,255,0.04)';
+      tr.dataset.name  = (m.full_name||'').toLowerCase();
+      tr.dataset.email = (m.email||'').toLowerCase();
+      tr.dataset.tier  = m.subscription_tier||'free';
+
+      var tier = m.subscription_tier || 'free';
+      var sel = '<select id="fit-'+m.id+'" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)">'+
+        ['free','premium','event'].map(function(t){return '<option value="'+t+'"'+(tier===t?' selected':'')+'>'+t.charAt(0).toUpperCase()+t.slice(1)+'</option>';}).join('')+'</select>';
+      tr.innerHTML =
+        '<td class="ap-td"><div style="font-size:13px;font-weight:500;color:var(--text-high)">'+(m.full_name||m.username||'—')+'</div><div style="font-size:11px;color:var(--text-mid)">@'+(m.username||'')+'</div></td>'+
+        '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+(m.email||'')+'</td>'+
+        '<td class="ap-td"><span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,0.07);color:'+TIER_COLOR[tier]+'">'+tier+'</span></td>'+
+        '<td class="ap-td">'+sel+'</td>'+
+        '<td class="ap-td"></td>';
+
+      var btn = document.createElement('button'); btn.textContent='Save'; btn.style.cssText="padding:5px 12px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:11px;cursor:pointer";
+      btn.addEventListener('click', (function(uid,b,row){return async function(){
+        b.disabled=true;b.textContent='\u2026';
+        var newTier = document.getElementById('fit-'+uid).value;
+        var notesVal = newTier !== (row.dataset.tier) ? 'Changed from '+row.dataset.tier+' to '+newTier+' by admin' : null;
+        try {
+          await rpc('admin_set_member_tier',{p_user_id:uid,p_tier:newTier,p_notes:notesVal});
+          row.dataset.tier = newTier;
+          var badge = row.querySelector('td:nth-child(3) span');
+          if(badge){badge.textContent=newTier;badge.style.color=TIER_COLOR[newTier]||'var(--text-mid)';}
+          b.textContent='\u2713';setTimeout(function(){b.textContent='Save';b.disabled=false;},2000);
+        } catch(e){b.textContent='Save';b.disabled=false;alert('Error: '+e.message);}
+      };})(m.id,btn,tr));
+      tr.lastElementChild.appendChild(btn);
+      tbody.appendChild(tr);
+    }
+
+    members.forEach(renderRow);
+    tbl.appendChild(tbody); wrap.appendChild(tbl); container.appendChild(wrap);
+
+    // Live search + filter
+    function filterTable() {
+      var q = search.value.toLowerCase();
+      var t = filter.value;
+      tbody.querySelectorAll('tr').forEach(function(row){
+        var matchQ = !q || row.dataset.name.includes(q) || row.dataset.email.includes(q);
+        var matchT = !t || row.dataset.tier === t;
+        row.style.display = (matchQ && matchT) ? '' : 'none';
+      });
+    }
+    search.addEventListener('input', filterTable);
+    filter.addEventListener('change', filterTable);
+
+    container.dataset.built = '1';
+  } catch(e){ container.dataset.built=''; container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>'; }
+}
+
+async function buildFiPricing(container) {
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
+  try {
+    var res = await apiFetch(SUPABASE_URL + '/rest/v1/site_settings?select=key,value&key=in.(price_premium_monthly,price_premium_annual,price_event_monthly,price_event_annual,currency_symbol,currency_code)');
+    if (!res||!res.ok) throw new Error(res?res.status:'Session expired');
+    var rows = await res.json(); var S={};
+    if(Array.isArray(rows)) rows.forEach(function(r){S[r.key]=r.value;});
+
+    async function savePriceSetting(k,v){var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_settings',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:k,value:v})});if(!r||!r.ok)throw new Error(r?r.status:'Failed');}
+
+    container.innerHTML = '';
+    function mk(tag,s,t){var e=document.createElement(tag);if(s)e.style.cssText=s;if(t!==undefined)e.textContent=t;return e;}
+    function card(title,desc){var d=mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');d.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:"+(desc?'4':'14')+"px",title));if(desc)d.appendChild(mk('p','font-size:12px;color:var(--text-mid);margin-bottom:14px',desc));return d;}
+    function inp(id,lbl,val,prefix){var w=mk('div','margin-bottom:12px');w.appendChild(mk('label','display:block;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:4px',lbl));var row=mk('div','display:flex;align-items:center;gap:0');if(prefix){var pre=mk('span','padding:7px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-right:none;border-radius:7px 0 0 7px;font-size:12px;color:var(--text-mid)',prefix);row.appendChild(pre);}var i=mk('input','flex:1;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:'+(prefix?'0 7px 7px 0':'7px')+';font-size:12px;color:var(--text-high)');i.id='fp-'+id;i.value=val||'';i.type='text';i.inputMode='decimal';row.appendChild(i);w.appendChild(row);return w;}
+    function saveBtn(keys,lbl){var b=document.createElement('button');b.className='ing-add-btn';b.style.marginTop='4px';b.textContent=lbl||'Save Pricing';b.addEventListener('click',async function(){b.disabled=true;b.textContent='Saving\u2026';try{for(var k=0;k<keys.length;k++){var el=document.getElementById('fp-'+keys[k]);if(el)await savePriceSetting(keys[k],el.value||'');}b.textContent='\u2713 Saved';setTimeout(function(){b.textContent=lbl||'Save Pricing';b.disabled=false;var c=document.getElementById('upanel-fi-pricing');if(c){c.dataset.built='';buildFiPricing(c);}},2000);}catch(e){b.textContent=lbl||'Save Pricing';b.disabled=false;alert('Save failed: '+e.message);}});return b;}
+
+    var cur = S.currency_symbol || '$';
+
+    var currCard = card('Currency');
+    var cg = mk('div','display:grid;grid-template-columns:1fr 1fr;gap:10px');
+    cg.appendChild(inp('currency_symbol','Symbol',S.currency_symbol));
+    cg.appendChild(inp('currency_code','Code (e.g. USD)',S.currency_code));
+    currCard.appendChild(cg); currCard.appendChild(saveBtn(['currency_symbol','currency_code'],'Save Currency')); container.appendChild(currCard);
+
+    var premCard = card('Premium Plan','Unlimited recipes, AI features, full print studio, meal planning, pantry tracker.');
+    var pg = mk('div','display:grid;grid-template-columns:1fr 1fr;gap:10px');
+    pg.appendChild(inp('price_premium_monthly','Monthly Price',S.price_premium_monthly,cur));
+    pg.appendChild(inp('price_premium_annual','Annual Price',S.price_premium_annual,cur));
+    premCard.appendChild(pg); premCard.appendChild(saveBtn(['price_premium_monthly','price_premium_annual'],'Save Premium Pricing')); container.appendChild(premCard);
+
+    var evtCard = card('Event / Wedding Tier','Everything in Premium plus event planning, table layouts, guest dietary cards, seating manager.');
+    var eg = mk('div','display:grid;grid-template-columns:1fr 1fr;gap:10px');
+    eg.appendChild(inp('price_event_monthly','Monthly Price',S.price_event_monthly,cur));
+    eg.appendChild(inp('price_event_annual','Annual Price',S.price_event_annual,cur));
+    evtCard.appendChild(eg); evtCard.appendChild(saveBtn(['price_event_monthly','price_event_annual'],'Save Event Pricing')); container.appendChild(evtCard);
+
+    var stripeCard = card('Payment Processing','Connect Stripe to handle subscriptions, invoices and renewals automatically.');
+    stripeCard.appendChild(mk('div','padding:16px;background:rgba(91,143,212,0.08);border:1px solid rgba(91,143,212,0.25);border-radius:9px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);line-height:1.6','Stripe integration is on the roadmap. Once connected, subscriptions will be managed automatically. For now, use the Member Tiers tab to manually set a member\'s tier after payment.'));
+    container.appendChild(stripeCard);
+
+    container.dataset.built = '1';
+  } catch(e){ container.dataset.built=''; container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>'; }
+}
+
+async function buildFiHistory(container) {
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
+  try {
+    var subs = await rpc('admin_get_subscriptions', {p_limit:100, p_offset:0});
+    if (!Array.isArray(subs)||!subs.length) { container.innerHTML='<div style="padding:16px;font-size:13px;color:var(--text-mid)">No subscription history yet. Changes made via Member Tiers will appear here.</div>'; container.dataset.built='1'; return; }
+    container.innerHTML = '';
+    var wrap = document.createElement('div'); wrap.style.cssText='overflow-x:auto;border:1px solid var(--border);border-radius:12px';
+    var tbl  = document.createElement('table'); tbl.className='ap-table';
+    tbl.innerHTML = '<thead><tr style="border-bottom:1px solid var(--border)"><th class="ap-th">Member</th><th class="ap-th">Tier</th><th class="ap-th">Status</th><th class="ap-th">Source</th><th class="ap-th">Started</th><th class="ap-th">Notes</th></tr></thead>';
+    var tbody = document.createElement('tbody');
+    var TIER_C={free:'var(--text-mid)',premium:'var(--accent)',event:'#5B8FD4'};
+    var SRC_C={manual:'var(--text-mid)',stripe:'#4caf76',promo:'#d4a017'};
+    subs.forEach(function(s){
+      var tr=document.createElement('tr');tr.style.borderBottom='1px solid rgba(255,255,255,0.04)';
+      var date=s.started_at?new Date(s.started_at).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'}):'—';
+      tr.innerHTML=
+        '<td class="ap-td"><div style="font-size:13px;font-weight:500;color:var(--text-high)">'+(s.full_name||s.username||'—')+'</div><div style="font-size:11px;color:var(--text-mid)">@'+(s.username||'')+'</div></td>'+
+        '<td class="ap-td"><span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,0.07);color:'+(TIER_C[s.tier]||'var(--text-mid)')+'">'+s.tier+'</span></td>'+
+        '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+s.status+'</td>'+
+        '<td class="ap-td"><span style="font-size:11px;color:'+(SRC_C[s.source]||'var(--text-mid)')+'">'+s.source+'</span></td>'+
+        '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+date+'</td>'+
+        '<td class="ap-td" style="font-size:11px;color:var(--text-mid)">'+(s.notes||'')+'</td>';
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody); wrap.appendChild(tbl); container.appendChild(wrap);
+    container.dataset.built='1';
+  } catch(e){ container.dataset.built=''; container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>'; }
+}
 
 document.addEventListener('DOMContentLoaded', init);
 
