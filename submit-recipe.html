@@ -1659,7 +1659,7 @@ function updateNav() {
   if (!session) return;
   let profile = {};
   try { profile = JSON.parse(lsGet('tcj_profile') || '{}') || {}; } catch(_) { profile = {}; }
-  setTimeout(initCollapsible, 150);
+  if (typeof initCollapsible === 'function') setTimeout(initCollapsible, 150);
   const loginLink = document.getElementById('nav-login');
   const np = document.getElementById('nav-profile');
   if (loginLink) loginLink.style.display = 'none';
@@ -3173,11 +3173,19 @@ function loadDraftSilent() {
   }
   const raw = lsGet(DRAFT_KEY);
   if (raw) {
-    const secWrap  = document.getElementById('ingredient-sections');
-    const methWrap = document.getElementById('method-sections');
-    if (secWrap)  { secWrap.innerHTML  = ''; ingSectionCount    = 0; }
-    if (methWrap) { methWrap.innerHTML = ''; methodSectionCount = 0; }
-    restoreDraft(raw);
+    try {
+      const d = JSON.parse(raw);
+      const hasContent = (d.recipe_name) ||
+        (d.ingredients && d.ingredients.some(s => s.items && s.items.length)) ||
+        (d.method && d.method.some(s => s.steps && s.steps.length));
+      if (hasContent) {
+        const secWrap  = document.getElementById('ingredient-sections');
+        const methWrap = document.getElementById('method-sections');
+        if (secWrap)  { secWrap.innerHTML  = ''; ingSectionCount    = 0; }
+        if (methWrap) { methWrap.innerHTML = ''; methodSectionCount = 0; }
+        restoreDraft(raw);
+      }
+    } catch(_) {}
   }
 }
 
