@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium Members Only — The Culinary Journal</title>
+  <script src="theme-init.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; background: var(--bg, #0f1015); display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; padding: 24px; }
+    .card { text-align: center; padding: 56px 48px; max-width: 500px; width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+    .icon { font-size: 2.8rem; margin-bottom: 24px; }
+    .tier-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 20px; background: linear-gradient(135deg, #C4973B, #e8b84b); color: #fff; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 20px; }
+    h1 { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 700; color: var(--text-high, #fff); margin-bottom: 12px; letter-spacing: -0.01em; }
+    .subtitle { font-size: 1rem; color: var(--text-mid, rgba(255,255,255,0.55)); line-height: 1.65; margin-bottom: 32px; }
+    .price { font-family: 'Cormorant Garamond', serif; font-size: 2.4rem; font-weight: 700; color: var(--text-high, #fff); margin-bottom: 4px; }
+    .price span { font-size: 1rem; font-family: 'DM Sans', sans-serif; font-weight: 400; color: var(--text-mid, rgba(255,255,255,0.5)); }
+    .feature-list { text-align: left; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 20px 24px; margin-bottom: 32px; }
+    .feature-list p { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-mid, rgba(255,255,255,0.4)); margin-bottom: 12px; }
+    .feature { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-high, rgba(255,255,255,0.85)); padding: 5px 0; }
+    .feature::before { content: '★'; color: #C4973B; font-weight: 700; flex-shrink: 0; font-size: 11px; }
+    .btn-group { display: flex; flex-direction: column; gap: 12px; }
+    .btn-premium { display: block; padding: 14px 32px; background: linear-gradient(135deg, #C4973B, #e8b84b); color: #fff; text-decoration: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; transition: opacity 0.2s; }
+    .btn-premium:hover { opacity: 0.88; }
+    .btn-secondary { display: block; padding: 13px 32px; background: transparent; color: var(--text-mid, rgba(255,255,255,0.6)); text-decoration: none; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; transition: border-color 0.2s, color 0.2s; }
+    .btn-secondary:hover { border-color: rgba(255,255,255,0.3); color: var(--text-high, #fff); }
+    .already-member { font-size: 12px; color: var(--text-mid, rgba(255,255,255,0.35)); margin-top: 16px; }
+    .already-member a { color: var(--accent, #C4973B); text-decoration: none; }
+    .already-member a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">⭐</div>
+    <div class="tier-badge">Premium</div>
+    <h1>Premium Members Only</h1>
+    <p class="subtitle">This feature is part of The Culinary Journal Premium. Upgrade to unlock it alongside everything else Premium has to offer.</p>
+
+    <div class="feature-list">
+      <p>What Premium unlocks</p>
+      <div class="feature">Unlimited recipe saves and collections</div>
+      <div class="feature">AI photo reading and handwriting import</div>
+      <div class="feature">Full nutrition tracking — free forever</div>
+      <div class="feature">Smart ingredient substitutions</div>
+      <div class="feature">Complete meal planning suite</div>
+      <div class="feature">Full print studio — every size and layout</div>
+      <div class="feature">Regional ingredient intelligence</div>
+      <div class="feature">Unlimited table layouts and guest management</div>
+    </div>
+
+    <div class="btn-group">
+      <a href="login.html#upgrade" class="btn-premium" id="upgrade-btn">Upgrade to Premium</a>
+      <a href="index.html" class="btn-secondary">Back to Home</a>
+    </div>
+    <p class="already-member">Already subscribed? <a href="login.html" id="sign-in-link">Sign in here</a></p>
+  </div>
+
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var next = params.get('next');
+    if (next) {
+      document.getElementById('sign-in-link').href = 'login.html?next=' + encodeURIComponent(next);
+    }
+  </script>
+</body>
+</html>
