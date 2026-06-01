@@ -634,8 +634,6 @@
           </div>
         </div>
 
-    </div>
-
     <!-- USERS VIEW -->
     <div id="view-users" style="display:none">
       <div class="ing-toolbar" style="margin-bottom:16px">
@@ -731,6 +729,32 @@
       <div id="rmgmt-rmsettings-panel" class="ap-inner-panel" style="display:none;padding:0">
         <div id="rm-interface-content"></div>
       </div>
+    </div>
+
+
+        <!-- ANALYTICS -->
+    
+
+    <div id="col-vis-panel" class="col-vis-panel"></div>
+
+  <!-- ADD COLUMN PANEL -->
+  <div id="add-col-panel" style="display:none;position:fixed;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:18px 20px;z-index:9998;box-shadow:0 8px 32px rgba(0,0,0,0.45);min-width:230px">
+    <div style="font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;color:var(--text-high);margin-bottom:12px">New Column</div>
+    <input id="new-col-name-input" placeholder="Column name" style="width:100%;box-sizing:border-box;font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text-high);outline:none;margin-bottom:12px" onkeydown="if(event.key==='Enter')confirmAddColumn()">
+    <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid);margin-bottom:8px">Type</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="text" checked style="accent-color:var(--accent)"> Text</label>
+      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="yesno" style="accent-color:var(--accent)"> Yes / No</label>
+      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="number" style="accent-color:var(--accent)"> Number</label>
+      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="currency" style="accent-color:var(--accent)"> Currency</label>
+      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="percentage" style="accent-color:var(--accent)"> Percentage</label>
+      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="fraction" style="accent-color:var(--accent)"> Fraction</label>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="confirmAddColumn()" style="flex:1;padding:8px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Add Column</button>
+      <button onclick="closeAddColPanel()" style="padding:8px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">Cancel</button>
+    </div>
+  </div>
 
 
     <!-- SITE MANAGEMENT -->
@@ -753,34 +777,13 @@
       <div id="upanel-sm-settings" data-panel="sm-settings" style="display:none;padding:0"></div>
     </div>
 
-        <!-- ANALYTICS -->
+    <!-- ANALYTICS -->
     <div id="v-analytics" style="display:none">
       <div id="analytics-content">
         <div class="ap-empty-row" style="padding:40px;text-align:center">Loading analytics&#8230;</div>
       </div>
     </div>
-
-    <div id="col-vis-panel" class="col-vis-panel"></div>
-
-  <!-- ADD COLUMN PANEL -->
-  <div id="add-col-panel" style="display:none;position:fixed;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:18px 20px;z-index:9998;box-shadow:0 8px 32px rgba(0,0,0,0.45);min-width:230px">
-    <div style="font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;color:var(--text-high);margin-bottom:12px">New Column</div>
-    <input id="new-col-name-input" placeholder="Column name" style="width:100%;box-sizing:border-box;font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text-high);outline:none;margin-bottom:12px" onkeydown="if(event.key==='Enter')confirmAddColumn()">
-    <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid);margin-bottom:8px">Type</div>
-    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
-      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="text" checked style="accent-color:var(--accent)"> Text</label>
-      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="yesno" style="accent-color:var(--accent)"> Yes / No</label>
-      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="number" style="accent-color:var(--accent)"> Number</label>
-      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="currency" style="accent-color:var(--accent)"> Currency</label>
-      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="percentage" style="accent-color:var(--accent)"> Percentage</label>
-      <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer"><input type="radio" name="nctype" value="fraction" style="accent-color:var(--accent)"> Fraction</label>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="confirmAddColumn()" style="flex:1;padding:8px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Add Column</button>
-      <button onclick="closeAddColPanel()" style="padding:8px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">Cancel</button>
-    </div>
-  </div>
-</main>
+  </main>
 </div>
 
 <div class="ap-modal-overlay" id="ap-modal">
