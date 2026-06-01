@@ -1537,6 +1537,7 @@
 </div><!-- /sr-page -->
 
 <script>
+
 const SUPABASE_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
 const DRAFT_KEY = 'tcj_recipe_draft';
@@ -2155,6 +2156,20 @@ function addIngRow(container, qty='', unit='', name='', note='', cat='') {
         oninput="validateUnit(this)" onblur="switchToUnitSelect(this)">
       <span class="ing-unknown-unit-badge" style="display:none" title="Not in standard list — admin will review">⚠</span>
     </div>
+    <div class="ing-name-wrap">
+      <input class="ing-input ing-name-input" type="text" maxlength="80" placeholder="Search ingredients…" value="${esc(name)}" oninput="searchIngredients(this)" onfocus="searchIngredients(this)" onclick="searchIngredients(this)" onblur="hideAC(this)" autocomplete="off">
+      <div class="ing-autocomplete"></div>
+      <span class="ing-unknown-badge" style="display:none">⚠ New ingredient — not in our database</span>
+    </div>
+    <select class="ing-cat-select" onchange="onCategoryChange(this)" onkeydown="if(event.key==='Delete'||event.key==='Backspace'){this.value='';onCategoryChange(this);event.preventDefault();}" title="Pick a category">${categoryOptionsHtml(cat)}</select>
+    <input class="ing-input ing-note-col" type="text" maxlength="120" placeholder="e.g. finely chopped" value="${esc(note)}">
+    <div class="ing-move-wrap">
+      <button class="btn-move-row" onclick="toggleMoveMenu(this,'ingredients')" title="Move to another section">⇄</button>
+      <div class="move-menu" style="display:none"></div>
+    </div>
+    <button class="btn-remove-row" onclick="this.closest('.ing-row').remove()">×</button>
+  `;
+
   container.appendChild(row);
 
   // If this row was pre-filled (parser, draft restore, etc.), validate it
@@ -2496,6 +2511,65 @@ function populateFromJsonLd(r, sourceUrl) {
 
 
 // ── IMPROVED PASTE AREA HELPERS ───────────────────────────────────
+// ── PASTE PARSER ─────────────────────────────────────────────────────────────
+function parseRecipe() {
+  const el = document.getElementById('paste-input');
+  const text = el ? el.value.trim() : '';
+  if (!text) { showMsg('Please paste recipe text first.', 'error'); return; }
+  const stripBullet = s => s.replace(/^[\u2022\u00b7*\-]\s+/, '').trim();
+  const rawLines = text.split('\n').map(l => stripBullet(l.trim())).filter(l => l);
+  const UNITS_LIST = UNITS.filter(u => u && u !== 'to taste').join('|');
+  const ingRe = new RegExp('^([\\d\\/. \u00BC-\u00BE\u2150-\u215E]+)?\\s*(' + UNITS_LIST + ')?\\s+(.{2,})$', 'i');
+  const METH_HDR = /^(prep\s+work|directions?|method|steps?|instructions?)\s*:?$/i;
+  const ING_HDR  = /^(ingredients?|for the\s+.+)\s*:?$/i;
+  let ingSecs=[], methSecs=[], curIng=null, curMeth=null, inMethod=false;
+  const pushIng  = () => { if(curIng  && curIng.items.length)  ingSecs.push(curIng);   curIng=null;  };
+  const pushMeth = () => { if(curMeth && curMeth.steps.length) methSecs.push(curMeth); curMeth=null; };
+  for (const line of rawLines) {
+    if (/^\[[^\]]+\]\s*:/i.test(line)) continue;
+    if (METH_HDR.test(line)) { pushIng(); pushMeth(); inMethod=true;  curMeth={name:line.replace(/\s*:?$/,'').toUpperCase(),steps:[]}; continue; }
+    if (ING_HDR.test(line))  { pushIng(); pushMeth(); inMethod=false; curIng ={name:line.replace(/\s*:?$/,''),items:[]};               continue; }
+    if (inMethod) {
+      if (!curMeth) curMeth={name:'DIRECTIONS',steps:[]};
+      curMeth.steps.push(line);
+    } else {
+      if (!curIng) curIng={name:'Ingredients',items:[]};
+      const m = ingRe.exec(line);
+      if(m) curIng.items.push({qty:(m[1]||'').trim(),unit:(m[2]||'').trim(),name:(m[3]||'').trim()});
+      else  curIng.items.push({qty:'',unit:'',name:line});
+    }
+  }
+  pushIng(); pushMeth();
+  const ingHost  = document.getElementById('ingredient-sections');
+  const methHost = document.getElementById('method-sections');
+  if (ingHost)  { ingHost.innerHTML  = ''; ingSectionCount    = 0; }
+  if (methHost) { methHost.innerHTML = ''; methodSectionCount = 0; }
+  let parsed = 0;
+  if (ingSecs.length) {
+    ingSecs.forEach(sec => {
+      addIngSection(sec.name);
+      const c = ingHost.lastChild.querySelector('.ing-rows');
+      c.innerHTML = '';
+      sec.items.forEach(i => { addIngRow(c,i.qty,i.unit,i.name,'',''); parsed++; });
+    });
+  } else { addIngSection('Ingredients'); }
+  if (methSecs.length) {
+    methSecs.forEach(sec => {
+      addMethodSection(sec.name);
+      const c = methHost.lastChild.querySelector('.step-rows');
+      c.innerHTML = '';
+      sec.steps.forEach(s => { addStep(c,s); parsed++; });
+    });
+  } else { addMethodSection('PREP WORK'); addMethodSection('DIRECTIONS'); }
+  const res = document.getElementById('parse-result');
+  if (res) {
+    res.className = 'sr-parse-result ' + (parsed>0?'success':'warn');
+    res.textContent = parsed>0 ? '\u2713 Detected '+parsed+' items. Review and correct below.' : 'Text detected but could not be structured. Please fill in manually.';
+    res.style.display = 'block';
+  }
+  if (parsed>0) showMsg('\u2713 Recipe parsed. Review the form below.','success');
+}
+
 function clearPaste() {
   document.getElementById('paste-input').value = '';
   document.getElementById('parse-result').style.display = 'none';
@@ -2806,4 +2880,436 @@ document.addEventListener('click', function(e) {
   if (!e.target.closest('.ing-unit-wrap')) closeAllUnitDropdowns();
 });
 
->
+// ── VALIDATE ─────────────────────────────────────────────────────────────────
+function validate(data) {
+  if (!data.recipe_name) return 'Please enter a recipe name.';
+  if (data.introduction && countWords(data.introduction) > 100)
+    return 'Introduction is over the 100-word limit. Please shorten it.';
+  if (!data.category) return 'Please select a category.';
+  if (!data.spice_level) return 'Please pick a spice level (or N/A if not spicy).';
+  if (!data.sweet_level) return 'Please pick a sweet level (or N/A if not sweet).';
+  if (!data.difficulty) return 'Please pick a difficulty level.';
+  if (!data.servings || data.servings < 1) return 'Please enter the number of servings.';
+  if (!data.prep_time_minutes && !data.cook_time_minutes)
+    return 'Please enter prep time or cook time.';
+  if (!data.origin_continent) return 'Please select the recipe origin (at least a continent).';
+  const hasIng = data.ingredients.some(s => s.items && s.items.length > 0);
+  if (!hasIng) return 'Please add at least one ingredient.';
+  const hasStep = data.method.some(s => s.steps && s.steps.length > 0);
+  if (!hasStep) return 'Please add at least one method step.';
+  if (data.source_type !== 'Original') {
+    if (!data.credit_name) return "Please enter the original creator's name.";
+    if (!data.credit_url)  return 'Please add the source URL.';
+  }
+  return null;
+}
+
+function countWords(s) { return (s||'').trim().split(/\s+/).filter(Boolean).length; }
+
+// ── SHOW MESSAGE ──────────────────────────────────────────────────────────────
+function showMsg(msg, type) {
+  const el = document.getElementById('form-message');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'sr-form-msg ' + (type || 'info');
+  el.style.display = 'block';
+  if (type === 'success') setTimeout(() => { el.style.display='none'; }, 5000);
+  el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+// ── COLLECT FORM DATA ─────────────────────────────────────────────────────────
+function collectFormData() {
+  const getDietaryTags    = () => ['tag-vegan','tag-veg','tag-gf','tag-df','tag-nf','tag-sf','tag-ef','tag-halal','tag-kosher'].filter(id => document.getElementById(id)?.checked).map(id => document.getElementById(id).value);
+  const getHealthTags     = () => ['tag-hp','tag-lc','tag-lf','tag-ls','tag-diab','tag-bf','tag-kf'].filter(id => document.getElementById(id)?.checked).map(id => document.getElementById(id).value);
+  const getOccasionTags   = () => ['tag-everyday','tag-onam','tag-eid','tag-xmas','tag-diwali','tag-easter','tag-party','tag-wedding','tag-bbq','tag-quick','tag-quick5','tag-goodfri','tag-lent','tag-thanksgiving','tag-ramadan'].filter(id => document.getElementById(id)?.checked).map(id => document.getElementById(id).value);
+  const getStyleTags      = () => ['tag-trad','tag-modern','tag-fusion','tag-streetfood','tag-finedining','tag-comfort'].filter(id => document.getElementById(id)?.checked).map(id => document.getElementById(id).value);
+  const getMealTypeTags   = () => ['tag-mt-breakfast','tag-mt-brunch','tag-mt-lunch','tag-mt-dinner','tag-mt-snack','tag-mt-drink','tag-mt-soup','tag-mt-salad','tag-mt-main','tag-mt-side','tag-mt-appetizer','tag-mt-bread','tag-mt-rice','tag-mt-dessert','tag-mt-frozen','tag-mt-preserve'].filter(id => document.getElementById(id)?.checked).map(id => document.getElementById(id).value);
+  const getFlavorTags     = () => ['tag-fp-spicy','tag-fp-tangy','tag-fp-savoury','tag-fp-sweet','tag-fp-rich','tag-fp-creamy','tag-fp-fresh','tag-fp-smoky','tag-fp-nutty','tag-fp-fruity','tag-fp-salty','tag-fp-umami','tag-fp-bitter','tag-fp-earthy','tag-fp-floral','tag-fp-mild'].filter(id => document.getElementById(id)?.checked).map(id => document.getElementById(id).value);
+
+  // Ingredients
+  const ingredients = [];
+  document.querySelectorAll('.ing-section').forEach(sec => {
+    const sectionName = sec.querySelector('.ing-section-name').value.trim();
+    const items = [];
+    sec.querySelectorAll('.ing-row').forEach(row => {
+      const qty        = row.querySelector('.ing-input')?.value.trim() || '';
+      const unit       = getUnitValue(row);
+      const ingredient = row.querySelector('.ing-name-input')?.value.trim() || '';
+      const note       = row.querySelector('.ing-note-col')?.value.trim() || '';
+      const category   = row.querySelector('.ing-cat-select')?.value || '';
+      if (ingredient) items.push({ qty, unit, ingredient, note, category });
+    });
+    if (items.length > 0 || sectionName) ingredients.push({ section: sectionName, items });
+  });
+
+  // Method
+  const method = [];
+  document.querySelectorAll('.method-section').forEach(sec => {
+    const sectionName = sec.querySelector('.method-section-name').value.trim();
+    const steps = [...sec.querySelectorAll('.step-row')].map(function(row) {
+      const title = (row.querySelector('.step-title-input')?.value || '').trim();
+      const text  = (row.querySelector('.step-input')?.value       || '').trim();
+      return { title, text };
+    }).filter(function(s) { return s.title || s.text; });
+    if (steps.length > 0 || sectionName) method.push({ section: sectionName, steps });
+  });
+
+  return {
+    recipe_name:          (document.getElementById('recipe-name')?.value       || '').trim(),
+    native_title:         (document.getElementById('native-title')?.value      || '').trim(),
+    category:             document.querySelector('input[name="category"]:checked')?.value  || '',
+    spice_level:          document.querySelector('input[name="spice"]:checked')?.value     || '',
+    sweet_level:          document.querySelector('input[name="sweet"]:checked')?.value     || '',
+    origin_continent:     window.fContinent || '',
+    origin_country:       window.fCountry   || '',
+    origin_state:         window.fState     || '',
+    introduction:         (document.getElementById('introduction')?.value      || '').trim(),
+    image_url:            window.uploadedImageUrl || '',
+    prep_time_minutes:    document.getElementById('prep-time')?.value.trim()   || '',
+    cook_time_minutes:    document.getElementById('cook-time')?.value.trim()   || '',
+    additional_time_minutes: document.getElementById('additional-time')?.value.trim() || '',
+    servings:             document.getElementById('servings')?.value.trim()    || '',
+    dietary_tags:         getDietaryTags(),
+    health_tags:          getHealthTags(),
+    occasion_tags:        getOccasionTags(),
+    style_tags:           getStyleTags(),
+    meal_type_tags:       getMealTypeTags(),
+    flavor_profile_tags:  getFlavorTags(),
+    difficulty:           document.querySelector('input[name="difficulty"]:checked')?.value || '',
+    ingredients,
+    method,
+    cooking_notes:        (document.getElementById('cooking-notes')?.value     || '').trim(),
+    source_type:          document.querySelector('input[name="source-type"]:checked')?.value || 'Original',
+    credit_name:          (document.getElementById('credit-name')?.value       || '').trim(),
+    credit_handle:        (document.getElementById('credit-handle')?.value     || '').trim(),
+    credit_url:           (document.getElementById('credit-url')?.value        || '').trim(),
+    visibility:           document.querySelector('input[name="visibility"]:checked')?.value || 'Public',
+    personal_notes:       (document.getElementById('personal-notes')?.value    || '').trim(),
+    cooking_style:        document.getElementById('cooking-style')?.value      || '',
+    servings_unit:        document.getElementById('servings-unit')?.value      || 'people',
+    shelf_life_value:     document.getElementById('shelf-life-value')?.value   || '',
+    shelf_life_unit:      document.getElementById('shelf-life-unit')?.value    || 'months',
+    shelf_life_storage:   document.getElementById('shelf-life-storage')?.value || '',
+    after_open_value:     document.getElementById('after-open-value')?.value   || '',
+    after_open_unit:      document.getElementById('after-open-unit')?.value    || 'weeks',
+  };
+}
+
+// ── RESTORE DRAFT ─────────────────────────────────────────────────────────────
+function restoreDraft(raw) {
+  if (!raw) return;
+  let d;
+  try { d = JSON.parse(raw); } catch(_) { return; }
+  if (!d) return;
+
+  const setVal = (id, v) => {
+    if (v === null || v === undefined || v === '') return;
+    const el = document.getElementById(id);
+    if (el) el.value = v;
+  };
+  const setRadio = (name, val) => {
+    if (!val) return;
+    const el = document.querySelector('input[name="'+name+'"][value="'+val+'"]');
+    if (el) el.checked = true;
+  };
+  const checkAll = (arr) => {
+    (arr||[]).forEach(v => {
+      const el = document.querySelector('input.tag-cb[value="'+v.replace(/"/g,'\\"')+'"]');
+      if (el) el.checked = true;
+    });
+  };
+
+  // Basic fields
+  setVal('recipe-name',     d.recipe_name);
+  setVal('native-title',    d.native_title);
+  setVal('introduction',    d.introduction);
+  setVal('prep-time',       d.prep_time_minutes);
+  setVal('cook-time',       d.cook_time_minutes);
+  setVal('additional-time', d.additional_time_minutes);
+  setVal('servings',        d.servings);
+  setVal('cooking-notes',   d.cooking_notes);
+  setVal('personal-notes',  d.personal_notes);
+  setVal('credit-name',     d.credit_name);
+  setVal('credit-handle',   d.credit_handle);
+  setVal('credit-url',      d.credit_url);
+
+  // Radios
+  setRadio('category',    d.category);
+  setRadio('spice',       d.spice_level);
+  setRadio('sweet',       d.sweet_level);
+  setRadio('source-type', d.source_type || 'Original');
+  setRadio('visibility',  d.visibility  || 'Public');
+  setRadio('difficulty',  d.difficulty);
+
+  // Origin picker
+  setTimeout(function() {
+    try {
+      if (d.origin_continent && typeof pickContinent === 'function') {
+        pickContinent(d.origin_continent);
+        setTimeout(function() {
+          try {
+            if (d.origin_country && typeof pickCountry === 'function') {
+              pickCountry(d.origin_country);
+              setTimeout(function() {
+                try { if (d.origin_state && typeof pickState === 'function') pickState(d.origin_state); } catch(_) {}
+              }, 150);
+            }
+          } catch(_) {}
+        }, 150);
+      }
+    } catch(_) {}
+  }, 300);
+
+  // Tags
+  checkAll(d.dietary_tags);
+  checkAll(d.health_tags);
+  checkAll(d.occasion_tags);
+  checkAll(d.style_tags);
+  checkAll(d.meal_type_tags);
+  checkAll(d.flavor_profile_tags);
+
+  // Image
+  if (d.image_url) {
+    window.uploadedImageUrl = d.image_url;
+    try {
+      if (typeof showImagePreview === 'function') { showImagePreview(d.image_url); }
+      else {
+        var pr = document.getElementById('img-preview');
+        var ps = document.getElementById('img-preview-state');
+        var es = document.getElementById('img-empty-state');
+        if (pr) pr.style.backgroundImage = 'url(' + d.image_url + ')';
+        if (ps) ps.style.display = 'block';
+        if (es) es.style.display = 'none';
+      }
+    } catch(_) {}
+  }
+
+  // Cooking style + shelf life
+  if (d.cooking_style !== undefined) {
+    var csEl = document.getElementById('cooking-style');
+    if (csEl) { csEl.value = d.cooking_style || ''; applyCookingStyle(d.cooking_style || ''); }
+  }
+  if (d.servings_unit) { var su = document.getElementById('servings-unit'); if(su) su.value = d.servings_unit; }
+  setVal('shelf-life-value', d.shelf_life_value);
+  if (d.shelf_life_unit)    { var slu = document.getElementById('shelf-life-unit');    if(slu) slu.value = d.shelf_life_unit; }
+  if (d.shelf_life_storage) { var sls = document.getElementById('shelf-life-storage'); if(sls) sls.value = d.shelf_life_storage; }
+  setVal('after-open-value', d.after_open_value);
+  if (d.after_open_unit) { var aou = document.getElementById('after-open-unit'); if(aou) aou.value = d.after_open_unit; }
+
+  // Ingredients
+  if (d.ingredients && d.ingredients.length) {
+    setTimeout(function() {
+      try {
+        const secWrap = document.getElementById('ingredient-sections');
+        if (secWrap) {
+          secWrap.innerHTML = ''; ingSectionCount = 0;
+          d.ingredients.forEach(function(sec) {
+            const sectionName = sec.section || sec.name || '';
+            addIngSection(sectionName);
+            const rowContainer = secWrap.lastElementChild.querySelector('.ing-rows');
+            if (rowContainer) {
+              rowContainer.innerHTML = '';
+              const items = sec.items || [];
+              if (items.length) {
+                items.forEach(function(item) {
+                  addIngRow(rowContainer, item.qty||'', item.unit||'', item.ingredient||'', item.note||'', item.category||'');
+                });
+              } else { addIngRow(rowContainer); }
+            }
+          });
+        }
+      } catch(e) { console.warn('Draft restore - ingredients:', e); }
+    }, 400);
+  }
+
+  // Method
+  if (d.method && d.method.length) {
+    setTimeout(function() {
+      try {
+        const methWrap = document.getElementById('method-sections');
+        if (methWrap) {
+          methWrap.innerHTML = ''; methodSectionCount = 0;
+          d.method.forEach(function(sec) {
+            const sectionName = sec.section || sec.name || '';
+            addMethodSection(sectionName);
+            const stepContainer = methWrap.lastElementChild.querySelector('.step-rows');
+            if (stepContainer) {
+              stepContainer.innerHTML = '';
+              const steps = sec.steps || [];
+              if (steps.length) { steps.forEach(function(step) { addStep(stepContainer, step); }); }
+              else { addStep(stepContainer); }
+            }
+          });
+        }
+      } catch(e) { console.warn('Draft restore - method:', e); }
+    }, 400);
+  }
+}
+
+// ── DRAFT SAVE / LOAD ─────────────────────────────────────────────────────────
+var autoSaveTimer = null;
+
+function saveDraft() {
+  let data; try { data = collectFormData(); } catch(_) { return; }
+  lsSet(DRAFT_KEY, JSON.stringify(data));
+  updateAutoSaveMsg();
+}
+
+function loadDraftSilent() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const draftId   = urlParams.get('draft');
+  if (draftId) {
+    const namedKey = 'tcj_draft_' + draftId;
+    const namedRaw = lsGet(namedKey);
+    if (namedRaw) {
+      window._activeDraftId = draftId;
+      const secWrap  = document.getElementById('ingredient-sections');
+      const methWrap = document.getElementById('method-sections');
+      if (secWrap)  { secWrap.innerHTML  = ''; ingSectionCount      = 0; }
+      if (methWrap) { methWrap.innerHTML = ''; methodSectionCount   = 0; }
+      restoreDraft(namedRaw);
+      return;
+    }
+  }
+  const raw = lsGet(DRAFT_KEY);
+  if (raw) {
+    const secWrap  = document.getElementById('ingredient-sections');
+    const methWrap = document.getElementById('method-sections');
+    if (secWrap)  { secWrap.innerHTML  = ''; ingSectionCount    = 0; }
+    if (methWrap) { methWrap.innerHTML = ''; methodSectionCount = 0; }
+    restoreDraft(raw);
+  }
+}
+
+function updateAutoSaveMsg() {
+  const el = document.getElementById('auto-save-msg');
+  if (el) { el.textContent = 'Draft saved ' + new Date().toLocaleTimeString(); }
+}
+
+function setupAutoSave() {
+  const fields = document.querySelectorAll('input:not([type=radio]):not([type=checkbox]), textarea, select');
+  fields.forEach(f => {
+    f.addEventListener('input',  () => { clearTimeout(autoSaveTimer); autoSaveTimer = setTimeout(saveDraft, 2000); });
+    f.addEventListener('change', () => { clearTimeout(autoSaveTimer); autoSaveTimer = setTimeout(saveDraft, 2000); });
+  });
+}
+
+// ── SESSION REFRESH ───────────────────────────────────────────────────────────
+async function refreshSessionIfNeeded() {
+  try {
+    if (!session || !session.access_token) return false;
+    const exp = session.expires_at || (session.user && session.user.exp);
+    if (exp && Date.now()/1000 < exp - 300) return true;
+    const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: session.refresh_token })
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    session = data;
+    lsSet('tcj_session', JSON.stringify(session));
+    return true;
+  } catch(_) { return true; }
+}
+
+// ── SUBMIT RECIPE ─────────────────────────────────────────────────────────────
+async function submitRecipe() {
+  const data = collectFormData();
+  const err  = validate(data);
+  if (err) { showMsg(err, 'error'); return; }
+
+  if (data.origin_country && !data.origin_state) {
+    const proceed = confirm(
+      'You picked ' + data.origin_country + ' as the country but no state/region.\n\n' +
+      'Recipes filtered by state won\'t include this one.\n\nContinue without a state?'
+    );
+    if (!proceed) {
+      const btnC = document.getElementById('btn-C');
+      if (btnC) { btnC.classList.add('state-nudge'); btnC.scrollIntoView({behavior:'smooth', block:'center'}); }
+      return;
+    }
+  }
+
+  if (!data.image_url) {
+    const proceed = confirm(
+      'No recipe photo uploaded.\n\nRecipes without an image are usually rejected during admin review.\n\nSubmit anyway?'
+    );
+    if (!proceed) {
+      const box = document.getElementById('img-upload-box');
+      if (box) box.scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
+  }
+
+  // Collect unknown ingredients
+  const unknownIngredients = [];
+  document.querySelectorAll('.ing-row').forEach(function(row) {
+    const badge     = row.querySelector('.ing-unknown-badge');
+    const nameInput = row.querySelector('.ing-name-input');
+    if (badge && badge.style.display !== 'none' && nameInput && nameInput.value.trim()) {
+      unknownIngredients.push(nameInput.value.trim());
+    }
+  });
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.textContent = 'Checking session...';
+
+  const sessionOk = await refreshSessionIfNeeded();
+  if (!sessionOk) {
+    showMsg('Your session has expired. Please sign out and sign in again — your draft has been saved.', 'error');
+    saveDraft();
+    btn.disabled = false;
+    btn.textContent = 'Submit for Review';
+    return;
+  }
+
+  btn.textContent = 'Submitting...';
+  try {
+    const payload = {
+      ...data,
+      user_id:             session.user?.id || session.id,
+      status:              'pending',
+      submitted_at:        new Date().toISOString(),
+      unknown_ingredients: unknownIngredients
+    };
+
+    const isEdit    = !!window._editRecipeId;
+    const submitUrl = isEdit
+      ? `${SUPABASE_URL}/rest/v1/submitted_recipes?id=eq.${window._editRecipeId}`
+      : `${SUPABASE_URL}/rest/v1/submitted_recipes`;
+    const res = await fetch(submitUrl, {
+      method:  isEdit ? 'PATCH' : 'POST',
+      headers: {
+        'apikey':       SUPABASE_KEY,
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type':  'application/json',
+        'Prefer':        'return=minimal'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok || res.status === 201) {
+      lsRemove(DRAFT_KEY);
+      showMsg('✓ Recipe submitted! You will be notified when it is reviewed and published. 🔔', 'success');
+      btn.textContent = '✓ Submitted';
+      setTimeout(() => { window.location.href = 'recipes.html'; }, 3000);
+    } else {
+      const errText = await res.text().catch(() => '');
+      let errMsg = 'Submission failed';
+      try { errMsg = JSON.parse(errText).message || errMsg; } catch(_) {}
+      throw new Error(res.status + ': ' + errMsg);
+    }
+  } catch(e) {
+    showMsg('Unable to submit — ' + (e.message || 'unknown error') + '. Your draft has been saved.', 'error');
+    saveDraft();
+    btn.disabled = false;
+    btn.textContent = 'Submit for Review';
+  }
+}
+
+
+</script>
+</body>
+</html>
