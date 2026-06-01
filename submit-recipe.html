@@ -3133,48 +3133,202 @@ function restoreDraft(raw) {
   }
 }
 
-// ── DRAFT SAVE / LOAD ─────────────────────────────────────────────────────────
-var autoSaveTimer = null;
+// ── DRAFT SAVE / LOAD (Supabase-backed) ─────────────────────────────────────
+//
+// Source of truth:  Supabase recipe_drafts table (survives code changes)
+// Fast local cache: localStorage DRAFT_KEY (instant saves, works offline)
+//
+// Auto-save writes localStorage immediately, then syncs to Supabase
+// every 30 seconds.  Page load checks Supabase first, falls back to
+// localStorage only if the DB has nothing for this user.
+// Auto-save is paused until after the restore is complete.
 
+var _draftRestoring = false;   // blocks auto-save during restore
+var _draftDbId      = null;    // Supabase row id for the current draft
+var _draftSyncTimer = null;
+
+// ── Save ──────────────────────────────────────────────────────────────────────
 function saveDraft() {
-  let data; try { data = collectFormData(); } catch(_) { return; }
+  if (_draftRestoring) return;   // never overwrite during restore
+  let data;
+  try { data = collectFormData(); } catch(_) { return; }
+
+  // 1. Write to localStorage immediately (zero latency)
   lsSet(DRAFT_KEY, JSON.stringify(data));
   updateAutoSaveMsg();
+
+  // 2. Sync to Supabase (debounced, every 30 s at most)
+  clearTimeout(_draftSyncTimer);
+  _draftSyncTimer = setTimeout(syncDraftToDb, 30000);
 }
 
-function loadDraftSilent() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const draftId   = urlParams.get('draft');
-  if (draftId) {
-    const namedKey = 'tcj_draft_' + draftId;
-    const namedRaw = lsGet(namedKey);
-    if (namedRaw) {
-      window._activeDraftId = draftId;
-      const secWrap  = document.getElementById('ingredient-sections');
-      const methWrap = document.getElementById('method-sections');
-      if (secWrap)  { secWrap.innerHTML  = ''; ingSectionCount      = 0; }
-      if (methWrap) { methWrap.innerHTML = ''; methodSectionCount   = 0; }
-      restoreDraft(namedRaw);
-      return;
-    }
-  }
-  const raw = lsGet(DRAFT_KEY);
-  if (raw) {
-    try {
-      const d = JSON.parse(raw);
-      const hasContent = (d.recipe_name) ||
-        (d.ingredients && d.ingredients.some(s => s.items && s.items.length)) ||
-        (d.method && d.method.some(s => s.steps && s.steps.length));
-      if (hasContent) {
-        const secWrap  = document.getElementById('ingredient-sections');
-        const methWrap = document.getElementById('method-sections');
-        if (secWrap)  { secWrap.innerHTML  = ''; ingSectionCount    = 0; }
-        if (methWrap) { methWrap.innerHTML = ''; methodSectionCount = 0; }
-        restoreDraft(raw);
+async function syncDraftToDb(force) {
+  clearTimeout(_draftSyncTimer);
+  if (!session || !session.access_token) return;
+  let data;
+  try { data = JSON.parse(lsGet(DRAFT_KEY) || 'null'); } catch(_) { return; }
+  if (!data) return;
+
+  try {
+    const payload = {
+      user_id:     session.user.id,
+      recipe_name: data.recipe_name || null,
+      draft_data:  data,
+      local_key:   DRAFT_KEY,
+      updated_at:  new Date().toISOString()
+    };
+
+    if (_draftDbId) {
+      // Update existing row
+      await fetch(SUPABASE_URL + '/rest/v1/recipe_drafts?id=eq.' + _draftDbId, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + session.access_token,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      // Insert new row and save the id for future updates
+      const res = await fetch(SUPABASE_URL + '/rest/v1/recipe_drafts', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + session.access_token,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const rows = await res.json();
+        if (rows && rows[0]) _draftDbId = rows[0].id;
       }
-    } catch(_) {}
+    }
+  } catch(_) {}   // silent — local save already done
+}
+
+function updateAutoSaveMsg() {
+  const el = document.getElementById('auto-save-msg');
+  if (el) el.textContent = 'Draft saved ' + new Date().toLocaleTimeString();
+}
+
+function setupAutoSave() {
+  // Attach to all fields AFTER page is ready
+  // (new ingredient/method rows attach via event delegation on their containers)
+  document.addEventListener('input',  onFormActivity);
+  document.addEventListener('change', onFormActivity);
+}
+
+var _autoSaveTimer = null;
+function onFormActivity(e) {
+  if (_draftRestoring) return;
+  const tag = e.target && e.target.tagName;
+  if (!tag || !['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer = setTimeout(saveDraft, 2000);
+}
+
+// ── Load ──────────────────────────────────────────────────────────────────────
+async function loadDraftSilent() {
+  _draftRestoring = true;   // pause auto-save
+
+  try {
+    // 1. Check for a named draft in the URL (?draft=ID)
+    const urlParams = new URLSearchParams(window.location.search);
+    const draftId   = urlParams.get('draft');
+
+    // Named draft — could be a Supabase UUID or a localStorage key
+    if (draftId && draftId !== 'autosave') {
+      // Try localStorage first (fast)
+      const localKey = 'tcj_draft_' + draftId;
+      const localRaw = lsGet(localKey);
+      if (localRaw) {
+        window._activeDraftId = draftId;
+        restoreDraft(localRaw);
+        // Also try to find/create its Supabase row
+        loadDbDraftId(draftId);
+        return;
+      }
+      // Try Supabase (draft may have been cleared from localStorage)
+      if (session && session.access_token) {
+        await loadFromDb(draftId);
+        return;
+      }
+    }
+
+    // 2. Load most recent Supabase draft for this user
+    if (session && session.access_token) {
+      const loaded = await loadLatestFromDb();
+      if (loaded) return;
+    }
+
+    // 3. Fall back to localStorage auto-save
+    const raw = lsGet(DRAFT_KEY);
+    if (raw) restoreDraft(raw);
+
+  } catch(e) {
+    // If anything goes wrong, just try localStorage
+    try { const raw = lsGet(DRAFT_KEY); if (raw) restoreDraft(raw); } catch(_) {}
+  } finally {
+    // Re-enable auto-save after restore has had time to complete
+    setTimeout(function() { _draftRestoring = false; }, 600);
   }
 }
+
+async function loadFromDb(draftId) {
+  try {
+    const res = await fetch(
+      SUPABASE_URL + '/rest/v1/recipe_drafts?id=eq.' + draftId + '&select=id,draft_data',
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token } }
+    );
+    if (!res.ok) return false;
+    const rows = await res.json();
+    if (!rows || !rows.length) return false;
+    _draftDbId = rows[0].id;
+    restoreDraft(JSON.stringify(rows[0].draft_data));
+    return true;
+  } catch(_) { return false; }
+}
+
+async function loadLatestFromDb() {
+  try {
+    const res = await fetch(
+      SUPABASE_URL + '/rest/v1/recipe_drafts?user_id=eq.' + session.user.id +
+      '&order=updated_at.desc&limit=1&select=id,draft_data',
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token } }
+    );
+    if (!res.ok) return false;
+    const rows = await res.json();
+    if (!rows || !rows.length) {
+      // No DB draft — try localStorage
+      const raw = lsGet(DRAFT_KEY);
+      if (raw) { restoreDraft(raw); return true; }
+      return false;
+    }
+    _draftDbId = rows[0].id;
+    restoreDraft(JSON.stringify(rows[0].draft_data));
+    return true;
+  } catch(_) { return false; }
+}
+
+async function loadDbDraftId(localId) {
+  if (!session || !session.access_token) return;
+  try {
+    const res = await fetch(
+      SUPABASE_URL + '/rest/v1/recipe_drafts?local_key=eq.tcj_draft_' + localId +
+      '&user_id=eq.' + session.user.id + '&limit=1&select=id',
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token } }
+    );
+    if (res.ok) {
+      const rows = await res.json();
+      if (rows && rows[0]) _draftDbId = rows[0].id;
+    }
+  } catch(_) {}
+}
+
 
 function updateAutoSaveMsg() {
   const el = document.getElementById('auto-save-msg');
