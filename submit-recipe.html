@@ -2341,32 +2341,49 @@ function detectUrlPaste(url) {
 
 // Show parse tips when user starts typing in paste area
 // ── DRAG-TO-REORDER ──────────────────────────────────────────────────────
-// makeSortable: enables drag handles to reorder children within a container.
-// Only dragging from an element with class .drag-handle or .section-drag-handle works.
+//
+// makeSortable(container, childSelector, onDrop)
+//   - Adds drag-to-reorder to direct children of `container` that match `childSelector`
+//   - Dragging is only triggered when the user mousedowns on a .drag-handle or
+//     .section-drag-handle element inside the child
+//   - After a successful drop, calls onDrop(container) if provided, then autosaves
+//
 function makeSortable(container, childSelector, onDrop) {
   if (!container || container._sortable) return;
   container._sortable = true;
 
   let dragEl = null;
 
-  container.addEventListener('dragstart', function(e) {
+  // Step 1: mousedown on a handle sets draggable=true on the parent row/section
+  container.addEventListener('mousedown', function(e) {
     const handle = e.target.closest('.drag-handle, .section-drag-handle');
-    if (!handle) { e.preventDefault(); return; }
-    dragEl = handle.closest(childSelector);
-    if (!dragEl) { e.preventDefault(); return; }
+    if (!handle) return;
+    const item = handle.closest(childSelector);
+    // Only allow if this item is a direct child of THIS container
+    if (item && item.parentElement === container) {
+      item.draggable = true;
+    }
+  });
+
+  // Step 2: dragstart — confirm the dragged item belongs to this container
+  container.addEventListener('dragstart', function(e) {
+    const item = e.target.closest ? e.target.closest(childSelector) : null;
+    if (!item || item.parentElement !== container) return;
+    dragEl = item;
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text', ''); // Required for Firefox
+    e.dataTransfer.setData('text/plain', 'drag'); // required for Firefox
+    e.stopPropagation(); // prevent parent containers catching this drag
     setTimeout(function() { if (dragEl) dragEl.classList.add('dragging'); }, 0);
   });
 
+  // Step 3: dragover — reposition the dragged element as the cursor moves
   container.addEventListener('dragover', function(e) {
     e.preventDefault();
+    e.stopPropagation();
     if (!dragEl) return;
-    e.dataTransfer.dropEffect = 'move';
-    const target = e.target.closest(childSelector);
-    if (!target || target === dragEl) return;
+    const target = e.target.closest ? e.target.closest(childSelector) : null;
+    if (!target || target === dragEl || target.parentElement !== container) return;
     const rect = target.getBoundingClientRect();
-    // Insert before or after based on mouse position
     if (e.clientY < rect.top + rect.height / 2) {
       container.insertBefore(dragEl, target);
     } else {
@@ -2374,50 +2391,45 @@ function makeSortable(container, childSelector, onDrop) {
     }
   });
 
-  container.addEventListener('dragend', function() {
+  // Step 4: dragend — clean up, callback, autosave
+  container.addEventListener('dragend', function(e) {
+    e.stopPropagation();
     if (dragEl) {
       dragEl.classList.remove('dragging');
       dragEl.draggable = false;
       dragEl = null;
     }
     if (onDrop) onDrop(container);
-    saveDraft();
+    try { saveDraft(); } catch(_) {}
   });
-}
-
-// Make drag handles activate dragging on their parent row/section
-function enableHandleDrag(container, childSelector) {
-  container.addEventListener('mousedown', function(e) {
-    const handle = e.target.closest('.drag-handle, .section-drag-handle');
-    if (!handle) return;
-    const item = handle.closest(childSelector);
-    if (item) item.draggable = true;
-  });
-  container.addEventListener('dragend', function(e) {
-    const item = e.target.closest(childSelector);
-    if (item) item.draggable = false;
-  }, true);
 }
 
 function initSectionSorting() {
-  const ingHost    = document.getElementById('ingredient-sections');
-  const methHost   = document.getElementById('method-sections');
+  const ingHost  = document.getElementById('ingredient-sections');
+  const methHost = document.getElementById('method-sections');
 
-  if (ingHost) {
-    makeSortable(ingHost, '.ing-section', null);
-    enableHandleDrag(ingHost, '.ing-section');
-    enableHandleDrag(ingHost, '.ing-row');
-  }
+  // Section-level reordering
+  if (ingHost)  makeSortable(ingHost,  '.ing-section',    null);
   if (methHost) {
     makeSortable(methHost, '.method-section', null);
-    enableHandleDrag(methHost, '.method-section');
-    enableHandleDrag(methHost, '.step-row');
-    // Renumber all steps after section reorder
+    // After a section is reordered, renumber all steps
     methHost.addEventListener('dragend', function() {
-      document.querySelectorAll('.step-rows').forEach(function(c) { renumberSteps(c); });
+      document.querySelectorAll('.step-rows').forEach(function(c) {
+        renumberSteps(c);
+      });
     });
   }
+
+  // Row-level reordering: set up on any already-existing section containers
+  // (new sections added later are handled inside addIngSection/addMethodSection)
+  document.querySelectorAll('.ing-rows').forEach(function(c) {
+    makeSortable(c, '.ing-row', null);
+  });
+  document.querySelectorAll('.step-rows').forEach(function(c) {
+    makeSortable(c, '.step-row', function(c) { renumberSteps(c); });
+  });
 }
+
 
 document.addEventListener('DOMContentLoaded', function() {
   const ta = document.getElementById('paste-input');
