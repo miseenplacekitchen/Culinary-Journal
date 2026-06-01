@@ -546,8 +546,8 @@ function outsideNotifClick(e) {
   }
 }
 
-// Load count on page load (after small delay to let nav render)
-setTimeout(loadNotifCount, 800);
+// Notification system RPCs not yet in Supabase — call disabled
+// setTimeout(loadNotifCount, 800);
 
 
 
