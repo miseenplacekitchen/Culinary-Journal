@@ -736,18 +736,22 @@
 
     <!-- SITE MANAGEMENT -->
     <div id="v-site-mgmt" style="display:none">
-
-      <!-- Tab bar — pure inline, no CSS classes -->
-      <div id="sm-tabbar" style="display:flex;border-bottom:1px solid rgba(255,255,255,0.12);margin-bottom:20px;flex-wrap:wrap"></div>
-
-      <!-- Panels -->
-      <div id="smpanel-pages"><div style="padding:20px;background:#dc5050;color:#fff;font-family:DM Sans,sans-serif;font-size:14px;font-weight:600;border-radius:8px;margin-bottom:12px">Site Management is rendering. Run site_management.sql in Supabase to load data.</div></div>
-      <div id="smpanel-features"      style="display:none"></div>
-      <div id="smpanel-announcements" style="display:none"></div>
-      <div id="smpanel-content"       style="display:none"></div>
-      <div id="smpanel-themes"        style="display:none"></div>
-      <div id="smpanel-email"         style="display:none"></div>
-      <div id="smpanel-settings"      style="display:none"></div>
+      <div class="ap-inner-tabs">
+        <button class="ap-inner-tab active" data-tab="sm-pages"    onclick="switchSMTab('sm-pages')">Pages</button>
+        <button class="ap-inner-tab"        data-tab="sm-features"  onclick="switchSMTab('sm-features')">Features</button>
+        <button class="ap-inner-tab"        data-tab="sm-ann"       onclick="switchSMTab('sm-ann')">Announcements</button>
+        <button class="ap-inner-tab"        data-tab="sm-content"   onclick="switchSMTab('sm-content')">Content</button>
+        <button class="ap-inner-tab"        data-tab="sm-themes"    onclick="switchSMTab('sm-themes')">Themes</button>
+        <button class="ap-inner-tab"        data-tab="sm-email"     onclick="switchSMTab('sm-email')">Email Templates</button>
+        <button class="ap-inner-tab"        data-tab="sm-settings"  onclick="switchSMTab('sm-settings')">Settings</button>
+      </div>
+      <div id="upanel-sm-pages"    data-panel="sm-pages"    style="padding:0"></div>
+      <div id="upanel-sm-features" data-panel="sm-features" style="display:none;padding:0"></div>
+      <div id="upanel-sm-ann"      data-panel="sm-ann"      style="display:none;padding:0"></div>
+      <div id="upanel-sm-content"  data-panel="sm-content"  style="display:none;padding:0"></div>
+      <div id="upanel-sm-themes"   data-panel="sm-themes"   style="display:none;padding:0"></div>
+      <div id="upanel-sm-email"    data-panel="sm-email"    style="display:none;padding:0"></div>
+      <div id="upanel-sm-settings" data-panel="sm-settings" style="display:none;padding:0"></div>
     </div>
 
         <!-- ANALYTICS -->
@@ -1112,8 +1116,8 @@ function switchView(view, ingTab) {
   const nb = document.getElementById('nav-' + view);
   if (nb) nb.classList.add('active');
   ALL_VIEWS.forEach(function(v) { const el = document.getElementById('v-' + v); if (el) el.style.display = (v===view)?'block':'none'; });
-  const titles = { 'dashboard':'Dashboard', 'recipe-mgmt':'Recipe Management', 'user-mgmt':'User Management', 'ingredients':'Ingredients', 'analytics':'Analytics', 'site-mgmt':'Site Management' };
-  const subs   = { 'dashboard':'Overview of site activity.', 'recipe-mgmt':'Review, approve and manage all submitted recipes.', 'user-mgmt':'Manage member registrations and accounts.', 'ingredients':'Browse, add and edit the ingredient database.', 'analytics':'Site performance and statistics.', 'site-mgmt':'Control pages, features, announcements, themes, email templates and site settings.' };
+  const titles = { 'dashboard':'Dashboard', 'recipe-mgmt':'Recipe Management', 'user-mgmt':'User Management', 'ingredients':'Ingredients', 'analytics':'Analytics' };
+  const subs   = { 'dashboard':'Overview of site activity.', 'recipe-mgmt':'Review, approve and manage all submitted recipes.', 'user-mgmt':'Manage member registrations and accounts.', 'ingredients':'Browse, add and edit the ingredient database.', 'analytics':'Site performance and statistics.', 'site-mgmt':'Site Management' };
   setEl('page-title', titles[view] || view);
   setEl('page-sub',   subs[view]   || '');
   if (view === 'dashboard')   loadDashboard();
@@ -1125,7 +1129,7 @@ function switchView(view, ingTab) {
   if (view === 'user-mgmt')   switchUserTab(_savedUserTab);
   if (view === 'ingredients') { loadImSettings(); switchIngTab(ingTab||'all'); }
   if (view === 'analytics')   loadAnalytics();
-  if (view === 'site-mgmt')    loadSiteManagement();
+  if (view === 'site-mgmt')   { var _smt=localStorage.getItem('tcj_active_sm_tab')||'sm-pages'; switchSMTab(_smt); }
 }
 
 // ── RECIPE MANAGEMENT ─────────────────────────────────────────────
@@ -2805,6 +2809,269 @@ function setEl(id,val){ const el=document.getElementById(id); if(el) el.textCont
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escH(s){ return esc(s); }
 function escT(s){ return esc(s); }
+
+
+// ── SITE MANAGEMENT ──────────────────────────────────────────────
+function switchSMTab(tab) {
+  localStorage.setItem('tcj_active_sm_tab', tab);
+  document.querySelectorAll('#v-site-mgmt .ap-inner-tab').forEach(function(t){
+    t.classList.toggle('active', t.dataset.tab === tab);
+  });
+  ['sm-pages','sm-features','sm-ann','sm-content','sm-themes','sm-email','sm-settings'].forEach(function(p){
+    var el = document.getElementById('upanel-' + p);
+    if (el) el.style.display = p === tab ? 'block' : 'none';
+  });
+  var container = document.getElementById('upanel-' + tab);
+  if (!container || container.dataset.built) return;
+  container.dataset.built = '1';
+  if (tab === 'sm-pages')    buildSMPages(container);
+  else if (tab === 'sm-features')  buildSMFeatures(container);
+  else if (tab === 'sm-ann')       buildSMAnnouncements(container);
+  else if (tab === 'sm-content')   buildSMContent(container);
+  else if (tab === 'sm-themes')    buildSMThemes(container);
+  else if (tab === 'sm-email')     buildSMEmail(container);
+  else if (tab === 'sm-settings')  buildSMSettings(container);
+}
+
+async function buildSMPages(container) {
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div>';
+  try {
+    var pages = await rpc('admin_get_site_pages', {}) || [];
+    container.innerHTML = '';
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'overflow-x:auto;border:1px solid var(--border);border-radius:12px';
+    var tbl = document.createElement('table');
+    tbl.className = 'ap-table';
+    tbl.innerHTML = '<thead><tr><th class="ap-th">Page</th><th class="ap-th">Path</th><th class="ap-th">Visibility</th><th class="ap-th" style="text-align:center">Coming Soon</th><th class="ap-th">Meta Title</th><th class="ap-th">Save</th></tr></thead>';
+    var tbody = document.createElement('tbody');
+    (Array.isArray(pages)?pages:[]).forEach(function(p) {
+      var tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+      var vis = '<select id="smv-'+esc(p.path)+'" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)">'+
+        ['public','members','hidden'].map(function(v){return '<option value="'+v+'"'+(p.visibility===v?' selected':'')+'>'+v.charAt(0).toUpperCase()+v.slice(1)+'</option>';}).join('')+'</select>';
+      tr.innerHTML =
+        '<td class="ap-td" style="font-size:13px;font-weight:500;color:var(--text-high)">'+esc(p.name)+'</td>'+
+        '<td class="ap-td" style="font-size:11px;color:var(--text-mid)">'+esc(p.path)+'</td>'+
+        '<td class="ap-td">'+vis+'</td>'+
+        '<td class="ap-td" style="text-align:center"><input type="checkbox" id="smcs-'+esc(p.path)+'"'+(p.coming_soon?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent)"></td>'+
+        '<td class="ap-td"><input id="smmt-'+esc(p.path)+'" value="'+esc(p.meta_title||'')+'" placeholder="SEO title" style="width:100%;box-sizing:border-box;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)"></td>'+
+        '<td class="ap-td"></td>';
+      var btn = document.createElement('button');
+      btn.textContent = 'Save'; btn.style.cssText = "padding:5px 12px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";
+      btn.addEventListener('click',(function(path,b){return async function(){b.disabled=true;b.textContent='…';
+        try{await rpc('admin_update_site_page',{p_path:path,p_visibility:document.getElementById('smv-'+path).value,p_meta_title:document.getElementById('smmt-'+path).value||null,p_meta_desc:null,p_coming_soon:document.getElementById('smcs-'+path).checked});
+        b.textContent='✓';setTimeout(function(){b.textContent='Save';b.disabled=false;},2000);}
+        catch(e){b.textContent='Save';b.disabled=false;alert('Error: '+e.message);}
+      };})(p.path,btn));
+      tr.lastElementChild.appendChild(btn); tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody); wrap.appendChild(tbl); container.appendChild(wrap);
+  } catch(e) {
+    container.innerHTML = '<div style="padding:20px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.3);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Run site_management.sql in Supabase first.</strong><br><span style="font-size:11px;color:var(--text-mid)">'+esc(e.message)+'</span></div>';
+  }
+}
+
+async function buildSMFeatures(container) {
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div>';
+  try {
+    var features = await rpc('admin_get_site_features', {}) || [];
+    container.innerHTML = '';
+    (Array.isArray(features)?features:[]).forEach(function(f) {
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:9px;margin-bottom:8px';
+      var info = document.createElement('div');
+      info.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;font-weight:500;color:var(--text-high)">'+esc(f.name)+'</div>'+
+        (f.description?'<div style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid);margin-top:2px">'+esc(f.description)+'</div>':'');
+      var right = document.createElement('div'); right.style.cssText='display:flex;align-items:center;gap:10px';
+      var status = document.createElement('span');
+      status.style.cssText='font-family:DM Sans,sans-serif;font-size:11px;font-weight:600;color:'+(f.enabled?'#4caf76':'#dc5050');
+      status.textContent = f.enabled?'Enabled':'Disabled';
+      var cb = document.createElement('input'); cb.type='checkbox'; cb.checked=f.enabled; cb.style.cssText='width:16px;height:16px;accent-color:var(--accent);cursor:pointer';
+      cb.addEventListener('change',(function(key,st){return async function(){
+        try{await rpc('admin_toggle_site_feature',{p_key:key,p_enabled:this.checked});st.textContent=this.checked?'Enabled':'Disabled';st.style.color=this.checked?'#4caf76':'#dc5050';}
+        catch(e){this.checked=!this.checked;alert('Error: '+e.message);}
+      };})(f.key,status));
+      right.appendChild(status); right.appendChild(cb);
+      row.appendChild(info); row.appendChild(right); container.appendChild(row);
+    });
+  } catch(e) { container.innerHTML='<div style="padding:20px;color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Run site_management.sql first.<br><small>'+esc(e.message)+'</small></div>'; }
+}
+
+async function buildSMAnnouncements(container) {
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div>';
+  try {
+    var anns = await rpc('admin_get_announcements', {}) || [];
+    container.innerHTML = '';
+    // Add form
+    var form = document.createElement('div');
+    form.style.cssText = 'background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px';
+    form.innerHTML = '<div style="font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px">New Announcement</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 100px 140px;gap:10px;margin-bottom:10px">'+
+      '<input id="sm-ann-text" placeholder="Announcement text…" style="padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)">'+
+      '<select id="sm-ann-type" style="padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)"><option value="info">Info</option><option value="success">Success</option><option value="warning">Warning</option><option value="error">Error</option></select>'+
+      '<input id="sm-ann-exp" type="datetime-local" style="padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)">'+
+      '</div>';
+    var addBtn = document.createElement('button');
+    addBtn.className='ing-add-btn'; addBtn.textContent='Add Announcement';
+    addBtn.addEventListener('click',async function(){
+      var text=(document.getElementById('sm-ann-text').value||'').trim();
+      if(!text){alert('Text required.');return;}
+      addBtn.disabled=true; addBtn.textContent='Saving…';
+      try{await rpc('admin_save_announcement',{p_id:0,p_text:text,p_type:document.getElementById('sm-ann-type').value,p_active:true,p_expires_at:document.getElementById('sm-ann-exp').value||null});
+      container.dataset.built='';switchSMTab('sm-ann');}
+      catch(e){addBtn.disabled=false;addBtn.textContent='Add Announcement';alert('Error: '+e.message);}
+    });
+    form.appendChild(addBtn); container.appendChild(form);
+    var TYPE_COLOR={info:'#5B8FD4',success:'#4caf76',warning:'#d4a017',error:'#dc5050'};
+    (Array.isArray(anns)?anns:[]).forEach(function(a){
+      var card=document.createElement('div');
+      card.style.cssText='background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;justify-content:space-between';
+      var left=document.createElement('div');left.style.flex='1';
+      left.innerHTML='<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,0.2);color:'+(TYPE_COLOR[a.type]||'var(--text-mid)')+'">'+esc(a.type.toUpperCase())+'</span>'+
+        '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high);margin-top:6px">'+esc(a.text)+'</div>'+
+        (!a.active?'<div style="font-size:11px;color:var(--text-mid);margin-top:3px">Inactive</div>':'');
+      var btns=document.createElement('div');btns.style.cssText='display:flex;gap:6px;flex-shrink:0';
+      var tBtn=document.createElement('button');tBtn.style.cssText="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";
+      tBtn.textContent=a.active?'Deactivate':'Activate';
+      tBtn.addEventListener('click',async function(){try{await rpc('admin_save_announcement',{p_id:a.id,p_text:a.text,p_type:a.type,p_active:!a.active,p_expires_at:a.expires_at||null});container.dataset.built='';switchSMTab('sm-ann');}catch(e){alert('Error: '+e.message);}});
+      var dBtn=document.createElement('button');dBtn.style.cssText="padding:4px 10px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";dBtn.textContent='Delete';
+      dBtn.addEventListener('click',async function(){if(!confirm('Delete?'))return;try{await rpc('admin_delete_announcement',{p_id:a.id});container.dataset.built='';switchSMTab('sm-ann');}catch(e){alert('Error: '+e.message);}});
+      btns.appendChild(tBtn);btns.appendChild(dBtn);card.appendChild(left);card.appendChild(btns);container.appendChild(card);
+    });
+    if(!anns.length){container.appendChild(Object.assign(document.createElement('div'),{style:'font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)',textContent:'No announcements yet.'}));}
+  } catch(e) { container.innerHTML='<div style="padding:20px;color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Run site_management.sql first.<br><small>'+esc(e.message)+'</small></div>'; }
+}
+
+async function buildSMContent(container) {
+  try {
+    var settings = await rpc('admin_get_site_settings', {}) || {};
+    container.innerHTML = '';
+    function mk(tag,s,t){var e=document.createElement(tag);if(s)e.style.cssText=s;if(t!==undefined)e.textContent=t;return e;}
+    // Homepage toggles
+    var sec=mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');
+    sec.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px",'Homepage'));
+    [{key:'homepage_show_featured',label:'Show Featured Recipes',val:settings.homepage_show_featured},{key:'homepage_show_rotw',label:'Show Recipe of the Week',val:settings.homepage_show_rotw}].forEach(function(t){
+      var row=mk('div','display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)');
+      row.appendChild(mk('span',"font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high)",t.label));
+      var cb=document.createElement('input');cb.type='checkbox';cb.checked=t.val!=='false';cb.style.cssText='width:16px;height:16px;accent-color:var(--accent);cursor:pointer';
+      cb.addEventListener('change',(function(key){return async function(){try{await rpc('admin_save_site_setting',{p_key:key,p_value:String(this.checked)});}catch(e){this.checked=!this.checked;alert('Error: '+e.message);}}})(t.key));
+      row.appendChild(cb);sec.appendChild(row);
+    });
+    container.appendChild(sec);
+    // Category order
+    var sec2=mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px');
+    sec2.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:4px",'Category Order'));
+    sec2.appendChild(mk('p',"font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:12px",'Use arrows to reorder. Saves immediately.'));
+    var cats=[];try{cats=JSON.parse(settings.homepage_categories_order||'[]');}catch(_){}
+    var catList=mk('div','');
+    function renderCats(){catList.innerHTML='';cats.forEach(function(cat,i){
+      var row=mk('div','display:flex;align-items:center;gap:8px;padding:7px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;margin-bottom:5px');
+      row.appendChild(mk('span',"font-size:10px;color:var(--text-mid);width:18px;text-align:center",String(i+1)));
+      row.appendChild(mk('span',"font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-high);flex:1",cat));
+      var up=document.createElement('button');up.style.cssText="padding:2px 8px;background:none;border:1px solid var(--border);border-radius:5px;font-size:10px;color:var(--text-mid);cursor:pointer";up.textContent='▲';
+      up.addEventListener('click',async function(){if(i>0){cats.splice(i-1,0,cats.splice(i,1)[0]);renderCats();await rpc('admin_save_site_setting',{p_key:'homepage_categories_order',p_value:JSON.stringify(cats)});}});
+      var dn=document.createElement('button');dn.style.cssText=up.style.cssText;dn.textContent='▼';
+      dn.addEventListener('click',async function(){if(i<cats.length-1){cats.splice(i+1,0,cats.splice(i,1)[0]);renderCats();await rpc('admin_save_site_setting',{p_key:'homepage_categories_order',p_value:JSON.stringify(cats)});}});
+      row.appendChild(up);row.appendChild(dn);catList.appendChild(row);
+    });}
+    renderCats();sec2.appendChild(catList);container.appendChild(sec2);
+  } catch(e){container.innerHTML='<div style="padding:20px;color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Run site_management.sql first.<br><small>'+esc(e.message)+'</small></div>';}
+}
+
+async function buildSMThemes(container) {
+  try {
+    var settings = await rpc('admin_get_site_settings', {}) || {};
+    container.innerHTML='';
+    function mk(tag,s,t){var e=document.createElement(tag);if(s)e.style.cssText=s;if(t!==undefined)e.textContent=t;return e;}
+    var disabled=[];try{disabled=JSON.parse(settings.disabled_themes||'[]');}catch(_){}
+    // Seasonal default
+    var sec=mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');
+    sec.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:4px",'Seasonal Default'));
+    sec.appendChild(mk('p',"font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:10px",'Override the site default. Leave blank for Midnight Slate.'));
+    var sel=document.createElement('select');sel.style.cssText="padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-high);width:280px";
+    var ALL=['','Midnight Slate','Midnight Black','Dark Forest','Dark Bordeaux','Dark Navy','Dark Chocolate','Dark Obsidian','Cream & Gold','Pure White','Soft Linen','Sage & Cream','Blush & Rose','Silver Morning','Lemon Fresh','Spring Blossom','Summer Citrus','Autumn Harvest','Winter Frost','Christmas','Diwali','Ramadan','New Year','Onam','Easter','Wedding White','Birthday Cake','Baby Shower','Fine Dining','Old Cookbook','World Kitchen','Silk & Whisper','Midnight Garden','Crystal & Pearl','The Secret Garden','Bridal Blush','Pure Petals','Violet Storm','Golden Hour','Forest Rain','Enchanted Winter','Emerald Night','Still Waters',"Heaven's Gate",'Ocean Breeze','Wildfire','Full Bloom','Lunar Gold'];
+    ALL.forEach(function(t){var o=document.createElement('option');o.value=t;o.textContent=t||'— None (Midnight Slate) —';o.selected=t===(settings.seasonal_default_theme||'');sel.appendChild(o);});
+    sel.addEventListener('change',async function(){try{await rpc('admin_save_site_setting',{p_key:'seasonal_default_theme',p_value:this.value});}catch(e){alert('Error: '+e.message);}});
+    sec.appendChild(sel);container.appendChild(sec);
+    // Enable/disable themes
+    var sec2=mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px');
+    sec2.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px",'Enable / Disable Themes'));
+    var grid=mk('div','display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:7px');
+    ALL.slice(1).forEach(function(t){
+      var isOff=disabled.includes(t);
+      var card=mk('div','display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid '+(isOff?'var(--border)':'var(--accent)')+';border-radius:8px;opacity:'+(isOff?'0.5':'1'));
+      card.appendChild(mk('span',"font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-high)",t));
+      var cb=document.createElement('input');cb.type='checkbox';cb.checked=!isOff;cb.style.cssText='width:14px;height:14px;accent-color:var(--accent);cursor:pointer';
+      cb.addEventListener('change',(function(theme,c){return async function(){
+        var nowOff=!this.checked;
+        if(nowOff){if(!disabled.includes(theme))disabled.push(theme);}else{disabled=disabled.filter(function(d){return d!==theme;});}
+        try{await rpc('admin_save_site_setting',{p_key:'disabled_themes',p_value:JSON.stringify(disabled)});c.style.borderColor=nowOff?'var(--border)':'var(--accent)';c.style.opacity=nowOff?'0.5':'1';}
+        catch(e){this.checked=!this.checked;alert('Error: '+e.message);}
+      };})(t,card));
+      card.appendChild(cb);grid.appendChild(card);
+    });
+    sec2.appendChild(grid);container.appendChild(sec2);
+  } catch(e){container.innerHTML='<div style="padding:20px;color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Run site_management.sql first.<br><small>'+esc(e.message)+'</small></div>';}
+}
+
+async function buildSMEmail(container) {
+  try {
+    var templates = await rpc('admin_get_email_templates', {}) || [];
+    container.innerHTML='<p style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px">Use {{name}}, {{recipe_name}}, {{reviewer_notes}}, {{reset_link}} as placeholders.</p>';
+    (Array.isArray(templates)?templates:[]).forEach(function(t){
+      var sec=document.createElement('div');sec.style.cssText='background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:14px';
+      sec.innerHTML='<div style="font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px">'+esc(t.name)+'</div>'+
+        '<div style="margin-bottom:8px"><label style="display:block;font-size:10px;color:var(--text-mid);margin-bottom:3px">Subject</label><input id="smet-s-'+t.key+'" value="'+esc(t.subject||'')+'" style="width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)"></div>'+
+        '<div style="margin-bottom:10px"><label style="display:block;font-size:10px;color:var(--text-mid);margin-bottom:3px">Body</label><textarea id="smet-b-'+t.key+'" rows="5" style="width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high);resize:vertical">'+esc(t.body||'')+'</textarea></div>';
+      var saveBtn=document.createElement('button');saveBtn.className='ing-add-btn';saveBtn.textContent='Save Template';
+      saveBtn.addEventListener('click',(function(key,btn){return async function(){btn.disabled=true;btn.textContent='Saving…';
+        try{await rpc('admin_save_email_template',{p_key:key,p_subject:document.getElementById('smet-s-'+key).value,p_body:document.getElementById('smet-b-'+key).value});btn.textContent='✓ Saved';setTimeout(function(){btn.textContent='Save Template';btn.disabled=false;},2000);}
+        catch(e){btn.textContent='Save Template';btn.disabled=false;alert('Error: '+e.message);}
+      };})(t.key,saveBtn));
+      sec.appendChild(saveBtn);container.appendChild(sec);
+    });
+  } catch(e){container.innerHTML='<div style="padding:20px;color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Run site_management.sql first.<br><small>'+esc(e.message)+'</small></div>';}
+}
+
+async function buildSMSettings(container) {
+  try {
+    var settings = await rpc('admin_get_site_settings', {}) || {};
+    container.innerHTML='';
+    function mk(tag,s,t){var e=document.createElement(tag);if(s)e.style.cssText=s;if(t!==undefined)e.textContent=t;return e;}
+    function sec(title,desc){var d=mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');d.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:"+(desc?'4px':'14px'),title));if(desc)d.appendChild(mk('p',"font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:14px",desc));return d;}
+    function inp(id,label,val,ta){var w=mk('div','margin-bottom:12px');w.appendChild(mk('label',"display:block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:4px",label));var i=document.createElement(ta?'textarea':'input');i.id=id;i.style.cssText='width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)'+(ta?';resize:vertical;height:80px':'');if(ta)i.textContent=val||'';else i.value=val||'';w.appendChild(i);return w;}
+    function saveBtn(keys,label){var row=mk('div','margin-top:8px;display:flex;align-items:center;gap:10px');var btn=mk('button','','');btn.className='ing-add-btn';btn.textContent=label||'Save';btn.addEventListener('click',async function(){btn.disabled=true;btn.textContent='Saving…';try{for(var k of keys){var el=document.getElementById('sms-'+k);if(el)await rpc('admin_save_site_setting',{p_key:k,p_value:el.value||''});}btn.textContent='✓ Saved';setTimeout(function(){btn.textContent=label||'Save';btn.disabled=false;},2000);}catch(e){btn.textContent=label||'Save';btn.disabled=false;alert('Error: '+e.message);}});row.appendChild(btn);return row;}
+    // Maintenance
+    var mSec=sec('Maintenance Mode','Takes the site offline instantly.');
+    var mRow=mk('div','display:flex;align-items:center;justify-content:space-between;margin-bottom:12px');mRow.appendChild(mk('span',"font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high)",'Maintenance Mode'));
+    var mCb=document.createElement('input');mCb.type='checkbox';mCb.checked=settings.maintenance_enabled==='true';mCb.style.cssText='width:16px;height:16px;accent-color:#dc5050;cursor:pointer';
+    mCb.addEventListener('change',async function(){try{await rpc('admin_save_site_setting',{p_key:'maintenance_enabled',p_value:String(this.checked)});}catch(e){this.checked=!this.checked;alert('Error: '+e.message);}});
+    mRow.appendChild(mCb);mSec.appendChild(mRow);
+    var msgInp=inp('sms-maintenance_message','Message',settings.maintenance_message,true);
+    mSec.appendChild(msgInp);mSec.appendChild(saveBtn(['maintenance_message'],'Save Message'));container.appendChild(mSec);
+    // Watermark
+    var wSec=sec('Watermark');var wg=mk('div','display:grid;grid-template-columns:1fr 1fr;gap:10px');
+    wg.appendChild(inp('sms-watermark_font','Font Family',settings.watermark_font));
+    wg.appendChild(inp('sms-watermark_opacity','Opacity (0–1)',settings.watermark_opacity));
+    wg.appendChild(inp('sms-watermark_size','Font Size (px)',settings.watermark_size));
+    wg.appendChild(inp('sms-watermark_position_site','Site Name Position',settings.watermark_position_site));
+    wSec.appendChild(wg);wSec.appendChild(saveBtn(['watermark_font','watermark_opacity','watermark_size','watermark_position_site'],'Save Watermark'));container.appendChild(wSec);
+    // Footer
+    var fSec=sec('Footer');fSec.appendChild(inp('sms-footer_copyright','Copyright Text',settings.footer_copyright));var soc={};try{soc=JSON.parse(settings.footer_social||'{}');}catch(_){}
+    var sg=mk('div','display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:4px');
+    ['instagram','facebook','pinterest'].forEach(function(s){var w=mk('div','');w.appendChild(mk('label',"display:block;font-size:10px;color:var(--text-mid);margin-bottom:3px",s.charAt(0).toUpperCase()+s.slice(1)));var i=mk('input','width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)');i.id='sms-soc-'+s;i.value=soc[s]||'';w.appendChild(i);sg.appendChild(w);});
+    fSec.appendChild(sg);
+    var fSaveBtn=mk('button','','');fSaveBtn.className='ing-add-btn';fSaveBtn.textContent='Save Footer';
+    fSaveBtn.addEventListener('click',async function(){fSaveBtn.disabled=true;fSaveBtn.textContent='Saving…';
+      try{await rpc('admin_save_site_setting',{p_key:'footer_copyright',p_value:document.getElementById('sms-footer_copyright').value});
+      await rpc('admin_save_site_setting',{p_key:'footer_social',p_value:JSON.stringify({instagram:document.getElementById('sms-soc-instagram').value,facebook:document.getElementById('sms-soc-facebook').value,pinterest:document.getElementById('sms-soc-pinterest').value})});
+      fSaveBtn.textContent='✓ Saved';setTimeout(function(){fSaveBtn.textContent='Save Footer';fSaveBtn.disabled=false;},2000);}
+      catch(e){fSaveBtn.textContent='Save Footer';fSaveBtn.disabled=false;alert('Error: '+e.message);}});
+    fSec.appendChild(fSaveBtn);container.appendChild(fSec);
+    // Legal
+    var lSec=sec('Legal & Policy');lSec.appendChild(inp('sms-legal_ai_disclaimer','AI Disclaimer',settings.legal_ai_disclaimer,true));lSec.appendChild(inp('sms-legal_terms','Terms of Use',settings.legal_terms,true));lSec.appendChild(inp('sms-legal_privacy','Privacy Policy',settings.legal_privacy,true));lSec.appendChild(saveBtn(['legal_ai_disclaimer','legal_terms','legal_privacy'],'Save Legal Text'));container.appendChild(lSec);
+  } catch(e){container.innerHTML='<div style="padding:20px;color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Run site_management.sql first.<br><small>'+esc(e.message)+'</small></div>';}
+}
 
 document.addEventListener('DOMContentLoaded', init);
 
