@@ -789,6 +789,18 @@
     /* Drop target indicator */
     .drag-over-above { border-top: 2px solid var(--accent) !important; }
     .drag-over-below { border-bottom: 2px solid var(--accent) !important; }
+
+    /* ── COOKING STYLE & SHELF LIFE ───────────────────────────── */
+    .sr-unit-badge {
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--text-high);
+      font-size: 12px;
+    }
+    #shelf-life-block .sr-field { margin-bottom: 0; }
+    #shelf-life-block .sr-label { font-size: 12px; }
+    #shelf-life-block .sr-hint  { font-size: 11px; }
 </style>
   <script src="page-guard.js"></script>
 </head>
@@ -1120,34 +1132,137 @@
       <hr class="sr-divider">
 
       <!-- Times & Servings — all times in minutes -->
+      <!-- ── COOKING STYLE ── -->
+      <div class="sr-field sr-full" style="margin-bottom:16px">
+        <label class="sr-label">Cooking Style <span class="opt">optional</span></label>
+        <select class="sr-input" id="cooking-style" onchange="applyCookingStyle(this.value)">
+          <option value="">— General Cooking (default) —</option>
+          <optgroup label="Everyday Cooking">
+            <option value="stir-fry">Stir-fry &amp; Sauté</option>
+            <option value="deep-fry">Deep Frying</option>
+            <option value="steam-poach">Steaming &amp; Poaching</option>
+            <option value="roasting">Roasting</option>
+            <option value="air-fry">Air Frying</option>
+            <option value="raw">Raw &amp; No-Cook</option>
+          </optgroup>
+          <optgroup label="Grilling &amp; Slow Cooking">
+            <option value="bbq">Grilling &amp; BBQ</option>
+            <option value="smoking-hot">Smoking (Hot)</option>
+            <option value="slow-cook">Slow Cooking &amp; Braising</option>
+            <option value="pressure">Pressure Cooking</option>
+            <option value="sous-vide">Sous Vide</option>
+          </optgroup>
+          <optgroup label="Baking &amp; Confectionery">
+            <option value="baking">Baking &amp; Pastry</option>
+            <option value="bread">Bread &amp; Dough</option>
+            <option value="candy">Candy &amp; Confectionery</option>
+          </optgroup>
+          <optgroup label="Marinades &amp; Passive">
+            <option value="marinating">Marinating</option>
+            <option value="brining">Brining</option>
+          </optgroup>
+          <optgroup label="Preservation">
+            <option value="pickling-q">Pickling (Quick)</option>
+            <option value="pickling-t">Pickling (Traditional)</option>
+            <option value="fermentation">Fermentation</option>
+            <option value="canning">Canning &amp; Bottling</option>
+            <option value="dehydrating">Dehydrating &amp; Drying</option>
+            <option value="curing">Curing &amp; Cold Smoking</option>
+            <option value="jam">Jam, Chutney &amp; Conserves</option>
+          </optgroup>
+        </select>
+        <div class="sr-hint"><span class="sr-i">i</span> Drives the time labels, units, and shelf life fields below.</div>
+      </div>
+
+      <!-- ── TIME + SERVINGS ROW ── -->
       <div class="sr-grid-3">
         <div class="sr-field">
-          <label class="sr-label">Prep Time <span class="req">*</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-high)">(minutes)</span></label>
-          <input class="sr-input" type="number" id="prep-time" placeholder="e.g. 15" min="0">
-          <div class="sr-hint"><span class="sr-i">i</span> Active hands-on work — chopping, measuring, mixing, setting up.</div>
+          <label class="sr-label" id="lbl-prep-time">Prep Time <span class="req">*</span> <span class="sr-unit-badge">(minutes)</span></label>
+          <input class="sr-input" type="number" id="prep-time" placeholder="e.g. 15" min="0" oninput="updateTotalTime()">
+          <div class="sr-hint" id="hint-prep-time"><span class="sr-i">i</span> Active hands-on work — chopping, measuring, mixing, setting up.</div>
         </div>
         <div class="sr-field">
-          <label class="sr-label">Cooking Time <span class="req">*</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-high)">(minutes)</span></label>
-          <input class="sr-input" type="number" id="cook-time" placeholder="e.g. 30" min="0">
-          <div class="sr-hint"><span class="sr-i">i</span> Active cooking — baking, roasting, simmering, frying, steaming.</div>
+          <label class="sr-label" id="lbl-cook-time">Cook Time <span class="req">*</span> <span class="sr-unit-badge" id="unit-cook-time">(minutes)</span></label>
+          <input class="sr-input" type="number" id="cook-time" placeholder="e.g. 30" min="0" oninput="updateTotalTime()">
+          <div class="sr-hint" id="hint-cook-time"><span class="sr-i">i</span> Active cooking — baking, roasting, simmering, frying, steaming.</div>
         </div>
         <div class="sr-field">
-          <label class="sr-label">Servings <span class="req">*</span></label>
-          <input class="sr-input" type="number" id="servings" placeholder="e.g. 4" min="1">
-          <div class="sr-hint"><span class="sr-i">i</span> How many people the recipe feeds.</div>
+          <label class="sr-label" id="lbl-servings">Serves <span class="req">*</span></label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="sr-input" type="number" id="servings" placeholder="e.g. 4" min="1" style="flex:1">
+            <select class="sr-input" id="servings-unit" style="width:140px;flex-shrink:0">
+              <option value="people">people</option>
+              <option value="pieces">pieces</option>
+              <option value="portions">portions</option>
+              <option value="cookies">cookies</option>
+              <option value="slices">slices</option>
+              <option value="rolls">rolls</option>
+              <option value="loaves">loaves</option>
+              <option value="jars">jars</option>
+              <option value="bottles">bottles</option>
+              <option value="litres">litres</option>
+              <option value="kg">kg</option>
+              <option value="g">grams</option>
+            </select>
+          </div>
+          <div class="sr-hint" id="hint-servings"><span class="sr-i">i</span> How many people the recipe feeds.</div>
         </div>
       </div>
-      <!-- Additional / passive time row -->
-      <div class="sr-grid" style="margin-top:14px">
+
+      <!-- ── EXTRA / PASSIVE TIME ROW ── (shown for relevant cooking styles) -->
+      <div class="sr-grid" style="margin-top:14px" id="row-extra-time">
         <div class="sr-field">
-          <label class="sr-label">Additional Time <span class="opt">optional</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-high)">(minutes)</span></label>
+          <label class="sr-label" id="lbl-extra-time">Passive Time <span class="opt">optional</span> <span class="sr-unit-badge" id="unit-extra-time">(minutes)</span></label>
           <input class="sr-input" type="number" id="additional-time" placeholder="e.g. 480" min="0" oninput="updateTotalTime()">
-          <div class="sr-hint"><span class="sr-i">i</span> Passive waiting time — marinating, proofing, chilling, fermenting, soaking, setting.</div>
+          <div class="sr-hint" id="hint-extra-time"><span class="sr-i">i</span> Passive waiting time — marinating, proofing, chilling, fermenting, soaking, setting.</div>
         </div>
         <div class="sr-field">
-          <label class="sr-label">Total Time <span class="opt">auto-calculated</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-high)">(minutes)</span></label>
-          <input class="sr-input" type="number" id="total-time" placeholder="—" readonly style="opacity:0.6;cursor:default;background:var(--text-ghost)">
-          <div class="sr-hint"><span class="sr-i">i</span> Prep + Cook + Additional time combined automatically.</div>
+          <label class="sr-label">Total Time <span class="opt">auto-calculated</span></label>
+          <input class="sr-input" type="text" id="total-time" placeholder="—" readonly style="opacity:0.6;cursor:default;background:var(--text-ghost)">
+          <div class="sr-hint"><span class="sr-i">i</span> Prep + Cook + Passive time combined automatically.</div>
+        </div>
+      </div>
+
+      <!-- ── SHELF LIFE (preservation styles only) ── -->
+      <div id="shelf-life-block" style="display:none;margin-top:14px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:16px 18px">
+        <div style="font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:14px">Shelf Life</div>
+        <div class="sr-grid-3" style="margin-bottom:12px">
+          <div class="sr-field">
+            <label class="sr-label">Shelf Life <span class="req">*</span></label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input class="sr-input" type="number" id="shelf-life-value" placeholder="e.g. 12" min="1" style="flex:1">
+              <select class="sr-input" id="shelf-life-unit" style="width:120px;flex-shrink:0">
+                <option value="days">days</option>
+                <option value="weeks">weeks</option>
+                <option value="months" selected>months</option>
+                <option value="years">years</option>
+              </select>
+            </div>
+            <div class="sr-hint"><span class="sr-i">i</span> How long the recipe keeps before it's no longer safe or good.</div>
+          </div>
+          <div class="sr-field">
+            <label class="sr-label">Storage Method <span class="req">*</span></label>
+            <select class="sr-input" id="shelf-life-storage">
+              <option value="">— Select storage —</option>
+              <option value="pantry">Pantry (sealed, room temperature)</option>
+              <option value="fridge">Refrigerated</option>
+              <option value="freezer">Frozen</option>
+              <option value="cool-dark">Cool dark place</option>
+              <option value="room-temp">Room temperature (short term)</option>
+            </select>
+          </div>
+          <div class="sr-field" id="field-after-open">
+            <label class="sr-label">After Opening <span class="opt">optional</span></label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input class="sr-input" type="number" id="after-open-value" placeholder="e.g. 4" min="1" style="flex:1">
+              <select class="sr-input" id="after-open-unit" style="width:120px;flex-shrink:0">
+                <option value="days">days</option>
+                <option value="weeks" selected>weeks</option>
+                <option value="months">months</option>
+              </select>
+            </div>
+            <div class="sr-hint"><span class="sr-i">i</span> Refrigerate once opened and use within this time.</div>
+          </div>
         </div>
       </div>
 
@@ -2353,6 +2468,103 @@ function detectUrlPaste(url) {
 }
 
 // Show parse tips when user starts typing in paste area
+// ── COOKING STYLE ─────────────────────────────────────────────────────────────
+// Configuration for each cooking style. Fields:
+//   cookLabel   — label for cook-time input
+//   cookHint    — hint text for cook-time
+//   cookUnit    — 'min' | 'hr' | 'day'  (unit shown after cook-time)
+//   extraLabel  — label for the passive/extra time row (null = hide row)
+//   extraHint   — hint text for extra time
+//   extraUnit   — 'min' | 'hr' | 'day' | 'week'
+//   servesLabel — 'Serves' | 'Makes' | 'Yield'
+//   servesUnit  — default value for the servings-unit select
+//   shelfLife   — true/false  (show shelf life block)
+var COOKING_STYLE_CFG = {
+  '':             { cookLabel:'Cook Time',                  cookHint:'Active cooking time.',                      cookUnit:'min',  extraLabel:null,                    extraUnit:'min',  servesLabel:'Serves',  servesUnit:'people',  shelfLife:false },
+  'stir-fry':     { cookLabel:'Cook Time',                  cookHint:'Active time on the wok or pan.',            cookUnit:'min',  extraLabel:null,                    extraUnit:'min',  servesLabel:'Serves',  servesUnit:'people',  shelfLife:false },
+  'deep-fry':     { cookLabel:'Frying Time',                cookHint:'Active time in the fryer.',                 cookUnit:'min',  extraLabel:null,                    extraUnit:'min',  servesLabel:'Serves',  servesUnit:'people',  shelfLife:false },
+  'steam-poach':  { cookLabel:'Steam / Poach Time',         cookHint:'Active cooking time.',                      cookUnit:'min',  extraLabel:null,                    extraUnit:'min',  servesLabel:'Serves',  servesUnit:'people',  shelfLife:false },
+  'roasting':     { cookLabel:'Roasting Time',              cookHint:'Time in the oven.',                         cookUnit:'min',  extraLabel:'Rest Time',             extraUnit:'min',  servesLabel:'Serves',  servesUnit:'people',  shelfLife:false, extraHint:'Resting time after the roast comes out of the oven.' },
+  'air-fry':      { cookLabel:'Air Fry Time',               cookHint:'Active time in the air fryer.',             cookUnit:'min',  extraLabel:null,                    extraUnit:'min',  servesLabel:'Serves',  servesUnit:'people',  shelfLife:false },
+  'raw':          { cookLabel:'Assembly Time',              cookHint:'Time to assemble the dish.',                cookUnit:'min',  extraLabel:null,                    extraUnit:'min',  servesLabel:'Serves',  servesUnit:'people',  shelfLife:false },
+  'bbq':          { cookLabel:'Grill / BBQ Time',           cookHint:'Active time on the grill.',                 cookUnit:'min',  extraLabel:'Rest Time',             extraUnit:'min',  servesLabel:'Serves',  servesUnit:'people',  shelfLife:false, extraHint:'Resting time before carving or serving.' },
+  'smoking-hot':  { cookLabel:'Smoking Time',               cookHint:'Total time in the smoker.',                 cookUnit:'hr',   extraLabel:'Rest Time',             extraUnit:'min',  servesLabel:'Serves',  servesUnit:'people',  shelfLife:false, extraHint:'Resting time after smoking, before serving.' },
+  'slow-cook':    { cookLabel:'Slow Cook Time',             cookHint:'Total time in the slow cooker.',            cookUnit:'hr',   extraLabel:null,                    extraUnit:'hr',   servesLabel:'Serves',  servesUnit:'people',  shelfLife:false },
+  'pressure':     { cookLabel:'Pressure Cook Time',         cookHint:'Time under pressure.',                      cookUnit:'min',  extraLabel:'Natural Release Time',  extraUnit:'min',  servesLabel:'Serves',  servesUnit:'people',  shelfLife:false, extraHint:'Time for pressure to release naturally before opening.' },
+  'sous-vide':    { cookLabel:'Sous Vide Time',             cookHint:'Total time in the water bath.',             cookUnit:'hr',   extraLabel:'Sear / Finish Time',    extraUnit:'min',  servesLabel:'Serves',  servesUnit:'people',  shelfLife:false, extraHint:'Quick sear or finishing step after the bath.' },
+  'baking':       { cookLabel:'Baking Time',                cookHint:'Active time in the oven.',                  cookUnit:'min',  extraLabel:'Rest / Cool Time',      extraUnit:'min',  servesLabel:'Makes',   servesUnit:'pieces',  shelfLife:true,  extraHint:'Time to cool or rest before cutting, icing, or serving.' },
+  'bread':        { cookLabel:'Baking Time',                cookHint:'Time in the oven.',                         cookUnit:'min',  extraLabel:'Prove Time',            extraUnit:'hr',   servesLabel:'Makes',   servesUnit:'loaves',  shelfLife:true,  extraHint:'Total proving / rising time (first and second prove combined).' },
+  'candy':        { cookLabel:'Cook Time',                  cookHint:'Active time cooking the candy mixture.',    cookUnit:'min',  extraLabel:'Set / Cool Time',       extraUnit:'min',  servesLabel:'Makes',   servesUnit:'pieces',  shelfLife:true,  extraHint:'Time for the candy to set or cool to the correct texture.' },
+  'marinating':   { cookLabel:'Cook Time',                  cookHint:'Active cooking time after marinating.',     cookUnit:'min',  extraLabel:'Marinade Time',         extraUnit:'hr',   servesLabel:'Serves',  servesUnit:'people',  shelfLife:false, extraHint:'Time the item marinates before cooking.' },
+  'brining':      { cookLabel:'Cook Time',                  cookHint:'Active cooking time after brining.',        cookUnit:'min',  extraLabel:'Brine Time',            extraUnit:'hr',   servesLabel:'Serves',  servesUnit:'people',  shelfLife:false, extraHint:'Time the item sits in the brine before cooking.' },
+  'pickling-q':   { cookLabel:'Active Prep / Cook Time',    cookHint:'Time to prepare and heat the brine.',       cookUnit:'min',  extraLabel:'Pickle Time',           extraUnit:'hr',   servesLabel:'Makes',   servesUnit:'jars',    shelfLife:true,  extraHint:'Time in the jar before ready to eat (refrigerator pickles).' },
+  'pickling-t':   { cookLabel:'Active Prep / Cook Time',    cookHint:'Time to prepare and process the jars.',     cookUnit:'min',  extraLabel:'Cure / Pickle Time',    extraUnit:'day',  servesLabel:'Makes',   servesUnit:'jars',    shelfLife:true,  extraHint:'Time needed to fully pickle at room temperature or in the fridge.' },
+  'fermentation': { cookLabel:'Active Prep Time',           cookHint:'Time to prepare the ferment.',              cookUnit:'min',  extraLabel:'Fermentation Time',     extraUnit:'day',  servesLabel:'Yield',   servesUnit:'litres',  shelfLife:true,  extraHint:'Total fermentation time at the correct temperature.' },
+  'canning':      { cookLabel:'Processing Time',            cookHint:'Time in the water bath or pressure canner.',cookUnit:'min',  extraLabel:'Cool / Seal Time',      extraUnit:'hr',   servesLabel:'Makes',   servesUnit:'jars',    shelfLife:true,  extraHint:'Time for jars to cool and seal properly.' },
+  'dehydrating':  { cookLabel:'Dehydration Time',           cookHint:'Total time in the dehydrator.',             cookUnit:'hr',   extraLabel:null,                    extraUnit:'hr',   servesLabel:'Yield',   servesUnit:'g',       shelfLife:true },
+  'curing':       { cookLabel:'Active Prep Time',           cookHint:'Time to prepare and apply the cure.',       cookUnit:'min',  extraLabel:'Cure / Smoke Time',     extraUnit:'day',  servesLabel:'Yield',   servesUnit:'kg',      shelfLife:true,  extraHint:'Total curing or cold smoking time.' },
+  'jam':          { cookLabel:'Cook Time',                  cookHint:'Active time cooking the jam or chutney.',   cookUnit:'min',  extraLabel:'Set Time',              extraUnit:'hr',   servesLabel:'Makes',   servesUnit:'jars',    shelfLife:true,  extraHint:'Time for the preserve to set before checking the seal.' },
+};
+
+var UNIT_LABELS = { 'min':'minutes', 'hr':'hours', 'day':'days', 'week':'weeks' };
+
+function applyCookingStyle(key) {
+  var cfg = COOKING_STYLE_CFG[key] || COOKING_STYLE_CFG[''];
+
+  // Store units globally so updateTotalTime can use them
+  window._cookUnit  = cfg.cookUnit;
+  window._extraUnit = cfg.extraUnit;
+
+  // ── Cook time ────────────────────────────────────────────
+  var lbl = document.getElementById('lbl-cook-time');
+  var unt = document.getElementById('unit-cook-time');
+  var hnt = document.getElementById('hint-cook-time');
+  if (lbl) lbl.innerHTML = cfg.cookLabel + ' <span class="req">*</span> <span class="sr-unit-badge" id="unit-cook-time">(' + UNIT_LABELS[cfg.cookUnit] + ')</span>';
+  if (hnt) hnt.innerHTML = '<span class="sr-i">i</span> ' + cfg.cookHint;
+
+  // ── Extra / passive time ─────────────────────────────────
+  var extraRow = document.getElementById('row-extra-time');
+  if (extraRow) {
+    if (cfg.extraLabel) {
+      extraRow.style.display = '';
+      var exLbl = document.getElementById('lbl-extra-time');
+      var exUnt = document.getElementById('unit-extra-time');
+      var exHnt = document.getElementById('hint-extra-time');
+      if (exLbl) exLbl.innerHTML = cfg.extraLabel + ' <span class="opt">optional</span> <span class="sr-unit-badge" id="unit-extra-time">(' + UNIT_LABELS[cfg.extraUnit] + ')</span>';
+      if (exHnt && cfg.extraHint) exHnt.innerHTML = '<span class="sr-i">i</span> ' + cfg.extraHint;
+    } else {
+      // Keep the total time visible but hide the extra-time input
+      var exFld = extraRow.querySelector('.sr-field:first-child');
+      if (exFld) exFld.style.display = 'none';
+      // Still show total-time
+      var totFld = extraRow.querySelector('.sr-field:last-child');
+      if (totFld) totFld.style.display = '';
+      extraRow.style.display = '';
+    }
+  }
+
+  // ── Servings ─────────────────────────────────────────────
+  var srvLbl = document.getElementById('lbl-servings');
+  var srvUnt = document.getElementById('servings-unit');
+  var srvHnt = document.getElementById('hint-servings');
+  if (srvLbl) srvLbl.innerHTML = cfg.servesLabel + ' <span class="req">*</span>';
+  if (srvUnt && cfg.servesUnit) srvUnt.value = cfg.servesUnit;
+  if (srvHnt) {
+    var hints = {
+      'Serves': 'How many people the recipe feeds.',
+      'Makes':  'Quantity this recipe produces.',
+      'Yield':  'Total yield of this recipe.'
+    };
+    srvHnt.innerHTML = '<span class="sr-i">i</span> ' + (hints[cfg.servesLabel] || hints['Serves']);
+  }
+
+  // ── Shelf life ───────────────────────────────────────────
+  var slBlock = document.getElementById('shelf-life-block');
+  if (slBlock) slBlock.style.display = cfg.shelfLife ? 'block' : 'none';
+
+  updateTotalTime();
+}
+
 // ── DRAG-TO-REORDER ──────────────────────────────────────────────────────
 //
 // makeSortable(container, childSelector, onDrop)
@@ -2985,6 +3197,13 @@ function collectFormData() {
     credit_url: document.getElementById('credit-url').value.trim(),
     visibility: document.querySelector('input[name="visibility"]:checked')?.value || 'Public',
     personal_notes: document.getElementById('personal-notes').value.trim(),
+    cooking_style: document.getElementById('cooking-style')?.value || '',
+    servings_unit: document.getElementById('servings-unit')?.value || 'people',
+    shelf_life_value: document.getElementById('shelf-life-value')?.value || '',
+    shelf_life_unit: document.getElementById('shelf-life-unit')?.value || 'months',
+    shelf_life_storage: document.getElementById('shelf-life-storage')?.value || '',
+    after_open_value: document.getElementById('after-open-value')?.value || '',
+    after_open_unit: document.getElementById('after-open-unit')?.value || 'weeks',
   };
 }
 
@@ -3127,6 +3346,30 @@ function restoreDraft(raw) {
   setVal('credit-name',    d.credit_name);
   setVal('credit-handle',  d.credit_handle);
   setVal('credit-url',     d.credit_url);
+
+  // ── Cooking style + shelf life ──────────────────────────
+  if (d.cooking_style !== undefined) {
+    var csEl = document.getElementById('cooking-style');
+    if (csEl) { csEl.value = d.cooking_style || ''; applyCookingStyle(d.cooking_style || ''); }
+  }
+  if (d.servings_unit) {
+    var suEl = document.getElementById('servings-unit');
+    if (suEl) suEl.value = d.servings_unit;
+  }
+  setVal('shelf-life-value',   d.shelf_life_value);
+  if (d.shelf_life_unit) {
+    var sluEl = document.getElementById('shelf-life-unit');
+    if (sluEl) sluEl.value = d.shelf_life_unit;
+  }
+  if (d.shelf_life_storage) {
+    var slsEl = document.getElementById('shelf-life-storage');
+    if (slsEl) slsEl.value = d.shelf_life_storage;
+  }
+  setVal('after-open-value', d.after_open_value);
+  if (d.after_open_unit) {
+    var aouEl = document.getElementById('after-open-unit');
+    if (aouEl) aouEl.value = d.after_open_unit;
+  }
 
   // ── Radio buttons ──────────────────────────────────────────
   setRadio('category',    d.category);
@@ -4063,12 +4306,31 @@ function autoFraction(input) {
 }
 
 function updateTotalTime() {
-  const prep = parseInt(document.getElementById('prep-time')?.value) || 0;
-  const cook = parseInt(document.getElementById('cook-time')?.value) || 0;
-  const add  = parseInt(document.getElementById('additional-time')?.value) || 0;
-  const total = prep + cook + add;
-  const el = document.getElementById('total-time');
-  if (el) el.value = total > 0 ? total : '';
+  var prep     = parseFloat(document.getElementById('prep-time')?.value) || 0;
+  var cook     = parseFloat(document.getElementById('cook-time')?.value) || 0;
+  var extra    = parseFloat(document.getElementById('additional-time')?.value) || 0;
+  var cookUnit  = (window._cookUnit  || 'min');
+  var extraUnit = (window._extraUnit || 'min');
+
+  // Normalise everything to minutes for the total
+  function toMins(val, unit) {
+    if (unit === 'hr')   return val * 60;
+    if (unit === 'day')  return val * 60 * 24;
+    if (unit === 'week') return val * 60 * 24 * 7;
+    return val; // min
+  }
+  function fmtTime(mins) {
+    if (!mins) return '';
+    if (mins < 60)   return mins + ' min';
+    var h = Math.floor(mins / 60), m = mins % 60;
+    if (mins < 1440) return h + ' hr' + (m ? ' ' + m + ' min' : '');
+    var d = Math.floor(mins / 1440), rem = mins % 1440;
+    var hh = Math.floor(rem / 60);
+    return d + ' day' + (d > 1 ? 's' : '') + (hh ? ' ' + hh + ' hr' : '');
+  }
+  var totalMins = toMins(prep, 'min') + toMins(cook, cookUnit) + toMins(extra, extraUnit);
+  var el = document.getElementById('total-time');
+  if (el) el.value = totalMins > 0 ? fmtTime(totalMins) : '';
 }
 // Hook prep and cook time inputs too
 document.addEventListener('DOMContentLoaded', () => {
