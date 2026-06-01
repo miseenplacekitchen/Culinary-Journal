@@ -2965,9 +2965,10 @@ function collectFormData() {
     origin_state: window.fState || '',
     introduction: document.getElementById('introduction').value.trim(),
     image_url: window.uploadedImageUrl || '',
-    prep_time_minutes: parseInt(document.getElementById('prep-time').value) || 0,
-    cook_time_minutes: parseInt(document.getElementById('cook-time').value) || 0,
-    servings: parseInt(document.getElementById('servings').value) || 0,
+    prep_time_minutes: document.getElementById('prep-time').value.trim(),
+    cook_time_minutes: document.getElementById('cook-time').value.trim(),
+    additional_time_minutes: document.getElementById('additional-time').value.trim(),
+    servings: document.getElementById('servings').value.trim(),
     dietary_tags: getDietaryTags(),
     health_tags: getHealthTags(),
     occasion_tags: getOccasionTags(),
@@ -3119,6 +3120,7 @@ function restoreDraft(raw) {
   setVal('introduction',   d.introduction);
   setVal('prep-time',      d.prep_time_minutes);
   setVal('cook-time',      d.cook_time_minutes);
+  setVal('additional-time', d.additional_time_minutes);
   setVal('servings',       d.servings);
   setVal('cooking-notes',  d.cooking_notes);
   setVal('personal-notes', d.personal_notes);
@@ -3134,24 +3136,31 @@ function restoreDraft(raw) {
   setRadio('visibility',  d.visibility  || 'Public');
   setRadio('difficulty',  d.difficulty);
 
-  // ── Origin dropdowns ───────────────────────────────────────
-  if (d.origin_continent) {
-    window.fContinent = d.origin_continent;
-    const cc = document.getElementById('origin-continent');
-    if (cc) { cc.value = d.origin_continent; cc.dispatchEvent(new Event('change')); }
-  }
+  // ── Origin picker ─────────────────────────────────────────
+  // The origin UI uses pickContinent/pickCountry/pickState functions
+  // and lbl-A/B/C labels — not element IDs like 'origin-continent'.
   setTimeout(function() {
-    if (d.origin_country) {
-      window.fCountry = d.origin_country;
-      const co = document.getElementById('origin-country');
-      if (co) { co.value = d.origin_country; co.dispatchEvent(new Event('change')); }
-    }
-    if (d.origin_state) {
-      window.fState = d.origin_state;
-      const st = document.getElementById('origin-state');
-      if (st) st.value = d.origin_state;
-    }
-  }, 200);
+    try {
+      if (d.origin_continent && typeof pickContinent === 'function') {
+        pickContinent(d.origin_continent);
+        // Allow country list to populate before setting country
+        setTimeout(function() {
+          try {
+            if (d.origin_country && typeof pickCountry === 'function') {
+              pickCountry(d.origin_country);
+              setTimeout(function() {
+                try {
+                  if (d.origin_state && typeof pickState === 'function') {
+                    pickState(d.origin_state);
+                  }
+                } catch(_) {}
+              }, 150);
+            }
+          } catch(_) {}
+        }, 150);
+      }
+    } catch(_) {}
+  }, 300);
 
   // ── Tags ────────────────────────────────────────────────────
   // Uses value attribute matching — no data-tag attribute exists on these inputs
@@ -3162,11 +3171,24 @@ function restoreDraft(raw) {
   checkAll(d.meal_type_tags);
   checkAll(d.flavor_profile_tags);
 
-  // ── Image ──────────────────────────────────────────────────
+  // ── Image ─────────────────────────────────────────────────
+  // img-preview is a <div> using background-image, not an <img>.
+  // The correct restore path is showImagePreview(url).
   if (d.image_url) {
     window.uploadedImageUrl = d.image_url;
-    const pr = document.getElementById('img-preview');
-    if (pr) { pr.src = d.image_url; pr.style.display = 'block'; }
+    try {
+      if (typeof showImagePreview === 'function') {
+        showImagePreview(d.image_url);
+      } else {
+        // Fallback: set background-image directly
+        var pr = document.getElementById('img-preview');
+        var ps = document.getElementById('img-preview-state');
+        var es = document.getElementById('img-empty-state');
+        if (pr) pr.style.backgroundImage = 'url(' + d.image_url + ')';
+        if (ps) ps.style.display = 'block';
+        if (es) es.style.display = 'none';
+      }
+    } catch(_) {}
   }
 
   // ── Ingredients ─────────────────────────────────────────────
