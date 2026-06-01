@@ -545,3 +545,154 @@ function outsideNotifClick(e) {
 
 // Load count on page load (after small delay to let nav render)
 setTimeout(loadNotifCount, 800);
+
+
+// ══════════════════════════════════════════════════════
+// FEEDBACK WIDGET — The Culinary Journal
+// Floating ✉ button on all pages except recipe-page.html
+// Submissions stored in Supabase feedback table.
+// Betty reviews from Admin Panel → User Management → Feedback.
+// ══════════════════════════════════════════════════════
+(function initFeedbackWidget() {
+  // Skip on recipe page and admin dashboard
+  var path = window.location.pathname;
+  if (path.includes('recipe-page') || path.includes('dashboard')) return;
+
+  var SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+  var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+
+  // Inject styles
+  var s = document.createElement('style');
+  s.textContent = [
+    '.tcj-fb-btn{position:fixed;bottom:24px;right:24px;z-index:8888;display:flex;align-items:center;gap:8px;padding:10px 18px;background:var(--accent,#C4973B);color:#fff;border:none;border-radius:50px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.3);transition:opacity .2s,transform .2s}',
+    '.tcj-fb-btn:hover{opacity:.88;transform:translateY(-2px)}',
+    '.tcj-fb-ov{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9990;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)}',
+    '.tcj-fb-box{background:var(--bg,#0f1117);border:1px solid var(--border,rgba(255,255,255,.12));border-radius:14px;padding:28px 32px;width:90%;max-width:480px;font-family:"DM Sans",sans-serif}',
+    '.tcj-fb-title{font-family:"Cormorant Garamond",serif;font-size:1.25rem;font-weight:700;color:var(--text-high,#fff);margin:0 0 6px}',
+    '.tcj-fb-sub{font-size:13px;color:var(--text-mid,rgba(255,255,255,.5));margin:0 0 18px;line-height:1.6}',
+    '.tcj-fb-lbl{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-mid,rgba(255,255,255,.5));margin-bottom:4px}',
+    '.tcj-fb-inp,.tcj-fb-ta,.tcj-fb-sel{width:100%;box-sizing:border-box;padding:9px 12px;background:rgba(255,255,255,.05);border:1px solid var(--border,rgba(255,255,255,.12));border-radius:8px;font-family:"DM Sans",sans-serif;font-size:13px;color:var(--text-high,#fff);outline:none;margin-bottom:14px;transition:border-color .2s}',
+    '.tcj-fb-inp:focus,.tcj-fb-ta:focus,.tcj-fb-sel:focus{border-color:var(--accent,#C4973B)}',
+    '.tcj-fb-sel{background:rgba(255,255,255,.05);cursor:pointer}',
+    '.tcj-fb-ta{resize:vertical;min-height:100px}',
+    '.tcj-fb-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px}',
+    '.tcj-fb-btns{display:flex;gap:10px}',
+    '.tcj-fb-send{flex:1;padding:11px;background:var(--accent,#C4973B);border:none;border-radius:8px;color:#fff;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:600;cursor:pointer}',
+    '.tcj-fb-cancel{padding:11px 18px;background:none;border:1px solid var(--border,rgba(255,255,255,.12));border-radius:8px;color:var(--text-mid,rgba(255,255,255,.5));font-family:"DM Sans",sans-serif;font-size:13px;cursor:pointer}',
+    '.tcj-fb-msg{font-size:12px;text-align:center;min-height:18px;margin-top:10px}'
+  ].join('');
+  document.head.appendChild(s);
+
+  // Floating button
+  var btn = document.createElement('button');
+  btn.className = 'tcj-fb-btn';
+  btn.innerHTML = '\u2709\ufe0e&nbsp; Feedback';
+  btn.title = 'Send feedback to The Culinary Journal';
+  document.body.appendChild(btn);
+
+  btn.addEventListener('click', function() {
+    // Read session for pre-fill
+    var prof = null, sess = null;
+    try { prof  = JSON.parse(localStorage.getItem('tcj_profile') || 'null'); } catch(_){}
+    try { sess  = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(_){}
+
+    var ov = document.createElement('div');
+    ov.className = 'tcj-fb-ov';
+
+    var box = document.createElement('div');
+    box.className = 'tcj-fb-box';
+    box.innerHTML =
+      '<div class="tcj-fb-title">Feedback to The Culinary Journal</div>' +
+      '<p class="tcj-fb-sub">Got a suggestion, spotted something wrong, or just want to say hello? We read everything.</p>' +
+      '<label class="tcj-fb-lbl">Type</label>' +
+      '<select class="tcj-fb-sel" id="tcj-t">' +
+        '<option value="general">General feedback</option>' +
+        '<option value="suggestion">Suggestion or idea</option>' +
+        '<option value="bug">Something isn\u2019t working</option>' +
+        '<option value="recipe">Recipe feedback</option>' +
+        '<option value="other">Other</option>' +
+      '</select>' +
+      '<label class="tcj-fb-lbl">Message <span style="color:#e05555">*</span></label>' +
+      '<textarea class="tcj-fb-ta" id="tcj-m" placeholder="Tell us anything\u2026"></textarea>' +
+      '<div class="tcj-fb-2col">' +
+        '<div><label class="tcj-fb-lbl">Name <span style="color:var(--text-mid)">optional</span></label>' +
+        '<input class="tcj-fb-inp" id="tcj-n" type="text" placeholder="How should we address you?"></div>' +
+        '<div><label class="tcj-fb-lbl">Email <span style="color:var(--text-mid)">optional \u2014 for a reply</span></label>' +
+        '<input class="tcj-fb-inp" id="tcj-e" type="email" placeholder="your@email.com"></div>' +
+      '</div>' +
+      '<div class="tcj-fb-btns">' +
+        '<button class="tcj-fb-cancel" id="tcj-c">Cancel</button>' +
+        '<button class="tcj-fb-send"   id="tcj-s">Send Feedback</button>' +
+      '</div>' +
+      '<div class="tcj-fb-msg" id="tcj-msg"></div>';
+
+    ov.appendChild(box);
+    document.body.appendChild(ov);
+
+    // Pre-fill
+    if (prof) {
+      if (prof.full_name)  box.querySelector('#tcj-n').value = prof.full_name;
+      if (prof.email)      box.querySelector('#tcj-e').value = prof.email;
+    }
+
+    // Close handlers
+    box.querySelector('#tcj-c').addEventListener('click', function(){ ov.remove(); });
+    ov.addEventListener('click', function(e){ if(e.target===ov) ov.remove(); });
+
+    // Send
+    box.querySelector('#tcj-s').addEventListener('click', function() {
+      var msg  = (box.querySelector('#tcj-m').value||'').trim();
+      var type =  box.querySelector('#tcj-t').value;
+      var name = (box.querySelector('#tcj-n').value||'').trim();
+      var email= (box.querySelector('#tcj-e').value||'').trim();
+      var msgEl=  box.querySelector('#tcj-msg');
+      var sendBtn= box.querySelector('#tcj-s');
+
+      if (!msg) {
+        msgEl.style.color='#e05555';
+        msgEl.textContent='Please write a message before sending.';
+        box.querySelector('#tcj-m').focus();
+        return;
+      }
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending\u2026';
+      msgEl.textContent = '';
+
+      var authHeader = (sess&&sess.access_token) ? 'Bearer '+sess.access_token : 'Bearer '+SUPA_KEY;
+      fetch(SUPA_URL+'/rest/v1/feedback', {
+        method:'POST',
+        headers:{
+          'apikey':SUPA_KEY,
+          'Authorization':authHeader,
+          'Content-Type':'application/json',
+          'Prefer':'return=minimal'
+        },
+        body: JSON.stringify({
+          type:    type,
+          feedback:msg,
+          name:    name||null,
+          email:   email||null,
+          username:prof ? (prof.username||null) : null,
+          user_id: (sess&&sess.user) ? sess.user.id : null,
+          status:  'new'
+        })
+      })
+      .then(function(res){
+        if(res.ok||res.status===201){
+          msgEl.style.color='#4caf76';
+          msgEl.textContent='\u2713 Thank you! We\u2019ll read your message.';
+          sendBtn.textContent='\u2713 Sent';
+          setTimeout(function(){ ov.remove(); }, 2000);
+        } else {
+          throw new Error('Error '+res.status);
+        }
+      })
+      .catch(function(){
+        msgEl.style.color='#e05555';
+        msgEl.textContent='Couldn\u2019t send right now. Please try again.';
+        sendBtn.disabled=false;
+        sendBtn.textContent='Send Feedback';
+      });
+    });
+  });
+})();

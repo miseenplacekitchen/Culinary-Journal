@@ -431,6 +431,35 @@
 
     /* Unit input wrap — holds the input AND the ⚠ warning badge for custom units */
     .ing-unit-wrap { position: relative; }
+    .ing-unit-select {
+      font-family: "DM Sans", sans-serif;
+      font-size: 13px;
+      color: var(--text-high);
+      background: var(--text-ghost);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 8px;
+      width: 100%;
+      box-sizing: border-box;
+      cursor: pointer;
+      outline: none;
+      appearance: auto;
+      -webkit-appearance: auto;
+    }
+    .ing-unit-select:focus { border-color: var(--accent); }
+    .ing-unit-custom {
+      font-family: "DM Sans", sans-serif;
+      font-size: 13px;
+      color: var(--text-high);
+      background: var(--text-ghost);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 10px;
+      width: 100%;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .ing-unit-custom:focus { border-color: var(--accent); }
     .ing-unit-wrap .ing-unit-input { padding-right: 26px; }
     .ing-unknown-unit-badge {
       position: absolute;
@@ -2082,8 +2111,8 @@ function addIngRow(container, qty='', unit='', name='', note='', cat='') {
     <span class="drag-handle" title="Drag to reorder">⠿</span>
     <input class="ing-input" type="text" maxlength="20" placeholder="½" oninput="autoFraction(this)" onblur="autoFraction(this)" value="${esc(qty)}">
     <div class="ing-unit-wrap">
-      <select class="ing-input ing-unit-select" onchange="onUnitSelectChange(this)" style="${UNITS.includes(unit) || !unit ? '' : 'display:none'}">${unitOptionsHtml(unit)}</select>
-      <input class="ing-input ing-unit-custom" type="text" maxlength="30" placeholder="type unit…"
+      <select class="ing-unit-select" onchange="onUnitSelectChange(this)" style="${UNITS.includes(unit) || !unit ? '' : 'display:none'}">${unitOptionsHtml(unit)}</select>
+      <input class="ing-unit-custom" type="text" maxlength="30" placeholder="type unit…"
         value="${!unit || UNITS.includes(unit) ? '' : esc(unit)}"
         style="${!unit || UNITS.includes(unit) ? 'display:none' : ''}"
         oninput="validateUnit(this)" onblur="switchToUnitSelect(this)">
@@ -4472,6 +4501,5 @@ document.addEventListener('keydown', function(e) {
   }
 });
 </script>
-<script src="feedback-widget.js" defer></script>
 </body>
 </html>
