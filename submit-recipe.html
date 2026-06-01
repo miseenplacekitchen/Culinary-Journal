@@ -2193,7 +2193,7 @@ function addStep(container, stepData = '') {
         style="font-family:'DM Sans',sans-serif;font-size:12px;font-style:italic;
           color:var(--text-high);background:var(--text-ghost);border:1px solid var(--border);
           border-radius:6px;padding:6px 10px;outline:none;transition:border-color 0.2s">
-      <textarea class="step-input" maxlength="1500" placeholder="Describe this step...">${stepBody || text}</textarea>
+      <textarea class="step-input" maxlength="1500" placeholder="Describe this step...">${stepBody}</textarea>
     </div>
     <div class="ing-move-wrap" style="position:relative;margin-top:8px">
       <button class="btn-move-row" onclick="toggleMoveMenu(this,'method')" title="Move to another section">⇄</button>
