@@ -2815,24 +2815,32 @@ function escT(s){ return esc(s); }
 
 // ── SITE MANAGEMENT ──────────────────────────────────────────────
 function switchSMTab(tab) {
-  localStorage.setItem('tcj_active_sm_tab', tab);
-  document.querySelectorAll('#v-site-mgmt .ap-inner-tab').forEach(function(t){
-    t.classList.toggle('active', t.dataset.tab === tab);
-  });
-  ['sm-pages','sm-features','sm-ann','sm-content','sm-themes','sm-email','sm-settings'].forEach(function(p){
-    var el = document.getElementById('upanel-' + p);
-    if (el) el.style.display = p === tab ? 'block' : 'none';
-  });
-  var container = document.getElementById('upanel-' + tab);
-  if (!container || container.dataset.built) return;
-  container.dataset.built = '1';
-  if (tab === 'sm-pages')    buildSMPages(container);
-  else if (tab === 'sm-features')  buildSMFeatures(container);
-  else if (tab === 'sm-ann')       buildSMAnnouncements(container);
-  else if (tab === 'sm-content')   buildSMContent(container);
-  else if (tab === 'sm-themes')    buildSMThemes(container);
-  else if (tab === 'sm-email')     buildSMEmail(container);
-  else if (tab === 'sm-settings')  buildSMSettings(container);
+  try {
+    localStorage.setItem('tcj_active_sm_tab', tab);
+    // Update active class on tab buttons
+    document.querySelectorAll('#v-site-mgmt .ap-inner-tab').forEach(function(t){
+      t.classList.toggle('active', t.dataset.tab === tab);
+    });
+    // Show/hide panels
+    ['sm-pages','sm-features','sm-ann','sm-content','sm-themes','sm-email','sm-settings'].forEach(function(p){
+      var el = document.getElementById('upanel-' + p);
+      if (el) el.style.display = p === tab ? 'block' : 'none';
+    });
+    // Load content if not already built
+    var container = document.getElementById('upanel-' + tab);
+    if (!container) return;
+    if (container.dataset.built === '1') return;
+    container.dataset.built = '1';
+    if (tab === 'sm-pages')         buildSMPages(container);
+    else if (tab === 'sm-features')  buildSMFeatures(container);
+    else if (tab === 'sm-ann')       buildSMAnnouncements(container);
+    else if (tab === 'sm-content')   buildSMContent(container);
+    else if (tab === 'sm-themes')    buildSMThemes(container);
+    else if (tab === 'sm-email')     buildSMEmail(container);
+    else if (tab === 'sm-settings')  buildSMSettings(container);
+  } catch(e) {
+    alert('Site Management tab error: ' + e.message);
+  }
 }
 
 
@@ -2848,43 +2856,60 @@ function smSQLError(container, e) {
 }
 
 async function buildSMPages(container) {
-  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
-  var pages;
-  try { pages = await rpc('admin_get_site_pages', {}); }
-  catch(e) { smSQLError(container, e); return; }
-  if (!Array.isArray(pages)) pages = [];
-  container.innerHTML = '';
-  if (!pages.length) {
-    container.innerHTML = '<div style="padding:20px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">No pages found. The site_pages table may be empty.</div>';
-    return;
+  container.innerHTML = '<div id="sm-status" style="font-family:DM Sans,sans-serif;font-size:13px;padding:16px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text-high)">Step 1: Starting fetch\u2026</div>';
+  var statusEl = container.querySelector('#sm-status');
+  function status(msg) { if(statusEl) statusEl.textContent = msg; }
+  try {
+    status('Step 2: Calling rpc admin_get_site_pages\u2026');
+    var pages;
+    try {
+      pages = await rpc('admin_get_site_pages', {});
+    } catch(fetchErr) {
+      container.innerHTML =
+        '<div style="padding:20px;background:rgba(220,80,80,0.12);border:1px solid rgba(220,80,80,0.5);border-radius:10px;font-family:DM Sans,sans-serif">' +
+        '<div style="font-size:14px;font-weight:700;color:#dc5050;margin-bottom:8px">RPC Failed</div>' +
+        '<div style="font-size:13px;color:var(--text-high);margin-bottom:8px">Error: ' + String(fetchErr.message).replace(/</g,'&lt;') + '</div>' +
+        '<div style="font-size:12px;color:var(--text-mid)">Make sure site_management.sql has been run in Supabase SQL Editor, and that you are logged in as admin.</div>' +
+        '</div>';
+      return;
+    }
+    status('Step 3: Got response. Pages: ' + (Array.isArray(pages) ? pages.length : typeof pages));
+    if (!Array.isArray(pages) || pages.length === 0) {
+      container.innerHTML = '<div style="padding:16px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">No pages found in site_pages table. SQL may have run but INSERT statements did not complete.</div>';
+      return;
+    }
+    status('Step 4: Building table with ' + pages.length + ' pages\u2026');
+    container.innerHTML = '';
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'overflow-x:auto;border:1px solid var(--border);border-radius:12px';
+    var tbl = document.createElement('table');
+    tbl.className = 'ap-table';
+    tbl.innerHTML = '<thead><tr style="border-bottom:1px solid var(--border)"><th class="ap-th">Page</th><th class="ap-th">Path</th><th class="ap-th">Visibility</th><th class="ap-th" style="text-align:center">Coming Soon</th><th class="ap-th">Meta Title</th><th class="ap-th">Save</th></tr></thead>';
+    var tbody = document.createElement('tbody');
+    pages.forEach(function(p) {
+      var tr = document.createElement('tr'); tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+      var vis = '<select id="smv-'+p.path+'" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)">'+
+        ['public','members','hidden'].map(function(v){return '<option value="'+v+'"'+(p.visibility===v?' selected':'')+'>'+v.charAt(0).toUpperCase()+v.slice(1)+'</option>';}).join('')+'</select>';
+      tr.innerHTML =
+        '<td class="ap-td" style="font-size:13px;font-weight:500;color:var(--text-high)">'+(p.name||'')+'</td>'+
+        '<td class="ap-td" style="font-size:11px;color:var(--text-mid)">'+(p.path||'')+'</td>'+
+        '<td class="ap-td">'+vis+'</td>'+
+        '<td class="ap-td" style="text-align:center"><input type="checkbox" id="smcs-'+(p.path||'')+'"'+(p.coming_soon?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent)"></td>'+
+        '<td class="ap-td"><input id="smmt-'+(p.path||'')+'" value="'+(p.meta_title||'')+'" placeholder="SEO title" style="width:100%;box-sizing:border-box;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)"></td>'+
+        '<td class="ap-td"></td>';
+      var btn = document.createElement('button');
+      btn.textContent='Save'; btn.style.cssText="padding:5px 12px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";
+      btn.addEventListener('click',(function(path,b){return async function(){
+        b.disabled=true;b.textContent='\u2026';
+        try{await rpc('admin_update_site_page',{p_path:path,p_visibility:document.getElementById('smv-'+path).value,p_meta_title:document.getElementById('smmt-'+path).value||null,p_meta_desc:null,p_coming_soon:document.getElementById('smcs-'+path).checked});b.textContent='\u2713';setTimeout(function(){b.textContent='Save';b.disabled=false;},2000);}
+        catch(e){b.textContent='Save';b.disabled=false;alert('Error: '+e.message);}
+      };})(p.path,btn));
+      tr.lastElementChild.appendChild(btn); tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody); wrap.appendChild(tbl); container.appendChild(wrap);
+  } catch(outerErr) {
+    container.innerHTML = '<div style="padding:20px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;color:#dc5050;font-size:13px">Unexpected error: ' + String(outerErr.message).replace(/</g,'&lt;') + '</div>';
   }
-  var wrap = document.createElement('div');
-  wrap.style.cssText = 'overflow-x:auto;border:1px solid var(--border);border-radius:12px';
-  var tbl = document.createElement('table');
-  tbl.className = 'ap-table';
-  tbl.innerHTML = '<thead><tr style="border-bottom:1px solid var(--border)"><th class="ap-th">Page</th><th class="ap-th">Path</th><th class="ap-th">Visibility</th><th class="ap-th" style="text-align:center">Coming Soon</th><th class="ap-th">Meta Title</th><th class="ap-th">Save</th></tr></thead>';
-  var tbody = document.createElement('tbody');
-  pages.forEach(function(p) {
-    var tr = document.createElement('tr'); tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
-    var vis = '<select id="smv-'+p.path+'" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)">'+
-      ['public','members','hidden'].map(function(v){return '<option value="'+v+'"'+(p.visibility===v?' selected':'')+'>'+v.charAt(0).toUpperCase()+v.slice(1)+'</option>';}).join('')+'</select>';
-    tr.innerHTML =
-      '<td class="ap-td" style="font-size:13px;font-weight:500;color:var(--text-high)">'+p.name+'</td>'+
-      '<td class="ap-td" style="font-size:11px;color:var(--text-mid)">'+p.path+'</td>'+
-      '<td class="ap-td">'+vis+'</td>'+
-      '<td class="ap-td" style="text-align:center"><input type="checkbox" id="smcs-'+p.path+'"'+(p.coming_soon?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent)"></td>'+
-      '<td class="ap-td"><input id="smmt-'+p.path+'" value="'+(p.meta_title||'')+'" placeholder="SEO title" style="width:100%;box-sizing:border-box;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)"></td>'+
-      '<td class="ap-td"></td>';
-    var btn = document.createElement('button');
-    btn.textContent='Save'; btn.style.cssText="padding:5px 12px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";
-    btn.addEventListener('click',(function(path,b){return async function(){
-      b.disabled=true;b.textContent='\u2026';
-      try{await rpc('admin_update_site_page',{p_path:path,p_visibility:document.getElementById('smv-'+path).value,p_meta_title:document.getElementById('smmt-'+path).value||null,p_meta_desc:null,p_coming_soon:document.getElementById('smcs-'+path).checked});b.textContent='\u2713';setTimeout(function(){b.textContent='Save';b.disabled=false;},2000);}
-      catch(e){b.textContent='Save';b.disabled=false;alert('Error: '+e.message);}
-    };})(p.path,btn));
-    tr.lastElementChild.appendChild(btn); tbody.appendChild(tr);
-  });
-  tbl.appendChild(tbody); wrap.appendChild(tbl); container.appendChild(wrap);
 }
 
 async function buildSMFeatures(container) {
