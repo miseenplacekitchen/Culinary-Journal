@@ -840,7 +840,7 @@
     #shelf-life-block .sr-label { font-size: 12px; }
     #shelf-life-block .sr-hint  { font-size: 11px; }
 </style>
-  <script src="page-guard.js"></script>
+  
 </head>
 <body class="cj-body">
 
@@ -1610,7 +1610,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (form) form.style.display = 'block';
-  try { updateNav(); } catch(e) { console.error('Nav error:', e); }
+  // Navigation handled by nav-init.js
   // Populate the shared units datalist from the UNITS array.
   // Skipping the empty string entry — datalist options need real values.
   try {
@@ -1655,20 +1655,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   try { setupAutoSave(); } catch(e) { console.error(e); }
 });
 
-function updateNav() {
-  if (!session) return;
-  let profile = {};
-  try { profile = JSON.parse(lsGet('tcj_profile') || '{}') || {}; } catch(_) { profile = {}; }
-  if (typeof initCollapsible === 'function') setTimeout(initCollapsible, 150);
-  const loginLink = document.getElementById('nav-login');
-  const np = document.getElementById('nav-profile');
-  if (loginLink) loginLink.style.display = 'none';
-  if (np) {
-    np.style.display = 'inline';
-    np.textContent = '@' + (profile.username || 'Profile');
-    np.href = 'profile.html';
-  }
-}
+// updateNav() removed — nav-init.js handles navigation
 
 // ── LOAD INGREDIENTS FROM SUPABASE ───────────────────
 async function loadIngredients() {
