@@ -424,7 +424,7 @@
     .btn-remove-section { background: none; border: none; color: var(--text-high); cursor: pointer; font-size: 18px; padding: 0; line-height: 1; opacity: 0.5; transition: opacity 0.2s; }
     .btn-remove-section:hover { opacity: 1; color: #e05555; }
 
-    .ing-row { display: grid; grid-template-columns: 80px 110px 1fr 150px 150px 32px; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .ing-row { display: grid; grid-template-columns: 22px 80px 110px 1fr 140px 140px 26px 22px; gap: 8px; align-items: center; margin-bottom: 8px; }
     .ing-input { font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high); background: var(--text-ghost); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; width: 100%; box-sizing: border-box; outline: none; }
     .ing-input:focus { border-color: var(--accent); }
     .ing-input::placeholder { color: var(--text-high); opacity: 0.6; }
@@ -541,7 +541,7 @@
     .draft-badge { display: none; font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--accent); background: rgb(from var(--accent) r g b / 0.1); border: 1px solid rgb(from var(--accent) r g b / 0.2); padding: 4px 10px; border-radius: 20px; }
 
     /* ── INGREDIENT COLUMN HEADERS ───────────── */
-    .ing-col-headers { display: grid; grid-template-columns: 80px 110px 1fr 150px 150px 32px; gap: 8px; margin-bottom: 6px; padding: 0 0 6px; border-bottom: 1px solid var(--border); }
+    .ing-col-headers { display: grid; grid-template-columns: 22px 80px 110px 1fr 140px 140px 26px 22px; gap: 8px; margin-bottom: 6px; padding: 0 0 6px; border-bottom: 1px solid var(--border); }
     /* Per-ingredient category filter — styled to match .ing-input */
     .ing-cat-select {
       font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high);
@@ -1933,11 +1933,13 @@ function addIngSection(name = '') {
       <button class="btn-remove-section" onclick="this.closest('.ing-section').remove()" title="Remove section">×</button>
     </div>
     <div class="ing-col-headers">
+      <span></span>
       <span class="ing-col-hdr">Qty</span>
       <span class="ing-col-hdr">Unit</span>
       <span class="ing-col-hdr">Ingredient</span>
       <span class="ing-col-hdr">Category</span>
       <span class="ing-col-hdr ing-note-col">Preparation Note</span>
+      <span></span>
       <span></span>
     </div>
     <div class="ing-rows"></div>
@@ -1971,7 +1973,7 @@ function addIngRow(container, qty='', unit='', name='', note='', cat='') {
       <div class="ing-autocomplete"></div>
       <span class="ing-unknown-badge" style="display:none">⚠ New ingredient — not in our database (will be reviewed by admin)</span>
     </div>
-    <select class="ing-cat-select" onchange="onCategoryChange(this)" title="Pick a category to narrow the ingredient search">${categoryOptionsHtml(cat)}</select>
+    <select class="ing-cat-select" onchange="onCategoryChange(this)" onkeydown="if(event.key==='Delete'||event.key==='Backspace'){this.value='';onCategoryChange(this);event.preventDefault();}" title="Pick a category — press Delete to clear">${categoryOptionsHtml(cat)}</select>
     <input class="ing-input ing-note-col" type="text" maxlength="120" placeholder="e.g. finely chopped" value="${esc(note)}">
     <div class="ing-move-wrap">
       <button class="btn-move-row" onclick="toggleMoveMenu(this,'ingredients')" title="Move to another section">⇄</button>
@@ -2010,7 +2012,7 @@ function getIngredientCategories() {
   return Object.keys(seen).sort();
 }
 function categoryOptionsHtml(selected) {
-  var html = '<option value="">Category</option>';
+  var html = '<option value="">— None —</option>';
   getIngredientCategories().forEach(function (c) {
     html += '<option value="' + escIng(c) + '"' + (c === selected ? ' selected' : '') + '>' + escIng(c) + '</option>';
   });
@@ -4099,6 +4101,15 @@ function initCollapsible() {
 }
 
 
+
+// Allow Delete / Backspace to clear the ingredient category dropdown
+document.addEventListener('keydown', function(e) {
+  if ((e.key === 'Delete' || e.key === 'Backspace') && e.target.classList.contains('ing-cat-select')) {
+    e.preventDefault();
+    e.target.value = '';
+    try { onCategoryChange(e.target); } catch(_) {}
+  }
+});
 </script>
 </body>
 </html>
