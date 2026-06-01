@@ -736,25 +736,21 @@
 
     <!-- SITE MANAGEMENT -->
     <div id="v-site-mgmt" style="display:none">
-      <div class="ap-inner-tabs">
-        <button class="ap-inner-tab active" data-smtab="pages"         onclick="switchSMTab('pages')">Pages</button>
-        <button class="ap-inner-tab"        data-smtab="features"      onclick="switchSMTab('features')">Features</button>
-        <button class="ap-inner-tab"        data-smtab="announcements" onclick="switchSMTab('announcements')">Announcements</button>
-        <button class="ap-inner-tab"        data-smtab="content"       onclick="switchSMTab('content')">Content</button>
-        <button class="ap-inner-tab"        data-smtab="themes"        onclick="switchSMTab('themes')">Themes</button>
-        <button class="ap-inner-tab"        data-smtab="email"         onclick="switchSMTab('email')">Email Templates</button>
-        <button class="ap-inner-tab"        data-smtab="settings"      onclick="switchSMTab('settings')">Settings</button>
-      </div>
-      <div id="smpanel-pages"         class="sm-panel"></div>
-      <div id="smpanel-features"      class="sm-panel" style="display:none"></div>
-      <div id="smpanel-announcements" class="sm-panel" style="display:none"></div>
-      <div id="smpanel-content"       class="sm-panel" style="display:none"></div>
-      <div id="smpanel-themes"        class="sm-panel" style="display:none"></div>
-      <div id="smpanel-email"         class="sm-panel" style="display:none"></div>
-      <div id="smpanel-settings"      class="sm-panel" style="display:none"></div>
+
+      <!-- Tab bar — pure inline, no CSS classes -->
+      <div id="sm-tabbar" style="display:flex;border-bottom:1px solid rgba(255,255,255,0.12);margin-bottom:20px;flex-wrap:wrap"></div>
+
+      <!-- Panels -->
+      <div id="smpanel-pages"></div>
+      <div id="smpanel-features"      style="display:none"></div>
+      <div id="smpanel-announcements" style="display:none"></div>
+      <div id="smpanel-content"       style="display:none"></div>
+      <div id="smpanel-themes"        style="display:none"></div>
+      <div id="smpanel-email"         style="display:none"></div>
+      <div id="smpanel-settings"      style="display:none"></div>
     </div>
 
-    <!-- ANALYTICS -->
+        <!-- ANALYTICS -->
     <div id="v-analytics" style="display:none">
       <div id="analytics-content">
         <div class="ap-empty-row" style="padding:40px;text-align:center">Loading analytics&#8230;</div>
@@ -6448,25 +6444,53 @@ async function exportCsv(){
 // ═══════════════════════════════════════════════════
 
 function loadSiteManagement() {
-  var saved = localStorage.getItem('tcj_active_sm_tab') || 'pages';
-  switchSMTab(saved);
+  // Build tab bar with pure inline styles — no CSS classes
+  var tabbar = document.getElementById('sm-tabbar');
+  if (!tabbar) return;
+  if (tabbar.dataset.built) {
+    switchSMTab(localStorage.getItem('tcj_active_sm_tab') || 'pages');
+    return;
+  }
+  tabbar.dataset.built = '1';
+  tabbar.innerHTML = '';
+  var SM_TABS = [
+    {key:'pages',        label:'Pages'},
+    {key:'features',     label:'Features'},
+    {key:'announcements',label:'Announcements'},
+    {key:'content',      label:'Content'},
+    {key:'themes',       label:'Themes'},
+    {key:'email',        label:'Email Templates'},
+    {key:'settings',     label:'Settings'}
+  ];
+  SM_TABS.forEach(function(td) {
+    var btn = document.createElement('button');
+    btn.textContent = td.label;
+    btn.dataset.smtab = td.key;
+    btn.style.cssText = "padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:rgba(255,255,255,0.5);margin-bottom:-1px;white-space:nowrap;outline:none";
+    btn.addEventListener('click', function(){ switchSMTab(td.key); });
+    tabbar.appendChild(btn);
+  });
+  switchSMTab(localStorage.getItem('tcj_active_sm_tab') || 'pages');
 }
 
 function switchSMTab(tab) {
   localStorage.setItem('tcj_active_sm_tab', tab);
-  document.querySelectorAll('#v-site-mgmt .ap-inner-tab').forEach(function(b){
-    b.classList.toggle('active', b.dataset.smtab === tab);
-  });
-  document.querySelectorAll('.sm-panel').forEach(function(p){
-    p.style.display = 'none';
+  var tabbar = document.getElementById('sm-tabbar');
+  if (tabbar) {
+    tabbar.querySelectorAll('button').forEach(function(b){
+      var active = b.dataset.smtab === tab;
+      b.style.borderBottomColor = active ? 'var(--accent)' : 'transparent';
+      b.style.color = active ? 'var(--accent)' : 'rgba(255,255,255,0.5)';
+    });
+  }
+  ['pages','features','announcements','content','themes','email','settings'].forEach(function(k){
+    var p = document.getElementById('smpanel-' + k);
+    if (p) p.style.display = k === tab ? 'block' : 'none';
   });
   var panel = document.getElementById('smpanel-' + tab);
-  if (panel) {
-    panel.style.display = 'block';
-    if (!panel.dataset.loaded) {
-      panel.dataset.loaded = '1';
-      loadSMTab(tab, panel);
-    }
+  if (panel && !panel.dataset.loaded) {
+    panel.dataset.loaded = '1';
+    loadSMTab(tab, panel);
   }
 }
 
