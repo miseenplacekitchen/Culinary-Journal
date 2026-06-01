@@ -920,15 +920,17 @@ let session = null;
 async function rpc(fn, params) {
   const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, {
     method: 'POST',
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json' },
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + session.access_token,
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify(params || {})
   });
-  if (res.status === 401) {
-    const ok = await tryRefreshToken();
-    if (ok) return rpc(fn, params);
-    window.location.href = 'login.html'; return null;
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(res.status + ': ' + t);
   }
-  if (!res.ok) { const t = await res.text(); throw new Error(res.status + ': ' + t); }
   const t = await res.text();
   return t ? JSON.parse(t) : null;
 }
@@ -953,75 +955,75 @@ async function tryRefreshToken() {
 }
 
 async function init() {
-  // Show loading state immediately so user never sees black screen
-  var body = document.body;
-  body.style.background = 'var(--bg)';
-
-  var sess = null;
-  try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(e) {}
-
-  if (!sess || !sess.access_token) {
-    window.location.href = 'login.html';
-    return;
-  }
-  session = sess;
-
-  // Try to get profile and check admin
-  var isAdmin = false;
-  var adminName = 'Admin';
   try {
-    var cached = null;
-    try { cached = JSON.parse(localStorage.getItem('tcj_profile') || 'null'); } catch(e) {}
-    if (cached && cached.is_admin) {
-      isAdmin = true;
-      adminName = cached.full_name || cached.username || 'Admin';
-    } else {
-      var rows = await rpc('get_my_profile', {});
-      var pr = Array.isArray(rows) ? rows[0] : rows;
-      if (pr) {
-        isAdmin = !!pr.is_admin;
-        adminName = pr.full_name || pr.username || 'Admin';
-        localStorage.setItem('tcj_profile', JSON.stringify(pr));
-      }
-    }
-  } catch(e) {
-    // If profile fetch fails with 401, session expired — redirect to login
-    if (e.message && e.message.includes('401')) {
-      localStorage.removeItem('tcj_session');
+    var sess = null;
+    try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(e) {}
+
+    if (!sess || !sess.access_token) {
       window.location.href = 'login.html';
       return;
     }
-    // Other error — show it so we can debug
-    showFatalError('Could not load profile: ' + e.message);
-    return;
-  }
+    session = sess;
 
-  if (!isAdmin) {
-    var denied = document.getElementById('screen-denied');
-    if (denied) denied.style.display = 'flex';
-    return;
-  }
+    // Get admin profile
+    var isAdmin = false;
+    var adminName = 'Admin';
 
-  setEl('admin-name', adminName);
-  document.getElementById('screen-denied').style.display = 'none';
+    try {
+      var cached = JSON.parse(localStorage.getItem('tcj_profile') || 'null');
+      if (cached) {
+        isAdmin   = !!cached.is_admin;
+        adminName = cached.full_name || cached.username || 'Admin';
+      } else {
+        var rows = await rpc('get_my_profile', {});
+        var pr   = Array.isArray(rows) ? rows[0] : rows;
+        if (pr) {
+          isAdmin   = !!pr.is_admin;
+          adminName = pr.full_name || pr.username || 'Admin';
+          localStorage.setItem('tcj_profile', JSON.stringify(pr));
+        }
+      }
+    } catch(e) {
+      // 401 = session expired → go to login
+      if (String(e.message).indexOf('401') !== -1) {
+        localStorage.removeItem('tcj_session');
+        localStorage.removeItem('tcj_profile');
+        window.location.href = 'login.html';
+        return;
+      }
+      // Anything else — show error so we know what it is
+      showFatalError('Profile error: ' + e.message);
+      return;
+    }
 
-  var _sv = localStorage.getItem('tcj_active_view') || 'dashboard';
-  if (_sv === 'site-mgmt') { _sv = 'dashboard'; localStorage.removeItem('tcj_active_view'); }
-  var _it = localStorage.getItem('tcj_active_ing_tab') || 'all';
+    if (!isAdmin) {
+      document.getElementById('screen-denied').style.display = 'flex';
+      return;
+    }
 
-  document.querySelectorAll('[id^="v-"]').forEach(function(el){ el.style.display = 'none'; });
+    setEl('admin-name', adminName);
 
-  try {
-    switchView(_sv, _it);
+    // Clean up stale view state
+    var _sv = localStorage.getItem('tcj_active_view') || 'dashboard';
+    if (_sv === 'site-mgmt' || !['dashboard','recipe-mgmt','user-mgmt','ingredients','analytics'].includes(_sv)) {
+      _sv = 'dashboard';
+      localStorage.setItem('tcj_active_view', 'dashboard');
+    }
+    var _it = localStorage.getItem('tcj_active_ing_tab') || 'all';
+
+    document.querySelectorAll('[id^="v-"]').forEach(function(el){ el.style.display = 'none'; });
+
+    try { switchView(_sv, _it); } catch(e) { switchView('dashboard'); }
+
+    document.getElementById('screen-main').style.display = 'flex';
+
+    // Background stats
+    rpc('admin_get_stats', {}).then(function(st){ if(st){ setEl('badge-pending', st.pending||0); } }).catch(function(){});
+    rpc('admin_count_pending_users', {}).then(function(n){ setEl('badge-pending-users', n||0); }).catch(function(){});
+
   } catch(e) {
-    switchView('dashboard');
+    showFatalError('Dashboard error: ' + e.message);
   }
-
-  document.getElementById('screen-main').style.display = 'flex';
-
-  // Background stats — non-blocking
-  rpc('admin_get_stats',{}).then(function(st){ if(st) setEl('badge-pending', st.pending||0); }).catch(function(){});
-  rpc('admin_count_pending_users',{}).then(function(pc){ setEl('badge-pending-users', pc||0); }).catch(function(){});
 }
 
 function showFatalError(msg) {
