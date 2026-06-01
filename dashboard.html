@@ -956,8 +956,9 @@ async function rpc(fn, params) {
     if (refreshed) {
       res = await attempt(session.access_token);
     } else {
-      showSessionExpired();
-      throw new Error('Session expired. Please sign in again.');
+      localStorage.removeItem('tcj_session'); localStorage.removeItem('tcj_profile');
+      window.location.href = 'login.html';
+      return null;
     }
   }
   if (!res.ok) { const t = await res.text(); throw new Error(res.status + ': ' + t); }
