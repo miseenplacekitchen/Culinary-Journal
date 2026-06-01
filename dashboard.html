@@ -939,6 +939,16 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 let session = null;
 
+function showSessionExpired() {
+  var existing = document.getElementById('session-expired-banner');
+  if (existing) return;
+  var banner = document.createElement('div');
+  banner.id = 'session-expired-banner';
+  banner.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center';
+  banner.innerHTML = '<div style="background:var(--bg);border:1px solid #dc5050;border-radius:16px;padding:40px 48px;text-align:center;max-width:440px"><div style="font-family:Cormorant Garamond,serif;font-size:1.5rem;font-weight:700;color:var(--text-high);margin-bottom:12px">Session Expired</div><div style="font-family:DM Sans,sans-serif;font-size:14px;color:var(--text-mid);margin-bottom:24px">Your login session has timed out. Please sign in again to continue.</div><button onclick="signOut()" style="padding:12px 32px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:14px;font-weight:600;cursor:pointer">Sign In Again</button></div>';
+  document.body.appendChild(banner);
+}
+
 async function rpc(fn, params) {
   async function attempt(token) {
     const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, {
@@ -950,13 +960,36 @@ async function rpc(fn, params) {
   }
   var res = await attempt(session.access_token);
   if (res.status === 401) {
-    var refreshed = await tryRefreshToken();
-    if (refreshed) { res = await attempt(session.access_token); }
-    else { window.location.href = 'login.html'; return; }
+    var refreshed = false;
+    try { refreshed = await tryRefreshToken(); } catch(_) {}
+    if (refreshed) {
+      res = await attempt(session.access_token);
+    } else {
+      showSessionExpired();
+      throw new Error('Session expired. Please sign in again.');
+    }
   }
   if (!res.ok) { const t = await res.text(); throw new Error(res.status + ': ' + t); }
   const t = await res.text();
   return t ? JSON.parse(t) : null;
+}
+
+async function apiFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = Object.assign({}, { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Accept': 'application/json' }, opts.headers || {});
+  var res = await fetch(url, opts);
+  if (res.status === 401) {
+    var refreshed = false;
+    try { refreshed = await tryRefreshToken(); } catch(_) {}
+    if (refreshed) {
+      opts.headers['Authorization'] = 'Bearer ' + session.access_token;
+      res = await fetch(url, opts);
+    } else {
+      showSessionExpired();
+      return null;
+    }
+  }
+  return res;
 }
 
 // Shared fetch wrapper for direct table queries — handles 401 same as rpc()
@@ -1058,6 +1091,9 @@ async function init() {
       return;
     }
     session = sess;
+    // Try to refresh token silently — don't block if it fails
+    dbg('Step 1b: Refreshing token...');
+    try { await tryRefreshToken(); dbg('Token refreshed'); } catch(_) {}
     dbg('Step 2: Getting profile...');
     var isAdmin = false;
     var adminName = 'Admin';
@@ -2870,26 +2906,34 @@ function smSQLError(container, e) {
 async function buildSMPages(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
   try {
-    var res = await apiFetch(SUPABASE_URL + '/rest/v1/site_pages?order=sort_order', {
-      headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Accept': 'application/json'}
-    });
+    var res = await apiFetch(SUPABASE_URL + '/rest/v1/site_pages?order=sort_order');
+    if (!res) return; // session expired — banner shown
+    if (!res) return; // session expired
+    if (!res) return; // session expired
+    if (!res) return; // session expired
+    if (!res) return; // session expired
+    if (!res) return; // session expired
+    if (!res) return; // session expired
     if (!res.ok) { smSQLError(container, new Error(res.status + ': ' + await res.text())); return; }
     var pages = await res.json();
-    if (!Array.isArray(pages) || !pages.length) { container.innerHTML='<div style="padding:16px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">No pages found. Run site_management.sql in Supabase.</div>'; return; }
+    if (!Array.isArray(pages) || !pages.length) {
+      container.innerHTML = '<div style="padding:16px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">No pages found. Run site_management.sql in Supabase SQL Editor.</div>';
+      return;
+    }
     container.innerHTML = '';
     var wrap = document.createElement('div'); wrap.style.cssText='overflow-x:auto;border:1px solid var(--border);border-radius:12px';
     var tbl = document.createElement('table'); tbl.className='ap-table';
-    tbl.innerHTML = '<thead><tr style="border-bottom:1px solid var(--border)"><th class="ap-th">Page</th><th class="ap-th">Path</th><th class="ap-th">Visibility</th><th class="ap-th" style="text-align:center">Coming Soon</th><th class="ap-th">Meta Title</th><th class="ap-th">Save</th></tr></thead>';
+    tbl.innerHTML = '<thead><tr style="border-bottom:1px solid var(--border)"><th class="ap-th">Page</th><th class="ap-th">Path</th><th class="ap-th">Visibility</th><th class="ap-th" style="text-align:center">Coming Soon</th><th class="ap-th">Save</th></tr></thead>';
     var tbody = document.createElement('tbody');
     pages.forEach(function(p) {
       var tr = document.createElement('tr'); tr.style.borderBottom='1px solid rgba(255,255,255,0.04)';
       var vis='<select id="smv-'+(p.path||'')+'" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)">'+['public','members','hidden'].map(function(v){return '<option value="'+v+'"'+(p.visibility===v?' selected':'')+'>'+v.charAt(0).toUpperCase()+v.slice(1)+'</option>';}).join('')+'</select>';
-      tr.innerHTML='<td class="ap-td" style="font-size:13px;font-weight:500;color:var(--text-high)">'+(p.name||'')+'</td><td class="ap-td" style="font-size:11px;color:var(--text-mid)">'+(p.path||'')+'</td><td class="ap-td">'+vis+'</td><td class="ap-td" style="text-align:center"><input type="checkbox" id="smcs-'+(p.path||'')+'"'+(p.coming_soon?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent)"></td><td class="ap-td"><input id="smmt-'+(p.path||'')+'" value="'+(p.meta_title||'')+'" placeholder="SEO title" style="width:100%;box-sizing:border-box;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)"></td><td class="ap-td"></td>';
-      var btn=document.createElement('button'); btn.textContent='Save'; btn.style.cssText="padding:5px 12px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";
-      btn.addEventListener('click',(function(path,b){return async function(){b.disabled=true;b.textContent='\u2026';try{var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_pages?path=eq.'+encodeURIComponent(path),{method:'PATCH',headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({visibility:document.getElementById('smv-'+path).value,meta_title:document.getElementById('smmt-'+path).value||null,coming_soon:document.getElementById('smcs-'+path).checked})});if(!r.ok)throw new Error(r.status);b.textContent='\u2713';setTimeout(function(){b.textContent='Save';b.disabled=false;},2000);}catch(e){b.textContent='Save';b.disabled=false;alert('Error: '+e.message);}}})(p.path,btn));
-      tr.lastElementChild.appendChild(btn); tbody.appendChild(tr);
+      tr.innerHTML='<td class="ap-td" style="font-size:13px;font-weight:500;color:var(--text-high)">'+(p.name||'')+'</td><td class="ap-td" style="font-size:11px;color:var(--text-mid)">'+(p.path||'')+'</td><td class="ap-td">'+vis+'</td><td class="ap-td" style="text-align:center"><input type="checkbox" id="smcs-'+(p.path||'')+'"'+(p.coming_soon?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent)"></td><td class="ap-td"></td>';
+      var btn=document.createElement('button');btn.textContent='Save';btn.style.cssText="padding:5px 12px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:11px;cursor:pointer";
+      btn.addEventListener('click',(function(path,b){return async function(){b.disabled=true;b.textContent='\u2026';try{var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_pages?path=eq.'+encodeURIComponent(path),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({visibility:document.getElementById('smv-'+path).value,coming_soon:document.getElementById('smcs-'+path).checked})});if(r&&!r.ok)throw new Error(r.status);b.textContent='\u2713';setTimeout(function(){b.textContent='Save';b.disabled=false;},2000);}catch(e){b.textContent='Save';b.disabled=false;alert('Error: '+e.message);}}})(p.path,btn));
+      tr.lastElementChild.appendChild(btn);tbody.appendChild(tr);
     });
-    tbl.appendChild(tbody); wrap.appendChild(tbl); container.appendChild(wrap);
+    tbl.appendChild(tbody);wrap.appendChild(tbl);container.appendChild(wrap);
   } catch(e) { smSQLError(container, e); }
 }
 
@@ -2899,6 +2943,12 @@ async function buildSMFeatures(container) {
     var res = await apiFetch(SUPABASE_URL + '/rest/v1/site_features?order=sort_order', {
       headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Accept': 'application/json'}
     });
+    if (!res) return; // session expired
+    if (!res) return; // session expired
+    if (!res) return; // session expired
+    if (!res) return; // session expired
+    if (!res) return; // session expired
+    if (!res) return; // session expired
     if (!res.ok) { smSQLError(container, new Error(res.status + ': ' + await res.text())); return; }
     var features = await res.json();
     if (!Array.isArray(features) || !features.length) { container.innerHTML='<div style="padding:16px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">No features found.</div>'; return; }
@@ -2922,6 +2972,12 @@ async function buildSMAnnouncements(container) {
     var res = await apiFetch(SUPABASE_URL + '/rest/v1/site_announcements?order=created_at.desc', {
       headers: {'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Accept': 'application/json'}
     });
+    if (!res) return; // session expired
+    if (!res) return; // session expired
+    if (!res) return; // session expired
+    if (!res) return; // session expired
+    if (!res) return; // session expired
+    if (!res) return; // session expired
     if (!res.ok) { smSQLError(container, new Error(res.status + ': ' + await res.text())); return; }
     var anns = await res.json(); if (!Array.isArray(anns)) anns=[];
     container.innerHTML='';
