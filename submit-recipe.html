@@ -2928,40 +2928,43 @@ function restoreDraft(raw) {
     const el = document.getElementById(id);
     if (el) el.value = v;
   };
+
   const setRadio = (name, val) => {
     if (!val) return;
     const el = document.querySelector('input[name="'+name+'"][value="'+val+'"]');
     if (el) el.checked = true;
   };
-  const checkAll = (arr, attr) => {
+
+  // Tags: match by value attribute (not data-tag — tags don't have that attribute)
+  const checkAll = (arr) => {
     (arr||[]).forEach(v => {
-      const el = document.querySelector('input['+attr+'="'+v+'"]');
+      const el = document.querySelector('input.tag-cb[value="'+v.replace(/"/g,'\\"')+'"]');
       if (el) el.checked = true;
     });
   };
 
-  // Basic fields
-  setVal('recipe-name', d.recipe_name);
-  setVal('native-title', d.native_title);
-  setVal('introduction', d.introduction);
-  setVal('prep-time', d.prep_time_minutes);
-  setVal('cook-time', d.cook_time_minutes);
-  setVal('servings', d.servings);
-  setVal('cooking-notes', d.cooking_notes);
+  // ── Basic text fields ───────────────────────────────────────
+  setVal('recipe-name',    d.recipe_name);
+  setVal('native-title',   d.native_title);
+  setVal('introduction',   d.introduction);
+  setVal('prep-time',      d.prep_time_minutes);
+  setVal('cook-time',      d.cook_time_minutes);
+  setVal('servings',       d.servings);
+  setVal('cooking-notes',  d.cooking_notes);
   setVal('personal-notes', d.personal_notes);
-  setVal('credit-name', d.credit_name);
-  setVal('credit-handle', d.credit_handle);
-  setVal('credit-url', d.credit_url);
+  setVal('credit-name',    d.credit_name);
+  setVal('credit-handle',  d.credit_handle);
+  setVal('credit-url',     d.credit_url);
 
-  // Radio buttons
-  setRadio('category',   d.category);
-  setRadio('spice',      d.spice_level);
-  setRadio('sweet',      d.sweet_level);
+  // ── Radio buttons ──────────────────────────────────────────
+  setRadio('category',    d.category);
+  setRadio('spice',       d.spice_level);
+  setRadio('sweet',       d.sweet_level);
   setRadio('source-type', d.source_type || 'Original');
-  setRadio('visibility', d.visibility || 'Public');
-  setRadio('difficulty', d.difficulty);
+  setRadio('visibility',  d.visibility  || 'Public');
+  setRadio('difficulty',  d.difficulty);
 
-  // Origin dropdowns
+  // ── Origin dropdowns ───────────────────────────────────────
   if (d.origin_continent) {
     window.fContinent = d.origin_continent;
     const cc = document.getElementById('origin-continent');
@@ -2980,50 +2983,81 @@ function restoreDraft(raw) {
     }
   }, 200);
 
-  // Tags
-  checkAll(d.dietary_tags,      'data-tag');
-  checkAll(d.health_tags,       'data-tag');
-  checkAll(d.occasion_tags,     'data-tag');
-  checkAll(d.style_tags,        'data-tag');
-  checkAll(d.meal_type_tags,    'data-tag');
-  checkAll(d.flavor_profile_tags, 'data-tag');
+  // ── Tags ────────────────────────────────────────────────────
+  // Uses value attribute matching — no data-tag attribute exists on these inputs
+  checkAll(d.dietary_tags);
+  checkAll(d.health_tags);
+  checkAll(d.occasion_tags);
+  checkAll(d.style_tags);
+  checkAll(d.meal_type_tags);
+  checkAll(d.flavor_profile_tags);
 
-  // Image
+  // ── Image ──────────────────────────────────────────────────
   if (d.image_url) {
     window.uploadedImageUrl = d.image_url;
     const pr = document.getElementById('img-preview');
     if (pr) { pr.src = d.image_url; pr.style.display = 'block'; }
   }
 
-  // Ingredients — restore into existing sections or build new ones
+  // ── Ingredients ─────────────────────────────────────────────
+  // Real function name is addIngSection(name), not addIngredientSection
   if (d.ingredients && d.ingredients.length) {
     setTimeout(function() {
       try {
-        // Clear existing ingredient sections
         const secWrap = document.getElementById('ingredient-sections');
         if (secWrap) {
           secWrap.innerHTML = '';
+          ingSectionCount = 0;
           d.ingredients.forEach(function(sec) {
-            if (typeof addIngredientSection === 'function') addIngredientSection(sec);
+            // Draft stores {section, items}; parser stores {name, items}
+            const sectionName = sec.section || sec.name || '';
+            addIngSection(sectionName);
+            const rowContainer = secWrap.lastElementChild.querySelector('.ing-rows');
+            if (rowContainer) {
+              rowContainer.innerHTML = ''; // Remove the default empty row addIngSection adds
+              const items = sec.items || [];
+              if (items.length) {
+                items.forEach(function(item) {
+                  addIngRow(rowContainer, item.qty||'', item.unit||'', item.ingredient||'', item.note||'', item.category||'');
+                });
+              } else {
+                addIngRow(rowContainer); // Keep at least one empty row
+              }
+            }
           });
         }
-      } catch(_) {}
-    }, 300);
+      } catch(e) { console.warn('Draft restore - ingredients:', e); }
+    }, 400);
   }
 
-  // Method/procedure
+  // ── Method / Procedure ──────────────────────────────────────
+  // Real function name is addMethodSection(name), steps added via addStep(container, text)
   if (d.method && d.method.length) {
     setTimeout(function() {
       try {
         const methWrap = document.getElementById('method-sections');
         if (methWrap) {
           methWrap.innerHTML = '';
+          methodSectionCount = 0;
           d.method.forEach(function(sec) {
-            if (typeof addMethodSection === 'function') addMethodSection(sec);
+            const sectionName = sec.section || sec.name || '';
+            addMethodSection(sectionName);
+            const stepContainer = methWrap.lastElementChild.querySelector('.step-rows');
+            if (stepContainer) {
+              stepContainer.innerHTML = ''; // Remove the default empty step addMethodSection adds
+              const steps = sec.steps || [];
+              if (steps.length) {
+                steps.forEach(function(step) {
+                  addStep(stepContainer, step);
+                });
+              } else {
+                addStep(stepContainer); // Keep at least one empty step
+              }
+            }
           });
         }
-      } catch(_) {}
-    }, 300);
+      } catch(e) { console.warn('Draft restore - method:', e); }
+    }, 400);
   }
 }
 
