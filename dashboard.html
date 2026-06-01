@@ -944,8 +944,8 @@ function showSessionExpired() {
   if (existing) return;
   var banner = document.createElement('div');
   banner.id = 'session-expired-banner';
-  banner.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center';
-  banner.innerHTML = '<div style="background:var(--bg);border:1px solid #dc5050;border-radius:16px;padding:40px 48px;text-align:center;max-width:440px"><div style="font-family:Cormorant Garamond,serif;font-size:1.5rem;font-weight:700;color:var(--text-high);margin-bottom:12px">Session Expired</div><div style="font-family:DM Sans,sans-serif;font-size:14px;color:var(--text-mid);margin-bottom:24px">Your login session has timed out. Please sign in again to continue.</div><button onclick="signOut()" style="padding:12px 32px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:14px;font-weight:600;cursor:pointer">Sign In Again</button></div>';
+  banner.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:DM Sans,sans-serif';
+  banner.innerHTML = '<div style="background:#1a1a2e;border:2px solid #dc5050;border-radius:16px;padding:40px 48px;text-align:center;max-width:440px"><div style="font-size:1.3rem;font-weight:700;color:#ffffff;margin-bottom:12px">Session Expired</div><div style="font-size:14px;color:#aaaaaa;margin-bottom:24px">Your login session timed out. Sign out and sign back in to continue.</div><button onclick="signOut()" style="padding:12px 32px;background:#dc5050;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Sign Out & Sign In Again</button></div>';
   document.body.appendChild(banner);
 }
 
@@ -976,7 +976,11 @@ async function rpc(fn, params) {
 
 async function apiFetch(url, opts) {
   opts = opts || {};
-  opts.headers = Object.assign({}, { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Accept': 'application/json' }, opts.headers || {});
+  opts.headers = Object.assign({}, {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + session.access_token,
+    'Accept': 'application/json'
+  }, opts.headers || {});
   var res = await fetch(url, opts);
   if (res.status === 401) {
     var refreshed = false;
@@ -984,10 +988,8 @@ async function apiFetch(url, opts) {
     if (refreshed) {
       opts.headers['Authorization'] = 'Bearer ' + session.access_token;
       res = await fetch(url, opts);
-    } else {
-      showSessionExpired();
-      return null;
     }
+    // Return response regardless — let the caller show the error inline
   }
   return res;
 }
@@ -2900,40 +2902,57 @@ function switchSMTab(tab) {
 // ── SITE MANAGEMENT BUILD FUNCTIONS ──────────────────────────────
 
 function smSQLError(container, e) {
-  container.innerHTML = '<div style="padding:20px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:12px;font-family:DM Sans,sans-serif"><div style="font-size:14px;font-weight:700;color:#dc5050;margin-bottom:8px">Error</div><div style="font-size:13px;color:var(--text-high);word-break:break-all">'+String((e&&e.message)||'Unknown error').replace(/</g,'&lt;')+'</div></div>';
+  var msg = e && e.message ? String(e.message) : 'Unknown error';
+  var is401 = msg.indexOf('401') !== -1;
+  container.innerHTML =
+    '<div style="padding:20px;background:#2a0a0a;border:2px solid #dc5050;border-radius:10px;font-family:DM Sans,sans-serif">' +
+    '<div style="font-size:14px;font-weight:700;color:#ff6b6b;margin-bottom:8px">' + (is401 ? 'Session expired — sign out and sign in again' : 'Error loading data') + '</div>' +
+    '<div style="font-size:12px;color:#ffffff;word-break:break-all;margin-bottom:12px">' + msg.replace(/</g,'&lt;').slice(0,400) + '</div>' +
+    '<button onclick="signOut()" style="padding:8px 20px;background:#dc5050;border:none;border-radius:6px;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Sign Out &amp; Sign In Again</button>' +
+    '</div>';
 }
 
 async function buildSMPages(container) {
-  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:#aaaaaa;padding:8px 0">Loading pages\u2026</div>';
   try {
     var res = await apiFetch(SUPABASE_URL + '/rest/v1/site_pages?order=sort_order');
-    if (!res) return; // session expired — banner shown
-    if (!res) return; // session expired
-    if (!res) return; // session expired
-    if (!res) return; // session expired
-    if (!res) return; // session expired
-    if (!res) return; // session expired
-    if (!res) return; // session expired
-    if (!res.ok) { smSQLError(container, new Error(res.status + ': ' + await res.text())); return; }
+    if (!res.ok) { smSQLError(container, new Error('HTTP ' + res.status + ': ' + await res.text())); return; }
     var pages = await res.json();
     if (!Array.isArray(pages) || !pages.length) {
-      container.innerHTML = '<div style="padding:16px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">No pages found. Run site_management.sql in Supabase SQL Editor.</div>';
+      container.innerHTML = '<div style="padding:16px;font-family:DM Sans,sans-serif;font-size:13px;color:#aaaaaa">No pages found in Supabase. Run site_management.sql in SQL Editor.</div>';
       return;
     }
     container.innerHTML = '';
-    var wrap = document.createElement('div'); wrap.style.cssText='overflow-x:auto;border:1px solid var(--border);border-radius:12px';
-    var tbl = document.createElement('table'); tbl.className='ap-table';
+    var wrap = document.createElement('div'); wrap.style.cssText = 'overflow-x:auto;border:1px solid var(--border);border-radius:12px';
+    var tbl = document.createElement('table'); tbl.className = 'ap-table';
     tbl.innerHTML = '<thead><tr style="border-bottom:1px solid var(--border)"><th class="ap-th">Page</th><th class="ap-th">Path</th><th class="ap-th">Visibility</th><th class="ap-th" style="text-align:center">Coming Soon</th><th class="ap-th">Save</th></tr></thead>';
     var tbody = document.createElement('tbody');
     pages.forEach(function(p) {
-      var tr = document.createElement('tr'); tr.style.borderBottom='1px solid rgba(255,255,255,0.04)';
-      var vis='<select id="smv-'+(p.path||'')+'" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)">'+['public','members','hidden'].map(function(v){return '<option value="'+v+'"'+(p.visibility===v?' selected':'')+'>'+v.charAt(0).toUpperCase()+v.slice(1)+'</option>';}).join('')+'</select>';
-      tr.innerHTML='<td class="ap-td" style="font-size:13px;font-weight:500;color:var(--text-high)">'+(p.name||'')+'</td><td class="ap-td" style="font-size:11px;color:var(--text-mid)">'+(p.path||'')+'</td><td class="ap-td">'+vis+'</td><td class="ap-td" style="text-align:center"><input type="checkbox" id="smcs-'+(p.path||'')+'"'+(p.coming_soon?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent)"></td><td class="ap-td"></td>';
-      var btn=document.createElement('button');btn.textContent='Save';btn.style.cssText="padding:5px 12px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:11px;cursor:pointer";
-      btn.addEventListener('click',(function(path,b){return async function(){b.disabled=true;b.textContent='\u2026';try{var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_pages?path=eq.'+encodeURIComponent(path),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({visibility:document.getElementById('smv-'+path).value,coming_soon:document.getElementById('smcs-'+path).checked})});if(r&&!r.ok)throw new Error(r.status);b.textContent='\u2713';setTimeout(function(){b.textContent='Save';b.disabled=false;},2000);}catch(e){b.textContent='Save';b.disabled=false;alert('Error: '+e.message);}}})(p.path,btn));
-      tr.lastElementChild.appendChild(btn);tbody.appendChild(tr);
+      var tr = document.createElement('tr'); tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+      var vis = '<select id="smv-'+(p.path||'')+'" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)">'+
+        ['public','members','hidden'].map(function(v){return '<option value="'+v+'"'+(p.visibility===v?' selected':'')+'>'+v.charAt(0).toUpperCase()+v.slice(1)+'</option>';}).join('')+'</select>';
+      tr.innerHTML = '<td class="ap-td" style="font-size:13px;font-weight:500;color:var(--text-high)">'+(p.name||'')+'</td>'+
+        '<td class="ap-td" style="font-size:11px;color:rgba(255,255,255,0.45)">'+(p.path||'')+'</td>'+
+        '<td class="ap-td">'+vis+'</td>'+
+        '<td class="ap-td" style="text-align:center"><input type="checkbox" id="smcs-'+(p.path||'')+'"'+(p.coming_soon?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent)"></td>'+
+        '<td class="ap-td"></td>';
+      var btn = document.createElement('button'); btn.textContent = 'Save';
+      btn.style.cssText = "padding:5px 12px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";
+      btn.addEventListener('click', (function(path, b) { return async function() {
+        b.disabled = true; b.textContent = '\u2026';
+        try {
+          var r = await apiFetch(SUPABASE_URL+'/rest/v1/site_pages?path=eq.'+encodeURIComponent(path), {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ visibility: document.getElementById('smv-'+path).value, coming_soon: document.getElementById('smcs-'+path).checked })
+          });
+          if (!r.ok) throw new Error(r.status);
+          b.textContent = '\u2713'; setTimeout(function(){ b.textContent='Save'; b.disabled=false; }, 2000);
+        } catch(e) { b.textContent = 'Save'; b.disabled = false; alert('Error: '+e.message); }
+      }; })(p.path, btn));
+      tr.lastElementChild.appendChild(btn); tbody.appendChild(tr);
     });
-    tbl.appendChild(tbody);wrap.appendChild(tbl);container.appendChild(wrap);
+    tbl.appendChild(tbody); wrap.appendChild(tbl); container.appendChild(wrap);
   } catch(e) { smSQLError(container, e); }
 }
 
