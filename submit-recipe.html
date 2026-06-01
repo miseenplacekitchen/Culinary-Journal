@@ -496,7 +496,7 @@
     /* ── METHOD SECTIONS ─────────────────────── */
     .method-section { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
     .method-section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
-    .method-section-name { flex: 1; font-family: "DM Sans", sans-serif; font-size: 14px; font-weight: 500; color: var(--text-high); background: transparent; border: none; border-bottom: 1px solid var(--border); padding: 4px 0; outline: none; }
+    .method-section-name { flex: 1; font-family: "DM Sans", sans-serif; font-size: 14px; font-weight: 500; text-transform: uppercase; color: var(--text-high); background: transparent; border: none; border-bottom: 1px solid var(--border); padding: 4px 0; outline: none; }
     .method-section-name:focus { border-bottom-color: var(--accent); }
     .method-section-name::placeholder { color: var(--text-high); font-weight: 400; }
     .step-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; padding-left: 12px; }
@@ -1426,8 +1426,8 @@ window.addEventListener('DOMContentLoaded', async () => {
   } catch(e) { console.error(e); }
   try { await loadIngredients(); } catch(e) { console.error('Ingredient load error:', e); }
   try { addIngSection('Ingredients'); } catch(e) { console.error(e); }
-  try { addMethodSection('Prep Work'); } catch(e) { console.error(e); }
-  try { addMethodSection('Directions'); } catch(e) { console.error(e); }
+  try { addMethodSection('PREP WORK'); } catch(e) { console.error(e); }
+  try { addMethodSection('DIRECTIONS'); } catch(e) { console.error(e); }
   try { loadDraftSilent(); } catch(e) { console.error(e); }
   try { setupSourceToggle(); } catch(e) { console.error(e); }
   try { setupAutoSave(); } catch(e) { console.error(e); }
@@ -2098,7 +2098,7 @@ function addMethodSection(name = '') {
   div.className = 'method-section';
   div.innerHTML = `
     <div class="method-section-header">
-      <input class="method-section-name" type="text" maxlength="100" placeholder="Section name &mdash; e.g. Prep Work, Directions, Marinating, Baking" value="${name}">
+      <input class="method-section-name" type="text" maxlength="100" placeholder="Section name &mdash; e.g. PREP WORK, DIRECTIONS, MARINATING" value="${name ? name.toUpperCase() : ''}" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase">
       <button class="btn-remove-section" onclick="this.closest('.method-section').remove()" title="Remove section">×</button>
     </div>
     <div class="step-rows"></div>
@@ -2724,8 +2724,8 @@ function parseRecipe() {
       parsed += sec.steps.length;
     });
   } else {
-    addMethodSection('Prep Work');
-    addMethodSection('Directions');
+    addMethodSection('PREP WORK');
+    addMethodSection('DIRECTIONS');
   }
 
   const result = document.getElementById('parse-result');
@@ -2850,8 +2850,18 @@ function cancelSubmission() {
   );
   if (!ok) return;
 
-  // Wipe the persisted draft
+  // Wipe the persisted draft — auto-save key, named draft entry, and index entry
   try { lsRemove(DRAFT_KEY); } catch(_) {}
+  try {
+    const draftId = getDraftId();
+    if (draftId) {
+      lsRemove('tcj_draft_' + draftId);
+      let idx = [];
+      try { idx = JSON.parse(lsGet(DRAFTS_INDEX_KEY) || '[]'); } catch(_) {}
+      idx = idx.filter(function(d) { return d.id !== draftId; });
+      lsSet(DRAFTS_INDEX_KEY, JSON.stringify(idx));
+    }
+  } catch(_) {}
 
   // Reset every text/textarea/number input that's part of the form
   document.querySelectorAll(
@@ -2886,8 +2896,8 @@ function cancelSubmission() {
   document.querySelectorAll('#ing-sections .ing-section').forEach(el => el.remove());
   document.querySelectorAll('#method-sections .method-section').forEach(el => el.remove());
   try { addIngSection('Ingredients'); } catch(_) {}
-  try { addMethodSection('Prep Work'); } catch(_) {}
-  try { addMethodSection('Directions'); } catch(_) {}
+  try { addMethodSection('PREP WORK'); } catch(_) {}
+  try { addMethodSection('DIRECTIONS'); } catch(_) {}
 
   // Reset origin filter state
   try { window.fContinent = null; window.fCountry = null; window.fState = null; } catch(_) {}
