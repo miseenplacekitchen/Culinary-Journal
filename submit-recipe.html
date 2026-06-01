@@ -2162,15 +2162,26 @@ function addMethodSection(name = '') {
 }
 
 // ── ADD STEP ──────────────────────────────────────────
-function addStep(container, text = '') {
+function addStep(container, stepData = '') {
   const stepNum = container.children.length + 1;
   const row = document.createElement('div');
   row.className = 'step-row';
-  // Detect if text has an italic title pattern "Title: rest"
-  const colonIdx = text ? text.indexOf(':') : -1;
-  const hasTitle = colonIdx > 0 && colonIdx < 40;
-  const stepTitle = hasTitle ? text.substring(0, colonIdx).trim() : '';
-  const stepBody  = hasTitle ? text.substring(colonIdx + 1).trim() : text;
+
+  // Accept both:
+  //   string  — parser format: "Title: body text" or just "body text"
+  //   object  — draft format:  { title: "Title", text: "body text" }
+  let stepTitle = '';
+  let stepBody  = '';
+  if (stepData && typeof stepData === 'object') {
+    stepTitle = (stepData.title || '').trim();
+    stepBody  = (stepData.text  || '').trim();
+  } else {
+    const text    = stepData || '';
+    const colonIdx = text.indexOf(':');
+    const hasTitle = colonIdx > 0 && colonIdx < 40;
+    stepTitle = hasTitle ? text.substring(0, colonIdx).trim() : '';
+    stepBody  = hasTitle ? text.substring(colonIdx + 1).trim() : text;
+  }
 
   row.innerHTML = `
     <span class="drag-handle" title="Drag to reorder">⠿</span>
@@ -2935,7 +2946,11 @@ function collectFormData() {
   const method = [];
   document.querySelectorAll('.method-section').forEach(sec => {
     const sectionName = sec.querySelector('.method-section-name').value.trim();
-    const steps = [...sec.querySelectorAll('.step-input')].map(s => s.value.trim()).filter(s => s);
+    const steps = [...sec.querySelectorAll('.step-row')].map(function(row) {
+      const title = (row.querySelector('.step-title-input')?.value || '').trim();
+      const text  = (row.querySelector('.step-input')?.value       || '').trim();
+      return { title, text };
+    }).filter(function(s) { return s.title || s.text; });
     if (steps.length > 0 || sectionName) method.push({ section: sectionName, steps });
   });
 
