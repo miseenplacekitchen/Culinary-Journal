@@ -970,7 +970,8 @@ async function init() {
   if (!isAdmin) { document.getElementById('screen-denied').style.display='flex'; document.getElementById('screen-main').style.display='none'; return; }
   document.getElementById('screen-denied').style.display = 'none';
   // Restore saved position BEFORE showing screen-main — no bounce possible
-  var _sv = localStorage.getItem('tcj_active_view')    || 'dashboard';
+  var _sv = localStorage.getItem('tcj_active_view') || 'dashboard';
+  if (_sv === 'site-mgmt') { _sv = 'dashboard'; localStorage.setItem('tcj_active_view','dashboard'); }
   var _it = localStorage.getItem('tcj_active_ing_tab') || 'all';
   document.querySelectorAll('[id^="v-"]').forEach(function(el){el.style.display='none';});
   switchView(_sv, _it);
@@ -994,7 +995,7 @@ function switchView(view, ingTab) {
   if (nb) nb.classList.add('active');
   ALL_VIEWS.forEach(function(v) { const el = document.getElementById('v-' + v); if (el) el.style.display = (v===view)?'block':'none'; });
   const titles = { 'dashboard':'Dashboard', 'recipe-mgmt':'Recipe Management', 'user-mgmt':'User Management', 'ingredients':'Ingredients', 'analytics':'Analytics' };
-  const subs   = { 'dashboard':'Overview of site activity.', 'recipe-mgmt':'Review, approve and manage all submitted recipes.', 'user-mgmt':'Manage member registrations and accounts.', 'ingredients':'Browse, add and edit the ingredient database.', 'analytics':'Site performance and statistics.' };
+  const subs   = { 'dashboard':'Overview of site activity.', 'recipe-mgmt':'Review, approve and manage all submitted recipes.', 'user-mgmt':'Manage member registrations and accounts.', 'ingredients':'Browse, add and edit the ingredient database.', 'analytics':'Site performance and statistics.', 'site-mgmt':'Site Management' };
   setEl('page-title', titles[view] || view);
   setEl('page-sub',   subs[view]   || '');
   if (view === 'dashboard')   loadDashboard();
