@@ -3439,7 +3439,7 @@ async function loadIngDuplicates(container) {
       var allRows = [];
       var page = 0, pageSize = 1000;
       while (true) {
-        var res = await apiFetch(SUPABASE_URL + '/rest/v1/ingredients?select=id,"Ingredient Name","Category","Also Known As","Sub Category","CJ Recommended Brand","Allergen","Notes","Standard Qty","Unit"&order=id.asc&limit=' + pageSize + '&offset=' + (page * pageSize));
+        var res = await apiFetch(SUPABASE_URL + '/rest/v1/ingredients?select="ID","Ingredient Name","Category","Also Known As","Sub Category","CJ Recommended Brand","Allergen","Notes","Standard Qty","Unit"&order="ID".asc&limit=' + pageSize + '&offset=' + (page * pageSize));
         if (!res || !res.ok) throw new Error('Fetch failed: ' + (res ? res.status : 'no response'));
         var rows = await res.json();
         if (!Array.isArray(rows) || !rows.length) break;
@@ -3479,7 +3479,7 @@ async function loadIngDuplicates(container) {
 
       // Sort each group: most complete first, then lowest ID
       dupes.forEach(function(g) {
-        g.sort(function(a,b) { var sd = score(b) - score(a); return sd !== 0 ? sd : a.id - b.id; });
+        g.sort(function(a,b) { var sd = score(b) - score(a); return sd !== 0 ? sd : a['ID'] - b['ID']; });
       });
 
       // Summary bar
@@ -3496,7 +3496,7 @@ async function loadIngDuplicates(container) {
 
       // Render each duplicate group
       dupes.forEach(function(group, gi) {
-        var keepId = group[0].id;
+        var keepId = group[0]['ID'];
         var card = mk('div','background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden');
         var cardHdr = mk('div','padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between');
         cardHdr.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high)",group[0]['Ingredient Name']));
@@ -3504,10 +3504,10 @@ async function loadIngDuplicates(container) {
         card.appendChild(cardHdr);
 
         group.forEach(function(row, ri) {
-          var isKeep = row.id === keepId;
+          var isKeep = row['ID'] === keepId;
           var rowEl = mk('div','display:grid;grid-template-columns:60px 1fr 120px 120px 100px 60px;gap:0 8px;align-items:center;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,0.03);background:' + (isKeep ? 'rgba(76,175,118,0.06)' : 'rgba(220,80,80,0.06)'));
           function cell(t,s){var d=mk('div',"font-family:'DM Sans',sans-serif;font-size:11px;color:"+(s||'var(--text-mid)')+";overflow:hidden;text-overflow:ellipsis;white-space:nowrap");d.textContent=t||'—';return d;}
-          rowEl.appendChild(cell('ID #'+row.id, isKeep?'#4caf76':'#dc5050'));
+          rowEl.appendChild(cell('ID #'+row['ID'], isKeep?'#4caf76':'#dc5050'));
           rowEl.appendChild(cell(row['Ingredient Name'], isKeep?'var(--text-high)':'var(--text-mid)'));
           rowEl.appendChild(cell(row['Category']));
           rowEl.appendChild(cell(row['Also Known As']));
@@ -3534,7 +3534,7 @@ async function removeAllDuplicates(dupes, resultsEl, delBtn, scanBtn) {
   var toDelete = [];
   dupes.forEach(function(group) {
     // First item is kept (highest score + lowest id), rest are deleted
-    group.slice(1).forEach(function(r) { toDelete.push(r.id); });
+    group.slice(1).forEach(function(r) { toDelete.push(r['ID']); });
   });
   if (!toDelete.length) return;
   if (!confirm('Delete ' + toDelete.length + ' duplicate record' + (toDelete.length===1?'':'s') + '? This cannot be undone.')) return;
