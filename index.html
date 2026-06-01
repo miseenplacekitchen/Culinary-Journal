@@ -973,5 +973,101 @@
 })();
 </script>
 
+
+<script>
+// ── Page Visibility Enforcement ─────────────────────────────────
+// Reads site_pages from Supabase and updates navigation links:
+//   hidden     → remove link entirely (no indication page exists)
+//   registered → replace with 🔒 Members badge link
+//   paid       → replace with ⭐ Premium badge link (for ALL non-paid visitors)
+//   coming_soon → replace with Coming Soon label
+// Admins bypass all restrictions and see everything as normal.
+(function applyPageVisibility() {
+  var SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+  var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+
+  var isLoggedIn = false;
+  var isAdmin    = false;
+  var isPaid     = false;
+  try {
+    var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    isLoggedIn = !!(sess && sess.access_token);
+    var prof = JSON.parse(localStorage.getItem('tcj_profile') || 'null');
+    if (prof) {
+      isAdmin = !!prof.is_admin;
+      isPaid  = prof.subscription_tier === 'premium' || prof.subscription_tier === 'event';
+    }
+  } catch(e) {}
+
+  // Admins see everything — no changes to nav
+  if (isAdmin) return;
+
+  fetch(SUPA_URL + '/rest/v1/site_pages?select=path,visibility,coming_soon', {
+    headers: { 'apikey': SUPA_KEY, 'Accept': 'application/json' }
+  })
+  .then(function(r){ return r.ok ? r.json() : null; })
+  .then(function(pages){
+    if (!Array.isArray(pages)) return;
+
+    pages.forEach(function(page){
+      var vis  = page.visibility;
+      var soon = page.coming_soon;
+
+      // Determine if this visitor can see this page as-is
+      var canSee = vis === 'public'
+        || (vis === 'registered' && isLoggedIn)
+        || (vis === 'paid' && isPaid);
+
+      if (canSee && !soon) return; // Nothing to change
+
+      document.querySelectorAll('a[href="' + page.path + '"]').forEach(function(link){
+        var cta = link.closest('.showcase-cta, .home-cta-secondary, .home-cta-primary');
+        var target = cta || link;
+
+        if (soon) {
+          // Coming Soon — grey out with badge
+          var span = document.createElement('span');
+          span.style.cssText = 'opacity:0.4;cursor:default;';
+          span.textContent = link.textContent.replace('→','').trim();
+          var badge = document.createElement('span');
+          badge.textContent = ' Coming Soon';
+          badge.style.cssText = 'font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);margin-left:6px;text-transform:uppercase;letter-spacing:0.05em;';
+          span.appendChild(badge);
+          if (target.parentNode) target.parentNode.replaceChild(span, target);
+
+        } else if (vis === 'hidden') {
+          // Hidden — remove entirely, no explanation
+          if (target.parentNode) target.parentNode.removeChild(target);
+
+        } else if (vis === 'registered' && !isLoggedIn) {
+          // Registered members only
+          var mLink = document.createElement('a');
+          mLink.href = 'members-only.html?next=' + encodeURIComponent(page.path);
+          if (target.getAttribute('class')) mLink.className = target.getAttribute('class');
+          if (target.getAttribute('style')) mLink.setAttribute('style', target.getAttribute('style'));
+          mLink.style.opacity = '0.6';
+          mLink.innerHTML = '&#128274; ' + link.textContent.replace('→','').trim() +
+            ' <span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:20px;background:rgba(255,255,255,0.12);margin-left:4px;text-transform:uppercase;letter-spacing:0.05em;">Members</span>';
+          if (target.parentNode) target.parentNode.replaceChild(mLink, target);
+
+        } else if (vis === 'paid' && !isPaid) {
+          // Paid members only — shown to ALL non-paid visitors (logged in or not)
+          // Always directs to paid-members-only.html regardless of login status
+          var pLink = document.createElement('a');
+          pLink.href = 'paid-members-only.html?next=' + encodeURIComponent(page.path);
+          if (target.getAttribute('class')) pLink.className = target.getAttribute('class');
+          if (target.getAttribute('style')) pLink.setAttribute('style', target.getAttribute('style'));
+          pLink.style.opacity = '0.6';
+          pLink.innerHTML = '&#11088; ' + link.textContent.replace('→','').trim() +
+            ' <span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:20px;background:linear-gradient(135deg,rgba(196,151,59,0.3),rgba(232,184,75,0.3));margin-left:4px;text-transform:uppercase;letter-spacing:0.05em;">Premium</span>';
+          if (target.parentNode) target.parentNode.replaceChild(pLink, target);
+        }
+      });
+    });
+  })
+  .catch(function(){});
+})();
+</script>
+
 </body>
 </html>

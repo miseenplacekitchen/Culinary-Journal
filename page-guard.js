@@ -1,16 +1,18 @@
 /**
  * page-guard.js — The Culinary Journal
- * Include in the <head> of every public page.
+ * Include in <head> of every public page.
  * Never include in: login.html, dashboard.html, coming-soon.html,
  *                   members-only.html, paid-members-only.html, 404.html
  *
  * Visibility levels:
  *   public     → everyone
  *   registered → any logged-in user (free or paid)
- *   paid       → paid subscribers only (subscription_tier = premium or event)
- *   hidden     → silently redirect to homepage — page doesn't exist to the public
+ *   paid       → paid subscribers only — ALL others (including free members
+ *                and the public) are sent to paid-members-only.html
+ *   hidden     → silently redirect to homepage — page doesn't exist to anyone
  *
- * coming_soon  → redirect to coming-soon.html regardless of visibility
+ * Admins (is_admin = true) bypass all restrictions and see everything.
+ * coming_soon → redirect to coming-soon.html regardless of visibility
  */
 (function() {
   var SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
@@ -21,23 +23,32 @@
   var path = raw.split('/').pop() || 'index.html';
   if (!path || raw === '/') path = 'index.html';
 
-  // Pages that are exempt from the guard
+  // Pages exempt from the guard (always accessible)
   var exempt = ['index.html','login.html','coming-soon.html','members-only.html',
                 'paid-members-only.html','404.html','reset-password.html','dashboard.html'];
   if (exempt.indexOf(path) !== -1) return;
 
-  // Read session
-  var accessToken  = null;
-  var cachedTier   = 'free';
+  // Read session and profile from localStorage
+  var accessToken = null;
+  var isAdmin     = false;
+  var isPaid      = false;
+  var isLoggedIn  = false;
+
   try {
     var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
-    if (sess && sess.access_token) accessToken = sess.access_token;
+    if (sess && sess.access_token) {
+      accessToken = sess.access_token;
+      isLoggedIn  = true;
+    }
     var prof = JSON.parse(localStorage.getItem('tcj_profile') || 'null');
-    if (prof && prof.subscription_tier) cachedTier = prof.subscription_tier;
+    if (prof) {
+      isAdmin = !!prof.is_admin;
+      isPaid  = prof.subscription_tier === 'premium' || prof.subscription_tier === 'event';
+    }
   } catch(e) {}
 
-  var isLoggedIn = !!accessToken;
-  var isPaid     = isLoggedIn && (cachedTier === 'premium' || cachedTier === 'event');
+  // Admins bypass every restriction — they always see everything
+  if (isAdmin) return;
 
   fetch(SUPA_URL + '/rest/v1/site_pages?path=eq.' + encodeURIComponent(path) +
         '&select=visibility,coming_soon', {
@@ -45,23 +56,26 @@
   })
   .then(function(r) { return r.ok ? r.json() : null; })
   .then(function(rows) {
-    if (!Array.isArray(rows) || !rows.length) return;
+    if (!Array.isArray(rows) || !rows.length) return; // Not in table = no restriction
+
     var page = rows[0];
 
-    // Coming soon takes priority
+    // Coming soon takes priority over all visibility settings
     if (page.coming_soon) {
       window.location.replace('coming-soon.html?from=' + encodeURIComponent(path));
       return;
     }
 
     switch (page.visibility) {
+
       case 'hidden':
-        // No explanation — just go home. Page doesn't exist to the public.
+        // No explanation — silently redirect to homepage.
+        // The page does not exist to the public.
         window.location.replace('index.html');
         break;
 
       case 'registered':
-        // Any logged-in user. Redirect non-members to members-only.html.
+        // Requires login. Free and paid members can both access this.
         if (!isLoggedIn) {
           window.location.replace('members-only.html?next=' + encodeURIComponent(path));
         }
@@ -69,16 +83,15 @@
 
       case 'paid':
         // Paid subscribers only.
-        if (!isLoggedIn) {
-          window.location.replace('members-only.html?next=' + encodeURIComponent(path));
-        } else if (!isPaid) {
-          // Logged in but not paid — show upgrade page
+        // Everyone who is not on a paid tier — whether logged in or not —
+        // sees the paid-members-only page with pricing information.
+        if (!isPaid) {
           window.location.replace('paid-members-only.html?next=' + encodeURIComponent(path));
         }
         break;
 
       default:
-        // public — no action
+        // public — no action needed
         break;
     }
   })
