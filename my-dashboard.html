@@ -98,7 +98,6 @@
     .qe-input:focus { border-color:var(--accent); }
     .qe-foot { display:flex; gap:8px; margin-top:16px; }
   </style>
-  <script src="page-guard.js"></script>
 </head>
 <body class="page-bg cj-body">
 <nav class="nav">
@@ -246,7 +245,7 @@ function renderCards(tab) {
     const statusClass = {pending:'status-pending',approved:'status-approved',rejected:'status-rejected'};
     const date = r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}) : '';
     card.innerHTML = `
-      <div class="ud-card-img">${r.image_url?`<img src="${r.image_url}" alt="${esc(r.recipe_name||'')}">`:'🍳'}</div>
+      <div class="ud-card-img">${r.image_url?`<img src="${esc(r.image_url||''||'#')}" alt="${esc(r.recipe_name||'')}">`:'🍳'}</div>
       <div class="ud-card-body">
         <div class="ud-card-name">${r.recipe_name||'Untitled'}</div>
         <div class="ud-card-meta">
@@ -284,7 +283,7 @@ function renderDrafts() {
     card.innerHTML = `
       <div class="ud-card-img">📝</div>
       <div class="ud-card-body">
-        <div class="ud-card-name">${draftData.recipe_name||'Untitled Draft'}</div>
+        <div class="ud-card-name">${esc(draftData.recipe_name||'Untitled Draft')}</div>
         <div class="ud-card-meta"><span class="ud-card-status status-pending">Draft</span>${date?`<span>${date}</span>`:''}</div>
       </div>
       <div class="ud-card-actions">

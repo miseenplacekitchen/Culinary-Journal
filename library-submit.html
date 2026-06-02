@@ -116,8 +116,7 @@ body { background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--text-
 <script>
 let currentType = 'ingredient';
 const params = new URLSearchParams(window.location.search);
-if (params.get('type')) { currentType = params.get('type'); document.querySelector(`[onclick="setType('${currentType}',this)"]`)?.click(); }
-if (params.get('id'))   { loadExisting(params.get('id')); }
+// type/id init moved to bottom — after TYPE_FIELDS declaration
 
 // Auth guard — verify admin server-side, not just from localStorage
 const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
@@ -212,22 +211,107 @@ function setType(type, btn) {
 }
 
 function renderTypeFields() {
-  const fields = TYPE_FIELDS[currentType] || [];
-  const wrap = document.getElementById('ls-type-fields');
-  wrap.innerHTML = `<div class="ls-section"><div class="ls-section-title">Profile Details</div>` +
-    fields.map(f => {
-      if (f.type === 'checkbox') return `<div class="ls-row" style="display:flex;align-items:center;gap:10px"><input type="checkbox" id="${f.id}" style="width:16px;height:16px;accent-color:var(--accent)"><label class="ls-label" for="${f.id}" style="margin:0">${f.label}</label></div>`;
-      if (f.type === 'select') return `<div class="ls-row"><label class="ls-label">${f.label}</label><select class="ls-select" id="${f.id}">${f.opts.map(o => `<option value="${o}">${o}</option>`).join('')}</select></div>`;
-      if (f.type === 'textarea') return `<div class="ls-row"><label class="ls-label">${f.label}</label><textarea class="ls-textarea" id="${f.id}"></textarea></div>`;
-      return `<div class="ls-row"><label class="ls-label">${f.label}</label><input class="ls-input" id="${f.id}" type="text" placeholder="${f.ph||''}"></div>`;
-    }).join('') + `</div>`;
+  var fields = TYPE_FIELDS[currentType] || [];
+  var wrap = document.getElementById('ls-type-fields');
+  wrap.replaceChildren();
+
+  var section = document.createElement('div');
+  section.className = 'ls-section';
+  var title = document.createElement('div');
+  title.className = 'ls-section-title';
+  title.textContent = 'Profile Details';
+  section.appendChild(title);
+
+  fields.forEach(function(f) {
+    var row = document.createElement('div');
+    row.className = 'ls-row';
+
+    if (f.type === 'checkbox') {
+      row.style.cssText = 'display:flex;align-items:center;gap:10px';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.id = f.id;
+      cb.style.cssText = 'width:16px;height:16px;accent-color:var(--accent)';
+      var lbl = document.createElement('label');
+      lbl.className = 'ls-label'; lbl.htmlFor = f.id;
+      lbl.style.margin = '0'; lbl.textContent = f.label;
+      row.appendChild(cb); row.appendChild(lbl);
+
+    } else if (f.type === 'select') {
+      var lbl2 = document.createElement('label');
+      lbl2.className = 'ls-label'; lbl2.textContent = f.label;
+      var sel = document.createElement('select');
+      sel.className = 'ls-select'; sel.id = f.id;
+      (f.opts || []).forEach(function(o) {
+        var opt = document.createElement('option');
+        opt.value = o; opt.textContent = o;
+        sel.appendChild(opt);
+      });
+      row.appendChild(lbl2); row.appendChild(sel);
+
+    } else if (f.type === 'textarea') {
+      var lbl3 = document.createElement('label');
+      lbl3.className = 'ls-label'; lbl3.textContent = f.label;
+      var ta = document.createElement('textarea');
+      ta.className = 'ls-textarea'; ta.id = f.id;
+      row.appendChild(lbl3); row.appendChild(ta);
+
+    } else {
+      var lbl4 = document.createElement('label');
+      lbl4.className = 'ls-label'; lbl4.textContent = f.label;
+      var inp = document.createElement('input');
+      inp.className = 'ls-input'; inp.id = f.id;
+      inp.type = 'text'; inp.placeholder = f.ph || '';
+      row.appendChild(lbl4); row.appendChild(inp);
+    }
+
+    section.appendChild(row);
+  });
+
+  wrap.appendChild(section);
 }
 
-function previewImage(input) {
+async function previewImage(input) {
   if (!input.files || !input.files[0]) return;
-  const reader = new FileReader();
-  reader.onload = e => { document.getElementById('f-img-preview').innerHTML = `<img src="${e.target.result}">`; };
-  reader.readAsDataURL(input.files[0]);
+  var file = input.files[0];
+  var preview = document.getElementById('f-img-preview');
+  var urlField = document.getElementById('f-img-url');
+
+  // Show local preview immediately
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = document.createElement('img');
+    img.src = e.target.result;
+    img.style.cssText = 'max-height:140px;border-radius:6px';
+    preview.replaceChildren(img);
+  };
+  reader.readAsDataURL(file);
+
+  // Upload to Supabase Storage
+  try {
+    var ext   = file.name.split('.').pop().toLowerCase() || 'jpg';
+    var path  = 'library/' + currentType + '/' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.' + ext;
+    var res   = await fetch(window.SUPA_URL + '/storage/v1/object/library-images/' + path, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + sess.access_token,
+        'Content-Type': file.type || 'image/jpeg',
+        'x-upsert': 'true'
+      },
+      body: file
+    });
+    if (res.ok) {
+      var publicUrl = window.SUPA_URL + '/storage/v1/object/public/library-images/' + path;
+      if (urlField) urlField.value = publicUrl;
+      var img2 = document.createElement('img'); img2.src = publicUrl; img2.style.cssText = 'max-height:140px;border-radius:6px'; preview.replaceChildren(img2);
+      var ok = document.createElement('div'); ok.style.cssText = 'font-size:11px;color:#6dc86d;margin-top:4px'; ok.textContent = '✓ Uploaded'; preview.after(ok);
+    } else {
+      // Fall back to URL field — user can paste one manually
+      var errData = await res.json().catch(() => ({}));
+      var err2 = document.createElement('div'); err2.style.cssText = 'font-size:11px;color:#dc5050;margin-top:4px'; err2.textContent = 'Upload failed — paste a URL below instead'; preview.after(err2);
+    }
+  } catch(e) {
+    var err2 = document.createElement('div'); err2.style.cssText = 'font-size:11px;color:#dc5050;margin-top:4px'; err2.textContent = 'Upload failed — paste a URL below instead'; preview.after(err2);
+  }
 }
 
 function showMsg(msg, type) {
@@ -342,12 +426,32 @@ async function loadExisting(id) {
     setVal('f-img-url', p.image_url);
     setVal('f-chefs', p.chefs_notes); setVal('f-brand', p.recommended_brand);
     setVal('f-dyk', p.did_you_know); setVal('f-status', p.status); setVal('f-visibility', p.visibility);
-    if (p.image_url) document.getElementById('f-img-preview').innerHTML = `<img src="${p.image_url}" style="max-height:100px">`;
+    if (p.image_url) { var ei = document.createElement('img'); ei.src = p.image_url; ei.style.maxHeight = '100px'; document.getElementById('f-img-preview').replaceChildren(ei); }
     document.querySelector('.ls-title').textContent = 'Edit Profile';
   } catch(_) {}
 }
 
 renderTypeFields();
+// ── Page init — runs after all declarations ──────────────────────
+(function initPage() {
+  var t = params.get('type');
+  if (t && t !== 'ingredient') {
+    currentType = t;
+    var activeBtn = document.querySelector('[data-type="' + t + '"]');
+    if (!activeBtn) {
+      document.querySelectorAll('.ls-type-btn').forEach(function(b) {
+        if (b.getAttribute('onclick') && b.getAttribute('onclick').indexOf("'" + t + "'") > -1) {
+          document.querySelectorAll('.ls-type-btn').forEach(function(x){ x.classList.remove('active'); });
+          b.classList.add('active');
+        }
+      });
+    }
+  }
+  renderTypeFields();
+  var id = params.get('id');
+  if (id) { loadExisting(id); }
+})();
+
 </script>
 </body>
 </html>

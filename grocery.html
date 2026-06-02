@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); }
     .gl-wrap { max-width:900px; margin:0 auto; padding:24px 20px 80px; }
@@ -60,7 +61,6 @@
       .gl-item.checked { display:none; }
     }
   </style>
-  <script src="page-guard.js"></script>
 </head>
 <body class="page-bg cj-body">
 <nav class="nav">
@@ -105,8 +105,6 @@
 <script src="nav-init.js"></script>
 <script>
 
-const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
 let _syncTimer = null;
 
 function getSession(){
@@ -268,7 +266,7 @@ function renderByRecipe(list){
       <div class="gl-recipe-header">
         <div>
           <div class="gl-recipe-name">${esc(recipe.name)}</div>
-          <div class="gl-recipe-count">${recipe.ingredients?.length||0} ingredients${recipe.servings?' · '+recipe.servings+' servings':''}</div>
+          <div class="gl-recipe-count">${recipe.ingredients?.length||0} ingredients${recipe.servings?' · '+esc(String(recipe.servings))+' servings':''}</div>
         </div>
         <button class="gl-remove-recipe" data-remove-id="${esc(String(recipe.id))}">Remove</button>
       </div>

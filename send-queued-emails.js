@@ -24,11 +24,19 @@ Deno.serve(async (req) => {
     const RESEND_KEY = Deno.env.get('RESEND_API_KEY');
     if (!RESEND_KEY) return new Response('RESEND_API_KEY not set', { status: 500 });
 
-    // Fetch up to 20 pending emails
+    // Reset stale 'sending' rows stuck for more than 10 minutes
+    await supabase
+      .from('email_queue')
+      .update({ status: 'pending' })
+      .eq('status', 'sending')
+      .lt('last_attempt_at', new Date(Date.now() - 10 * 60 * 1000).toISOString());
+
+    // Fetch up to 20 pending emails (max 3 attempts each)
     const { data: queue, error } = await supabase
       .from('email_queue')
-      .select('id, template_key, to_email, to_name, variables')
+      .select('id, template_key, to_email, to_name, variables, attempts')
       .eq('status', 'pending')
+      .lt('attempts', 3)
       .order('created_at', { ascending: true })
       .limit(20);
 
@@ -41,8 +49,8 @@ Deno.serve(async (req) => {
 
     for (const item of queue) {
       try {
-        // Mark as processing first to avoid double-send
-        await supabase.from('email_queue').update({ status: 'sending' }).eq('id', item.id);
+        // Mark as processing + increment attempts to avoid double-send
+        await supabase.from('email_queue').update({ status: 'sending', attempts: (item.attempts || 0) + 1, last_attempt_at: new Date().toISOString() }).eq('id', item.id);
 
         // Load template
         const { data: tmpl } = await supabase
@@ -62,21 +70,29 @@ Deno.serve(async (req) => {
         vars.name     = vars.name    || item.to_name || 'Member';
         vars.site_url = 'https://www.theculinaryjournal.site';
 
+        // Plain text sanitiser for email subjects (no HTML entities)
+        function escText(str) {
+          return String(str || '').replace(/[\r\n\t]/g,' ').replace(/\s+/g,' ').trim().slice(0,200);
+        }
+        // HTML escaper for email body variables
         function escHtml(str) {
           return String(str || '')
             .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-            .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+            .replace(/"/g,'&quot;');
+        }
+        // URL allowlist — only allow our own site URLs
+        function escUrl(str) {
+          const s = String(str || '');
+          return s.startsWith('https://www.theculinaryjournal.site/') ? s : '#';
         }
 
         let subject = tmpl.subject;
         let body    = tmpl.body;
         for (const [k, v] of Object.entries(vars)) {
           const re = new RegExp('{{' + k + '}}', 'g');
-          // subject is plain text — escape fully
-          subject = subject.replace(re, escHtml(v));
-          // body may contain intentional HTML from the template itself,
-          // but user-supplied values must be escaped
-          body = body.replace(re, escHtml(v));
+          const isUrl = k.endsWith('_url') || k.endsWith('_link');
+          subject = subject.replace(re, escText(v));
+          body    = body.replace(re, isUrl ? escUrl(v) : escHtml(v));
         }
 
         // Wrap body in base template
@@ -106,11 +122,23 @@ ${body}
           sent++;
         } else {
           const err = await res.json().catch(() => ({}));
-          await supabase.from('email_queue').update({ status: 'failed', error_msg: JSON.stringify(err) }).eq('id', item.id);
+          const newAttempts = (item.attempts || 0) + 1;
+          await supabase.from('email_queue').update({
+            status: newAttempts >= 3 ? 'failed' : 'pending',
+            error_msg: JSON.stringify(err),
+            attempts: newAttempts,
+            last_attempt_at: new Date().toISOString()
+          }).eq('id', item.id);
           failed++;
         }
       } catch (e) {
-        await supabase.from('email_queue').update({ status: 'failed', error_msg: String(e) }).eq('id', item.id);
+        const newAttempts = (item.attempts || 0) + 1;
+        await supabase.from('email_queue').update({
+          status: newAttempts >= 3 ? 'failed' : 'pending',
+          error_msg: String(e),
+          attempts: newAttempts,
+          last_attempt_at: new Date().toISOString()
+        }).eq('id', item.id);
         failed++;
       }
     }

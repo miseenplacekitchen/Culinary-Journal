@@ -491,7 +491,6 @@
     .rotw-link:hover { gap:14px; }
     @media(max-width:768px){ .rotw { padding:0 20px; } .rotw-card { grid-template-columns:1fr; } }
   </style>
-  <script src="page-guard.js"></script>
 </head>
 <body class="page-bg">
 <div class="page-overlay">
@@ -947,6 +946,7 @@
 </script>
 
 
+<script>
   // ── RECIPE OF THE WEEK ──────────────────────────────────────────
   (function() {
             fetch(SUPA_URL + '/rest/v1/submitted_recipes?is_recipe_of_week=eq.true&status=eq.approved&select=id,recipe_name,native_title,category,origin_country,prep_time_minutes,cook_time_minutes,servings,introduction,image_url&limit=1', {
@@ -972,7 +972,7 @@
           '<div class="rotw-category">' + (r.category||'') + (r.origin_country ? ' &middot; ' + r.origin_country : '') + '</div>' +
           '<div class="rotw-title">' + (r.recipe_name||'') + '</div>' +
           (r.native_title ? '<div class="rotw-native">' + r.native_title + '</div>' : '') +
-          '<div class="rotw-desc">' + (r.introduction ? r.introduction.slice(0,160) + (r.introduction.length>160?'…':'') : 'This week's featured recipe.') + '</div>' +
+          '<div class="rotw-desc">' + (r.introduction ? r.introduction.slice(0,160) + (r.introduction.length>160?'…':'') : "This week’s featured recipe.") + '</div>' +
           (prepCook.length ? '<div class="rotw-meta">' + prepCook.join(' &nbsp;·&nbsp; ') + '</div>' : '') +
           '<a href="recipe-page.html?id=' + r.id + '" class="rotw-link">View recipe →</a>' +
         '</div>';
@@ -981,5 +981,6 @@
     .catch(function(){});
   })();
 
+</script>
 </body>
 </html>

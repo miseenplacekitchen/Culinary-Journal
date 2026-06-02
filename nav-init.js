@@ -148,16 +148,6 @@ function buildSectionNav() {
   tabNav.appendChild(wrapper);
 }
 
-// ── PAGE GUARD LOADER ────────────────────────────────────────────
-// Loads page-guard.js once on every page that includes nav-init.js
-(function() {
-  if (window.__pgLoaded) return;
-  window.__pgLoaded = true;
-  var s = document.createElement('script');
-  s.src = (document.querySelector('base') ? '' : '') + 'page-guard.js';
-  document.head.appendChild(s);
-})();
-
 /* ═══════════════════════════════════════════════════════════════
    THE CULINARY JOURNAL — nav-init.js  (shared top-right nav)
 
@@ -273,7 +263,7 @@ function buildSectionNav() {
       // Clean the URL so the hash disappears
       window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
       // Fetch profile (includes is_admin) and store it
-      fetch('https://kzywmodvfbyexqgipcjt.supabase.co/rest/v1/rpc/get_my_profile', {
+      fetch(window.SUPA_URL + '/rest/v1/rpc/get_my_profile', {
         method: 'POST',
         headers: {
           'apikey':        window.SUPA_KEY,
@@ -441,9 +431,8 @@ function buildSectionNav() {
 
 var _notifOpen = false;
 var _notifPanel = null;
-var SUPA_URL_N = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+var SUPA_URL_N = window.SUPA_URL;
 var SUPA_KEY_N = window.SUPA_KEY;
-
 async function notifRpc(fn, params) {
   var session = JSON.parse(localStorage.getItem('tcj_session')||'null');
   if (!session) return null;
@@ -509,7 +498,20 @@ function renderNotifPanel(notifs) {
     var item = document.createElement('a');
     item.className = 'nav-notif-item' + (n.read?'':' unread');
     item.href = n.recipe_id ? 'recipe-page.html?id=' + n.recipe_id : '#';
-    item.innerHTML = '<div class="nav-notif-dot'+(n.read?' read':'')+'"></div><div><div class="nav-notif-msg">'+icon+' '+(n.recipe_name||n.message||'Notification')+'</div><div class="nav-notif-time">'+timeStr+'</div></div>';
+    // Build notification item using DOM — no innerHTML with user data
+    var dot = document.createElement('div');
+    dot.className = 'nav-notif-dot' + (n.read ? ' read' : '');
+    var inner = document.createElement('div');
+    var msg = document.createElement('div');
+    msg.className = 'nav-notif-msg';
+    msg.textContent = (icon ? icon + ' ' : '') + (n.recipe_name || n.message || 'Notification');
+    var time = document.createElement('div');
+    time.className = 'nav-notif-time';
+    time.textContent = timeStr;
+    inner.appendChild(msg);
+    inner.appendChild(time);
+    item.appendChild(dot);
+    item.appendChild(inner);
     item.addEventListener('click', async function(e) {
       e.preventDefault();
       try { await notifRpc('mark_notification_read', {p_id: n.id}); } catch(_) {}
