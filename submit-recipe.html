@@ -3832,9 +3832,11 @@ async function saveNamedDraft(showToast) {
     let index = JSON.parse(lsGet(DRAFTS_INDEX_KEY) || '[]');
     const existing = index.findIndex(function(d) { return d.id === draftId; });
     const entry = {
-      id:      draftId,
-      name:    data.recipe_name || 'Untitled Recipe',
-      saved:   new Date().toISOString(),
+      id:         draftId,
+      recipe_name: data.recipe_name || 'Untitled Recipe',
+      category:   data.category    || '',
+      image_url:  data.image_url   || '',
+      saved_at:   new Date().toISOString(),
     };
     if (existing > -1) index[existing] = entry;
     else index.unshift(entry);
