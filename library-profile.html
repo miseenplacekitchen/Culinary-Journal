@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile — The Culinary Journal</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="theme-init.js"></script>
+<script src="nav-init.js"></script>
+<style>
+.lp-page { min-height:100vh; background:var(--bg); }
+
+/* Hero */
+.lp-hero { position:relative; min-height:420px; display:flex; align-items:flex-end; }
+.lp-hero-img { position:absolute; inset:0; background:var(--surface); }
+.lp-hero-img img { width:100%; height:100%; object-fit:cover; }
+.lp-hero-overlay { position:absolute; inset:0; background:linear-gradient(to top, rgba(12,7,2,.92) 0%, rgba(12,7,2,.5) 50%, transparent 100%); }
+.lp-hero-content { position:relative; z-index:1; max-width:900px; margin:0 auto; padding:48px 40px; width:100%; }
+.lp-back { display:inline-flex; align-items:center; gap:6px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); text-decoration:none; margin-bottom:24px; transition:color .15s; }
+.lp-back:hover { color:var(--accent); }
+.lp-type-badge { display:inline-block; font-family:'DM Sans',sans-serif; font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); border:1px solid rgba(196,151,59,.3); border-radius:4px; padding:3px 10px; margin-bottom:14px; }
+.lp-name { font-family:'Cormorant Garamond',serif; font-size:clamp(2.4rem,5vw,3.8rem); font-weight:700; color:#fff; line-height:1.05; margin-bottom:6px; }
+.lp-aka  { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-style:italic; color:var(--accent); margin-bottom:16px; }
+.lp-tags { display:flex; flex-wrap:wrap; gap:8px; }
+.lp-tag  { font-family:'DM Sans',sans-serif; font-size:11px; padding:4px 10px; border-radius:20px; background:rgba(255,255,255,.08); color:var(--text-mid); border:1px solid rgba(255,255,255,.1); }
+
+/* Body */
+.lp-body { max-width:900px; margin:0 auto; padding:48px 40px 80px; }
+.lp-grid { display:grid; grid-template-columns:2fr 1fr; gap:40px; }
+
+/* Sections */
+.lp-section { margin-bottom:40px; }
+.lp-section-title { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:var(--accent); margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid rgba(196,151,59,.15); }
+.lp-text { font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-mid); line-height:1.8; }
+.lp-text p { margin-bottom:12px; }
+
+/* Sidebar cards */
+.lp-sidebar-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px; }
+.lp-sidebar-title { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-muted); margin-bottom:12px; }
+.lp-sidebar-item { display:flex; justify-content:space-between; font-family:'DM Sans',sans-serif; font-size:13px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+.lp-sidebar-item:last-child { border-bottom:none; }
+.lp-sidebar-label { color:var(--text-muted); }
+.lp-sidebar-value { color:var(--text-high); font-weight:500; text-align:right; max-width:60%; }
+
+/* Chef's note */
+.lp-chefs-note { background:rgba(196,151,59,.06); border:1px solid rgba(196,151,59,.2); border-radius:12px; padding:24px; margin-bottom:16px; }
+.lp-chefs-note-label { font-family:'DM Sans',sans-serif; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); margin-bottom:10px; }
+.lp-chefs-note-text { font-family:'Cormorant Garamond',serif; font-size:1.05rem; font-style:italic; color:var(--text-high); line-height:1.7; }
+
+/* Did you know */
+.lp-did-you-know { background:var(--surface); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:18px 20px; margin-bottom:16px; }
+.lp-dyk-label { font-family:'DM Sans',sans-serif; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
+.lp-dyk-text { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); line-height:1.7; }
+
+/* Flags */
+.lp-flags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
+.lp-flag { font-family:'DM Sans',sans-serif; font-size:11px; padding:4px 10px; border-radius:20px; border:1px solid var(--border); color:var(--text-mid); }
+.lp-flag.yes { border-color:rgba(100,200,100,.4); color:#6dc86d; background:rgba(100,200,100,.08); }
+
+/* Recipes */
+.lp-recipes-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+.lp-recipe-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; overflow:hidden; text-decoration:none; transition:border-color .15s; }
+.lp-recipe-card:hover { border-color:var(--accent); }
+.lp-recipe-thumb { aspect-ratio:16/9; background:var(--bg); }
+.lp-recipe-thumb img { width:100%; height:100%; object-fit:cover; }
+.lp-recipe-name { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); padding:10px 12px; }
+
+/* Loading / error */
+.lp-loading { display:flex; justify-content:center; padding:120px; }
+.lp-error { max-width:900px; margin:80px auto; padding:0 40px; text-align:center; font-family:'DM Sans',sans-serif; color:var(--text-muted); }
+.spinner { width:28px; height:28px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+@media(max-width:768px){
+  .lp-hero-content,.lp-body { padding-left:20px; padding-right:20px; }
+  .lp-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body class="lp-page">
+<div id="main-nav"></div>
+<div id="lp-content">
+  <div class="lp-loading"><div class="spinner"></div></div>
+</div>
+
+<script>
+const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+
+const TYPE_META = {
+  ingredient:   { label:'Ingredient',    emoji:'🌿', back:'Ingredients' },
+  spice:        { label:'Spice',         emoji:'🌶', back:'Spice Directory' },
+  tool:         { label:'Tool',          emoji:'🔪', back:'Tools & Appliances' },
+  cut:          { label:'Cut',           emoji:'🥩', back:'Cuts & Prep' },
+  preservation: { label:'Preservation', emoji:'🫙', back:'Preservation' },
+};
+
+const params   = new URLSearchParams(window.location.search);
+const profType = params.get('type') || 'ingredient';
+const profSlug = params.get('slug') || '';
+const meta     = TYPE_META[profType] || TYPE_META.ingredient;
+
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
+function section(title, content) {
+  if (!content) return '';
+  return `<div class="lp-section">
+    <div class="lp-section-title">${title}</div>
+    <div class="lp-text">${content.replace(/\n/g,'<br>')}</div>
+  </div>`;
+}
+
+function sidebarCard(title, rows) {
+  const visible = rows.filter(r => r[1]);
+  if (!visible.length) return '';
+  return `<div class="lp-sidebar-card">
+    <div class="lp-sidebar-title">${title}</div>
+    ${visible.map(([label,val]) => `<div class="lp-sidebar-item"><span class="lp-sidebar-label">${label}</span><span class="lp-sidebar-value">${esc(String(val))}</span></div>`).join('')}
+  </div>`;
+}
+
+function buildSections(p) {
+  // Build different section sets per type
+  const t = profType;
+  let main = '';
+  let sidebar = '';
+
+  if (t === 'ingredient') {
+    main =
+      section('The Story', p.origin_story) +
+      section('History', p.history) +
+      section('Across Cultures', p.cultural_use) +
+      section('Flavour Profile', p.flavour_profile) +
+      section('In the Kitchen — How to Buy', p.how_to_buy) +
+      section('In the Kitchen — How to Store', p.how_to_store) +
+      section('In the Kitchen — How to Prep', p.how_to_prep) +
+      section('When to Add It', p.when_to_add) +
+      section('Common Mistakes', p.common_mistakes) +
+      section('The Science', p.science_notes) +
+      section('Flavour Pairings', p.pairings) +
+      section('Preservation', p.preservation_notes) +
+      section('For Babies & Toddlers', p.baby_notes) +
+      section('Substitutes', p.substitutes) +
+      section('Nutrition & Health', p.nutrition_notes);
+    sidebar =
+      sidebarCard('At a Glance', [
+        ['Category', p.category],
+        ['Sub-category', p.subcategory],
+        ['Allergen', p.allergen],
+        ['Seasonality', p.seasonality],
+      ]) +
+      buildFlags(p) +
+      buildChefsNote(p) +
+      buildDidYouKnow(p);
+  } else if (t === 'spice') {
+    main =
+      section('The Story', p.origin_story) +
+      section('History', p.history) +
+      section('Across Cultures', p.cultural_use) +
+      section('Flavour Profile', p.flavour_wheel) +
+      section('Whole vs Ground', p.whole_vs_ground) +
+      section('How to Toast & Bloom', p.how_to_toast) +
+      section('The Blends It Belongs To', p.blends) +
+      section('When to Add It', p.when_to_add) +
+      section('The Science', p.science_notes) +
+      section('Flavour Pairings', p.pairings) +
+      section('Substitutes', p.substitutes);
+    sidebar =
+      sidebarCard('At a Glance', [
+        ['Heat Level', p.heat_level !== null ? '🌶'.repeat(p.heat_level || 0) || 'Mild' : null],
+      ]) +
+      buildChefsNote(p) +
+      buildDidYouKnow(p);
+  } else if (t === 'tool') {
+    main =
+      section('What It Is', p.what_its_for) +
+      section('How to Use It', p.how_to_use) +
+      section('How to Care for It', p.how_to_care) +
+      section('What to Look For When Buying', p.what_to_look_for) +
+      section('Common Mistakes', p.common_mistakes);
+    sidebar =
+      sidebarCard('At a Glance', [
+        ['Category', p.tool_category],
+        ['Price Range', p.price_range],
+        ['Recommended Brand', p.recommended_brand],
+      ]) +
+      buildChefsNote(p) +
+      buildDidYouKnow(p);
+  } else if (t === 'cut') {
+    main =
+      section('What It Is', p.location_on_animal) +
+      section('Characteristics', p.characteristics) +
+      section('How to Clean It', p.how_to_clean) +
+      section('How to Prep It', p.how_to_prep) +
+      section('Best Cooking Methods', p.best_cooking_methods);
+    sidebar =
+      sidebarCard('At a Glance', [
+        ['Type', p.protein_type],
+        ['International Names', Array.isArray(p.international_names) ? p.international_names.join(', ') : null],
+      ]) +
+      buildChefsNote(p) +
+      buildDidYouKnow(p);
+  } else if (t === 'preservation') {
+    const steps = Array.isArray(p.step_by_step) && p.step_by_step.length
+      ? `<div class="lp-section"><div class="lp-section-title">Step by Step</div><ol style="font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-mid);line-height:1.8;padding-left:20px">${p.step_by_step.map(s => `<li style="margin-bottom:8px">${esc(s)}</li>`).join('')}</ol></div>`
+      : '';
+    main =
+      section('What It Is', p.what_it_is) +
+      section('History', p.history) +
+      section('Best For', p.best_for) +
+      section('Equipment Needed', p.equipment_needed) +
+      steps +
+      section('Safety Notes', p.safety_notes);
+    sidebar =
+      sidebarCard('At a Glance', [
+        ['Technique', p.technique_type],
+        ['Shelf Life', p.shelf_life],
+      ]) +
+      buildChefsNote(p) +
+      buildDidYouKnow(p);
+  }
+
+  return `<div class="lp-grid"><div>${main}</div><div>${sidebar}</div></div>`;
+}
+
+function buildFlags(p) {
+  if (!p) return '';
+  const flags = [
+    ['Vegan', p.vegan], ['Vegetarian', p.vegetarian]
+  ].filter(f => f[1] !== undefined);
+  if (!flags.length) return '';
+  return `<div class="lp-sidebar-card">
+    <div class="lp-sidebar-title">Dietary</div>
+    <div class="lp-flags">${flags.map(([label,val]) =>
+      `<span class="lp-flag${val?' yes':''}">${val ? '✓' : '✗'} ${label}</span>`
+    ).join('')}</div>
+  </div>`;
+}
+
+function buildChefsNote(p) {
+  if (!p.chefs_notes && !p.recommended_brand) return '';
+  return `<div class="lp-chefs-note">
+    <div class="lp-chefs-note-label">Chef's Note</div>
+    <div class="lp-chefs-note-text">${esc(p.chefs_notes || '')}${p.recommended_brand ? `<br><br>Recommended: ${esc(p.recommended_brand)}` : ''}</div>
+  </div>`;
+}
+
+function buildDidYouKnow(p) {
+  if (!p.did_you_know) return '';
+  return `<div class="lp-did-you-know">
+    <div class="lp-dyk-label">Did you know?</div>
+    <div class="lp-dyk-text">${esc(p.did_you_know)}</div>
+  </div>`;
+}
+
+async function loadLinkedRecipes(profileName) {
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/submitted_recipes?status=eq.approved&visibility=eq.Public&select=id,recipe_name,image_url&ingredients=cs.${encodeURIComponent('"' + profileName + '"')}&limit=6`, {
+      headers: { 'apikey': SUPA_KEY }
+    });
+    if (!res.ok) return '';
+    const recipes = await res.json();
+    if (!recipes.length) return '';
+    return `<div class="lp-section" style="margin-top:40px">
+      <div class="lp-section-title">Recipes Using This</div>
+      <div class="lp-recipes-grid">
+        ${recipes.map(r => `<a href="recipe-page.html?id=${r.id}" class="lp-recipe-card">
+          <div class="lp-recipe-thumb">${r.image_url ? `<img src="${esc(r.image_url)}" loading="lazy">` : ''}</div>
+          <div class="lp-recipe-name">${esc(r.recipe_name)}</div>
+        </a>`).join('')}
+      </div>
+    </div>`;
+  } catch(_) { return ''; }
+}
+
+async function init() {
+  if (!profSlug) { showError('No profile specified.'); return; }
+  try {
+    const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
+    const headers = { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' };
+    if (sess?.access_token) headers['Authorization'] = 'Bearer ' + sess.access_token;
+
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_library_profile', {
+      method: 'POST', headers,
+      body: JSON.stringify({ p_type: profType, p_slug: profSlug })
+    });
+    const p = await res.json();
+    if (!p || !p.name) { showError('This profile is not available.'); return; }
+
+    document.title = p.name + ' — The Culinary Journal';
+
+    const heroImg = p.image_url
+      ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}">`
+      : '';
+
+    const localNames = Array.isArray(p.local_names) && p.local_names.length
+      ? p.local_names.map(n => `<span class="lp-tag">${esc(n)}</span>`).join('')
+      : '';
+
+    const recipesHtml = await loadLinkedRecipes(p.name);
+
+    document.getElementById('lp-content').innerHTML = `
+      <div class="lp-hero">
+        <div class="lp-hero-img">${heroImg}</div>
+        <div class="lp-hero-overlay"></div>
+        <div class="lp-hero-content">
+          <a href="library-directory.html?type=${profType}" class="lp-back">← ${meta.back}</a>
+          <div class="lp-type-badge">${meta.emoji} ${meta.label}</div>
+          <h1 class="lp-name">${esc(p.name)}</h1>
+          ${p.also_known_as ? `<div class="lp-aka">Also known as: ${esc(p.also_known_as)}</div>` : ''}
+          ${localNames ? `<div class="lp-tags">${localNames}</div>` : ''}
+        </div>
+      </div>
+      <div class="lp-body">
+        ${buildSections(p)}
+        ${recipesHtml}
+      </div>
+    `;
+  } catch(e) {
+    showError('Could not load this profile.');
+  }
+}
+
+function showError(msg) {
+  document.getElementById('lp-content').innerHTML = `
+    <div class="lp-error">
+      <p style="font-size:32px;margin-bottom:16px">${meta.emoji}</p>
+      <p>${msg}</p>
+      <a href="library-directory.html?type=${profType}" style="color:var(--accent);font-family:'DM Sans',sans-serif;font-size:13px">← Back to ${meta.back}</a>
+    </div>`;
+}
+
+init();
+</script>
+</body>
+</html>
