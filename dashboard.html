@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Panel — The Culinary Journal</title>
 <script src="theme-init.js"></script>
-  <link rel="stylesheet" href="style.css">
+  
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <link rel="stylesheet" href="style.css">
   <style>
@@ -364,7 +364,7 @@
 </head>
 <body>
 
-<div id="debug-status" style="position:fixed;bottom:10px;right:10px;background:#333;color:#fff;padding:8px 12px;font-size:11px;font-family:monospace;border-radius:6px;z-index:99999;max-width:400px">Loading...</div>
+
 <div id="screen-denied" style="display:none;position:fixed;inset:0;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:9999">
   <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;color:var(--text-high)">Access Restricted</div>
   <div style="font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-mid)">This panel is restricted to administrators.</div>
@@ -1099,24 +1099,17 @@ async function loadDashboard() {
 
 
 async function init() {
-  function dbg(msg) {
-    var el = document.getElementById('debug-status');
-    if (el) el.textContent = msg;
-  }
+  
   try {
-    dbg('Step 1: Checking session...');
     var sess = null;
     try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(e) {}
     if (!sess || !sess.access_token) {
-      dbg('No session - redirecting to login');
       window.location.href = 'login.html';
       return;
     }
     session = sess;
     // Try to refresh token silently — don't block if it fails
-    dbg('Step 1b: Refreshing token...');
-    try { await tryRefreshToken(); dbg('Token refreshed'); } catch(_) {}
-    dbg('Step 2: Getting profile...');
+    try { await tryRefreshToken(); } catch(_) {}
     var isAdmin = false;
     var adminName = 'Admin';
     try {
@@ -1124,11 +1117,9 @@ async function init() {
       if (cached) {
         isAdmin = !!cached.is_admin;
         adminName = cached.full_name || cached.username || 'Admin';
-        dbg('Step 2: Profile from cache. is_admin=' + cached.is_admin);
       } else {
         var rows = await rpc('get_my_profile', {});
         var pr = Array.isArray(rows) ? rows[0] : rows;
-        dbg('Step 2: Profile from RPC. is_admin=' + (pr ? pr.is_admin : 'NO PROFILE'));
         if (pr) {
           isAdmin = !!pr.is_admin;
           adminName = pr.full_name || pr.username || 'Admin';
@@ -1136,7 +1127,6 @@ async function init() {
         }
       }
     } catch(e) {
-      dbg('Step 2 ERROR: ' + e.message);
       if (String(e.message).indexOf('401') !== -1) {
         localStorage.removeItem('tcj_session');
         localStorage.removeItem('tcj_profile');
@@ -1146,9 +1136,7 @@ async function init() {
       showFatalError('Profile error: ' + e.message);
       return;
     }
-    dbg('Step 3: isAdmin=' + isAdmin);
     if (!isAdmin) {
-      dbg('NOT ADMIN - showing denied screen');
       document.getElementById('screen-denied').style.display = 'flex';
       return;
     }
@@ -1160,11 +1148,8 @@ async function init() {
     }
     var _it = localStorage.getItem('tcj_active_ing_tab') || 'all';
     document.querySelectorAll('[id^="v-"]').forEach(function(el){ el.style.display = 'none'; });
-    dbg('Step 4: Calling switchView(' + _sv + ')...');
-    try { switchView(_sv, _it); } catch(e) { dbg('switchView error: ' + e.message); switchView('dashboard'); }
-    dbg('Step 5: Showing screen-main');
+    try { switchView(_sv, _it); } catch(e) { switchView('dashboard'); }
     document.getElementById('screen-main').style.display = 'flex';
-    dbg('Done. View: ' + _sv);
     rpc('admin_get_stats',{}).then(function(st){ if(st) setEl('badge-pending', st.pending||0); }).catch(function(){});
     rpc('admin_count_pending_users',{}).then(function(n){ setEl('badge-pending-users', n||0); }).catch(function(){});
     // Load unread feedback count
@@ -1174,7 +1159,6 @@ async function init() {
       if (el) { el.textContent = n||''; el.style.display = n ? 'inline-block' : 'none'; }
     }).catch(function(){});
   } catch(e) {
-    document.getElementById('debug-status').textContent = 'FATAL: ' + e.message;
     showFatalError('Dashboard error: ' + e.message);
   }
 }

@@ -848,8 +848,17 @@ async function handleAvatarSelect(e) {
     );
 
     if (!uploadRes.ok) {
-      // If bucket missing — fall back to base64 stored in profile
-      await saveAvatarBase64(file);
+      // Storage upload failed — show error, do not store base64 in profile
+      const errText = await uploadRes.text().catch(() => '');
+      const msgEl = document.getElementById('avatar-msg');
+      if (msgEl) {
+        msgEl.textContent = 'Photo upload failed. Please try again or check that the avatars storage bucket exists in Supabase.';
+        msgEl.style.display = 'block';
+      }
+      const avatarEl = document.getElementById('acct-avatar');
+      if (avatarEl && PROFILE && PROFILE.avatar_url) {
+        avatarEl.innerHTML = '<img src="' + PROFILE.avatar_url + '" alt="Profile photo">';
+      }
       return;
     }
 
@@ -858,27 +867,21 @@ async function handleAvatarSelect(e) {
     if (PROFILE) PROFILE.avatar_url = publicUrl;
 
   } catch(err) {
-    // Silently fall back to base64 if storage fails
-    await saveAvatarBase64(file);
+    // Storage upload failed — show error to user
+    const msgEl = document.getElementById('avatar-msg');
+    if (msgEl) {
+      msgEl.textContent = 'Photo upload failed. Please try again.';
+      msgEl.style.display = 'block';
+    }
+    // Restore previous avatar if available
+    const avatarEl = document.getElementById('acct-avatar');
+    if (avatarEl && PROFILE && PROFILE.avatar_url && !PROFILE.avatar_url.startsWith('data:')) {
+      avatarEl.innerHTML = '<img src="' + PROFILE.avatar_url + '" alt="Profile photo">';
+    }
   } finally {
     if (uploading) uploading.style.display = 'none';
   }
 }
-
-async function saveAvatarBase64(file) {
-  return new Promise(function(resolve) {
-    const r = new FileReader();
-    r.onload = async function(ev) {
-      try {
-        await callRPC('update_avatar_url', { p_url: ev.target.result });
-        if (PROFILE) PROFILE.avatar_url = ev.target.result;
-      } catch(_) {}
-      resolve();
-    };
-    r.readAsDataURL(file);
-  });
-}
-
 
 function signOut() {
   try {
@@ -1528,8 +1531,11 @@ async function savePreferences() {
   var getChecked = function(containerId) {
     return [...document.querySelectorAll('#' + containerId + ' input:checked')].map(function(i){return i.value;});
   };
-  var styleEl = document.querySelector('input[name="cooking-style"]:checked');
-  var style   = styleEl ? styleEl.value : '';
+  var styleEl  = document.querySelector('input[name="cooking-style"]:checked');
+  var style    = styleEl ? styleEl.value : '';
+  var fontSzEl = document.querySelector('input[name="font-size"]:checked') ||
+                 document.getElementById('font-size-select');
+  var fontSize = fontSzEl ? (fontSzEl.value || fontSzEl.dataset.value || '') : '';
   try {
     await callRPC('update_my_preferences', {
       p_dietary_preferences: getChecked('pref-dietary'),

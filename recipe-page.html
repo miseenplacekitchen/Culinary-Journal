@@ -218,6 +218,10 @@
     .rp-toast.show { transform: translateX(-50%) translateY(0); }
 
     /* ── PRINT BUTTON ────────────────────────── */
+    .rp-tried-btn { display:flex;align-items:center;gap:5px;background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:20px;padding:5px 12px;font-family:"DM Sans",sans-serif;font-size:12px;cursor:pointer;transition:all .2s; }
+    .rp-tried-btn:hover { border-color:var(--accent);color:var(--accent); }
+    .rp-tried-btn.done { border-color:var(--accent);color:var(--accent);background:rgba(196,151,59,0.12); }
+    .rp-tried-btn.done svg { fill:var(--accent);stroke:var(--accent); }
     .rp-print-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: none; border: 1px solid var(--border); border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
     .rp-print-btn:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -349,6 +353,16 @@
       <div class="rp-meta-item" id="meta-cook" style="display:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         <span id="meta-cook-text"></span>
+      </div>
+
+      <div class="rp-meta-divider"></div>
+
+      <!-- Tried It -->
+      <div class="rp-meta-item">
+        <button class="rp-tried-btn" id="tried-it-btn" onclick="markTriedIt()" title="I made this recipe">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span id="tried-it-label">Tried It</span>
+        </button>
       </div>
 
       <div class="rp-meta-divider"></div>
@@ -1692,6 +1706,37 @@ function showPrintOptions() {
 }
 
 // ── TOAST ─────────────────────────────────────────────
+function markTriedIt() {
+  const recipeId = new URLSearchParams(window.location.search).get('id') || 'demo';
+  const key      = 'tcj_tried_' + recipeId;
+  const already  = localStorage.getItem(key);
+  const btn      = document.getElementById('tried-it-btn');
+  const label    = document.getElementById('tried-it-label');
+  if (already) {
+    // Untoggle
+    localStorage.removeItem(key);
+    if (btn)   btn.classList.remove('done');
+    if (label) label.textContent = 'Tried It';
+    showToast('Removed from your made list');
+  } else {
+    localStorage.setItem(key, '1');
+    if (btn)   btn.classList.add('done');
+    if (label) label.textContent = '✓ Made this';
+    showToast('Added to your made list! 👨‍🍳');
+  }
+}
+
+function initTriedIt() {
+  const recipeId = new URLSearchParams(window.location.search).get('id') || 'demo';
+  const key      = 'tcj_tried_' + recipeId;
+  const btn      = document.getElementById('tried-it-btn');
+  const label    = document.getElementById('tried-it-label');
+  if (localStorage.getItem(key)) {
+    if (btn)   btn.classList.add('done');
+    if (label) label.textContent = '✓ Made this';
+  }
+}
+
 function showToast(msg) {
   const toast = document.getElementById('rp-toast');
   toast.textContent = msg;

@@ -328,6 +328,7 @@ function buildSectionNav() {
     var html;
     if (loggedIn) {
       html =
+        '<button class="cj-notif-bell" id="nav-notif-btn" onclick="toggleNotifPanel()" title="Notifications" style="position:relative;background:none;border:1px solid var(--border);border-radius:8px;width:34px;height:34px;cursor:pointer;color:var(--text-mid);font-size:16px;display:inline-flex;align-items:center;justify-content:center;margin-right:8px;transition:color 0.15s,border-color 0.15s">🔔<span id="nav-notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--accent);color:#0f1117;border-radius:10px;font-size:10px;font-weight:700;padding:1px 5px;font-family:DM Sans,sans-serif;min-width:16px;text-align:center"></span></button>' +
         '<div class="cj-menu-wrap" id="cj-user">' +
           '<button class="cj-trigger" id="cj-user-trigger" type="button" aria-haspopup="true" aria-expanded="false">' +
             '<span class="cj-handle">@' + escapeHtml(username || 'me') + '</span>' + IC.chevron +
@@ -518,8 +519,8 @@ function renderNotifPanel(notifs) {
     var icon = n.type==='recipe_approved'?'✅':n.type==='recipe_rejected'?'❌':'⏳';
     var item = document.createElement('a');
     item.className = 'nav-notif-item' + (n.read?'':' unread');
-    item.href = n.recipe_id ? 'recipe-page.html?id='+n.recipe_id : '#';
-    item.innerHTML = '<div class="nav-notif-dot'+(n.read?' read':'')+'"></div><div><div class="nav-notif-msg">'+icon+' '+(n.message||n.recipe_name||'Notification')+'</div><div class="nav-notif-time">'+timeStr+'</div></div>';
+    item.href = n.recipe_id ? 'recipe-page.html?id=' + n.recipe_id : '#';
+    item.innerHTML = '<div class="nav-notif-dot'+(n.read?' read':'')+'"></div><div><div class="nav-notif-msg">'+icon+' '+(n.recipe_name||n.message||'Notification')+'</div><div class="nav-notif-time">'+timeStr+'</div></div>';
     item.addEventListener('click', function(){notifRpc('mark_notification_read',{p_id:n.id}); loadNotifCount();});
     _notifPanel.appendChild(item);
   });
@@ -546,8 +547,8 @@ function outsideNotifClick(e) {
   }
 }
 
-// Notification system RPCs not yet in Supabase — call disabled
-// setTimeout(loadNotifCount, 800);
+// Notification RPCs now exist — polling enabled
+setTimeout(function() { if(typeof loadNotifCount === "function") loadNotifCount(); }, 800);
 
 
 
