@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Panel — The Culinary Journal</title>
 <script src="theme-init.js"></script>
+<script src="nav-init.js"></script>
   
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
@@ -374,8 +376,13 @@
 <div id="screen-main" class="ap-wrap" style="display:none">
   <aside class="ap-side">
     <div class="ap-logo">
-      <div class="ap-logo-title">The Culinary Journal</div>
-      <div class="ap-logo-sub">Admin Panel</div>
+      <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+        <img src="favicon.svg" alt="TCJ" style="width:36px;height:36px;border-radius:9px;flex-shrink:0">
+        <div>
+          <div class="ap-logo-title">The Culinary Journal</div>
+          <div class="ap-logo-sub">Admin Panel</div>
+        </div>
+      </a>
     </div>
     <nav class="ap-nav">
       <button class="ap-nav-item active" id="nav-dashboard" onclick="switchView('dashboard')" style="font-weight:600">&#127968; Dashboard</button>
