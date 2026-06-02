@@ -8,52 +8,46 @@
 // The dropdown (sub-pages) appears on hover; the chevron toggles it for touch/keyboard.
 var CJ_SECTIONS = [
   {
-    id:'knowledge', label:'Recipes', emoji:'📖', primaryPage:'recipes.html',
-    pages:['recipes.html','chefs.html','search.html','baby.html','preservation.html','conversions.html','dietary-card.html'],
+    id:'recipebook', label:'The Recipe Book', primaryPage:'recipes.html',
+    pages:['recipes.html','chefs.html','search.html','submit-recipe.html','draft-recipes.html'],
     links:[
-      {href:'recipes.html',      emoji:'📖', label:'Browse Recipes'},
-      {href:'chefs.html',        emoji:'👨‍🍳', label:'Chef Directory'},
-      {href:'search.html',       emoji:'🔍', label:'Search'},
-      {href:'preservation.html', emoji:'🫙', label:'Preservation Library'},
-      {href:'conversions.html',  emoji:'⚖️', label:'Conversions'},
-      {href:'baby.html',         emoji:'👶', label:'Baby & Toddler'},
+      {href:'recipes.html',      label:'Browse Recipes'},
+      {href:'search.html',       label:'Search'},
+      {href:'chefs.html',        label:'Chef Directory'},
+      {href:'submit-recipe.html',label:'Submit a Recipe'},
     ]
   },
   {
-    id:'planning', label:'Planning', emoji:'🗓', primaryPage:'meal-planner.html',
-    pages:['meal-planner.html','grocery.html','pantry.html'],
+    id:'miseenplace', label:'Mise en Place', primaryPage:'meal-planner.html',
+    pages:['meal-planner.html','grocery.html','pantry.html','print-studio.html'],
     links:[
-      {href:'meal-planner.html', emoji:'🗓', label:'Meal Planner'},
-      {href:'grocery.html',      emoji:'🛒', label:'Grocery List'},
-      {href:'pantry.html',       emoji:'🫙', label:'Pantry & Fridge'},
+      {href:'meal-planner.html', label:'Meal Planner'},
+      {href:'grocery.html',      label:'Grocery List'},
+      {href:'pantry.html',       label:'Pantry & Fridge'},
+      {href:'print-studio.html', label:'Print Studio'},
     ]
   },
   {
-    id:'hosting', label:'Hosting', emoji:'🪑', primaryPage:'table-planner.html',
-    pages:['table-planner.html','family-profiles.html'],
+    id:'guestlist', label:'The Guest List', primaryPage:'table-planner.html',
+    pages:['table-planner.html','family-profiles.html','dietary-card.html'],
     links:[
-      {href:'table-planner.html',   emoji:'🪑', label:'Table Planner'},
-      {href:'family-profiles.html', emoji:'👨‍👩‍👧', label:'Family Profiles'},
+      {href:'table-planner.html',   label:'Table Planner'},
+      {href:'family-profiles.html', label:'Family Profiles'},
+      {href:'dietary-card.html',    label:'Dietary Cards'},
     ]
   },
   {
-    id:'publishing', label:'Publish', emoji:'🖨', primaryPage:'print-studio.html',
-    pages:['print-studio.html','submit-recipe.html','draft-recipes.html'],
+    id:'library', label:'The Library', primaryPage:'library-directory.html',
+    pages:['library-directory.html','library-profile.html','preservation.html','conversions.html','baby.html','culinary-life.html'],
     links:[
-      {href:'print-studio.html',  emoji:'🖨', label:'Print Studio'},
-      {href:'submit-recipe.html', emoji:'📝', label:'Submit a Recipe'},
-      {href:'draft-recipes.html', emoji:'📄', label:'Draft Recipes'},
-    ]
-  },
-  {
-    id:'personal', label:'True North', emoji:'📓', primaryPage:'diary.html',
-    pages:['diary.html','my-dashboard.html','culinary-life.html','collections.html','profile.html','site-settings.html','user.html'],
-    links:[
-      {href:'culinary-life.html', emoji:'✨', label:'My Culinary Life'},
-      {href:'diary.html',         emoji:'📓', label:'My Diary'},
-      {href:'my-dashboard.html',  emoji:'🏠', label:'My Kitchen'},
-      {href:'collections.html',   emoji:'📁', label:'Collections'},
-      {href:'profile.html',       emoji:'👤', label:'My Profile'},
+      {href:'library-directory.html?type=ingredient', label:'Ingredients'},
+      {href:'library-directory.html?type=spice',      label:'Spice Directory'},
+      {href:'library-directory.html?type=tool',       label:'Tools & Appliances'},
+      {href:'library-directory.html?type=cut',        label:'Cuts & Prep'},
+      {href:'library-directory.html?type=preservation',label:'Preservation Academy'},
+      {href:'conversions.html',                       label:'Conversions & Weights'},
+      {href:'baby.html',                              label:'Baby & Toddler'},
+      {href:'culinary-life.html',                     label:'Culinary Life'},
     ]
   }
 ];
@@ -338,17 +332,13 @@ function buildSectionNav() {
                 (fullName ? '<div class="cj-menu-name">' + escapeHtml(fullName) + '</div>' : '') +
                 '<div class="cj-menu-handle">@' + escapeHtml(username || 'me') + '</div>' +
               '</div><div class="cj-menu-sep"></div>' : '') +
-            (isAdmin ? item('dashboard.html', IC.dashboard, '⚙ Admin Dashboard') : '') +
-            (isAdmin ? '<div class="cj-menu-sep"></div>' : '') +
-            item('my-dashboard.html',    IC.profile, 'My Kitchen') +
-            item('profile.html',         IC.profile, 'My Profile') +
-            item('collections.html',     IC.drafts,  '📁 My Collections') +
-            item('family-profiles.html', IC.profile, '👨‍👩‍👧 Family Profiles') +
+            (isAdmin ? item('dashboard.html', IC.dashboard, 'Admin Panel') + '<div class="cj-menu-sep"></div>' : '') +
+            item('profile.html',       IC.profile, 'My Profile') +
+            item('my-dashboard.html',  IC.profile, 'My Dashboard') +
             '<div class="cj-menu-sep"></div>' +
-            item('grocery.html',         IC.drafts,  '🛒 Grocery List') +
-            item('draft-recipes.html',   IC.drafts,  'Draft Recipes') +
-            item('submit-recipe.html',   IC.submit,  'Submit a Recipe') +
-            item('recipes.html',         IC.book,    'Browse Recipes') +
+            item('draft-recipes.html', IC.drafts,  'My Recipes & Drafts') +
+            item('collections.html',   IC.drafts,  'My Collections') +
+            item('diary.html',         IC.drafts,  'My Diary') +
             '<div class="cj-menu-sep"></div>' +
             '<button class="cj-menu-item cj-menu-danger" id="cj-signout" type="button" role="menuitem">' + IC.signout + '<span>Sign Out</span></button>' +
           '</div>' +

@@ -472,6 +472,23 @@
       .emotional { padding: 64px 20px; }
       .trust-item { min-width: 100%; border-right: none; border-bottom: 0.5px solid var(--border); }
     }
+
+    /* ── RECIPE OF THE WEEK ── */
+    .rotw { max-width:900px; margin:0 auto 60px; padding:0 40px; }
+    .rotw-eyebrow { font-family:'DM Sans',sans-serif; font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--accent); margin-bottom:12px; }
+    .rotw-card { display:grid; grid-template-columns:1fr 1fr; gap:0; border:0.5px solid var(--border); border-radius:16px; overflow:hidden; background:var(--surface); }
+    .rotw-img { aspect-ratio:4/3; background:var(--surface); position:relative; overflow:hidden; }
+    .rotw-img img { width:100%; height:100%; object-fit:cover; }
+    .rotw-img-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:48px; background:var(--bg); }
+    .rotw-body { padding:32px 36px; display:flex; flex-direction:column; justify-content:center; }
+    .rotw-category { font-family:'DM Sans',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-low); margin-bottom:10px; }
+    .rotw-title { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:600; color:var(--text-high); line-height:1.2; margin-bottom:6px; }
+    .rotw-native { font-family:'Cormorant Garamond',serif; font-size:1rem; font-style:italic; color:var(--accent); margin-bottom:16px; }
+    .rotw-desc { font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-mid); line-height:1.6; margin-bottom:24px; flex:1; }
+    .rotw-meta { display:flex; gap:20px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-low); margin-bottom:24px; }
+    .rotw-link { display:inline-flex; align-items:center; gap:8px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--accent); text-decoration:none; border:1px solid var(--accent-border); border-radius:8px; padding:10px 20px; transition:gap .2s; }
+    .rotw-link:hover { gap:14px; }
+    @media(max-width:768px){ .rotw { padding:0 20px; } .rotw-card { grid-template-columns:1fr; } }
   </style>
   <script src="page-guard.js"></script>
 </head>
@@ -530,6 +547,12 @@
       <span class="trust-num">∞</span>
       <span class="trust-label">Recipes, Memories & Stories</span>
     </div>
+  </div>
+
+  <!-- ── RECIPE OF THE WEEK ── -->
+  <div class="rotw" id="rotw-section" style="display:none">
+    <div class="rotw-eyebrow">Recipe of the Week</div>
+    <div class="rotw-card" id="rotw-card"></div>
   </div>
 
   <!-- ── SECTIONS INTRO ── -->
@@ -929,6 +952,43 @@
   .catch(function(){});
 })();
 </script>
+
+
+  // ── RECIPE OF THE WEEK ──────────────────────────────────────────
+  (function() {
+    var SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
+    var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+    fetch(SUPA_URL + '/rest/v1/submitted_recipes?is_recipe_of_week=eq.true&status=eq.approved&select=id,recipe_name,native_title,category,origin_country,prep_time_minutes,cook_time_minutes,servings,introduction,image_url&limit=1', {
+      headers: { 'apikey': SUPA_KEY }
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(rows) {
+      if (!rows || !rows.length) return;
+      var r = rows[0];
+      var section = document.getElementById('rotw-section');
+      var card    = document.getElementById('rotw-card');
+      if (!section || !card) return;
+      var imgHtml = r.image_url
+        ? '<img src="' + r.image_url + '" alt="' + (r.recipe_name||'') + '" loading="lazy">'
+        : '<div class="rotw-img-placeholder">🍽</div>';
+      var prepCook = [];
+      if (r.prep_time_minutes) prepCook.push('Prep ' + r.prep_time_minutes + ' min');
+      if (r.cook_time_minutes) prepCook.push('Cook ' + r.cook_time_minutes + ' min');
+      if (r.servings) prepCook.push('Serves ' + r.servings);
+      card.innerHTML =
+        '<div class="rotw-img">' + imgHtml + '</div>' +
+        '<div class="rotw-body">' +
+          '<div class="rotw-category">' + (r.category||'') + (r.origin_country ? ' &middot; ' + r.origin_country : '') + '</div>' +
+          '<div class="rotw-title">' + (r.recipe_name||'') + '</div>' +
+          (r.native_title ? '<div class="rotw-native">' + r.native_title + '</div>' : '') +
+          '<div class="rotw-desc">' + (r.introduction ? r.introduction.slice(0,160) + (r.introduction.length>160?'…':'') : 'This week's featured recipe.') + '</div>' +
+          (prepCook.length ? '<div class="rotw-meta">' + prepCook.join(' &nbsp;·&nbsp; ') + '</div>' : '') +
+          '<a href="recipe-page.html?id=' + r.id + '" class="rotw-link">View recipe →</a>' +
+        '</div>';
+      section.style.display = '';
+    })
+    .catch(function(){});
+  })();
 
 </body>
 </html>

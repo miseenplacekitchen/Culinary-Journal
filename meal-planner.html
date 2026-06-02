@@ -237,7 +237,48 @@ function getPlan() {
 }
 
 function savePlan(plan) {
-  localStorage.setItem(getWeekKey(currentWeekOffset), JSON.stringify(plan));
+  const key = getWeekKey(currentWeekOffset);
+  localStorage.setItem(key, JSON.stringify(plan));
+  // Sync to Supabase in background
+  clearTimeout(window._mpSyncTimer);
+  window._mpSyncTimer = setTimeout(async function() {
+    try {
+      const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
+      if (!sess || !sess.access_token) return;
+      await fetch(SUPA_URL + '/rest/v1/rpc/save_my_meal_plan', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPA_KEY,
+          'Authorization': 'Bearer ' + sess.access_token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_week_key: key, p_plan_data: plan })
+      });
+    } catch(_) {}
+  }, 1200);
+}
+
+async function loadPlanFromSupabase() {
+  try {
+    const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
+    if (!sess || !sess.access_token) return;
+    const key = getWeekKey(currentWeekOffset);
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_my_meal_plan', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + sess.access_token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ p_week_key: key })
+    });
+    if (!res.ok) return;
+    const remote = await res.json();
+    if (remote && typeof remote === 'object' && Object.keys(remote).length) {
+      localStorage.setItem(key, JSON.stringify(remote));
+      renderWeek();
+    }
+  } catch(_) {}
 }
 
 function getSlot(day, meal) {
@@ -551,6 +592,7 @@ document.addEventListener('DOMContentLoaded', function() {
   renderCalendar();
   loadRecipes();
   loadFamilyProfiles();
+  loadPlanFromSupabase();
   document.getElementById('mp-modal').addEventListener('click', function(e) {
     if (e.target === this) closePicker();
   });

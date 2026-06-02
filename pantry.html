@@ -183,7 +183,49 @@ function getPantry() {
   try { return JSON.parse(localStorage.getItem('tcj_pantry') || '[]'); }
   catch(_) { return []; }
 }
-function savePantry(list) { localStorage.setItem('tcj_pantry', JSON.stringify(list)); }
+
+function savePantry(list) {
+  localStorage.setItem('tcj_pantry', JSON.stringify(list));
+  clearTimeout(window._pantrySyncTimer);
+  window._pantrySyncTimer = setTimeout(async function() {
+    try {
+      const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
+      if (!sess || !sess.access_token) return;
+      await fetch(SUPA_URL + '/rest/v1/rpc/save_my_pantry', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPA_KEY,
+          'Authorization': 'Bearer ' + sess.access_token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_items: list })
+      });
+    } catch(_) {}
+  }, 1500);
+}
+
+async function loadPantryFromSupabase() {
+  try {
+    const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
+    if (!sess || !sess.access_token) return;
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_my_pantry', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + sess.access_token,
+        'Content-Type': 'application/json'
+      },
+      body: '{}'
+    });
+    if (!res.ok) return;
+    const remote = await res.json();
+    if (Array.isArray(remote) && remote.length) {
+      localStorage.setItem('tcj_pantry', JSON.stringify(remote));
+      renderStats();
+      renderList('');
+    }
+  } catch(_) {}
+}
 
 function getStatus(item) {
   if (!item.qty || item.qty <= 0) return 'out';
@@ -366,6 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
   renderStats();
   renderList('');
   loadIngredientNames();
+  loadPantryFromSupabase();
   document.getElementById('pt-modal').addEventListener('click', function(e) {
     if (e.target===this) closeModal();
   });

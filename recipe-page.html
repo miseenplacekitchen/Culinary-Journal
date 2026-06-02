@@ -1646,14 +1646,65 @@ function renderNotes(r) {
   `;
 }
 
-function savePersonalNote() {
-  const note = document.querySelector('.rp-personal-notes textarea').value;
-  lsSet('tcj_note_' + (recipe?.id || 'demo'), note);
+async function savePersonalNote() {
+  const note = document.querySelector('.rp-personal-notes textarea')?.value || '';
+  const key  = 'tcj_note_' + (recipe?.id || 'demo');
+  lsSet(key, note);
+  // Also persist to Supabase if logged in and real recipe
+  if (session && recipe?.id) {
+    try {
+      await fetch(SUPABASE_URL + '/rest/v1/recipe_personal_notes', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + session.access_token,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates,return=minimal'
+        },
+        body: JSON.stringify({
+          recipe_id: recipe.id,
+          user_id: session.user?.id || session.id,
+          note: note,
+          updated_at: new Date().toISOString()
+        })
+      });
+    } catch(_) {}
+  }
   showToast('Personal note saved ✓');
 }
 
-function submitPublicNote() {
-  showToast('Submitted for review — Betty will approve it shortly 🔔');
+async function submitPublicNote() {
+  const note = document.querySelector('.rp-personal-notes textarea')?.value?.trim();
+  if (!note) { showToast('Write a note first before submitting.'); return; }
+  if (!session) { showToast('Sign in to submit a cooking tip.'); return; }
+  if (!recipe?.id) { showToast('Cannot submit on demo recipe.'); return; }
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/recipe_public_notes', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + session.access_token,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        recipe_id: recipe.id,
+        user_id: session.user?.id || session.id,
+        note: note,
+        status: 'pending'
+      })
+    });
+    if (res.ok || res.status === 201) {
+      showToast('Submitted for review — Betty will approve it shortly 🔔');
+      document.querySelector('.rp-btn-publish-note').disabled = true;
+      document.querySelector('.rp-btn-publish-note').textContent = '✓ Submitted';
+    } else {
+      const err = await res.json().catch(() => ({}));
+      showToast('Could not submit: ' + (err.message || res.status));
+    }
+  } catch(e) {
+    showToast('Could not submit — please try again.');
+  }
 }
 
 // ── TABS ──────────────────────────────────────────────

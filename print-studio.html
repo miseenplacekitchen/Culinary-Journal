@@ -383,7 +383,10 @@ function setSize(size, btn) {
 
 function printCards() {
   if (!currentRecipe) { alert('No recipe loaded. Open a recipe page and click Print.'); return; }
-  window.print();
+  // Rebuild cards with current settings before printing
+  buildCards();
+  // Give browser time to render then print
+  setTimeout(function() { window.print(); }, 300);
 }
 
 function buildCards() {
