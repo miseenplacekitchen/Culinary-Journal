@@ -7,6 +7,7 @@
   <title>Recipe — The Culinary Journal</title>
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
@@ -244,6 +245,7 @@
   </style>
   <script src="page-guard.js"></script>
   <script src="nav-init.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="cj-body">
 
@@ -458,9 +460,6 @@
 <div class="rp-toast" id="rp-toast"></div>
 
 <script>
-const SUPABASE_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
-
 const SPICE_LABELS = { 0:'No Spice', 1:'Mild', 2:'Medium', 3:'Hot', 4:'Very Hot', 5:'Extremely Hot' };
 // The submit form saves spice as a TEXT label; the page works in 0–5. Map between them.
 const SPICE_TEXT_TO_NUM = {
@@ -578,7 +577,7 @@ function goCreateCollection() { closeCollPicker(); window.location.href='collect
 
 function showToastRp(msg, isError) {
   var t = document.getElementById('rp-toast');
-  if (!t) { t=document.createElement('div'); t.id='rp-toast'; t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px 18px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high);z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:400px;text-align:center'; document.body.appendChild(t); }
+  if (!t) { t=document.createElement('div'); t.id='rp-toast-dynamic'; t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px 18px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high);z-index:99999;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:400px;text-align:center'; document.body.appendChild(t); }
   t.textContent=msg; t.style.display='block'; t.style.borderColor=isError?'rgba(220,80,80,0.4)':'var(--accent)';
   clearTimeout(t._t); t._t=setTimeout(function(){t.style.display='none';},2500);
 }
@@ -1749,9 +1748,7 @@ function showToast(msg) {
   if (!recipe || !recipe.id) return;
   var s; try { s = JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch(_) {}
   if (!s || !s.access_token) return;
-  var SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-  var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
-  fetch(SUPA_URL+'/rest/v1/cooking_events?recipe_id=eq.'+recipe.id+'&select=id,cooked_at,rating&order=cooked_at.desc', {
+      fetch(SUPA_URL+'/rest/v1/cooking_events?recipe_id=eq.'+recipe.id+'&select=id,cooked_at,rating&order=cooked_at.desc', {
     headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+s.access_token}
   }).then(function(r){ return r.ok ? r.json() : []; }).then(function(events) {
     if (!events || !events.length) return;

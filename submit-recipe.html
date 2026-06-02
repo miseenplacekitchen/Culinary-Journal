@@ -6,6 +6,7 @@
   <title>Submit a Recipe — The Culinary Journal</title>
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -1543,8 +1544,6 @@
 
 <script>
 
-const SUPABASE_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
 const DRAFT_KEY        = 'tcj_recipe_draft';
 const DRAFTS_INDEX_KEY = 'tcj_drafts_index';
 
@@ -2496,7 +2495,7 @@ function populateFromJsonLd(r, sourceUrl) {
   var creditUrl = document.getElementById('credit-url');
   if (creditUrl && !creditUrl.value) creditUrl.value = sourceUrl;
 
-  var srcEl = document.querySelector('input[name="source-type"][value="from-somewhere"]');
+  var srcEl = document.querySelector('input[name="source-type"][value="From Somewhere Else"]');
   if (srcEl) srcEl.checked = true;
 
   if (pasteText && typeof parseRecipe === 'function') setTimeout(parseRecipe, 200);
@@ -2757,7 +2756,7 @@ function applyCookingStyle(key) {
   var lbl = document.getElementById('lbl-cook-time');
   var unt = document.getElementById('unit-cook-time');
   var hnt = document.getElementById('hint-cook-time');
-  if (lbl) lbl.innerHTML = cfg.cookLabel + ' <span class="req">*</span> <span class="sr-unit-badge" id="unit-cook-time">(' + UNIT_LABELS[cfg.cookUnit] + ')</span>';
+  if (lbl) lbl.innerHTML = cfg.cookLabel + ' <span class="req">*</span> <span class="sr-unit-badge" id="unit-cook-time-lbl">(' + UNIT_LABELS[cfg.cookUnit] + ')</span>';
   if (hnt) hnt.innerHTML = '<span class="sr-i">i</span> ' + cfg.cookHint;
 
   // ── Extra / passive time ─────────────────────────────────
@@ -2768,7 +2767,7 @@ function applyCookingStyle(key) {
       var exLbl = document.getElementById('lbl-extra-time');
       var exUnt = document.getElementById('unit-extra-time');
       var exHnt = document.getElementById('hint-extra-time');
-      if (exLbl) exLbl.innerHTML = cfg.extraLabel + ' <span class="opt">optional</span> <span class="sr-unit-badge" id="unit-extra-time">(' + UNIT_LABELS[cfg.extraUnit] + ')</span>';
+      if (exLbl) exLbl.innerHTML = cfg.extraLabel + ' <span class="opt">optional</span> <span class="sr-unit-badge" id="unit-extra-time-lbl">(' + UNIT_LABELS[cfg.extraUnit] + ')</span>';
       if (exHnt && cfg.extraHint) exHnt.innerHTML = '<span class="sr-i">i</span> ' + cfg.extraHint;
     } else {
       // Keep the total time visible but hide the extra-time input
@@ -3449,10 +3448,6 @@ async function loadDbDraftId(localId) {
 }
 
 
-function updateAutoSaveMsg() {
-  const el = document.getElementById('auto-save-msg');
-  if (el) { el.textContent = 'Draft saved ' + new Date().toLocaleTimeString(); }
-}
 
 // setupAutoSave() — handled by event delegation above
 
