@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); }
     .bp-wrap  { max-width:900px; margin:0 auto; padding:32px 20px 80px; }
@@ -232,8 +233,8 @@
 
 <script src="nav-init.js"></script>
 <script>
-const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
 const ADMIN_EMAIL = 'miseenplacekitchen.official@gmail.com';
 const SETTINGS_KEY = 'tcj_site_settings';
 
@@ -241,7 +242,50 @@ function getSettings() {
   try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'); }
   catch(_) { return {}; }
 }
-function saveSettings(s) { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }
+async function loadSettingsFromDB() {
+  try {
+    const session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+    if (!session || !session.access_token) return;
+    const res = await fetch(SUPA_URL + '/rest/v1/site_settings?select=key,value', {
+      headers: {'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + session.access_token}
+    });
+    if (!res.ok) return;
+    const rows = await res.json();
+    if (!Array.isArray(rows)) return;
+    const s = {};
+    rows.forEach(function(r) {
+      // Parse JSON values (arrays stored as JSON strings)
+      var v = r.value;
+      try {
+        var parsed = JSON.parse(v);
+        if (Array.isArray(parsed) || (parsed !== null && typeof parsed === 'object')) v = parsed;
+      } catch(_) {}
+      s[r.key] = v;
+    });
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    hydrateForm(s);
+  } catch(_) {}
+}
+async function saveSettings(s) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  // Persist each key to Supabase site_settings table
+  try {
+    const session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+    if (!session || !session.access_token) return;
+    for (const [key, value] of Object.entries(s)) {
+      await fetch(SUPA_URL + '/rest/v1/site_settings', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPA_KEY,
+          'Authorization': 'Bearer ' + session.access_token,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates,return=minimal'
+        },
+        body: JSON.stringify({ key: key, value: (Array.isArray(value) || (value !== null && typeof value === 'object')) ? JSON.stringify(value) : String(value) })
+      });
+    }
+  } catch(_) {}
+}
 
 function showMsg(id, text, ok) {
   const el = document.getElementById(id);
@@ -257,44 +301,58 @@ function previewTheme() {
   if (t !== 'midnight-slate') document.body.classList.add('theme-'+t);
 }
 
-function saveTheme() {
+async function saveTheme() {
   const t = document.getElementById('bp-theme').value;
   const s = getSettings();
   s.default_theme = t;
-  saveSettings(s);
+  await saveSettings(s);
   // Apply for current visitor too
   localStorage.setItem('tcj_theme', t);
   previewTheme();
   showMsg('bp-theme-msg', '✓ Default theme saved.', true);
 }
 
-function saveBanner() {
+async function saveBanner() {
   const s = getSettings();
   s.banner_text = document.getElementById('bp-banner').value.trim();
   s.banner_link = document.getElementById('bp-banner-link').value.trim();
-  saveSettings(s);
+  await saveSettings(s);
   showMsg('bp-banner-msg', '✓ Banner saved.', true);
 }
 
-function saveFeatured() {
-  const ids = document.getElementById('bp-featured').value.trim().split('\n').map(function(s){return s.trim();}).filter(Boolean);
+async function saveFeatured() {
+  const ids  = document.getElementById('bp-featured').value.trim().split('\n').map(function(s){return s.trim();}).filter(Boolean);
+  const rotd = (document.getElementById('bp-rotd') || {}).value || '';
   const s = getSettings();
-  s.featured_ids = ids;
-  saveSettings(s);
+  s.featured_ids  = ids;
+  s.recipe_of_day = rotd.trim();
+  await saveSettings(s);
   showMsg('bp-featured-msg', '✓ ' + ids.length + ' featured recipe(s) saved.', true);
 }
 
-function saveSiteSettings() {
+async function saveSiteSettings() {
   const s = getSettings();
   s.submissions    = document.getElementById('bp-submissions').value;
   s.registrations  = document.getElementById('bp-registrations').value;
-  saveSettings(s);
+  await saveSettings(s);
   showMsg('bp-settings-msg', '✓ Settings saved.', true);
 }
 
 async function initAdmin() {
-  loadSavedSettings();
+  loadSavedSettings();          // populate from localStorage immediately (fast)
+  await loadSettingsFromDB();   // then override with DB values
   await loadPageVisibility();
+}
+
+function hydrateForm(s) {
+  // Alias used by loadSettingsFromDB — populates form fields from a settings object
+  if (s.default_theme) { const el = document.getElementById('bp-theme'); if (el) el.value = s.default_theme; }
+  if (s.banner_text)   { const el = document.getElementById('bp-banner'); if (el) el.value = s.banner_text; }
+  if (s.banner_link)   { const el = document.getElementById('bp-banner-link'); if (el) el.value = s.banner_link; }
+  if (s.featured_ids)  { const el = document.getElementById('bp-featured'); if (el) el.value = (Array.isArray(s.featured_ids) ? s.featured_ids : [s.featured_ids]).join('\n'); }
+  if (s.recipe_of_day) { const el = document.getElementById('bp-rotd'); if (el) el.value = s.recipe_of_day; }
+  if (s.submissions)   { const el = document.getElementById('bp-submissions'); if (el) el.value = s.submissions; }
+  if (s.registrations) { const el = document.getElementById('bp-registrations'); if (el) el.value = s.registrations; }
 }
 
 function loadSavedSettings() {
@@ -302,7 +360,7 @@ function loadSavedSettings() {
   if (s.default_theme) document.getElementById('bp-theme').value = s.default_theme;
   if (s.banner_text)   document.getElementById('bp-banner').value = s.banner_text;
   if (s.banner_link)   document.getElementById('bp-banner-link').value = s.banner_link;
-  if (s.featured_ids)  document.getElementById('bp-featured').value = (s.featured_ids||[]).join('\n');
+  if (s.featured_ids)  document.getElementById('bp-featured').value = (Array.isArray(s.featured_ids) ? s.featured_ids : [s.featured_ids]).join('\n');
   if (s.recipe_of_day) document.getElementById('bp-rotd').value = s.recipe_of_day;
   if (s.submissions)   document.getElementById('bp-submissions').value = s.submissions;
   if (s.registrations) document.getElementById('bp-registrations').value = s.registrations;
@@ -358,8 +416,8 @@ var currentPageSettings = {};
 async function loadPageVisibility() {
   try {
     var res = await fetch(
-      'https://kzywmodvfbyexqgipcjt.supabase.co/rest/v1/rpc/get_page_settings',
-      {method:'POST', headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM','Content-Type':'application/json'}, body:'{}'}
+      SUPA_URL + '/rest/v1/rpc/get_page_settings',
+      {method:'POST', headers:{'apikey': SUPA_KEY,'Content-Type':'application/json'}, body:'{}'}
     );
     var rows = res.ok ? await res.json() : [];
     rows.forEach(function(r){ currentPageSettings[r.page_id] = {visibility:r.visibility, message:r.message||''}; });
@@ -371,8 +429,8 @@ async function loadPageVisibility() {
   }
 }
 
-var STATUS_ICON = {'live':'🟢', 'members-only':'🔵', 'admin-only':'🔴', 'offline':'⚫'};
-var STATUS_LABEL = {'live':'Live', 'members-only':'Members Only', 'admin-only':'Admin Only', 'offline':'Offline'};
+var STATUS_ICON = {'public':'🟢', 'registered':'🔵', 'paid':'🟡', 'hidden':'🔴'};
+var STATUS_LABEL = {'public':'Public', 'registered':'Members Only', 'paid':'Paid Only', 'hidden':'Hidden'};
 
 function renderPageTable() {
   var table = document.getElementById('pv-table');
@@ -389,8 +447,8 @@ function renderPageTable() {
   tbl.appendChild(thead);
   var tbody = document.createElement('tbody');
   MANAGED_PAGES.forEach(function(page) {
-    var s = currentPageSettings[page.id] || {visibility:'live',message:''};
-    var vis = s.visibility || 'live';
+    var s = currentPageSettings[page.id] || {visibility:'public',message:''};
+    var vis = s.visibility || 'public';
     var tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
     // Name cell
@@ -404,7 +462,7 @@ function renderPageTable() {
     var sel = document.createElement('select');
     sel.id = 'pv-vis-' + page.id;
     sel.style.cssText = 'font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text-high);outline:none;cursor:pointer';
-    [['live','🟢 Live'],['members-only','🔵 Members Only'],['admin-only','🔴 Admin Only'],['offline','⚫ Offline']].forEach(function(opt) {
+    [['public','🟢 Public'],['registered','🔵 Members Only'],['paid','🟡 Paid Only'],['hidden','🔴 Hidden']].forEach(function(opt) {
       var o = document.createElement('option');
       o.value = opt[0]; o.textContent = opt[1];
       if (vis === opt[0]) o.selected = true;
@@ -434,7 +492,7 @@ async function savePageVisibility() {
   var session = JSON.parse(localStorage.getItem('tcj_session')||'null');
   if (!session) { alert('Not signed in.'); return; }
   var headers = {
-    'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM',
+    'apikey': SUPA_KEY,
     'Content-Type':'application/json',
     'Authorization':'Bearer '+session.access_token
   };
@@ -445,7 +503,7 @@ async function savePageVisibility() {
     var msgEl = document.getElementById('pv-msg-' + page.id);
     if (!visEl) continue;
     try {
-      var res = await fetch('https://kzywmodvfbyexqgipcjt.supabase.co/rest/v1/rpc/set_page_visibility', {
+      var res = await fetch(SUPA_URL + '/rest/v1/rpc/set_page_visibility', {
         method:'POST', headers:headers,
         body:JSON.stringify({p_page_id:page.id, p_visibility:visEl.value, p_message:msgEl?msgEl.value.trim():''})
       });

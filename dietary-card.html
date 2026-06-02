@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); display:flex; align-items:flex-start; justify-content:center; padding:40px 20px 80px; }
     .dc-card  { background:var(--text-ghost); border:1px solid var(--border); border-radius:18px; width:100%; max-width:520px; overflow:hidden; }
@@ -35,7 +36,7 @@
     .dc-submit:hover { opacity:0.88; }
     .dc-privacy { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); text-align:center; margin-top:12px; line-height:1.5; }
     /* States */
-    #dc-loading, #dc-error, #dc-success { display:none; padding:40px 32px; text-align:center; }
+    #dc-loading, #dc-error, #dc-success, #dc-already { display:none; padding:40px 32px; text-align:center; }
     #dc-loading .dc-icon, #dc-error .dc-icon, #dc-success .dc-icon { font-size:40px; margin-bottom:12px; }
     .dc-state-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; color:var(--text-high); margin-bottom:6px; }
     .dc-state-sub   { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); line-height:1.6; }
@@ -145,8 +146,7 @@
 </div>
 
 <script>
-const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 
 function show(id) {
   ['dc-loading','dc-error','dc-already','dc-success','dc-form'].forEach(function(s){

@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); }
     .ch-wrap  { max-width:1000px; margin:0 auto; padding:32px 20px 80px; }
@@ -114,8 +115,8 @@
 
 <script src="nav-init.js"></script>
 <script>
-const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
 const CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
 
 let allChefs = [], allRecipes = [];
@@ -184,7 +185,7 @@ function renderChefGrid(chefs) {
     var profileHandle = chef.handle ? chef.handle.replace(/^@/,'') : '';
     card.innerHTML =
       '<div class="ch-avatar">' + initials + '</div>' +
-      '<div class="ch-name">' + chef.name + '</div>' +
+      '<div class="ch-name">' + esc(chef.name||'') + '</div>' +
       (chef.handle ? '<div class="ch-handle">' + chef.handle + '</div>' : '') +
       (countries  ? '<div class="ch-meta">' + countries + '</div>' : '') +
       (cats       ? '<div class="ch-meta">' + cats + '</div>' : '') +

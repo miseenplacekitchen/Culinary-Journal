@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); }
     .ud-wrap { max-width:1100px; margin:0 auto; padding:24px 20px 60px; }
@@ -85,6 +86,17 @@
     .ud-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--text-high); margin-bottom:6px; }
     .ud-empty-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-bottom:20px; }
     .ud-cta { display:inline-block; padding:10px 22px; background:var(--accent); color:#fff; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; text-decoration:none; }
+  
+    /* ── Quick Edit Modal ─────────────────────────────── */
+    .qe-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9999; align-items:center; justify-content:center; }
+    .qe-modal.open { display:flex; }
+    .qe-box { background:var(--bg); border:1px solid var(--border); border-radius:14px; padding:24px; width:420px; max-width:92vw; font-family:'DM Sans',sans-serif; }
+    .qe-title { font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:700; color:var(--text-high); margin-bottom:16px; }
+    .qe-field { margin-bottom:14px; }
+    .qe-label { display:block; font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-mid); margin-bottom:5px; }
+    .qe-input { width:100%; box-sizing:border-box; padding:9px 12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text-high); font-family:'DM Sans',sans-serif; font-size:13px; outline:none; resize:none; }
+    .qe-input:focus { border-color:var(--accent); }
+    .qe-foot { display:flex; gap:8px; margin-top:16px; }
   </style>
   <script src="page-guard.js"></script>
 </head>
@@ -149,20 +161,14 @@
 
 <script src="nav-init.js"></script>
 <script>
-const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+let currentFilter = null;
+
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 
 let session = null, allRecipes = [], currentTab = 'all';
 
-async function rpc(fn, params) {
-  const res = await fetch(SUPA_URL + '/rest/v1/rpc/' + fn, {
-    method:'POST',
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json'},
-    body:JSON.stringify(params)
-  });
-  if (!res.ok) { const t = await res.text(); throw new Error(t); }
-  return res.json();
-}
+// rpc() provided by supabase-config.js
+
 
 async function init() {
   try { session = JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch(_){}
@@ -198,7 +204,20 @@ function switchTab(tab, btn) {
   currentTab = tab;
   document.querySelectorAll('.ud-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  renderCards(tab);
+  const grid    = document.getElementById('ud-grid');
+  const analEl  = document.getElementById('analytics-panel');
+  const tabAnal = document.getElementById('tab-analytics');
+  if (tab === 'analytics') {
+    if (grid)    grid.style.display    = 'none';
+    if (analEl)  analEl.style.display  = 'block';
+    if (tabAnal) tabAnal.style.display = 'block';
+    renderAnalytics();
+  } else {
+    if (grid)    grid.style.display    = '';
+    if (analEl)  analEl.style.display  = 'none';
+    if (tabAnal) tabAnal.style.display = 'none';
+    renderCards(tab);
+  }
 }
 
 function renderCards(tab) {
@@ -227,7 +246,7 @@ function renderCards(tab) {
     const statusClass = {pending:'status-pending',approved:'status-approved',rejected:'status-rejected'};
     const date = r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}) : '';
     card.innerHTML = `
-      <div class="ud-card-img">${r.image_url?`<img src="${r.image_url}" alt="${r.recipe_name}">`:'🍳'}</div>
+      <div class="ud-card-img">${r.image_url?`<img src="${r.image_url}" alt="${esc(r.recipe_name||'')}">`:'🍳'}</div>
       <div class="ud-card-body">
         <div class="ud-card-name">${r.recipe_name||'Untitled'}</div>
         <div class="ud-card-meta">
@@ -241,8 +260,10 @@ function renderCards(tab) {
         ${r.status==='approved'?`<a href="recipe-page.html?id=${r.id}" class="ud-btn ud-btn-primary">View Recipe</a>`:''}
         ${r.status==='pending'?`<span class="ud-btn ud-btn-secondary" style="cursor:default">Under Review</span>`:''}
         ${r.status==='rejected'?`<a href="submit-recipe.html?id=${r.id}" class="ud-btn ud-btn-primary">Edit & Resubmit</a>`:''}
+        <button class="ud-btn ud-btn-secondary ud-quick-edit-btn">✏ Quick Edit</button>
         <a href="submit-recipe.html" class="ud-btn ud-btn-secondary">+ New Recipe</a>
       </div>`;
+    card.querySelector('.ud-quick-edit-btn').addEventListener('click', function(){ openQuickEdit(r); });
     grid.appendChild(card);
   });
 }
@@ -332,7 +353,7 @@ async function saveQuickEdit() {
   var vis  = document.getElementById('qe-visibility').value;
   var note = document.getElementById('qe-note').value.trim();
   try {
-    await supaRpc('quick_update_recipe', {p_id:id, p_name:name, p_visibility:vis, p_description:note||null});
+    await rpc('quick_update_recipe', {p_id:id, p_name:name, p_visibility:vis, p_description:note||null});
     closeQuickEdit();
     // Refresh current tab
     if (typeof loadRecipes === 'function') loadRecipes(currentFilter);
@@ -364,6 +385,8 @@ async function saveQuickEdit() {
     </div>
   </div>
 </div>
+
+
 
 </body>
 </html>

@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); }
     .sr-wrap  { max-width:860px; margin:0 auto; padding:32px 20px 80px; }
@@ -111,8 +112,8 @@
 
 <script src="nav-init.js"></script>
 <script>
-const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
 const CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
 
 let searchTimer = null;
@@ -177,12 +178,8 @@ async function searchRecipes(q) {
 
 async function searchIngredients(q) {
   try {
-    const enc = encodeURIComponent(q);
-    const res = await fetch(
-      SUPA_URL + '/rest/v1/ingredients?or=(Ingredient Name.ilike.*' + enc + '*,Also Known As.ilike.*' + enc + '*)&select=ID,Ingredient Name,Also Known As,Category,Allergen,Vegan (Yes/No)&limit=12',
-      {headers:{'apikey':SUPA_KEY}}
-    );
-    return res.ok ? await res.json() : [];
+    const data = await rpc('search_ingredients', {p_query: q, p_limit: 12});
+    return Array.isArray(data) ? data : [];
   } catch(_) { return []; }
 }
 
@@ -219,11 +216,11 @@ function renderResults() {
   if (ingredients.length) {
     html += '<div class="sr-section-label">Ingredients (' + ingredients.length + ')</div><div class="sr-ing-list">';
     ingredients.forEach(function(i) {
-      const isVegan = i['Vegan (Yes/No)'] === 'Yes';
+      const isVegan = (i.vegan||'').toLowerCase() === 'yes';
       html += '<div class="sr-ing-item">' +
-        '<div style="flex:1"><div class="sr-ing-name">' + (i['Ingredient Name']||'') + '</div>' +
-        (i['Also Known As']?'<div class="sr-ing-cat">Also known as: '+i['Also Known As']+'</div>':'') +
-        '<div class="sr-ing-cat">' + (i['Category']||'') + (i['Allergen']?' · Contains: '+i['Allergen']:'') + '</div></div>' +
+        '<div style="flex:1"><div class="sr-ing-name">' + esc(i.ingredient_name||'') + '</div>' +
+        (i.also_known_as?'<div class="sr-ing-cat">Also known as: '+esc(i.also_known_as)+'</div>':'') +
+        '<div class="sr-ing-cat">' + esc(i.category||'') + (i.allergen?' · Contains: '+esc(i.allergen):'') + '</div></div>' +
         (isVegan?'<span class="sr-ing-pill vegan">Vegan</span>':'') + '</div>';
     });
     html += '</div>';

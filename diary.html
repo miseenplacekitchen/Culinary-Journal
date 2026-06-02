@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
   <style>
     .dj-wrap { max-width:1100px; margin:0 auto; padding:28px 20px 60px; }
 
@@ -279,8 +280,7 @@
 
 <script src="nav-init.js"></script>
 <script>
-const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 
 const MOODS = ['😊','😄','🥰','😌','🤔','😐','😴','😢','😤','🤩','😎','🫶','✨','💪','🙏'];
 const TYPE_LABELS  = {general:'General',recipe:'Recipe Notes',event:'Event',reflection:'Reflection',goals:'Goals',gratitude:'Gratitude'};
@@ -429,8 +429,8 @@ function renderEntries(entries){
   el.innerHTML = entries.map(e=>{
     const colour = TYPE_COLOURS[e.entry_type]||TYPE_COLOURS.general;
     const emoji  = TYPE_EMOJIS[e.entry_type]||'📝';
-    const label  = TYPE_LABELS[e.entry_type]||'General';
-    const tags   = (e.tags||[]).map(t=>`<span class="dj-entry-tag">${t}</span>`).join('');
+    const label  = esc(TYPE_LABELS[e.entry_type]||'General');
+    const tags   = (e.tags||[]).map(t=>`<span class="dj-entry-tag">${esc(t)}</span>`).join('');
     const preview = (e.content||'').slice(0,120).replace(/\n/g,' ');
     return `<div class="dj-entry" onclick="viewEntry(${JSON.stringify(e.id)})">
       <div class="dj-entry-head">

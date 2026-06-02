@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
   <script>
     // Apply admin theme immediately — reads from same keys as dashboard
     (function(){
@@ -69,6 +70,7 @@
     .denied { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 12px; }
     .denied p { font-size: 14px; color: var(--text-mid); }
   </style>
+  <script src="nav-init.js"></script>
 </head>
 <body>
 
@@ -141,22 +143,12 @@
 </div>
 
 <script>
-const SUPABASE_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
 let session = null;
 
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-async function rpc(fn, params) {
-  const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, {
-    method: 'POST',
-    headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json' },
-    body: JSON.stringify(params || {})
-  });
-  if (!res.ok) { const t = await res.text(); throw new Error(res.status + ': ' + t); }
-  const t = await res.text();
-  return t ? JSON.parse(t) : null;
-}
+// rpc() provided by supabase-config.js
+
 
 async function init() {
   let sess;
@@ -239,7 +231,7 @@ async function loadPages() {
         '<td class="ap-td" style="font-size:13px;font-weight:500;color:var(--text-high)">' + esc(p.name) + '</td>' +
         '<td class="ap-td" style="font-size:11px;color:var(--text-mid)">' + esc(p.path) + '</td>' +
         '<td class="ap-td"><select id="vis-' + esc(p.path) + '" class="sm-select" style="padding:5px 8px;font-size:12px">' +
-          ['public','members','hidden'].map(function(v){return '<option value="'+v+'"'+(p.visibility===v?' selected':'')+'>'+v.charAt(0).toUpperCase()+v.slice(1)+'</option>';}).join('') +
+          ['public','registered','paid','hidden'].map(function(v){var labels={'public':'Public','registered':'Members Only','paid':'Paid Only','hidden':'Hidden'};return '<option value="'+v+'"'+(p.visibility===v?' selected':'')+'>'+(labels[v]||v)+'</option>';}).join('') +
         '</select></td>' +
         '<td class="ap-td" style="text-align:center"><input type="checkbox" id="cs-' + esc(p.path) + '" class="sm-toggle"' + (p.coming_soon?' checked':'') + '></td>' +
         '<td class="ap-td">' + inp('mt-'+p.path, p.meta_title, 'SEO title') + '</td>' +

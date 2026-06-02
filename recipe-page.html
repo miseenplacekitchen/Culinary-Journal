@@ -242,6 +242,17 @@
       .rp-tab-btn { padding: 12px 16px; font-size: 12px; }
       .rp-meta-row { gap: 12px; }
     }
+  
+    /* ── Step Timer ─────────────────────────────────── */
+    .rp-timer-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; font-size: 10px; font-family: 'DM Sans', sans-serif; color: var(--accent); cursor: pointer; margin-left: 8px; white-space: nowrap; vertical-align: middle; }
+    .rp-timer-btn:hover { background: rgba(196,151,59,.1); }
+    .rp-timer-active { position: fixed; bottom: 80px; right: 20px; background: var(--bg); border: 1px solid var(--accent); border-radius: 13px; padding: 14px 18px; z-index: 9990; box-shadow: 0 4px 24px rgba(0,0,0,.4); font-family: 'DM Sans', sans-serif; min-width: 180px; }
+    .rp-timer-label { font-size: 11px; color: var(--text-mid); margin-bottom: 4px; }
+    .rp-timer-display { font-size: 2rem; font-weight: 700; color: var(--text-high); letter-spacing: 2px; }
+    .rp-timer-done { color: #4caf76; }
+    .rp-timer-controls { display: flex; gap: 8px; margin-top: 8px; }
+    .rp-timer-controls button { flex: 1; padding: 5px 0; border-radius: 7px; border: 1px solid var(--border); background: none; color: var(--text-mid); cursor: pointer; font-size: 12px; font-family: 'DM Sans', sans-serif; }
+    .rp-timer-controls button:hover { border-color: var(--accent); color: var(--accent); }
   </style>
   <script src="page-guard.js"></script>
   <script src="nav-init.js"></script>
@@ -1791,6 +1802,106 @@ function showToast(msg) {
     actionsEl.appendChild(logBtn);
   }, 600);
 })();
+
+// ── Step Timer ────────────────────────────────────────────────────────
+let _timerInterval = null, _timerRemaining = 0, _timerLabel = '';
+
+function parseTimerFromStep(text) {
+  // Match patterns: "20 minutes", "1 hour 30 minutes", "45 mins", "1½ hours"
+  const t = text.toLowerCase();
+  let total = 0;
+  const hr  = t.match(/(\d+(?:\.\d+)?)\s*(?:hour|hr)s?/);
+  const min = t.match(/(\d+(?:\.\d+)?)\s*(?:minute|min)s?/);
+  const sec = t.match(/(\d+(?:\.\d+)?)\s*(?:second|sec)s?/);
+  if (hr)  total += parseFloat(hr[1])  * 3600;
+  if (min) total += parseFloat(min[1]) * 60;
+  if (sec) total += parseFloat(sec[1]);
+  return Math.round(total);
+}
+
+function fmtTimerDisplay(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  if (h) return h+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+  return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+}
+
+function startTimer(seconds, label) {
+  clearInterval(_timerInterval);
+  _timerRemaining = seconds;
+  _timerLabel = label;
+  let el = document.getElementById('rp-timer-widget');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'rp-timer-widget';
+    el.className = 'rp-timer-active';
+    el.innerHTML = '<div class="rp-timer-label" id="rp-timer-lbl"></div>' +
+      '<div class="rp-timer-display" id="rp-timer-disp"></div>' +
+      '<div class="rp-timer-controls">' +
+        '<button onclick="pauseResumeTimer()">⏸ Pause</button>' +
+        '<button onclick="cancelTimer()">✕ Cancel</button>' +
+      '</div>';
+    document.body.appendChild(el);
+  }
+  document.getElementById('rp-timer-lbl').textContent = label;
+  document.getElementById('rp-timer-disp').classList.remove('rp-timer-done');
+  _timerInterval = setInterval(function(){
+    _timerRemaining--;
+    const disp = document.getElementById('rp-timer-disp');
+    if (disp) disp.textContent = fmtTimerDisplay(_timerRemaining);
+    if (_timerRemaining <= 0) {
+      clearInterval(_timerInterval);
+      if (disp) { disp.textContent = 'Done! ✓'; disp.classList.add('rp-timer-done'); }
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Timer done — ' + label);
+      }
+    }
+  }, 1000);
+  if (document.getElementById('rp-timer-disp'))
+    document.getElementById('rp-timer-disp').textContent = fmtTimerDisplay(_timerRemaining);
+}
+
+let _timerPaused = false;
+function pauseResumeTimer() {
+  const btn = document.querySelector('#rp-timer-widget .rp-timer-controls button');
+  if (_timerPaused) {
+    _timerPaused = false;
+    if (btn) btn.textContent = '⏸ Pause';
+    startTimer(_timerRemaining, _timerLabel);
+  } else {
+    _timerPaused = true;
+    clearInterval(_timerInterval);
+    if (btn) btn.textContent = '▶ Resume';
+  }
+}
+
+function cancelTimer() {
+  clearInterval(_timerInterval);
+  const el = document.getElementById('rp-timer-widget');
+  if (el) el.remove();
+}
+
+function injectTimerButtons() {
+  document.querySelectorAll('.rp-proc-step-text, .rp-proc-single').forEach(function(el) {
+    if (el.querySelector('.rp-timer-btn')) return;
+    const t = parseTimerFromStep(el.textContent || '');
+    if (t >= 30) {
+      const btn = document.createElement('button');
+      btn.className = 'rp-timer-btn';
+      btn.textContent = '⏱ ' + (t >= 3600
+        ? Math.floor(t/3600) + 'h ' + Math.floor((t%3600)/60) + 'm'
+        : Math.floor(t/60) + ' min');
+      btn.onclick = function(e) {
+        e.preventDefault();
+        if ('Notification' in window && Notification.permission === 'default') {
+          Notification.requestPermission();
+        }
+        startTimer(t, el.textContent.substring(0, 60).trim());
+      };
+      el.appendChild(btn);
+    }
+  });
+}
+
 </script>
 
 <!-- QR Code Modal -->

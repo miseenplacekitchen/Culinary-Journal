@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
   <style>
     .page-bg{min-height:100vh;background:var(--bg);}
     .up-wrap{max-width:900px;margin:0 auto;padding:40px 20px 80px;}
@@ -89,8 +90,8 @@
 </div>
 <script src="nav-init.js"></script>
 <script>
-const SUPA_URL='https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
 const CAT_EMOJI={'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
 
 async function load(){
@@ -136,8 +137,8 @@ function renderProfile(profile,recipes){
     const emoji=CAT_EMOJI[r.category]||'🍳';
     return '<a class="up-recipe-card" href="recipe-page.html?id='+r.id+'">'+
       '<div class="up-recipe-img">'+(r.image_url?'<img src="'+r.image_url+'" loading="lazy">':emoji)+'</div>'+
-      '<div class="up-recipe-body"><div class="up-recipe-name">'+(r.recipe_name||'')+'</div>'+
-      '<div class="up-recipe-cat">'+(r.category||'')+(r.origin_country?' · '+r.origin_country:'')+'</div></div></a>';
+      '<div class="up-recipe-body"><div class="up-recipe-name">'+esc(r.recipe_name||'')+'</div>'+
+      '<div class="up-recipe-cat">'+esc(r.category||'')+(r.origin_country?' · '+esc(r.origin_country):'')+'</div></div></a>';
   }).join('');
 }
 
