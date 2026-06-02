@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
   <style>
     .page-bg{min-height:100vh;background:var(--bg);}
     .cl-wrap{max-width:1000px;margin:0 auto;padding:32px 20px 80px;}
@@ -137,8 +138,6 @@
 </div>
 <script src="nav-init.js"></script>
 <script>
-const SUPA_URL='https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
 const CAT_EMOJI={'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
 const EMOJIS=['📁','⭐','❤️','🍳','🌍','🎉','🥗','🍰','🌶','🥘','📚','🎂','🏡','💛','🌿','🍽','👨‍👩‍👧‍👦','🫙'];
 let collections=[], currentCollection=null;
@@ -151,7 +150,7 @@ async function rpc(fn,params){
   if(!r.ok)throw new Error(await r.text());
   return r.json().catch(()=>null);
 }
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 async function load(){
   const session=JSON.parse(localStorage.getItem('tcj_session')||'null');
@@ -162,9 +161,50 @@ async function load(){
 
 function renderList(){
   const el=document.getElementById('cl-grid-wrap');
+  // Event delegation for all collection interactions — no inline onclicks with user data
+  document.addEventListener('click', function(e) {
+    var target = e.target;
+    
+    // Open collection card
+    var card = target.closest('.cl-card[data-cid]');
+    if (card && !target.closest('[data-action]')) {
+      openCollection(card.dataset.cid); return;
+    }
+    
+    // Edit collection
+    var editBtn = target.closest('[data-action="edit-coll"]');
+    if (editBtn) {
+      e.stopPropagation();
+      var c = collections.find(function(x){ return x.id === editBtn.dataset.cid; });
+      if (c) openCollectionModal(c);
+      return;
+    }
+    
+    // Delete collection
+    var delBtn = target.closest('[data-action="delete-coll"]');
+    if (delBtn) {
+      e.stopPropagation();
+      deleteCollection(delBtn.dataset.cid, delBtn.dataset.name);
+      return;
+    }
+    
+    // Remove recipe from collection
+    var remBtn = target.closest('[data-action="remove-recipe"]');
+    if (remBtn) {
+      removeFromColl(remBtn.dataset.cid, remBtn.dataset.rid);
+      return;
+    }
+    
+    // Pick emoji
+    var emojiBtn = target.closest('[data-action="pick-emoji"]');
+    if (emojiBtn) {
+      pickEmoji(emojiBtn.dataset.emoji);
+      return;
+    }
+  });
   if(!collections.length){el.innerHTML='<div class="cl-empty"><div class="cl-empty-icon">📁</div><div class="cl-empty-title">No collections yet</div><div class="cl-empty-sub">Create a collection to organise your saved and submitted recipes into groups — Sunday Dinners, Kerala Recipes, Party Food and more.</div></div>';return;}
   el.innerHTML='<div class="cl-grid">'+collections.map(c=>`
-    <div class="cl-card" onclick="openCollection('${c.id}')">
+    <div class="cl-card" data-cid="${esc(String(c.id))}">
       <div class="cl-card-emoji">${esc(c.emoji||'📁')}</div>
       <div class="cl-card-name">${esc(c.name)}</div>
       <div class="cl-card-desc">${esc(c.description||'')}</div>
@@ -173,8 +213,8 @@ function renderList(){
         ${c.is_public?'<span class="cl-pub-badge">Public</span>':''}
       </div>
       <div class="cl-card-actions" onclick="event.stopPropagation()">
-        <button class="cl-btn cl-btn-ghost cl-btn-sm" onclick="openCollectionModal(collections.find(x=>x.id==='${c.id}'))">Edit</button>
-        <button class="cl-btn cl-btn-sm cl-btn-danger" onclick="deleteCollection('${c.id}','${esc(c.name)}')">Delete</button>
+        <button class="cl-btn cl-btn-ghost cl-btn-sm" data-action="edit-coll" data-cid="${esc(String(c.id))}">Edit</button>
+        <button class="cl-btn cl-btn-sm cl-btn-danger" data-action="delete-coll" data-cid="${esc(String(c.id))}" data-name="${esc(c.name)}">Delete</button>
       </div>
     </div>`).join('')+'</div>';
 }
@@ -201,7 +241,7 @@ function renderCollectionRecipes(recipes,collectionId){
   el.innerHTML=recipes.map(r=>{
     const emoji=CAT_EMOJI[r.category]||'🍳';
     return `<div class="cl-recipe-card">
-      <button class="cl-recipe-remove" onclick="removeFromColl('${collectionId}','${r.id}')" title="Remove">×</button>
+      <button class="cl-recipe-remove" data-action="remove-recipe" data-cid="${esc(String(collectionId))}" data-rid="${esc(String(r.id))}" title="Remove">×</button>
       <a href="recipe-page.html?id=${r.id}" class="cl-recipe-link">
         <div class="cl-recipe-img">${r.image_url?'<img src="'+r.image_url+'" loading="lazy">':emoji}</div>
         <div class="cl-recipe-body">
@@ -248,7 +288,7 @@ function openCollectionModal(c){
   setTimeout(()=>document.getElementById('cm-name').focus(),50);
 }
 function buildEmojiGrid(){
-  document.getElementById('cm-emoji-grid').innerHTML=EMOJIS.map(e=>`<button type="button" class="cl-emoji-opt${e===selectedEmoji?' selected':''}" onclick="pickEmoji('${e}')">${e}</button>`).join('');
+  document.getElementById('cm-emoji-grid').innerHTML=EMOJIS.map(e=>`<button type="button" class="cl-emoji-opt${e===selectedEmoji?' selected':''}" data-action="pick-emoji" data-emoji="${e}">${e}</button>`).join('');
 }
 function pickEmoji(e){selectedEmoji=e;document.getElementById('cm-emoji').value=e;buildEmojiGrid();}
 function closeModal(){document.getElementById('cl-modal').classList.remove('open');}

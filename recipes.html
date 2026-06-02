@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
   <style>
     .page-bg { background-color: #0f0f0f; }
     .xf{position:relative}
@@ -198,9 +199,6 @@
 // ══════════════════════════════════════════════════════════
 //  SUPABASE CONFIG
 // ══════════════════════════════════════════════════════════
-const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
-
 async function supaFetch(table, params) {
   const url = SUPA_URL + '/rest/v1/' + table + '?' + params + '&apikey=' + SUPA_KEY;
   const res = await fetch(url, {
@@ -687,8 +685,8 @@ loadCategories();
 var allCommunityRecipes = [];
 var activeDietFilter = '';
 var activeChefFilter = '';
-var SUPA_URL_CR = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-var SUPA_KEY_CR = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+var SUPA_URL_CR = window.SUPA_URL;
+var SUPA_KEY_CR = window.SUPA_KEY;
 var CR_CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
 
 async function loadCommunityRecipes() {

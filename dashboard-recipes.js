@@ -11,11 +11,15 @@ function switchRecipeTab(tab) {
   var listPanel = document.getElementById('rmgmt-list-panel');
   var anaPanel  = document.getElementById('rmgmt-analytics-panel');
   var rmPanel   = document.getElementById('rmgmt-rmsettings-panel');
+  // rotw and notes reuse rm-panel dynamically
+  var rmMgmtPanel = document.getElementById('rm-panel') || document.getElementById('rmgmt-rmsettings-panel');
   if (listPanel) listPanel.style.display = (tab==='all'||tab==='pending'||tab==='approved'||tab==='rejected') ? 'block' : 'none';
   if (anaPanel)  anaPanel.style.display  = tab==='analytics'  ? 'block' : 'none';
-  if (rmPanel)   rmPanel.style.display   = tab==='rmsettings' ? 'block' : 'none';
+  if (rmPanel)   rmPanel.style.display   = (tab==='rmsettings'||tab==='rotw'||tab==='notes') ? 'block' : 'none';
   if (tab==='analytics')  { loadRecipeAnalytics(); return; }
   if (tab==='rmsettings') { loadRMInterface();     return; }
+  if (tab==='rotw')       { loadROTW();            return; }
+  if (tab==='notes')      { loadRecipeNotes();     return; }
   loadRecipeMgmt(tab);
 }
 
@@ -776,3 +780,121 @@ async function bulkApproveRecipes() {
 // ═══════════════════════════════════════════════════════════════
 // FM INTERFACE (Finance Management > FM Interface tab)
 // ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════
+// Recipe of the Week + Cooking Notes Approval
+// ══════════════════════════════════════════════════════════════════════
+
+async function loadROTW() {
+  var panel = document.getElementById('rm-panel');
+  if (!panel) return;
+  panel.innerHTML = '<div class="ap-loading">Loading…</div>';
+  try {
+    // Load currently set recipe of the week
+    var rows = await rpc('admin_get_recipes', { p_status: 'approved', p_limit: 200, p_offset: 0 });
+    var recipes = Array.isArray(rows) ? rows : [];
+    var current = recipes.find(function(r){ return r.is_recipe_of_week; });
+
+    var html = '<div style="font-family:DM Sans,sans-serif">' +
+      '<div style="margin-bottom:24px;padding:20px;background:rgba(196,151,59,.06);border:1px solid rgba(196,151,59,.2);border-radius:12px">' +
+      '<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:8px">Currently Featured</div>';
+
+    if (current) {
+      html += '<div style="font-size:15px;font-weight:600;color:var(--text-high);margin-bottom:4px">' + esc(current.recipe_name) + '</div>' +
+        '<div style="font-size:12px;color:var(--text-muted)">Set ' + (current.recipe_of_week_at ? new Date(current.recipe_of_week_at).toLocaleDateString() : 'unknown') + '</div>' +
+        '<button onclick="setROTW(null)" style="margin-top:12px;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--text-mid);cursor:pointer">Clear Recipe of the Week</button>';
+    } else {
+      html += '<div style="font-size:13px;color:var(--text-muted)">No recipe set as Recipe of the Week.</div>';
+    }
+    html += '</div>';
+
+    html += '<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Select from approved recipes:</div>' +
+      '<input type="text" id="rotw-search" placeholder="Search recipes…" oninput="filterROTWList(this.value)" ' +
+      'style="width:100%;max-width:400px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high);outline:none;margin-bottom:12px">' +
+      '<div id="rotw-list">';
+
+    recipes.forEach(function(r) {
+      html += '<div class="rotw-row" data-name="' + esc((r.recipe_name||'').toLowerCase()) + '" ' +
+        'style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04)">' +
+        '<div>' +
+        '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high)">' + esc(r.recipe_name||'') + '</div>' +
+        '<div style="font-size:11px;color:var(--text-muted)">' + esc(r.category||'') + '</div>' +
+        '</div>' +
+        '<button onclick="setROTW(\'' + esc(r.id) + '\')" ' +
+        'style="font-family:DM Sans,sans-serif;font-size:11px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid ' +
+        (r.is_recipe_of_week?'var(--accent)':'var(--border)') + ';background:' +
+        (r.is_recipe_of_week?'var(--accent)':'none') + ';color:' +
+        (r.is_recipe_of_week?'#0C0702':'var(--text-mid)') + ';cursor:pointer">' +
+        (r.is_recipe_of_week?'⭐ Current':'Set as ROTW') + '</button>' +
+        '</div>';
+    });
+
+    html += '</div></div>';
+    panel.innerHTML = html;
+  } catch(e) {
+    panel.innerHTML = '<div class="ap-empty">Error: ' + esc(e.message||String(e)) + '</div>';
+  }
+}
+
+function filterROTWList(query) {
+  var q = (query||'').toLowerCase();
+  document.querySelectorAll('.rotw-row').forEach(function(row) {
+    row.style.display = (!q || row.dataset.name.includes(q)) ? '' : 'none';
+  });
+}
+
+async function setROTW(id) {
+  try {
+    await rpc('admin_set_recipe_of_week', { p_id: id || null });
+    loadROTW();
+  } catch(e) { alert('Error: ' + (e.message||e)); }
+}
+
+// ── Cooking Tips / Notes Approval ─────────────────────────────────────
+async function loadRecipeNotes() {
+  var panel = document.getElementById('rm-panel');
+  if (!panel) return;
+  panel.innerHTML = '<div class="ap-loading">Loading…</div>';
+  try {
+    var notes = await rpc('admin_get_pending_notes', {});
+    buildNotesPanel(panel, Array.isArray(notes) ? notes : []);
+    // Update badge
+    var badge = document.getElementById('rtab-badge-notes');
+    if (badge) badge.textContent = Array.isArray(notes) ? notes.length : 0;
+  } catch(e) {
+    panel.innerHTML = '<div class="ap-empty">Error: ' + esc(e.message||String(e)) + '</div>';
+  }
+}
+
+function buildNotesPanel(panel, notes) {
+  if (!notes.length) {
+    panel.innerHTML = '<div class="ap-empty">No cooking tips pending review.</div>';
+    return;
+  }
+  var html = '<div style="font-family:DM Sans,sans-serif">' +
+    '<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">' + notes.length + ' cooking tip' + (notes.length!==1?'s':'') + ' pending review</div>';
+
+  notes.forEach(function(n) {
+    html += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">' +
+      '<div>' +
+      '<div style="font-size:13px;font-weight:600;color:var(--text-high);margin-bottom:3px">' + esc(n.recipe_name||'Recipe') + '</div>' +
+      '<div style="font-size:11px;color:var(--text-muted)">Submitted by @' + esc(n.submitted_by||'member') + ' · ' + (n.created_at ? new Date(n.created_at).toLocaleDateString() : '') + '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px">' +
+      '<button onclick="reviewNote(' + n.id + ',\'approved\')" style="font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;border:none;background:#6dc86d;color:#0C0702;cursor:pointer">Approve</button>' +
+      '<button onclick="reviewNote(' + n.id + ',\'rejected\')" style="font-family:DM Sans,sans-serif;font-size:12px;padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--text-mid);cursor:pointer">Reject</button>' +
+      '</div></div>' +
+      '<div style="font-size:13px;color:var(--text-mid);line-height:1.6;background:var(--bg);padding:12px;border-radius:8px">' + esc(n.note||'') + '</div>' +
+      '</div>';
+  });
+
+  html += '</div>';
+  panel.innerHTML = html;
+}
+
+async function reviewNote(id, status) {
+  try {
+    await rpc('admin_review_note', { p_id: id, p_status: status });
+    loadRecipeNotes();
+  } catch(e) { alert('Error: ' + (e.message||e)); }
+}

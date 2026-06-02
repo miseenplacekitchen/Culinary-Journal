@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); }
     .tp-wrap  { max-width:1100px; margin:0 auto; padding:24px 16px 80px; }
@@ -437,9 +438,6 @@
 
 <script src="nav-init.js"></script>
 <script>
-const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
-
 const DIETS = ['Vegan','Vegetarian','Gluten Free','Dairy Free','Nut Free','Halal','Kosher','Shellfish Free','Egg Free','Soy Free'];
 const DIET_ICONS = {Vegan:'🌿',Vegetarian:'🥕','Gluten Free':'🌾','Dairy Free':'🥛','Nut Free':'🥜',Halal:'☪',Kosher:'✡','Shellfish Free':'🦐','Egg Free':'🥚','Soy Free':'🌱'};
 const EVENT_ICONS = {'Dinner Party':'🍽','Wedding':'💍','Birthday':'🎂','Anniversary':'💑','Baby Shower':'👶','Corporate Event':'🏢','Graduation':'🎓','Funeral Wake':'🕊','Other':'📋'};

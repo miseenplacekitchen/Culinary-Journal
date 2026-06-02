@@ -1,3 +1,4 @@
+var _detailUser = null; // Stores current user detail — action buttons read from here
 // The Culinary Journal — Dashboard Module
 // This file is loaded by dashboard.html
 // Requires: supabase-config.js to be loaded first
@@ -127,10 +128,10 @@ function renderMemberRow(u) {
     '<td class="ap-td"><span style="font-size:11px;font-weight:600;color:'+statusColor+'">'+esc(u.account_status||'Active')+'</span>' +
       (u.deactivation_expires_at ? '<br><span style="font-size:10px;color:var(--text-mid)">until '+new Date(u.deactivation_expires_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})+'</span>' : '') + '</td>' +
     '<td class="ap-td">'+planBadge+'</td>' +
-    '<td class="ap-td"><button onclick="openUserDetail(\''+esc(u.id)+'\')" style="padding:5px 12px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-mid);font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer;margin-right:4px">View</button>' +
+    '<td class="ap-td"><button data-action="view-user" data-uid="'+esc(u.id)+'" style="padding:5px 12px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-mid);font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer;margin-right:4px">View</button>' +
     (u.is_active
-      ? '<button onclick="showDeactivateModal(\''+esc(u.id)+'\',\''+esc(u.full_name||u.username)+'\')" style="padding:5px 12px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer">Deactivate</button>'
-      : '<button onclick="confirmReactivate(\''+esc(u.id)+'\',\''+esc(u.full_name||u.username)+'\')" style="padding:5px 12px;background:none;border:1px solid #4caf76;border-radius:6px;color:#4caf76;font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer">Reactivate</button>'
+      ? '<button data-action="deactivate-user" data-uid="'+esc(u.id)+'" style="padding:5px 12px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer">Deactivate</button>'
+      : '<button data-action="reactivate-user" data-uid="'+esc(u.id)+'" style="padding:5px 12px;background:none;border:1px solid #4caf76;border-radius:6px;color:#4caf76;font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer">Reactivate</button>'
     ) + '</td></tr>';
 }
 
@@ -277,6 +278,7 @@ async function confirmDeactivation() {
 }
 
 async function openUserDetail(uid) {
+  _detailUser = { id: uid }; // Will be populated with full profile below
   _userDetailOpen = true;
   var existing = document.getElementById('user-detail-panel');
   if (existing) existing.remove();
@@ -328,12 +330,12 @@ async function openUserDetail(uid) {
       '<div style="padding:14px 20px;border-bottom:1px solid var(--border)">' +
         '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:10px">Badges</div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">' +
-          (badges.length?badges.map(function(b){return '<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:12px;background:rgba(255,255,255,0.08);color:var(--accent);font-size:11px">'+esc(b)+'<button onclick="doRemoveBadge(\''+esc(uid)+'\',\''+esc(b)+'\')" style="background:none;border:none;color:var(--text-mid);cursor:pointer;font-size:12px;padding:0;line-height:1">\u2715</button></span>';}).join(''):
+          (badges.length?badges.map(function(b){return '<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:12px;background:rgba(255,255,255,0.08);color:var(--accent);font-size:11px">'+esc(b)+'<button data-action="remove-badge" data-uid="'+esc(uid)+'" data-badge="'+esc(b)+'" style="background:none;border:none;color:var(--text-mid);cursor:pointer;font-size:12px;padding:0;line-height:1">\u2715</button></span>';}).join(''):
             '<span style="font-size:12px;color:var(--text-mid)">No badges yet</span>') +
         '</div>' +
         '<div style="display:flex;gap:5px;flex-wrap:wrap">' +
           allBadges.filter(function(b){return !badges.includes(b);}).map(function(b){
-            return '<button onclick="doAwardBadge(\''+esc(uid)+'\',\''+esc(b)+'\')" style="padding:3px 9px;background:none;border:1px solid var(--border);border-radius:9px;color:var(--text-mid);font-size:10px;cursor:pointer">+ '+esc(b)+'</button>';
+            return '<button data-action="award-badge" data-uid="'+esc(uid)+'" data-badge="'+esc(b)+'" style="padding:3px 9px;background:none;border:1px solid var(--border);border-radius:9px;color:var(--text-mid);font-size:10px;cursor:pointer">+ '+esc(b)+'</button>';
           }).join('') +
         '</div>' +
       '</div>' +
@@ -364,12 +366,12 @@ async function openUserDetail(uid) {
         '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:10px">Actions</div>' +
         '<div style="display:flex;flex-direction:column;gap:7px">' +
           (p.is_active!==false
-            ?'<button onclick="showDeactivateModal(\''+esc(uid)+'\',\''+esc(p.full_name||p.username)+'\');closeUserDetail()" style="padding:8px 14px;background:none;border:1px solid #dc5050;border-radius:7px;color:#dc5050;font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;text-align:left">Deactivate Account</button>'
-            :'<button onclick="confirmReactivate(\''+esc(uid)+'\',\''+esc(p.full_name||p.username)+'\')" style="padding:8px 14px;background:none;border:1px solid #4caf76;border-radius:7px;color:#4caf76;font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;text-align:left">Reactivate Account</button>') +
+            ?'<button onclick="showDeactivateModal_current();closeUserDetail()" style="padding:8px 14px;background:none;border:1px solid #dc5050;border-radius:7px;color:#dc5050;font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;text-align:left">Deactivate Account</button>'
+            :'<button onclick="confirmReactivate_current()" style="padding:8px 14px;background:none;border:1px solid #4caf76;border-radius:7px;color:#4caf76;font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;text-align:left">Reactivate Account</button>') +
           '<button onclick="doToggleFlag(\''+esc(uid)+'\','+(p.flagged?'true':'false')+')" style="padding:8px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;text-align:left">'+(p.flagged?'Remove Flag':'Flag Account')+'</button>' +
           '<button onclick="doToggleAdmin(\''+esc(uid)+'\','+(p.is_admin?'true':'false')+')" style="padding:8px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;text-align:left">'+(p.is_admin?'Remove Admin Access':'Grant Admin Access')+'</button>' +
-          '<button onclick="doSendEmailToUser(\''+esc(uid)+'\',\''+esc(p.email)+'\',\''+esc(p.full_name||p.username)+'\')" style="padding:8px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;text-align:left">\u2709\ufe0f Send Email</button>' +
-          '<button onclick="doExportUserData(\''+esc(uid)+'\',\''+esc(p.full_name||p.username)+'\')" style="padding:8px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;text-align:left">\uD83D\uDCC4 Export Data (GDPR)</button>' +
+          '<button onclick="doSendEmailToUser_current()" style="padding:8px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;text-align:left">\u2709\ufe0f Send Email</button>' +
+          '<button onclick="doExportUserData_current()" style="padding:8px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;text-align:left">\uD83D\uDCC4 Export Data (GDPR)</button>' +
         '</div>' +
       '</div>';
   } catch(e) {
@@ -429,7 +431,7 @@ async function loadPendingUsers() {
         '<td class="ap-td"><span style="font-size:11px;font-weight:600;color:#dc5050">'+esc(u.account_status||'Deactivated')+'</span></td>' +
         '<td class="ap-td">' +
           '<button onclick="openUserDetail(\''+esc(u.id)+'\')" style="padding:5px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-mid);font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer;margin-right:4px">View</button>' +
-          '<button onclick="confirmReactivate(\''+esc(u.id)+'\',\''+esc(u.full_name||u.username)+'\')" style="padding:5px 10px;background:none;border:1px solid #4caf76;border-radius:6px;color:#4caf76;font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer">Reactivate</button>' +
+          '<button data-action="reactivate-user" data-uid=""+esc(u.id)+"" style="padding:5px 10px;background:none;border:1px solid #4caf76;border-radius:6px;color:#4caf76;font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer">Reactivate</button>' +
         '</td></tr>';
     }).join('');
   } catch(e) { tbody.innerHTML = '<tr><td colspan="5" class="ap-empty-row">Error: '+esc(e.message)+'</td></tr>'; }
@@ -461,7 +463,7 @@ async function loadUMDeactivated(container) {
           '<td class="ap-td"><span style="font-size:11px;font-weight:600;color:'+((u.deactivation_type==='permanent')?'#dc5050':'#d4a017')+'">'+esc(u.deactivation_type||'N/A')+'</span></td>' +
           '<td class="ap-td" style="font-size:12px;color:var(--text-mid);max-width:200px">'+esc(u.deactivation_reason||'\u2014')+'</td>' +
           '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+exp+'</td>' +
-          '<td class="ap-td"><button onclick="confirmReactivate(\''+esc(u.id)+'\',\''+esc(u.full_name||u.username)+'\')" style="padding:5px 12px;background:none;border:1px solid #4caf76;border-radius:6px;color:#4caf76;font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer">Reactivate</button></td>' +
+          '<td class="ap-td"><button data-action="reactivate-user" data-uid=""+esc(u.id)+"" style="padding:5px 12px;background:none;border:1px solid #4caf76;border-radius:6px;color:#4caf76;font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer">Reactivate</button></td>' +
         '</tr>';
       }).join('') + '</tbody></table>';
     container.appendChild(tbl);
@@ -641,3 +643,36 @@ function doSendEmailToUser(uid, email, name) {
     }
   })();
 }
+// ── Action wrappers reading from _detailUser (no user data in onclick) ──
+function showDeactivateModal_current() {
+  if (_detailUser) showDeactivateModal(_detailUser.id, _detailUser.full_name||_detailUser.username||'this user');
+}
+function confirmReactivate_current() {
+  if (_detailUser) confirmReactivate(_detailUser.id, _detailUser.full_name||_detailUser.username||'this user');
+}
+function doToggleFlag_current() {
+  if (_detailUser) doToggleFlag(_detailUser.id, !!_detailUser.flagged);
+}
+function doToggleAdmin_current() {
+  if (_detailUser) doToggleAdmin(_detailUser.id, !!_detailUser.is_admin);
+}
+function doSendEmailToUser_current() {
+  if (_detailUser) doSendEmailToUser(_detailUser.id, _detailUser.email||'', _detailUser.full_name||_detailUser.username||'');
+}
+function doExportUserData_current() {
+  if (_detailUser) doExportUserData(_detailUser.id, _detailUser.full_name||_detailUser.username||'');
+}
+function doAddNote_current() {
+  if (_detailUser) doAddNote(_detailUser.id);
+}
+
+// ── Table-level event delegation for user row action buttons ──────────
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('[data-action][data-uid]');
+  if (!btn) return;
+  var action = btn.dataset.action;
+  var uid    = btn.dataset.uid;
+  if (action === 'view-user')       openUserDetail(uid);
+  if (action === 'deactivate-user') showDeactivateModal(uid, '');
+  if (action === 'reactivate-user') confirmReactivate(uid, '');
+});

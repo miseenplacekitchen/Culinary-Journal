@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
   <script src="nav-init.js" defer></script>
   <script>
     // Apply saved theme as early as possible (prevents flash on subsequent loads).
@@ -703,9 +704,6 @@
    PROFILE PAGE — uses RPCs for all profile reads/writes so it
    works regardless of how RLS is configured on the profiles table.
 ═══════════════════════════════════════════════════════════════ */
-const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
-
 const THEMES = {
   dark: [
     { key: 'midnight-slate',  name: 'Midnight Slate',  sub: 'Default',         swatches: ['#0a0a0a', '#C4973B', '#ffffff'], live: true },

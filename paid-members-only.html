@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Premium Members Only — The Culinary Journal</title>
   <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
@@ -74,10 +75,7 @@
   </div>
 
   <script>
-    var SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-    var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
-
-    // Pass ?next= through to login
+            // Pass ?next= through to login
     var params = new URLSearchParams(window.location.search);
     var next   = params.get('next');
     if (next) {

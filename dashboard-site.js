@@ -205,3 +205,111 @@ async function buildSMSettings(container) {
 // ═══════════════════════════════════════════════════════════════
 // FINANCE MANAGEMENT
 // ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════
+// Library Management
+// ══════════════════════════════════════════════════════════════════════
+
+var LIB_CURRENT_TYPE = 'ingredient';
+var LIB_CURRENT_STATUS = null;
+
+var LIB_TYPE_MAP = {
+  'lm-ingredients':  { type:'ingredient',   label:'Ingredients',   emoji:'🌿' },
+  'lm-spices':       { type:'spice',         label:'Spices',        emoji:'🌶' },
+  'lm-tools':        { type:'tool',          label:'Tools',         emoji:'🔪' },
+  'lm-cuts':         { type:'cut',           label:'Cuts & Prep',   emoji:'🥩' },
+  'lm-preservation': { type:'preservation',  label:'Preservation',  emoji:'🫙' },
+};
+
+function switchLibTab(tab) {
+  localStorage.setItem('tcj_active_lib_tab', tab);
+  document.querySelectorAll('#v-library-mgmt .ap-inner-tab').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  var info = LIB_TYPE_MAP[tab];
+  if (info) { LIB_CURRENT_TYPE = info.type; loadLibProfiles(); }
+}
+
+async function loadLibProfiles(status) {
+  LIB_CURRENT_STATUS = status || null;
+  var panel = document.getElementById('lm-panel');
+  if (!panel) return;
+  panel.innerHTML = '<div class="ap-loading">Loading…</div>';
+  try {
+    var data = await rpc('admin_get_library_profiles', {
+      p_type: LIB_CURRENT_TYPE, p_status: LIB_CURRENT_STATUS, p_limit: 50, p_offset: 0
+    });
+    buildLibPanel(panel, Array.isArray(data) ? data : []);
+  } catch(e) {
+    panel.innerHTML = '<div class="ap-empty">Error loading profiles: ' + (e.message||e) + '</div>';
+  }
+}
+
+function buildLibPanel(panel, items) {
+  var info = Object.values(LIB_TYPE_MAP).find(function(t){ return t.type === LIB_CURRENT_TYPE; }) || {};
+  var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
+    '<div style="display:flex;gap:8px">' +
+    ['All','draft','published'].map(function(s){
+      return '<button onclick="loadLibProfiles(' + (s==='All'?'null':"'"+s+"'")+  ')" ' +
+        'style="font-family:DM Sans,sans-serif;font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:' +
+        ((s==='All'&&!LIB_CURRENT_STATUS)||(s===LIB_CURRENT_STATUS)?'var(--accent)':'none') +
+        ';color:' + ((s==='All'&&!LIB_CURRENT_STATUS)||(s===LIB_CURRENT_STATUS)?'#0C0702':'var(--text-mid)') +
+        ';cursor:pointer">' + s + '</button>';
+    }).join('') +
+    '</div>' +
+    '<a href="library-submit.html?type=' + LIB_CURRENT_TYPE + '" target="_blank" ' +
+    'style="font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;padding:8px 16px;border-radius:8px;background:var(--accent);color:#0C0702;text-decoration:none">+ New Profile</a>' +
+    '</div>';
+
+  if (!items.length) {
+    html += '<div class="ap-empty">No ' + (info.label||'profiles') + ' found.</div>';
+    panel.innerHTML = html;
+    return;
+  }
+
+  html += '<div class="ap-table"><table style="width:100%;border-collapse:collapse">' +
+    '<thead><tr>' +
+    ['Image','Name','Status','Visibility','Updated','Actions'].map(function(h){
+      return '<th style="text-align:left;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-muted);padding:8px 12px;border-bottom:1px solid var(--border)">' + h + '</th>';
+    }).join('') +
+    '</tr></thead><tbody>';
+
+  items.forEach(function(p) {
+    var statusColor = p.status==='published' ? '#6dc86d' : 'var(--text-muted)';
+    html += '<tr style="border-bottom:1px solid rgba(255,255,255,.04)">' +
+      '<td style="padding:8px 12px"><div style="width:40px;height:40px;border-radius:6px;background:var(--surface);overflow:hidden">' +
+      (p.image_url ? '<img src="' + esc(p.image_url) + '" style="width:100%;height:100%;object-fit:cover">' : info.emoji||'') +
+      '</div></td>' +
+      '<td style="padding:8px 12px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high)">' + esc(p.name) + '</td>' +
+      '<td style="padding:8px 12px"><span style="font-size:11px;font-family:DM Sans,sans-serif;color:' + statusColor + ';text-transform:uppercase;letter-spacing:.06em">' + esc(p.status) + '</span></td>' +
+      '<td style="padding:8px 12px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-muted)">' + esc(p.visibility||'public') + '</td>' +
+      '<td style="padding:8px 12px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-muted)">' + (p.updated_at ? new Date(p.updated_at).toLocaleDateString() : '—') + '</td>' +
+      '<td style="padding:8px 12px">' +
+      '<a href="library-submit.html?type=' + LIB_CURRENT_TYPE + '&id=' + esc(p.id) + '" target="_blank" ' +
+      'style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--accent);margin-right:8px">Edit</a>' +
+      '<button onclick="libTogglePublish(\'' + esc(p.id) + '\',\'' + esc(p.status) + '\')" ' +
+      'style="font-family:DM Sans,sans-serif;font-size:11px;background:none;border:none;cursor:pointer;color:var(--text-mid)">' +
+      (p.status==='published'?'Unpublish':'Publish') + '</button>' +
+      '<button onclick="libDelete(\'' + esc(p.id) + '\',\'' + esc(p.name) + '\')" ' +
+      'style="font-family:DM Sans,sans-serif;font-size:11px;background:none;border:none;cursor:pointer;color:var(--text-danger);margin-left:8px">Delete</button>' +
+      '</td></tr>';
+  });
+
+  html += '</tbody></table></div>';
+  panel.innerHTML = html;
+}
+
+async function libTogglePublish(id, currentStatus) {
+  var newStatus = currentStatus === 'published' ? 'draft' : 'published';
+  try {
+    await rpc('admin_publish_library_profile', { p_type: LIB_CURRENT_TYPE, p_id: id, p_status: newStatus });
+    loadLibProfiles(LIB_CURRENT_STATUS);
+  } catch(e) { alert('Error: ' + (e.message||e)); }
+}
+
+async function libDelete(id, name) {
+  if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+  try {
+    await rpc('admin_delete_library_profile', { p_type: LIB_CURRENT_TYPE, p_id: id });
+    loadLibProfiles(LIB_CURRENT_STATUS);
+  } catch(e) { alert('Error: ' + (e.message||e)); }
+}
