@@ -2690,8 +2690,8 @@ function detectUrlPaste(url) {
   const creditUrl = document.getElementById('credit-url');
   if (creditUrl && !creditUrl.value) creditUrl.value = url;
   // Detect source type
-  const srcOriginal = document.getElementById('source-original');
-  const srcSomewhere = document.getElementById('source-somewhere');
+  const srcOriginal = document.getElementById('src-original');
+  const srcSomewhere = document.getElementById('src-from');
   if (srcSomewhere) srcSomewhere.checked = true;
   // Detect platform and show message
   let platform = 'website';
@@ -3017,7 +3017,7 @@ function showMsg(msg, type) {
   const el = document.getElementById('sr-msg') || document.getElementById('form-message');
   if (!el) { console.warn('showMsg: no message element found'); return; }
   el.textContent = msg;
-  el.className = 'sr-form-msg ' + (type || 'info');
+  el.className = 'sr-msg ' + (type || 'info');
   el.style.display = 'block';
   if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 5000);
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -3293,7 +3293,7 @@ async function syncDraftToDb(force) {
       user_id:     session.user.id,
       recipe_name: data.recipe_name || null,
       draft_data:  data,
-      local_key:   DRAFT_KEY,
+      local_key:   window._activeDraftId ? 'tcj_draft_' + window._activeDraftId : DRAFT_KEY,
       updated_at:  new Date().toISOString()
     };
 
@@ -3553,7 +3553,30 @@ async function submitRecipe() {
     });
 
     if (res.ok || res.status === 201) {
+      // Clear auto-save
       lsRemove(DRAFT_KEY);
+      // Clear named draft from localStorage + index
+      if (window._activeDraftId) {
+        const namedKey = 'tcj_draft_' + window._activeDraftId;
+        lsRemove(namedKey);
+        try {
+          let index = JSON.parse(lsGet(DRAFTS_INDEX_KEY) || '[]');
+          index = index.filter(function(d) { return d.id !== window._activeDraftId; });
+          lsSet(DRAFTS_INDEX_KEY, JSON.stringify(index));
+        } catch(_) {}
+        // Delete from Supabase recipe_drafts
+        if (_draftDbId && session && session.access_token) {
+          fetch(SUPABASE_URL + '/rest/v1/recipe_drafts?id=eq.' + _draftDbId, {
+            method: 'DELETE',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': 'Bearer ' + session.access_token
+            }
+          }).catch(function(){});
+        }
+        window._activeDraftId = null;
+        _draftDbId = null;
+      }
       showMsg('✓ Recipe submitted! You will be notified when it is reviewed and published. 🔔', 'success');
       btn.textContent = '✓ Submitted';
       setTimeout(() => { window.location.href = 'recipes.html'; }, 3000);
@@ -3613,7 +3636,7 @@ function removeImage() {
   if (preview)  { preview.style.backgroundImage = ''; }
   if (preState) preState.style.display = 'none';
   if (emState)  emState.style.display  = 'block';
-  const fileInput = document.getElementById('img-file-input');
+  const fileInput = document.getElementById('recipe-image-input');
   if (fileInput) fileInput.value = '';
 }
 
@@ -3658,7 +3681,7 @@ function updateTotalTime() {
 // ── INTRODUCTION WORD COUNTER ─────────────────────────────────────────────
 function updateIntroCounter() {
   const el  = document.getElementById('introduction');
-  const cnt = document.getElementById('intro-word-count');
+  const cnt = document.getElementById('intro-words');
   if (!el || !cnt) return;
   const words = (el.value || '').trim().split(/\s+/).filter(Boolean).length;
   cnt.textContent = words + ' / 100 words';
@@ -3669,7 +3692,7 @@ function updateIntroCounter() {
 var _dupCheckTimer = null;
 function checkDuplicateName() {
   const input = document.getElementById('recipe-name');
-  const warn  = document.getElementById('dup-name-warn');
+  const warn  = document.getElementById('dup-name-info');
   if (!input || !warn) return;
   const name = input.value.trim();
   if (!name || name.length < 3) { warn.style.display = 'none'; return; }
@@ -3778,7 +3801,7 @@ function renumberIngRows(container) {
 // ── COLLAPSE / EXPAND ALL SECTIONS ───────────────────────────────────────
 var _allCollapsed = false;
 function toggleAllSections() {
-  const btn      = document.getElementById('btn-collapse-all');
+  const btn      = document.getElementById('btn-toggle-all');
   const sections = document.querySelectorAll('.ing-section, .method-section');
   _allCollapsed  = !_allCollapsed;
   sections.forEach(function(sec) {
@@ -3789,7 +3812,7 @@ function toggleAllSections() {
 }
 
 // ── SAVE NAMED DRAFT ──────────────────────────────────────────────────────
-function saveNamedDraft(showToast) {
+async function saveNamedDraft(showToast) {
   let data;
   try { data = collectFormData(); } catch(_) { return; }
 
@@ -3818,8 +3841,8 @@ function saveNamedDraft(showToast) {
     lsSet(DRAFTS_INDEX_KEY, JSON.stringify(index));
   } catch(_) {}
 
-  // Sync to Supabase in the background
-  try { syncDraftToDb(true); } catch(_) {}
+  // Sync to Supabase — awaited so draft is saved before redirect
+  try { await syncDraftToDb(true); } catch(_) {}
 
   // Update URL to include draft ID (so refresh loads the right draft)
   const url = new URL(window.location.href);
@@ -3834,14 +3857,13 @@ function saveNamedDraft(showToast) {
 }
 
 // ── CANCEL SUBMISSION ──────────────────────────────────────────────────────
-function cancelSubmission() {
+async function cancelSubmission() {
   const confirmed = confirm(
     'Cancel this recipe?\n\n' +
     'Your draft will be saved automatically so you can come back to it later.'
   );
   if (!confirmed) return;
-  // Save current state before leaving
-  try { saveNamedDraft(false); } catch(_) {}
+  try { await saveNamedDraft(false); } catch(_) {}
   window.location.href = 'draft-recipes.html';
 }
 
