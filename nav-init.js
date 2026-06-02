@@ -65,14 +65,12 @@ var CJ_SECTIONS = [
 function canonicalizeLogo() {
   var logo = document.querySelector('a.nav-logo, .nav-logo');
   if (!logo) return;
-  if (!logo.querySelector('.nav-logo-badge')) {
-    logo.setAttribute('href', 'index.html');
-    logo.innerHTML =
-      '<img src="favicon.svg" alt="The Culinary Journal" class="nav-logo-icon" ' +
-      'style="width:32px;height:32px;border-radius:8px;flex-shrink:0;">' +
-      '<span class="nav-logo-text">The Culinary Journal</span>' +
-      '<span class="nav-logo-badge">Est. 2025</span>';
-  }
+  logo.setAttribute('href', 'index.html');
+  logo.innerHTML =
+    '<img src="favicon.svg" alt="The Culinary Journal" class="nav-logo-icon" ' +
+    'style="width:32px;height:32px;border-radius:8px;flex-shrink:0;">' +
+    '<span class="nav-logo-text">The Culinary Journal</span>' +
+    '<span class="nav-logo-badge">Est. 2025</span>';
 }
 
 function buildSectionNav() {
