@@ -564,7 +564,7 @@
           <option value="Unit">Unit</option>
         </select>
         <div id="bulk-val-wrap" style="display:flex;gap:6px;align-items:center;flex:1">
-          <input type="text" class="bulk-val-input" id="bulk-value" placeholder="New value...">
+          <input type="text" class="bulk-val-input" id="bulk-value-1" placeholder="New value...">
         </div>
         <button class="bulk-apply-btn" onclick="applyBulkEdit()">Apply to Selected</button>
         <button class="bulk-del-btn" onclick="deleteSelected()">Delete Selected</button>
@@ -636,7 +636,7 @@
                 <th class="ap-th">Actions</th>
               </tr>
             </thead>
-            <tbody id="brand-tbody">
+            <tbody id="brand-tbody-placeholder">
               <tr><td colspan="5" class="ap-empty-row">No brand mappings yet. Add your first one above.</td></tr>
             </tbody>
           </table>
@@ -1142,7 +1142,7 @@ async function init() {
     }
     setEl('admin-name', adminName);
     var _sv = localStorage.getItem('tcj_active_view') || 'dashboard';
-    if (!['dashboard','recipe-mgmt','user-mgmt','ingredients','site-mgmt'].includes(_sv)) {
+    if (!['dashboard','recipe-mgmt','user-mgmt','ingredients','site-mgmt','finance'].includes(_sv)) {
       _sv = 'dashboard';
       localStorage.setItem('tcj_active_view','dashboard');
     }
@@ -2287,6 +2287,7 @@ async function openUserDetail(uid) {
             :'<button onclick="confirmReactivate(\''+esc(uid)+'\',\''+esc(p.full_name||p.username)+'\')" style="padding:8px 14px;background:none;border:1px solid #4caf76;border-radius:7px;color:#4caf76;font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;text-align:left">Reactivate Account</button>') +
           '<button onclick="doToggleFlag(\''+esc(uid)+'\','+(p.flagged?'true':'false')+')" style="padding:8px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;text-align:left">'+(p.flagged?'Remove Flag':'Flag Account')+'</button>' +
           '<button onclick="doToggleAdmin(\''+esc(uid)+'\','+(p.is_admin?'true':'false')+')" style="padding:8px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;text-align:left">'+(p.is_admin?'Remove Admin Access':'Grant Admin Access')+'</button>' +
+          '<button onclick="doSendEmailToUser(\''+esc(uid)+'\',\''+esc(p.email)+'\',\''+esc(p.full_name||p.username)+'\')" style="padding:8px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;text-align:left">\u2709\ufe0f Send Email</button>' +
           '<button onclick="doExportUserData(\''+esc(uid)+'\',\''+esc(p.full_name||p.username)+'\')" style="padding:8px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;text-align:left">\uD83D\uDCC4 Export Data (GDPR)</button>' +
         '</div>' +
       '</div>';
@@ -2958,6 +2959,19 @@ async function buildSMPages(container) {
         '<td class="ap-td">'+vis+'</td>'+
         '<td class="ap-td" style="text-align:center"><input type="checkbox" id="smcs-'+(p.path||'')+'"'+(p.coming_soon?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent)"></td>'+
         '<td class="ap-td"></td>';
+      var seoWrap = document.createElement('tr');
+      seoWrap.style.cssText = 'border-bottom:1px solid rgba(255,255,255,0.04)';
+      var seoCel = document.createElement('td');
+      seoCel.setAttribute('colspan','5');
+      seoCel.style.cssText = 'padding:0 8px 10px;display:none';
+      seoCel.id = 'seo-row-' + (p.path||'');
+      seoCel.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 0">' +
+        '<div><label style="display:block;font-size:10px;text-transform:uppercase;color:var(--text-mid);margin-bottom:3px">Meta Title</label>' +
+        '<input id="seo-t-'+(p.path||'')+'" value="'+(S['seo_'+p.path+'_title']||'')+'" style="width:100%;box-sizing:border-box;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-high)"></div>' +
+        '<div><label style="display:block;font-size:10px;text-transform:uppercase;color:var(--text-mid);margin-bottom:3px">Meta Description</label>' +
+        '<input id="seo-d-'+(p.path||'')+'" value="'+(S['seo_'+p.path+'_desc']||'')+'" style="width:100%;box-sizing:border-box;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-high)"></div></div>';
+      seoWrap.appendChild(seoCel);
+      tbody.appendChild(seoWrap);
       var btn = document.createElement('button'); btn.textContent = 'Save';
       btn.style.cssText = "padding:5px 12px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";
       btn.addEventListener('click', (function(path, b) { return async function() {
@@ -3157,6 +3171,12 @@ async function buildSMSettings(container) {
     wg.appendChild(inp('watermark_font','Font',S.watermark_font));wg.appendChild(inp('watermark_opacity','Opacity',S.watermark_opacity));
     w.appendChild(wg);w.appendChild(saveBtn(['watermark_font','watermark_opacity'],'Save Watermark'));container.appendChild(w);
     var f=card('Footer');f.appendChild(inp('footer_copyright','Copyright',S.footer_copyright));f.appendChild(saveBtn(['footer_copyright'],'Save Footer'));container.appendChild(f);
+        var seo=card('SEO — Site-wide Defaults');
+    seo.appendChild(inp('seo_site_title','Default Page Title',S.seo_site_title));
+    seo.appendChild(inp('seo_site_description','Default Meta Description',S.seo_site_description));
+    seo.appendChild(inp('seo_og_image','Social Share Image URL',S.seo_og_image));
+    seo.appendChild(saveBtn(['seo_site_title','seo_site_description','seo_og_image'],'Save SEO'));
+    container.appendChild(seo);
     container.dataset.built='1';
   } catch(e){container.dataset.built='';container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>';}
 }
@@ -4476,11 +4496,7 @@ function buildCurrenciesTab(container, _dirty){
   container.appendChild(sb);
 }
 
-// ── BRAND MAPPING TAB ────────────────────────────────────────────
-function buildBrandsTab(container, _dirty){
-  // Load existing brand mappings from the existing brand mapping system
-  loadBrandMappings(container);
-}
+
 
 // ── Save button helper ────────────────────────────────────────────
 function makeSaveBtn(label, fn){
@@ -6756,8 +6772,8 @@ function clearSelection(){document.querySelectorAll('.ing-row-check').forEach(fu
 function updateBulkValueInput(){
   const field=document.getElementById('bulk-field').value,wrap=document.getElementById('bulk-val-wrap');
   const yesno=['Vegan (Yes/No)','Vegetarian (Yes/No)','Liquid (Yes/No)'];
-  if(field==='Category')wrap.innerHTML='<select class="bulk-val-input" id="bulk-value"><option value="">— Select —</option>'+CATS_LIST.map(function(c){return '<option>'+c+'</option>';}).join('')+'</select>';
-  else if(yesno.includes(field))wrap.innerHTML='<select class="bulk-val-input" id="bulk-value"><option>Yes</option><option>No</option></select>';
+  if(field==='Category')wrap.innerHTML='<select class="bulk-val-input" id="bulk-value-2"><option value="">— Select —</option>'+CATS_LIST.map(function(c){return '<option>'+c+'</option>';}).join('')+'</select>';
+  else if(yesno.includes(field))wrap.innerHTML='<select class="bulk-val-input" id="bulk-value-3"><option>Yes</option><option>No</option></select>';
   else wrap.innerHTML='<input type="text" class="bulk-val-input" id="bulk-value" placeholder="New value...">';
   setTimeout(fixDropdownTheme,10);
 }
@@ -7553,34 +7569,7 @@ async function smSaveAll() {
   }
 }
 
-function loadSiteManagement() {
-  // Build tab bar with pure inline styles — no CSS classes
-  if (!tabbar) return;
-  if (tabbar.dataset.built) {
-    switchSMTab(localStorage.getItem('tcj_active_sm_tab') || 'pages');
-    return;
-  }
-  tabbar.dataset.built = '1';
-  tabbar.innerHTML = '';
-  var SM_TABS = [
-    {key:'pages',        label:'Pages'},
-    {key:'features',     label:'Features'},
-    {key:'announcements',label:'Announcements'},
-    {key:'content',      label:'Content'},
-    {key:'themes',       label:'Themes'},
-    {key:'email',        label:'Email Templates'},
-    {key:'settings',     label:'Settings'}
-  ];
-  SM_TABS.forEach(function(td) {
-    var btn = document.createElement('button');
-    btn.textContent = td.label;
-    btn.dataset.smtab = td.key;
-    btn.style.cssText = "padding:10px 18px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:rgba(255,255,255,0.5);margin-bottom:-1px;white-space:nowrap;outline:none";
-    btn.addEventListener('click', function(){ switchSMTab(td.key); });
-    tabbar.appendChild(btn);
-  });
-  switchSMTab(localStorage.getItem('tcj_active_sm_tab') || 'pages');
-}
+
 
 
 async function doExportUserData(uid, username) {
@@ -7840,6 +7829,35 @@ async function buildFiInterface(container) {
     container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>';
   }
 }
+
+// ── Send Email to User ──────────────────────────────────────────────────────
+function doSendEmailToUser(uid, email, name) {
+  var subject = prompt('Email subject:');
+  if (!subject) return;
+  var body = prompt('Email message body (plain text):');
+  if (!body) return;
+  if (!confirm('Send email to ' + name + ' <' + email + '>?')) return;
+
+  // Queue via Supabase email queue if available, otherwise open mail client
+  (async function() {
+    try {
+      var res = await rpc('queue_email', {
+        p_template_key: 'custom',
+        p_to_email:     email,
+        p_to_name:      name,
+        p_variables:    { name: name, subject: subject, body: body }
+      });
+      showToast('Email queued for ' + name);
+      auditLog('User Management', 'Email Sent', name, uid, subject, null);
+    } catch(e) {
+      // Fallback: open default mail client
+      window.location.href = 'mailto:' + encodeURIComponent(email) +
+        '?subject=' + encodeURIComponent(subject) +
+        '&body=' + encodeURIComponent(body);
+    }
+  })();
+}
+
 </script>
 </body>
 </html>
