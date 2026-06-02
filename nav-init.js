@@ -68,7 +68,8 @@ function canonicalizeLogo() {
   if (!logo.querySelector('.nav-logo-badge')) {
     logo.setAttribute('href', 'index.html');
     logo.innerHTML =
-      '<span aria-hidden="true">🍽</span>' +
+      '<img src="favicon.svg" alt="The Culinary Journal" class="nav-logo-icon" ' +
+      'style="width:32px;height:32px;border-radius:8px;flex-shrink:0;">' +
       '<span class="nav-logo-text">The Culinary Journal</span>' +
       '<span class="nav-logo-badge">Est. 2025</span>';
   }
