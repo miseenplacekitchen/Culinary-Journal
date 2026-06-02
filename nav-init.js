@@ -8,46 +8,46 @@
 // The dropdown (sub-pages) appears on hover; the chevron toggles it for touch/keyboard.
 var CJ_SECTIONS = [
   {
-    id:'recipebook', label:'The Recipe Book', emoji:'', primaryPage:'recipes.html',
+    id:'recipebook', label:'The Recipe Book', emoji:'📖', primaryPage:'recipes.html',
     pages:['recipes.html','chefs.html','search.html','submit-recipe.html','draft-recipes.html'],
     links:[
-      {href:'recipes.html',      label:'Browse Recipes'},
-      {href:'search.html',       label:'Search'},
-      {href:'chefs.html',        label:'Chef Directory'},
-      {href:'submit-recipe.html',label:'Submit a Recipe'},
+      {href:'recipes.html',      emoji:'🍽', label:'Browse Recipes'},
+      {href:'search.html',       emoji:'🔍', label:'Search'},
+      {href:'chefs.html',        emoji:'👨‍🍳', label:'Chef Directory'},
+      {href:'submit-recipe.html',emoji:'📝', label:'Submit a Recipe'},
     ]
   },
   {
-    id:'miseenplace', label:'Mise en Place', emoji:'', primaryPage:'meal-planner.html',
+    id:'miseenplace', label:'Mise en Place', emoji:'🍳', primaryPage:'meal-planner.html',
     pages:['meal-planner.html','grocery.html','pantry.html','print-studio.html'],
     links:[
-      {href:'meal-planner.html', label:'Meal Planner'},
-      {href:'grocery.html',      label:'Grocery List'},
-      {href:'pantry.html',       label:'Pantry & Fridge'},
-      {href:'print-studio.html', label:'Print Studio'},
+      {href:'meal-planner.html', emoji:'🗓', label:'Meal Planner'},
+      {href:'grocery.html',      emoji:'🛒', label:'Grocery List'},
+      {href:'pantry.html',       emoji:'🫙', label:'Pantry & Fridge'},
+      {href:'print-studio.html', emoji:'🖨', label:'Print Studio'},
     ]
   },
   {
-    id:'guestlist', label:'The Guest List', emoji:'', primaryPage:'table-planner.html',
+    id:'guestlist', label:'The Guest List', emoji:'🪑', primaryPage:'table-planner.html',
     pages:['table-planner.html','family-profiles.html','dietary-card.html'],
     links:[
-      {href:'table-planner.html',   label:'Table Planner'},
-      {href:'family-profiles.html', label:'Family Profiles'},
-      {href:'dietary-card.html',    label:'Dietary Cards'},
+      {href:'table-planner.html',   emoji:'🪑', label:'Table Planner'},
+      {href:'family-profiles.html', emoji:'👨‍👩‍👧', label:'Family Profiles'},
+      {href:'dietary-card.html',    emoji:'🥗', label:'Dietary Cards'},
     ]
   },
   {
-    id:'library', label:'The Library', emoji:'', primaryPage:'library-directory.html',
+    id:'library', label:'The Library', emoji:'📚', primaryPage:'library-directory.html',
     pages:['library-directory.html','library-profile.html','preservation.html','conversions.html','baby.html','culinary-life.html'],
     links:[
-      {href:'library-directory.html?type=ingredient', label:'Ingredients'},
-      {href:'library-directory.html?type=spice',      label:'Spice Directory'},
-      {href:'library-directory.html?type=tool',       label:'Tools & Appliances'},
-      {href:'library-directory.html?type=cut',        label:'Cuts & Prep'},
-      {href:'library-directory.html?type=preservation',label:'Preservation Academy'},
-      {href:'conversions.html',                       label:'Conversions & Weights'},
-      {href:'baby.html',                              label:'Baby & Toddler'},
-      {href:'culinary-life.html',                     label:'Culinary Life'},
+      {href:'library-directory.html?type=ingredient', emoji:'🌿', label:'Ingredients'},
+      {href:'library-directory.html?type=spice',      emoji:'🌶', label:'Spice Directory'},
+      {href:'library-directory.html?type=tool',       emoji:'🔪', label:'Tools & Appliances'},
+      {href:'library-directory.html?type=cut',        emoji:'🥩', label:'Cuts & Prep'},
+      {href:'library-directory.html?type=preservation',emoji:'🫙', label:'Preservation Academy'},
+      {href:'conversions.html',                       emoji:'⚖️', label:'Conversions & Weights'},
+      {href:'baby.html',                              emoji:'👶', label:'Baby & Toddler'},
+      {href:'culinary-life.html',                     emoji:'✨', label:'Culinary Life'},
     ]
   }
 ];
