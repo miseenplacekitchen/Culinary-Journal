@@ -201,6 +201,8 @@
 
 <script src="nav-init.js"></script>
 <script>
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
 const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
 
@@ -310,9 +312,9 @@ function renderCalendar() {
         card.className = 'mp-recipe-card';
         const emoji = CAT_EMOJI[recipe.category] || '🍽';
         var conflicts = checkRecipeConflicts(recipe);
-      card.innerHTML = '<div class="mp-recipe-name">' + emoji + ' ' + recipe.name + '</div>' +
-          '<div class="mp-recipe-cat">' + (recipe.category||'') + '</div>' +
-          (conflicts.length ? '<div class="mp-member-flags">' + conflicts.slice(0,2).map(function(c){return '<span class="mp-member-flag warn">⚠ '+c+'</span>';}).join('') + '</div>' : '') +
+      card.innerHTML = '<div class="mp-recipe-name">' + emoji + ' ' + esc(recipe.name||'') + '</div>' +
+          '<div class="mp-recipe-cat">' + esc(recipe.category||'') + '</div>' +
+          (conflicts.length ? '<div class="mp-member-flags">' + conflicts.slice(0,2).map(function(c){return '<span class="mp-member-flag warn">⚠ '+esc(c)+'</span>';}).join('') + '</div>' : '') +
           '<button class="mp-recipe-remove" title="Remove">×</button>';
         card.querySelector('.mp-recipe-remove').addEventListener('click', function(e) {
           e.stopPropagation(); clearSlot(day, meal); renderCalendar();
@@ -403,8 +405,8 @@ function renderFamilyFlags() {
       const diets = (p.dietary_needs||[]).concat(p.allergies||[]).slice(0,3);
       const spiceIcon = SPICE_ICONS[p.spice_preference]||'🌶';
       return '<div style="display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:5px 10px;margin:3px">' +
-        '<span>'+emoji+'</span><span style="font-weight:500;color:var(--text-high)">'+p.name+'</span>' +
-        (diets.length ? '<span style="color:#dc5050;font-size:10px">⚠ '+diets.join(', ')+'</span>' : '') +
+        '<span>'+emoji+'</span><span style="font-weight:500;color:var(--text-high)">'+esc(p.name||'')+'</span>' +
+        (diets.length ? '<span style="color:#dc5050;font-size:10px">⚠ '+esc(diets.join(', '))+'</span>' : '') +
         '<span title="Spice preference">'+spiceIcon+'</span></div>';
     }).join('');
 }
@@ -476,7 +478,7 @@ function renderResults(recipes) {
     const item = document.createElement('div');
     item.className = 'mp-result-item';
     const emoji = CAT_EMOJI[r.category] || '🍽';
-    item.innerHTML = '<div class="mp-result-emoji">' + emoji + '</div><div><div class="mp-result-name">' + r.name + '</div><div class="mp-result-cat">' + (r.category||'') + (r.origin_country?' · '+r.origin_country:'') + '</div></div>';
+    item.innerHTML = '<div class="mp-result-emoji">' + emoji + '</div><div><div class="mp-result-name">' + esc(r.name||'') + '</div><div class="mp-result-cat">' + esc(r.category||'') + (r.origin_country?' · '+esc(r.origin_country):'') + '</div></div>';
     item.addEventListener('click', function() {
       if (!pickerTarget) return;
       setSlot(pickerTarget.day, pickerTarget.meal, {id: r.id, name: r.name, category: r.category, image_url: r.image_url});

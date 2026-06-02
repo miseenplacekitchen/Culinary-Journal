@@ -357,6 +357,8 @@
 
 <script src="nav-init.js"></script>
 <script>
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
 const FRACTIONS = {'1/8':'⅛','1/4':'¼','3/8':'⅜','1/2':'½','5/8':'⅝','3/4':'¾','7/8':'⅞','1/3':'⅓','2/3':'⅔'};
 function fmtQty(v){ if(!v)return''; let s=String(v); Object.keys(FRACTIONS).forEach(f=>{s=s.replace(new RegExp(f.replace('/','[/]'),'g'),FRACTIONS[f]);}); return s; }
 
@@ -405,19 +407,19 @@ function buildCards() {
 
     let ingHtml = '';
     (r.ingredients || []).forEach(sec => {
-      if (sec.title) ingHtml += `<div class="ps-section-head">${sec.title}</div>`;
+      if (sec.title) ingHtml += `<div class="ps-section-head">${esc(sec.title||'')}</div>`;
       ingHtml += '<div class="ps-ing-list">';
       (sec.items || []).forEach(item => {
-        ingHtml += `<div class="ps-ing-item"><span class="ps-ing-qty">${fmtQty(item.qty)} ${item.unit||''}</span><span>${item.ingredient||''}</span></div>`;
+        ingHtml += `<div class="ps-ing-item"><span class="ps-ing-qty">${esc(fmtQty(item.qty))||''} ${esc(item.unit||'')}</span><span>${esc(item.ingredient||'')}</span></div>`;
       });
       ingHtml += '</div>';
     });
 
     cards.push(`
       <div class="ps-watermark">The Culinary Journal</div>
-      <div class="ps-card-title">${r.recipe_name||''}</div>
-      ${r.native_title?`<div class="ps-card-subtitle">${r.native_title}</div>`:''}
-      <div class="ps-card-meta">${meta.map(m=>`<span>${m}</span>`).join('')}</div>
+      <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
+      ${r.native_title?`<div class="ps-card-subtitle">${esc(r.native_title||'')}</div>`:''}
+      <div class="ps-card-meta">${meta.map(m=>`<span>${esc(m)}</span>`).join('')}</div>
       ${ingHtml}
     `);
   }
@@ -427,13 +429,13 @@ function buildCards() {
     (r.method || []).forEach(block => {
       const steps = (block.steps || []).map((step, i) => {
         const text = typeof step === 'string' ? step : (step.text || step.title || '');
-        return `<div class="ps-step"><span class="ps-step-num">${i+1}.</span><span class="ps-step-text">${text}</span></div>`;
+        return `<div class="ps-step"><span class="ps-step-num">${i+1}.</span><span class="ps-step-text">${esc(text)}</span></div>`;
       }).join('');
       if (steps) {
         cards.push(`
           <div class="ps-watermark">The Culinary Journal</div>
-          <div class="ps-card-title">${r.recipe_name||''}</div>
-          ${block.title?`<div class="ps-section-head">${block.title}</div>`:'<div class="ps-section-head">Procedure</div>'}
+          <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
+          ${block.title?`<div class="ps-section-head">${esc(block.title||'')}</div>`:'<div class="ps-section-head">Procedure</div>'}
           ${steps}
         `);
       }
@@ -441,12 +443,12 @@ function buildCards() {
   }
 
   // Notes card
-  if (incNotes && r.cooking_notes) {
+  if (incNotes && esc(r.cooking_notes||'')) {
     cards.push(`
       <div class="ps-watermark">The Culinary Journal</div>
-      <div class="ps-card-title">${r.recipe_name||''}</div>
+      <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
       <div class="ps-section-head">Cooking Notes</div>
-      <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#444;line-height:1.6">${r.cooking_notes}</div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#444;line-height:1.6">${esc(r.cooking_notes||'')}</div>
     `);
   }
 
@@ -467,7 +469,7 @@ function buildCards() {
 function loadRecipe(recipe) {
   currentRecipe = recipe;
   document.getElementById('ps-recipe-name').innerHTML =
-    '<strong style="font-family:\'DM Sans\',sans-serif;font-size:13px;color:var(--text-high)">' + (recipe.recipe_name||'Recipe') + '</strong>';
+    '<strong style="font-family:\'DM Sans\',sans-serif;font-size:13px;color:var(--text-high)">' + esc(recipe.recipe_name||'Recipe') + '</strong>';
   buildCards();
 }
 

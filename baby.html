@@ -267,6 +267,8 @@
 
 <script src="nav-init.js"></script>
 <script>
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
 const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
 const DANGER_INGREDIENTS = ['honey','salt','nut','nuts','peanut','shellfish','raw fish','raw egg','caffeine','alcohol'];
@@ -335,13 +337,13 @@ function renderBabyRecipes(recipes) {
     card.className = 'bt-recipe-card';
     card.href = 'recipe-page.html?id=' + r.id;
     card.innerHTML =
-      '<div class="bt-recipe-img">' + (r.image_url ? '<img src="'+r.image_url+'" loading="lazy">' : '👶') + '</div>' +
+      '<div class="bt-recipe-img">' + (r.image_url ? '<img src="'+esc(r.image_url)+'" loading="lazy">' : '👶') + '</div>' +
       '<div class="bt-recipe-body">' +
-        '<div class="bt-recipe-name">' + (r.recipe_name||'') + '</div>' +
-        '<div class="bt-recipe-meta">' + (r.origin_country||'') + '</div>' +
+        '<div class="bt-recipe-name">' + esc(r.recipe_name||'') + '</div>' +
+        '<div class="bt-recipe-meta">' + esc(r.origin_country||'') + '</div>' +
         '<div class="bt-recipe-flags">' +
-          dietTags.map(function(t){return '<span class="bt-flag-ok">'+t+'</span>';}).join('') +
-          warnings.map(function(w){return '<span class="bt-flag-warn">⚠ '+w+'</span>';}).join('') +
+          dietTags.map(function(t){return '<span class="bt-flag-ok">'+esc(t)+'</span>';}).join('') +
+          warnings.map(function(w){return '<span class="bt-flag-warn">⚠ '+esc(w)+'</span>';}).join('') +
         '</div>' +
       '</div>';
     grid.appendChild(card);

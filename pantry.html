@@ -172,6 +172,8 @@
 
 <script src="nav-init.js"></script>
 <script>
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+
 const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
 
@@ -241,16 +243,16 @@ function renderList(search) {
     const row = document.createElement('div');
     row.className = 'pt-item ' + status;
     row.innerHTML =
-      '<div style="flex:1"><div class="pt-item-name">' + item.name + '</div>' +
-      (item.category ? '<div class="pt-item-cat">' + item.category + '</div>' : '') + '</div>' +
+      '<div style="flex:1"><div class="pt-item-name">' + esc(item.name||'') + '</div>' +
+      (item.category ? '<div class="pt-item-cat">' + esc(item.category||'') + '</div>' : '') + '</div>' +
       '<div class="pt-item-qty">' +
-        '<button class="pt-qty-btn" onclick="adjustQty(\'' + item.id + '\',-1)">−</button>' +
-        '<div class="pt-qty-val">' + (item.qty||0) + ' <span style="font-size:10px;color:var(--text-mid)">' + (item.unit||'') + '</span></div>' +
-        '<button class="pt-qty-btn" onclick="adjustQty(\'' + item.id + '\',1)">+</button>' +
+        '<button class="pt-qty-btn" data-item-id="' + esc(String(item.id)) + '" data-delta="-1">−</button>' +
+        '<div class="pt-qty-val">' + (item.qty||0) + ' <span style="font-size:10px;color:var(--text-mid)">' + esc(item.unit||'') + '</span></div>' +
+        '<button class="pt-qty-btn" data-item-id="' + esc(String(item.id)) + '" data-delta="1">+</button>' +
       '</div>' +
       '<span class="pt-status ' + status + '">' + (status==='ok'?'Good':status==='low'?'Low':'Out') + '</span>' +
-      '<button class="pt-btn pt-btn-ghost" style="font-size:11px;padding:5px 10px" onclick="editItem(\'' + item.id + '\')">Edit</button>' +
-      '<button class="pt-del-btn" onclick="deleteItem(\'' + item.id + '\')" title="Delete">🗑</button>';
+      '<button class="pt-btn pt-btn-ghost" style="font-size:11px;padding:5px 10px" data-action="edit" data-item-id="' + esc(String(item.id)) + '">Edit</button>' +
+      '<button class="pt-del-btn" data-action="delete" data-item-id="' + esc(String(item.id)) + '" title="Delete">🗑</button>';
     el.appendChild(row);
   });
   renderStats();
@@ -351,6 +353,16 @@ async function loadIngredientNames() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  // Button delegation — no inline onclick, no XSS
+  document.getElementById('pt-list').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-item-id]');
+    if (!btn) return;
+    var id = btn.dataset.itemId;
+    if (btn.dataset.action === 'edit')   { editItem(id); return; }
+    if (btn.dataset.action === 'delete') { deleteItem(id); return; }
+    if (btn.dataset.delta !== undefined) { adjustQty(id, parseInt(btn.dataset.delta||0)); }
+  });
+
   renderStats();
   renderList('');
   loadIngredientNames();
