@@ -521,7 +521,13 @@ function renderNotifPanel(notifs) {
     item.className = 'nav-notif-item' + (n.read?'':' unread');
     item.href = n.recipe_id ? 'recipe-page.html?id=' + n.recipe_id : '#';
     item.innerHTML = '<div class="nav-notif-dot'+(n.read?' read':'')+'"></div><div><div class="nav-notif-msg">'+icon+' '+(n.recipe_name||n.message||'Notification')+'</div><div class="nav-notif-time">'+timeStr+'</div></div>';
-    item.addEventListener('click', function(){notifRpc('mark_notification_read',{p_id:n.id}); loadNotifCount();});
+    item.addEventListener('click', async function(e) {
+      e.preventDefault();
+      try { await notifRpc('mark_notification_read', {p_id: n.id}); } catch(_) {}
+      loadNotifCount();
+      var dest = n.recipe_id ? 'recipe-page.html?id=' + n.recipe_id : null;
+      if (dest) window.location.href = dest;
+    });
     _notifPanel.appendChild(item);
   });
   loadNotifCount();

@@ -3119,7 +3119,7 @@ async function buildSMEmail(container) {
         '<div style="margin-bottom:10px"><label style="display:block;font-size:10px;color:var(--text-mid);margin-bottom:3px">Body</label><textarea id="em-b-'+t.key+'" rows="4" style="width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--text-high);resize:vertical">'+(t.body||'')+'</textarea></div>';
       var btn=document.createElement('button');btn.className='ing-add-btn';btn.textContent='Save';
       btn.addEventListener('click',(function(key,b){return async function(){b.disabled=true;b.textContent='Saving\u2026';
-        try{var r=await apiFetch(SUPABASE_URL+'/rest/v1/email_templates',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:key,subject:document.getElementById('em-s-'+key).value,body:document.getElementById('em-b-'+key).value})});
+        try{var r=await apiFetch(SUPABASE_URL+'/rest/v1/email_templates',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:key,name:key.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();}),subject:document.getElementById('em-s-'+key).value,body:document.getElementById('em-b-'+key).value})});
         if(!r||!r.ok)throw new Error(r?r.status+': '+await r.text():'Session expired');
         b.textContent='\u2713 Saved';setTimeout(function(){var c=document.getElementById('upanel-sm-email');if(c){c.dataset.built='';buildSMEmail(c);}},1500);}
         catch(e){b.textContent='Save';b.disabled=false;alert('Save failed: '+e.message);}
@@ -7516,7 +7516,7 @@ async function smSaveAll() {
         var r3 = await apiFetch(SUPABASE_URL + '/rest/v1/email_templates', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=representation' },
-          body: JSON.stringify({ key: tkey, subject: subj.value, body: bodyEl.value })
+          body: JSON.stringify({ key: tkey, name: tkey.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();}), subject: subj.value, body: bodyEl.value })
         });
         if (!r3 || !r3.ok) throw new Error('Email template save failed: ' + tkey);
         saved++;
