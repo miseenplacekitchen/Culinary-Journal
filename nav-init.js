@@ -8,7 +8,7 @@
 // The dropdown (sub-pages) appears on hover; the chevron toggles it for touch/keyboard.
 var CJ_SECTIONS = [
   {
-    id:'recipebook', label:'The Recipe Book', primaryPage:'recipes.html',
+    id:'recipebook', label:'The Recipe Book', emoji:'', primaryPage:'recipes.html',
     pages:['recipes.html','chefs.html','search.html','submit-recipe.html','draft-recipes.html'],
     links:[
       {href:'recipes.html',      label:'Browse Recipes'},
@@ -18,7 +18,7 @@ var CJ_SECTIONS = [
     ]
   },
   {
-    id:'miseenplace', label:'Mise en Place', primaryPage:'meal-planner.html',
+    id:'miseenplace', label:'Mise en Place', emoji:'', primaryPage:'meal-planner.html',
     pages:['meal-planner.html','grocery.html','pantry.html','print-studio.html'],
     links:[
       {href:'meal-planner.html', label:'Meal Planner'},
@@ -28,7 +28,7 @@ var CJ_SECTIONS = [
     ]
   },
   {
-    id:'guestlist', label:'The Guest List', primaryPage:'table-planner.html',
+    id:'guestlist', label:'The Guest List', emoji:'', primaryPage:'table-planner.html',
     pages:['table-planner.html','family-profiles.html','dietary-card.html'],
     links:[
       {href:'table-planner.html',   label:'Table Planner'},
@@ -37,7 +37,7 @@ var CJ_SECTIONS = [
     ]
   },
   {
-    id:'library', label:'The Library', primaryPage:'library-directory.html',
+    id:'library', label:'The Library', emoji:'', primaryPage:'library-directory.html',
     pages:['library-directory.html','library-profile.html','preservation.html','conversions.html','baby.html','culinary-life.html'],
     links:[
       {href:'library-directory.html?type=ingredient', label:'Ingredients'},
@@ -101,7 +101,7 @@ function buildSectionNav() {
     var isActive = activeSection === section.id;
     var btn = document.createElement('button');
     btn.type = 'button';
-    btn.textContent = section.emoji + ' ' + section.label;
+    btn.textContent = section.emoji ? section.emoji + ' ' + section.label : section.label;
     btn.style.cssText = 'padding:10px 14px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:' + (isActive ? '600' : '500') + ';color:' + (isActive ? 'var(--accent)' : 'var(--text-low)') + ';background:none;border:none;border-radius:8px;cursor:pointer;white-space:nowrap';
 
     var links = section.links.slice();
