@@ -850,7 +850,7 @@ function getGroceryData() {
   catch(_) { return {recipes:[]}; }
 }
 function saveGroceryData(data) { localStorage.setItem('tcj_grocery', JSON.stringify(data)); }
-try { groceryList = JSON.parse(lsGet('tcj_grocery') || '[]') || []; } catch(_) { groceryList = []; }
+try { var _gr = JSON.parse(lsGet('tcj_grocery') || 'null'); groceryList = (_gr && Array.isArray(_gr.recipes)) ? _gr : {recipes:[]}; } catch(_) { groceryList = {recipes:[]}; }
 
 // ── INIT ─────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {

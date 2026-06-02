@@ -57,17 +57,26 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Interpolate variables: replace {{name}}, {{recipe_name}}, etc.
+        // Interpolate variables — escape HTML in all user-supplied values
         const vars = item.variables || {};
-        vars.name    = vars.name    || item.to_name || 'Member';
+        vars.name     = vars.name    || item.to_name || 'Member';
         vars.site_url = 'https://www.theculinaryjournal.site';
+
+        function escHtml(str) {
+          return String(str || '')
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
 
         let subject = tmpl.subject;
         let body    = tmpl.body;
         for (const [k, v] of Object.entries(vars)) {
           const re = new RegExp('{{' + k + '}}', 'g');
-          subject = subject.replace(re, v);
-          body    = body.replace(re, v);
+          // subject is plain text — escape fully
+          subject = subject.replace(re, escHtml(v));
+          // body may contain intentional HTML from the template itself,
+          // but user-supplied values must be escaped
+          body = body.replace(re, escHtml(v));
         }
 
         // Wrap body in base template

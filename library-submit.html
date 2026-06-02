@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
 <style>
 *, *::before, *::after { box-sizing:border-box; }
 body { background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--text-high); margin:0; }
@@ -113,19 +114,27 @@ body { background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--text-
 </div>
 
 <script>
-const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
 let currentType = 'ingredient';
 const params = new URLSearchParams(window.location.search);
 if (params.get('type')) { currentType = params.get('type'); document.querySelector(`[onclick="setType('${currentType}',this)"]`)?.click(); }
 if (params.get('id'))   { loadExisting(params.get('id')); }
 
-// Auth guard — admin only
+// Auth guard — verify admin server-side, not just from localStorage
 const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
-const prof = JSON.parse(localStorage.getItem('tcj_profile')||'{}');
-if (!sess || !sess.access_token || !prof.is_admin) {
-  alert('Admin access required.'); window.location.href = 'index.html';
+if (!sess || !sess.access_token) {
+  window.location.href = 'login.html'; throw new Error('not logged in');
 }
+(async function verifyAdmin() {
+  try {
+    const res = await fetch(window.SUPA_URL + '/rest/v1/rpc/is_admin', {
+      method: 'POST',
+      headers: { 'apikey': window.SUPA_KEY, 'Authorization': 'Bearer ' + sess.access_token, 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    const isAdmin = await res.json();
+    if (!isAdmin) { alert('Admin access required.'); window.location.href = 'index.html'; }
+  } catch(e) { alert('Could not verify access.'); window.location.href = 'index.html'; }
+})();
 
 const TYPE_FIELDS = {
   ingredient: [

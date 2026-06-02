@@ -117,7 +117,7 @@ function buildSectionNav() {
         var a = document.createElement('a');
         a.href = link.href;
         var icon = document.createElement('span');
-        icon.textContent = link.emoji;
+        icon.textContent = link.emoji || '';
         icon.style.cssText = 'font-size:15px;margin-right:8px;flex-shrink:0';
         var txt = document.createTextNode(link.label);
         a.appendChild(icon);
@@ -276,7 +276,7 @@ function buildSectionNav() {
       fetch('https://kzywmodvfbyexqgipcjt.supabase.co/rest/v1/rpc/get_my_profile', {
         method: 'POST',
         headers: {
-          'apikey':        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM',
+          'apikey':        window.SUPA_KEY,
           'Authorization': 'Bearer ' + token,
           'Content-Type':  'application/json'
         },
@@ -442,7 +442,7 @@ function buildSectionNav() {
 var _notifOpen = false;
 var _notifPanel = null;
 var SUPA_URL_N = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-var SUPA_KEY_N = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+var SUPA_KEY_N = window.SUPA_KEY;
 
 async function notifRpc(fn, params) {
   var session = JSON.parse(localStorage.getItem('tcj_session')||'null');
@@ -557,10 +557,7 @@ setTimeout(function() { if(typeof loadNotifCount === "function") loadNotifCount(
   var path = window.location.pathname;
   if (path.includes('recipe-page') || path.includes('dashboard') || path.includes('login')) return;
 
-  var SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-  var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
-
-  var style = document.createElement('style');
+      var style = document.createElement('style');
   style.textContent = [
     /* Floating button */
     '.tcj-fb-btn{position:fixed;bottom:24px;right:24px;z-index:8888;display:flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(255,255,255,0.1);color:var(--text-mid,rgba(255,255,255,0.5));border:1px solid rgba(255,255,255,0.15);border-radius:50px;font-family:"DM Sans",sans-serif;font-size:12px;font-weight:500;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.2);transition:all .2s;backdrop-filter:blur(6px)}',

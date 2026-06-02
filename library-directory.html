@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
 <script src="nav-init.js"></script>
 <style>
 .lib-page { min-height:100vh; background:var(--bg); }
@@ -67,9 +68,6 @@
 </div>
 
 <script>
-const SUPA_URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
-
 const TYPES = {
   ingredient:   { label:'Ingredients',   emoji:'🌿', desc:'Profiles of every ingredient in our kitchen — where it comes from, how to use it, what it does.',    tagField:'category' },
   spice:        { label:'Spice Directory',emoji:'🌶', desc:'Every spice and herb — flavour, heat, technique, and the science of why it works.',                 tagField:'heat_level' },
