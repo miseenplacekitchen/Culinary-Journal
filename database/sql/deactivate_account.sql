@@ -30,23 +30,6 @@ DO $$ BEGIN
   END IF;
 END; $$;
 
--- ── deactivate_my_account() — user deactivates their own account ──────
-DROP FUNCTION IF EXISTS deactivate_my_account();
-CREATE FUNCTION deactivate_my_account()
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
-  UPDATE profiles SET
-    is_active          = false,
-    deactivated_at     = NOW(),
-    deactivation_type  = 'permanent',
-    deactivation_reason = 'Self-deactivated'
-  WHERE id = auth.uid();
-  IF NOT FOUND THEN RAISE EXCEPTION 'Profile not found'; END IF;
-END;
-$$;
-
 -- ── admin_deactivate_user(p_user_id, p_type, p_days, p_reason) ────────
 -- p_type: 'permanent' or 'temporary'
 -- p_days: number of days for temporary (NULL for permanent)
