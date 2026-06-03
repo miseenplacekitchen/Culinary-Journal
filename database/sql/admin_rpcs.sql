@@ -1388,16 +1388,6 @@ ON CONFLICT (path) DO NOTHING;
 -- Safe to run even if already created by other files
 -- ════════════════════════════════════════════════════════════════════
 
--- get_my_profile — required during admin login/profile load
-DROP FUNCTION IF EXISTS get_my_profile();
-CREATE FUNCTION get_my_profile()
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
-  RETURN (SELECT row_to_json(p)::jsonb FROM profiles p WHERE id = auth.uid());
-END; $$;
-GRANT EXECUTE ON FUNCTION get_my_profile() TO authenticated;
-
 -- admin_deactivate_user — matches deactivate_account.sql signature exactly
 DROP FUNCTION IF EXISTS admin_deactivate_user(uuid, text, integer, text);
 CREATE FUNCTION admin_deactivate_user(
@@ -1530,7 +1520,6 @@ REVOKE ALL ON FUNCTION public.admin_bulk_award_badge(uuid[], text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_bulk_update_field(uuid[], text, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_subscriptions(int, int) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_bulk_upsert_ingredients(jsonb) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.get_my_profile() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_deactivate_user(uuid, text, integer, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_reactivate_user(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.queue_email(text, text, text, jsonb) FROM PUBLIC;

@@ -74,13 +74,7 @@ $$;
 GRANT EXECUTE ON FUNCTION public.get_login_info(text) TO anon, authenticated;
 
 -- Get current user's full profile — includes all preference fields
-DO $$ DECLARE r record;
-BEGIN
-  FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
-           WHERE proname = 'get_my_profile' AND pronamespace = 'public'::regnamespace
-  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
-END $$;
-CREATE FUNCTION public.get_my_profile()
+CREATE OR REPLACE FUNCTION public.get_my_profile()
 RETURNS TABLE (
   id                  uuid,
   full_name           text,
@@ -101,13 +95,18 @@ AS $$
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
   RETURN QUERY
-    SELECT p.id, p.full_name, p.username, u.email,
-           p.is_active, p.is_admin, p.theme_preference,
-           COALESCE(p.dietary_preferences, '{}'),
-           COALESCE(p.allergies, '{}'),
-           COALESCE(p.health_conditions, '{}'),
-           COALESCE(p.cooking_style, ''),
-           COALESCE(p.font_size, 'medium'),
+    SELECT p.id,
+           p.full_name::text,
+           p.username::text,
+           u.email::text,
+           p.is_active,
+           p.is_admin,
+           p.theme_preference::text,
+           COALESCE(p.dietary_preferences, '{}')::text[],
+           COALESCE(p.allergies, '{}')::text[],
+           COALESCE(p.health_conditions, '{}')::text[],
+           COALESCE(p.cooking_style, '')::text,
+           COALESCE(p.font_size, 'medium')::text,
            u.created_at
     FROM public.profiles p
     JOIN auth.users u ON u.id = p.id

@@ -89,29 +89,6 @@ ALTER TABLE public.submitted_recipes
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS font_size text DEFAULT 'medium';
 
--- Drop and recreate get_my_profile with font_size
-DROP FUNCTION IF EXISTS public.get_my_profile();
-CREATE FUNCTION public.get_my_profile()
-RETURNS TABLE (
-  id                  uuid, full_name text, username text, email text,
-  is_active boolean, is_admin boolean, theme_preference text,
-  dietary_preferences text[], allergies text[], health_conditions text[],
-  cooking_style text, font_size text, created_at timestamptz
-)
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
-  RETURN QUERY
-    SELECT p.id, p.full_name, p.username, u.email, p.is_active, p.is_admin,
-           p.theme_preference,
-           COALESCE(p.dietary_preferences,'{}'), COALESCE(p.allergies,'{}'),
-           COALESCE(p.health_conditions,'{}'), COALESCE(p.cooking_style,''),
-           COALESCE(p.font_size,'medium'), u.created_at
-    FROM public.profiles p JOIN auth.users u ON u.id = p.id
-    WHERE p.id = auth.uid();
-END; $$;
-GRANT EXECUTE ON FUNCTION public.get_my_profile() TO authenticated;
-
 -- Update update_my_preferences to include font_size
 CREATE OR REPLACE FUNCTION public.update_my_preferences(
   p_dietary_preferences text[], p_allergies text[],
