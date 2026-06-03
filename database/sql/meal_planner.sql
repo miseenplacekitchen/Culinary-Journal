@@ -45,44 +45,6 @@ CREATE POLICY "users manage own family profiles" ON family_profiles
   FOR ALL TO authenticated
   USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
--- ── get_approved_recipes(p_limit) ─────────────────────────────────────
--- Returns approved recipes for meal planner recipe picker
-DROP FUNCTION IF EXISTS get_approved_recipes(int);
-DROP FUNCTION IF EXISTS get_approved_recipes(text, int);
-CREATE FUNCTION get_approved_recipes(
-  p_category text DEFAULT NULL,
-  p_limit    int  DEFAULT 100
-)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  RETURN COALESCE(
-    (SELECT jsonb_agg(r ORDER BY r.recipe_name ASC)
-     FROM (
-       SELECT id,
-              recipe_name,
-              recipe_name   AS name,
-              category,
-              origin_country,
-              spice_level,
-              image_url,
-              prep_time_minutes,
-              cook_time_minutes,
-              servings,
-              ingredients,
-              dietary_tags,
-              occasion_tags,
-              health_tags
-       FROM submitted_recipes
-       WHERE status = 'approved'
-         AND (p_category IS NULL OR category = p_category)
-       LIMIT p_limit
-     ) r),
-    '[]'::jsonb
-  );
-END; $$;
-REVOKE ALL ON FUNCTION get_approved_recipes(text, int) FROM PUBLIC;
-GRANT  EXECUTE ON FUNCTION get_approved_recipes(text, int) TO anon, authenticated;
-
 SELECT 'Meal planner ready' AS status;
 
 -- ── Meal plans table + RPCs ────────────────────────────────────────────

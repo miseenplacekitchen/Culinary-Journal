@@ -83,19 +83,3 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION delete_family_profile(uuid) TO authenticated;
 
--- ── DIETARY CARD PUBLIC RPCs (no auth) ───────────────────────────
--- Allows a guest to submit dietary requirements via their token
-CREATE OR REPLACE FUNCTION submit_guest_dietary(
-  p_token   uuid,
-  p_dietary text
-)
-RETURNS void
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  UPDATE event_guests SET
-    dietary_requirements  = p_dietary,
-    dietary_submitted     = true,
-    dietary_submitted_at  = now()
-  WHERE id = p_token;
-END; $$;
-GRANT EXECUTE ON FUNCTION submit_guest_dietary(uuid,text) TO anon, authenticated;
