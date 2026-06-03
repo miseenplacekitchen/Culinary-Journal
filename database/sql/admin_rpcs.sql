@@ -236,14 +236,6 @@ END; $$;
 -- USER MANAGEMENT
 -- ════════════════════════════════════════════════════════════════════
 
-DROP FUNCTION IF EXISTS admin_set_member_tier(uuid, text, text);
-CREATE FUNCTION admin_set_member_tier(p_user_id uuid, p_tier text, p_notes text DEFAULT NULL)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  UPDATE profiles SET subscription_tier = p_tier WHERE id = p_user_id;
-END; $$;
-
 DROP FUNCTION IF EXISTS admin_export_user_data(uuid);
 CREATE FUNCTION admin_export_user_data(p_user_id uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
@@ -256,18 +248,6 @@ BEGIN
     'notes',    (SELECT jsonb_agg(n) FROM user_notes n WHERE user_id = p_user_id),
     'exported_at', NOW()
   );
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_get_tier_stats();
-CREATE FUNCTION admin_get_tier_stats()
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  RETURN (SELECT jsonb_build_object(
-    'free',    COUNT(*) FILTER (WHERE subscription_tier='free' OR subscription_tier IS NULL),
-    'premium', COUNT(*) FILTER (WHERE subscription_tier='premium'),
-    'event',   COUNT(*) FILTER (WHERE subscription_tier='event')
-  ) FROM profiles);
 END; $$;
 
 DROP FUNCTION IF EXISTS admin_get_inactive_users(int);
@@ -790,19 +770,6 @@ END; $$;
 -- SUBSCRIPTIONS / FINANCE
 -- ════════════════════════════════════════════════════════════════════
 
-DROP FUNCTION IF EXISTS admin_get_subscriptions(int, int);
-CREATE FUNCTION admin_get_subscriptions(p_limit int DEFAULT 100, p_offset int DEFAULT 0)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  RETURN (SELECT jsonb_agg(u ORDER BY u.created_at DESC) FROM (
-    SELECT id, full_name, username, email, subscription_tier, created_at
-    FROM profiles
-    WHERE subscription_tier != 'free' AND subscription_tier IS NOT NULL
-    LIMIT p_limit OFFSET p_offset
-  ) u);
-END; $$;
-
 SELECT 'All admin RPCs ready — full backend coverage' AS status;
 
 -- ════════════════════════════════════════════════════════════════════
@@ -973,9 +940,7 @@ SELECT 'admin_rpcs complete — all tables, RPCs and security checks in place' A
 -- ── Revoke public execute from all admin functions ──────────────────────────
 REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_bulk_approve_recipes(uuid[]) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_set_member_tier(uuid, text, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_export_user_data(uuid) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_get_tier_stats() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_inactive_users(int) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_appeals() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_review_appeal(bigint, text, text) FROM PUBLIC;
@@ -1006,7 +971,6 @@ REVOKE ALL ON FUNCTION public.admin_bulk_upsert_brand_mappings(jsonb) FROM PUBLI
 REVOKE ALL ON FUNCTION public.admin_sync_brands_from_ingredients() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_bulk_award_badge(uuid[], text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_bulk_update_field(uuid[], text, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_get_subscriptions(int, int) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_bulk_upsert_ingredients(jsonb) FROM PUBLIC;
 
 SELECT 'admin_rpcs ready' AS status;
