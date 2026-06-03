@@ -83,30 +83,6 @@ END; $$;
 REVOKE ALL ON FUNCTION get_approved_recipes(text, int) FROM PUBLIC;
 GRANT  EXECUTE ON FUNCTION get_approved_recipes(text, int) TO anon, authenticated;
 
--- ── get_my_family_profiles() ──────────────────────────────────────────
--- Returns fields exactly as meal-planner.html reads them:
--- id, name, relationship, dietary_needs, allergies, spice_preference
-DROP FUNCTION IF EXISTS get_my_family_profiles();
-CREATE FUNCTION get_my_family_profiles()
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
-  RETURN COALESCE(
-    (SELECT jsonb_agg(p ORDER BY p.created_at ASC)
-     FROM (
-       SELECT id, name, relationship,
-              COALESCE(dietary_needs, '[]'::jsonb) AS dietary_needs,
-              COALESCE(allergies,     '[]'::jsonb) AS allergies,
-              spice_preference
-       FROM family_profiles
-       WHERE user_id = auth.uid()
-     ) p),
-    '[]'::jsonb
-  );
-END; $$;
-REVOKE ALL ON FUNCTION get_my_family_profiles() FROM PUBLIC;
-GRANT  EXECUTE ON FUNCTION get_my_family_profiles() TO authenticated;
-
 SELECT 'Meal planner ready' AS status;
 
 -- ── Meal plans table + RPCs ────────────────────────────────────────────

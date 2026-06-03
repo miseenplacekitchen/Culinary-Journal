@@ -39,21 +39,6 @@ CREATE POLICY "Users manage own family profiles"
 -- dietary_submitted columns are in table_planner.sql
 
 -- ── FAMILY PROFILE RPCs ──────────────────────────────────────────
-DROP FUNCTION IF EXISTS public.get_my_family_profiles();
-CREATE OR REPLACE FUNCTION get_my_family_profiles()
-RETURNS SETOF public.family_profiles
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
-  RETURN QUERY SELECT * FROM public.family_profiles
-    WHERE user_id = auth.uid()
-    ORDER BY CASE relationship
-      WHEN 'self'    THEN 1 WHEN 'partner' THEN 2
-      WHEN 'child'   THEN 3 WHEN 'toddler' THEN 4 WHEN 'baby' THEN 5
-      WHEN 'elderly' THEN 6 ELSE 7 END, name;
-END; $$;
-GRANT EXECUTE ON FUNCTION get_my_family_profiles() TO authenticated;
-
 DROP FUNCTION IF EXISTS public.upsert_family_profile(uuid,text,text,text,jsonb,text,jsonb,text[],text);
 CREATE OR REPLACE FUNCTION upsert_family_profile(
   p_id               uuid    DEFAULT NULL,
@@ -99,29 +84,6 @@ END; $$;
 GRANT EXECUTE ON FUNCTION delete_family_profile(uuid) TO authenticated;
 
 -- ── DIETARY CARD PUBLIC RPCs (no auth) ───────────────────────────
--- Allows a guest to load their card via UUID token (= guest ID)
-DROP FUNCTION IF EXISTS public.get_guest_card(uuid);
-CREATE OR REPLACE FUNCTION get_guest_card(p_token uuid)
-RETURNS TABLE (
-  guest_name  text,
-  event_name  text,
-  event_date  date,
-  event_type  text,
-  dietary_requirements text,
-  already_submitted boolean
-)
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  RETURN QUERY
-    SELECT g.name, e.name, e.event_date, e.event_type,
-           g.dietary_requirements,
-           COALESCE(g.dietary_submitted, false)
-    FROM event_guests g
-    JOIN public.events e ON e.id = g.event_id
-    WHERE g.id = p_token;
-END; $$;
-GRANT EXECUTE ON FUNCTION get_guest_card(uuid) TO anon, authenticated;
-
 -- Allows a guest to submit dietary requirements via their token
 CREATE OR REPLACE FUNCTION submit_guest_dietary(
   p_token   uuid,
