@@ -116,12 +116,6 @@ $$;
 GRANT EXECUTE ON FUNCTION public.get_my_profile() TO authenticated;
 
 -- Update name and/or username
-DO $$ DECLARE r record;
-BEGIN
-  FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
-           WHERE proname = 'update_my_profile' AND pronamespace = 'public'::regnamespace
-  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
-END $$;
 CREATE OR REPLACE FUNCTION public.update_my_profile(
   new_full_name text,
   new_username  text
@@ -150,9 +144,16 @@ BEGIN
          username  = COALESCE(new_username,  username)
    WHERE id = auth.uid();
   RETURN QUERY
-    SELECT p.id, p.full_name, p.username, p.email,
-           p.is_active, p.theme_preference, p.created_at
-    FROM public.profiles p WHERE p.id = auth.uid();
+    SELECT p.id,
+           p.full_name::text,
+           p.username::text,
+           u.email::text,
+           p.is_active,
+           p.theme_preference::text,
+           u.created_at
+    FROM public.profiles p
+    JOIN auth.users u ON u.id = p.id
+    WHERE p.id = auth.uid();
 END;
 $$;
 GRANT EXECUTE ON FUNCTION public.update_my_profile(text,text) TO authenticated;
