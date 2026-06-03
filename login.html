@@ -468,7 +468,19 @@ async function supaAuth(endpoint, body) {
     body: JSON.stringify(body)
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error_description || data.msg || 'Authentication failed');
+  if (!res.ok) {
+    const raw = (data.error_description || data.msg || data.error || '').toLowerCase();
+    let friendly = 'Something went wrong. Please try again.';
+    if (raw.includes('invalid') || raw.includes('password') || raw.includes('credentials'))
+      friendly = 'Incorrect password. Please try again.';
+    else if (raw.includes('email') || raw.includes('phone') || raw.includes('user not found'))
+      friendly = 'No account found with those details.';
+    else if (raw.includes('too many') || raw.includes('rate'))
+      friendly = 'Too many attempts. Please wait a moment and try again.';
+    else if (raw.includes('network') || raw.includes('fetch'))
+      friendly = 'Connection error. Please check your internet and try again.';
+    throw new Error(friendly);
+  }
   return data;
 }
 
