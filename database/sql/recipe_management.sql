@@ -51,44 +51,6 @@ DROP POLICY IF EXISTS "Admin full access" ON public.recipe_collections;
 CREATE POLICY "Admin full access" ON public.recipe_collections FOR ALL USING (is_admin()) WITH CHECK (is_admin());
 
 -- ── 3. Enhanced admin_get_recipes ────────────────────────────────
-DROP FUNCTION IF EXISTS public.admin_get_recipes(text,text,text,int,int);
-DROP FUNCTION IF EXISTS public.admin_get_recipes(text,text,text,integer,integer);
-CREATE FUNCTION public.admin_get_recipes(
-  p_status   TEXT DEFAULT NULL,
-  p_search   TEXT DEFAULT NULL,
-  p_category TEXT DEFAULT NULL,
-  p_limit    INT  DEFAULT 100,
-  p_offset   INT  DEFAULT 0
-)
-RETURNS json LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-DECLARE result json;
-BEGIN
-  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
-  SELECT COALESCE(json_agg(row_to_json(t)),'[]'::json) FROM (
-    SELECT
-      r.id, r.recipe_name, r.native_title, r.category, r.status,
-      r.spice_level, r.origin_continent, r.origin_country, r.origin_state,
-      r.prep_time_minutes, r.cook_time_minutes, r.servings,
-      r.source_type, r.visibility, r.is_featured, r.is_recipe_of_week,
-      r.recipe_of_week_expires, r.submitted_at, r.reviewed_at,
-      r.reviewer_notes, r.photo_url, r.credit_name, r.credit_handle,
-      r.dietary_tags, r.health_tags, r.occasion_tags, r.style_tags,
-      p.username, p.full_name
-    FROM public.submitted_recipes r
-    LEFT JOIN public.profiles p ON p.id = r.user_id
-    WHERE (p_status IS NULL OR r.status = p_status)
-    AND   (p_search IS NULL OR p_search = '' OR
-           r.recipe_name ILIKE '%'||p_search||'%' OR
-           p.username    ILIKE '%'||p_search||'%')
-    AND   (p_category IS NULL OR p_category = '' OR r.category = p_category)
-    ORDER BY r.submitted_at DESC
-    LIMIT p_limit OFFSET p_offset
-  ) t INTO result;
-  RETURN result;
-END;
-$$;
-
 -- ── 4. Get full recipe detail ─────────────────────────────────────
 DROP FUNCTION IF EXISTS public.admin_get_recipe_detail(uuid);
 CREATE OR REPLACE FUNCTION public.admin_get_recipe_detail(p_id UUID)
@@ -108,23 +70,6 @@ END;
 $$;
 
 -- ── 5. Review recipe (approve/reject/reset) ───────────────────────
-DROP FUNCTION IF EXISTS public.admin_review_recipe(uuid, text, text) CASCADE;
-DROP FUNCTION IF EXISTS admin_review_recipe(uuid, text, text);
-CREATE OR REPLACE FUNCTION public.admin_review_recipe(
-  p_id UUID, p_status TEXT, p_notes TEXT DEFAULT NULL
-)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-BEGIN
-  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
-  UPDATE public.submitted_recipes SET
-    status = p_status,
-    reviewer_notes = p_notes,
-    reviewed_at = now()
-  WHERE id = p_id;
-END;
-$$;
-
 -- ── 6. Edit recipe fields before approving ────────────────────────
 DROP FUNCTION IF EXISTS public.admin_edit_recipe(uuid, text, text, text, text, text, text, integer);
 CREATE OR REPLACE FUNCTION public.admin_edit_recipe(
@@ -182,25 +127,6 @@ END;
 $$;
 
 -- ── 9. Get recipe stats ───────────────────────────────────────────
-DROP FUNCTION IF EXISTS admin_get_stats();
-CREATE OR REPLACE FUNCTION public.admin_get_stats()
-RETURNS json LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-DECLARE result json;
-BEGIN
-  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
-  SELECT json_build_object(
-    'total',    (SELECT COUNT(*) FROM public.submitted_recipes),
-    'pending',  (SELECT COUNT(*) FROM public.submitted_recipes WHERE status='pending'),
-    'approved', (SELECT COUNT(*) FROM public.submitted_recipes WHERE status='approved'),
-    'rejected', (SELECT COUNT(*) FROM public.submitted_recipes WHERE status='rejected'),
-    'featured', (SELECT COUNT(*) FROM public.submitted_recipes WHERE is_featured = true),
-    'recipe_of_week', (SELECT recipe_name FROM public.submitted_recipes WHERE is_recipe_of_week = true LIMIT 1)
-  ) INTO result;
-  RETURN result;
-END;
-$$;
-
 -- ── 10. Collections CRUD ──────────────────────────────────────────
 DROP FUNCTION IF EXISTS admin_get_collections();
 CREATE OR REPLACE FUNCTION public.admin_get_collections()
@@ -252,13 +178,10 @@ END;
 $$;
 
 -- ── Grants ────────────────────────────────────────────────────────
-GRANT EXECUTE ON FUNCTION public.admin_get_recipes(text,text,text,integer,integer)   TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_get_recipe_detail(uuid)                        TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_review_recipe(uuid,text,text)                  TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_edit_recipe(uuid,text,text,text,text,text,text,integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_feature_recipe(uuid,boolean)                   TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_set_recipe_of_week(uuid)                       TO authenticated;
-GRANT EXECUTE ON FUNCTION public.admin_get_stats()                                    TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_get_collections()                              TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_save_collection(bigint,text,text,uuid[],boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_delete_collection(bigint)                      TO authenticated;
