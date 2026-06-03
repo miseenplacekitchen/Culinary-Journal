@@ -101,7 +101,7 @@ const profType = params.get('type') || 'ingredient';
 const profSlug = params.get('slug') || '';
 const meta     = TYPE_META[profType] || TYPE_META.ingredient;
 
-function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 function section(title, content) {
   if (!content) return '';

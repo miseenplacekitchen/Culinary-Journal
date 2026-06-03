@@ -678,7 +678,8 @@ function hide(id) { document.getElementById(id).style.display='none'; }
 // ══════════════════════════════════════════════════════════
 loadCategories();
 </script>
-<script src="nav-init.js">
+<script src="nav-init.js"></script>
+<script>
 // ══════════════════════════════════════════════════════════
 //  COMMUNITY RECIPES
 // ══════════════════════════════════════════════════════════
@@ -717,8 +718,30 @@ function buildChefFilter() {
   var row = document.getElementById('cr-chef-row');
   var filterEl = document.getElementById('cr-chef-filters');
   if (!row || !filterEl) return;
-  filterEl.innerHTML = '<button class="cr-filter active" onclick="filterByChef('',this)">All</button>' +
-    chefNames.map(function(n){return '<button class="cr-filter" onclick="filterByChef(''+n.replace(/'/g,"\'")+'',this)">'+n+'</button>';}).join('');
+  // Build chef filter buttons via DOM — avoids quote-escaping issues entirely
+  var allBtn = document.createElement('button');
+  allBtn.className = 'cr-filter active';
+  allBtn.dataset.chef = '';
+  allBtn.textContent = 'All';
+  filterEl.replaceChildren(allBtn);
+  chefNames.forEach(function(n) {
+    var btn = document.createElement('button');
+    btn.className = 'cr-filter';
+    btn.dataset.chef = n;
+    btn.textContent = n;
+    filterEl.appendChild(btn);
+  });
+  // Event delegation for chef filter buttons
+  if (!filterEl._delegated) {
+    filterEl._delegated = true;
+    filterEl.addEventListener('click', function(e) {
+      var btn = e.target.closest('.cr-filter');
+      if (!btn) return;
+      filterEl.querySelectorAll('.cr-filter').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      filterByChef(btn.dataset.chef || '', btn);
+    });
+  }
   row.style.display = 'block';
 }
 
@@ -751,22 +774,64 @@ function renderCommunityRecipes() {
     grid.innerHTML = '<div class="cr-empty">No recipes match this filter.</div>';
     return;
   }
-  grid.innerHTML = filtered.map(function(r) {
+  // Build community recipe cards via DOM — no DB fields in innerHTML
+  grid.replaceChildren();
+  filtered.forEach(function(r) {
     var emoji = CR_CAT_EMOJI[r.category] || '🍳';
-    var chefLine = '';
-    if (r.credit_name) {
-      chefLine = '<div class="cr-chef">by <a href="user.html?u=' + (r.username||r.credit_handle||'').replace(/^@/,'') + '" style="color:var(--accent);text-decoration:none">' + r.credit_name + '</a></div>';
-    } else if (r.username) {
-      chefLine = '<div class="cr-chef">by <a href="user.html?u=' + r.username + '" style="color:var(--accent);text-decoration:none">@' + r.username + '</a></div>';
+
+    // Validate image URL — only allow http/https
+    var safeImg = (r.image_url && /^https?:\/\//.test(r.image_url)) ? r.image_url : null;
+
+    // Card link
+    var card = document.createElement('a');
+    card.className = 'cr-card';
+    card.href = 'recipe-page.html?id=' + encodeURIComponent(r.id || '');
+
+    // Image or emoji
+    var imgWrap = document.createElement('div');
+    imgWrap.className = 'cr-img';
+    if (safeImg) {
+      var img = document.createElement('img');
+      img.src = safeImg; img.loading = 'lazy';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover';
+      imgWrap.appendChild(img);
+    } else {
+      imgWrap.textContent = emoji;
     }
-    return '<a class="cr-card" href="recipe-page.html?id=' + r.id + '">' +
-      '<div class="cr-img">' + (r.image_url ? '<img src="'+r.image_url+'" loading="lazy" style="width:100%;height:100%;object-fit:cover">' : emoji) + '</div>' +
-      '<div class="cr-body">' +
-        '<div class="cr-name">' + (r.recipe_name||'') + '</div>' +
-        '<div class="cr-meta">' + (r.category||'') + (r.origin_country?' · '+r.origin_country:'') + '</div>' +
-        chefLine +
-      '</div></a>';
-  }).join('');
+    card.appendChild(imgWrap);
+
+    // Body
+    var body = document.createElement('div');
+    body.className = 'cr-body';
+
+    var nameEl = document.createElement('div');
+    nameEl.className = 'cr-name';
+    nameEl.textContent = r.recipe_name || '';
+    body.appendChild(nameEl);
+
+    var metaEl = document.createElement('div');
+    metaEl.className = 'cr-meta';
+    metaEl.textContent = (r.category || '') + (r.origin_country ? ' · ' + r.origin_country : '');
+    body.appendChild(metaEl);
+
+    // Chef line
+    var handle = (r.username || r.credit_handle || '').replace(/^@/, '');
+    var displayName = r.credit_name || (r.username ? '@' + r.username : '');
+    if (displayName) {
+      var chefEl = document.createElement('div');
+      chefEl.className = 'cr-chef';
+      chefEl.textContent = 'by ';
+      var chefLink = document.createElement('a');
+      chefLink.href = 'user.html?u=' + encodeURIComponent(handle);
+      chefLink.style.cssText = 'color:var(--accent);text-decoration:none';
+      chefLink.textContent = displayName;
+      chefEl.appendChild(chefLink);
+      body.appendChild(chefEl);
+    }
+
+    card.appendChild(body);
+    grid.appendChild(card);
+  });
 }
 
 // Load community recipes on page load

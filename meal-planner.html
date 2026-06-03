@@ -202,7 +202,7 @@
 
 <script src="nav-init.js"></script>
 <script>
-function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 const MEALS = ['Breakfast','Lunch','Dinner','Snack'];
 const DAYS  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];

@@ -80,7 +80,7 @@ const params  = new URLSearchParams(window.location.search);
 let currentType = params.get('type') || 'ingredient';
 let searchTimer = null;
 
-function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 function buildTabs() {
   const wrap = document.getElementById('lib-tabs');

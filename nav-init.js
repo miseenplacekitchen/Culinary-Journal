@@ -322,7 +322,7 @@ function buildSectionNav() {
                 (fullName ? '<div class="cj-menu-name">' + escapeHtml(fullName) + '</div>' : '') +
                 '<div class="cj-menu-handle">@' + escapeHtml(username || 'me') + '</div>' +
               '</div><div class="cj-menu-sep"></div>' : '') +
-            (isAdmin ? item('dashboard.html', IC.dashboard, 'Admin Panel') + '<div class="cj-menu-sep"></div>' : '') +
+            (isAdmin ? item('dashboard.html', IC.dashboard, 'Admin Panel') + item('library-submit.html', IC.drafts, '📚 Submit Library Profile') + '<div class="cj-menu-sep"></div>' : '') +
             item('profile.html',       IC.profile, 'My Profile') +
             item('my-dashboard.html',  IC.profile, 'My Dashboard') +
             '<div class="cj-menu-sep"></div>' +

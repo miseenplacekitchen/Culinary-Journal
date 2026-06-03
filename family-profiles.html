@@ -208,7 +208,7 @@ async function rpc(fn, params) {
   return res.json().catch(function(){return null;});
 }
 
-function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 async function load() {
   const session = JSON.parse(localStorage.getItem('tcj_session')||'null');

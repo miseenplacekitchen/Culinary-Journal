@@ -57,24 +57,37 @@ async function buildSMPages(container) {
     var tbody = document.createElement('tbody');
     pages.forEach(function(p) {
       var tr = document.createElement('tr'); tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
-      var vis = '<select id="smv-'+(p.path||'')+'" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)">'+
+      var vis = '<select id="smv-'+esc(p.path||'')+'" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)">'+
         [{v:'public',l:'Public — Everyone'},{v:'registered',l:'Registered Members'},{v:'paid',l:'Paid Members Only'},{v:'hidden',l:'Hidden'}].map(function(o){return '<option value="'+o.v+'"'+(p.visibility===o.v?' selected':'')+'>'+o.l+'</option>';}).join('')+'</select>';
-      tr.innerHTML = '<td class="ap-td" style="font-size:13px;font-weight:500;color:var(--text-high)">'+(p.name||'')+'</td>'+
-        '<td class="ap-td" style="font-size:11px;color:var(--text-mid)">'+(p.path||'')+'</td>'+
+      tr.innerHTML = '<td class="ap-td" style="font-size:13px;font-weight:500;color:var(--text-high)">'+esc(p.name||'')+'</td>'+
+        '<td class="ap-td" style="font-size:11px;color:var(--text-mid)">'+esc(p.path||'')+'</td>'+
         '<td class="ap-td">'+vis+'</td>'+
-        '<td class="ap-td" style="text-align:center"><input type="checkbox" id="smcs-'+(p.path||'')+'"'+(p.coming_soon?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent)"></td>'+
+        '<td class="ap-td" style="text-align:center"><input type="checkbox" id="smcs-'+esc(p.path||'')+'"'+(p.coming_soon?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent)"></td>'+
         '<td class="ap-td"></td>';
       var seoWrap = document.createElement('tr');
       seoWrap.style.cssText = 'border-bottom:1px solid rgba(255,255,255,0.04)';
       var seoCel = document.createElement('td');
       seoCel.setAttribute('colspan','5');
       seoCel.style.cssText = 'padding:0 8px 10px;display:none';
-      seoCel.id = 'seo-row-' + (p.path||'');
-      seoCel.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 0">' +
-        '<div><label style="display:block;font-size:10px;text-transform:uppercase;color:var(--text-mid);margin-bottom:3px">Meta Title</label>' +
-        '<input id="seo-t-'+(p.path||'')+'" value="'+(S['seo_'+p.path+'_title']||'')+'" style="width:100%;box-sizing:border-box;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-high)"></div>' +
-        '<div><label style="display:block;font-size:10px;text-transform:uppercase;color:var(--text-mid);margin-bottom:3px">Meta Description</label>' +
-        '<input id="seo-d-'+(p.path||'')+'" value="'+(S['seo_'+p.path+'_desc']||'')+'" style="width:100%;box-sizing:border-box;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-high)"></div></div>';
+      seoCel.id = 'seo-row-' + esc(p.path||'');
+      // Build SEO inputs via DOM to avoid unescaped values in innerHTML
+      var seoGrid = document.createElement('div');
+      seoGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 0';
+      var seoMakeLabeledInput = function(labelText, inputId, inputValue) {
+        var wrap = document.createElement('div');
+        var lbl  = document.createElement('label');
+        lbl.style.cssText = 'display:block;font-size:10px;text-transform:uppercase;color:var(--text-mid);margin-bottom:3px';
+        lbl.textContent = labelText;
+        var inp  = document.createElement('input');
+        inp.id   = inputId;
+        inp.value = inputValue;
+        inp.style.cssText = 'width:100%;box-sizing:border-box;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-high)';
+        wrap.appendChild(lbl); wrap.appendChild(inp);
+        return wrap;
+      };
+      seoGrid.appendChild(seoMakeLabeledInput('Meta Title',       'seo-t-'+(p.path||''), S['seo_'+(p.path||'')+'_title']||''));
+      seoGrid.appendChild(seoMakeLabeledInput('Meta Description', 'seo-d-'+(p.path||''), S['seo_'+(p.path||'')+'_desc']||''));
+      seoCel.appendChild(seoGrid);
       seoWrap.appendChild(seoCel);
       tbody.appendChild(seoWrap);
       var btn = document.createElement('button'); btn.textContent = 'Save';
@@ -124,7 +137,7 @@ async function buildSMAnnouncements(container) {
       anns.forEach(function(a){
         var card=document.createElement('div');card.style.cssText='background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;gap:10px;justify-content:space-between';
         var left=document.createElement('div');left.style.flex='1';
-        left.innerHTML='<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:rgba(0,0,0,0.3);color:'+(TC[a.type]||'var(--text-mid)')+'">'+(a.type||'').toUpperCase()+'</span><div style="font-size:13px;color:var(--text-high);margin-top:6px">'+(a.text||'')+'</div>';
+        var annType = document.createElement('span'); annType.style.cssText = 'font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:rgba(0,0,0,0.3);color:'+(TC[a.type]||'var(--text-mid)'); annType.textContent = (a.type||'').toUpperCase(); var annText = document.createElement('div'); annText.style.cssText = 'font-size:13px;color:var(--text-high);margin-top:6px'; annText.textContent = a.text||''; left.appendChild(annType); left.appendChild(annText);
         var dBtn=document.createElement('button');dBtn.style.cssText="padding:4px 10px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-size:11px;cursor:pointer;flex-shrink:0";dBtn.textContent='Delete';
         dBtn.addEventListener('click',async function(){if(!confirm('Delete?'))return;
           try{var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_announcements?id=eq.'+a.id,{method:'DELETE'});
@@ -148,9 +161,24 @@ async function buildSMEmail(container) {
     container.innerHTML='<p style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px">Use {{name}}, {{recipe_name}}, {{reset_link}} as placeholders.</p>';
     templates.forEach(function(t){
       var sec=document.createElement('div');sec.style.cssText='background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:14px';
-      sec.innerHTML='<div style="font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px">'+(t.name||t.key||'')+'</div>'+
-        '<div style="margin-bottom:8px"><label style="display:block;font-size:10px;color:var(--text-mid);margin-bottom:3px">Subject</label><input id="em-s-'+t.key+'" value="'+(t.subject||'')+'" style="width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--text-high)"></div>'+
-        '<div style="margin-bottom:10px"><label style="display:block;font-size:10px;color:var(--text-mid);margin-bottom:3px">Body</label><textarea id="em-b-'+t.key+'" rows="4" style="width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--text-high);resize:vertical">'+(t.body||'')+'</textarea></div>';
+      var prevSec = sec; prevSec._tkey = t.key; prevSec._tbody = t.body||''; // Build email template inputs via DOM — no user data in innerHTML
+      var secTitle = document.createElement('div');
+      secTitle.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px';
+      secTitle.textContent = t.name || t.key || '';
+      sec.appendChild(secTitle);
+
+      var subWrap = document.createElement('div'); subWrap.style.marginBottom = '8px';
+      var subLbl = document.createElement('label'); subLbl.style.cssText = 'display:block;font-size:10px;color:var(--text-mid);margin-bottom:3px'; subLbl.textContent = 'Subject';
+      var subInp = document.createElement('input'); subInp.id = 'em-s-'+t.key; subInp.value = t.subject||'';
+      subInp.style.cssText = 'width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--text-high)';
+      subWrap.appendChild(subLbl); subWrap.appendChild(subInp); sec.appendChild(subWrap);
+
+      var bodyWrap = document.createElement('div'); bodyWrap.style.marginBottom = '10px';
+      var bodyLbl = document.createElement('label'); bodyLbl.style.cssText = 'display:block;font-size:10px;color:var(--text-mid);margin-bottom:3px'; bodyLbl.textContent = 'Body';
+      var ta = document.createElement('textarea'); ta.id = 'em-b-'+t.key; ta.rows = 4;
+      ta.style.cssText = 'width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--text-high);resize:vertical';
+      ta.value = prevSec._tbody || '';
+      bodyWrap.appendChild(bodyLbl); bodyWrap.appendChild(ta); sec.appendChild(bodyWrap);
       var btn=document.createElement('button');btn.className='ing-add-btn';btn.textContent='Save';
       btn.addEventListener('click',(function(key,b){return async function(){b.disabled=true;b.textContent='Saving\u2026';
         try{var r=await apiFetch(SUPABASE_URL+'/rest/v1/email_templates',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:key,name:key.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();}),subject:document.getElementById('em-s-'+key).value,body:document.getElementById('em-b-'+key).value})});
@@ -286,16 +314,28 @@ function buildLibPanel(panel, items) {
       '<td style="padding:8px 12px">' +
       '<a href="library-submit.html?type=' + LIB_CURRENT_TYPE + '&id=' + esc(p.id) + '" target="_blank" ' +
       'style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--accent);margin-right:8px">Edit</a>' +
-      '<button onclick="libTogglePublish(\'' + esc(p.id) + '\',\'' + esc(p.status) + '\')" ' +
+      '<button data-action="lib-toggle" data-lid="' + esc(p.id) + '" data-lstatus="' + esc(p.status) + '" ' +
       'style="font-family:DM Sans,sans-serif;font-size:11px;background:none;border:none;cursor:pointer;color:var(--text-mid)">' +
       (p.status==='published'?'Unpublish':'Publish') + '</button>' +
-      '<button onclick="libDelete(\'' + esc(p.id) + '\',\'' + esc(p.name) + '\')" ' +
+      '<button data-action="lib-delete" data-lid="' + esc(p.id) + '" data-lname="' + esc(p.name) + '" ' +
       'style="font-family:DM Sans,sans-serif;font-size:11px;background:none;border:none;cursor:pointer;color:var(--text-danger);margin-left:8px">Delete</button>' +
       '</td></tr>';
   });
 
   html += '</tbody></table></div>';
   panel.innerHTML = html;
+
+  // Event delegation — no user data in onclick
+  panel.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    var action  = btn.dataset.action;
+    var lid     = btn.dataset.lid;
+    var lstatus = btn.dataset.lstatus;
+    var lname   = btn.dataset.lname;
+    if (action === 'lib-toggle' && lid) libTogglePublish(lid, lstatus);
+    if (action === 'lib-delete' && lid) libDelete(lid, lname);
+  }, { once: false });
 }
 
 async function libTogglePublish(id, currentStatus) {

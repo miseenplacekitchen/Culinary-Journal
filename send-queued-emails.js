@@ -1,14 +1,39 @@
-// Supabase Edge Function: send-queued-emails
-// Deploy to Supabase: supabase functions deploy send-queued-emails
-// Set secret: supabase secrets set RESEND_API_KEY=re_your_key_here
+// ══════════════════════════════════════════════════════════════════════
+// HOW TO DEPLOY THIS EDGE FUNCTION
+// ══════════════════════════════════════════════════════════════════════
+// 1. Install Supabase CLI: npm install -g supabase
+// 2. Login: supabase login
+// 3. Link project: supabase link --project-ref kzywmodvfbyexqgipcjt
+// 4. Create function folder:
+//    mkdir -p supabase/functions/send-queued-emails
+//    cp send-queued-emails.js supabase/functions/send-queued-emails/index.ts
+// 5. Set secret: supabase secrets set RESEND_API_KEY=re_your_key_here
+// 6. Deploy: supabase functions deploy send-queued-emails
+// 7. Schedule (run in Supabase SQL editor — pg_net named-argument syntax):
+//    SELECT cron.schedule(
+//      'send-queued-emails',
+//      '*/5 * * * *',
+//      $$
+//        SELECT net.http_post(
+//          url     := 'https://kzywmodvfbyexqgipcjt.supabase.co/functions/v1/send-queued-emails',
+//          headers := jsonb_build_object(
+//            'Content-Type',  'application/json',
+//            'Authorization', 'Bearer YOUR_CRON_SECRET'
+//          ),
+//          body    := '{}'::jsonb
+//        )
+//      $$
+//    );
 //
-// Call via cron (in Supabase SQL editor):
-//   SELECT cron.schedule('send-emails', '*/5 * * * *',
-//     $$SELECT net.http_post('https://kzywmodvfbyexqgipcjt.supabase.co/functions/v1/send-queued-emails',
-//       '{}', 'application/json',
-//       ARRAY[net.http_header('Authorization','Bearer YOUR_SERVICE_ROLE_KEY')])$$);
+//    -- To verify the cron job was created:
+//    SELECT * FROM cron.job WHERE jobname = 'send-queued-emails';
 //
-// Or call manually via: POST /functions/v1/send-queued-emails
+//    -- To remove it:
+//    SELECT cron.unschedule('send-queued-emails');
+// ══════════════════════════════════════════════════════════════════════
+// Note: YOUR_CRON_SECRET above is the same value you set via:
+//       supabase secrets set CRON_SECRET=your-random-secret
+
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -16,6 +41,25 @@ const RESEND_API = 'https://api.resend.com/emails';
 const FROM       = 'The Culinary Journal <noreply@theculinaryjournal.site>';
 
 Deno.serve(async (req) => {
+  // Verify caller using a shared cron secret (set via Supabase secrets)
+  const CRON_SECRET = Deno.env.get('CRON_SECRET');
+  // CRON_SECRET is required — set it via: supabase secrets set CRON_SECRET=your-secret
+  if (!CRON_SECRET) {
+    return new Response('CRON_SECRET not configured', { status: 500 });
+  }
+  const authHeader = req.headers.get('Authorization') || '';
+  const provided   = authHeader.replace('Bearer ', '').trim();
+  // Constant-time comparison to prevent timing attacks
+  const encoder    = new TextEncoder();
+  const a = encoder.encode(provided);
+  const b = encoder.encode(CRON_SECRET);
+  let mismatch = a.length !== b.length ? 1 : 0;
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    mismatch |= (a[i] ?? 0) ^ (b[i] ?? 0);
+  }
+  if (mismatch !== 0) {
+    return new Response('Unauthorized', { status: 401 });
+  }
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL'),

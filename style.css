@@ -30,6 +30,31 @@
   --text-muted:    var(--text-mid);
 }
 
+/* Midnight Slate — default theme, also selectable explicitly */
+.theme-midnight-slate  {
+  --accent:        #C4973B;
+  --accent-border: rgba(196,151,59,0.35);
+  --accent-glow:   rgba(196,151,59,0.12);
+  --text-high:     rgba(255,255,255,0.92);
+  --text-mid:      rgba(255,255,255,0.55);
+  --text-low:      rgba(255,255,255,0.25);
+  --text-ghost:    rgba(255,255,255,0.07);
+  --border:        rgba(255,255,255,0.08);
+  --overlay-dark:  rgba(0,0,0,0.92);
+  --overlay-mid:   rgba(5,3,2,0.72);
+  --overlay-light: rgba(0,0,0,0.85);
+  --nav-bg:        rgba(0,0,0,0.60);
+  --tab-bg:        rgba(0,0,0,0.45);
+  --card-bg:       rgba(255,255,255,0.04);
+  --feature-bg:    rgba(0,0,0,0.38);
+  --footer-bg:     rgba(0,0,0,0.45);
+  --bg:            #0f1011;
+  --surface:       rgba(255,255,255,0.04);
+  /* Aliases for compatibility with recipe-page and submit-recipe */
+  --text:          var(--text-high);
+  --text-muted:    var(--text-mid);
+}
+
 /* ── RESET ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
