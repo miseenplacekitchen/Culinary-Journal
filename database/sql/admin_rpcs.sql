@@ -26,7 +26,6 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS flagged             boolean DEFAUL
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS subscription_tier   text DEFAULT 'free';
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS login_method        text DEFAULT 'email';
 
-
 -- ══════════════════════════════════════════════════════════════════════
 -- Admin RPCs — The Culinary Journal
 -- All signatures match dashboard.html calls exactly
@@ -296,14 +295,6 @@ BEGIN
   RETURN COALESCE(v_rows,'[]'::jsonb);
 END; $$;
 
-DROP FUNCTION IF EXISTS admin_get_recipe_detail(uuid);
-CREATE FUNCTION admin_get_recipe_detail(p_id uuid)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  RETURN (SELECT row_to_json(r)::jsonb FROM submitted_recipes r WHERE id = p_id);
-END; $$;
-
 DROP FUNCTION IF EXISTS admin_review_recipe(uuid, text, text);
 CREATE FUNCTION admin_review_recipe(p_id uuid, p_status text, p_notes text DEFAULT NULL)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
@@ -322,44 +313,6 @@ BEGIN
       CASE p_status WHEN 'approved' THEN 'Your recipe has been published!'
                     ELSE 'Your recipe was not approved. ' || COALESCE(p_notes,'') END);
   END IF;
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_edit_recipe(uuid, text, text, text, text, text, text, integer);
-CREATE FUNCTION admin_edit_recipe(
-  p_id uuid, p_recipe_name text DEFAULT NULL, p_category text DEFAULT NULL,
-  p_spice_level text DEFAULT NULL, p_native_title text DEFAULT NULL,
-  p_introduction text DEFAULT NULL, p_cooking_notes text DEFAULT NULL,
-  p_servings integer DEFAULT NULL
-)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  UPDATE submitted_recipes SET
-    recipe_name   = COALESCE(p_recipe_name,   recipe_name),
-    category      = COALESCE(p_category,      category),
-    spice_level   = COALESCE(p_spice_level,   spice_level),
-    native_title  = COALESCE(p_native_title,  native_title),
-    introduction  = COALESCE(p_introduction,  introduction),
-    cooking_notes = COALESCE(p_cooking_notes, cooking_notes),
-    servings      = COALESCE(p_servings,      servings)
-  WHERE id = p_id;
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_feature_recipe(uuid, boolean);
-CREATE FUNCTION admin_feature_recipe(p_id uuid, p_featured boolean)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  UPDATE submitted_recipes SET is_featured = p_featured WHERE id = p_id;
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_set_recipe_of_week(uuid);
-CREATE FUNCTION admin_set_recipe_of_week(p_id uuid)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  UPDATE submitted_recipes SET is_recipe_of_week = false WHERE is_recipe_of_week = true;
-  UPDATE submitted_recipes SET is_recipe_of_week = true  WHERE id = p_id;
 END; $$;
 
 DROP FUNCTION IF EXISTS admin_bulk_approve_recipes(uuid[]);
@@ -693,46 +646,6 @@ END; $$;
 -- ════════════════════════════════════════════════════════════════════
 -- COLLECTIONS
 -- ════════════════════════════════════════════════════════════════════
-
-DROP FUNCTION IF EXISTS admin_get_collections();
-CREATE FUNCTION admin_get_collections()
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  RETURN (SELECT jsonb_agg(c ORDER BY c.created_at DESC) FROM (
-    SELECT id, name, description, recipe_ids, published, created_at,
-           array_length(recipe_ids,1) AS recipe_count
-    FROM collections
-  ) c);
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_save_collection(bigint, text, text, uuid[], boolean);
-CREATE FUNCTION admin_save_collection(
-  p_id bigint, p_name text, p_description text DEFAULT NULL,
-  p_recipe_ids uuid[] DEFAULT '{}', p_published boolean DEFAULT false
-)
-RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_id bigint;
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  IF p_id > 0 THEN
-    UPDATE collections SET name=p_name, description=p_description,
-      recipe_ids=p_recipe_ids, published=p_published WHERE id=p_id;
-    RETURN p_id;
-  ELSE
-    INSERT INTO collections (name, description, recipe_ids, published)
-    VALUES (p_name, p_description, p_recipe_ids, p_published) RETURNING id INTO v_id;
-    RETURN v_id;
-  END IF;
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_delete_collection(bigint);
-CREATE FUNCTION admin_delete_collection(p_id bigint)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  DELETE FROM collections WHERE id=p_id;
-END; $$;
 
 -- ════════════════════════════════════════════════════════════════════
 -- AUDIT LOG
@@ -1434,35 +1347,13 @@ BEGIN
 END; $$;
 
 -- queue_email — matches email_templates.sql signature exactly
-DROP FUNCTION IF EXISTS queue_email(text, text, text, jsonb);
-CREATE FUNCTION queue_email(
-  p_template_key text, p_to_email text,
-  p_to_name text DEFAULT NULL, p_variables jsonb DEFAULT '{}'
-)
-RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_id uuid;
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='email_queue') THEN
-    RETURN NULL;
-  END IF;
-  INSERT INTO email_queue (template_key, to_email, to_name, variables)
-  VALUES (p_template_key, p_to_email, p_to_name, p_variables)
-  RETURNING id INTO v_id;
-  RETURN v_id;
-END; $$;
-
 SELECT 'admin_rpcs complete — all tables, RPCs and security checks in place' AS status;
 
 -- ── Revoke public execute from all admin functions ──────────────────────────
 REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_stats() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_recipes(text, text, text, int, int) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_get_recipe_detail(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_review_recipe(uuid, text, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_edit_recipe(uuid, text, text, text, text, text, text, integer) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_feature_recipe(uuid, boolean) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_set_recipe_of_week(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_bulk_approve_recipes(uuid[]) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_count_users(text, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_users(text, text, int, int) FROM PUBLIC;
@@ -1486,9 +1377,6 @@ REVOKE ALL ON FUNCTION public.admin_get_recipe_requests(text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_update_recipe_request(bigint, text, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_feedback(text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_update_feedback(bigint, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_get_collections() FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_save_collection(bigint, text, text, uuid[], boolean) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_delete_collection(bigint) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_log_action(text, text, text, text, text, text, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_audit_log(int, int) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_ingredients(text, text, int, int, text, text) FROM PUBLIC;
@@ -1522,6 +1410,5 @@ REVOKE ALL ON FUNCTION public.admin_get_subscriptions(int, int) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_bulk_upsert_ingredients(jsonb) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_deactivate_user(uuid, text, integer, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_reactivate_user(uuid) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.queue_email(text, text, text, jsonb) FROM PUBLIC;
 
 SELECT 'admin_rpcs ready' AS status;
