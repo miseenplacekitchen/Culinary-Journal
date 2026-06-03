@@ -1,17 +1,4 @@
 -- ══════════════════════════════════════════════════════════════════════
--- is_admin() — must exist before any RLS policy or function uses it
--- Safe to re-run: CREATE OR REPLACE
--- ══════════════════════════════════════════════════════════════════════
-CREATE OR REPLACE FUNCTION is_admin()
-RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $$
-  SELECT COALESCE(
-    (SELECT is_admin FROM profiles WHERE id = auth.uid() LIMIT 1),
-    false
-  );
-$$;
-GRANT EXECUTE ON FUNCTION is_admin() TO authenticated, anon;
-
--- ══════════════════════════════════════════════════════════════════════
 -- profiles column guards — add if missing from existing table
 -- ══════════════════════════════════════════════════════════════════════
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_active           boolean NOT NULL DEFAULT true;
@@ -921,7 +908,6 @@ ON CONFLICT (path) DO NOTHING;
 SELECT 'admin_rpcs complete — all tables, RPCs and security checks in place' AS status;
 
 -- ── Revoke public execute from all admin functions ──────────────────────────
-REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_bulk_approve_recipes(uuid[]) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_export_user_data(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_inactive_users(int) FROM PUBLIC;

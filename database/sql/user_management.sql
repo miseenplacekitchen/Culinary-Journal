@@ -1,15 +1,3 @@
--- ── Correct is_admin() — checks profiles.is_admin column (SECURITY DEFINER bypasses RLS) ──
--- Do NOT change this to check auth.users.email — it will break all RLS policies.
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.profiles
-    WHERE id = auth.uid()
-      AND is_admin = true
-  );
-$$;
-GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
-
 -- ── User Management SQL ───────────────────────────────────────────
 -- Run this entire block in Supabase SQL Editor
 
