@@ -331,125 +331,6 @@ END; $$;
 -- USER MANAGEMENT
 -- ════════════════════════════════════════════════════════════════════
 
-DROP FUNCTION IF EXISTS admin_count_users(text, text);
-DROP FUNCTION IF EXISTS admin_count_users();
-CREATE FUNCTION admin_count_users(p_search text DEFAULT NULL, p_status text DEFAULT NULL)
-RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  RETURN (
-    SELECT COUNT(*)::integer FROM profiles
-    WHERE (p_search IS NULL OR full_name ILIKE '%'||p_search||'%'
-           OR username ILIKE '%'||p_search||'%' OR email ILIKE '%'||p_search||'%')
-      AND (p_status IS NULL OR
-           CASE WHEN is_active=false THEN 'deactivated' ELSE 'active' END = p_status)
-  );
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_get_users(text, text, int, int);
-CREATE FUNCTION admin_get_users(
-  p_search text DEFAULT NULL, p_status text DEFAULT NULL,
-  p_limit int DEFAULT 6, p_offset int DEFAULT 0
-)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_rows jsonb; v_total bigint;
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  SELECT COUNT(*) INTO v_total FROM profiles
-  WHERE (p_search IS NULL OR full_name ILIKE '%'||p_search||'%' OR username ILIKE '%'||p_search||'%' OR email ILIKE '%'||p_search||'%')
-    AND (p_status IS NULL OR CASE WHEN is_active=false THEN 'deactivated' ELSE 'active' END = p_status);
-  SELECT jsonb_agg(u ORDER BY u.created_at DESC NULLS LAST) INTO v_rows FROM (
-    SELECT id, full_name, username, email, is_active, is_admin, flagged,
-           subscription_tier AS plan, login_method, badges, created_at,
-           CASE WHEN is_active=false THEN 'Deactivated' WHEN is_admin=true THEN 'Administrator'
-                WHEN flagged=true THEN 'Flagged' ELSE 'Active' END AS account_status,
-           (SELECT COUNT(*) FROM submitted_recipes sr WHERE sr.user_id = profiles.id) AS recipe_count,
-           (SELECT COUNT(*) FROM submitted_recipes sr WHERE sr.user_id = profiles.id AND sr.status='approved') AS approved_count
-    FROM profiles
-    WHERE (p_search IS NULL OR full_name ILIKE '%'||p_search||'%' OR username ILIKE '%'||p_search||'%' OR email ILIKE '%'||p_search||'%')
-      AND (p_status IS NULL OR CASE WHEN is_active=false THEN 'deactivated' ELSE 'active' END = p_status)
-    LIMIT p_limit OFFSET p_offset
-  ) u;
-  RETURN COALESCE(v_rows,'[]'::jsonb);
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_get_user_detail(uuid);
-CREATE FUNCTION admin_get_user_detail(p_user_id uuid)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_profile jsonb; v_notes jsonb; v_recipes jsonb; v_counts jsonb;
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  SELECT row_to_json(p)::jsonb INTO v_profile FROM (
-    SELECT id, full_name, username, email, is_active, is_admin, flagged,
-           subscription_tier AS plan, login_method, badges, created_at,
-           theme_preference, deactivation_reason, deactivation_type, reactivate_at,
-           COALESCE(badges,'[]'::jsonb) AS badges,
-           CASE WHEN is_active=false THEN 'Deactivated' WHEN is_admin=true THEN 'Administrator'
-                WHEN flagged=true THEN 'Flagged' ELSE 'Active' END AS account_status
-    FROM profiles WHERE id = p_user_id
-  ) p;
-  SELECT jsonb_agg(n ORDER BY n.created_at DESC) INTO v_notes
-  FROM (SELECT note, created_by, created_at FROM user_notes WHERE user_id = p_user_id LIMIT 20) n;
-  SELECT jsonb_agg(r ORDER BY r.submitted_at DESC) INTO v_recipes
-  FROM (SELECT id, recipe_name AS title, status, submitted_at FROM submitted_recipes WHERE user_id = p_user_id LIMIT 10) r;
-  SELECT jsonb_build_object(
-    'recipe_count',   (SELECT COUNT(*) FROM submitted_recipes WHERE user_id=p_user_id),
-    'approved_count', (SELECT COUNT(*) FROM submitted_recipes WHERE user_id=p_user_id AND status='approved'),
-    'rejected_count', (SELECT COUNT(*) FROM submitted_recipes WHERE user_id=p_user_id AND status='rejected'),
-    'pending_count',  (SELECT COUNT(*) FROM submitted_recipes WHERE user_id=p_user_id AND status='pending')
-  ) INTO v_counts;
-  RETURN jsonb_build_object(
-    'profile', v_profile,
-    'notes',   COALESCE(v_notes,'[]'::jsonb),
-    'recent_recipes', COALESCE(v_recipes,'[]'::jsonb)
-  ) || v_counts;
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_add_user_note(uuid, text);
-CREATE FUNCTION admin_add_user_note(p_user_id uuid, p_note text)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  INSERT INTO user_notes (user_id, note, created_by)
-  VALUES (p_user_id, p_note, (SELECT username FROM profiles WHERE id = auth.uid()));
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_award_badge(uuid, text);
-CREATE FUNCTION admin_award_badge(p_user_id uuid, p_badge text)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  UPDATE profiles SET badges = COALESCE(badges,'[]'::jsonb) || jsonb_build_array(p_badge)
-  WHERE id = p_user_id AND NOT (COALESCE(badges,'[]'::jsonb) @> jsonb_build_array(p_badge));
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_remove_badge(uuid, text);
-CREATE FUNCTION admin_remove_badge(p_user_id uuid, p_badge text)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  UPDATE profiles SET badges = (
-    SELECT jsonb_agg(b) FROM jsonb_array_elements(COALESCE(badges,'[]'::jsonb)) b WHERE b::text != to_json(p_badge)::text
-  ) WHERE id = p_user_id;
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_flag_user(uuid, boolean);
-CREATE FUNCTION admin_flag_user(p_user_id uuid, p_flagged boolean)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  UPDATE profiles SET flagged = p_flagged WHERE id = p_user_id;
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_set_admin_status(uuid, boolean);
-CREATE FUNCTION admin_set_admin_status(p_user_id uuid, p_is_admin boolean)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  IF p_user_id = auth.uid() THEN RAISE EXCEPTION 'Cannot change your own admin status'; END IF;
-  UPDATE profiles SET is_admin = p_is_admin WHERE id = p_user_id;
-END; $$;
-
 DROP FUNCTION IF EXISTS admin_set_member_tier(uuid, text, text);
 CREATE FUNCTION admin_set_member_tier(p_user_id uuid, p_tier text, p_notes text DEFAULT NULL)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
@@ -472,30 +353,6 @@ BEGIN
   );
 END; $$;
 
-DROP FUNCTION IF EXISTS admin_get_user_analytics();
-CREATE FUNCTION admin_get_user_analytics()
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  RETURN jsonb_build_object(
-    'signups_this_week',  (SELECT COUNT(*) FROM profiles WHERE created_at >= NOW()-'7 days'::interval),
-    'signups_this_month', (SELECT COUNT(*) FROM profiles WHERE created_at >= NOW()-'30 days'::interval),
-    'premium_count',      (SELECT COUNT(*) FROM profiles WHERE subscription_tier='premium'),
-    'free_count',         (SELECT COUNT(*) FROM profiles WHERE subscription_tier='free' OR subscription_tier IS NULL),
-    'admin_count',        (SELECT COUNT(*) FROM profiles WHERE is_admin=true),
-    'deactivated_count',  (SELECT COUNT(*) FROM profiles WHERE is_active=false),
-    'top_contributors',   (
-      SELECT jsonb_agg(t) FROM (
-        SELECT p.username, p.full_name, COUNT(sr.id) AS approved
-        FROM profiles p JOIN submitted_recipes sr ON sr.user_id=p.id
-        WHERE sr.status='approved'
-        GROUP BY p.id, p.username, p.full_name
-        ORDER BY approved DESC LIMIT 10
-      ) t
-    )
-  );
-END; $$;
-
 DROP FUNCTION IF EXISTS admin_get_tier_stats();
 CREATE FUNCTION admin_get_tier_stats()
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
@@ -506,14 +363,6 @@ BEGIN
     'premium', COUNT(*) FILTER (WHERE subscription_tier='premium'),
     'event',   COUNT(*) FILTER (WHERE subscription_tier='event')
   ) FROM profiles);
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_count_pending_users();
-CREATE FUNCTION admin_count_pending_users()
-RETURNS int LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  RETURN (SELECT COUNT(*)::int FROM submitted_recipes WHERE status = 'pending');
 END; $$;
 
 DROP FUNCTION IF EXISTS admin_get_inactive_users(int);
@@ -566,82 +415,13 @@ END; $$;
 -- REPORTS
 -- ════════════════════════════════════════════════════════════════════
 
-DROP FUNCTION IF EXISTS admin_get_reports(text, int, int);
-CREATE FUNCTION admin_get_reports(p_status text DEFAULT NULL, p_limit int DEFAULT 200, p_offset int DEFAULT 0)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  RETURN (SELECT jsonb_agg(r ORDER BY r.created_at DESC) FROM (
-    SELECT r.id, r.target_type, r.target_id, r.reason, r.status, r.created_at,
-           p.username AS reporter_username
-    FROM reports r LEFT JOIN profiles p ON p.id=r.reporter_id
-    WHERE (p_status IS NULL OR r.status=p_status)
-    LIMIT p_limit OFFSET p_offset
-  ) r);
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_update_report(bigint, text);
-CREATE FUNCTION admin_update_report(p_id bigint, p_status text)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  UPDATE reports SET status=p_status WHERE id=p_id;
-END; $$;
-
 -- ════════════════════════════════════════════════════════════════════
 -- RECIPE REQUESTS
 -- ════════════════════════════════════════════════════════════════════
 
-DROP FUNCTION IF EXISTS admin_get_recipe_requests(text);
-CREATE FUNCTION admin_get_recipe_requests(p_status text DEFAULT NULL)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  RETURN (SELECT jsonb_agg(r ORDER BY r.created_at DESC) FROM (
-    SELECT rr.id, rr.request, rr.status, rr.admin_notes, rr.created_at,
-           p.username, p.full_name
-    FROM recipe_requests rr LEFT JOIN profiles p ON p.id=rr.user_id
-    WHERE (p_status IS NULL OR rr.status=p_status)
-  ) r);
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_update_recipe_request(bigint, text, text);
-CREATE FUNCTION admin_update_recipe_request(p_id bigint, p_status text, p_notes text DEFAULT NULL)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_user_id uuid; v_request text;
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  UPDATE recipe_requests SET status=p_status, admin_notes=p_notes
-  WHERE id=p_id RETURNING user_id, request INTO v_user_id, v_request;
-  IF p_status='fulfilled' AND v_user_id IS NOT NULL THEN
-    INSERT INTO notifications (user_id, type, message)
-    VALUES (v_user_id, 'request_fulfilled', 'Your recipe request has been fulfilled: ' || v_request);
-  END IF;
-END; $$;
-
 -- ════════════════════════════════════════════════════════════════════
 -- FEEDBACK
 -- ════════════════════════════════════════════════════════════════════
-
-DROP FUNCTION IF EXISTS admin_get_feedback(text);
-CREATE FUNCTION admin_get_feedback(p_status text DEFAULT 'new')
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  RETURN (SELECT jsonb_agg(f ORDER BY f.created_at DESC) FROM (
-    SELECT id, type, feedback, name, email, username, status, created_at
-    FROM feedback WHERE (p_status IS NULL OR status=p_status)
-    LIMIT 200
-  ) f);
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_update_feedback(bigint, text);
-CREATE FUNCTION admin_update_feedback(p_id bigint, p_status text)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  UPDATE feedback SET status=p_status WHERE id=p_id;
-END; $$;
 
 -- ════════════════════════════════════════════════════════════════════
 -- COLLECTIONS
@@ -733,27 +513,6 @@ ALTER TABLE chef_invites ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "admin manages invites" ON chef_invites;
 CREATE POLICY "admin manages invites" ON chef_invites FOR ALL TO authenticated
   USING (is_admin()) WITH CHECK (is_admin());
-
-DROP FUNCTION IF EXISTS admin_create_invite(text, text, text);
-CREATE FUNCTION admin_create_invite(p_email text, p_role text DEFAULT NULL, p_message text DEFAULT NULL)
-RETURNS text LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_token text;
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  INSERT INTO chef_invites (email, invited_by)
-  VALUES (p_email, auth.uid()) RETURNING token INTO v_token;
-  RETURN v_token;
-END; $$;
-
-DROP FUNCTION IF EXISTS admin_get_invites();
-CREATE FUNCTION admin_get_invites()
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  RETURN (SELECT jsonb_agg(i ORDER BY i.created_at DESC) FROM (
-    SELECT id, email, token, status, created_at, expires_at FROM chef_invites
-  ) i);
-END; $$;
 
 SELECT 'Admin RPC system ready' AS status;
 
@@ -1302,50 +1061,7 @@ ON CONFLICT (path) DO NOTHING;
 -- ════════════════════════════════════════════════════════════════════
 
 -- admin_deactivate_user — matches deactivate_account.sql signature exactly
-DROP FUNCTION IF EXISTS admin_deactivate_user(uuid, text, integer, text);
-CREATE FUNCTION admin_deactivate_user(
-  p_user_id uuid,
-  p_type    text    DEFAULT 'permanent',
-  p_days    integer DEFAULT NULL,
-  p_reason  text    DEFAULT NULL
-)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_reactivate_at timestamptz := NULL;
-        v_email text; v_name text;
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  IF p_user_id = auth.uid() THEN RAISE EXCEPTION 'Admins cannot deactivate themselves'; END IF;
-  IF p_type = 'temporary' AND p_days IS NOT NULL AND p_days > 0 THEN
-    v_reactivate_at := NOW() + (p_days || ' days')::interval;
-  END IF;
-  SELECT email, full_name INTO v_email, v_name FROM profiles WHERE id = p_user_id;
-  UPDATE profiles SET
-    is_active = false, deactivated_at = NOW(),
-    deactivation_type = COALESCE(p_type,'permanent'),
-    deactivation_reason = p_reason, reactivate_at = v_reactivate_at
-  WHERE id = p_user_id;
-  IF NOT FOUND THEN RAISE EXCEPTION 'User not found'; END IF;
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='email_queue')
-  AND EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
-              WHERE p.proname='queue_email' AND n.nspname='public') THEN
-    PERFORM queue_email('account_deactivated', v_email, v_name,
-      jsonb_build_object('name', COALESCE(v_name,'Member'),
-                         'reason', COALESCE(p_reason,'No reason provided')));
-  END IF;
-END; $$;
-
 -- admin_reactivate_user
-DROP FUNCTION IF EXISTS admin_reactivate_user(uuid);
-CREATE FUNCTION admin_reactivate_user(p_user_id uuid)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  UPDATE profiles SET is_active=true, deactivated_at=NULL, deactivation_type=NULL,
-    deactivation_reason=NULL, reactivate_at=NULL, reactivated_at=NOW()
-  WHERE id=p_user_id;
-  IF NOT FOUND THEN RAISE EXCEPTION 'User not found'; END IF;
-END; $$;
-
 -- queue_email — matches email_templates.sql signature exactly
 SELECT 'admin_rpcs complete — all tables, RPCs and security checks in place' AS status;
 
@@ -1355,34 +1071,16 @@ REVOKE ALL ON FUNCTION public.admin_get_stats() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_recipes(text, text, text, int, int) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_review_recipe(uuid, text, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_bulk_approve_recipes(uuid[]) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_count_users(text, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_get_users(text, text, int, int) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_get_user_detail(uuid) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_add_user_note(uuid, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_award_badge(uuid, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_remove_badge(uuid, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_flag_user(uuid, boolean) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_set_admin_status(uuid, boolean) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_set_member_tier(uuid, text, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_export_user_data(uuid) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_get_user_analytics() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_tier_stats() FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_count_pending_users() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_inactive_users(int) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_appeals() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_review_appeal(bigint, text, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_get_reports(text, int, int) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_update_report(bigint, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_get_recipe_requests(text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_update_recipe_request(bigint, text, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_get_feedback(text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_update_feedback(bigint, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_log_action(text, text, text, text, text, text, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_audit_log(int, int) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_ingredients(text, text, int, int, text, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_count_ingredients(text, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_create_invite(text, text, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_get_invites() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_upsert_ingredient(integer, text, text, text, text, text, float8, text, text, text, text, text, text, text, jsonb) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_delete_ingredient(int) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_export_ingredients(text, text) FROM PUBLIC;
@@ -1408,7 +1106,5 @@ REVOKE ALL ON FUNCTION public.admin_bulk_award_badge(uuid[], text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_bulk_update_field(uuid[], text, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_get_subscriptions(int, int) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_bulk_upsert_ingredients(jsonb) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_deactivate_user(uuid, text, integer, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_reactivate_user(uuid) FROM PUBLIC;
 
 SELECT 'admin_rpcs ready' AS status;
