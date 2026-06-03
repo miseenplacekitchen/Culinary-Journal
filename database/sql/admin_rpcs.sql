@@ -749,23 +749,6 @@ BEGIN
   RETURN v_count;
 END; $$;
 
-DROP FUNCTION IF EXISTS admin_bulk_update_field(uuid[], text, text);
-CREATE FUNCTION admin_bulk_update_field(p_ids uuid[], p_field text, p_value text)
-RETURNS int LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_count int;
-BEGIN
-  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  IF p_field = 'subscription_tier' THEN
-    UPDATE profiles SET subscription_tier = p_value WHERE id = ANY(p_ids);
-  ELSIF p_field = 'is_active' THEN
-    UPDATE profiles SET is_active = (p_value = 'true') WHERE id = ANY(p_ids);
-  ELSE
-    RAISE EXCEPTION 'Field % not allowed for bulk update', p_field;
-  END IF;
-  GET DIAGNOSTICS v_count = ROW_COUNT;
-  RETURN v_count;
-END; $$;
-
 -- ════════════════════════════════════════════════════════════════════
 -- SUBSCRIPTIONS / FINANCE
 -- ════════════════════════════════════════════════════════════════════
@@ -970,7 +953,6 @@ REVOKE ALL ON FUNCTION public.admin_delete_all_brand_mappings() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_bulk_upsert_brand_mappings(jsonb) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_sync_brands_from_ingredients() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_bulk_award_badge(uuid[], text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.admin_bulk_update_field(uuid[], text, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.admin_bulk_upsert_ingredients(jsonb) FROM PUBLIC;
 
 SELECT 'admin_rpcs ready' AS status;
