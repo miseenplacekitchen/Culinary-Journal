@@ -143,37 +143,3 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION get_recipe_collections(uuid) TO authenticated;
 
--- ── QUICK EDIT RECIPE ─────────────────────────────────────────────
-CREATE OR REPLACE FUNCTION quick_update_recipe(
-  p_id         uuid,
-  p_name       text,
-  p_visibility text,
-  p_description text DEFAULT NULL
-)
-RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
-  UPDATE public.submitted_recipes SET
-    recipe_name = p_name,
-    visibility  = LOWER(p_visibility),
-    description = COALESCE(p_description, description)
-  WHERE id=p_id AND user_id=auth.uid();
-END; $$;
-GRANT EXECUTE ON FUNCTION quick_update_recipe(uuid,text,text,text) TO authenticated;
-
--- ── PUBLIC PROFILE ────────────────────────────────────────────────
-CREATE OR REPLACE FUNCTION get_public_profile(p_username text)
-RETURNS TABLE (
-  id uuid, username text, full_name text, created_at timestamptz,
-  recipe_count bigint, collection_count bigint
-)
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  RETURN QUERY
-    SELECT p.id, p.username, p.full_name, u.created_at,
-           (SELECT COUNT(*) FROM public.submitted_recipes sr WHERE sr.user_id=p.id AND sr.status='approved' AND sr.visibility='public')::bigint,
-           (SELECT COUNT(*) FROM public.collections c WHERE c.user_id=p.id AND c.is_public=true)::bigint
-    FROM public.profiles p JOIN auth.users u ON u.id=p.id
-    WHERE LOWER(p.username)=LOWER(p_username) AND COALESCE(p.is_active,true)=true;
-END; $$;
-GRANT EXECUTE ON FUNCTION get_public_profile(text) TO anon, authenticated;
