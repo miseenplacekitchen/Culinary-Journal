@@ -1054,6 +1054,15 @@ async function init() {
     }
     PROFILE = rows[0];
 
+    // Sync theme to localStorage so theme-init.js picks it up on next load
+    if (PROFILE.theme_preference && PROFILE.theme_preference !== 'midnight-slate') {
+      localStorage.setItem('tcj_theme', PROFILE.theme_preference);
+    } else {
+      localStorage.removeItem('tcj_theme');
+    }
+    // Also keep profile cache fresh
+    localStorage.setItem('tcj_profile', JSON.stringify(PROFILE));
+
     if (PROFILE.is_active === false) {
       showFatalError('Account deactivated',
         'This account has been deactivated. Contact support to reactivate it.',
