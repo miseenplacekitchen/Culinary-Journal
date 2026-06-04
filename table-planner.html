@@ -777,6 +777,7 @@ function renderGuestList() {
       '<td class="tp-gd"><div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--accent)">' + escHtml(seat) + '</div></td>' +
       '<td class="tp-gd"><div style="display:flex;gap:6px">' +
         '<button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="openGuestModal(\'' + g.id + '\')">Edit</button>' +
+        '<button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="copyDietaryLink(\'' + g.id + '\')" title="Copy this guest\'s dietary card link">🥗 Link</button>' +
         '<button class="tp-btn tp-btn-sm tp-btn-danger" onclick="deleteGuest(\'' + g.id + '\')">×</button>' +
       '</div></td>';
     tbody.appendChild(tr);
@@ -1250,8 +1251,10 @@ function getTableClass(shape) {
 }
 
 // ── DIETARY CARD LINK ────────────────────────────────────────────
-function copyDietaryLink(guestId, guestName) {
-  const url = 'https://www.theculinaryjournal.site/dietary-card.html?token=' + guestId;
+function copyDietaryLink(guestId) {
+  const g = currentGuests.find(function(x){ return x.id === guestId; });
+  const guestName = g ? g.name : 'your guest';
+  const url = location.origin + '/dietary-card.html?token=' + guestId;
   if (navigator.clipboard) {
     navigator.clipboard.writeText(url).then(function() {
       showToast('Dietary card link for ' + guestName + ' copied to clipboard! 📋', false);

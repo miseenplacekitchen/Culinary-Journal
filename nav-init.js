@@ -33,7 +33,6 @@ var CJ_SECTIONS = [
     links:[
       {href:'table-planner.html',   emoji:'🪑', label:'Table Planner'},
       {href:'family-profiles.html', emoji:'👨‍👩‍👧', label:'Family Profiles'},
-      {href:'dietary-card.html',    emoji:'🥗', label:'Dietary Cards'},
     ]
   },
   {
