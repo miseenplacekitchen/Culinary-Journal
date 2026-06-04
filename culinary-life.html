@@ -39,7 +39,7 @@
     .cl-log-form { display:flex; flex-direction:column; gap:10px; }
     .cl-log-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .cl-input, .cl-select, .cl-textarea {
-      background:var(--text-ghost); border:1px solid var(--border); border-radius:9px;
+      background: var(--input-bg); border:1px solid var(--border); border-radius:9px;
       padding:9px 12px; font-family:'DM Sans',sans-serif; font-size:13px;
       color:var(--text-high); outline:none; width:100%; box-sizing:border-box; transition:border-color .15s;
     }
@@ -94,7 +94,7 @@
     .cl-cook-date { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); flex-shrink:0; }
     .cl-cook-rating { font-size:11px; }
     .cl-cook-del { background:none; border:none; color:var(--text-low); cursor:pointer; font-size:14px; padding:0 2px; flex-shrink:0; }
-    .cl-cook-del:hover { color:#dc5050; }
+    .cl-cook-del:hover { color: var(--danger); }
 
     /* ── Empty states ── */
     .cl-empty { text-align:center; padding:40px 20px; }
@@ -103,7 +103,7 @@
     .cl-empty-sub   { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); line-height:1.6; }
 
     /* ── Modal ── */
-    .cl-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+    .cl-modal { display:none; position:fixed; inset:0; background: var(--scrim); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
     .cl-modal.open { display:flex; }
     .cl-modal-box { background:var(--bg,#0f1011); border:1px solid var(--border); border-radius:16px; width:100%; max-width:500px; overflow-y:auto; max-height:90vh; }
     .cl-modal-head { display:flex; align-items:center; justify-content:space-between; padding:18px 22px 14px; border-bottom:1px solid var(--border); }

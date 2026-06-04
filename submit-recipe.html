@@ -35,7 +35,7 @@
     .sr-label .opt { color: var(--text-mid); margin-left: 6px; font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 10px; font-style: italic; }
     .sr-input, .sr-select, .sr-textarea {
       font-family: "DM Sans", sans-serif; font-size: 14px; color: var(--text-high);
-      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px;
       padding: 10px 14px; width: 100%; box-sizing: border-box;
       transition: border-color 0.2s, box-shadow 0.2s; outline: none;
     }
@@ -56,7 +56,7 @@
       letter-spacing: 0.04em;
     }
     .intro-counter.amber { color: rgba(232,140, 45,0.95); }
-    .intro-counter.red   { color: #dc5050; font-weight: 600; }
+    .intro-counter.red   { color: var(--danger); font-weight: 600; }
     /* Source URL nudge — when user picks "From Somewhere Else" / "Scanned",
        gently pulse the URL input so they don't forget to add the credit link. */
     @keyframes source-url-pulse {
@@ -300,7 +300,7 @@
     .xf-btn.on{border-color:var(--accent-border);color:var(--accent);background:var(--accent-glow)}
     .xf-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:260px;background:#1c1c1c;border:0.5px solid rgb(from var(--accent) r g b / 0.3);border-radius:10px;z-index:400;box-shadow:0 8px 32px rgba(0,0,0,0.55);overflow:hidden}
     .xf-panel.open{display:block}
-    .xf-input{width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);border:none;border-bottom:0.5px solid rgba(255,255,255,0.07);font-family:"DM Sans",sans-serif;font-size:13px;color: var(--text-high);outline:none;box-sizing:border-box}
+    .xf-input{width:100%;padding:10px 14px;background: var(--input-bg);border:none;border-bottom:0.5px solid rgba(255,255,255,0.07);font-family:"DM Sans",sans-serif;font-size:13px;color: var(--text-high);outline:none;box-sizing:border-box}
     .xf-input::placeholder{color: var(--text-low)}
     .xf-items{max-height:260px;overflow-y:auto}
     .xf-items::-webkit-scrollbar{width:3px}
@@ -428,7 +428,7 @@
     .btn-remove-section:hover { opacity: 1; color: #e05555; }
 
     .ing-row { display: grid; grid-template-columns: 22px 80px 110px 1fr 140px 140px 26px 22px; gap: 8px; align-items: center; margin-bottom: 8px; }
-    .ing-input { font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high); background: var(--text-ghost); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; width: 100%; box-sizing: border-box; outline: none; }
+    .ing-input { font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high); background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; width: 100%; box-sizing: border-box; outline: none; }
     .ing-input:focus { border-color: var(--accent); }
     .ing-input::placeholder { color: var(--text-high); opacity: 0.6; }
 
@@ -504,12 +504,12 @@
     .ing-name-wrap { position: relative; }
     /* Ingredient autocomplete — RAISED panel. Page bg + section bg are both
        very dark on the default theme (~#1a), so a #1c1c1c dropdown blended in
-       and looked see-through. Now #2a2a2a (clearly lighter, raised) with a
+       and looked see-through. Now var(--bg) (themed, raised) with a
        solid gold border and big shadow. Stays a "dark island" on light
        themes too, like the xf-component dropdown. */
     .ing-autocomplete {
       position: absolute; top: 100%; left: 0; right: 0;
-      background: #2a2a2a;
+      background: var(--bg);
       border: 1.5px solid var(--accent);
       border-top: none;
       border-radius: 0 0 8px 8px;
@@ -542,7 +542,7 @@
     .method-section-name::placeholder { color: var(--text-high); font-weight: 400; }
     .step-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; padding-left: 12px; }
     .step-number { font-family: "Cormorant Garamond", serif; font-size: 18px; color: var(--accent); min-width: 24px; padding-top: 6px; text-align: center; }
-    .step-input { flex: 1; font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high); background: var(--text-ghost); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; resize: vertical; min-height: 60px; box-sizing: border-box; outline: none; line-height: 1.6; }
+    .step-input { flex: 1; font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high); background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; resize: vertical; min-height: 60px; box-sizing: border-box; outline: none; line-height: 1.6; }
     .step-input:focus { border-color: var(--accent); }
     .step-input::placeholder { color: var(--text-high); opacity: 0.6; }
     .btn-add-step { display: flex; align-items: center; gap: 6px; background: none; border: 1px dashed var(--border); border-radius: 6px; padding: 7px 14px; font-family: "DM Sans", sans-serif; font-size: 12px; color: var(--text-high); cursor: pointer; transition: all 0.2s; margin-top: 8px; }
@@ -586,7 +586,7 @@
     /* Per-ingredient category filter — styled to match .ing-input */
     .ing-cat-select {
       font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high);
-      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px;
       padding: 9px 10px; width: 100%; box-sizing: border-box; cursor: pointer;
       outline: none; transition: border-color 0.2s;
     }
@@ -699,7 +699,7 @@
     .img-status:not(:empty) { margin-top: 8px; min-height: 18px; }
     .img-status.img-status-uploading { color: var(--accent); }
     .img-status.img-status-success   { color: #56b45a; }
-    .img-status.img-status-error     { color: #dc5050; }
+    .img-status.img-status-error     { color: var(--danger); }
 
 
 
@@ -2429,7 +2429,7 @@ function showImportStatus(msg, ok) {
   if (!el) return;
   el.textContent = (ok===true?'✅ ':ok===false?'⚠ ':'⏳ ') + msg;
   el.style.display = 'block';
-  el.style.color = ok===true?'#4caf76':ok===false?'#dc5050':'var(--text-muted)';
+  el.style.color = ok===true?'var(--success)':ok===false?'var(--danger)':'var(--text-muted)';
 }
 
 function extractJsonLdRecipe(html) {
@@ -3682,7 +3682,7 @@ function updateIntroCounter() {
   if (!el || !cnt) return;
   const words = (el.value || '').trim().split(/\s+/).filter(Boolean).length;
   cnt.textContent = words + ' / 100 words';
-  cnt.style.color = words > 100 ? '#dc5050' : 'var(--text-mid)';
+  cnt.style.color = words > 100 ? 'var(--danger)' : 'var(--text-mid)';
 }
 
 // ── DUPLICATE RECIPE NAME CHECK ───────────────────────────────────────────

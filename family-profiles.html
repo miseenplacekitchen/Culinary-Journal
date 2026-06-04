@@ -21,7 +21,7 @@
     .fp-btn-ghost   { background:none; border:1px solid var(--border); color:var(--text-mid); }
     .fp-btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
     .fp-btn-sm { padding:6px 12px; font-size:11px; }
-    .fp-btn-danger { background:rgba(220,80,80,0.1); border:1px solid rgba(220,80,80,0.3); color:#dc5050; }
+    .fp-btn-danger { background: var(--danger-bg); border:1px solid rgb(from var(--danger) r g b / 0.3); color: var(--danger); }
 
     /* Profile cards */
     .fp-grid  { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
@@ -32,9 +32,9 @@
     .fp-card-rel  { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
     .fp-pills { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
     .fp-pill  { font-family:'DM Sans',sans-serif; font-size:10px; padding:2px 8px; border-radius:4px; }
-    .fp-pill-diet    { background:rgba(76,175,118,0.1); color:#4caf76; }
-    .fp-pill-allergy { background:rgba(220,80,80,0.1); color:#dc5050; }
-    .fp-pill-spice   { background:rgba(240,168,48,0.1); color:#f0a830; }
+    .fp-pill-diet    { background: var(--success-bg); color:#4caf76; }
+    .fp-pill-allergy { background: var(--danger-bg); color: var(--danger); }
+    .fp-pill-spice   { background:rgba(240,168,48,0.1); color: var(--warn); }
     .fp-pill-health  { background:rgb(from var(--accent) r g b / 0.1); color:var(--accent); }
     .fp-card-actions { display:flex; gap:6px; margin-top:12px; padding-top:10px; border-top:1px solid var(--border); }
     .fp-notes { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); font-style:italic; margin-bottom:6px; }
@@ -46,13 +46,13 @@
     .fp-empty-sub   { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
 
     /* Modal */
-    .fp-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+    .fp-modal { display:none; position:fixed; inset:0; background: var(--scrim); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
     .fp-modal.open { display:flex; }
     .fp-modal-box { background:var(--bg); border:1px solid var(--border); border-radius:16px; width:100%; max-width:520px; padding:24px; max-height:92vh; overflow-y:auto; }
     .fp-modal-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:600; color:var(--text-high); margin-bottom:20px; }
     .fp-field { margin-bottom:14px; }
     .fp-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-mid); margin-bottom:5px; display:block; }
-    .fp-input { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text-high); outline:none; }
+    .fp-input { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color:var(--text-high); outline:none; }
     .fp-input:focus { border-color:var(--accent); }
     .fp-select { -webkit-appearance:none; cursor:pointer; }
     .fp-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }

@@ -39,8 +39,8 @@
     .pt-list { display:flex; flex-direction:column; gap:8px; }
     .pt-item { display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--text-ghost); border:1px solid var(--border); border-radius:11px; transition:border-color 0.15s; }
     .pt-item:hover { border-color:var(--accent-border); }
-    .pt-item.low  { border-left:3px solid #f0a830; }
-    .pt-item.out  { border-left:3px solid #dc5050; opacity:0.65; }
+    .pt-item.low  { border-left:3px solid var(--warn); }
+    .pt-item.out  { border-left:3px solid var(--danger); opacity:0.65; }
     .pt-item-name { flex:1; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500; color:var(--text-high); }
     .pt-item-cat  { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
     .pt-item-qty  { display:flex; align-items:center; gap:6px; }
@@ -48,24 +48,24 @@
     .pt-qty-btn:hover { border-color:var(--accent); color:var(--accent); }
     .pt-qty-val   { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; color:var(--text-high); min-width:44px; text-align:center; }
     .pt-status { padding:3px 9px; border-radius:20px; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; }
-    .pt-status.ok  { background:rgba(76,175,118,0.12); color:#4caf76; }
-    .pt-status.low { background:rgba(240,168,48,0.15); color:#f0a830; }
-    .pt-status.out { background:rgba(220,80,80,0.12); color:#dc5050; }
+    .pt-status.ok  { background: var(--success-bg); color:#4caf76; }
+    .pt-status.low { background: var(--warn-bg); color: var(--warn); }
+    .pt-status.out { background:rgb(from var(--danger) r g b / 0.12); color: var(--danger); }
     .pt-del-btn { background:none; border:none; color:var(--text-mid); cursor:pointer; padding:4px 6px; border-radius:5px; font-size:14px; }
-    .pt-del-btn:hover { color:#dc5050; background:rgba(220,80,80,0.1); }
+    .pt-del-btn:hover { color: var(--danger); background: var(--danger-bg); }
     .pt-empty { text-align:center; padding:60px 20px; }
     .pt-empty-icon { font-size:48px; margin-bottom:12px; }
     .pt-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--text-high); margin-bottom:6px; }
     .pt-empty-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
 
     /* Add item modal */
-    .pt-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+    .pt-modal { display:none; position:fixed; inset:0; background: var(--scrim); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
     .pt-modal.open { display:flex; }
     .pt-modal-box { background:var(--bg); border:1px solid var(--border); border-radius:16px; width:100%; max-width:440px; padding:24px; }
     .pt-modal-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:600; color:var(--text-high); margin-bottom:20px; }
     .pt-field { margin-bottom:14px; }
     .pt-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mid); margin-bottom:5px; }
-    .pt-input { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:9px 12px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text-high); outline:none; }
+    .pt-input { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:9px 12px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color:var(--text-high); outline:none; }
     .pt-input:focus { border-color:var(--accent); }
     .pt-row { display:flex; gap:10px; }
     .pt-modal-foot { display:flex; gap:10px; margin-top:18px; }
@@ -255,8 +255,8 @@ function renderStats() {
   document.getElementById('pt-stats').innerHTML =
     '<div class="pt-stat"><div class="pt-stat-num">' + items.length + '</div><div class="pt-stat-label">Total Items</div></div>' +
     '<div class="pt-stat"><div class="pt-stat-num" style="color:#4caf76">' + ok + '</div><div class="pt-stat-label">Well Stocked</div></div>' +
-    '<div class="pt-stat"><div class="pt-stat-num" style="color:#f0a830">' + low + '</div><div class="pt-stat-label">Running Low</div></div>' +
-    '<div class="pt-stat"><div class="pt-stat-num" style="color:#dc5050">' + out + '</div><div class="pt-stat-label">Out of Stock</div></div>';
+    '<div class="pt-stat"><div class="pt-stat-num" style="color:var(--warn)">' + low + '</div><div class="pt-stat-label">Running Low</div></div>' +
+    '<div class="pt-stat"><div class="pt-stat-num" style="color:var(--danger)">' + out + '</div><div class="pt-stat-label">Out of Stock</div></div>';
 }
 
 function renderList(search) {

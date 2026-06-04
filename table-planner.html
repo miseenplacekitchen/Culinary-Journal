@@ -23,8 +23,8 @@
     .tp-btn-ghost { background:none; border:1px solid var(--border); color:var(--text-mid); }
     .tp-btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
     .tp-btn-sm  { padding:7px 14px; font-size:12px; }
-    .tp-btn-danger { background:rgba(220,80,80,0.1); border:1px solid rgba(220,80,80,0.3); color:#dc5050; }
-    .tp-btn-danger:hover { background:rgba(220,80,80,0.2); }
+    .tp-btn-danger { background: var(--danger-bg); border:1px solid rgb(from var(--danger) r g b / 0.3); color: var(--danger); }
+    .tp-btn-danger:hover { background:rgb(from var(--danger) r g b / 0.2); }
 
     .tp-events-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
     .tp-event-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:14px; padding:20px; cursor:pointer; transition:all 0.15s; }
@@ -96,8 +96,8 @@
     .tp-guest-group { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
     .tp-diet-pill  { display:inline-block; font-size:11px; padding:2px 7px; border-radius:4px; margin:1px 2px; background:rgb(from var(--accent) r g b / 0.1); color:var(--accent); }
     .tp-rsvp { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; padding:3px 8px; border-radius:20px; }
-    .tp-rsvp.attending { background:rgba(76,175,118,0.12); color:#4caf76; }
-    .tp-rsvp.declined  { background:rgba(220,80,80,0.12); color:#dc5050; }
+    .tp-rsvp.attending { background: var(--success-bg); color:#4caf76; }
+    .tp-rsvp.declined  { background:rgb(from var(--danger) r g b / 0.12); color: var(--danger); }
     .tp-rsvp.pending   { background:rgba(180,180,180,0.12); color:var(--text-mid); }
 
     /* ── SEATING ────────────────────────────────────── */
@@ -136,13 +136,13 @@
     .tp-tc-td { padding:6px 10px; border-bottom:1px solid rgba(from var(--border) r g b / 0.5); color:var(--text-high); }
 
     /* Modals */
-    .tp-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+    .tp-modal { display:none; position:fixed; inset:0; background: var(--scrim); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
     .tp-modal.open { display:flex; }
     .tp-modal-box { background:var(--bg); border:1px solid var(--border); border-radius:16px; width:100%; max-width:440px; padding:24px; max-height:90vh; overflow-y:auto; }
     .tp-modal-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:600; color:var(--text-high); margin-bottom:20px; }
     .tp-field { margin-bottom:14px; }
     .tp-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-mid); margin-bottom:5px; display:block; }
-    .tp-input { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text-high); outline:none; }
+    .tp-input { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color:var(--text-high); outline:none; }
     .tp-input:focus { border-color:var(--accent); }
     .tp-select { -webkit-appearance:none; }
     .tp-diet-checks { display:flex; flex-wrap:wrap; gap:6px; }
@@ -571,7 +571,7 @@ function createTableEl(t) {
   el.innerHTML =
     '<div class="tp-table-actions">' +
       '<button class="tp-tact-btn" onclick="openRenameModal(\'' + t.id + '\')" title="Rename">✏</button>' +
-      '<button class="tp-tact-btn" onclick="removeTable(\'' + t.id + '\')" title="Remove" style="color:#dc5050">🗑</button>' +
+      '<button class="tp-tact-btn" onclick="removeTable(\'' + t.id + '\')" title="Remove" style="color:var(--danger)">🗑</button>' +
     '</div>' +
     '<div class="tp-table-label">' + escHtml(t.name) + '</div>' +
     '<div class="tp-table-count">' + assignedCount + '/' + t.seats + ' seated</div>';
@@ -753,7 +753,7 @@ function renderGuestStats() {
   el.innerHTML =
     '<div class="tp-gstat"><div class="tp-gstat-num">' + currentGuests.length + '</div><div class="tp-gstat-label">Total</div></div>' +
     '<div class="tp-gstat"><div class="tp-gstat-num" style="color:#4caf76">' + attending + '</div><div class="tp-gstat-label">Attending</div></div>' +
-    '<div class="tp-gstat"><div class="tp-gstat-num" style="color:#dc5050">' + declined + '</div><div class="tp-gstat-label">Declined</div></div>' +
+    '<div class="tp-gstat"><div class="tp-gstat-num" style="color:var(--danger)">' + declined + '</div><div class="tp-gstat-label">Declined</div></div>' +
     '<div class="tp-gstat"><div class="tp-gstat-num">' + seated + '</div><div class="tp-gstat-label">Seated</div></div>';
 }
 
@@ -1271,7 +1271,7 @@ function showToast(msg, isError) {
   }
   toast.innerHTML = msg;
   toast.style.display = 'block';
-  toast.style.borderColor = isError ? 'rgba(220,80,80,0.4)' : 'var(--accent-border)';
+  toast.style.borderColor = isError ? 'rgb(from var(--danger) r g b / 0.4)' : 'var(--accent-border)';
   clearTimeout(toast._timer);
   toast._timer = setTimeout(function(){ toast.style.display='none'; }, 3000);
 }
@@ -1334,10 +1334,10 @@ function renderDishPlacement() {
         '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)">'+r.rule+'</div></div></div>';
     }).join('')+
     (allergyWarnings.length ?
-      '<div style="margin-top:20px;font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#dc5050;margin-bottom:10px">⚠ Guest Allergy Warnings</div>'+
+      '<div style="margin-top:20px;font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--danger);margin-bottom:10px">⚠ Guest Allergy Warnings</div>'+
       allergyWarnings.map(function(w){
         var seat = w.seat ? ' ('+getSeatLabel(w.seat)+')' : ' (unseated)';
-        return '<div style="background:rgba(220,80,80,0.07);border:1px solid rgba(220,80,80,0.2);border-radius:9px;padding:10px 14px;margin-bottom:8px;font-family:DM Sans,sans-serif;font-size:13px">'+
+        return '<div style="background:rgb(from var(--danger) r g b / 0.07);border:1px solid rgb(from var(--danger) r g b / 0.2);border-radius:9px;padding:10px 14px;margin-bottom:8px;font-family:DM Sans,sans-serif;font-size:13px">'+
           '<strong style="color:var(--text-high)">'+w.name+'</strong>'+seat+' — '+w.allergens.map(function(a){return a.replace(' allergy','');}).join(', ')+'</div>';
       }).join('') : ''
     );

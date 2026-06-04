@@ -42,7 +42,7 @@
     .sm-section-desc  { font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text-mid); margin-bottom: 16px; }
     .sm-label { display: block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-mid); margin-bottom: 4px; }
     .sm-input, .sm-select, .sm-textarea {
-      width: 100%; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border);
+      width: 100%; padding: 8px 12px; background: var(--input-bg); border: 1px solid var(--border);
       border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-high);
       outline: none; transition: border-color 0.15s;
     }
@@ -52,7 +52,7 @@
     .sm-btn:hover { opacity: 0.85; }
     .sm-btn-ghost { background: none; border: 1px solid var(--border); color: var(--text-mid); }
     .sm-btn-ghost:hover { border-color: var(--accent); color: var(--accent); opacity: 1; }
-    .sm-btn-danger { background: none; border: 1px solid #dc5050; color: #dc5050; }
+    .sm-btn-danger { background: none; border: 1px solid var(--danger); color: var(--danger); }
     .sm-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .sm-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
     .sm-grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
@@ -63,7 +63,7 @@
     .sm-row-desc  { font-size: 11px; color: var(--text-mid); margin-top: 2px; }
     .sm-toggle    { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
     .sm-tag-green { font-size: 11px; font-weight: 600; color: #4caf76; }
-    .sm-tag-red   { font-size: 11px; font-weight: 600; color: #dc5050; }
+    .sm-tag-red   { font-size: 11px; font-weight: 600; color: var(--danger); }
     .sm-save-msg  { margin-left: 12px; font-size: 12px; color: #4caf76; }
     .ap-table { width: 100%; border-collapse: collapse; }
     .ap-th { padding: 10px 12px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-mid); border-bottom: 1px solid var(--border); }
@@ -208,7 +208,7 @@ function loadPanel(key) {
 
 function err(containerId, msg) {
   const el = document.getElementById(containerId);
-  if (el) el.innerHTML = '<div style="color:#dc5050;font-size:13px;padding:20px;background:rgba(220,80,80,0.08);border:1px solid rgba(220,80,80,0.3);border-radius:10px">Error: ' + esc(msg) + '<br><br><strong>Make sure you have run site_management.sql in Supabase.</strong></div>';
+  if (el) el.innerHTML = '<div style="color:var(--danger);font-size:13px;padding:20px;background:rgb(from var(--danger) r g b / 0.08);border:1px solid rgb(from var(--danger) r g b / 0.3);border-radius:10px">Error: ' + esc(msg) + '<br><br><strong>Make sure you have run site_management.sql in Supabase.</strong></div>';
 }
 
 // ── PAGES ─────────────────────────────────────────────────────────
@@ -331,7 +331,7 @@ async function loadAnnouncements() {
       return;
     }
 
-    const TYPE_COLOR = {info:'#5B8FD4', success:'#4caf76', warning:'#d4a017', error:'#dc5050'};
+    const TYPE_COLOR = {info:'var(--info)', success:'var(--success)', warning:'var(--warn)', error:'var(--danger)'};
     anns.forEach(function(a) {
       const card = document.createElement('div');
       card.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;justify-content:space-between';

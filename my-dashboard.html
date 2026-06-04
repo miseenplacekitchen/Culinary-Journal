@@ -71,10 +71,10 @@
     .an-recent-name { font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; color:var(--text-high); margin-bottom:2px; }
     .an-recent-time { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); }
     .ud-card-status { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; }
-    .status-pending  { background:rgba(255,193,7,0.15); color:#ffc107; border:1px solid rgba(255,193,7,0.3); }
+    .status-pending  { background:rgb(from var(--warn) r g b / 0.15); color:var(--warn); border:1px solid rgb(from var(--warn) r g b / 0.3); }
     .status-approved { background:rgba(76,175,118,0.15); color:#4caf76; border:1px solid rgba(76,175,118,0.3); }
-    .status-rejected { background:rgba(220,80,80,0.15); color:#dc5050; border:1px solid rgba(220,80,80,0.3); }
-    .ud-card-notes { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-top:8px; padding:8px 10px; background:rgba(220,80,80,0.08); border-radius:6px; border-left:2px solid #dc5050; line-height:1.5; }
+    .status-rejected { background:rgb(from var(--danger) r g b / 0.15); color: var(--danger); border:1px solid rgb(from var(--danger) r g b / 0.3); }
+    .ud-card-notes { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-top:8px; padding:8px 10px; background:rgb(from var(--danger) r g b / 0.08); border-radius:6px; border-left:2px solid var(--danger); line-height:1.5; }
     .ud-card-actions { padding:10px 16px; border-top:1px solid var(--border); display:flex; gap:8px; }
     .ud-btn { flex:1; padding:8px; border-radius:7px; border:none; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; cursor:pointer; text-align:center; text-decoration:none; display:inline-block; }
     .ud-btn-primary { background:var(--accent); color:#fff; }
@@ -94,7 +94,7 @@
     .qe-title { font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:700; color:var(--text-high); margin-bottom:16px; }
     .qe-field { margin-bottom:14px; }
     .qe-label { display:block; font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-mid); margin-bottom:5px; }
-    .qe-input { width:100%; box-sizing:border-box; padding:9px 12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text-high); font-family:'DM Sans',sans-serif; font-size:13px; outline:none; resize:none; }
+    .qe-input { width:100%; box-sizing:border-box; padding:9px 12px; background: var(--input-bg); border:1px solid var(--border); border-radius:8px; color:var(--text-high); font-family:'DM Sans',sans-serif; font-size:13px; outline:none; resize:none; }
     .qe-input:focus { border-color:var(--accent); }
     .qe-foot { display:flex; gap:8px; margin-top:16px; }
   </style>
@@ -327,7 +327,7 @@ function renderAnalytics() {
     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px">'+
       '<div class="an-card"><div class="an-card-label">Total submitted</div><div class="an-card-value">'+recipes.length+'</div></div>'+
       '<div class="an-card"><div class="an-card-label">Published</div><div class="an-card-value" style="color:#4caf76">'+approved.length+'</div></div>'+
-      '<div class="an-card"><div class="an-card-label">Under review</div><div class="an-card-value" style="color:#f0a830">'+pending.length+'</div></div>'+
+      '<div class="an-card"><div class="an-card-label">Under review</div><div class="an-card-value" style="color:var(--warn)">'+pending.length+'</div></div>'+
       '<div class="an-card"><div class="an-card-label">Categories</div><div class="an-card-value">'+cats.length+'</div></div>'+
     '</div>'+
     (cats.length ? '<div class="an-sec-title" style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:12px">Your Categories</div>'+catBars+'<br>' : '')+

@@ -32,6 +32,18 @@
 body {
   --text:       var(--text-high);
   --text-muted: var(--text-mid);
+  /* ── COMPONENT TOKENS (CJ-002 Phase 3) — one source for every control ── */
+  --input-bg:       var(--text-ghost);
+  --panel-bg:       var(--card-bg);
+  --surface-2:      var(--card-bg);
+  --hover-wash:     rgb(from var(--accent) r g b / 0.08);
+  --selected-wash:  rgb(from var(--accent) r g b / 0.12);
+  --scrim:          rgba(0, 0, 0, 0.72);
+  /* semantic status — theme-independent by design */
+  --danger:  #dc5050;  --danger-bg:  rgba(220, 80, 80, 0.10);
+  --warn:    #f0a830;  --warn-bg:    rgba(240, 168, 48, 0.15);
+  --success: #4caf76;  --success-bg: rgba(76, 175, 118, 0.12);
+  --info:    #5B8FD4;
 }
 
 /* Midnight Slate — default theme, also selectable explicitly */
@@ -145,7 +157,7 @@ body {
   color: var(--text-mid);
   border: 0.5px solid rgba(255,255,255,0.15) !important;
 }
-.btn-ghost:hover { background: rgba(255,255,255,0.12); color: var(--text-high); }
+.btn-ghost:hover { background: var(--hover-wash); color: var(--text-high); }
 .btn-gold { background: var(--accent); color: #fff; }
 .btn-gold:hover { filter: brightness(0.9); transform: translateY(-1px); }
 
@@ -168,7 +180,7 @@ body {
   color: var(--text-mid);
   border: 0.5px solid rgba(255,255,255,0.2) !important;
 }
-.btn-cta-secondary:hover { background: rgba(255,255,255,0.12); }
+.btn-cta-secondary:hover { background: var(--hover-wash); }
 
 /* ── TAB NAVIGATION ── */
 .tab-nav {
@@ -368,7 +380,7 @@ body {
 .search-wrap input {
   width: 100%;
   padding: 13px 16px 13px 44px;
-  background: rgba(255,255,255,0.06);
+  background: var(--input-bg);
   border: 0.5px solid var(--border);
   border-radius: 10px;
   font-family: 'DM Sans', sans-serif;
@@ -378,7 +390,7 @@ body {
   transition: all 0.2s;
 }
 .search-wrap input::placeholder { color: var(--text-low); }
-.search-wrap input:focus { border-color: var(--accent-border); background: rgba(255,255,255,0.08); }
+.search-wrap input:focus { border-color: var(--accent-border); background: var(--input-bg); }
 .s-clear {
   position: absolute;
   right: 14px;
@@ -393,7 +405,7 @@ body {
 .filter-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .fsel {
   padding: 8px 14px;
-  background: rgba(255,255,255,0.06);
+  background: var(--input-bg);
   border: 0.5px solid var(--border);
   border-radius: 8px;
   font-family: 'DM Sans', sans-serif;
@@ -809,7 +821,7 @@ body {
   border: 1px solid var(--border);
 }
 .cj-btn-secondary:hover { color: var(--text-high); border-color: var(--accent-border); filter: none; }
-.cj-btn-danger   { background: rgba(220,80,80,.1); color: #dc5050; border: 1px solid rgba(220,80,80,.3); }
+.cj-btn-danger   { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(220,80,80,.3); }
 .cj-btn-sm       { padding: 6px 14px; font-size: 12px; border-radius: 7px; }
 
 /* ── FORM FIELDS ── */
@@ -830,7 +842,7 @@ body {
 .cj-input,
 .cj-textarea,
 .cj-select {
-  background: var(--text-ghost);
+  background: var(--input-bg);
   border: 1px solid var(--border);
   border-radius: 9px;
   padding: 10px 13px;
@@ -855,7 +867,7 @@ body {
    themed, even without a page-specific class. Page classes (.fsel,
    .cj-select, .sr-select, .dj-select, …) override via specificity. */
 select {
-  background: var(--text-ghost);
+  background: var(--input-bg);
   color: var(--text-high);
   border: 1px solid var(--border);
   border-radius: 9px;
@@ -898,7 +910,7 @@ select option:checked {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.75);
+  background: var(--scrim);
   z-index: 9999;
   align-items: center;
   justify-content: center;
@@ -1027,7 +1039,7 @@ select option:checked {
 .cj-notice-info    { background: rgba(112,160,208,.1); border: 1px solid rgba(112,160,208,.3); color: #70a0d0; }
 .cj-notice-success { background: rgba(76,175,118,.1);  border: 1px solid rgba(76,175,118,.3);  color: #4caf76; }
 .cj-notice-warning { background: rgba(220,130,50,.1);  border: 1px solid rgba(220,130,50,.3);  color: #dc8232; }
-.cj-notice-error   { background: rgba(220,80,80,.1);   border: 1px solid rgba(220,80,80,.3);   color: #dc5050; }
+.cj-notice-error   { background: var(--danger-bg);   border: 1px solid rgba(220,80,80,.3);   color: var(--danger); }
 
 
 /* ── GROUPED SECTION NAVIGATION ── */

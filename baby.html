@@ -37,14 +37,14 @@
     .bt-item  { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); display:flex; gap:7px; margin-bottom:6px; line-height:1.5; }
     .bt-item::before { content:'·'; color:var(--accent); flex-shrink:0; }
     .bt-ok::before  { content:'✓'; color:#4caf76; font-weight:700; }
-    .bt-no::before  { content:'✗'; color:#dc5050; font-weight:700; }
-    .bt-warn::before{ content:'⚠'; color:#f0a830; font-weight:700; }
+    .bt-no::before  { content:'✗'; color: var(--danger); font-weight:700; }
+    .bt-warn::before{ content:'⚠'; color: var(--warn); font-weight:700; }
 
     /* Danger banner */
-    .bt-danger { background:rgba(220,80,80,0.07); border:1px solid rgba(220,80,80,0.25); border-radius:11px; padding:16px 18px; margin-bottom:20px; }
-    .bt-danger-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#dc5050; margin-bottom:10px; }
+    .bt-danger { background:rgb(from var(--danger) r g b / 0.07); border:1px solid rgb(from var(--danger) r g b / 0.25); border-radius:11px; padding:16px 18px; margin-bottom:20px; }
+    .bt-danger-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color: var(--danger); margin-bottom:10px; }
     .bt-danger-grid  { display:flex; flex-wrap:wrap; gap:8px; }
-    .bt-danger-pill  { background:rgba(220,80,80,0.1); border:1px solid rgba(220,80,80,0.3); border-radius:20px; padding:4px 12px; font-family:'DM Sans',sans-serif; font-size:12px; color:#dc5050; font-weight:500; }
+    .bt-danger-pill  { background: var(--danger-bg); border:1px solid rgb(from var(--danger) r g b / 0.3); border-radius:20px; padding:4px 12px; font-family:'DM Sans',sans-serif; font-size:12px; color: var(--danger); font-weight:500; }
 
     /* Recipe cards */
     .bt-recipe-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; }
@@ -56,8 +56,8 @@
     .bt-recipe-name { font-family:'Cormorant Garamond',serif; font-size:1rem; font-weight:600; color:var(--text-high); margin-bottom:3px; }
     .bt-recipe-meta { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
     .bt-recipe-flags { display:flex; flex-wrap:wrap; gap:3px; margin-top:5px; }
-    .bt-flag-ok  { font-size:10px; padding:1px 7px; border-radius:4px; background:rgba(76,175,118,0.1); color:#4caf76; }
-    .bt-flag-warn{ font-size:10px; padding:1px 7px; border-radius:4px; background:rgba(220,80,80,0.1); color:#dc5050; }
+    .bt-flag-ok  { font-size:10px; padding:1px 7px; border-radius:4px; background: var(--success-bg); color:#4caf76; }
+    .bt-flag-warn{ font-size:10px; padding:1px 7px; border-radius:4px; background: var(--danger-bg); color: var(--danger); }
 
     .bt-empty { text-align:center; padding:48px 20px; }
     .bt-empty-icon  { font-size:40px; margin-bottom:10px; }

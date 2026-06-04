@@ -54,8 +54,8 @@
       max-width: 520px;
       text-align: center;
       padding: 28px 24px;
-      background: rgba(220,80,80,0.08);
-      border: 0.5px solid rgba(220,80,80,0.35);
+      background: rgb(from var(--danger) r g b / 0.08);
+      border: 0.5px solid rgb(from var(--danger) r g b / 0.35);
       border-radius: 14px;
     }
     .err-title {
@@ -211,7 +211,7 @@
     .pinput {
       width: 100%;
       padding: 11px 14px;
-      background: rgba(255,255,255,0.05);
+      background: var(--input-bg);
       border: 0.5px solid rgba(255,255,255,0.1);
       border-radius: 8px;
       font-family: 'DM Sans', sans-serif;
@@ -221,9 +221,9 @@
       transition: all 0.2s;
       box-sizing: border-box;
     }
-    .pinput:focus { border-color: rgb(from var(--accent) r g b / 0.5); background: rgba(255,255,255,0.07); }
-    .pinput:disabled { opacity: 0.55; cursor: not-allowed; background: rgba(255,255,255,0.025); }
-    .pinput.error { border-color: rgba(220,80,80,0.6); }
+    .pinput:focus { border-color: rgb(from var(--accent) r g b / 0.5); background: var(--input-bg); }
+    .pinput:disabled { opacity: 0.55; cursor: not-allowed; background: var(--input-bg); }
+    .pinput.error { border-color: rgb(from var(--danger) r g b / 0.6); }
     .phint { font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--text-low); margin-top: 5px; }
     .perror {
       font-family: 'DM Sans', sans-serif;
@@ -257,7 +257,7 @@
       display: none;
       line-height: 1.5;
     }
-    .pmsg-error   { background: rgba(220,80,80,0.1); border: 0.5px solid rgba(220,80,80,0.3); color: #e07070; }
+    .pmsg-error   { background: var(--danger-bg); border: 0.5px solid rgb(from var(--danger) r g b / 0.3); color: #e07070; }
     .pmsg-success { background: rgba(80,180,80,0.1); border: 0.5px solid rgba(80,180,80,0.3); color: #70c070; }
 
     .pwd-wrap { position: relative; }
@@ -401,7 +401,7 @@
       z-index: 1000;
     }
     .toast.show { opacity: 1; transform: translateY(0); }
-    .toast.err { background: rgba(220,80,80,0.95); }
+    .toast.err { background: rgb(from var(--danger) r g b / 0.95); }
 
     .nav-user-pill {
       font-family: 'DM Sans', sans-serif;
@@ -678,13 +678,13 @@
         <button class="pbtn" onclick="signOut()" style="background:none;border:1px solid var(--border);color:var(--text-mid);margin-top:8px">Sign Out</button>
       </section>
 
-      <section class="pcard" style="border-color:rgba(220,80,80,0.15)">
+      <section class="pcard" style="border-color:rgb(from var(--danger) r g b / 0.15)">
         <h2 class="pcard-title">Account Management</h2>
         <p class="pcard-desc">This action is permanent and cannot be self-reversed. Contact support to reactivate a deactivated account.</p>
-        <div style="margin-top:14px;padding:16px 18px;background:rgba(220,80,80,0.04);border:1px solid rgba(220,80,80,0.15);border-radius:11px;max-width:420px">
-          <div style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:#dc5050;margin-bottom:4px">Deactivate Account</div>
+        <div style="margin-top:14px;padding:16px 18px;background:rgb(from var(--danger) r g b / 0.04);border:1px solid rgb(from var(--danger) r g b / 0.15);border-radius:11px;max-width:420px">
+          <div style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--danger);margin-bottom:4px">Deactivate Account</div>
           <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:14px">Your recipes, diary entries, and collections are preserved. You will not be able to sign in until your account is reactivated by support.</div>
-          <button class="pbtn" onclick="showDeactivateModal()" style="background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);color:#dc5050">Deactivate Account</button>
+          <button class="pbtn" onclick="showDeactivateModal()" style="background:rgb(from var(--danger) r g b / 0.1);border:1px solid rgb(from var(--danger) r g b / 0.4);color:var(--danger)">Deactivate Account</button>
         </div>
       </section>
 
@@ -1565,13 +1565,13 @@ async function savePreferences() {
 
 <!-- Deactivation Modal -->
 <div id="deactivate-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)">
-  <div style="background:var(--bg);border:1px solid rgba(220,80,80,0.4);border-radius:16px;padding:28px;max-width:420px;width:100%">
+  <div style="background:var(--bg);border:1px solid rgb(from var(--danger) r g b / 0.4);border-radius:16px;padding:28px;max-width:420px;width:100%">
     <div style="font-size:32px;text-align:center;margin-bottom:12px">⚠️</div>
-    <div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600;color:#dc5050;text-align:center;margin-bottom:8px">Deactivate Account?</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600;color:var(--danger);text-align:center;margin-bottom:8px">Deactivate Account?</div>
     <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);text-align:center;margin-bottom:20px;line-height:1.6">Your account will be deactivated and you will be signed out. Your recipes and data are preserved. Contact support at <strong style="color:var(--text-high)">miseenplacekitchen.official@gmail.com</strong> to reactivate.</div>
     <div style="display:flex;gap:10px">
       <button onclick="cancelDeactivate()" style="flex:1;padding:12px;background:none;border:1px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-mid);cursor:pointer">Cancel</button>
-      <button onclick="confirmDeactivate()" id="deactivate-confirm-btn" style="flex:1;padding:12px;background:rgba(220,80,80,0.15);border:1px solid rgba(220,80,80,0.5);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;color:#dc5050;font-weight:600;cursor:pointer">Yes, Deactivate</button>
+      <button onclick="confirmDeactivate()" id="deactivate-confirm-btn" style="flex:1;padding:12px;background:rgb(from var(--danger) r g b / 0.15);border:1px solid rgb(from var(--danger) r g b / 0.5);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--danger);font-weight:600;cursor:pointer">Yes, Deactivate</button>
     </div>
   </div>
 </div>

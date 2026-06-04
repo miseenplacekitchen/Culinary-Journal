@@ -66,9 +66,9 @@
     .ap-stat  { background: var(--text-ghost); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
     .ap-stat-num   { font-family: "Cormorant Garamond", serif; font-size: 2.2rem; font-weight: 600; color: var(--text-high); line-height: 1; }
     .ap-stat-label { font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--text-mid); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
-    .ap-stat.pending .ap-stat-num { color: #f0a830; }
+    .ap-stat.pending .ap-stat-num { color: var(--warn); }
     .ap-stat.approved .ap-stat-num { color: #4caf76; }
-    .ap-stat.rejected .ap-stat-num { color: #dc5050; }
+    .ap-stat.rejected .ap-stat-num { color: var(--danger); }
 
     /* ── FILTERS ── */
     .ap-filters { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
@@ -92,16 +92,16 @@
     .ap-submitter    { font-family: "DM Sans", sans-serif; font-size: 12px; color: var(--text-mid); }
     .ap-date         { font-family: "DM Sans", sans-serif; font-size: 12px; color: var(--text-mid); white-space: nowrap; }
     .ap-status-pill  { font-family: "DM Sans", sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 10px; border-radius: 20px; display: inline-block; }
-    .ap-status-pill.pending  { background: rgba(240,168,48,0.15); color: #f0a830; }
+    .ap-status-pill.pending  { background: var(--warn-bg); color: var(--warn); }
     .ap-status-pill.approved { background: rgba(76,175,118,0.15); color: #4caf76; }
-    .ap-status-pill.rejected { background: rgba(220,80,80,0.15);  color: #dc5050; }
+    .ap-status-pill.rejected { background: rgb(from var(--danger) r g b / 0.15);  color: var(--danger); }
     .ap-thumb { width: 48px; height: 36px; border-radius: 6px; object-fit: cover; background: var(--border); }
     .ap-thumb-empty { width: 48px; height: 36px; border-radius: 6px; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 16px; }
     .ap-empty-row { text-align: center; padding: 60px 20px; }
     .ap-empty-row td { font-family: "DM Sans", sans-serif; font-size: 14px; color: var(--text-mid); }
 
     /* ── REVIEW MODAL ── */
-    .ap-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 9999; display: none; align-items: flex-start; justify-content: center; padding: 24px; overflow-y: auto; backdrop-filter: blur(4px); }
+    .ap-modal-overlay { position: fixed; inset: 0; background: var(--scrim); z-index: 9999; display: none; align-items: flex-start; justify-content: center; padding: 24px; overflow-y: auto; backdrop-filter: blur(4px); }
     .ap-modal-overlay.open { display: flex; }
     .ap-modal { background: var(--bg); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 860px; margin: auto; overflow: hidden; }
     .ap-modal-head { padding: 24px 28px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 16px; }
@@ -140,13 +140,13 @@
     .ap-review-btns { display: flex; gap: 10px; align-items: center; }
     .ap-btn-approve { flex: 1; padding: 12px; background: #2e7d4f; border: none; border-radius: 9px; color: var(--text-high); font-family: "DM Sans", sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
     .ap-btn-approve:hover { opacity: 0.85; }
-    .ap-btn-reject  { flex: 1; padding: 12px; background: none; border: 1px solid #dc5050; border-radius: 9px; color: #dc5050; font-family: "DM Sans", sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
-    .ap-btn-reject:hover { background: rgba(220,80,80,0.1); }
+    .ap-btn-reject  { flex: 1; padding: 12px; background: none; border: 1px solid var(--danger); border-radius: 9px; color: var(--danger); font-family: "DM Sans", sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .ap-btn-reject:hover { background: var(--danger-bg); }
     .ap-btn-pending { padding: 12px 20px; background: none; border: 1px solid var(--border); border-radius: 9px; color: var(--text-mid); font-family: "DM Sans", sans-serif; font-size: 13px; cursor: pointer; }
     .ap-btn-pending:hover { border-color: var(--accent); color: var(--accent); }
     .ap-review-msg  { font-family: "DM Sans", sans-serif; font-size: 12px; margin-left: auto; padding: 8px 14px; border-radius: 8px; }
     .ap-review-msg.success { background: rgba(76,175,118,0.15); color: #4caf76; }
-    .ap-review-msg.error   { background: rgba(220,80,80,0.15);  color: #dc5050; }
+    .ap-review-msg.error   { background: rgb(from var(--danger) r g b / 0.15);  color: var(--danger); }
 
 
 
@@ -200,21 +200,21 @@
     .bulk-toolbar.visible { display:flex; }
     .bulk-count { font-family:DM Sans,sans-serif; font-size:13px; font-weight:600; color:var(--accent); white-space:nowrap; }
     .bulk-field-sel { font-family:DM Sans,sans-serif; font-size:12px; padding:6px 10px; border-radius:7px; border:1px solid var(--border); background:var(--bg); color:var(--text-high); outline:none; cursor:pointer; }
-    .bulk-val-input { font-family:DM Sans,sans-serif; font-size:12px; padding:6px 10px; border-radius:7px; border:1px solid var(--border); background:var(--bg); color:var(--text-high); outline:none; flex:1; min-width:120px; max-width:200px; }
+    .bulk-val-input { font-family:DM Sans,sans-serif; font-size:12px; padding:6px 10px; border-radius:7px; border:1px solid var(--border); background: var(--input-bg); color:var(--text-high); outline:none; flex:1; min-width:120px; max-width:200px; }
     .bulk-apply-btn { padding:6px 16px; background:var(--accent); border:none; border-radius:7px; color:#fff; font-family:DM Sans,sans-serif; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; }
     .bulk-apply-btn:hover { opacity:0.85; }
     .bulk-clear-btn { padding:6px 14px; background:none; border:1px solid var(--border); border-radius:7px; color:var(--text-mid); font-family:DM Sans,sans-serif; font-size:12px; cursor:pointer; white-space:nowrap; }
     .bulk-clear-btn:hover { border-color:var(--accent); color:var(--accent); }
-    .bulk-del-btn { padding:6px 14px; background:none; border:1px solid #dc5050; border-radius:7px; color:#dc5050; font-family:DM Sans,sans-serif; font-size:12px; cursor:pointer; white-space:nowrap; }
+    .bulk-del-btn { padding:6px 14px; background:none; border:1px solid var(--danger); border-radius:7px; color: var(--danger); font-family:DM Sans,sans-serif; font-size:12px; cursor:pointer; white-space:nowrap; }
 
     /* Inline editing */
     .editable-cell { cursor:pointer; }
     .editable-cell:hover { background:rgb(from var(--accent) r g b / 0.06); border-radius:4px; }
-    .inline-input { font-family:DM Sans,sans-serif; font-size:12px; padding:2px 6px; border-radius:5px; border:1px solid var(--accent); background:var(--bg); color:var(--text-high); outline:none; width:100%; min-width:80px; }
-    .inline-select { font-family:DM Sans,sans-serif; font-size:12px; padding:2px 6px; border-radius:5px; border:1px solid var(--accent); background:var(--bg); color:var(--text-high); outline:none; }
+    .inline-input { font-family:DM Sans,sans-serif; font-size:12px; padding:2px 6px; border-radius:5px; border:1px solid var(--accent); background: var(--input-bg); color:var(--text-high); outline:none; width:100%; min-width:80px; }
+    .inline-select { font-family:DM Sans,sans-serif; font-size:12px; padding:2px 6px; border-radius:5px; border:1px solid var(--accent); background: var(--input-bg); color:var(--text-high); outline:none; }
 
     /* CSV Import modal */
-    .csv-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; display:none; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+    .csv-modal-overlay { position:fixed; inset:0; background: var(--scrim); z-index:9999; display:none; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
     .csv-modal-overlay.open { display:flex; }
     .csv-modal { background:var(--bg); border:1px solid var(--border); border-radius:16px; width:100%; max-width:800px; margin:auto; overflow:hidden; max-height:90vh; display:flex; flex-direction:column; }
     .csv-modal-head { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
@@ -240,24 +240,24 @@
     /* Only the ingredient modal form fields — NOT table inline selects */
     .ing-modal-body input,
     .ing-modal-body textarea {
-      background: var(--bg);
+      background: var(--input-bg);
       color: var(--text-high);
       border-color: var(--border);
     }
     .ing-modal-body select {
-      background: var(--bg);
+      background: var(--input-bg);
       color: var(--text-high);
       border-color: var(--border);
       -webkit-appearance: auto;
       appearance: auto;
     }
     .ing-modal-body select option { background: var(--bg); color: var(--text-high); }
-    .ing-modal-foot input, .ing-modal-foot select { background: var(--bg); color: var(--text-high); }
+    .ing-modal-foot input, .ing-modal-foot select { background: var(--input-bg); color: var(--text-high); }
     .ing-cat-filter { background: var(--bg); color: var(--text-high); }
     .ing-cat-filter option { background: var(--bg); color: var(--text-high); }
     .ap-search { background: var(--bg); color: var(--text-high); }
     .ap-search::placeholder { color: var(--text-mid); }
-    .bulk-field-sel, .bulk-val-input { background: var(--bg); color: var(--text-high); }
+    .bulk-field-sel, .bulk-val-input { background: var(--input-bg); color: var(--text-high); }
     .ap-reviewer-notes { background: var(--bg); color: var(--text-high); }
 
     /* ── INGREDIENT MANAGEMENT ────────────────── */
@@ -275,7 +275,7 @@
     .ing-cat-filter { font-family:DM Sans,sans-serif; font-size:12px; padding:7px 12px; border-radius:20px; border:1px solid var(--border); background:var(--bg); color:var(--text-high); outline:none; cursor:pointer; }
     .ing-cat-filter option { background:var(--bg); color:var(--text-high); }
     .ing-count { font-family:DM Sans,sans-serif; font-size:12px; color:var(--text-mid); }
-    .ing-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; display:none; align-items:center; justify-content:center; padding:20px; overflow-y:auto; backdrop-filter:blur(4px); }
+    .ing-modal-overlay { position:fixed; inset:0; background: var(--scrim); z-index:9999; display:none; align-items:center; justify-content:center; padding:20px; overflow-y:auto; backdrop-filter:blur(4px); }
     .ing-modal-overlay.open { display:flex; }
     .ing-modal { background:var(--bg); border:1px solid var(--border); border-radius:16px; width:100%; max-width:700px; margin:auto; overflow:hidden; }
     .ing-modal-head { padding:22px 26px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
@@ -284,17 +284,17 @@
     .ing-modal-body { padding:22px 26px; display:grid; grid-template-columns:1fr 1fr; gap:14px; max-height:65vh; overflow-y:auto; }
     .ing-modal-body .full { grid-column:1/-1; }
     .ing-field label { display:block; font-family:DM Sans,sans-serif; font-size:10px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-mid); margin-bottom:5px; }
-    .ing-field input, .ing-field select, .ing-field textarea { width:100%; font-family:DM Sans,sans-serif; font-size:13px; color:var(--text-high); background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; outline:none; box-sizing:border-box; }
+    .ing-field input, .ing-field select, .ing-field textarea { width:100%; font-family:DM Sans,sans-serif; font-size:13px; color:var(--text-high); background: var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; outline:none; box-sizing:border-box; }
     .ing-field select option { background:var(--bg); color:var(--text-high); }
     .ing-field input:focus, .ing-field select:focus, .ing-field textarea:focus { border-color:var(--accent); }
     .ing-field textarea { resize:vertical; min-height:72px; }
     .ing-modal-foot { padding:16px 26px; border-top:1px solid var(--border); display:flex; gap:10px; align-items:center; background:var(--text-ghost); }
     .ing-save-btn { flex:1; padding:11px; background:var(--accent); border:none; border-radius:9px; color:#fff; font-family:DM Sans,sans-serif; font-size:14px; font-weight:600; cursor:pointer; }
     .ing-cancel-btn { padding:11px 20px; background:none; border:1px solid var(--border); border-radius:9px; color:var(--text-mid); font-family:DM Sans,sans-serif; font-size:13px; cursor:pointer; }
-    .ing-del-btn { padding:11px 20px; background:none; border:1px solid #dc5050; border-radius:9px; color:#dc5050; font-family:DM Sans,sans-serif; font-size:13px; cursor:pointer; }
+    .ing-del-btn { padding:11px 20px; background:none; border:1px solid var(--danger); border-radius:9px; color: var(--danger); font-family:DM Sans,sans-serif; font-size:13px; cursor:pointer; }
     .ing-msg { font-family:DM Sans,sans-serif; font-size:12px; padding:6px 12px; border-radius:7px; display:none; }
     .ing-msg.ok  { background:rgba(76,175,118,0.15); color:#4caf76; }
-    .ing-msg.err { background:rgba(220,80,80,0.15);  color:#dc5050; }
+    .ing-msg.err { background:rgb(from var(--danger) r g b / 0.15);  color: var(--danger); }
 
     /* ── ACCESS DENIED ── */
     .ap-denied { display: flex; align-items: center; justify-content: center; min-height: 100vh; text-align: center; }
@@ -349,8 +349,8 @@
 
   /* ── Custom tooltip ── */
   .tcj-tip {
-    position:fixed;z-index:99999;background:#1e2a1e;border:1px solid #4caf76;
-    color:#e8f5e9;font-family:'DM Sans',sans-serif;font-size:11px;line-height:1.5;
+    position:fixed;z-index:99999;background: var(--bg);border:1px solid #4caf76;
+    color: var(--text-high);font-family:'DM Sans',sans-serif;font-size:11px;line-height:1.5;
     padding:7px 12px;border-radius:7px;max-width:280px;pointer-events:none;
     box-shadow:0 4px 16px rgba(0,0,0,0.5);
   }
@@ -414,7 +414,7 @@
 
       <!-- QUICK ACTIONS -->
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px">
-        <button onclick="switchView('recipe-mgmt');switchRecipeTab('pending')" style="padding:9px 18px;background:rgba(212,160,23,0.12);border:1px solid rgba(212,160,23,0.35);border-radius:8px;color:#d4a017;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">&#9203; Review Pending Recipes</button>
+        <button onclick="switchView('recipe-mgmt');switchRecipeTab('pending')" style="padding:9px 18px;background:rgb(from var(--warn) r g b / 0.12);border:1px solid rgb(from var(--warn) r g b / 0.35);border-radius:8px;color:var(--warn);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">&#9203; Review Pending Recipes</button>
         <button onclick="switchView('finance');switchFinanceTab('fi-members')" style="padding:9px 18px;background:rgba(196,151,59,0.1);border:1px solid rgba(196,151,59,0.3);border-radius:8px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">&#128176; Manage Member Tiers</button>
         <button onclick="switchView('site-mgmt')" style="padding:9px 18px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">&#9881;&#65039; Site Management</button>
         <button onclick="switchView('user-mgmt')" style="padding:9px 18px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">&#128101; User Management</button>
@@ -907,7 +907,7 @@
         </div>
       </div>
 
-      <div id="csv-error" style="display:none;margin-top:12px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.3);border-radius:8px;padding:10px 14px;"></div>
+      <div id="csv-error" style="display:none;margin-top:12px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--danger);background:rgb(from var(--danger) r g b / 0.1);border:1px solid rgb(from var(--danger) r g b / 0.3);border-radius:8px;padding:10px 14px;"></div>
     </div>
     <div class="csv-modal-foot">
       <button class="csv-import-btn" id="csv-import-btn" onclick="importCsv()" disabled>Import</button>
