@@ -25,9 +25,13 @@
   --footer-bg:     rgba(0,0,0,0.45);
   --bg:            #0f1011;
   --surface:       rgba(255,255,255,0.04);
-  /* Aliases for compatibility with recipe-page and submit-recipe */
-  --text:          var(--text-high);
-  --text-muted:    var(--text-mid);
+}
+
+/* Aliases for recipe-page / submit-recipe — declared on body so they
+   re-resolve AFTER the theme class overrides --text-high / --text-mid. */
+body {
+  --text:       var(--text-high);
+  --text-muted: var(--text-mid);
 }
 
 /* Midnight Slate — default theme, also selectable explicitly */
@@ -1171,6 +1175,7 @@ body.theme-cream-gold {
   --feature-bg: rgba(248,238,210,0.6);
   --footer-bg: rgba(245,232,200,0.7);
   background: #fdf6e3;
+  --surface: rgba(40,30,18,0.04);
 }
 body.theme-cream-gold .page-bg { background-color: #fdf6e3; }
 body.theme-pure-white {
@@ -1192,6 +1197,7 @@ body.theme-pure-white {
   --feature-bg: rgba(250,250,250,0.6);
   --footer-bg: rgba(248,248,248,0.7);
   background: #ffffff;
+  --surface: rgba(0,0,0,0.025);
 }
 body.theme-pure-white .page-bg { background-color: #ffffff; }
 body.theme-spring-blossom {
@@ -1213,6 +1219,7 @@ body.theme-spring-blossom {
   --feature-bg: rgba(250,228,235,0.6);
   --footer-bg: rgba(248,220,228,0.7);
   background: #fdeef2;
+  --surface: rgba(60,30,40,0.04);
 }
 body.theme-spring-blossom .page-bg { background-color: #fdeef2; }
 body.theme-autumn-harvest {
@@ -1292,6 +1299,7 @@ body.theme-soft-linen {
   --card-bg: rgba(42,36,24,0.04);
   --feature-bg: rgba(245,240,232,0.60); --footer-bg: rgba(245,240,232,0.70);
   background: #f5f0e8;
+  --surface: rgba(42,36,24,0.04);
 }
 body.theme-soft-linen .page-bg { background-color: #f5f0e8; }
 
@@ -1309,6 +1317,7 @@ body.theme-sage-cream {
   --card-bg: rgba(42,46,34,0.04);
   --feature-bg: rgba(244,241,232,0.60); --footer-bg: rgba(244,241,232,0.70);
   background: #f4f1e8;
+  --surface: rgba(42,46,34,0.04);
 }
 body.theme-sage-cream .page-bg { background-color: #f4f1e8; }
 
@@ -1326,6 +1335,7 @@ body.theme-blush-rose {
   --card-bg: rgba(58,32,40,0.04);
   --feature-bg: rgba(251,234,229,0.60); --footer-bg: rgba(251,234,229,0.70);
   background: #fbeae5;
+  --surface: rgba(58,32,40,0.04);
 }
 body.theme-blush-rose .page-bg { background-color: #fbeae5; }
 
@@ -1343,6 +1353,7 @@ body.theme-silver-morning {
   --card-bg: rgba(26,32,40,0.04);
   --feature-bg: rgba(240,242,245,0.60); --footer-bg: rgba(240,242,245,0.70);
   background: #f0f2f5;
+  --surface: rgba(26,32,40,0.04);
 }
 body.theme-silver-morning .page-bg { background-color: #f0f2f5; }
 
@@ -1360,6 +1371,7 @@ body.theme-lemon-fresh {
   --card-bg: rgba(46,40,24,0.04);
   --feature-bg: rgba(253,251,232,0.60); --footer-bg: rgba(253,251,232,0.70);
   background: #fdfbe8;
+  --surface: rgba(46,40,24,0.04);
 }
 body.theme-lemon-fresh .page-bg { background-color: #fdfbe8; }
 
@@ -1378,6 +1390,7 @@ body.theme-summer-citrus {
   --card-bg: rgba(58,42,16,0.04);
   --feature-bg: rgba(255,248,224,0.60); --footer-bg: rgba(255,248,224,0.70);
   background: #fff8e0;
+  --surface: rgba(58,42,16,0.04);
 }
 body.theme-summer-citrus .page-bg { background-color: #fff8e0; }
 
@@ -1395,6 +1408,7 @@ body.theme-winter-frost {
   --card-bg: rgba(26,40,48,0.04);
   --feature-bg: rgba(232,240,245,0.60); --footer-bg: rgba(232,240,245,0.70);
   background: #e8f0f5;
+  --surface: rgba(26,40,48,0.04);
 }
 body.theme-winter-frost .page-bg { background-color: #e8f0f5; }
 
@@ -1457,6 +1471,7 @@ body.theme-onam {
   --card-bg: rgba(50,30,12,0.04);
   --feature-bg: rgba(255,245,224,0.60); --footer-bg: rgba(255,245,224,0.70);
   background: #fff5e0;
+  --surface: rgba(50,30,12,0.04);
 }
 body.theme-onam .page-bg { background-color: #fff5e0; }
 
@@ -1474,6 +1489,7 @@ body.theme-easter {
   --card-bg: rgba(50,36,50,0.04);
   --feature-bg: rgba(251,242,232,0.60); --footer-bg: rgba(251,242,232,0.70);
   background: #fbf2e8;
+  --surface: rgba(50,36,50,0.04);
 }
 body.theme-easter .page-bg { background-color: #fbf2e8; }
 
@@ -1491,6 +1507,8 @@ body.theme-wedding-white {
   --card-bg: rgba(26,26,26,0.04);
   --feature-bg: rgba(250,250,250,0.60); --footer-bg: rgba(255,255,255,0.70);
   background: #ffffff;
+  --bg: #ffffff;
+  --surface: rgba(26,26,26,0.04);
 }
 body.theme-wedding-white .page-bg { background-color: #ffffff; }
 
@@ -1508,6 +1526,7 @@ body.theme-birthday-cake {
   --card-bg: rgba(90,48,80,0.04);
   --feature-bg: rgba(255,240,248,0.60); --footer-bg: rgba(255,240,248,0.70);
   background: #fff0f8;
+  --surface: rgba(90,48,80,0.04);
 }
 body.theme-birthday-cake .page-bg { background-color: #fff0f8; }
 
@@ -1524,6 +1543,8 @@ body.theme-baby-shower {
   --card-bg: rgba(58,74,88,0.04);
   --feature-bg: rgba(238,245,248,0.60); --footer-bg: rgba(238,245,248,0.70);
   background: #eef5f8;
+  --bg: #eef5f8;
+  --surface: rgba(58,74,88,0.04);
 }
 body.theme-baby-shower .page-bg { background-color: #eef5f8; }
 
@@ -1550,6 +1571,8 @@ body.theme-old-cookbook {
   --card-bg: rgba(42,24,16,0.04);
   --feature-bg: rgba(242,232,208,0.60); --footer-bg: rgba(242,232,208,0.70);
   background: #f2e8d0;
+  --bg: #f2e8d0;
+  --surface: rgba(42,24,16,0.04);
 }
 body.theme-old-cookbook .page-bg { background-color: #f2e8d0; }
 
@@ -1597,6 +1620,8 @@ body.theme-crystal-pearl {
   --card-bg: rgba(58,48,74,0.04);
   --feature-bg: rgba(248,244,248,0.60); --footer-bg: rgba(248,244,248,0.70);
   background: #f8f4f8;
+  --bg: #f8f4f8;
+  --surface: rgba(58,48,74,0.04);
 }
 body.theme-crystal-pearl .page-bg { background-color: #f8f4f8; }
 
@@ -1623,6 +1648,8 @@ body.theme-bridal-blush {
   --card-bg: rgba(74,48,46,0.04);
   --feature-bg: rgba(251,240,238,0.60); --footer-bg: rgba(251,240,238,0.70);
   background: #fbf0ee;
+  --bg: #fbf0ee;
+  --surface: rgba(74,48,46,0.04);
 }
 body.theme-bridal-blush .page-bg { background-color: #fbf0ee; }
 
@@ -1639,6 +1666,8 @@ body.theme-pure-petals {
   --card-bg: rgba(58,40,40,0.04);
   --feature-bg: rgba(253,250,250,0.60); --footer-bg: rgba(253,250,250,0.70);
   background: #fdfafa;
+  --bg: #fdfafa;
+  --surface: rgba(58,40,40,0.04);
 }
 body.theme-pure-petals .page-bg { background-color: #fdfafa; }
 
@@ -1685,6 +1714,8 @@ body.theme-enchanted-winter {
   --card-bg: rgba(26,42,58,0.04);
   --feature-bg: rgba(232,238,242,0.60); --footer-bg: rgba(232,238,242,0.70);
   background: #e8eef2;
+  --bg: #e8eef2;
+  --surface: rgba(26,42,58,0.04);
 }
 body.theme-enchanted-winter .page-bg { background-color: #e8eef2; }
 
@@ -1721,6 +1752,8 @@ body.theme-heavens-gate {
   --card-bg: rgba(42,40,72,0.04);
   --feature-bg: rgba(240,240,250,0.60); --footer-bg: rgba(240,240,250,0.70);
   background: #f0f0fa;
+  --bg: #f0f0fa;
+  --surface: rgba(42,40,72,0.04);
 }
 body.theme-heavens-gate .page-bg { background-color: #f0f0fa; }
 
@@ -1737,6 +1770,8 @@ body.theme-ocean-breeze {
   --card-bg: rgba(26,58,72,0.04);
   --feature-bg: rgba(232,244,248,0.60); --footer-bg: rgba(232,244,248,0.70);
   background: #e8f4f8;
+  --bg: #e8f4f8;
+  --surface: rgba(26,58,72,0.04);
 }
 body.theme-ocean-breeze .page-bg { background-color: #e8f4f8; }
 
@@ -1763,6 +1798,8 @@ body.theme-full-bloom {
   --card-bg: rgba(58,32,48,0.04);
   --feature-bg: rgba(251,244,232,0.60); --footer-bg: rgba(251,244,232,0.70);
   background: #fbf4e8;
+  --bg: #fbf4e8;
+  --surface: rgba(58,32,48,0.04);
 }
 body.theme-full-bloom .page-bg { background-color: #fbf4e8; }
 

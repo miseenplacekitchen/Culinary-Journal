@@ -299,15 +299,15 @@
     .xf-btn.on{border-color:var(--accent-border);color:var(--accent);background:var(--accent-glow)}
     .xf-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:260px;background:#1c1c1c;border:0.5px solid rgb(from var(--accent) r g b / 0.3);border-radius:10px;z-index:400;box-shadow:0 8px 32px rgba(0,0,0,0.55);overflow:hidden}
     .xf-panel.open{display:block}
-    .xf-input{width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);border:none;border-bottom:0.5px solid rgba(255,255,255,0.07);font-family:"DM Sans",sans-serif;font-size:13px;color:#fff;outline:none;box-sizing:border-box}
-    .xf-input::placeholder{color:rgba(255,255,255,0.28)}
+    .xf-input{width:100%;padding:10px 14px;background:rgba(255,255,255,0.05);border:none;border-bottom:0.5px solid rgba(255,255,255,0.07);font-family:"DM Sans",sans-serif;font-size:13px;color: var(--text-high);outline:none;box-sizing:border-box}
+    .xf-input::placeholder{color: var(--text-low)}
     .xf-items{max-height:260px;overflow-y:auto}
     .xf-items::-webkit-scrollbar{width:3px}
     .xf-items::-webkit-scrollbar-thumb{background:rgb(from var(--accent) r g b / 0.25)}
-    .xf-item{padding:9px 14px;font-family:"DM Sans",sans-serif;font-size:13px;color:rgba(255,255,255,0.7);cursor:pointer;border-bottom:0.5px solid rgba(255,255,255,0.04)}
+    .xf-item{padding:9px 14px;font-family:"DM Sans",sans-serif;font-size:13px;color: var(--text-mid);cursor:pointer;border-bottom:0.5px solid rgba(255,255,255,0.04)}
     .xf-item:hover{background:rgb(from var(--accent) r g b / 0.08);color:var(--accent)}
     .xf-item.sel{color:var(--accent);font-weight:600}
-    .xf-none{padding:10px 14px;font-family:"DM Sans",sans-serif;font-size:12px;color:rgba(255,255,255,0.3)}
+    .xf-none{padding:10px 14px;font-family:"DM Sans",sans-serif;font-size:12px;color: var(--text-low)}
     .xf-clear-btn{padding:8px 12px;background:none;border:0.5px solid var(--border);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:11px;color:var(--text-high);cursor:pointer;display:none}
     .xf-clear-btn:hover{color:var(--text-high);border-color:var(--accent-border)}
     /* When user picks a country but no state, gently pulse the state button
@@ -520,7 +520,7 @@
       padding: 10px 14px;
       font-family: "DM Sans", sans-serif;
       font-size: 13px;
-      color: #fff;
+      color: var(--text-high);
       cursor: pointer;
       display: flex;
       justify-content: space-between;
@@ -529,7 +529,7 @@
     }
     .ing-autocomplete-item:last-child { border-bottom: none; }
     .ing-autocomplete-item:hover { background: rgb(from var(--accent) r g b / 0.22); color: #fff; }
-    .ing-autocomplete-cat { font-size: 11px; color: rgba(255,255,255,0.55); letter-spacing: 0.02em; }
+    .ing-autocomplete-cat { font-size: 11px; color: var(--text-mid); letter-spacing: 0.02em; }
     .ing-unknown { border-color: #e09955 !important; }
     .ing-unknown-badge { font-size: 10px; color: #e09955; margin-top: 2px; display: block; }
 
@@ -757,14 +757,14 @@
     }
     .img-ctrl-group { display: flex; align-items: center; gap: 6px; }
     .img-ctrl-label { font-family: "DM Sans", sans-serif; font-size: 10px;
-      text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.6); }
+      text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-mid); }
     .img-ctrl-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
-      color: white; border-radius: 5px; width: 26px; height: 26px; font-size: 13px;
+      color: var(--text-high); border-radius: 5px; width: 26px; height: 26px; font-size: 13px;
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: background 0.15s; padding: 0; }
     .img-ctrl-btn:hover { background: rgba(255,255,255,0.28); }
     .img-ctrl-btn.img-ctrl-active { background: var(--accent); border-color: var(--accent); color: #1a1a1a; }
-    .img-ctrl-val { font-family: "DM Sans", sans-serif; font-size: 12px; color: white;
+    .img-ctrl-val { font-family: "DM Sans", sans-serif; font-size: 12px; color: var(--text-high);
       min-width: 36px; text-align: center; }
 
   
@@ -779,7 +779,7 @@
       border-radius: 8px; padding: 6px 0;
       min-width: 190px; z-index: 200; box-shadow: 0 6px 24px rgba(0,0,0,0.6); }
     .move-menu-item { display: block; width: 100%; padding: 9px 16px; background: none;
-      border: none; font-family: "DM Sans", sans-serif; font-size: 13px; color: #e8e8e8;
+      border: none; font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high);
       cursor: pointer; text-align: left; transition: background 0.1s; }
     .move-menu-item:hover { background: rgba(196,151,59,0.18); color: var(--accent); }
     .move-menu-title { font-family: "DM Sans", sans-serif; font-size: 10px; color: #999;
