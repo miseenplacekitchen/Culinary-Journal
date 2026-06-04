@@ -56,7 +56,7 @@
     .rp-credit-item a { color: var(--accent); text-decoration: none; }
     .rp-credit-item a:hover { text-decoration: underline; }
     .rp-credit-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
-    .rp-credit-badge.original { background: rgba(196,151,59,0.15); color: var(--accent); border: 1px solid rgba(196,151,59,0.3); }
+    .rp-credit-badge.original { background: rgb(from var(--accent) r g b / 0.15); color: var(--accent); border: 1px solid rgb(from var(--accent) r g b / 0.3); }
     .rp-credit-badge.external { background: rgba(85,150,220,0.1); color: #5596dc; border: 1px solid rgba(85,150,220,0.3); }
     .rp-preserved { font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
 
@@ -89,7 +89,7 @@
     .rp-ing-name { font-family: "DM Sans", sans-serif; font-size: 14px; color: var(--text); }
     .rp-ing-name.crossed { text-decoration: line-through; opacity: 0.4; }
     .rp-ing-info-btn { background: none; border: none; cursor: pointer; padding: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.15s; position: relative; }
-    .rp-ing-info-btn:hover { background: rgba(196,151,59,0.15); }
+    .rp-ing-info-btn:hover { background: rgb(from var(--accent) r g b / 0.15); }
     .rp-ing-info-icon { width: 16px; height: 16px; border: 1px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: "Cormorant Garamond", serif; font-size: 10px; color: var(--accent); font-style: italic; }
     .rp-ing-cart-btn { background: none; border: none; cursor: pointer; padding: 0; opacity: 0.35; transition: opacity 0.2s; color: var(--text-muted); }
     .rp-ing-cart-btn:hover { opacity: 1; color: var(--accent); }
@@ -199,7 +199,7 @@
     /* ── NOTES TAB ───────────────────────────── */
     .rp-notes-block { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
     .rp-notes-block-title { font-family: "DM Sans", sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
-    .rp-notes-block-title span { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: rgba(196,151,59,0.1); border: 1px solid rgba(196,151,59,0.2); font-weight: 400; letter-spacing: 0; text-transform: none; }
+    .rp-notes-block-title span { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: rgb(from var(--accent) r g b / 0.1); border: 1px solid rgb(from var(--accent) r g b / 0.2); font-weight: 400; letter-spacing: 0; text-transform: none; }
     .rp-notes-list { list-style: none; padding: 0; margin: 0; }
     .rp-notes-item { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-family: "DM Sans", sans-serif; font-size: 14px; color: var(--text-muted); line-height: 1.6; }
     .rp-notes-item:last-child { border-bottom: none; }
@@ -221,7 +221,7 @@
     /* ── PRINT BUTTON ────────────────────────── */
     .rp-tried-btn { display:flex;align-items:center;gap:5px;background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:20px;padding:5px 12px;font-family:"DM Sans",sans-serif;font-size:12px;cursor:pointer;transition:all .2s; }
     .rp-tried-btn:hover { border-color:var(--accent);color:var(--accent); }
-    .rp-tried-btn.done { border-color:var(--accent);color:var(--accent);background:rgba(196,151,59,0.12); }
+    .rp-tried-btn.done { border-color:var(--accent);color:var(--accent);background:rgb(from var(--accent) r g b / 0.12); }
     .rp-tried-btn.done svg { fill:var(--accent);stroke:var(--accent); }
     .rp-print-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: none; border: 1px solid var(--border); border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
     .rp-print-btn:hover { border-color: var(--accent); color: var(--accent); }
@@ -230,7 +230,7 @@
     .rp-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
     .rp-tag { font-family: "DM Sans", sans-serif; font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); color: var(--text-muted); }
     .rp-tag.dietary { border-color: rgba(85,204,119,0.3); color: #55cc77; background: rgba(85,204,119,0.05); }
-    .rp-tag.occasion { border-color: rgba(196,151,59,0.3); color: var(--accent); background: rgba(196,151,59,0.05); }
+    .rp-tag.occasion { border-color: rgb(from var(--accent) r g b / 0.3); color: var(--accent); background: rgb(from var(--accent) r g b / 0.05); }
     .rp-tag.style { border-color: rgba(150,150,220,0.3); color: #9696dc; background: rgba(150,150,220,0.05); }
 
     /* ── RESPONSIVE ──────────────────────────── */
@@ -245,7 +245,7 @@
   
     /* ── Step Timer ─────────────────────────────────── */
     .rp-timer-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; font-size: 10px; font-family: 'DM Sans', sans-serif; color: var(--accent); cursor: pointer; margin-left: 8px; white-space: nowrap; vertical-align: middle; }
-    .rp-timer-btn:hover { background: rgba(196,151,59,.1); }
+    .rp-timer-btn:hover { background: rgb(from var(--accent) r g b / .1); }
     .rp-timer-active { position: fixed; bottom: 80px; right: 20px; background: var(--bg); border: 1px solid var(--accent); border-radius: 13px; padding: 14px 18px; z-index: 9990; box-shadow: 0 4px 24px rgba(0,0,0,.4); font-family: 'DM Sans', sans-serif; min-width: 180px; }
     .rp-timer-label { font-size: 11px; color: var(--text-mid); margin-bottom: 4px; }
     .rp-timer-display { font-size: 2rem; font-weight: 700; color: var(--text-high); letter-spacing: 2px; }

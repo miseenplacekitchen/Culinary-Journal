@@ -850,6 +850,32 @@ body {
 .cj-textarea        { resize: vertical; min-height: 100px; line-height: 1.6; }
 .cj-select          { cursor: pointer; }
 
+/* ── GLOBAL SELECT / OPTION BASELINE (CJ-002 Phase 2) ──────────────
+   Element-level defaults so every native <select> on every page is
+   themed, even without a page-specific class. Page classes (.fsel,
+   .cj-select, .sr-select, .dj-select, …) override via specificity. */
+select {
+  background: var(--text-ghost);
+  color: var(--text-high);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 8px 11px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+select:focus { border-color: var(--accent); }
+select option,
+select optgroup {
+  background: var(--bg);
+  color: var(--text-high);
+}
+select option:checked {
+  background: rgb(from var(--accent) r g b / 0.18);
+  color: var(--text-high);
+}
+
 /* ── PILL FILTERS ── */
 .cj-pill-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .cj-pill {

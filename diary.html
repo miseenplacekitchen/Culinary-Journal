@@ -67,7 +67,7 @@
     /* ── Entry cards ── */
     .dj-entries { display:flex; flex-direction:column; gap:12px; }
     .dj-entry { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; overflow:hidden; cursor:pointer; transition:border-color .15s; }
-    .dj-entry:hover { border-color:var(--accent-border, rgba(196,151,59,.4)); }
+    .dj-entry:hover { border-color:var(--accent-border, rgb(from var(--accent) r g b / .4)); }
     .dj-entry-head { display:flex; align-items:flex-start; justify-content:space-between; padding:14px 16px 8px; gap:12px; }
     .dj-entry-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
     .dj-entry-date { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; color:var(--accent); }
@@ -76,7 +76,7 @@
     .dj-entry-title { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:700; color:var(--text-high); padding:0 16px; margin-bottom:6px; }
     .dj-entry-preview { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); padding:0 16px 12px; line-height:1.6; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
     .dj-entry-tags { display:flex; flex-wrap:wrap; gap:4px; padding:0 16px 12px; }
-    .dj-entry-tag { padding:2px 8px; background:rgba(196,151,59,.1); border-radius:20px; font-family:'DM Sans',sans-serif; font-size:10px; color:var(--accent); }
+    .dj-entry-tag { padding:2px 8px; background:rgb(from var(--accent) r g b / .1); border-radius:20px; font-family:'DM Sans',sans-serif; font-size:10px; color:var(--accent); }
 
     /* ── Empty state ── */
     .dj-empty { text-align:center; padding:60px 20px; }
@@ -105,7 +105,7 @@
     .dj-mood-row { display:flex; flex-wrap:wrap; gap:6px; }
     .dj-mood-btn { font-size:22px; padding:6px; border-radius:8px; border:1.5px solid transparent; cursor:pointer; background:none; transition:all .15s; line-height:1; }
     .dj-mood-btn:hover { border-color:var(--border); background:var(--text-ghost); }
-    .dj-mood-btn.selected { border-color:var(--accent); background:rgba(196,151,59,.1); }
+    .dj-mood-btn.selected { border-color:var(--accent); background:rgb(from var(--accent) r g b / .1); }
 
     .dj-modal-foot { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
     .dj-btn { padding:10px 22px; border-radius:9px; border:none; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; }
