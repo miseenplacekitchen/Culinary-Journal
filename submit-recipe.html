@@ -55,7 +55,7 @@
       text-align: right;
       letter-spacing: 0.04em;
     }
-    .intro-counter.amber { color: rgba(232,140, 45,0.95); }
+    .intro-counter.amber { color: rgb(from var(--warn) r g b / 0.95); }
     .intro-counter.red   { color: var(--danger); font-weight: 600; }
     /* Source URL nudge — when user picks "From Somewhere Else" / "Scanned",
        gently pulse the URL input so they don't forget to add the credit link. */
@@ -298,14 +298,14 @@
     .xf-btn{display:flex;align-items:center;gap:6px;padding:10px 14px;background:var(--text-ghost);border:0.5px solid var(--border);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:13px;color:var(--text-high);cursor:pointer;white-space:nowrap;transition:all 0.2s}
     .xf-btn:hover{background:var(--accent-glow);color:var(--text-high)}
     .xf-btn.on{border-color:var(--accent-border);color:var(--accent);background:var(--accent-glow)}
-    .xf-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:260px;background:#1c1c1c;border:0.5px solid rgb(from var(--accent) r g b / 0.3);border-radius:10px;z-index:400;box-shadow:0 8px 32px rgba(0,0,0,0.55);overflow:hidden}
+    .xf-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:260px;background: var(--bg);border:0.5px solid rgb(from var(--accent) r g b / 0.3);border-radius:10px;z-index:400;box-shadow:0 8px 32px rgba(0,0,0,0.55);overflow:hidden}
     .xf-panel.open{display:block}
-    .xf-input{width:100%;padding:10px 14px;background: var(--input-bg);border:none;border-bottom:0.5px solid rgba(255,255,255,0.07);font-family:"DM Sans",sans-serif;font-size:13px;color: var(--text-high);outline:none;box-sizing:border-box}
+    .xf-input{width:100%;padding:10px 14px;background: var(--input-bg);border:none;border-bottom: 0.5px solid var(--border);font-family:"DM Sans",sans-serif;font-size:13px;color: var(--text-high);outline:none;box-sizing:border-box}
     .xf-input::placeholder{color: var(--text-low)}
     .xf-items{max-height:260px;overflow-y:auto}
     .xf-items::-webkit-scrollbar{width:3px}
     .xf-items::-webkit-scrollbar-thumb{background:rgb(from var(--accent) r g b / 0.25)}
-    .xf-item{padding:9px 14px;font-family:"DM Sans",sans-serif;font-size:13px;color: var(--text-mid);cursor:pointer;border-bottom:0.5px solid rgba(255,255,255,0.04)}
+    .xf-item{padding:9px 14px;font-family:"DM Sans",sans-serif;font-size:13px;color: var(--text-high);cursor:pointer;border-bottom: 0.5px solid var(--border)}
     .xf-item:hover{background:rgb(from var(--accent) r g b / 0.08);color:var(--accent)}
     .xf-item.sel{color:var(--accent);font-weight:600}
     .xf-none{padding:10px 14px;font-family:"DM Sans",sans-serif;font-size:12px;color: var(--text-low)}
@@ -314,24 +314,24 @@
     /* When user picks a country but no state, gently pulse the state button
        to remind them. Filters on the Recipes page rely on state being set. */
     @keyframes state-pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(232,140,45,0.0); }
-      50%      { box-shadow: 0 0 0 4px rgba(232,140,45,0.35); }
+      0%, 100% { box-shadow: 0 0 0 0 rgb(from var(--warn) r g b / 0.0); }
+      50%      { box-shadow: 0 0 0 4px rgb(from var(--warn) r g b / 0.35); }
     }
     .xf-btn.state-nudge {
-      border-color: rgba(232,140,45,0.65) !important;
-      color: rgba(232,140,45,0.95) !important;
+      border-color: rgb(from var(--warn) r g b / 0.65) !important;
+      color: rgb(from var(--warn) r g b / 0.95) !important;
       animation: state-pulse 1.6s ease-in-out infinite;
     }
     .state-nudge-hint {
       display: none;
       margin-top: 8px;
       padding: 8px 12px;
-      background: rgba(232,140,45,0.10);
-      border: 0.5px solid rgba(232,140,45,0.35);
+      background: rgb(from var(--warn) r g b / 0.10);
+      border: 0.5px solid rgb(from var(--warn) r g b / 0.35);
       border-radius: 8px;
       font-family: "DM Sans", sans-serif;
       font-size: 12px;
-      color: rgba(232,140,45,0.95);
+      color: rgb(from var(--warn) r g b / 0.95);
       line-height: 1.5;
     }
     .state-nudge-hint.show { display: block; }
@@ -503,7 +503,7 @@
     /* ── INGREDIENT AUTOCOMPLETE ─────────────── */
     .ing-name-wrap { position: relative; }
     /* Ingredient autocomplete — RAISED panel. Page bg + section bg are both
-       very dark on the default theme (~#1a), so a #1c1c1c dropdown blended in
+       very dark on the default theme, so a fixed dark dropdown blended in
        and looked see-through. Now var(--bg) (themed, raised) with a
        solid gold border and big shadow. Stays a "dark island" on light
        themes too, like the xf-component dropdown. */
@@ -776,7 +776,7 @@
       transition: all 0.15s; }
     .btn-move-row:hover { border-color: var(--accent); color: var(--accent); }
     .move-menu { position: absolute; right: 0; top: 30px;
-      background: #1a1a26; border: 1px solid var(--accent);
+      background: var(--bg); border: 1px solid var(--accent);
       border-radius: 8px; padding: 6px 0;
       min-width: 190px; z-index: 200; box-shadow: 0 6px 24px rgba(0,0,0,0.6); }
     .move-menu-item { display: block; width: 100%; padding: 9px 16px; background: none;

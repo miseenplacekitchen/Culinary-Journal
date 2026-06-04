@@ -17,14 +17,14 @@
     .xf-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.15);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:12px;color: var(--text-mid);cursor:pointer;white-space:nowrap;transition:all 0.2s}
     .xf-btn:hover{background:rgba(255,255,255,0.1);color: var(--text-high)}
     .xf-btn.on{border-color:rgb(from var(--accent) r g b / 0.55);color:#C4973B;background:rgb(from var(--accent) r g b / 0.08)}
-    .xf-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:230px;background:#1c1c1c;border:0.5px solid rgb(from var(--accent) r g b / 0.3);border-radius:10px;z-index:400;box-shadow:0 8px 32px rgba(0,0,0,0.55);overflow:hidden}
+    .xf-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:230px;background: var(--bg);border:0.5px solid rgb(from var(--accent) r g b / 0.3);border-radius:10px;z-index:400;box-shadow:0 8px 32px rgba(0,0,0,0.55);overflow:hidden}
     .xf-panel.open{display:block}
-    .xf-input{width:100%;padding:10px 14px;background: var(--input-bg);border:none;border-bottom:0.5px solid rgba(255,255,255,0.07);font-family:"DM Sans",sans-serif;font-size:12px;color: var(--text-high);outline:none}
+    .xf-input{width:100%;padding:10px 14px;background: var(--input-bg);border:none;border-bottom: 0.5px solid var(--border);font-family:"DM Sans",sans-serif;font-size:12px;color: var(--text-high);outline:none}
     .xf-input::placeholder{color: var(--text-low)}
     .xf-items{max-height:230px;overflow-y:auto}
     .xf-items::-webkit-scrollbar{width:3px}
     .xf-items::-webkit-scrollbar-thumb{background:rgb(from var(--accent) r g b / 0.25)}
-    .xf-item{padding:9px 14px;font-family:"DM Sans",sans-serif;font-size:12px;color: var(--text-mid);cursor:pointer;border-bottom:0.5px solid rgba(255,255,255,0.04)}
+    .xf-item{padding:9px 14px;font-family:"DM Sans",sans-serif;font-size:12px;color: var(--text-high);cursor:pointer;border-bottom: 0.5px solid var(--border)}
     .xf-item:hover{background:rgb(from var(--accent) r g b / 0.08);color:#C4973B}
     .xf-item.sel{color:#C4973B;font-weight:600}
     .xf-none{padding:10px 14px;font-family:"DM Sans",sans-serif;font-size:12px;color: var(--text-low)}
