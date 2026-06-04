@@ -60,9 +60,9 @@
     .tp-table-lshape { border-radius:8px; background:var(--bg); border:2px solid var(--accent); position:relative; }
     .tp-table-lshape::after { content:''; position:absolute; bottom:-2px; right:-2px; width:55%; height:55%; background:var(--bg); border:2px solid var(--accent); border-top:none; border-left:none; border-radius:0 0 8px 0; }
     /* Dining style colour tints */
-    .dining-formal .tp-table-el   { border-color:#c4973b; }
-    .dining-buffet .tp-table-el   { border-color:#4caf76; }
-    .dining-outdoor .tp-table-el  { border-color:#8bc34a; }
+    .dining-formal .tp-table-el   { border-color:var(--accent); }
+    .dining-buffet .tp-table-el   { border-color:var(--success); }
+    .dining-outdoor .tp-table-el  { border-color:#8bc34a; } /* deliberate one-off category hue */
     .dining-casual .tp-table-el   { border-color:var(--accent); }
     /* Dish placement overlay */
     .tp-dish-badge { position:absolute; top:-9px; right:-9px; background:var(--accent); color:#fff; font-size:9px; border-radius:10px; padding:1px 6px; font-family:DM Sans,sans-serif; font-weight:700; z-index:5; white-space:nowrap; }
@@ -94,12 +94,13 @@
     .tp-gd { padding:10px 12px; border-bottom:1px solid rgba(from var(--border) r g b / 0.5); vertical-align:middle; }
     .tp-guest-name { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-high); }
     .tp-guest-group { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+    .tp-diet-pill-severe { background: rgb(from var(--danger) r g b / 0.14) !important; color: var(--danger) !important; font-weight:600; }
     .tp-diet-status { font-family:'DM Sans',sans-serif; font-size:11px; border-radius:20px; padding:2px 8px; margin-right:6px; display:inline-block; }
     .tp-diet-received { background: var(--success-bg); color: var(--success); padding:2px 6px; }
     .tp-diet-awaiting { background: var(--warn-bg); color: var(--warn); }
     .tp-diet-pill  { display:inline-block; font-size:11px; padding:2px 7px; border-radius:4px; margin:1px 2px; background:rgb(from var(--accent) r g b / 0.1); color:var(--accent); }
     .tp-rsvp { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; padding:3px 8px; border-radius:20px; }
-    .tp-rsvp.attending { background: var(--success-bg); color:#4caf76; }
+    .tp-rsvp.attending { background: var(--success-bg); color:var(--success); }
     .tp-rsvp.declined  { background:rgb(from var(--danger) r g b / 0.12); color: var(--danger); }
     .tp-rsvp.pending   { background:rgba(180,180,180,0.12); color:var(--text-mid); }
 
@@ -239,7 +240,7 @@
       <button class="tp-btn tp-btn-primary tp-btn-sm" onclick="openAddTableModal()">+ Add Table</button>
       <button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="autoArrange()">↻ Auto Arrange</button>
       <button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="saveLayout()">💾 Save Layout</button>
-      <span id="layout-save-msg" style="font-family:'DM Sans',sans-serif;font-size:12px;color:#4caf76;display:none">✓ Saved</span>
+      <span id="layout-save-msg" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--success);display:none">✓ Saved</span>
     </div>
     <div class="tp-canvas" id="layout-canvas">
       <div class="tp-canvas-grid"></div>
@@ -445,6 +446,29 @@
 <script>
 const DIETS = ['Vegan','Vegetarian','Gluten Free','Dairy Free','Nut Free','Halal','Kosher','Shellfish Free','Egg Free','Soy Free'];
 const DIET_ICONS = {Vegan:'🌿',Vegetarian:'🥕','Gluten Free':'🌾','Dairy Free':'🥛','Nut Free':'🥜',Halal:'☪',Kosher:'✡','Shellfish Free':'🦐','Egg Free':'🥚','Soy Free':'🌱'};
+const SPICE_LABELS = {0:'No spice',1:'Mild',2:'Medium',3:'Hot',4:'Very Hot',5:'Extremely Hot'};
+const GROUP_ICONS  = {allergy:'\u26a0\ufe0f','allergy-severe':'\u26a0\ufe0f',intolerance:'\u26a0\ufe0f',diet:'\ud83e\udd57',religious:'\ud83d\udd4a',medical:'\u2695\ufe0f',dislike:'\ud83d\udeab'};
+function tcjDietParse(v) {
+  var m = String(v).match(/^(allergy-severe|intolerance|allergy|diet|religious|medical|dislike):(.+)$/);
+  if (m) {
+    var kind=m[1], item=m[2];
+    if (kind==='allergy-severe') return {label:'\u26a0\ufe0f '+item+' \u2014 SEVERE allergy', severe:true};
+    if (kind==='intolerance')    return {label:'\u26a0\ufe0f '+item+' (intolerance)', severe:false};
+    if (kind==='allergy')        return {label:'\u26a0\ufe0f '+item+' allergy', severe:false};
+    return {label:(GROUP_ICONS[kind]||'')+' '+item, severe:false};
+  }
+  var sp = String(v).match(/^spice:(\d)$/);
+  if (sp) return {label:'\ud83c\udf36 Spice: up to '+(SPICE_LABELS[sp[1]]||sp[1]), severe:false};
+  return {label:(DIET_ICONS[v]||'')+v, severe:false};
+}
+function tcjDietPills(arr) {
+  return (arr||[]).map(function(v){
+    var p = tcjDietParse(v);
+    var long = p.label.length > 46;
+    var shown = long ? p.label.slice(0,44)+'\u2026' : p.label;
+    return '<span class="tp-diet-pill'+(p.severe?' tp-diet-pill-severe':'')+'"'+(long?' title="'+escHtml(p.label)+'"':'')+'>'+escHtml(shown)+'</span>';
+  }).join('');
+}
 const EVENT_ICONS = {'Dinner Party':'🍽','Wedding':'💍','Birthday':'🎂','Anniversary':'💑','Baby Shower':'👶','Corporate Event':'🏢','Graduation':'🎓','Funeral Wake':'🕊','Other':'📋'};
 
 let currentEvent = null;
@@ -757,7 +781,7 @@ function renderGuestStats() {
   if (!el) return;
   el.innerHTML =
     '<div class="tp-gstat"><div class="tp-gstat-num">' + currentGuests.length + '</div><div class="tp-gstat-label">Total</div></div>' +
-    '<div class="tp-gstat"><div class="tp-gstat-num" style="color:#4caf76">' + attending + '</div><div class="tp-gstat-label">Attending</div></div>' +
+    '<div class="tp-gstat"><div class="tp-gstat-num" style="color:var(--success)">' + attending + '</div><div class="tp-gstat-label">Attending</div></div>' +
     '<div class="tp-gstat"><div class="tp-gstat-num" style="color:var(--danger)">' + declined + '</div><div class="tp-gstat-label">Declined</div></div>' +
     '<div class="tp-gstat"><div class="tp-gstat-num">' + seated + '</div><div class="tp-gstat-label">Seated</div></div>';
 }
@@ -771,14 +795,14 @@ function renderGuestList() {
   }
   tbody.innerHTML = '';
   currentGuests.forEach(function(g) {
-    const dietIcons = (g.dietary_requirements||[]).map(function(d){return '<span class="tp-diet-pill">'+(DIET_ICONS[d]||'')+(d)+'</span>';}).join('');
+    const dietIcons = tcjDietPills(g.dietary_requirements);
     const seat = g.seat_assignment ? getSeatLabel(g.seat_assignment) : '';
     const tr = document.createElement('tr');
     tr.innerHTML =
       '<td class="tp-gd"><div class="tp-guest-name">' + escHtml(g.name) + (g.plus_one&&g.plus_one_name ? ' <span style="font-size:10px;color:var(--text-mid)">+'+escHtml(g.plus_one_name)+'</span>' : '') + '</div></td>' +
       '<td class="tp-gd">' + ((g.dietary_submitted || dietIcons)
         ? '<span class="tp-diet-status tp-diet-received" title="The guest&#39;s dietary requirements have been recorded and documented for the purposes of event planning and catering arrangement.">✅</span>' + (dietIcons||'')
-        : '<span class="tp-diet-status tp-diet-awaiting" title="No dietary requirements yet — copy this guest&#39;s dietary form link and send it to them">⏳ Awaiting dietary</span>') + '</td>' +
+        : '<span class="tp-diet-status tp-diet-awaiting" title="No dietary requirements have been submitted to date. Please ensure that the dietary form link is sent to the guest.">⏳ Awaiting dietary</span>') + '</td>' +
       '<td class="tp-gd"><span class="tp-rsvp ' + (g.rsvp_status||'pending') + '">' + (g.rsvp_status||'pending') + '</span></td>' +
       '<td class="tp-gd"><div class="tp-guest-group">' + escHtml(g.group_name||'') + '</div></td>' +
       '<td class="tp-gd"><div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--accent)">' + escHtml(seat) + '</div></td>' +
@@ -901,7 +925,7 @@ function renderSeating() {
   // Unassigned panel
   unassignedEl.innerHTML = '';
   if (!unseated.length) {
-    unassignedEl.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:#4caf76;text-align:center;padding:12px">All guests are seated! 🎉</div>';
+    unassignedEl.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--success);text-align:center;padding:12px">All guests are seated! 🎉</div>';
   } else {
     unseated.forEach(function(g) {
       const item = document.createElement('div');
@@ -1263,9 +1287,10 @@ function exportGuestsCSV() {
   const esc = function(v){ v = (v===null||v===undefined) ? '' : String(v); return '"' + v.replace(/"/g,'""') + '"'; };
   const rows = [['Name','Plus One','Plus One Name','Dietary Requirements','Dietary Status','RSVP','Group','Seat','Notes']];
   currentGuests.forEach(function(g){
-    const diets = (g.dietary_requirements||[]);
+    const raw = (g.dietary_requirements||[]);
+    const diets = raw.map(function(v){ return tcjDietParse(v).label; });
     rows.push([g.name, g.plus_one?'Yes':'No', g.plus_one_name||'', diets.join('; '),
-               diets.length?'Received':'Awaiting', g.rsvp_status||'pending',
+               (g.dietary_submitted || raw.length)?'Received':'Awaiting', g.rsvp_status||'pending',
                g.group_name||'', g.seat_assignment?getSeatLabel(g.seat_assignment):'', g.notes||'']);
   });
   const csv = rows.map(function(r){ return r.map(esc).join(','); }).join('\r\n');
