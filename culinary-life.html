@@ -299,8 +299,12 @@ async function rpc(fn, params) {
     headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+s.access_token,'Content-Type':'application/json'},
     body: JSON.stringify(params||{})
   });
-  if (!r.ok) { const e=await r.json().catch(()=>{}); console.warn(fn, e?.message||r.status); return null; }
-  return r.json();
+  if (!r.ok) {
+    const e = await r.json().catch(()=>{});
+    throw new Error(e?.message || ('Error ' + r.status));   // surface failures — no more silent nulls
+  }
+  const t = await r.text();          // void RPCs return 204 No Content —
+  return t ? JSON.parse(t) : null;   // r.json() on an empty body throws.
 }
 
 // ── STARS ────────────────────────────────────────────────────────
@@ -422,8 +426,12 @@ function renderHistory() {
 }
 async function deleteCook(id) {
   if (!confirm('Remove this entry from your cooking history?')) return;
-  await rpc('delete_cooking_event', {p_id: id});
-  loadAll();
+  try {
+    await rpc('delete_cooking_event', {p_id: id});
+    loadAll();
+  } catch(e) {
+    alert('Could not remove this entry: ' + e.message);
+  }
 }
 
 // ── TIMELINE ────────────────────────────────────────────────────

@@ -297,7 +297,8 @@ async function rpc(fn,params){
   if(s && s.access_token) h['Authorization']='Bearer '+s.access_token;
   const r = await fetch(SUPA_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:h,body:JSON.stringify(params||{})});
   if(!r.ok){ const e=await r.json().catch(()=>{}); throw new Error(e?.message||r.status); }
-  return r.json();
+  const t = await r.text();          // void RPCs return 204 No Content —
+  return t ? JSON.parse(t) : null;   // r.json() on an empty body throws.
 }
 function fmtDate(d){ const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
 function todayStr(){ return new Date().toISOString().slice(0,10); }

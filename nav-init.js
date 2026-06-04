@@ -767,3 +767,60 @@ setTimeout(function() { if(typeof loadNotifCount === "function") loadNotifCount(
     });
   });
 })();
+
+
+/* ══════════════════════════════════════════════════════
+   SESSION KEEP-ALIVE (CJ-003/004 root cause, CJ-022)
+   Supabase access tokens expire (~1h). Only profile.html
+   refreshed them; every other page failed silently after
+   expiry. This shared keep-alive refreshes the stored
+   token before it lapses, so the per-page helpers — which
+   all read tcj_session from localStorage on every call —
+   always find a fresh token. Modelled on profile.html's
+   proven refreshSession().
+══════════════════════════════════════════════════════ */
+(function () {
+  function tcjGetSession() {
+    try { return JSON.parse(localStorage.getItem('tcj_session') || 'null'); }
+    catch (_) { return null; }
+  }
+  function tcjJwtExp(token) {
+    try {
+      var p = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      return (JSON.parse(atob(p)).exp || 0) * 1000;
+    } catch (_) { return 0; }
+  }
+  async function tcjRefreshSession() {
+    // SUPA_URL / SUPA_KEY are page globals; static pages don't define them.
+    if (typeof SUPA_URL === 'undefined' || typeof SUPA_KEY === 'undefined') return false;
+    var s = tcjGetSession();
+    if (!s || !s.refresh_token) return false;
+    try {
+      var res = await fetch(SUPA_URL + '/auth/v1/token?grant_type=refresh_token', {
+        method:  'POST',
+        headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ refresh_token: s.refresh_token })
+      });
+      if (!res.ok) return false;
+      var data = await res.json();
+      if (!data.access_token) return false;
+      var updated = Object.assign({}, s, {
+        access_token:  data.access_token,
+        refresh_token: data.refresh_token || s.refresh_token
+      });
+      localStorage.setItem('tcj_session', JSON.stringify(updated));
+      return true;
+    } catch (_) { return false; }
+  }
+  async function tcjKeepAlive() {
+    var s = tcjGetSession();
+    if (!s || !s.access_token) return;
+    var msLeft = tcjJwtExp(s.access_token) - Date.now();
+    if (msLeft < 10 * 60 * 1000) await tcjRefreshSession();   // refresh when <10 min remain (or already expired)
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', tcjKeepAlive);
+  } else { tcjKeepAlive(); }
+  setInterval(tcjKeepAlive, 5 * 60 * 1000);                    // re-check every 5 minutes
+  window.tcjRefreshSession = tcjRefreshSession;                // available to pages that want an on-demand refresh
+})();
