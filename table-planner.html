@@ -291,6 +291,7 @@
     <div class="tp-print-wrap">
       <div class="tp-print-section">
         <div class="tp-print-section-title">Place Cards (A6 Landscape)</div>
+        <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);margin:-6px 0 10px">Print preview — place cards are intentionally shown on white, exactly as they print on card stock.</div>
         <div id="place-cards-preview"></div>
         <button class="tp-btn tp-btn-primary tp-btn-sm" style="margin-top:10px" onclick="printPlaceCards()">🖨 Print Place Cards</button>
       </div>
@@ -775,15 +776,15 @@ function renderGuestList() {
     const tr = document.createElement('tr');
     tr.innerHTML =
       '<td class="tp-gd"><div class="tp-guest-name">' + escHtml(g.name) + (g.plus_one&&g.plus_one_name ? ' <span style="font-size:10px;color:var(--text-mid)">+'+escHtml(g.plus_one_name)+'</span>' : '') + '</div></td>' +
-      '<td class="tp-gd">' + (dietIcons
-        ? '<span class="tp-diet-status tp-diet-received" title="Dietary requirements are on file for this guest">✅</span>' + dietIcons
-        : '<span class="tp-diet-status tp-diet-awaiting" title="No dietary requirements yet — send them their dietary form">⏳ Awaiting dietary</span>') + '</td>' +
+      '<td class="tp-gd">' + ((g.dietary_submitted || dietIcons)
+        ? '<span class="tp-diet-status tp-diet-received" title="The guest&#39;s dietary requirements have been recorded and documented for the purposes of event planning and catering arrangement.">✅</span>' + (dietIcons||'')
+        : '<span class="tp-diet-status tp-diet-awaiting" title="No dietary requirements yet — copy this guest&#39;s dietary form link and send it to them">⏳ Awaiting dietary</span>') + '</td>' +
       '<td class="tp-gd"><span class="tp-rsvp ' + (g.rsvp_status||'pending') + '">' + (g.rsvp_status||'pending') + '</span></td>' +
       '<td class="tp-gd"><div class="tp-guest-group">' + escHtml(g.group_name||'') + '</div></td>' +
       '<td class="tp-gd"><div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--accent)">' + escHtml(seat) + '</div></td>' +
       '<td class="tp-gd"><div style="display:flex;gap:6px">' +
         '<button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="openGuestModal(\'' + g.id + '\')">Edit</button>' +
-        '<button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="copyDietaryLink(\'' + g.id + '\')" title="Copy a personal link for this guest — they open it and fill in their own dietary requirements, which appear here automatically">🥗 Copy Dietary Form</button>' +
+        '<button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="copyDietaryLink(\'' + g.id + '\')" title="Please provide the guest with their unique personal link. Using this link, the guest may directly submit their dietary requirements and preferences. Once submitted, the information will be automatically captured within the system and recorded against the guest&#39;s profile.">🥗 Copy Dietary Form</button>' +
         '<button class="tp-btn tp-btn-sm tp-btn-danger" onclick="deleteGuest(\'' + g.id + '\')">×</button>' +
       '</div></td>';
     tbody.appendChild(tr);
