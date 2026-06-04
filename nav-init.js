@@ -354,7 +354,10 @@ function buildSectionNav() {
     var wraps = host.querySelectorAll('.cj-menu-wrap');
 
     function closeAll() {
-      wraps.forEach(function (w) {
+      // Document-wide: the section nav and the profile/account nav are
+      // separate hosts; closing only this host's menus let two dropdowns
+      // stay open at once.
+      document.querySelectorAll('.cj-menu-wrap.open').forEach(function (w) {
         w.classList.remove('open');
         var t = w.querySelector('.cj-trigger');
         if (t) t.setAttribute('aria-expanded', 'false');

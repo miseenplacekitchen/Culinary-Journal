@@ -355,7 +355,16 @@ async function loadAll() {
     document.getElementById('cl-sub').textContent = 'Sign in to track your culinary life.';
     return;
   }
-  await Promise.all([loadStats(), loadFavourites(), loadHistory(), loadTimeline(), loadYearReview(), loadMilestones()]);
+  // Each section loads independently — one failing RPC must not blank
+  // the others (Recent History carries the delete buttons).
+  const safe = function (fn, label) {
+    return fn().catch(function (e) { console.warn('culinary-life ' + label + ':', e.message); });
+  };
+  await Promise.all([
+    safe(loadStats, 'stats'), safe(loadFavourites, 'favourites'),
+    safe(loadHistory, 'history'), safe(loadTimeline, 'timeline'),
+    safe(loadYearReview, 'year'), safe(loadMilestones, 'milestones')
+  ]);
 }
 
 // ── STATS ────────────────────────────────────────────────────────
