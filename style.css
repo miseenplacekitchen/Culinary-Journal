@@ -240,7 +240,7 @@ body {
 .hero-desc {
   font-family: 'DM Sans', sans-serif;
   font-size: 15px;
-  color: rgba(255,255,255,0.42);
+  color: var(--text-mid);
   max-width: 440px;
   line-height: 1.78;
   margin-bottom: 36px;
@@ -311,13 +311,13 @@ body {
   font-family: 'Cormorant Garamond', serif;
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255,255,255,0.85);
+  color: var(--text-high);
   margin-bottom: 6px;
 }
 .feature-desc {
   font-family: 'DM Sans', sans-serif;
   font-size: 13px;
-  color: rgba(255,255,255,0.28);
+  color: var(--text-low);
   line-height: 1.55;
 }
 
@@ -334,17 +334,17 @@ body {
 .footer-text {
   font-family: 'DM Sans', sans-serif;
   font-size: 12px;
-  color: rgba(255,255,255,0.2);
+  color: var(--text-low);
 }
 .footer-links { display: flex; gap: 20px; }
 .footer-links a {
   font-family: 'DM Sans', sans-serif;
   font-size: 12px;
-  color: rgba(255,255,255,0.2);
+  color: var(--text-low);
   text-decoration: none;
   transition: color 0.2s;
 }
-.footer-links a:hover { color: rgba(255,255,255,0.5); }
+.footer-links a:hover { color: var(--text-mid); }
 
 /* ── RECIPES PAGE ── */
 .recipes-top {
@@ -400,7 +400,7 @@ body {
   transition: border-color 0.2s;
 }
 .fsel:focus { border-color: var(--accent-border); }
-.fsel option { background: #1a1a1a; color: #fff; }
+.fsel option { background: var(--bg); color: var(--text-high); }
 
 /* ── BREADCRUMB ── */
 .breadcrumb {
@@ -595,13 +595,13 @@ body {
   grid-column: 1 / -1;
   text-align: center;
   padding: 60px 0;
-  color: rgba(255,255,255,0.25);
+  color: var(--text-low);
 }
 .empty-icon  { font-size: 40px; margin-bottom: 12px; }
 .empty-title {
   font-family: 'Cormorant Garamond', serif;
   font-size: 18px;
-  color: rgba(255,255,255,0.4);
+  color: var(--text-mid);
   margin-bottom: 6px;
 }
 .empty-desc {
