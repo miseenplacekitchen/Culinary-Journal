@@ -117,8 +117,8 @@ RETURNS TABLE (
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM public.collections WHERE id=p_collection_id
-    AND (user_id=auth.uid() OR is_public=true)
+    SELECT 1 FROM public.collections c WHERE c.id = p_collection_id
+    AND (c.user_id = auth.uid() OR c.is_public = true)
   ) THEN RAISE EXCEPTION 'not_found'; END IF;
   RETURN QUERY
     SELECT sr.id, sr.recipe_name, sr.category, sr.origin_country,
