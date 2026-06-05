@@ -389,6 +389,13 @@ async function loadEntries(){
     buildCalendar();
     applyFilters();
     loadStats();
+    // AP-03: deep-link from the Culinary Life timeline — ?edit=<entry id>
+    const editId = new URLSearchParams(location.search).get('edit');
+    if (editId && !window._djEditHandled) {
+      window._djEditHandled = true;
+      const target = allEntries.find(function(e){ return String(e.id) === editId; });
+      if (target) { viewingEntry = target; editFromView(); }
+    }
   }catch(e){
     renderEntries([]);
   }

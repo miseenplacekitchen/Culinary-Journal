@@ -36,7 +36,7 @@ var CJ_SECTIONS = [
   },
   {
     id:'library', label:'The Library', emoji:'📚', primaryPage:'library-directory.html',
-    pages:['library-directory.html','library-profile.html','preservation.html','conversions.html','baby.html','culinary-life.html'],
+    pages:['library-directory.html','library-profile.html','preservation.html','conversions.html','baby.html'],
     links:[
       {href:'library-directory.html?type=ingredient', emoji:'🌿', label:'Ingredients'},
       {href:'library-directory.html?type=spice',      emoji:'🌶', label:'Spice Directory'},
@@ -45,7 +45,20 @@ var CJ_SECTIONS = [
       {href:'library-directory.html?type=preservation',emoji:'🫙', label:'Preservation Academy'},
       {href:'conversions.html',                       emoji:'⚖️', label:'Conversions & Weights'},
       {href:'baby.html',                              emoji:'👶', label:'Baby & Toddler'},
-      {href:'culinary-life.html',                     emoji:'✨', label:'Culinary Life'},
+    ]
+  },
+  {
+    // AP-05: member-personal pages. signedInOnly — hidden when logged out
+    // (the logged-out account dropdown trigger was renamed Explore to avoid
+    // the label collision). Primary page = Analytics per D-3 assumption.
+    id:'myhub', label:'My Hub', emoji:'✨', primaryPage:'my-dashboard.html', signedInOnly:true,
+    pages:['culinary-life.html','collections.html','draft-recipes.html','diary.html','my-dashboard.html'],
+    links:[
+      {href:'culinary-life.html', emoji:'✨', label:'Culinary Life'},
+      {href:'collections.html',   emoji:'📁', label:'My Collections'},
+      {href:'draft-recipes.html', emoji:'📝', label:'My Recipes & Drafts'},
+      {href:'diary.html',         emoji:'📔', label:'My Diary'},
+      {href:'my-dashboard.html',  emoji:'📊', label:'Analytics'},
     ]
   }
 ];
@@ -96,6 +109,12 @@ function buildSectionNav() {
   var currentBtn = null;
 
   CJ_SECTIONS.forEach(function(section) {
+    // AP-05: member-personal sections render only for signed-in users
+    if (section.signedInOnly) {
+      var _s = null;
+      try { _s = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
+      if (!_s || !_s.access_token) return;
+    }
     var isActive = activeSection === section.id;
     var btn = document.createElement('button');
     btn.type = 'button';
@@ -325,11 +344,6 @@ function buildSectionNav() {
             (isAdmin ? item('library-submit.html', IC.drafts, '📚 Submit Library Profile') : '') +
             '<div class="cj-menu-sep"></div>' +
             item('profile.html',       IC.profile, 'My Profile') +
-            item('my-dashboard.html',  IC.profile, 'My Dashboard') +
-            '<div class="cj-menu-sep"></div>' +
-            item('draft-recipes.html', IC.drafts,  'My Recipes & Drafts') +
-            item('collections.html',   IC.drafts,  'My Collections') +
-            item('diary.html',         IC.drafts,  'My Diary') +
             '<div class="cj-menu-sep"></div>' +
             '<button class="cj-menu-item cj-menu-danger" id="cj-signout" type="button" role="menuitem">' + IC.signout + '<span>Sign Out</span></button>' +
           '</div>' +
@@ -339,9 +353,9 @@ function buildSectionNav() {
         '<a href="login.html" class="cj-trigger cj-primary">Sign In</a>' +
         '<div class="cj-menu-wrap" id="cj-hub">' +
           '<button class="cj-trigger" id="cj-hub-trigger" type="button" aria-haspopup="true" aria-expanded="false">' +
-            'Hub' + IC.chevron +
+            'Explore' + IC.chevron +
           '</button>' +
-          '<div class="cj-menu" role="menu" aria-label="Hub menu">' +
+          '<div class="cj-menu" role="menu" aria-label="Explore menu">' +
             item('submit-recipe.html', IC.submit, 'Submit a Recipe') +
             item('recipes.html',       IC.book,   'Browse Recipes') +
           '</div>' +

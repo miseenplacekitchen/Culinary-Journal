@@ -55,7 +55,13 @@
     .cl-btn-secondary { background:var(--text-ghost); color:var(--text-mid); border:1px solid var(--border); }
 
     /* ── Activity feed ── */
-    .cl-event { display:flex; gap:14px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+    .cl-event { display:flex; gap:14px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,.04); align-items:flex-start; }
+    .cl-event-actions { display:flex; gap:4px; opacity:0; transition:opacity .15s; }
+    .cl-event:hover .cl-event-actions { opacity:1; }
+    .cl-evt-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:3px 7px; font-size:11px; cursor:pointer; color:var(--text-mid); }
+    .cl-evt-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .cl-evt-danger:hover { border-color:var(--danger); color:var(--danger); }
+    @media (hover:none) { .cl-event-actions { opacity:1; } }
     .cl-event:last-child { border-bottom:none; }
     .cl-event-icon { width:34px; height:34px; border-radius:50%; background:var(--accent-glow); border:1px solid var(--accent-border); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
     .cl-event-body { flex:1; min-width:0; }
@@ -454,12 +460,65 @@ async function loadTimeline() {
     const date  = fmtDate(e.event_date);
     const label = esc(e.label || '');
     const meta  = e.detail ? esc(e.detail).slice(0,60)+(e.detail.length>60?'…':'') : '';
+    // AP-03 (per D-1 recommendation): edit/delete on diary entries and
+    // cooking events only. Milestones are system-generated; recipe events
+    // mirror submissions — both stay read-only here.
+    const editable = (e.event_type === 'diary' || e.event_type === 'cook') && e.source_id;
+    const controls = editable
+      ? '<div class="cl-event-actions">'
+        + '<button class="cl-evt-btn" title="Edit" onclick="editTimelineItem(\''+e.event_type+'\',\''+esc(e.source_id)+'\')">✏</button>'
+        + '<button class="cl-evt-btn cl-evt-danger" title="Delete" onclick="deleteTimelineItem(\''+e.event_type+'\',\''+esc(e.source_id)+'\',\''+label.replace(/'/g,'&#39;')+'\')">🗑</button>'
+        + '</div>'
+      : '';
     return '<div class="cl-event">'
       + '<div class="cl-event-icon">'+icon+'</div>'
       + '<div class="cl-event-body"><div class="cl-event-label">'+label+'</div>'+(meta?'<div class="cl-event-meta">'+meta+'</div>':'')+'</div>'
+      + controls
       + '<div class="cl-event-date">'+date+'</div>'
       + '</div>';
   }).join('');
+}
+
+// ── AP-03: TIMELINE EDIT / DELETE ────────────────────────────────
+async function deleteTimelineItem(type, id, label) {
+  if (!confirm('Delete "' + label + '" from your ' + (type === 'diary' ? 'diary' : 'cooking history') + '? This cannot be undone.')) return;
+  try {
+    if (type === 'diary')      await rpc('delete_diary_entry',  {p_id: id});
+    else if (type === 'cook')  await rpc('delete_cooking_event', {p_id: id});
+    else return;
+    await refreshAfterTimelineChange();
+  } catch(e) { alert('Could not delete: ' + (e.message || e)); }
+}
+
+function editTimelineItem(type, id) {
+  if (type === 'diary') { location.href = 'diary.html?edit=' + encodeURIComponent(id); return; }
+  if (type !== 'cook') return;
+  // Inline edit form for a cooking event
+  const name   = prompt('Recipe name (leave blank to keep):') ;
+  if (name === null) return;
+  const dateIn = prompt('Date cooked, YYYY-MM-DD (leave blank to keep):');
+  if (dateIn === null) return;
+  if (dateIn && !/^\d{4}-\d{2}-\d{2}$/.test(dateIn)) { alert('Date must be YYYY-MM-DD.'); return; }
+  const rating = prompt('Rating 1–5 (leave blank to keep):');
+  if (rating === null) return;
+  if (rating && !/^[1-5]$/.test(rating)) { alert('Rating must be 1 to 5.'); return; }
+  const note   = prompt('Note (leave blank to keep):');
+  if (note === null) return;
+  rpc('update_cooking_event', {
+    p_id: id,
+    p_recipe_name: name || null,
+    p_cooked_at:   dateIn || null,
+    p_rating:      rating ? parseInt(rating) : null,
+    p_notes:       note || null
+  }).then(refreshAfterTimelineChange)
+    .catch(function(e){ alert('Could not save: ' + (e.message || e)); });
+}
+
+async function refreshAfterTimelineChange() {
+  // Timeline, Cooking History and the stat cards share the same data
+  try { await loadTimeline(); } catch(_) {}
+  try { await loadHistory(); }  catch(_) {}
+  try { await loadStats(); }    catch(_) {}
 }
 
 // ── YEAR IN REVIEW ───────────────────────────────────────────────
