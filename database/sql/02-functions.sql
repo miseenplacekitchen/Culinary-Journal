@@ -19,6 +19,13 @@
 -- CREATE OR REPLACE FUNCTION statement directly in SQL Editor.
 -- ══════════════════════════════════════════════════════════════════════
 
+-- NOTE: the seven admin ingredient functions (admin_get_ingredients,
+-- admin_upsert_ingredient, admin_delete_ingredient, admin_count_ingredients,
+-- admin_export_ingredients, admin_get_ingredient_units,
+-- admin_bulk_upsert_ingredients) live in admin_rpcs.sql — their single
+-- home file. They were removed from here to end the dual-definition
+-- conflict (one function, one file).
+
 -- ── ADMIN HELPER ─────────────────────────────────────────────────
 -- Must exist first — all other admin functions depend on it.
 -- is_admin() must never be dropped — RLS policies depend on it.
@@ -376,27 +383,10 @@ GRANT EXECUTE ON FUNCTION public.quick_update_recipe(uuid,text,text,text) TO aut
 
 -- ── ADMIN — RECIPES ──────────────────────────────────────────────
 
-DO $$ DECLARE r record;
-BEGIN
-  FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
-           WHERE proname = 'admin_get_recipes' AND pronamespace = 'public'::regnamespace
-  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
-END $$;
-CREATE OR REPLACE FUNCTION public.admin_get_recipes(p_status text DEFAULT NULL)
-RETURNS jsonb
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-BEGIN
-  IF NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  RETURN COALESCE(
-    (SELECT jsonb_agg(r ORDER BY r.submitted_at DESC)
-     FROM submitted_recipes r
-     WHERE (p_status IS NULL OR r.status = p_status)),
-    '[]'::jsonb
-  );
-END;
-$$;
-GRANT EXECUTE ON FUNCTION public.admin_get_recipes(text) TO authenticated;
+-- admin_get_recipes — MOVED to recipe_management.sql (its home file) on 5 Jun 2026.
+-- The old 1-parameter version here did not match the dashboard JS call
+-- signature (p_status, p_search, p_category, p_limit, p_offset) and broke
+-- the entire Recipe Management panel. Do not redefine it in this file.
 
 DO $$ DECLARE r record;
 BEGIN
@@ -415,6 +405,7 @@ BEGIN
     'pending',  COUNT(*) FILTER (WHERE status = 'pending'),
     'approved', COUNT(*) FILTER (WHERE status = 'approved'),
     'rejected', COUNT(*) FILTER (WHERE status = 'rejected'),
+    'featured', COUNT(*) FILTER (WHERE is_featured = true),
     'total',    COUNT(*)
   ) INTO result FROM public.submitted_recipes;
   RETURN result;
@@ -525,185 +516,30 @@ BEGIN
            WHERE proname = 'admin_get_ingredients' AND pronamespace = 'public'::regnamespace
   LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
 END $$;
-CREATE OR REPLACE FUNCTION public.admin_get_ingredients(
-  p_search   text DEFAULT NULL,
-  p_category text DEFAULT NULL,
-  p_limit    int  DEFAULT 50,
-  p_offset   int  DEFAULT 0
-)
-RETURNS jsonb
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-BEGIN
-  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
-  RETURN COALESCE(
-    (SELECT jsonb_agg(i ORDER BY i."ID")
-     FROM (
-       SELECT * FROM public.ingredients
-       WHERE (p_search   IS NULL OR "Ingredient Name" ILIKE '%'||p_search||'%'
-                                 OR "Also Known As"   ILIKE '%'||p_search||'%')
-         AND (p_category IS NULL OR "Category" = p_category)
-       ORDER BY "ID"
-       LIMIT p_limit OFFSET p_offset
-     ) i),
-    '[]'::jsonb
-  );
-END;
-$$;
-GRANT EXECUTE ON FUNCTION public.admin_get_ingredients(text,text,int,int) TO authenticated;
-
 DO $$ DECLARE r record;
 BEGIN
   FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
            WHERE proname = 'admin_count_ingredients' AND pronamespace = 'public'::regnamespace
   LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
 END $$;
-CREATE OR REPLACE FUNCTION public.admin_count_ingredients(
-  p_search   text DEFAULT NULL,
-  p_category text DEFAULT NULL
-)
-RETURNS bigint
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-DECLARE total bigint;
-BEGIN
-  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
-  SELECT COUNT(*) INTO total FROM public.ingredients
-  WHERE (p_search   IS NULL OR "Ingredient Name" ILIKE '%'||p_search||'%'
-                            OR "Also Known As"   ILIKE '%'||p_search||'%')
-    AND (p_category IS NULL OR "Category" = p_category);
-  RETURN total;
-END;
-$$;
-GRANT EXECUTE ON FUNCTION public.admin_count_ingredients(text,text) TO authenticated;
-
 DO $$ DECLARE r record;
 BEGIN
   FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
            WHERE proname = 'admin_get_ingredient_units' AND pronamespace = 'public'::regnamespace
   LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
 END $$;
-CREATE OR REPLACE FUNCTION public.admin_get_ingredient_units()
-RETURNS TABLE (unit text)
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-BEGIN
-  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
-  RETURN QUERY
-    SELECT DISTINCT "Unit" FROM public.ingredients
-    WHERE "Unit" IS NOT NULL AND "Unit" != ''
-    ORDER BY "Unit";
-END;
-$$;
-GRANT EXECUTE ON FUNCTION public.admin_get_ingredient_units() TO authenticated;
-
 DO $$ DECLARE r record;
 BEGIN
   FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
            WHERE proname = 'admin_export_ingredients' AND pronamespace = 'public'::regnamespace
   LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
 END $$;
-CREATE OR REPLACE FUNCTION public.admin_export_ingredients(
-  p_search   text DEFAULT NULL,
-  p_category text DEFAULT NULL
-)
-RETURNS jsonb
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-BEGIN
-  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
-  RETURN COALESCE(
-    (SELECT jsonb_agg(i ORDER BY i."ID")
-     FROM (
-       SELECT * FROM public.ingredients
-       WHERE (p_search   IS NULL OR "Ingredient Name" ILIKE '%'||p_search||'%'
-                                 OR "Also Known As"   ILIKE '%'||p_search||'%')
-         AND (p_category IS NULL OR "Category" = p_category)
-       ORDER BY "ID"
-     ) i),
-    '[]'::jsonb
-  );
-END;
-$$;
-GRANT EXECUTE ON FUNCTION public.admin_export_ingredients(text,text) TO authenticated;
-
--- Definitive upsert — handles extra_fields, single version
-DROP FUNCTION IF EXISTS public.admin_upsert_ingredient(int,text,text,text,text,text,numeric,text,text,text,text,text,text,text);
-DROP FUNCTION IF EXISTS public.admin_upsert_ingredient(int,text,text,text,text,text,numeric,text,text,text,text,text,text,text,jsonb);
-CREATE FUNCTION public.admin_upsert_ingredient(
-  p_id                   int     DEFAULT NULL,
-  p_ingredient_name      text    DEFAULT '',
-  p_also_known_as        text    DEFAULT '',
-  p_category             text    DEFAULT '',
-  p_sub_category         text    DEFAULT '',
-  p_standard_qty         text    DEFAULT '',
-  p_standard_weight      numeric DEFAULT NULL,
-  p_unit                 text    DEFAULT '',
-  p_liquid               text    DEFAULT 'No',
-  p_cj_recommended_brand text    DEFAULT '',
-  p_allergen             text    DEFAULT '',
-  p_vegan                text    DEFAULT 'Yes',
-  p_vegetarian           text    DEFAULT 'Yes',
-  p_notes                text    DEFAULT '',
-  p_extra_fields         jsonb   DEFAULT NULL
-)
-RETURNS public.ingredients
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-DECLARE result public.ingredients;
-BEGIN
-  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
-  IF p_id IS NULL THEN
-    INSERT INTO public.ingredients (
-      "Ingredient Name","Also Known As","Category","Sub Category",
-      "Standard Qty","Standard Weight (g or ml)","Unit","Liquid (Yes/No)",
-      "CJ Recommended Brand","Allergen","Vegan (Yes/No)","Vegetarian (Yes/No)","Notes",extra_fields
-    ) VALUES (
-      p_ingredient_name,p_also_known_as,p_category,p_sub_category,
-      p_standard_qty,p_standard_weight,p_unit,p_liquid,
-      p_cj_recommended_brand,p_allergen,p_vegan,p_vegetarian,p_notes,
-      COALESCE(p_extra_fields,'{}')
-    ) RETURNING * INTO result;
-  ELSE
-    UPDATE public.ingredients SET
-      "Ingredient Name"           = p_ingredient_name,
-      "Also Known As"             = p_also_known_as,
-      "Category"                  = p_category,
-      "Sub Category"              = p_sub_category,
-      "Standard Qty"              = p_standard_qty,
-      "Standard Weight (g or ml)" = p_standard_weight,
-      "Unit"                      = p_unit,
-      "Liquid (Yes/No)"           = p_liquid,
-      "CJ Recommended Brand"      = p_cj_recommended_brand,
-      "Allergen"                  = p_allergen,
-      "Vegan (Yes/No)"            = p_vegan,
-      "Vegetarian (Yes/No)"       = p_vegetarian,
-      "Notes"                     = p_notes,
-      extra_fields                = COALESCE(p_extra_fields, extra_fields, '{}')
-    WHERE "ID" = p_id RETURNING * INTO result;
-  END IF;
-  RETURN result;
-END;
-$$;
-GRANT EXECUTE ON FUNCTION public.admin_upsert_ingredient(int,text,text,text,text,text,numeric,text,text,text,text,text,text,text,jsonb) TO authenticated;
-
 DO $$ DECLARE r record;
 BEGIN
   FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
            WHERE proname = 'admin_delete_ingredient' AND pronamespace = 'public'::regnamespace
   LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
 END $$;
-CREATE OR REPLACE FUNCTION public.admin_delete_ingredient(p_id int)
-RETURNS void
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-BEGIN
-  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
-  DELETE FROM public.ingredients WHERE "ID" = p_id;
-END;
-$$;
-GRANT EXECUTE ON FUNCTION public.admin_delete_ingredient(int) TO authenticated;
-
 DO $$ DECLARE r record;
 BEGIN
   FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
@@ -741,74 +577,6 @@ BEGIN
            WHERE proname = 'admin_bulk_upsert_ingredients' AND pronamespace = 'public'::regnamespace
   LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
 END $$;
-CREATE OR REPLACE FUNCTION public.admin_bulk_upsert_ingredients(p_rows jsonb)
-RETURNS int
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-DECLARE
-  row_data jsonb;
-  v_id     int;
-  v_extra  jsonb;
-  total    int := 0;
-BEGIN
-  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
-  FOR row_data IN SELECT * FROM jsonb_array_elements(p_rows) LOOP
-    v_id    := NULLIF(row_data->>'ID','')::int;
-    v_extra := COALESCE(row_data->'extra_fields','{}');
-    IF v_id IS NOT NULL THEN
-      IF EXISTS (SELECT 1 FROM public.ingredients WHERE "ID" = v_id) THEN
-        UPDATE public.ingredients SET
-          "Ingredient Name"           = COALESCE(NULLIF(row_data->>'Ingredient Name',''),        "Ingredient Name"),
-          "Also Known As"             = COALESCE(NULLIF(row_data->>'Also Known As',''),          "Also Known As"),
-          "Category"                  = COALESCE(NULLIF(row_data->>'Category',''),               "Category"),
-          "Sub Category"              = COALESCE(NULLIF(row_data->>'Sub Category',''),           "Sub Category"),
-          "Standard Qty"              = COALESCE(NULLIF(row_data->>'Standard Qty',''),           "Standard Qty"),
-          "Standard Weight (g or ml)" = COALESCE(NULLIF(row_data->>'Standard Weight (g or ml)','')::numeric, "Standard Weight (g or ml)"),
-          "Unit"                      = COALESCE(NULLIF(row_data->>'Unit',''),                   "Unit"),
-          "Liquid (Yes/No)"           = COALESCE(NULLIF(row_data->>'Liquid (Yes/No)',''),        "Liquid (Yes/No)"),
-          "CJ Recommended Brand"      = COALESCE(NULLIF(row_data->>'CJ Recommended Brand',''),  "CJ Recommended Brand"),
-          "Allergen"                  = COALESCE(NULLIF(row_data->>'Allergen',''),               "Allergen"),
-          "Vegan (Yes/No)"            = COALESCE(NULLIF(row_data->>'Vegan (Yes/No)',''),         "Vegan (Yes/No)"),
-          "Vegetarian (Yes/No)"       = COALESCE(NULLIF(row_data->>'Vegetarian (Yes/No)',''),   "Vegetarian (Yes/No)"),
-          "Notes"                     = COALESCE(NULLIF(row_data->>'Notes',''),                  "Notes"),
-          extra_fields                = CASE WHEN v_extra = '{}'::jsonb THEN extra_fields
-                                             ELSE COALESCE(extra_fields,'{}') || v_extra END
-        WHERE "ID" = v_id;
-      ELSE
-        INSERT INTO public.ingredients (
-          "ID","Ingredient Name","Also Known As","Category","Sub Category",
-          "Standard Qty","Standard Weight (g or ml)","Unit","Liquid (Yes/No)",
-          "CJ Recommended Brand","Allergen","Vegan (Yes/No)","Vegetarian (Yes/No)","Notes",extra_fields
-        ) VALUES (
-          v_id, row_data->>'Ingredient Name', row_data->>'Also Known As',
-          row_data->>'Category', row_data->>'Sub Category', row_data->>'Standard Qty',
-          NULLIF(row_data->>'Standard Weight (g or ml)','')::numeric,
-          row_data->>'Unit', row_data->>'Liquid (Yes/No)', row_data->>'CJ Recommended Brand',
-          row_data->>'Allergen', row_data->>'Vegan (Yes/No)', row_data->>'Vegetarian (Yes/No)',
-          row_data->>'Notes', COALESCE(v_extra,'{}')
-        );
-      END IF;
-    ELSE
-      INSERT INTO public.ingredients (
-        "Ingredient Name","Also Known As","Category","Sub Category",
-        "Standard Qty","Standard Weight (g or ml)","Unit","Liquid (Yes/No)",
-        "CJ Recommended Brand","Allergen","Vegan (Yes/No)","Vegetarian (Yes/No)","Notes",extra_fields
-      ) VALUES (
-        row_data->>'Ingredient Name', row_data->>'Also Known As',
-        row_data->>'Category', row_data->>'Sub Category', row_data->>'Standard Qty',
-        NULLIF(row_data->>'Standard Weight (g or ml)','')::numeric,
-        row_data->>'Unit', row_data->>'Liquid (Yes/No)', row_data->>'CJ Recommended Brand',
-        row_data->>'Allergen', row_data->>'Vegan (Yes/No)', row_data->>'Vegetarian (Yes/No)',
-        row_data->>'Notes', COALESCE(v_extra,'{}')
-      );
-    END IF;
-    total := total + 1;
-  END LOOP;
-  RETURN total;
-END;
-$$;
-GRANT EXECUTE ON FUNCTION public.admin_bulk_upsert_ingredients(jsonb) TO authenticated;
-
 -- ── ADMIN — USERS ─────────────────────────────────────────────────
 
 DO $$ DECLARE r record;
