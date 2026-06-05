@@ -94,7 +94,11 @@ function buildTabs() {
   const wrap = document.getElementById('lib-tabs');
   wrap.innerHTML = Object.entries(TYPES).map(([type, info]) =>
     `<button class="lib-tab${type===currentType?' active':''}" onclick="switchType('${type}')">${info.emoji} ${info.label}</button>`
-  ).join('');
+  ).join('')
+  // AP-01: plain link pills — NOT entries in TYPES (they are standalone
+  // pages, not ?type= directory filters)
+  + `<button class="lib-tab" onclick="location.href='conversions.html'">⚖️ Conversions &amp; Weights</button>`
+  + `<button class="lib-tab" onclick="location.href='baby.html'">👶 Baby &amp; Toddler</button>`;
 }
 
 function switchType(type) {
