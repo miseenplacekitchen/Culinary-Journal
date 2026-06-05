@@ -337,22 +337,23 @@ CREATE FUNCTION admin_get_ingredients(
   p_sort_col text DEFAULT 'Ingredient Name', p_sort_dir text DEFAULT 'asc'
 )
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_rows jsonb; v_total bigint;
+-- AP-07: returns a plain jsonb ARRAY of complete rows (all columns incl.
+-- extra_fields). The frontend slices/filters the array and fetches the
+-- total separately via admin_count_ingredients. Do not change this to an
+-- object shape. AP-06f (sort params accepted but unused) remains open —
+-- implement only with a strict column whitelist, never raw interpolation.
+DECLARE v_rows jsonb;
 BEGIN
   IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  SELECT COUNT(*) INTO v_total FROM ingredients
-  WHERE (p_search IS NULL OR "Ingredient Name" ILIKE '%'||p_search||'%')
-    AND (p_category IS NULL OR "Category" = p_category);
-  SELECT jsonb_agg(i) INTO v_rows FROM (
-    SELECT "ID", "Ingredient Name", "Category", "Sub Category", "Unit",
-           "Allergen", "Vegan (Yes/No)", "Vegetarian (Yes/No)", "CJ Recommended Brand"
+  SELECT jsonb_agg(to_jsonb(i)) INTO v_rows FROM (
+    SELECT *
     FROM ingredients
     WHERE (p_search IS NULL OR "Ingredient Name" ILIKE '%'||p_search||'%')
       AND (p_category IS NULL OR "Category" = p_category)
     ORDER BY "Ingredient Name" ASC
     LIMIT p_limit OFFSET p_offset
   ) i;
-  RETURN jsonb_build_object('rows', COALESCE(v_rows,'[]'::jsonb), 'total', v_total);
+  RETURN COALESCE(v_rows, '[]'::jsonb);
 END; $$;
 
 DROP FUNCTION IF EXISTS admin_count_ingredients(text, text);
