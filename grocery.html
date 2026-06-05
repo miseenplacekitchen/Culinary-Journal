@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Build and manage your grocery list from recipes and pantry needs on The Culinary Journal.">
+  <link rel="canonical" href="https://theculinaryjournal.site/grocery.html">
+  <title>Grocery List — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .gl-wrap { max-width:900px; margin:0 auto; padding:24px 20px 80px; }
+    .gl-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
+    .gl-title { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:600; color:var(--text-high); }
+    .gl-actions { display:flex; gap:8px; }
+    .gl-btn { padding:8px 16px; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; cursor:pointer; border:none; }
+    .gl-btn-primary { background:var(--accent); color:#fff; }
+    .gl-btn-ghost { background:none; border:1px solid var(--border); color:var(--text-mid); }
+    .gl-btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+
+    /* Tabs */
+    .gl-tabs { display:flex; gap:4px; background:var(--text-ghost); border-radius:10px; padding:4px; margin-bottom:24px; width:fit-content; }
+    .gl-tab { font-family:'DM Sans',sans-serif; font-size:13px; padding:8px 20px; border-radius:7px; border:none; background:none; color:var(--text-mid); cursor:pointer; transition:all 0.15s; }
+    .gl-tab.active { background:var(--bg); color:var(--text-high); font-weight:500; box-shadow:0 1px 4px rgba(0,0,0,0.15); }
+
+    /* Recipe sections (Tab 1) */
+    .gl-recipe-section { margin-bottom:24px; border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+    .gl-recipe-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:var(--text-ghost); border-bottom:1px solid var(--border); }
+    .gl-recipe-name { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:600; color:var(--text-high); }
+    .gl-recipe-count { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+    .gl-remove-recipe { padding:4px 10px; background:none; border:1px solid rgb(from var(--danger) r g b / 0.3); border-radius:5px; color: var(--danger); font-size:11px; cursor:pointer; font-family:'DM Sans',sans-serif; }
+
+    /* Ingredient rows */
+    .gl-item { display:flex; align-items:center; gap:12px; padding:11px 18px; border-bottom:1px solid rgba(from var(--border) r g b / 0.4); transition:background 0.1s; }
+    .gl-item:last-child { border-bottom:none; }
+    .gl-item:hover { background:var(--text-ghost); }
+    .gl-item.checked { opacity:0.45; }
+    .gl-item.checked .gl-item-name { text-decoration:line-through; }
+    .gl-check { width:18px; height:18px; accent-color:var(--accent); cursor:pointer; flex-shrink:0; }
+    .gl-item-name { flex:1; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); }
+    .gl-item-qty { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--accent); font-weight:500; white-space:nowrap; }
+    .gl-item-note { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); display:flex; align-items:center; gap:4px; }
+
+    /* Combined tab category headers */
+    .gl-category-header { padding:10px 18px 6px; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); background:var(--text-ghost); border-bottom:1px solid var(--border); }
+
+    /* Empty state */
+    .gl-empty { text-align:center; padding:60px 20px; }
+    .gl-empty-icon { font-size:48px; margin-bottom:12px; }
+    .gl-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--text-high); margin-bottom:6px; }
+    .gl-empty-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-bottom:20px; }
+
+    /* Print */
+    @media print {
+      nav, .gl-actions, .gl-tabs, .gl-remove-recipe, .gl-check { display:none!important; }
+      .page-bg { background:white!important; }
+      .gl-item-name, .gl-item-qty, .gl-recipe-name { color:#000!important; }
+      .gl-item.checked { display:none; }
+    }
+  </style>
+</head>
+<body class="page-bg cj-body">
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"></div>
+
+<div class="gl-wrap">
+  <div class="gl-header">
+    <h1 class="gl-title">🛒 Grocery List</h1>
+    <div class="gl-actions">
+      <button class="gl-btn gl-btn-ghost" onclick="clearChecked()">Clear Checked</button>
+      <button class="gl-btn gl-btn-ghost" onclick="clearAll()">Clear All</button>
+      <button class="gl-btn gl-btn-primary" onclick="window.print()">🖨 Print</button>
+    </div>
+  </div>
+
+  <div class="gl-tabs">
+    <button class="gl-tab active" id="tab-by-recipe" onclick="switchTab('recipe',this)">By Recipe</button>
+    <button class="gl-tab" id="tab-combined" onclick="switchTab('combined',this)">Combined Shopping List</button>
+  </div>
+
+  <div id="view-recipe"></div>
+  <div id="view-combined" style="display:none"></div>
+</div>
+
+<script src="nav-init.js"></script>
+<script>
+
+let _syncTimer = null;
+
+function getSession(){
+  try{ return JSON.parse(localStorage.getItem('tcj_session')||'null'); }catch(_){return null;}
+}
+
+async function callRPC(fn, params){
+  const sess = getSession();
+  if(!sess||!sess.access_token) return null;
+  const res = await fetch(SUPA_URL+'/rest/v1/rpc/'+fn, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+sess.access_token},
+    body: JSON.stringify(params)
+  });
+  if(!res.ok) return null;
+  return res.json();
+}
+
+async function syncFromSupabase(){
+  try{
+    const data = await callRPC('get_my_grocery_list',{});
+    if(!data) return; // not logged in or no saved list
+    const remote = data.list_data||{recipes:[]};
+    const remoteChecked = data.checked||[];
+    const remoteTime = data.updated_at ? new Date(data.updated_at).getTime() : 0;
+    // Only overwrite local if remote is newer
+    const localRaw = localStorage.getItem('tcj_grocery_ts');
+    const localTime = localRaw ? parseInt(localRaw) : 0;
+    if(remoteTime > localTime){
+      localStorage.setItem('tcj_grocery', JSON.stringify(remote));
+      localStorage.setItem('tcj_grocery_checked', JSON.stringify(remoteChecked));
+      localStorage.setItem('tcj_grocery_ts', String(remoteTime));
+      render();
+    }
+  } catch(_) {}
+}
+
+function scheduleSyncToSupabase(){
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(async function(){
+    try{
+      const list    = getList();
+      const checked = getChecked();
+      await callRPC('save_my_grocery_list',{p_list_data:list, p_checked:checked});
+      localStorage.setItem('tcj_grocery_ts', String(Date.now()));
+    } catch(_) {}
+  }, 1500);
+}
+
+// Grocery list stored in localStorage under 'tcj_grocery'
+// Structure: { recipes: [{id, name, servings, ingredients:[{name,qty,unit,category,section}]}] }
+
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+const UNICODE_FRACTIONS = {'½':0.5,'⅓':1/3,'⅔':2/3,'¼':0.25,'¾':0.75,'⅛':0.125,'⅜':0.375,'⅝':0.625,'⅞':0.875};
+function parseFraction(v){
+  if(v==null||v==='') return 0;
+  v = String(v).trim();
+  // Unicode fraction
+  if(UNICODE_FRACTIONS[v] !== undefined) return UNICODE_FRACTIONS[v];
+  // Mixed number with unicode e.g. "1½"
+  for(const [uf,val] of Object.entries(UNICODE_FRACTIONS)){
+    if(v.endsWith(uf)) return parseFloat(v.slice(0,-uf.length)||0) + val;
+  }
+  // Slash fraction e.g. "1/2" or "3 1/4"
+  const slash = v.match(/^(\d+)\s+(\d+)\/(\d+)$|^(\d+)\/(\d+)$/);
+  if(slash){
+    if(slash[1]) return parseInt(slash[1]) + parseInt(slash[2])/parseInt(slash[3]);
+    return parseInt(slash[4])/parseInt(slash[5]);
+  }
+  return parseFloat(v)||0;
+}
+
+const FRACTIONS = {'1/8':'⅛','1/4':'¼','3/8':'⅜','1/2':'½','5/8':'⅝','3/4':'¾','1/3':'⅓','2/3':'⅔'};
+function fmtQty(v){ if(!v)return ''; let s=String(v); Object.keys(FRACTIONS).forEach(f=>{s=s.replace(new RegExp(f.replace('/','[/]'),'g'),FRACTIONS[f]);}); return s; }
+
+function getList(){ try{return JSON.parse(localStorage.getItem('tcj_grocery')||'{"recipes":[],"checked":[]}');}catch(_){return{recipes:[],checked:[]};} }
+function saveList(list){ localStorage.setItem('tcj_grocery',JSON.stringify(list)); scheduleSyncToSupabase(); }
+function getChecked(){ try{return JSON.parse(localStorage.getItem('tcj_grocery_checked')||'[]');}catch(_){return[];} }
+function setChecked(arr){ localStorage.setItem('tcj_grocery_checked',JSON.stringify(arr)); scheduleSyncToSupabase(); }
+
+function currentTab(){ return document.getElementById('tab-by-recipe').classList.contains('active')?'recipe':'combined'; }
+
+function switchTab(tab, btn){
+  document.querySelectorAll('.gl-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('view-recipe').style.display = tab==='recipe'?'block':'none';
+  document.getElementById('view-combined').style.display = tab==='combined'?'block':'none';
+  render();
+}
+
+function toggleItem(key){
+  const checked = getChecked();
+  const idx = checked.indexOf(key);
+  if(idx>-1) checked.splice(idx,1); else checked.push(key);
+  setChecked(checked);
+  render();
+}
+
+function removeRecipe(recipeId){
+  if(!confirm('Remove this recipe from your list?')) return;
+  const list = getList();
+  list.recipes = list.recipes.filter(r=>r.id!==recipeId);
+  saveList(list);
+  render();
+}
+
+function clearChecked(){
+  setChecked([]);
+  render();
+}
+
+function clearAll(){
+  if(!confirm('Clear the entire grocery list?')) return;
+  saveList({recipes:[],checked:[]});
+  setChecked([]);
+  render();
+}
+
+function render(){
+  const list = getList();
+  const tab  = currentTab();
+  if(tab==='recipe') renderByRecipe(list);
+  else renderCombined(list);
+}
+
+function renderByRecipe(list){
+  const el = document.getElementById('view-recipe');
+  if(!list.recipes.length){
+    el.innerHTML = `<div class="gl-empty"><div class="gl-empty-icon">🛒</div><div class="gl-empty-title">Your list is empty</div><div class="gl-empty-sub">Add ingredients from a recipe page using the 🛒 button.</div></div>`;
+    return;
+  }
+  const checked = getChecked();
+  el.innerHTML = '';
+  list.recipes.forEach(recipe=>{
+    const div = document.createElement('div');
+    div.className = 'gl-recipe-section';
+    let itemsHtml = '';
+    const groupedBySection = {};
+    (recipe.ingredients||[]).forEach(ing=>{
+      const sec = ing.section||'Ingredients';
+      if(!groupedBySection[sec]) groupedBySection[sec]=[];
+      groupedBySection[sec].push(ing);
+    });
+    Object.keys(groupedBySection).forEach(section=>{
+      if(Object.keys(groupedBySection).length>1) itemsHtml+=`<div class="gl-category-header">${esc(section)}</div>`;
+      groupedBySection[section].forEach(ing=>{
+        const key = recipe.id+':'+ing.name;
+        const isChecked = checked.includes(key);
+        itemsHtml+=`<div class="gl-item${isChecked?' checked':''}">
+          <input type="checkbox" class="gl-check" ${isChecked?'checked':''} data-key="${esc(key)}">
+          <span class="gl-item-name">${esc(ing.name)}</span>
+          <span class="gl-item-qty">${esc(fmtQty(ing.qty))} ${esc(ing.unit||'')}</span>
+        </div>`;
+      });
+    });
+    div.innerHTML = `
+      <div class="gl-recipe-header">
+        <div>
+          <div class="gl-recipe-name">${esc(recipe.name)}</div>
+          <div class="gl-recipe-count">${recipe.ingredients?.length||0} ingredients${recipe.servings?' · '+esc(String(recipe.servings))+' servings':''}</div>
+        </div>
+        <button class="gl-remove-recipe" data-remove-id="${esc(String(recipe.id))}">Remove</button>
+      </div>
+      ${itemsHtml}`;
+    el.appendChild(div);
+  });
+}
+
+const CATEGORY_ORDER = ['Produce','Meat & Seafood','Dairy & Eggs','Bakery','Pantry','Spices & Herbs','Oils & Sauces','Canned & Preserved','Frozen','Other'];
+
+function renderCombined(list){
+  const el = document.getElementById('view-combined');
+  if(!list.recipes.length){
+    el.innerHTML = `<div class="gl-empty"><div class="gl-empty-icon">🛒</div><div class="gl-empty-title">Your list is empty</div><div class="gl-empty-sub">Add ingredients from a recipe page.</div></div>`;
+    return;
+  }
+  const checked = getChecked();
+  // Combine ingredients by name (case-insensitive)
+  const combined = {};
+  list.recipes.forEach(recipe=>{
+    (recipe.ingredients||[]).forEach(ing=>{
+      const key = ing.name.toLowerCase().trim();
+      if(!combined[key]){
+        combined[key]={ name:ing.name, entries:[], category:ing.category||'Other' };
+      }
+      combined[key].entries.push({qty:parseFraction(ing.qty), unit:ing.unit||'', recipe:recipe.name, rawQty:ing.qty});
+    });
+  });
+
+  // Group by category
+  const byCategory = {};
+  Object.values(combined).forEach(item=>{
+    const cat = item.category;
+    if(!byCategory[cat]) byCategory[cat]=[];
+    // Try to combine same units
+    const unitGroups = {};
+    item.entries.forEach(e=>{
+      const k=e.unit.toLowerCase();
+      if(!unitGroups[k]) unitGroups[k]={total:0,unit:e.unit,recipes:[]};
+      unitGroups[k].total = Math.round((unitGroups[k].total + e.qty) * 10000) / 10000;
+      unitGroups[k].recipes.push(e.recipe);
+    });
+    const qtyText = Object.values(unitGroups).map(g=>{
+      const t = g.total%1===0?g.total:parseFloat(g.total.toFixed(2));
+      return fmtQty(String(t))+' '+g.unit;
+    }).join(' + ');
+    byCategory[cat].push({name:item.name, qtyText, recipes:[...new Set(item.entries.map(e=>e.recipe))]});
+  });
+
+  el.innerHTML = '';
+  const cats = [...new Set([...CATEGORY_ORDER, ...Object.keys(byCategory)])].filter(c=>byCategory[c]);
+  cats.forEach(cat=>{
+    if(!byCategory[cat]) return;
+    const div = document.createElement('div');
+    div.className = 'gl-recipe-section';
+    div.innerHTML = `<div class="gl-category-header">${esc(cat)}</div>`;
+    byCategory[cat].forEach(item=>{
+      const checkKey = 'combined:'+item.name.toLowerCase();
+      const isChecked = checked.includes(checkKey);
+      const row = document.createElement('div');
+      row.className = 'gl-item'+(isChecked?' checked':'');
+      row.innerHTML = `
+        <input type="checkbox" class="gl-check" ${isChecked?'checked':''} data-key="${esc(checkKey)}">
+        <span class="gl-item-name">${esc(item.name)}</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+          <span class="gl-item-qty">${esc(item.qtyText)}</span>
+          <span class="gl-item-note">from ${esc(item.recipes.join(', '))}</span>
+        </div>`;
+      div.appendChild(row);
+    });
+    el.appendChild(div);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  render();
+  syncFromSupabase();
+  // Event delegation — safer than inline onclick
+  document.getElementById('view-recipe').addEventListener('click', function(e){
+    const cb = e.target.closest('[data-key]');
+    if(cb) toggleItem(cb.dataset.key);
+    const rb = e.target.closest('[data-remove-id]');
+    if(rb){ e.stopPropagation(); removeRecipe(rb.dataset.removeId); }
+  });
+  document.getElementById('view-combined').addEventListener('click', function(e){
+    const cb = e.target.closest('[data-key]');
+    if(cb) toggleItem(cb.dataset.key);
+  });
+});
+
+// Listen for storage changes (when recipe page adds items)
+window.addEventListener('storage', e=>{ if(e.key==='tcj_grocery') render(); });
+</script>
+</body>
+</html>

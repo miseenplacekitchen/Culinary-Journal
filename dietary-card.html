@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Guest dietary requirements form for events hosted through The Culinary Journal.">
+  <link rel="canonical" href="https://theculinaryjournal.site/dietary-card.html">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Dietary Requirements — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); display:flex; align-items:flex-start; justify-content:center; padding:40px 20px 80px; }
+    .dc-card  { background:var(--text-ghost); border:1px solid var(--border); border-radius:18px; width:100%; max-width:520px; overflow:hidden; }
+    .dc-header { background:var(--bg); border-bottom:1px solid var(--border); padding:28px 32px; text-align:center; }
+    .dc-logo  { font-family:'Cormorant Garamond',serif; font-size:1rem; color:var(--accent); letter-spacing:0.06em; margin-bottom:16px; }
+    .dc-event { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:700; color:var(--text-high); margin-bottom:4px; }
+    .dc-date  { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); }
+    .dc-body  { padding:28px 32px; }
+    .dc-greeting { font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:600; color:var(--text-high); margin-bottom:6px; }
+    .dc-intro    { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-bottom:24px; line-height:1.6; }
+    .dc-section  { margin-bottom:20px; }
+    .dc-section-title { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); margin-bottom:10px; }
+    .dc-checks { display:flex; flex-wrap:wrap; gap:7px; }
+    .dc-check  { display:flex; align-items:center; gap:6px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; cursor:pointer; transition:all 0.15s; }
+    .dc-check:has(input:checked) { background:rgb(from var(--accent) r g b / 0.1); border-color:rgb(from var(--accent) r g b / 0.35); color:var(--text-high); }
+    .dc-check input { accent-color:var(--accent); }
+    .dc-none  { display:flex; align-items:center; gap:6px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; cursor:pointer; }
+    .dc-none:has(input:checked) { background:rgba(76,175,118,0.1); border-color:rgba(76,175,118,0.35); }
+    .dc-field { margin-bottom:16px; }
+    .dc-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-mid); margin-bottom:5px; display:block; }
+    .dc-textarea { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:10px 12px; border:1px solid var(--border); border-radius:9px; background:var(--bg); color:var(--text-high); outline:none; resize:vertical; }
+    .dc-textarea:focus { border-color:var(--accent); }
+    .dc-submit { width:100%; padding:14px; background:var(--accent); border:none; border-radius:10px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; color:#fff; cursor:pointer; margin-top:8px; }
+    .dc-submit:hover { opacity:0.88; }
+
+    /* ── Phase B: grouped taxonomy ── */
+    .dc-sev { font-family:'DM Sans',sans-serif; font-size:11px; margin-left:4px; padding:3px 6px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text-high); display:none; }
+    .dc-check:has(input:checked) .dc-sev { display:inline-block; }
+    .dc-check:has(.dc-sev option[value="Severe"]:checked) { border-color:var(--danger); background:rgb(from var(--danger) r g b / 0.08); }
+    .dc-other { font-family:'DM Sans',sans-serif; font-size:13px; margin-top:8px; width:100%; box-sizing:border-box; padding:8px 12px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text-high); outline:none; }
+    .dc-other:focus { border-color:var(--accent); }
+    .dc-group-hint { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin:-4px 0 8px; }
+    /* ── Phase B: spice chillies (ported verbatim from Submit Recipe) ── */
+    .chilli {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      margin: 0;
+      vertical-align: middle;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+    .chilli-green { background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MzUuMzg1IDUzNS4zODUiPgo8cGF0aCBmaWxsPSIjOThDRTAwIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGQ9Ik00MC41NDksMzc4LjU2OWMxOC4xMywxNC4zNDQsMzcuMDU1LDI2Ljg0Miw1Ni41MDUsMzcuNjM5YzI1Ljc0Mi0zMy4zMTYsNDAuNDItNjQuMjc5LDQ5LjQ0OC05Mi45MzhjLTI1LjE1OSwyLjE1MS01My4zMjEsMS45OTktODUuMzU1LTEuNTU5QzQwLjIxNCwzMTcuMzQxLTExLjk0OSwzMzcuMDQsNDAuNTQ5LDM3OC41Njl6Ii8+CjxwYXRoIGZpbGw9IiM5OENFMDAiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTQ4OS4zNjUsNDE3LjUzN2M1NC45MDgtMzUuNTI1LDIwLjYyNS0xMTQuMjQzLTI2LjgxNC0xNTYuMjYxYy0xMS43MTMtMTAuMzc2LTIyLjM3NS0xOC4wNTQtMzIuMzExLTIzLjU5MWMtMTMuMDE2LDY2LjU4NC00OC44MjYsMTMyLjc5NC0xMDIuMjgxLDE4OC4yNjdjLTE0Ljg0LDE1LjQwNS0zMC42NzYsMjkuNTU4LTQ3LjMyNCw0Mi40OTVDMzU4LjcxMyw0NzIuMjcyLDQzMy4xNzYsNDUzLjkwMyw0ODkuMzY1LDQxNy41Mzd6IE00NDQuNDM5LDI3Ni41NzZjOS4yODUtNC4xNzksMjQuNzExLDkuOTgzLDM0LjQ2MywzMS42NDNjOS43NTQsMjEuNjU4LDEwLjEzNyw0Mi42MDEsMC44NTIsNDYuNzc5cy0yNC43MDktOS45ODMtMzQuNDYzLTMxLjY0M1M0MzUuMTU0LDI4MC43NTUsNDQ0LjQzOSwyNzYuNTc2eiIvPgo8cGF0aCBmaWxsPSIjOThDRTAwIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGQ9Ik02My44MTQsNDgwLjc3M2MtMTUuMDUyLDExLjY3Ni0zMS42MzMsNTQuNjExLDExLjM2LDU0LjYxMWM1LjI2LDAsMTEuNDI3LTAuNjQxLDE4LjU5LTIuMDY1YzU5LjE2My0xMS43NjIsMTEyLjM2OS0zNS42OTYsMTU3Ljc2Mi02Ny4zMTljODYuOTUyLTYwLjU3OSwxNDUuMTItMTQ5LjUxLDE2MC43ODQtMjM2LjE1NmMwLjc4My00LjM1MSwxLjQ3My04LjY5MiwyLjA0NS0xMy4wMzRjNC4yODUtMzIuNTEzLTE0LjI5NS01NC45MzctNDEuNzQ4LTY4LjE0M2MtNS43NjgsNy4zNTQtMTEuODc3LDE0LjQyLTE4LjM3MSwyMC45OTljNC45NjMsNC43NTMsNy41MDgsOS42NjgsNi4yNzMsMTMuOTIzYy0yLjgzLDkuNzczLTIzLjYxOSwxMi4zNDUtNDYuNDM2LDUuNzM3Yy0yMi44MTYtNi42MDctMzkuMDA2LTE5Ljg5OS0zNi4xNzQtMjkuNjcyYzEuOTY5LTYuNzk5LDEyLjY5Ny0xMC4wMTIsMjYuNjY4LTkuMThjMS44ODUtNC41NDIsMy45NjktOS45MTYsNi4xNi0xNi4wNTVjLTIuNTE2LTAuMDk2LTUuMDMxLTAuMjEtNy41MzctMC4yMWMtOC41NjYsMC0xNy4wNDksMC41ODMtMjUuMjA1LDEuNzRjLTExNi4zMzgsMTYuNDg2LTgyLjA2Niw4NC41ODEtMTEwLjgzLDE4NC45NzdjLTkuMDg0LDMxLjcxOS0yNC41ODUsNjYuNjYtNTMuMDA1LDEwNC4yMjJDMTAwLjU1Myw0NDMuMTE2LDg0LjEzNSw0NjEuNjU4LDYzLjgxNCw0ODAuNzczeiIvPgo8cGF0aCBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC4yIiBkPSJNMTMwLDE3MCBDMTEwLDE5MCA5NSwyMzAgMTAwLDI4MCBDMTE1LDI0MCAxMjgsMjAwIDEzMCwxNzBaIi8+CjxwYXRoIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjMiIGQ9Ik0xNTUsMTYwIEMxNDAsMTc1IDEyOCwyMDAgMTI1LDIyNSBDMTM4LDE5OCAxNTAsMTc1IDE1NSwxNjBaIi8+CjxwYXRoIGZpbGw9IiNjOGU4NWEiIG9wYWNpdHk9IjAuMTUiIGQ9Ik0xMDAsMzIwIEM4NSwzNDAgODAsMzcwIDkwLDQwMCBDOTUsMzcwIDk4LDM0NSAxMDAsMzIwWiIvPgo8cGF0aCBmaWxsPSIjM0Q1QzE0IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGQ9Ik0zMjMuNzYyLDEyNS44MDRjLTEuMDIzLDMuMjIyLTIuMDU3LDYuMzQ5LTMuMDgsOS4yODVjLTIuMTcsNi4yMjUtNC4yODMsMTEuNzgxLTYuMjI1LDE2LjU2MmMtNS4wMiwxMi4zNzQtOC43ODcsMTkuNTM2LTguNzg3LDE5LjUzNmwyNC4wNjgsNy41MzZjNS44OTEtNC41MzMsMTEuNTIxLTkuNTkxLDE2LjkyNi0xNS4wMDRjNS45MTgtNS45MjksMTEuNTMxLTEyLjMxNiwxNi44NC0xOC45ODFjMi4wNDUtMi41NzIsNC4wNDUtNS4xODMsNS45OTQtNy44MzJjMS45NDEtMi42MTEsMy44MjYtNS4yNiw1LjY3Mi03LjkyN2MzNS41OTItNTEuMzg5LDU0LjU2Mi0xMTAuODMsNTQuNTYyLTExMC44M0M0MTguNjg4LDYuMzIxLDQwMC4yOTksMCwzODIuMTExLDBjLTE2LjM1MiwwLTMyLjU0MSw1LjEyNS00My4wNjgsMTUuOTY5YzIuMTcsMzcuNjM4LTQuNTQzLDczLjAzOS0xMi40OTgsMTAwLjU2OUMzMjUuNjM1LDExOS43MjIsMzI0LjcwNywxMjIuODQsMzIzLjc2MiwxMjUuODA0eiIvPgo8L3N2Zz4="); }
+    .chilli-yellow { background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MzUuMzg1IDUzNS4zODUiPgo8cGF0aCBmaWxsPSIjQzhBODAwIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGQ9Ik00MC41NDksMzc4LjU2OWMxOC4xMywxNC4zNDQsMzcuMDU1LDI2Ljg0Miw1Ni41MDUsMzcuNjM5YzI1Ljc0Mi0zMy4zMTYsNDAuNDItNjQuMjc5LDQ5LjQ0OC05Mi45MzhjLTI1LjE1OSwyLjE1MS01My4zMjEsMS45OTktODUuMzU1LTEuNTU5QzQwLjIxNCwzMTcuMzQxLTExLjk0OSwzMzcuMDQsNDAuNTQ5LDM3OC41Njl6Ii8+CjxwYXRoIGZpbGw9IiNDOEE4MDAiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTQ4OS4zNjUsNDE3LjUzN2M1NC45MDgtMzUuNTI1LDIwLjYyNS0xMTQuMjQzLTI2LjgxNC0xNTYuMjYxYy0xMS43MTMtMTAuMzc2LTIyLjM3NS0xOC4wNTQtMzIuMzExLTIzLjU5MWMtMTMuMDE2LDY2LjU4NC00OC44MjYsMTMyLjc5NC0xMDIuMjgxLDE4OC4yNjdjLTE0Ljg0LDE1LjQwNS0zMC42NzYsMjkuNTU4LTQ3LjMyNCw0Mi40OTVDMzU4LjcxMyw0NzIuMjcyLDQzMy4xNzYsNDUzLjkwMyw0ODkuMzY1LDQxNy41Mzd6IE00NDQuNDM5LDI3Ni41NzZjOS4yODUtNC4xNzksMjQuNzExLDkuOTgzLDM0LjQ2MywzMS42NDNjOS43NTQsMjEuNjU4LDEwLjEzNyw0Mi42MDEsMC44NTIsNDYuNzc5cy0yNC43MDktOS45ODMtMzQuNDYzLTMxLjY0M1M0MzUuMTU0LDI4MC43NTUsNDQ0LjQzOSwyNzYuNTc2eiIvPgo8cGF0aCBmaWxsPSIjQzhBODAwIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGQ9Ik02My44MTQsNDgwLjc3M2MtMTUuMDUyLDExLjY3Ni0zMS42MzMsNTQuNjExLDExLjM2LDU0LjYxMWM1LjI2LDAsMTEuNDI3LTAuNjQxLDE4LjU5LTIuMDY1YzU5LjE2My0xMS43NjIsMTEyLjM2OS0zNS42OTYsMTU3Ljc2Mi02Ny4zMTljODYuOTUyLTYwLjU3OSwxNDUuMTItMTQ5LjUxLDE2MC43ODQtMjM2LjE1NmMwLjc4My00LjM1MSwxLjQ3My04LjY5MiwyLjA0NS0xMy4wMzRjNC4yODUtMzIuNTEzLTE0LjI5NS01NC45MzctNDEuNzQ4LTY4LjE0M2MtNS43NjgsNy4zNTQtMTEuODc3LDE0LjQyLTE4LjM3MSwyMC45OTljNC45NjMsNC43NTMsNy41MDgsOS42NjgsNi4yNzMsMTMuOTIzYy0yLjgzLDkuNzczLTIzLjYxOSwxMi4zNDUtNDYuNDM2LDUuNzM3Yy0yMi44MTYtNi42MDctMzkuMDA2LTE5Ljg5OS0zNi4xNzQtMjkuNjcyYzEuOTY5LTYuNzk5LDEyLjY5Ny0xMC4wMTIsMjYuNjY4LTkuMThjMS44ODUtNC41NDIsMy45NjktOS45MTYsNi4xNi0xNi4wNTVjLTIuNTE2LTAuMDk2LTUuMDMxLTAuMjEtNy41MzctMC4yMWMtOC41NjYsMC0xNy4wNDksMC41ODMtMjUuMjA1LDEuNzRjLTExNi4zMzgsMTYuNDg2LTgyLjA2Niw4NC41ODEtMTEwLjgzLDE4NC45NzdjLTkuMDg0LDMxLjcxOS0yNC41ODUsNjYuNjYtNTMuMDA1LDEwNC4yMjJDMTAwLjU1Myw0NDMuMTE2LDg0LjEzNSw0NjEuNjU4LDYzLjgxNCw0ODAuNzczeiIvPgo8cGF0aCBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC4yIiBkPSJNMTMwLDE3MCBDMTEwLDE5MCA5NSwyMzAgMTAwLDI4MCBDMTE1LDI0MCAxMjgsMjAwIDEzMCwxNzBaIi8+CjxwYXRoIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjMiIGQ9Ik0xNTUsMTYwIEMxNDAsMTc1IDEyOCwyMDAgMTI1LDIyNSBDMTM4LDE5OCAxNTAsMTc1IDE1NSwxNjBaIi8+CjxwYXRoIGZpbGw9IiNlOGQwNjAiIG9wYWNpdHk9IjAuMTUiIGQ9Ik0xMDAsMzIwIEM4NSwzNDAgODAsMzcwIDkwLDQwMCBDOTUsMzcwIDk4LDM0NSAxMDAsMzIwWiIvPgo8cGF0aCBmaWxsPSIjM0Q1QzE0IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGQ9Ik0zMjMuNzYyLDEyNS44MDRjLTEuMDIzLDMuMjIyLTIuMDU3LDYuMzQ5LTMuMDgsOS4yODVjLTIuMTcsNi4yMjUtNC4yODMsMTEuNzgxLTYuMjI1LDE2LjU2MmMtNS4wMiwxMi4zNzQtOC43ODcsMTkuNTM2LTguNzg3LDE5LjUzNmwyNC4wNjgsNy41MzZjNS44OTEtNC41MzMsMTEuNTIxLTkuNTkxLDE2LjkyNi0xNS4wMDRjNS45MTgtNS45MjksMTEuNTMxLTEyLjMxNiwxNi44NC0xOC45ODFjMi4wNDUtMi41NzIsNC4wNDUtNS4xODMsNS45OTQtNy44MzJjMS45NDEtMi42MTEsMy44MjYtNS4yNiw1LjY3Mi03LjkyN2MzNS41OTItNTEuMzg5LDU0LjU2Mi0xMTAuODMsNTQuNTYyLTExMC44M0M0MTguNjg4LDYuMzIxLDQwMC4yOTksMCwzODIuMTExLDBjLTE2LjM1MiwwLTMyLjU0MSw1LjEyNS00My4wNjgsMTUuOTY5YzIuMTcsMzcuNjM4LTQuNTQzLDczLjAzOS0xMi40OTgsMTAwLjU2OUMzMjUuNjM1LDExOS43MjIsMzI0LjcwNywxMjIuODQsMzIzLjc2MiwxMjUuODA0eiIvPgo8L3N2Zz4="); }
+    .chilli-orange { background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MzUuMzg1IDUzNS4zODUiPjxwYXRoIGZpbGw9IiNDMDM5MEIiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTQwLjU0OSwzNzguNTY5YzE4LjEzLDE0LjM0NCwzNy4wNTUsMjYuODQyLDU2LjUwNSwzNy42MzljMjUuNzQyLTMzLjMxNiw0MC40Mi02NC4yNzksNDkuNDQ4LTkyLjkzOGMtMjUuMTU5LDIuMTUxLTUzLjMyMSwxLjk5OS04NS4zNTUtMS41NTlDNDAuMjE0LDMxNy4zNDEtMTEuOTQ5LDMzNy4wNCw0MC41NDksMzc4LjU2OXoiLz48cGF0aCBmaWxsPSIjQzAzOTBCIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGQ9Ik00ODkuMzY1LDQxNy41MzdjNTQuOTA4LTM1LjUyNSwyMC42MjUtMTE0LjI0My0yNi44MTQtMTU2LjI2MWMtMTEuNzEzLTEwLjM3Ni0yMi4zNzUtMTguMDU0LTMyLjMxMS0yMy41OTFjLTEzLjAxNiw2Ni41ODQtNDguODI2LDEzMi43OTQtMTAyLjI4MSwxODguMjY3Yy0xNC44NCwxNS40MDUtMzAuNjc2LDI5LjU1OC00Ny4zMjQsNDIuNDk1QzM1OC43MTMsNDcyLjI3Miw0MzMuMTc2LDQ1My45MDMsNDg5LjM2NSw0MTcuNTM3eiBNNDQ0LjQzOSwyNzYuNTc2YzkuMjg1LTQuMTc5LDI0LjcxMSw5Ljk4MywzNC40NjMsMzEuNjQzYzkuNzU0LDIxLjY1OCwxMC4xMzcsNDIuNjAxLDAuODUyLDQ2Ljc3OXMtMjQuNzA5LTkuOTgzLTM0LjQ2My0zMS42NDNTNDM1LjE1NCwyODAuNzU1LDQ0NC40MzksMjc2LjU3NnoiLz48cGF0aCBmaWxsPSIjQzAzOTBCIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGQ9Ik02My44MTQsNDgwLjc3M2MtMTUuMDUyLDExLjY3Ni0zMS42MzMsNTQuNjExLDExLjM2LDU0LjYxMWM1LjI2LDAsMTEuNDI3LTAuNjQxLDE4LjU5LTIuMDY1YzU5LjE2My0xMS43NjIsMTEyLjM2OS0zNS42OTYsMTU3Ljc2Mi02Ny4zMTljODYuOTUyLTYwLjU3OSwxNDUuMTItMTQ5LjUxLDE2MC43ODQtMjM2LjE1NmMwLjc4My00LjM1MSwxLjQ3My04LjY5MiwyLjA0NS0xMy4wMzRjNC4yODUtMzIuNTEzLTE0LjI5NS01NC45MzctNDEuNzQ4LTY4LjE0M2MtNS43NjgsNy4zNTQtMTEuODc3LDE0LjQyLTE4LjM3MSwyMC45OTljNC45NjMsNC43NTMsNy41MDgsOS42NjgsNi4yNzMsMTMuOTIzYy0yLjgzLDkuNzczLTIzLjYxOSwxMi4zNDUtNDYuNDM2LDUuNzM3Yy0yMi44MTYtNi42MDctMzkuMDA2LTE5Ljg5OS0zNi4xNzQtMjkuNjcyYzEuOTY5LTYuNzk5LDEyLjY5Ny0xMC4wMTIsMjYuNjY4LTkuMThjMS44ODUtNC41NDIsMy45NjktOS45MTYsNi4xNi0xNi4wNTVjLTIuNTE2LTAuMDk2LTUuMDMxLTAuMjEtNy41MzctMC4yMWMtOC41NjYsMC0xNy4wNDksMC41ODMtMjUuMjA1LDEuNzRjLTExNi4zMzgsMTYuNDg2LTgyLjA2Niw4NC41ODEtMTEwLjgzLDE4NC45NzdjLTkuMDg0LDMxLjcxOS0yNC41ODUsNjYuNjYtNTMuMDA1LDEwNC4yMjJDMTAwLjU1Myw0NDMuMTE2LDg0LjEzNSw0NjEuNjU4LDYzLjgxNCw0ODAuNzczeiIvPjxwYXRoIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjIiIGQ9Ik0xMzAsMTcwIEMxMTAsMTkwIDk1LDIzMCAxMDAsMjgwIEMxMTUsMjQwIDEyOCwyMDAgMTMwLDE3MFoiLz48cGF0aCBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC4zIiBkPSJNMTU1LDE2MCBDMTQwLDE3NSAxMjgsMjAwIDEyNSwyMjUgQzEzOCwxOTggMTUwLDE3NSAxNTUsMTYwWiIvPjxwYXRoIGZpbGw9IiNlMDgwNjAiIG9wYWNpdHk9IjAuMTUiIGQ9Ik0xMDAsMzIwIEM4NSwzNDAgODAsMzcwIDkwLDQwMCBDOTUsMzcwIDk4LDM0NSAxMDAsMzIwWiIvPjxwYXRoIGZpbGw9IiMzRDVDMTQiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTMyMy43NjIsMTI1LjgwNGMtMS4wMjMsMy4yMjItMi4wNTcsNi4zNDktMy4wOCw5LjI4NWMtMi4xNyw2LjIyNS00LjI4MywxMS43ODEtNi4yMjUsMTYuNTYyYy01LjAyLDEyLjM3NC04Ljc4NywxOS41MzYtOC43ODcsMTkuNTM2bDI0LjA2OCw3LjUzNmM1Ljg5MS00LjUzMywxMS41MjEtOS41OTEsMTYuOTI2LTE1LjAwNGM1LjkxOC01LjkyOSwxMS41MzEtMTIuMzE2LDE2Ljg0LTE4Ljk4MWMyLjA0NS0yLjU3Miw0LjA0NS01LjE4Myw1Ljk5NC03LjgzMmMxLjk0MS0yLjYxMSwzLjgyNi01LjI2LDUuNjcyLTcuOTI3YzM1LjU5Mi01MS4zODksNTQuNTYyLTExMC44Myw1NC41NjItMTEwLjgzQzQxOC42ODgsNi4zMjEsNDAwLjI5OSwwLDM4Mi4xMTEsMGMtMTYuMzUyLDAtMzIuNTQxLDUuMTI1LTQzLjA2OCwxNS45NjljMi4xNywzNy42MzgtNC41NDMsNzMuMDM5LTEyLjQ5OCwxMDAuNTY5QzMyNS42MzUsMTE5LjcyMiwzMjQuNzA3LDEyMi44NCwzMjMuNzYyLDEyNS44MDR6Ii8+PC9zdmc+"); }
+    .chilli-red { background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MzUuMzg1IDUzNS4zODUiPgo8cGF0aCBmaWxsPSIjQjUxQjFCIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGQ9Ik00MC41NDksMzc4LjU2OWMxOC4xMywxNC4zNDQsMzcuMDU1LDI2Ljg0Miw1Ni41MDUsMzcuNjM5YzI1Ljc0Mi0zMy4zMTYsNDAuNDItNjQuMjc5LDQ5LjQ0OC05Mi45MzhjLTI1LjE1OSwyLjE1MS01My4zMjEsMS45OTktODUuMzU1LTEuNTU5QzQwLjIxNCwzMTcuMzQxLTExLjk0OSwzMzcuMDQsNDAuNTQ5LDM3OC41Njl6Ii8+CjxwYXRoIGZpbGw9IiNCNTFCMUIiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTQ4OS4zNjUsNDE3LjUzN2M1NC45MDgtMzUuNTI1LDIwLjYyNS0xMTQuMjQzLTI2LjgxNC0xNTYuMjYxYy0xMS43MTMtMTAuMzc2LTIyLjM3NS0xOC4wNTQtMzIuMzExLTIzLjU5MWMtMTMuMDE2LDY2LjU4NC00OC44MjYsMTMyLjc5NC0xMDIuMjgxLDE4OC4yNjdjLTE0Ljg0LDE1LjQwNS0zMC42NzYsMjkuNTU4LTQ3LjMyNCw0Mi40OTVDMzU4LjcxMyw0NzIuMjcyLDQzMy4xNzYsNDUzLjkwMyw0ODkuMzY1LDQxNy41Mzd6IE00NDQuNDM5LDI3Ni41NzZjOS4yODUtNC4xNzksMjQuNzExLDkuOTgzLDM0LjQ2MywzMS42NDNjOS43NTQsMjEuNjU4LDEwLjEzNyw0Mi42MDEsMC44NTIsNDYuNzc5cy0yNC43MDktOS45ODMtMzQuNDYzLTMxLjY0M1M0MzUuMTU0LDI4MC43NTUsNDQ0LjQzOSwyNzYuNTc2eiIvPgo8cGF0aCBmaWxsPSIjQjUxQjFCIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGQ9Ik02My44MTQsNDgwLjc3M2MtMTUuMDUyLDExLjY3Ni0zMS42MzMsNTQuNjExLDExLjM2LDU0LjYxMWM1LjI2LDAsMTEuNDI3LTAuNjQxLDE4LjU5LTIuMDY1YzU5LjE2My0xMS43NjIsMTEyLjM2OS0zNS42OTYsMTU3Ljc2Mi02Ny4zMTljODYuOTUyLTYwLjU3OSwxNDUuMTItMTQ5LjUxLDE2MC43ODQtMjM2LjE1NmMwLjc4My00LjM1MSwxLjQ3My04LjY5MiwyLjA0NS0xMy4wMzRjNC4yODUtMzIuNTEzLTE0LjI5NS01NC45MzctNDEuNzQ4LTY4LjE0M2MtNS43NjgsNy4zNTQtMTEuODc3LDE0LjQyLTE4LjM3MSwyMC45OTljNC45NjMsNC43NTMsNy41MDgsOS42NjgsNi4yNzMsMTMuOTIzYy0yLjgzLDkuNzczLTIzLjYxOSwxMi4zNDUtNDYuNDM2LDUuNzM3Yy0yMi44MTYtNi42MDctMzkuMDA2LTE5Ljg5OS0zNi4xNzQtMjkuNjcyYzEuOTY5LTYuNzk5LDEyLjY5Ny0xMC4wMTIsMjYuNjY4LTkuMThjMS44ODUtNC41NDIsMy45NjktOS45MTYsNi4xNi0xNi4wNTVjLTIuNTE2LTAuMDk2LTUuMDMxLTAuMjEtNy41MzctMC4yMWMtOC41NjYsMC0xNy4wNDksMC41ODMtMjUuMjA1LDEuNzRjLTExNi4zMzgsMTYuNDg2LTgyLjA2Niw4NC41ODEtMTEwLjgzLDE4NC45NzdjLTkuMDg0LDMxLjcxOS0yNC41ODUsNjYuNjYtNTMuMDA1LDEwNC4yMjJDMTAwLjU1Myw0NDMuMTE2LDg0LjEzNSw0NjEuNjU4LDYzLjgxNCw0ODAuNzczeiIvPgo8cGF0aCBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC4yIiBkPSJNMTMwLDE3MCBDMTEwLDE5MCA5NSwyMzAgMTAwLDI4MCBDMTE1LDI0MCAxMjgsMjAwIDEzMCwxNzBaIi8+CjxwYXRoIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjMiIGQ9Ik0xNTUsMTYwIEMxNDAsMTc1IDEyOCwyMDAgMTI1LDIyNSBDMTM4LDE5OCAxNTAsMTc1IDE1NSwxNjBaIi8+CjxwYXRoIGZpbGw9IiNlMDcwNzAiIG9wYWNpdHk9IjAuMTUiIGQ9Ik0xMDAsMzIwIEM4NSwzNDAgODAsMzcwIDkwLDQwMCBDOTUsMzcwIDk4LDM0NSAxMDAsMzIwWiIvPgo8cGF0aCBmaWxsPSIjM0Q1QzE0IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGQ9Ik0zMjMuNzYyLDEyNS44MDRjLTEuMDIzLDMuMjIyLTIuMDU3LDYuMzQ5LTMuMDgsOS4yODVjLTIuMTcsNi4yMjUtNC4yODMsMTEuNzgxLTYuMjI1LDE2LjU2MmMtNS4wMiwxMi4zNzQtOC43ODcsMTkuNTM2LTguNzg3LDE5LjUzNmwyNC4wNjgsNy41MzZjNS44OTEtNC41MzMsMTEuNTIxLTkuNTkxLDE2LjkyNi0xNS4wMDRjNS45MTgtNS45MjksMTEuNTMxLTEyLjMxNiwxNi44NC0xOC45ODFjMi4wNDUtMi41NzIsNC4wNDUtNS4xODMsNS45OTQtNy44MzJjMS45NDEtMi42MTEsMy44MjYtNS4yNiw1LjY3Mi03LjkyN2MzNS41OTItNTEuMzg5LDU0LjU2Mi0xMTAuODMsNTQuNTYyLTExMC44M0M0MTguNjg4LDYuMzIxLDQwMC4yOTksMCwzODIuMTExLDBjLTE2LjM1MiwwLTMyLjU0MSw1LjEyNS00My4wNjgsMTUuOTY5YzIuMTcsMzcuNjM4LTQuNTQzLDczLjAzOS0xMi40OTgsMTAwLjU2OUMzMjUuNjM1LDExOS43MjIsMzI0LjcwNywxMjIuODQsMzIzLjc2MiwxMjUuODA0eiIvPgo8L3N2Zz4="); }
+    .chilli-darkred { background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MzUuMzg1IDUzNS4zODUiPgo8cGF0aCBmaWxsPSIjNTYwMjFEIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGQ9Ik00MC41NDksMzc4LjU2OWMxOC4xMywxNC4zNDQsMzcuMDU1LDI2Ljg0Miw1Ni41MDUsMzcuNjM5YzI1Ljc0Mi0zMy4zMTYsNDAuNDItNjQuMjc5LDQ5LjQ0OC05Mi45MzhjLTI1LjE1OSwyLjE1MS01My4zMjEsMS45OTktODUuMzU1LTEuNTU5QzQwLjIxNCwzMTcuMzQxLTExLjk0OSwzMzcuMDQsNDAuNTQ5LDM3OC41Njl6Ii8+CjxwYXRoIGZpbGw9IiM1NjAyMUQiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTQ4OS4zNjUsNDE3LjUzN2M1NC45MDgtMzUuNTI1LDIwLjYyNS0xMTQuMjQzLTI2LjgxNC0xNTYuMjYxYy0xMS43MTMtMTAuMzc2LTIyLjM3NS0xOC4wNTQtMzIuMzExLTIzLjU5MWMtMTMuMDE2LDY2LjU4NC00OC44MjYsMTMyLjc5NC0xMDIuMjgxLDE4OC4yNjdjLTE0Ljg0LDE1LjQwNS0zMC42NzYsMjkuNTU4LTQ3LjMyNCw0Mi40OTVDMzU4LjcxMyw0NzIuMjcyLDQzMy4xNzYsNDUzLjkwMyw0ODkuMzY1LDQxNy41Mzd6IE00NDQuNDM5LDI3Ni41NzZjOS4yODUtNC4xNzksMjQuNzExLDkuOTgzLDM0LjQ2MywzMS42NDNjOS43NTQsMjEuNjU4LDEwLjEzNyw0Mi42MDEsMC44NTIsNDYuNzc5cy0yNC43MDktOS45ODMtMzQuNDYzLTMxLjY0M1M0MzUuMTU0LDI4MC43NTUsNDQ0LjQzOSwyNzYuNTc2eiIvPgo8cGF0aCBmaWxsPSIjNTYwMjFEIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGQ9Ik02My44MTQsNDgwLjc3M2MtMTUuMDUyLDExLjY3Ni0zMS42MzMsNTQuNjExLDExLjM2LDU0LjYxMWM1LjI2LDAsMTEuNDI3LTAuNjQxLDE4LjU5LTIuMDY1YzU5LjE2My0xMS43NjIsMTEyLjM2OS0zNS42OTYsMTU3Ljc2Mi02Ny4zMTljODYuOTUyLTYwLjU3OSwxNDUuMTItMTQ5LjUxLDE2MC43ODQtMjM2LjE1NmMwLjc4My00LjM1MSwxLjQ3My04LjY5MiwyLjA0NS0xMy4wMzRjNC4yODUtMzIuNTEzLTE0LjI5NS01NC45MzctNDEuNzQ4LTY4LjE0M2MtNS43NjgsNy4zNTQtMTEuODc3LDE0LjQyLTE4LjM3MSwyMC45OTljNC45NjMsNC43NTMsNy41MDgsOS42NjgsNi4yNzMsMTMuOTIzYy0yLjgzLDkuNzczLTIzLjYxOSwxMi4zNDUtNDYuNDM2LDUuNzM3Yy0yMi44MTYtNi42MDctMzkuMDA2LTE5Ljg5OS0zNi4xNzQtMjkuNjcyYzEuOTY5LTYuNzk5LDEyLjY5Ny0xMC4wMTIsMjYuNjY4LTkuMThjMS44ODUtNC41NDIsMy45NjktOS45MTYsNi4xNi0xNi4wNTVjLTIuNTE2LTAuMDk2LTUuMDMxLTAuMjEtNy41MzctMC4yMWMtOC41NjYsMC0xNy4wNDksMC41ODMtMjUuMjA1LDEuNzRjLTExNi4zMzgsMTYuNDg2LTgyLjA2Niw4NC41ODEtMTEwLjgzLDE4NC45NzdjLTkuMDg0LDMxLjcxOS0yNC41ODUsNjYuNjYtNTMuMDA1LDEwNC4yMjJDMTAwLjU1Myw0NDMuMTE2LDg0LjEzNSw0NjEuNjU4LDYzLjgxNCw0ODAuNzczeiIvPgo8cGF0aCBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC4yIiBkPSJNMTMwLDE3MCBDMTEwLDE5MCA5NSwyMzAgMTAwLDI4MCBDMTE1LDI0MCAxMjgsMjAwIDEzMCwxNzBaIi8+CjxwYXRoIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjMiIGQ9Ik0xNTUsMTYwIEMxNDAsMTc1IDEyOCwyMDAgMTI1LDIyNSBDMTM4LDE5OCAxNTAsMTc1IDE1NSwxNjBaIi8+CjxwYXRoIGZpbGw9IiM4YjFhM2EiIG9wYWNpdHk9IjAuMTUiIGQ9Ik0xMDAsMzIwIEM4NSwzNDAgODAsMzcwIDkwLDQwMCBDOTUsMzcwIDk4LDM0NSAxMDAsMzIwWiIvPgo8cGF0aCBmaWxsPSIjM0Q1QzE0IiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGQ9Ik0zMjMuNzYyLDEyNS44MDRjLTEuMDIzLDMuMjIyLTIuMDU3LDYuMzQ5LTMuMDgsOS4yODVjLTIuMTcsNi4yMjUtNC4yODMsMTEuNzgxLTYuMjI1LDE2LjU2MmMtNS4wMiwxMi4zNzQtOC43ODcsMTkuNTM2LTguNzg3LDE5LjUzNmwyNC4wNjgsNy41MzZjNS44OTEtNC41MzMsMTEuNTIxLTkuNTkxLDE2LjkyNi0xNS4wMDRjNS45MTgtNS45MjksMTEuNTMxLTEyLjMxNiwxNi44NC0xOC45ODFjMi4wNDUtMi41NzIsNC4wNDUtNS4xODMsNS45OTQtNy44MzJjMS45NDEtMi42MTEsMy44MjYtNS4yNiw1LjY3Mi03LjkyN2MzNS41OTItNTEuMzg5LDU0LjU2Mi0xMTAuODMsNTQuNTYyLTExMC44M0M0MTguNjg4LDYuMzIxLDQwMC4yOTksMCwzODIuMTExLDBjLTE2LjM1MiwwLTMyLjU0MSw1LjEyNS00My4wNjgsMTUuOTY5YzIuMTcsMzcuNjM4LTQuNTQzLDczLjAzOS0xMi40OTgsMTAwLjU2OUMzMjUuNjM1LDExOS43MjIsMzI0LjcwNywxMjIuODQsMzIzLjc2MiwxMjUuODA0eiIvPgo8L3N2Zz4="); }
+    .dc-spice-row { display:flex; flex-wrap:wrap; gap:7px; }
+    .dc-spice-row .dc-check { user-select:none; }
+    .dc-privacy { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); text-align:center; margin-top:12px; line-height:1.5; }
+    /* States */
+    #dc-loading, #dc-error, #dc-success, #dc-already { display:none; padding:40px 32px; text-align:center; }
+    #dc-loading .dc-icon, #dc-error .dc-icon, #dc-success .dc-icon { font-size:40px; margin-bottom:12px; }
+    .dc-state-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; color:var(--text-high); margin-bottom:6px; }
+    .dc-state-sub   { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); line-height:1.6; }
+  </style>
+  <script src="page-guard.js"></script>
+  <script src="nav-init.js"></script>
+</head>
+<body class="page-bg">
+
+<div class="dc-card">
+  <!-- Loading -->
+  <div id="dc-loading">
+    <div class="dc-icon">⏳</div>
+    <div class="dc-state-title">Loading your card...</div>
+  </div>
+
+  <!-- Error -->
+  <div id="dc-error">
+    <div class="dc-icon">⚠️</div>
+    <div class="dc-state-title">Link not found</div>
+    <div class="dc-state-sub">This dietary card link is not valid or has expired. Please contact the host for a new link.</div>
+  </div>
+
+  <!-- Already submitted -->
+  <div id="dc-already">
+    <div style="padding:40px 32px;text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">✅</div>
+      <div class="dc-state-title">Already submitted</div>
+      <div class="dc-state-sub" id="dc-already-msg">Your dietary requirements have already been received. Contact the host if you need to make changes.</div>
+    </div>
+  </div>
+
+  <!-- Success -->
+  <div id="dc-success">
+    <div class="dc-icon">🎉</div>
+    <div class="dc-state-title">Thank you!</div>
+    <div class="dc-state-sub">Your dietary requirements have been sent to the host. They will make sure everything is prepared with your needs in mind.</div>
+    <div style="margin-top:16px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)">You can close this page.</div>
+  </div>
+
+  <!-- Form -->
+  <div id="dc-form">
+    <div class="dc-header">
+      <div class="dc-logo">🍽 The Culinary Journal</div>
+      <h1 class="dc-event" id="dc-event-name">Event</h1>
+      <div class="dc-date" id="dc-event-date"></div>
+    </div>
+    <div class="dc-body">
+      <div class="dc-greeting" id="dc-greeting">Hello!</div>
+      <div class="dc-intro">The host would like to know your dietary requirements so they can make sure there's something delicious for you. This only takes a minute — please tick everything that applies.</div>
+
+      <div class="dc-section">
+        <div class="dc-section-title">Allergies &amp; Intolerances</div>
+        <div class="dc-group-hint">Tick anything that applies — then tell us how serious it is.</div>
+        <div class="dc-checks" id="dc-allergy-checks">
+          <label class="dc-check"><input type="checkbox" data-group="allergy" value="Peanut"> 🥜 Peanut
+            <select class="dc-sev" title="How serious is this for you?"><option value="Allergy">Allergy</option><option value="Intolerance">Intolerance</option><option value="Severe">Severe — anaphylaxis</option></select>
+          </label>
+          <label class="dc-check"><input type="checkbox" data-group="allergy" value="Tree Nuts"> 🌰 Tree nuts
+            <select class="dc-sev" title="How serious is this for you?"><option value="Allergy">Allergy</option><option value="Intolerance">Intolerance</option><option value="Severe">Severe — anaphylaxis</option></select>
+          </label>
+          <label class="dc-check"><input type="checkbox" data-group="allergy" value="Milk/Dairy"> 🥛 Milk / dairy
+            <select class="dc-sev" title="How serious is this for you?"><option value="Allergy">Allergy</option><option value="Intolerance">Intolerance</option><option value="Severe">Severe — anaphylaxis</option></select>
+          </label>
+          <label class="dc-check"><input type="checkbox" data-group="allergy" value="Egg"> 🥚 Egg
+            <select class="dc-sev" title="How serious is this for you?"><option value="Allergy">Allergy</option><option value="Intolerance">Intolerance</option><option value="Severe">Severe — anaphylaxis</option></select>
+          </label>
+          <label class="dc-check"><input type="checkbox" data-group="allergy" value="Wheat"> 🌾 Wheat
+            <select class="dc-sev" title="How serious is this for you?"><option value="Allergy">Allergy</option><option value="Intolerance">Intolerance</option><option value="Severe">Severe — anaphylaxis</option></select>
+          </label>
+          <label class="dc-check"><input type="checkbox" data-group="allergy" value="Gluten"> 🌾 Gluten (all gluten cereals)
+            <select class="dc-sev" title="How serious is this for you?"><option value="Allergy">Allergy</option><option value="Intolerance">Intolerance</option><option value="Severe">Severe — anaphylaxis</option></select>
+          </label>
+          <label class="dc-check"><input type="checkbox" data-group="allergy" value="Soy"> 🌱 Soy
+            <select class="dc-sev" title="How serious is this for you?"><option value="Allergy">Allergy</option><option value="Intolerance">Intolerance</option><option value="Severe">Severe — anaphylaxis</option></select>
+          </label>
+          <label class="dc-check"><input type="checkbox" data-group="allergy" value="Sesame"> ✨ Sesame
+            <select class="dc-sev" title="How serious is this for you?"><option value="Allergy">Allergy</option><option value="Intolerance">Intolerance</option><option value="Severe">Severe — anaphylaxis</option></select>
+          </label>
+          <label class="dc-check"><input type="checkbox" data-group="allergy" value="Fish"> 🐟 Fish
+            <select class="dc-sev" title="How serious is this for you?"><option value="Allergy">Allergy</option><option value="Intolerance">Intolerance</option><option value="Severe">Severe — anaphylaxis</option></select>
+          </label>
+          <label class="dc-check"><input type="checkbox" data-group="allergy" value="Crustaceans"> 🦐 Crustaceans (prawn, crab, lobster)
+            <select class="dc-sev" title="How serious is this for you?"><option value="Allergy">Allergy</option><option value="Intolerance">Intolerance</option><option value="Severe">Severe — anaphylaxis</option></select>
+          </label>
+          <label class="dc-check"><input type="checkbox" data-group="allergy" value="Molluscs"> 🦪 Molluscs (oyster, mussel, squid)
+            <select class="dc-sev" title="How serious is this for you?"><option value="Allergy">Allergy</option><option value="Intolerance">Intolerance</option><option value="Severe">Severe — anaphylaxis</option></select>
+          </label>
+          <label class="dc-check"><input type="checkbox" data-group="allergy" value="Lupin"> 🌼 Lupin
+            <select class="dc-sev" title="How serious is this for you?"><option value="Allergy">Allergy</option><option value="Intolerance">Intolerance</option><option value="Severe">Severe — anaphylaxis</option></select>
+          </label>
+          <label class="dc-check"><input type="checkbox" data-group="allergy" value="Sulphites"> 🍷 Sulphites
+            <select class="dc-sev" title="How serious is this for you?"><option value="Allergy">Allergy</option><option value="Intolerance">Intolerance</option><option value="Severe">Severe — anaphylaxis</option></select>
+          </label>
+          <label class="dc-check"><input type="checkbox" data-group="allergy" value="Mustard"> 🌭 Mustard
+            <select class="dc-sev" title="How serious is this for you?"><option value="Allergy">Allergy</option><option value="Intolerance">Intolerance</option><option value="Severe">Severe — anaphylaxis</option></select>
+          </label>
+          <label class="dc-check"><input type="checkbox" data-group="allergy" value="Celery"> 🥬 Celery
+            <select class="dc-sev" title="How serious is this for you?"><option value="Allergy">Allergy</option><option value="Intolerance">Intolerance</option><option value="Severe">Severe — anaphylaxis</option></select>
+          </label>
+          <label class="dc-check"><input type="checkbox" data-group="allergy" value="Corn"> 🌽 Corn
+            <select class="dc-sev" title="How serious is this for you?"><option value="Allergy">Allergy</option><option value="Intolerance">Intolerance</option><option value="Severe">Severe — anaphylaxis</option></select>
+          </label>
+        </div>
+        <input class="dc-other" id="dc-allergy-other" placeholder="Other allergy or intolerance — type it here...">
+      </div>
+
+      <div class="dc-section">
+        <div class="dc-section-title">Dietary Patterns</div>
+        <div class="dc-checks" id="dc-diet-checks">
+          <label class="dc-check"><input type="checkbox" data-group="diet" value="Vegetarian"> 🥕 Vegetarian</label>
+          <label class="dc-check"><input type="checkbox" data-group="diet" value="Vegan"> 🌿 Vegan</label>
+          <label class="dc-check"><input type="checkbox" data-group="diet" value="Pescatarian"> 🐟 Pescatarian</label>
+          <label class="dc-check"><input type="checkbox" data-group="diet" value="No Red Meat"> 🚫 No red meat</label>
+          <label class="dc-check"><input type="checkbox" data-group="diet" value="No Pork"> 🚫 No pork</label>
+          <label class="dc-check"><input type="checkbox" data-group="diet" value="No Beef"> 🚫 No beef</label>
+          <label class="dc-check"><input type="checkbox" data-group="diet" value="Mostly Plant-Based"> 🌱 Mostly plant-based</label>
+        </div>
+      </div>
+
+      <div class="dc-section">
+        <div class="dc-section-title">Religious &amp; Cultural Requirements</div>
+        <div class="dc-checks" id="dc-religious-checks">
+          <label class="dc-check"><input type="checkbox" data-group="religious" value="Halal"> ☪ Halal</label>
+          <label class="dc-check"><input type="checkbox" data-group="religious" value="Kosher"> ✡ Kosher</label>
+          <label class="dc-check"><input type="checkbox" data-group="religious" value="Hindu Vegetarian"> 🕉 Hindu vegetarian</label>
+          <label class="dc-check"><input type="checkbox" data-group="religious" value="No Beef (Religious)"> 🐄 No beef (religious)</label>
+          <label class="dc-check"><input type="checkbox" data-group="religious" value="Jain"> 🙏 Jain (no root vegetables)</label>
+          <label class="dc-check"><input type="checkbox" data-group="religious" value="Buddhist Vegetarian"> ☸ Buddhist vegetarian</label>
+          <label class="dc-check"><input type="checkbox" data-group="religious" value="Currently Fasting"> 🌙 Currently fasting</label>
+        </div>
+      </div>
+
+      <div class="dc-section">
+        <div class="dc-section-title">Medical Diets</div>
+        <div class="dc-checks" id="dc-medical-checks">
+          <label class="dc-check"><input type="checkbox" data-group="medical" value="Coeliac"> ⚕️ Coeliac (strict gluten-free)</label>
+          <label class="dc-check"><input type="checkbox" data-group="medical" value="Diabetic"> 🩺 Diabetic / low sugar</label>
+          <label class="dc-check"><input type="checkbox" data-group="medical" value="Low Sodium"> 🧂 Low sodium</label>
+          <label class="dc-check"><input type="checkbox" data-group="medical" value="Low FODMAP"> 🫶 Low FODMAP</label>
+          <label class="dc-check"><input type="checkbox" data-group="medical" value="Low Cholesterol"> ❤️ Low cholesterol</label>
+          <label class="dc-check"><input type="checkbox" data-group="medical" value="Renal Diet"> 💧 Renal diet</label>
+          <label class="dc-check"><input type="checkbox" data-group="medical" value="Pregnancy Precautions"> 🤰 Pregnancy precautions</label>
+          <label class="dc-check"><input type="checkbox" data-group="medical" value="Texture-Modified"> 🥣 Soft / texture-modified foods</label>
+        </div>
+        <input class="dc-other" id="dc-medical-other" placeholder="Other medical requirement — type it here...">
+      </div>
+
+      <div class="dc-section">
+        <div class="dc-section-title">Dislikes &amp; Preferences</div>
+        <div class="dc-checks" id="dc-dislike-checks">
+          <label class="dc-check"><input type="checkbox" data-group="dislike" value="Coriander"> 🌿 No coriander</label>
+          <label class="dc-check"><input type="checkbox" data-group="dislike" value="Mushrooms"> 🍄 No mushrooms</label>
+          <label class="dc-check"><input type="checkbox" data-group="dislike" value="Olives"> 🫒 No olives</label>
+          <label class="dc-check"><input type="checkbox" data-group="dislike" value="Onion/Garlic"> 🧅 No onion or garlic</label>
+          <label class="dc-check"><input type="checkbox" data-group="dislike" value="Seafood"> 🦞 No seafood</label>
+          <label class="dc-check"><input type="checkbox" data-group="dislike" value="Offal"> 🍖 No offal</label>
+          <label class="dc-check"><input type="checkbox" data-group="dislike" value="Very Spicy Food"> 🌶 Nothing very spicy</label>
+        </div>
+        <input class="dc-other" id="dc-dislike-other" placeholder="Other dislikes — type them here...">
+      </div>
+
+      <div class="dc-section">
+        <div class="dc-section-title">How much spice are you comfortable with?</div>
+        <div class="dc-spice-row" id="dc-spice-row">
+          <label class="dc-check"><input type="radio" name="spice" value="" checked> No preference</label>
+          <label class="dc-check"><input type="radio" name="spice" value="0"> 🚫 No spice please</label>
+          <label class="dc-check"><input type="radio" name="spice" value="1"> <span class="chilli chilli-green"></span> Mild</label>
+          <label class="dc-check"><input type="radio" name="spice" value="2"> <span class="chilli chilli-yellow"></span><span class="chilli chilli-yellow"></span> Medium</label>
+          <label class="dc-check"><input type="radio" name="spice" value="3"> <span class="chilli chilli-orange"></span><span class="chilli chilli-orange"></span><span class="chilli chilli-orange"></span> Hot</label>
+          <label class="dc-check"><input type="radio" name="spice" value="4"> <span class="chilli chilli-red"></span><span class="chilli chilli-red"></span><span class="chilli chilli-red"></span><span class="chilli chilli-red"></span> Very Hot</label>
+          <label class="dc-check"><input type="radio" name="spice" value="5"> <span class="chilli chilli-darkred"></span><span class="chilli chilli-darkred"></span><span class="chilli chilli-darkred"></span><span class="chilli chilli-darkred"></span><span class="chilli chilli-darkred"></span> Extremely Hot</label>
+        </div>
+      </div>
+
+      <div class="dc-field">
+        <label class="dc-label">Anything else the host should know?</label>
+        <textarea class="dc-textarea" id="dc-notes" rows="3" placeholder="e.g. I don't eat pork, I'm pregnant, I have a severe nut allergy — please keep all nuts away from my plate..."></textarea>
+      </div>
+
+      <label class="dc-none" style="margin-bottom:12px">
+        <input type="checkbox" id="dc-no-requirements" onchange="toggleNoReqs(this.checked)" style="accent-color:var(--accent)">
+        <span>✓ No dietary requirements — I eat everything</span>
+      </label>
+
+      <button class="dc-submit" onclick="submitCard()">Send my dietary requirements →</button>
+      <div class="dc-privacy">Your information is shared only with your host and used solely to plan the menu. It is not stored or used for any other purpose.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+function show(id) {
+  ['dc-loading','dc-error','dc-already','dc-success','dc-form'].forEach(function(s){
+    document.getElementById(s).style.display = s===id ? 'block' : 'none';
+  });
+}
+
+function toggleNoReqs(checked) {
+  document.querySelectorAll('.dc-section input, .dc-section select').forEach(function(el){
+    el.disabled = checked;
+    if (checked) { if (el.type==='checkbox') el.checked=false; if (el.classList.contains('dc-other')) el.value=''; }
+  });
+  if (checked) { const np=document.querySelector('input[name="spice"][value=""]'); if(np){np.disabled=false;np.checked=true;} }
+}
+
+async function loadCard() {
+  show('dc-loading');
+  const params = new URLSearchParams(window.location.search);
+  const token  = params.get('token');
+  if (!token) { show('dc-error'); return; }
+  try {
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_guest_card', {
+      method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+      body: JSON.stringify({p_token: token})
+    });
+    if (!res.ok) { show('dc-error'); return; }
+    const rows = await res.json();
+    if (!rows || !rows.length) { show('dc-error'); return; }
+    const card = rows[0];
+
+    if (card.already_submitted) {
+      document.getElementById('dc-already-msg').textContent =
+        'Your dietary requirements for ' + card.event_name + ' have already been received. Contact your host if you need to make changes.';
+      show('dc-already');
+      return;
+    }
+
+    document.getElementById('dc-event-name').textContent = card.event_name || 'Your Event';
+    if (card.event_date) {
+      const d = new Date(card.event_date);
+      document.getElementById('dc-event-date').textContent = d.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    }
+    document.getElementById('dc-greeting').textContent = 'Hello, ' + (card.guest_name||'Guest') + '!';
+
+    // Pre-check existing dietary requirements if any (new namespaced + legacy plain values)
+    const existing = card.dietary_requirements || [];
+    if (existing.length) {
+      const legacy={'Vegan':'diet:Vegan','Vegetarian':'diet:Vegetarian','Gluten Free':'allergy:Gluten','Dairy Free':'allergy:Milk/Dairy','Halal':'religious:Halal','Kosher':'religious:Kosher','Nut Free':'allergy:Tree Nuts','Egg Free':'allergy:Egg','Shellfish Free':'allergy:Crustaceans','Nut allergy':'allergy:Tree Nuts','Peanut allergy':'allergy:Peanut','Gluten allergy':'allergy:Gluten','Dairy allergy':'allergy:Milk/Dairy','Egg allergy':'allergy:Egg','Fish allergy':'allergy:Fish','Shellfish allergy':'allergy:Crustaceans','Soy allergy':'allergy:Soy','Sesame allergy':'allergy:Sesame'};
+      const want={};
+      existing.forEach(function(v){
+        const norm = legacy[v] || v;
+        const m = norm.match(/^(allergy-severe|intolerance|allergy|diet|religious|medical|dislike):(.+)$/);
+        if (m) want[m[2]] = m[1];
+        const sp = norm.match(/^spice:(\d)$/);
+        if (sp) { const r=document.querySelector('input[name="spice"][value="'+sp[1]+'"]'); if(r) r.checked=true; }
+      });
+      document.querySelectorAll('.dc-section input[type="checkbox"][data-group]').forEach(function(cb){
+        const kind = want[cb.value];
+        if (!kind) return;
+        cb.checked = true;
+        const sev = cb.closest('.dc-check').querySelector('.dc-sev');
+        if (sev) sev.value = kind==='allergy-severe' ? 'Severe' : kind==='intolerance' ? 'Intolerance' : 'Allergy';
+      });
+    }
+
+    show('dc-form');
+  } catch(e) { show('dc-error'); }
+}
+
+async function submitCard() {
+  const params = new URLSearchParams(window.location.search);
+  const token  = params.get('token');
+  if (!token) return;
+
+  const noReqs = document.getElementById('dc-no-requirements').checked;
+  let dietary = [];
+  if (noReqs) {
+    dietary = ['No dietary requirements'];
+  } else {
+    document.querySelectorAll('.dc-section input[type="checkbox"][data-group]:checked').forEach(function(cb){
+      let prefix = cb.dataset.group;
+      if (prefix === 'allergy') {
+        const sev = cb.closest('.dc-check').querySelector('.dc-sev');
+        prefix = (sev && sev.value==='Severe') ? 'allergy-severe' : (sev && sev.value==='Intolerance') ? 'intolerance' : 'allergy';
+      }
+      dietary.push(prefix + ':' + cb.value);
+    });
+    [['dc-allergy-other','allergy'],['dc-medical-other','medical'],['dc-dislike-other','dislike']].forEach(function(p){
+      const el=document.getElementById(p[0]); const v=el?el.value.trim():'';
+      if (v) dietary.push(p[1] + ':' + v);
+    });
+    const spiceEl = document.querySelector('input[name="spice"]:checked');
+    if (spiceEl && spiceEl.value !== '') dietary.push('spice:' + spiceEl.value);
+  }
+  const notes = document.getElementById('dc-notes').value.trim();
+  if (notes) dietary.push('Note: ' + notes);
+
+  try {
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/submit_guest_dietary', {
+      method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+      body: JSON.stringify({p_token: token, p_dietary: dietary})
+    });
+    if (!res.ok) { alert('Something went wrong. Please try again.'); return; }
+    show('dc-success');
+  } catch(e) { alert('Error submitting. Please try again.'); }
+}
+
+document.addEventListener('DOMContentLoaded', loadCard);
+</script>
+</body>
+</html>

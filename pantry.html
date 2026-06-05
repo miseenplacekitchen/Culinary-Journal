@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Track pantry and fridge inventory, expiry dates, and low-stock items in your kitchen.">
+  <link rel="canonical" href="https://theculinaryjournal.site/pantry.html">
+  <title>Pantry & Fridge — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .pt-wrap  { max-width:960px; margin:0 auto; padding:24px 16px 80px; }
+    .pt-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
+    .pt-title  { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--text-high); }
+    .pt-btn { padding:9px 18px; border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; border:none; }
+    .pt-btn-primary { background:var(--accent); color:#fff; }
+    .pt-btn-ghost   { background:none; border:1px solid var(--border); color:var(--text-mid); }
+    .pt-btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+
+    /* Filters */
+    .pt-filters { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+    .pt-filter  { padding:6px 14px; border-radius:20px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); cursor:pointer; }
+    .pt-filter:hover { border-color:var(--accent); color:var(--accent); }
+    .pt-filter.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:500; }
+    .pt-search { flex:1; min-width:200px; max-width:300px; font-family:'DM Sans',sans-serif; font-size:13px; padding:7px 14px; border-radius:20px; border:1px solid var(--border); background:var(--text-ghost); color:var(--text-high); outline:none; }
+    .pt-search:focus { border-color:var(--accent); }
+
+    /* Stats */
+    .pt-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+    @media(max-width:600px){ .pt-stats { grid-template-columns:repeat(2,1fr); } }
+    .pt-stat { background:var(--text-ghost); border:1px solid var(--border); border-radius:11px; padding:14px 16px; }
+    .pt-stat-num { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--accent); }
+    .pt-stat-label { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); text-transform:uppercase; letter-spacing:0.08em; }
+
+    /* Items */
+    .pt-list { display:flex; flex-direction:column; gap:8px; }
+    .pt-item { display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--text-ghost); border:1px solid var(--border); border-radius:11px; transition:border-color 0.15s; }
+    .pt-item:hover { border-color:var(--accent-border); }
+    .pt-item.low  { border-left:3px solid var(--warn); }
+    .pt-item.out  { border-left:3px solid var(--danger); opacity:0.65; }
+    .pt-item-name { flex:1; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500; color:var(--text-high); }
+    .pt-item-cat  { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+    .pt-item-qty  { display:flex; align-items:center; gap:6px; }
+    .pt-qty-btn   { width:24px; height:24px; border-radius:5px; border:1px solid var(--border); background:none; color:var(--text-mid); cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; }
+    .pt-qty-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .pt-qty-val   { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; color:var(--text-high); min-width:44px; text-align:center; }
+    .pt-status { padding:3px 9px; border-radius:20px; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; }
+    .pt-status.ok  { background: var(--success-bg); color:#4caf76; }
+    .pt-status.low { background: var(--warn-bg); color: var(--warn); }
+    .pt-status.out { background:rgb(from var(--danger) r g b / 0.12); color: var(--danger); }
+    .pt-del-btn { background:none; border:none; color:var(--text-mid); cursor:pointer; padding:4px 6px; border-radius:5px; font-size:14px; }
+    .pt-del-btn:hover { color: var(--danger); background: var(--danger-bg); }
+    .pt-empty { text-align:center; padding:60px 20px; }
+    .pt-empty-icon { font-size:48px; margin-bottom:12px; }
+    .pt-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--text-high); margin-bottom:6px; }
+    .pt-empty-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
+
+    /* Add item modal */
+    .pt-modal { display:none; position:fixed; inset:0; background: var(--scrim); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+    .pt-modal.open { display:flex; }
+    .pt-modal-box { background:var(--bg); border:1px solid var(--border); border-radius:16px; width:100%; max-width:440px; padding:24px; }
+    .pt-modal-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:600; color:var(--text-high); margin-bottom:20px; }
+    .pt-field { margin-bottom:14px; }
+    .pt-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mid); margin-bottom:5px; }
+    .pt-input { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:9px 12px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color:var(--text-high); outline:none; }
+    .pt-input:focus { border-color:var(--accent); }
+    .pt-row { display:flex; gap:10px; }
+    .pt-modal-foot { display:flex; gap:10px; margin-top:18px; }
+  </style>
+</head>
+<body class="page-bg cj-body">
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"></div>
+
+<div class="pt-wrap">
+  <div class="pt-header">
+    <h1 class="pt-title">🫙 Pantry &amp; Fridge</h1>
+    <div style="display:flex;gap:8px">
+      <button class="pt-btn pt-btn-ghost" onclick="addToGroceryLow()">🛒 Order Low Stock</button>
+      <button class="pt-btn pt-btn-primary" onclick="openAddModal()">+ Add Item</button>
+    </div>
+  </div>
+
+  <div class="pt-stats" id="pt-stats"></div>
+
+  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+    <input class="pt-search" type="text" placeholder="Search pantry..." oninput="renderList(this.value)" id="pt-search">
+    <button class="pt-filter active" onclick="setFilter('all',this)">All</button>
+    <button class="pt-filter" onclick="setFilter('ok',this)">✓ Good</button>
+    <button class="pt-filter" onclick="setFilter('low',this)">⚠ Low</button>
+    <button class="pt-filter" onclick="setFilter('out',this)">✗ Out</button>
+  </div>
+
+  <div class="pt-list" id="pt-list"></div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="pt-modal" id="pt-modal">
+  <div class="pt-modal-box">
+    <div class="pt-modal-title" id="pt-modal-title">Add Pantry Item</div>
+    <input type="hidden" id="pt-edit-id">
+    <div class="pt-field">
+      <div class="pt-label">Item Name</div>
+      <input class="pt-input" id="pt-name" placeholder="e.g. Plain Flour" list="pt-ingredients-list" autocomplete="off">
+      <datalist id="pt-ingredients-list"></datalist>
+    </div>
+    <div class="pt-row">
+      <div class="pt-field" style="flex:1">
+        <div class="pt-label">Quantity</div>
+        <input class="pt-input" id="pt-qty" type="number" min="0" step="0.1" placeholder="e.g. 2">
+      </div>
+      <div class="pt-field" style="flex:1">
+        <div class="pt-label">Unit</div>
+        <input class="pt-input" id="pt-unit" placeholder="e.g. cups, kg, L" list="pt-units-list">
+        <datalist id="pt-units-list">
+          <option value="g"><option value="kg"><option value="ml"><option value="L">
+          <option value="cup"><option value="tbsp"><option value="tsp">
+          <option value="pieces"><option value="cans"><option value="bottles">
+        </datalist>
+      </div>
+    </div>
+    <div class="pt-field">
+      <div class="pt-label">Category</div>
+      <select class="pt-input" id="pt-category">
+        <option value="">Select category...</option>
+        <option>Baking</option><option>Grains, Pasta &amp; Noodles</option>
+        <option>Dairy &amp; Eggs</option><option>Meat</option><option>Seafood</option>
+        <option>Vegetables</option><option>Fruits</option><option>Herbs</option>
+        <option>Spices</option><option>Oils &amp; Fats</option>
+        <option>Condiments &amp; Sauces</option><option>Canned &amp; Preserved</option>
+        <option>Sweeteners</option><option>Alcohol &amp; Cooking Wine</option>
+        <option>Stocks &amp; Broths</option><option>Nuts &amp; Seeds</option>
+        <option>Legumes &amp; Pulses</option><option>Other</option>
+      </select>
+    </div>
+    <div class="pt-row">
+      <div class="pt-field" style="flex:1">
+        <div class="pt-label">Low Stock Alert Below</div>
+        <input class="pt-input" id="pt-min" type="number" min="0" step="0.1" placeholder="e.g. 0.5">
+      </div>
+      <div class="pt-field" style="flex:1">
+        <div class="pt-label">Best Before Date</div>
+        <input class="pt-input" id="pt-expiry" type="date">
+      </div>
+    </div>
+    <div class="pt-modal-foot">
+      <button class="pt-btn pt-btn-primary" style="flex:1" onclick="saveItem()">Save</button>
+      <button class="pt-btn pt-btn-ghost" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="nav-init.js"></script>
+<script>
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+let activeFilter = 'all';
+
+function getPantry() {
+  try { return JSON.parse(localStorage.getItem('tcj_pantry') || '[]'); }
+  catch(_) { return []; }
+}
+
+function savePantry(list) {
+  localStorage.setItem('tcj_pantry', JSON.stringify(list));
+  clearTimeout(window._pantrySyncTimer);
+  window._pantrySyncTimer = setTimeout(async function() {
+    try {
+      const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
+      if (!sess || !sess.access_token) return;
+      await fetch(SUPA_URL + '/rest/v1/rpc/save_my_pantry', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPA_KEY,
+          'Authorization': 'Bearer ' + sess.access_token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_items: list })
+      });
+    } catch(_) {}
+  }, 1500);
+}
+
+async function loadPantryFromSupabase() {
+  try {
+    const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
+    if (!sess || !sess.access_token) return;
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_my_pantry', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + sess.access_token,
+        'Content-Type': 'application/json'
+      },
+      body: '{}'
+    });
+    if (!res.ok) return;
+    const remote = await res.json();
+    if (Array.isArray(remote) && remote.length) {
+      localStorage.setItem('tcj_pantry', JSON.stringify(remote));
+      renderStats();
+      renderList('');
+    }
+  } catch(_) {}
+}
+
+function getStatus(item) {
+  if (!item.qty || item.qty <= 0) return 'out';
+  if (item.min_qty && item.qty <= item.min_qty) return 'low';
+  return 'ok';
+}
+
+function getExpiryStatus(item) {
+  if (!item.expiry_date) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const exp   = new Date(item.expiry_date); exp.setHours(0,0,0,0);
+  const days  = Math.round((exp - today) / 86400000);
+  if (days < 0)  return {status:'expired', days, label:'Expired ' + Math.abs(days) + 'd ago'};
+  if (days <= 7) return {status:'expiring', days, label:'Expires in ' + days + 'd'};
+  return {status:'ok', days, label:'Best before: ' + exp.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'})};
+}
+
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.pt-filter').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  renderList(document.getElementById('pt-search').value);
+}
+
+function renderStats() {
+  const items = getPantry();
+  const ok  = items.filter(function(i) { return getStatus(i)==='ok'; }).length;
+  const low = items.filter(function(i) { return getStatus(i)==='low'; }).length;
+  const out = items.filter(function(i) { return getStatus(i)==='out'; }).length;
+  document.getElementById('pt-stats').innerHTML =
+    '<div class="pt-stat"><div class="pt-stat-num">' + items.length + '</div><div class="pt-stat-label">Total Items</div></div>' +
+    '<div class="pt-stat"><div class="pt-stat-num" style="color:#4caf76">' + ok + '</div><div class="pt-stat-label">Well Stocked</div></div>' +
+    '<div class="pt-stat"><div class="pt-stat-num" style="color:var(--warn)">' + low + '</div><div class="pt-stat-label">Running Low</div></div>' +
+    '<div class="pt-stat"><div class="pt-stat-num" style="color:var(--danger)">' + out + '</div><div class="pt-stat-label">Out of Stock</div></div>';
+}
+
+function renderList(search) {
+  const items = getPantry();
+  const q = (search||'').toLowerCase();
+  const filtered = items.filter(function(item) {
+    if (q && !item.name.toLowerCase().includes(q)) return false;
+    const status = getStatus(item);
+    if (activeFilter !== 'all' && status !== activeFilter) return false;
+    return true;
+  });
+  const el = document.getElementById('pt-list');
+  if (!filtered.length) {
+    el.innerHTML = '<div class="pt-empty"><div class="pt-empty-icon">🫙</div><div class="pt-empty-title">Nothing here yet</div><div class="pt-empty-sub">Click + Add Item to start tracking your pantry.</div></div>';
+    return;
+  }
+  el.innerHTML = '';
+  filtered.sort(function(a,b) {
+    const so = {out:0,low:1,ok:2};
+    return (so[getStatus(a)]||0) - (so[getStatus(b)]||0) || a.name.localeCompare(b.name);
+  }).forEach(function(item) {
+    const status = getStatus(item);
+    const row = document.createElement('div');
+    row.className = 'pt-item ' + status;
+    row.innerHTML =
+      '<div style="flex:1"><div class="pt-item-name">' + esc(item.name||'') + '</div>' +
+      (item.category ? '<div class="pt-item-cat">' + esc(item.category||'') + '</div>' : '') + '</div>' +
+      '<div class="pt-item-qty">' +
+        '<button class="pt-qty-btn" data-item-id="' + esc(String(item.id)) + '" data-delta="-1">−</button>' +
+        '<div class="pt-qty-val">' + (item.qty||0) + ' <span style="font-size:10px;color:var(--text-mid)">' + esc(item.unit||'') + '</span></div>' +
+        '<button class="pt-qty-btn" data-item-id="' + esc(String(item.id)) + '" data-delta="1">+</button>' +
+      '</div>' +
+      '<span class="pt-status ' + status + '">' + (status==='ok'?'Good':status==='low'?'Low':'Out') + '</span>' +
+      '<button class="pt-btn pt-btn-ghost" style="font-size:11px;padding:5px 10px" data-action="edit" data-item-id="' + esc(String(item.id)) + '">Edit</button>' +
+      '<button class="pt-del-btn" data-action="delete" data-item-id="' + esc(String(item.id)) + '" title="Delete">🗑</button>';
+    el.appendChild(row);
+  });
+  renderStats();
+}
+
+function adjustQty(id, delta) {
+  const list = getPantry();
+  const item = list.find(function(i) { return i.id === id; });
+  if (!item) return;
+  item.qty = Math.max(0, (parseFloat(item.qty)||0) + delta);
+  savePantry(list);
+  renderList(document.getElementById('pt-search').value);
+}
+
+function deleteItem(id) {
+  if (!confirm('Remove this item from your pantry?')) return;
+  savePantry(getPantry().filter(function(i) { return i.id !== id; }));
+  renderList(document.getElementById('pt-search').value);
+}
+
+function openAddModal() {
+  document.getElementById('pt-modal-title').textContent = 'Add Pantry Item';
+  document.getElementById('pt-edit-id').value = '';
+  ['pt-name','pt-qty','pt-unit','pt-min','pt-expiry'].forEach(function(id) { document.getElementById(id).value = ''; });
+  document.getElementById('pt-category').value = '';
+  document.getElementById('pt-modal').classList.add('open');
+  setTimeout(function() { document.getElementById('pt-name').focus(); }, 50);
+}
+
+function editItem(id) {
+  const item = getPantry().find(function(i) { return i.id===id; });
+  if (!item) return;
+  document.getElementById('pt-modal-title').textContent = 'Edit Item';
+  document.getElementById('pt-edit-id').value = id;
+  document.getElementById('pt-name').value = item.name||'';
+  document.getElementById('pt-qty').value  = item.qty||'';
+  document.getElementById('pt-unit').value = item.unit||'';
+  document.getElementById('pt-category').value = item.category||'';
+  document.getElementById('pt-min').value  = item.min_qty||'';
+  document.getElementById('pt-expiry').value = item.expiry_date||'';
+  document.getElementById('pt-modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('pt-modal').classList.remove('open'); }
+
+function saveItem() {
+  const name = document.getElementById('pt-name').value.trim();
+  if (!name) { alert('Please enter an item name.'); return; }
+  const list = getPantry();
+  const editId = document.getElementById('pt-edit-id').value;
+  const item = {
+    id: editId || 'pt_' + Date.now(),
+    name,
+    qty: parseFloat(document.getElementById('pt-qty').value)||0,
+    unit: document.getElementById('pt-unit').value.trim(),
+    category: document.getElementById('pt-category').value,
+    min_qty: parseFloat(document.getElementById('pt-min').value)||null,
+    expiry_date: document.getElementById('pt-expiry').value||null,
+    updated: new Date().toISOString()
+  };
+  if (editId) {
+    const idx = list.findIndex(function(i){ return i.id===editId; });
+    if (idx > -1) list[idx] = item; else list.push(item);
+  } else { list.push(item); }
+  savePantry(list);
+  closeModal();
+  renderList(document.getElementById('pt-search').value);
+}
+
+function addToGroceryLow() {
+  const items = getPantry().filter(function(i) { return getStatus(i) !== 'ok'; });
+  if (!items.length) { alert('All items are well stocked!'); return; }
+  const data = JSON.parse(localStorage.getItem('tcj_grocery')||'{"recipes":[]}');
+  let entry = data.recipes.find(function(r){ return r.id==='pantry-restock'; });
+  if (!entry) { entry = {id:'pantry-restock',name:'Pantry Restock',servings:1,ingredients:[]}; data.recipes.push(entry); }
+  let added = 0;
+  items.forEach(function(item) {
+    if (!entry.ingredients.find(function(i){return i.name===item.name;})) {
+      entry.ingredients.push({name:item.name, qty:item.min_qty||1, unit:item.unit||'', section:'Restock'});
+      added++;
+    }
+  });
+  localStorage.setItem('tcj_grocery', JSON.stringify(data));
+  alert(added + ' item(s) added to grocery list. Going to Grocery List...');
+  window.location.href = 'grocery.html';
+}
+
+// Load ingredient names for autocomplete
+async function loadIngredientNames() {
+  try {
+    const res = await fetch(SUPA_URL + '/rest/v1/ingredients?select=' + encodeURIComponent('"Ingredient Name"') + '&limit=200&order=' + encodeURIComponent('"Ingredient Name"'), {headers:{'apikey':SUPA_KEY}});
+    const rows = await res.json();
+    const dl = document.getElementById('pt-ingredients-list');
+    if (dl && rows.length) {
+      dl.innerHTML = rows.map(function(r) { return '<option value="' + (r['Ingredient Name']||'').replace(/"/g,'&quot;') + '">'; }).join('');
+    }
+  } catch(_) {}
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Button delegation — no inline onclick, no XSS
+  document.getElementById('pt-list').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-item-id]');
+    if (!btn) return;
+    var id = btn.dataset.itemId;
+    if (btn.dataset.action === 'edit')   { editItem(id); return; }
+    if (btn.dataset.action === 'delete') { deleteItem(id); return; }
+    if (btn.dataset.delta !== undefined) { adjustQty(id, parseInt(btn.dataset.delta||0)); }
+  });
+
+  renderStats();
+  renderList('');
+  loadIngredientNames();
+  loadPantryFromSupabase();
+  document.getElementById('pt-modal').addEventListener('click', function(e) {
+    if (e.target===this) closeModal();
+  });
+});
+</script>
+</body>
+</html>

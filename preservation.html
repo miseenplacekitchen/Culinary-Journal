@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Complete guide to food preservation — canning, freezing, pickling, fermenting, curing, and more.">
+  <link rel="canonical" href="https://theculinaryjournal.site/preservation.html">
+  <title>Preservation Techniques — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .pv-layout { display:grid; grid-template-columns:220px 1fr; gap:0; max-width:1100px; margin:0 auto; }
+    @media(max-width:768px){ .pv-layout { grid-template-columns:1fr; } }
+
+    /* Sidebar */
+    .pv-nav { position:sticky; top:0; height:100vh; overflow-y:auto; padding:32px 16px; border-right:1px solid var(--border); }
+    @media(max-width:768px){ .pv-nav { position:static; height:auto; border-right:none; border-bottom:1px solid var(--border); padding:20px; } }
+    .pv-nav-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:700; color:var(--accent); margin-bottom:20px; }
+    .pv-nav-link { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); text-decoration:none; margin-bottom:2px; }
+    .pv-nav-link:hover { background:var(--text-ghost); color:var(--text-high); }
+    .pv-nav-link.active { background:rgb(from var(--accent) r g b / 0.1); color:var(--accent); font-weight:500; }
+    @media(max-width:768px){ .pv-nav-link { display:inline-flex; margin:3px; } }
+
+    /* Main content */
+    .pv-main { padding:40px 40px 100px; }
+    @media(max-width:768px){ .pv-main { padding:24px 20px 60px; } }
+    .pv-hero-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.18em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
+    .pv-hero-title { font-family:'Cormorant Garamond',serif; font-size:2.4rem; font-weight:700; color:var(--text-high); margin-bottom:10px; line-height:1.1; }
+    .pv-hero-desc  { font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-mid); max-width:600px; line-height:1.7; margin-bottom:48px; }
+
+    /* Technique sections */
+    .pv-technique { margin-bottom:60px; padding-top:20px; border-top:1px solid var(--border); scroll-margin-top:20px; }
+    .pv-tech-header { display:flex; align-items:center; gap:14px; margin-bottom:16px; }
+    .pv-tech-icon  { font-size:36px; flex-shrink:0; }
+    .pv-tech-title { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--text-high); }
+    .pv-tech-desc  { font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-high); line-height:1.8; margin-bottom:16px; max-width:680px; }
+    .pv-tech-grid  { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; }
+    @media(max-width:640px){ .pv-tech-grid { grid-template-columns:1fr; } }
+    .pv-info-box   { background:var(--text-ghost); border:1px solid var(--border); border-radius:10px; padding:16px 18px; }
+    .pv-info-title { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-mid); margin-bottom:10px; }
+    .pv-info-item  { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); display:flex; gap:8px; margin-bottom:7px; line-height:1.5; }
+    .pv-info-item::before { content:'·'; color:var(--accent); flex-shrink:0; }
+    .pv-warning    { background:rgb(from var(--danger) r g b / 0.07); border:1px solid rgb(from var(--danger) r g b / 0.25); border-radius:10px; padding:14px 18px; margin-bottom:14px; }
+    .pv-warning-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color: var(--danger); margin-bottom:8px; }
+    .pv-warning-item  { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); display:flex; gap:8px; margin-bottom:5px; line-height:1.5; }
+    .pv-warning-item::before { content:'⚠'; font-size:11px; flex-shrink:0; color: var(--danger); margin-top:2px; }
+    .pv-shelf-table { width:100%; border-collapse:collapse; margin-bottom:14px; }
+    .pv-shelf-table th { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-mid); padding:7px 12px; border-bottom:2px solid var(--border); text-align:left; }
+    .pv-shelf-table td { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-high); padding:8px 12px; border-bottom:1px solid rgba(from var(--border) r g b / 0.4); }
+    .pv-shelf-life { color:var(--accent); font-weight:600; }
+  </style>
+  <script src="page-guard.js"></script>
+</head>
+<body class="page-bg cj-body">
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"></div>
+<div class="pv-layout">
+  <nav class="pv-nav">
+    <div class="pv-nav-title">🫙 Preservation</div>
+    <a class="pv-nav-link" href="#canning">🥫 Canning</a>
+    <a class="pv-nav-link" href="#freezing">❄️ Freezing</a>
+    <a class="pv-nav-link" href="#pickling">🥒 Pickling</a>
+    <a class="pv-nav-link" href="#fermenting">🧫 Fermenting</a>
+    <a class="pv-nav-link" href="#curing">🧂 Curing &amp; Salting</a>
+    <a class="pv-nav-link" href="#dehydrating">☀️ Dehydrating</a>
+    <a class="pv-nav-link" href="#vacuum">🔒 Vacuum Sealing</a>
+    <a class="pv-nav-link" href="#oil">🫒 Preserving in Oil</a>
+    <a class="pv-nav-link" href="#sugar">🍯 Sugar Preserves</a>
+    <a class="pv-nav-link" href="#alcohol">🍶 Preserving in Alcohol</a>
+  </nav>
+
+  <main class="pv-main">
+    <div class="pv-hero-label">The Culinary Journal</div>
+    <h1 class="pv-hero-title">Preservation Techniques</h1>
+    <p class="pv-hero-desc">A complete guide to keeping food safe, delicious, and waste-free. Every technique includes shelf life guidance and safety warnings — because proper preservation is as much about safety as flavour.</p>
+
+    <!-- CANNING -->
+    <div class="pv-technique" id="canning">
+      <div class="pv-tech-header"><div class="pv-tech-icon">🥫</div><h2 class="pv-tech-title">Canning</h2></div>
+      <p class="pv-tech-desc">Canning uses heat to destroy microorganisms and create a vacuum seal. Two methods: <strong>water bath canning</strong> for high-acid foods (pH below 4.6), and <strong>pressure canning</strong> for low-acid foods. Never substitute one for the other.</p>
+      <div class="pv-warning">
+        <div class="pv-warning-title">⚠ Safety — Read Before Canning</div>
+        <div class="pv-warning-item">Botulism (Clostridium botulinum) cannot be seen, smelled or tasted. It grows in low-acid, anaerobic environments — exactly what an improperly canned jar provides.</div>
+        <div class="pv-warning-item">Always use tested recipes from USDA, Ball, or equivalent authority. Do not adjust ratios or substitute ingredients.</div>
+        <div class="pv-warning-item">Never use water bath canning for low-acid foods (vegetables, meat, fish, beans). Always use a pressure canner at the correct PSI for your altitude.</div>
+        <div class="pv-warning-item">Discard any jar with bulging lids, spurting liquid, off-smell, or visible mould — without tasting it.</div>
+        <div class="pv-warning-item">Always check the seal after cooling: the centre should not flex when pressed. Refrigerate and use within days if the seal fails.</div>
+      </div>
+      <div class="pv-tech-grid">
+        <div class="pv-info-box">
+          <div class="pv-info-title">Water Bath — Suitable Foods</div>
+          <div class="pv-info-item">Jams, jellies, marmalades</div>
+          <div class="pv-info-item">Pickles and relishes (properly acidified)</div>
+          <div class="pv-info-item">Fruit and fruit juices</div>
+          <div class="pv-info-item">Tomatoes (with added lemon juice or citric acid)</div>
+          <div class="pv-info-item">Chutneys (high acid)</div>
+        </div>
+        <div class="pv-info-box">
+          <div class="pv-info-title">Pressure Canner — Suitable Foods</div>
+          <div class="pv-info-item">Vegetables (beans, corn, carrots, peas)</div>
+          <div class="pv-info-item">Meat, poultry and fish</div>
+          <div class="pv-info-item">Soups and stews</div>
+          <div class="pv-info-item">Stocks and broths</div>
+          <div class="pv-info-item">Mixed low-acid dishes</div>
+        </div>
+      </div>
+      <table class="pv-shelf-table"><thead><tr><th>Food</th><th>Shelf Life (sealed)</th><th>After Opening</th></tr></thead><tbody>
+        <tr><td>Jams and jellies</td><td class="pv-shelf-life">1–2 years</td><td>Refrigerate, use within 3 months</td></tr>
+        <tr><td>Pickles</td><td class="pv-shelf-life">1–2 years</td><td>Refrigerate, use within 2 months</td></tr>
+        <tr><td>Canned tomatoes</td><td class="pv-shelf-life">12–18 months</td><td>Refrigerate, use within 5 days</td></tr>
+        <tr><td>Pressure-canned vegetables</td><td class="pv-shelf-life">2–5 years</td><td>Refrigerate, use within 3–4 days</td></tr>
+        <tr><td>Pressure-canned meat/fish</td><td class="pv-shelf-life">2–5 years</td><td>Refrigerate, use within 3 days</td></tr>
+      </tbody></table>
+    </div>
+
+    <!-- FREEZING -->
+    <div class="pv-technique" id="freezing">
+      <div class="pv-tech-header"><div class="pv-tech-icon">❄️</div><h2 class="pv-tech-title">Freezing</h2></div>
+      <p class="pv-tech-desc">Freezing slows bacterial growth by keeping food at or below −18°C (0°F). The safest and most versatile preservation method. Blanching vegetables before freezing stops enzyme activity that causes flavour and texture loss.</p>
+      <div class="pv-warning">
+        <div class="pv-warning-title">⚠ Safety</div>
+        <div class="pv-warning-item">Never refreeze thawed raw meat or fish without cooking it first.</div>
+        <div class="pv-warning-item">Thaw in the refrigerator, under cold running water, or in the microwave — never at room temperature.</div>
+        <div class="pv-warning-item">Freezer burn is a quality issue, not a safety issue — but heavily freezer-burned food should be discarded.</div>
+        <div class="pv-warning-item">Label everything with contents and date. A full freezer is more energy efficient than a half-empty one.</div>
+      </div>
+      <div class="pv-tech-grid">
+        <div class="pv-info-box">
+          <div class="pv-info-title">Best Practice</div>
+          <div class="pv-info-item">Blanch vegetables: boil 2–5 minutes, plunge into ice water, dry completely, then freeze</div>
+          <div class="pv-info-item">Freeze in single layers on a tray first, then bag — prevents clumping</div>
+          <div class="pv-info-item">Remove as much air as possible from bags</div>
+          <div class="pv-info-item">Cool all cooked food completely before freezing</div>
+        </div>
+        <div class="pv-info-box">
+          <div class="pv-info-title">Does Not Freeze Well</div>
+          <div class="pv-info-item">Lettuce and salad leaves (cell walls burst)</div>
+          <div class="pv-info-item">Raw potato (goes grainy — mash or par-cook first)</div>
+          <div class="pv-info-item">Whole eggs in shells (expand and crack)</div>
+          <div class="pv-info-item">Cream-based sauces (separate on thawing)</div>
+          <div class="pv-info-item">Cucumber, radish, watermelon</div>
+        </div>
+      </div>
+      <table class="pv-shelf-table"><thead><tr><th>Food</th><th>Freezer Life (best quality)</th></tr></thead><tbody>
+        <tr><td>Beef, lamb, pork (whole cuts)</td><td class="pv-shelf-life">4–12 months</td></tr>
+        <tr><td>Minced meat</td><td class="pv-shelf-life">3–4 months</td></tr>
+        <tr><td>Poultry (whole)</td><td class="pv-shelf-life">12 months</td></tr>
+        <tr><td>Fish (fatty: salmon, tuna)</td><td class="pv-shelf-life">2–3 months</td></tr>
+        <tr><td>Fish (lean: cod, haddock)</td><td class="pv-shelf-life">6 months</td></tr>
+        <tr><td>Blanched vegetables</td><td class="pv-shelf-life">8–12 months</td></tr>
+        <tr><td>Cooked casseroles and stews</td><td class="pv-shelf-life">2–3 months</td></tr>
+        <tr><td>Bread and baked goods</td><td class="pv-shelf-life">2–3 months</td></tr>
+        <tr><td>Butter</td><td class="pv-shelf-life">6–9 months</td></tr>
+      </tbody></table>
+    </div>
+
+    <!-- PICKLING -->
+    <div class="pv-technique" id="pickling">
+      <div class="pv-tech-header"><div class="pv-tech-icon">🥒</div><h2 class="pv-tech-title">Pickling</h2></div>
+      <p class="pv-tech-desc">Pickling uses acid — either vinegar (quick pickling) or naturally produced lactic acid (lacto-fermentation) — to create an environment too hostile for spoilage bacteria. The pH must reach 4.6 or below for safety.</p>
+      <div class="pv-warning">
+        <div class="pv-warning-title">⚠ Safety</div>
+        <div class="pv-warning-item">Use only vinegar with 5% acidity or higher. Do not dilute beyond tested recipe ratios.</div>
+        <div class="pv-warning-item">Do not reduce the amount of vinegar or substitute low-acid liquids in tested recipes.</div>
+        <div class="pv-warning-item">Use pickling or canning salt — table salt with iodine can cause cloudiness and soften pickles.</div>
+        <div class="pv-warning-item">Quick pickles stored at room temperature must be water-bath canned. Refrigerator pickles are not shelf stable.</div>
+      </div>
+      <div class="pv-tech-grid">
+        <div class="pv-info-box">
+          <div class="pv-info-title">Basic Pickling Brine</div>
+          <div class="pv-info-item">1 cup white vinegar (5% acidity)</div>
+          <div class="pv-info-item">1 cup water</div>
+          <div class="pv-info-item">1 tbsp pickling salt</div>
+          <div class="pv-info-item">1 tsp sugar (optional)</div>
+          <div class="pv-info-item">Bring to boil, pour over packed vegetables</div>
+        </div>
+        <div class="pv-info-box">
+          <div class="pv-info-title">Best Pickling Candidates</div>
+          <div class="pv-info-item">Cucumbers, onions, radishes</div>
+          <div class="pv-info-item">Carrots, beans, cauliflower</div>
+          <div class="pv-info-item">Jalapeños and other chillies</div>
+          <div class="pv-info-item">Green mango, raw papaya</div>
+          <div class="pv-info-item">Eggs (hard-boiled, brine-pickled)</div>
+        </div>
+      </div>
+      <table class="pv-shelf-table"><thead><tr><th>Type</th><th>Shelf Life</th><th>Notes</th></tr></thead><tbody>
+        <tr><td>Refrigerator pickles</td><td class="pv-shelf-life">2–4 weeks</td><td>Must stay refrigerated</td></tr>
+        <tr><td>Water-bath canned pickles</td><td class="pv-shelf-life">1–2 years</td><td>Unopened, cool dark place</td></tr>
+        <tr><td>Pickled eggs</td><td class="pv-shelf-life">3–4 months</td><td>Refrigerated always</td></tr>
+      </tbody></table>
+    </div>
+
+    <!-- FERMENTING -->
+    <div class="pv-technique" id="fermenting">
+      <div class="pv-tech-header"><div class="pv-tech-icon">🧫</div><h2 class="pv-tech-title">Fermenting</h2></div>
+      <p class="pv-tech-desc">Lacto-fermentation uses naturally occurring Lactobacillus bacteria to convert sugars into lactic acid. The result is preserved food with enhanced flavour, improved digestibility, and probiotic benefits. Salt is the key — it inhibits harmful bacteria while allowing beneficial ones to thrive.</p>
+      <div class="pv-warning">
+        <div class="pv-warning-title">⚠ Safety</div>
+        <div class="pv-warning-item">Use non-iodised salt (pickling, sea, or kosher salt). Iodine inhibits fermentation.</div>
+        <div class="pv-warning-item">Keep vegetables submerged below the brine at all times. Exposed food can grow mould.</div>
+        <div class="pv-warning-item">White kahm yeast on the surface is harmless — skim it off. Fuzzy pink, black or green mould means discard.</div>
+        <div class="pv-warning-item">Use the correct salt ratio: typically 2% of the total weight (vegetable + water) for most vegetables.</div>
+        <div class="pv-warning-item">Ferment in a cool place (18–22°C ideal). High heat speeds fermentation and risks off-flavours.</div>
+      </div>
+      <div class="pv-tech-grid">
+        <div class="pv-info-box">
+          <div class="pv-info-title">Classic Ferments</div>
+          <div class="pv-info-item">Sauerkraut — shredded cabbage, 2% salt</div>
+          <div class="pv-info-item">Kimchi — cabbage, gochugaru, fish sauce or miso</div>
+          <div class="pv-info-item">Dill pickles — whole cucumbers in brine</div>
+          <div class="pv-info-item">Fermented hot sauce — blended chillies and salt</div>
+          <div class="pv-info-item">Beet kvass — raw beetroot in salted water</div>
+        </div>
+        <div class="pv-info-box">
+          <div class="pv-info-title">Signs of Success</div>
+          <div class="pv-info-item">Bubbles forming within 24–48 hours</div>
+          <div class="pv-info-item">Tangy, sour aroma (vinegary but alive)</div>
+          <div class="pv-info-item">Vegetables stay firm and bright</div>
+          <div class="pv-info-item">Brine may become cloudy — this is normal</div>
+        </div>
+      </div>
+      <table class="pv-shelf-table"><thead><tr><th>Ferment</th><th>Active Ferment</th><th>Refrigerator</th></tr></thead><tbody>
+        <tr><td>Sauerkraut</td><td>1–4 weeks at room temp</td><td class="pv-shelf-life">6–12 months</td></tr>
+        <tr><td>Kimchi</td><td>1–5 days at room temp</td><td class="pv-shelf-life">3–6 months</td></tr>
+        <tr><td>Fermented pickles</td><td>3–7 days</td><td class="pv-shelf-life">2–4 months</td></tr>
+        <tr><td>Fermented hot sauce</td><td>5–14 days</td><td class="pv-shelf-life">6+ months</td></tr>
+      </tbody></table>
+    </div>
+
+    <!-- CURING -->
+    <div class="pv-technique" id="curing">
+      <div class="pv-tech-header"><div class="pv-tech-icon">🧂</div><h2 class="pv-tech-title">Curing &amp; Salting</h2></div>
+      <p class="pv-tech-desc">Curing uses salt, and optionally sugar, nitrates/nitrites, and smoke, to preserve meat and fish by drawing out moisture and inhibiting bacterial growth. One of the oldest preservation methods in the world.</p>
+      <div class="pv-warning">
+        <div class="pv-warning-title">⚠ Safety</div>
+        <div class="pv-warning-item">Curing salts (Prague Powder / Instacure) contain sodium nitrite and are toxic in excess — use only the precise amounts specified in tested recipes. Never substitute for table salt.</div>
+        <div class="pv-warning-item">Curing does not replace refrigeration for most products unless you are cold-smoking or making dry-cured products with very low water activity.</div>
+        <div class="pv-warning-item">Minimum internal temperature for safety: pork 63°C, poultry 74°C, fish 63°C when cooking cured products.</div>
+        <div class="pv-warning-item">Do not cure at room temperature. Cure in the refrigerator at 1–4°C at all times.</div>
+      </div>
+      <div class="pv-tech-grid">
+        <div class="pv-info-box">
+          <div class="pv-info-title">Wet Curing (Brining)</div>
+          <div class="pv-info-item">Submerge in salt + water solution (equilibrium brine: 3–5% salt by weight)</div>
+          <div class="pv-info-item">Add sugar, herbs, spices, bay leaves</div>
+          <div class="pv-info-item">Suitable for: pork belly, whole chickens, fish</div>
+          <div class="pv-info-item">Typical time: 24 hours to 7 days depending on size</div>
+        </div>
+        <div class="pv-info-box">
+          <div class="pv-info-title">Dry Curing</div>
+          <div class="pv-info-item">Rub cure mix directly onto meat surface</div>
+          <div class="pv-info-item">Salt draws out moisture, concentrate flavour</div>
+          <div class="pv-info-item">Suitable for: salmon (gravlax), duck, pork</div>
+          <div class="pv-info-item">Gravlax: 2 days in fridge under weight</div>
+        </div>
+      </div>
+      <table class="pv-shelf-table"><thead><tr><th>Product</th><th>Refrigerator</th><th>Freezer</th></tr></thead><tbody>
+        <tr><td>Cured salmon (gravlax)</td><td class="pv-shelf-life">5–7 days</td><td>2–3 months</td></tr>
+        <tr><td>Brined pork belly (uncooked)</td><td class="pv-shelf-life">5–7 days</td><td>6 months</td></tr>
+        <tr><td>Cooked cured meats</td><td class="pv-shelf-life">3–5 days</td><td>1–2 months</td></tr>
+      </tbody></table>
+    </div>
+
+    <!-- DEHYDRATING -->
+    <div class="pv-technique" id="dehydrating">
+      <div class="pv-tech-header"><div class="pv-tech-icon">☀️</div><h2 class="pv-tech-title">Dehydrating</h2></div>
+      <p class="pv-tech-desc">Dehydrating removes water content to below 10–20%, preventing microbial growth. Can be done in a food dehydrator, conventional oven on low, or in the sun in hot dry climates. Creates dried fruits, jerky, herbs, and vegetable chips.</p>
+      <div class="pv-warning">
+        <div class="pv-warning-title">⚠ Safety</div>
+        <div class="pv-warning-item">Meat and poultry must reach an internal temperature of 74°C during drying to be safe. Pre-cook or post-heat in oven at 160°C for 10 minutes if dehydrator doesn't reach this temperature.</div>
+        <div class="pv-warning-item">Condition dried food before storing: fill jars loosely, seal, and shake daily for a week. If moisture appears, return to dehydrator.</div>
+        <div class="pv-warning-item">Store in airtight containers in a cool, dark, dry place. Moisture and light degrade quality rapidly.</div>
+      </div>
+      <div class="pv-tech-grid">
+        <div class="pv-info-box">
+          <div class="pv-info-title">Temperatures</div>
+          <div class="pv-info-item">Herbs and flowers: 35–40°C</div>
+          <div class="pv-info-item">Fruits and vegetables: 55–60°C</div>
+          <div class="pv-info-item">Meat jerky: 70–75°C</div>
+          <div class="pv-info-item">Oven: lowest setting, door propped open for airflow</div>
+        </div>
+        <div class="pv-info-box">
+          <div class="pv-info-title">Best Dehydrating Candidates</div>
+          <div class="pv-info-item">Herbs — basil, thyme, oregano, rosemary</div>
+          <div class="pv-info-item">Tomatoes, mushrooms, capsicum strips</div>
+          <div class="pv-info-item">Apple, mango, banana, berries</div>
+          <div class="pv-info-item">Beef, chicken, venison (jerky)</div>
+          <div class="pv-info-item">Citrus zest and slices</div>
+        </div>
+      </div>
+      <table class="pv-shelf-table"><thead><tr><th>Product</th><th>Shelf Life</th></tr></thead><tbody>
+        <tr><td>Dried herbs</td><td class="pv-shelf-life">1–3 years</td></tr>
+        <tr><td>Dried fruit</td><td class="pv-shelf-life">6–12 months</td></tr>
+        <tr><td>Dried vegetables</td><td class="pv-shelf-life">6–12 months</td></tr>
+        <tr><td>Jerky (meat)</td><td class="pv-shelf-life">1–2 months (room temp), 6 months (refrigerated)</td></tr>
+      </tbody></table>
+    </div>
+
+    <!-- VACUUM SEALING -->
+    <div class="pv-technique" id="vacuum">
+      <div class="pv-tech-header"><div class="pv-tech-icon">🔒</div><h2 class="pv-tech-title">Vacuum Sealing</h2></div>
+      <p class="pv-tech-desc">Vacuum sealing removes oxygen from packaging, slowing oxidation and inhibiting aerobic bacteria. Extends shelf life 3–5× compared to regular storage. Does not replace refrigeration or freezing but dramatically extends the effectiveness of both.</p>
+      <div class="pv-warning">
+        <div class="pv-warning-title">⚠ Safety</div>
+        <div class="pv-warning-item">Vacuum sealing does NOT eliminate botulism risk. C. botulinum is anaerobic — it thrives without oxygen. Never vacuum seal garlic in oil without refrigerating immediately and using within a week.</div>
+        <div class="pv-warning-item">Do not vacuum seal mushrooms, bananas, or soft cheeses at room temperature — seal refrigerated only.</div>
+        <div class="pv-warning-item">Always label with the seal date. Visual inspection alone cannot determine safety.</div>
+      </div>
+      <table class="pv-shelf-table"><thead><tr><th>Product</th><th>Normal</th><th>Vacuum Sealed</th></tr></thead><tbody>
+        <tr><td>Raw beef (refrigerator)</td><td>3–5 days</td><td class="pv-shelf-life">2 weeks</td></tr>
+        <tr><td>Raw fish (refrigerator)</td><td>1–2 days</td><td class="pv-shelf-life">4–5 days</td></tr>
+        <tr><td>Cheese (refrigerator)</td><td>1–2 weeks</td><td class="pv-shelf-life">4–8 months</td></tr>
+        <tr><td>Dry goods (pantry)</td><td>6–12 months</td><td class="pv-shelf-life">2–3 years</td></tr>
+        <tr><td>Meat (freezer)</td><td>6 months</td><td class="pv-shelf-life">2–3 years</td></tr>
+      </tbody></table>
+    </div>
+
+    <!-- PRESERVING IN OIL -->
+    <div class="pv-technique" id="oil">
+      <div class="pv-tech-header"><div class="pv-tech-icon">🫒</div><h2 class="pv-tech-title">Preserving in Oil</h2></div>
+      <p class="pv-tech-desc">Submerging food in oil prevents contact with air and provides a flavour-carrying medium. Commonly used for herbs, garlic, sun-dried tomatoes, roasted peppers, and soft cheeses like feta.</p>
+      <div class="pv-warning">
+        <div class="pv-warning-title">⚠ Safety — Highest Risk</div>
+        <div class="pv-warning-item">Garlic-in-oil and herb-in-oil preparations at room temperature carry serious botulism risk. Fresh garlic and herbs in oil MUST be refrigerated and used within 1 week.</div>
+        <div class="pv-warning-item">Commercial products contain acidifying agents specifically to prevent botulism. Homemade versions do not — never store at room temperature for extended periods.</div>
+        <div class="pv-warning-item">Dried herbs and dried garlic in oil are safer than fresh — moisture is the primary risk factor.</div>
+      </div>
+      <table class="pv-shelf-table"><thead><tr><th>Product</th><th>Shelf Life</th><th>Storage</th></tr></thead><tbody>
+        <tr><td>Fresh herbs in oil</td><td class="pv-shelf-life">1 week</td><td>Refrigerator only</td></tr>
+        <tr><td>Dried herbs in oil</td><td class="pv-shelf-life">1–3 months</td><td>Cool dark pantry</td></tr>
+        <tr><td>Sun-dried tomatoes in oil</td><td class="pv-shelf-life">2–3 months</td><td>Refrigerator once opened</td></tr>
+        <tr><td>Marinated feta in oil</td><td class="pv-shelf-life">2–3 weeks</td><td>Refrigerator only</td></tr>
+        <tr><td>Confit (duck, garlic)</td><td class="pv-shelf-life">1–3 months</td><td>Submerged in fat, refrigerator</td></tr>
+      </tbody></table>
+    </div>
+
+    <!-- SUGAR PRESERVES -->
+    <div class="pv-technique" id="sugar">
+      <div class="pv-tech-header"><div class="pv-tech-icon">🍯</div><h2 class="pv-tech-title">Sugar Preserves</h2></div>
+      <p class="pv-tech-desc">High sugar concentrations bind water, making it unavailable to microorganisms. Jams require 60–65% sugar by weight for safe room-temperature storage. Pectin (natural or commercial) creates the gel structure.</p>
+      <div class="pv-warning">
+        <div class="pv-warning-title">⚠ Safety</div>
+        <div class="pv-warning-item">Reducing sugar significantly below tested recipe amounts creates a product that is NOT shelf stable at room temperature — refrigerate and treat as fresh fruit.</div>
+        <div class="pv-warning-item">Always use sterilised jars. Fill hot jam into hot jars, seal immediately.</div>
+        <div class="pv-warning-item">Use a thermometer: jam is ready at 105°C (setting point). Underset jam ferments in the jar.</div>
+      </div>
+      <div class="pv-tech-grid">
+        <div class="pv-info-box">
+          <div class="pv-info-title">Pectin Content (Natural)</div>
+          <div class="pv-info-item">High pectin: citrus, apples, quince, blackcurrants, gooseberries</div>
+          <div class="pv-info-item">Medium: apricots, raspberries, blackberries, plums</div>
+          <div class="pv-info-item">Low: strawberries, cherries, pears, figs — add lemon juice or commercial pectin</div>
+        </div>
+        <div class="pv-info-box">
+          <div class="pv-info-title">Types of Sugar Preserves</div>
+          <div class="pv-info-item">Jam — crushed or chopped fruit with sugar</div>
+          <div class="pv-info-item">Jelly — strained clear fruit juice with sugar</div>
+          <div class="pv-info-item">Marmalade — citrus peel included</div>
+          <div class="pv-info-item">Conserve — whole fruit pieces</div>
+          <div class="pv-info-item">Curd — egg-based, e.g. lemon curd</div>
+        </div>
+      </div>
+      <table class="pv-shelf-table"><thead><tr><th>Product</th><th>Sealed Shelf Life</th><th>After Opening</th></tr></thead><tbody>
+        <tr><td>Jam / Jelly (properly set)</td><td class="pv-shelf-life">1–2 years</td><td>Refrigerate, 3 months</td></tr>
+        <tr><td>Marmalade</td><td class="pv-shelf-life">1–2 years</td><td>Refrigerate, 3 months</td></tr>
+        <tr><td>Lemon curd</td><td class="pv-shelf-life">2 weeks unfilled</td><td>Refrigerate, 2 weeks</td></tr>
+      </tbody></table>
+    </div>
+
+    <!-- ALCOHOL -->
+    <div class="pv-technique" id="alcohol">
+      <div class="pv-tech-header"><div class="pv-tech-icon">🍶</div><h2 class="pv-tech-title">Preserving in Alcohol</h2></div>
+      <p class="pv-tech-desc">Alcohol above 20% inhibits microbial growth. Fruits macerated in spirits create flavourful liqueurs while being preserved. Lower-alcohol solutions (wine, beer) slow but do not fully prevent spoilage.</p>
+      <div class="pv-warning">
+        <div class="pv-warning-title">⚠ Safety</div>
+        <div class="pv-warning-item">Minimum 40% ABV spirits for safe room-temperature preservation (vodka, brandy, rum, gin).</div>
+        <div class="pv-warning-item">Wine or beer-based preserves must be refrigerated and used within weeks, not months.</div>
+        <div class="pv-warning-item">Label all alcohol preserves clearly with contents and alcohol percentage.</div>
+      </div>
+      <div class="pv-tech-grid">
+        <div class="pv-info-box">
+          <div class="pv-info-title">Classic Combinations</div>
+          <div class="pv-info-item">Cherries in brandy</div>
+          <div class="pv-info-item">Peaches in bourbon</div>
+          <div class="pv-info-item">Figs in port or rum</div>
+          <div class="pv-info-item">Sloe berries in gin (sloe gin)</div>
+          <div class="pv-info-item">Vanilla pods in vodka (extract)</div>
+          <div class="pv-info-item">Citrus peel in Cointreau or grappa</div>
+        </div>
+        <div class="pv-info-box">
+          <div class="pv-info-title">Method</div>
+          <div class="pv-info-item">Use fresh, unblemished fruit — one piece of mould contaminates the jar</div>
+          <div class="pv-info-item">Fill sterilised jar ¾ full with fruit</div>
+          <div class="pv-info-item">Add sugar if desired (speeds maceration)</div>
+          <div class="pv-info-item">Cover completely with spirit, seal tightly</div>
+          <div class="pv-info-item">Store in cool dark place, shake weekly</div>
+          <div class="pv-info-item">Ready in 4–8 weeks; improves with time</div>
+        </div>
+      </div>
+      <table class="pv-shelf-table"><thead><tr><th>Product</th><th>Shelf Life</th></tr></thead><tbody>
+        <tr><td>Fruit in 40%+ spirits</td><td class="pv-shelf-life">1–3 years (improves with age)</td></tr>
+        <tr><td>Homemade liqueur</td><td class="pv-shelf-life">1–2 years</td></tr>
+        <tr><td>Vanilla extract</td><td class="pv-shelf-life">Indefinite (alcohol doesn't expire)</td></tr>
+      </tbody></table>
+    </div>
+
+  </main>
+</div>
+<script src="nav-init.js"></script>
+<script>
+// Highlight active nav link on scroll
+const sections = document.querySelectorAll('.pv-technique');
+const links    = document.querySelectorAll('.pv-nav-link');
+const obs = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) {
+      links.forEach(function(l){ l.classList.remove('active'); });
+      const active = document.querySelector('.pv-nav-link[href="#' + e.target.id + '"]');
+      if (active) active.classList.add('active');
+    }
+  });
+}, {rootMargin:'-10% 0px -80% 0px'});
+sections.forEach(function(s){ obs.observe(s); });
+</script>
+</body>
+</html>

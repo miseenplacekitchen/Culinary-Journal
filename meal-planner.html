@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Plan weekly meals, assign recipes to days, and coordinate cooking for your household.">
+  <link rel="canonical" href="https://theculinaryjournal.site/meal-planner.html">
+  <title>Meal Planner — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .mp-wrap { max-width:1200px; margin:0 auto; padding:24px 16px 80px; }
+
+    /* Header */
+    .mp-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
+    .mp-title  { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--text-high); }
+    .mp-week-nav { display:flex; align-items:center; gap:12px; }
+    .mp-week-btn { padding:7px 14px; border-radius:8px; border:1px solid var(--border); background:none; color:var(--text-mid); font-family:'DM Sans',sans-serif; font-size:13px; cursor:pointer; }
+    .mp-week-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .mp-week-label { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-high); min-width:160px; text-align:center; }
+    .mp-actions { display:flex; gap:8px; }
+    .mp-btn { padding:9px 18px; border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; border:none; }
+    .mp-btn-primary { background:var(--accent); color:#fff; }
+    .mp-btn-ghost   { background:none; border:1px solid var(--border); color:var(--text-mid); }
+    .mp-btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+
+    /* Calendar grid */
+    .mp-grid { display:grid; grid-template-columns: 90px repeat(7,1fr); gap:0; border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+    .mp-col-header { text-align:center; padding:12px 6px; background:var(--text-ghost); border-bottom:1px solid var(--border); border-right:1px solid var(--border); }
+    .mp-col-header:last-child { border-right:none; }
+    .mp-col-day  { font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; color:var(--text-high); }
+    .mp-col-date { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); margin-top:2px; }
+    .mp-col-header.today { background:rgb(from var(--accent) r g b / 0.1); }
+    .mp-col-header.today .mp-col-day { color:var(--accent); }
+    .mp-row-label { display:flex; align-items:center; justify-content:center; padding:8px 6px; background:var(--text-ghost); border-right:1px solid var(--border); border-bottom:1px solid rgba(from var(--border) r g b / 0.4); font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-mid); writing-mode:horizontal-tb; text-align:center; min-height:90px; }
+    .mp-row-label:last-child { border-bottom:none; }
+    .mp-slot { border-right:1px solid rgba(from var(--border) r g b / 0.4); border-bottom:1px solid rgba(from var(--border) r g b / 0.4); min-height:90px; padding:6px; position:relative; }
+    .mp-slot:last-child { border-right:none; }
+
+    /* When row is last */
+    .mp-grid-row:last-child .mp-slot,
+    .mp-grid-row:last-child .mp-row-label { border-bottom:none; }
+
+
+    .mp-mode-bar { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; align-items:center; }
+    .mp-mode-btn { padding:8px 16px; border-radius:20px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; color:var(--text-mid); cursor:pointer; }
+    .mp-mode-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .mp-mode-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .mp-conflict-badge { display:inline-block; background: var(--danger-bg); border:1px solid rgb(from var(--danger) r g b / 0.3); border-radius:4px; font-family:'DM Sans',sans-serif; font-size:10px; color: var(--danger); padding:1px 6px; margin-left:4px; }
+    .mp-member-flags { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
+    .mp-member-flag { font-size:10px; padding:1px 7px; border-radius:4px; background:rgba(240,168,48,0.1); color: var(--warn); font-family:'DM Sans',sans-serif; }
+    .mp-member-flag.ok { background: var(--success-bg); color:#4caf76; }
+    .mp-member-flag.warn { background: var(--danger-bg); color: var(--danger); }
+    .mp-slot-empty { width:100%; height:100%; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:8px; border:1px dashed rgba(from var(--border) r g b / 0.4); min-height:78px; transition:all 0.15s; }
+    .mp-slot-empty:hover { border-color:var(--accent); background:rgb(from var(--accent) r g b / 0.06); }
+    .mp-slot-add { font-size:18px; color:var(--text-mid); }
+    .mp-slot-empty:hover .mp-slot-add { color:var(--accent); }
+
+    .mp-recipe-card { background:rgb(from var(--accent) r g b / 0.08); border:1px solid rgb(from var(--accent) r g b / 0.2); border-radius:8px; padding:7px 8px; cursor:pointer; position:relative; min-height:78px; }
+    .mp-recipe-card:hover { background:rgb(from var(--accent) r g b / 0.14); }
+    .mp-recipe-name { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; color:var(--text-high); line-height:1.3; margin-bottom:3px; }
+    .mp-recipe-cat  { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); }
+    .mp-recipe-remove { position:absolute; top:4px; right:4px; background:none; border:none; color:var(--text-mid); cursor:pointer; font-size:14px; padding:0 2px; line-height:1; }
+    .mp-recipe-remove:hover { color: var(--danger); }
+
+    /* Weekly summary */
+    .mp-summary { margin-top:20px; background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:18px 20px; }
+    .mp-summary-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-mid); margin-bottom:12px; }
+    .mp-summary-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .mp-summary-stat { text-align:center; }
+    .mp-summary-num { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:700; color:var(--accent); }
+    .mp-summary-label { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+
+    /* Recipe search modal */
+    .mp-modal { display:none; position:fixed; inset:0; background: var(--scrim); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+    .mp-modal.open { display:flex; }
+    .mp-modal-box { background:var(--bg); border:1px solid var(--border); border-radius:16px; width:100%; max-width:520px; overflow:hidden; }
+    .mp-modal-head { padding:18px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .mp-modal-title { font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:600; color:var(--text-high); }
+    .mp-modal-close { background:none; border:none; color:var(--text-mid); cursor:pointer; font-size:20px; }
+    .mp-modal-search { padding:14px 20px; border-bottom:1px solid var(--border); }
+    .mp-modal-search input { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:9px 14px; border:1px solid var(--border); border-radius:9px; background: var(--input-bg); color:var(--text-high); outline:none; }
+    .mp-modal-search input:focus { border-color:var(--accent); }
+    .mp-modal-results { max-height:340px; overflow-y:auto; padding:10px; }
+    .mp-result-item { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:9px; cursor:pointer; }
+    .mp-result-item:hover { background:var(--text-ghost); }
+    .mp-result-emoji { font-size:24px; flex-shrink:0; }
+    .mp-result-name { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-high); }
+    .mp-result-cat  { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+    .mp-result-empty { text-align:center; padding:30px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
+  
+    .mp-view-btn { padding:5px 18px; border-radius:8px; border:none; background:none; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:all .15s; }
+    .mp-view-btn.active { background:var(--accent); color:#fff; }
+    /* ── Month view ── */
+    #mp-month-view { display:none; }
+    .mth-cal { border:1px solid var(--border); border-radius:14px; overflow:hidden; background:var(--text-ghost); }
+    .mth-cal-head { display:grid; grid-template-columns:repeat(7,1fr); border-bottom:1px solid var(--border); }
+    .mth-dow { padding:10px 6px; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; text-align:center; color:var(--text-mid); }
+    .mth-body { display:grid; grid-template-columns:repeat(7,1fr); }
+    .mth-cell { border-right:1px solid var(--border); border-bottom:1px solid var(--border); min-height:90px; padding:6px; cursor:pointer; transition:background .15s; }
+    .mth-cell:hover { background:rgb(from var(--accent) r g b / .05); }
+    .mth-cell:nth-child(7n) { border-right:none; }
+    .mth-cell.other { opacity:.3; cursor:default; }
+    .mth-cell.other:hover { background:none; }
+    .mth-cell.today .mth-day-num { color:var(--accent); font-weight:700; }
+    .mth-day-num { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-bottom:4px; }
+    .mth-meal-dot { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-high); padding:2px 5px; border-radius:4px; margin-bottom:2px; background:rgb(from var(--accent) r g b / .1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.4; }
+    .mth-more { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--accent); }
+    @media(max-width:600px){ .mth-cell { min-height:60px; } .mth-meal-dot { display:none; } }
+  </style>
+  <script src="page-guard.js"></script>
+</head>
+<body class="page-bg cj-body">
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"></div>
+
+<div class="mp-wrap">
+  <div class="mp-header">
+    <div>
+      <h1 class="mp-title">🗓 Meal Planner</h1>
+      <div style="display:flex;gap:4px;background:var(--text-ghost);border:1px solid var(--border);border-radius:10px;padding:3px;margin-top:10px;width:fit-content">
+        <button id="view-week-btn" class="mp-view-btn active" onclick="setView('week',this)">Week</button>
+        <button id="view-month-btn" class="mp-view-btn" onclick="setView('month',this)">Month</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div class="mp-week-nav">
+        <button class="mp-week-btn" onclick="prevWeek()">← Prev</button>
+        <div class="mp-week-label" id="week-label"></div>
+        <button class="mp-week-btn" onclick="nextWeek()">Next →</button>
+        <button class="mp-week-btn" onclick="goThisWeek()" title="Jump to the current week">This Week</button>
+      </div>
+      <div id="mp-month-nav" style="display:none;align-items:center;gap:8px">
+        <button class="mp-week-btn" onclick="changeMonthView(-1)">← Prev</button>
+        <div id="mth-label" style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--text-high);min-width:130px;text-align:center"></div>
+        <button class="mp-week-btn" onclick="changeMonthView(1)">Next →</button>
+        <button class="mp-week-btn" onclick="goThisMonth()" title="Jump to the current month">This Month</button>
+        <select id="mth-jump-month" onchange="jumpMonthYear()" style="padding:6px 8px;font-size:12px"></select>
+        <select id="mth-jump-year" onchange="jumpMonthYear()" style="padding:6px 8px;font-size:12px"></select>
+      </div>
+      <div class="mp-actions">
+        <button class="mp-btn mp-btn-ghost" onclick="clearWeek()">Clear Week</button>
+        <button class="mp-btn mp-btn-primary" onclick="addToGrocery()">🛒 Add to Grocery List</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mode & Family panel -->
+  <div class="mp-mode-bar">
+    <span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid)">Cooking for:</span>
+    <button class="mp-mode-btn active" data-mode="individual" onclick="setMode('individual',this)">👤 Individual</button>
+    <button class="mp-mode-btn" data-mode="couple" onclick="setMode('couple',this)">💑 Couple</button>
+    <button class="mp-mode-btn" data-mode="family" onclick="setMode('family',this)" title="To add a family profile, go to Mise en Place → Family Profiles and create profiles there">👨‍👩‍👧‍👦 Family</button>
+    <button class="mp-mode-btn" data-mode="group" onclick="setMode('group',this)">🎉 Group</button>
+    <span id="mp-conflict-summary" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)"></span>
+  </div>
+  <div id="mp-family-flags" style="display:none;background:var(--text-ghost);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-family:'DM Sans',sans-serif;font-size:12px"></div>
+
+  <div class="mp-grid" id="mp-grid"></div>
+
+  <div id="mp-month-view">
+  <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:10px">💡 Click any day to open that week and add or edit meals.</div>
+  <div class="mth-cal">
+    <div class="mth-cal-head" id="mth-dow"></div>
+    <div class="mth-body" id="mth-body"></div>
+  </div>
+</div>
+
+<div class="mp-summary" id="mp-summary"></div>
+</div>
+
+<!-- Recipe picker modal -->
+<div class="mp-modal" id="mp-modal">
+  <div class="mp-modal-box">
+    <div class="mp-modal-head">
+      <div class="mp-modal-title" id="mp-modal-title">Choose a Recipe</div>
+      <button class="mp-modal-close" onclick="closePicker()">&#215;</button>
+    </div>
+    <div class="mp-modal-search">
+      <input type="text" id="mp-search" placeholder="Search recipes..." oninput="searchRecipes(this.value)" autocomplete="off">
+    </div>
+    <div class="mp-modal-results" id="mp-results">
+      <div class="mp-result-empty">Loading recipes...</div>
+    </div>
+  </div>
+</div>
+
+<script src="nav-init.js"></script>
+<script>
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+const MEALS = ['Breakfast','Lunch','Dinner','Snack'];
+const DAYS  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
+
+let currentWeekOffset = 0;
+let pickerTarget = null; // {day, meal}
+let allRecipes = [];
+
+function getWeekDates(offset) {
+  const today = new Date();
+  const day = today.getDay();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1) + (offset * 7));
+  return DAYS.map(function(_, i) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
+  });
+}
+
+function getWeekKey(offset) {
+  const dates = getWeekDates(offset);
+  return 'tcj_meal_' + dates[0].toISOString().slice(0, 10);
+}
+
+function getPlan() {
+  try { return JSON.parse(localStorage.getItem(getWeekKey(currentWeekOffset)) || '{}'); }
+  catch(_) { return {}; }
+}
+
+function savePlan(plan) {
+  const key = getWeekKey(currentWeekOffset);
+  localStorage.setItem(key, JSON.stringify(plan));
+  // Sync to Supabase in background
+  clearTimeout(window._mpSyncTimer);
+  window._mpSyncTimer = setTimeout(async function() {
+    try {
+      const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
+      if (!sess || !sess.access_token) return;
+      await fetch(SUPA_URL + '/rest/v1/rpc/save_my_meal_plan', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPA_KEY,
+          'Authorization': 'Bearer ' + sess.access_token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_week_key: key, p_plan_data: plan })
+      });
+    } catch(_) {}
+  }, 1200);
+}
+
+async function loadPlanFromSupabase() {
+  try {
+    const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
+    if (!sess || !sess.access_token) return;
+    const key = getWeekKey(currentWeekOffset);
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_my_meal_plan', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + sess.access_token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ p_week_key: key })
+    });
+    if (!res.ok) return;
+    const remote = await res.json();
+    if (remote && typeof remote === 'object' && Object.keys(remote).length) {
+      localStorage.setItem(key, JSON.stringify(remote));
+      renderCalendar();
+    }
+  } catch(_) {}
+}
+
+function getSlot(day, meal) {
+  const plan = getPlan();
+  return plan[day] ? plan[day][meal] : null;
+}
+
+function setSlot(day, meal, recipe) {
+  const plan = getPlan();
+  if (!plan[day]) plan[day] = {};
+  plan[day][meal] = recipe;
+  savePlan(plan);
+}
+
+function clearSlot(day, meal) {
+  const plan = getPlan();
+  if (plan[day]) { delete plan[day][meal]; if (!Object.keys(plan[day]).length) delete plan[day]; }
+  savePlan(plan);
+}
+
+function prevWeek() { currentWeekOffset--; renderCalendar(); }
+function nextWeek() { currentWeekOffset++; renderCalendar(); }
+function goThisWeek() { currentWeekOffset = 0; renderCalendar(); }
+
+function goThisMonth() {
+  var n = new Date();
+  monthMon = n.getMonth(); monthYear = n.getFullYear();
+  buildMonthView();
+}
+
+function jumpMonthYear() {
+  var m = document.getElementById('mth-jump-month');
+  var y = document.getElementById('mth-jump-year');
+  if (!m || !y) return;
+  monthMon = parseInt(m.value, 10); monthYear = parseInt(y.value, 10);
+  buildMonthView();
+}
+
+function syncMonthJump() {
+  var m = document.getElementById('mth-jump-month');
+  var y = document.getElementById('mth-jump-year');
+  if (!m || !y) return;
+  if (!m.options.length) {
+    var names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    names.forEach(function(n,i){ var o=document.createElement('option'); o.value=i; o.textContent=n; m.appendChild(o); });
+    var thisYear = new Date().getFullYear();
+    for (var yy = thisYear - 2; yy <= thisYear + 3; yy++) { var o=document.createElement('option'); o.value=yy; o.textContent=yy; y.appendChild(o); }
+  }
+  m.value = monthMon; y.value = monthYear;
+}
+
+function clearWeek() {
+  if (!confirm('Clear ALL meal prep entries for this entire week?\n\nThis cannot be undone. Press OK to confirm, or Cancel to keep your entries.')) return;
+  localStorage.removeItem(getWeekKey(currentWeekOffset));
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const dates = getWeekDates(currentWeekOffset);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  // Week label
+  const from = dates[0].toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+  const to   = dates[6].toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});
+  document.getElementById('week-label').textContent = from + ' – ' + to;
+
+  const grid = document.getElementById('mp-grid');
+  grid.innerHTML = '';
+
+  // Header row: empty corner + day columns
+  const corner = document.createElement('div');
+  corner.className = 'mp-col-header';
+  corner.style.cssText = 'background:var(--text-ghost);border-bottom:1px solid var(--border);border-right:1px solid var(--border)';
+  grid.appendChild(corner);
+
+  dates.forEach(function(date, i) {
+    const isToday = date.getTime() === today.getTime();
+    const hdr = document.createElement('div');
+    hdr.className = 'mp-col-header' + (isToday ? ' today' : '');
+    hdr.innerHTML = '<div class="mp-col-day">' + DAYS[i] + '</div><div class="mp-col-date">' + date.getDate() + ' ' + date.toLocaleDateString('en-AU',{month:'short'}) + '</div>';
+    grid.appendChild(hdr);
+  });
+
+  // Meal rows
+  MEALS.forEach(function(meal) {
+    const rowLabel = document.createElement('div');
+    rowLabel.className = 'mp-row-label';
+    rowLabel.textContent = meal;
+    grid.appendChild(rowLabel);
+
+    dates.forEach(function(_, di) {
+      const day = DAYS[di];
+      const recipe = getSlot(day, meal);
+      const slot = document.createElement('div');
+      slot.className = 'mp-slot';
+
+      if (recipe) {
+        const card = document.createElement('div');
+        card.className = 'mp-recipe-card';
+        const emoji = CAT_EMOJI[recipe.category] || '🍽';
+        var conflicts = checkRecipeConflicts(recipe);
+      card.innerHTML = '<div class="mp-recipe-name">' + emoji + ' ' + esc(recipe.name||'') + '</div>' +
+          '<div class="mp-recipe-cat">' + esc(recipe.category||'') + '</div>' +
+          (conflicts.length ? '<div class="mp-member-flags">' + conflicts.slice(0,2).map(function(c){return '<span class="mp-member-flag warn">⚠ '+esc(c)+'</span>';}).join('') + '</div>' : '') +
+          '<button class="mp-recipe-remove" title="Remove">×</button>';
+        card.querySelector('.mp-recipe-remove').addEventListener('click', function(e) {
+          e.stopPropagation(); clearSlot(day, meal); renderCalendar();
+        });
+        card.addEventListener('click', function() { openPicker(day, meal); });
+        slot.appendChild(card);
+      } else {
+        const empty = document.createElement('div');
+        empty.className = 'mp-slot-empty';
+        empty.innerHTML = '<span class="mp-slot-add">+</span>';
+        empty.addEventListener('click', function() { openPicker(day, meal); });
+        slot.appendChild(empty);
+      }
+      grid.appendChild(slot);
+    });
+  });
+
+  // Set column layout
+  grid.style.gridTemplateColumns = '90px repeat(7,1fr)';
+
+  renderSummary();
+}
+
+function renderSummary() {
+  const plan = getPlan();
+  let total = 0, uniqueRecipes = {}, days = 0;
+  DAYS.forEach(function(day) {
+    let hasMeal = false;
+    MEALS.forEach(function(meal) {
+      const r = plan[day] && plan[day][meal];
+      if (r) { total++; uniqueRecipes[r.id||r.name] = true; hasMeal = true; }
+    });
+    if (hasMeal) days++;
+  });
+  const unique = Object.keys(uniqueRecipes).length;
+  document.getElementById('mp-summary').innerHTML =
+    '<div class="mp-summary-title">This Week at a Glance</div>' +
+    '<div class="mp-summary-grid">' +
+    '<div class="mp-summary-stat"><div class="mp-summary-num">' + total + '</div><div class="mp-summary-label">Meals Planned</div></div>' +
+    '<div class="mp-summary-stat"><div class="mp-summary-num">' + unique + '</div><div class="mp-summary-label">Unique Recipes</div></div>' +
+    '<div class="mp-summary-stat"><div class="mp-summary-num">' + days + '</div><div class="mp-summary-label">Days Covered</div></div>' +
+    '</div>';
+}
+
+
+// ── MODES & FAMILY PROFILES ─────────────────────────────────────
+let currentMode = 'individual';
+let familyProfiles = [];
+
+function setMode(mode, btn) {
+  currentMode = mode;
+  document.querySelectorAll('.mp-mode-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  const familyPanel = document.getElementById('mp-family-flags');
+  if (mode === 'family' || mode === 'couple') {
+    renderFamilyFlags();
+    familyPanel.style.display = 'block';
+  } else {
+    familyPanel.style.display = 'none';
+  }
+  updateConflictSummary();
+}
+
+async function loadFamilyProfiles() {
+  const session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+  if (!session) return;
+  try {
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_my_family_profiles', {
+      method:'POST', headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json'},
+      body:JSON.stringify({})
+    });
+    if (res.ok) familyProfiles = await res.json() || [];
+    updateConflictSummary();
+  } catch(_) {}
+}
+
+function renderFamilyFlags() {
+  const el = document.getElementById('mp-family-flags');
+  if (!familyProfiles.length) {
+    el.innerHTML = '<span style="color:var(--text-mid)">No family profiles set up yet. To add a family profile, go to <strong>Mise en Place → Family Profiles</strong> and complete the profile creation process there. <a href="family-profiles.html" style="color:var(--accent)">Add profiles →</a></span>';
+    return;
+  }
+  const REL_EMOJI = {self:'👤',partner:'💑',child:'👦',toddler:'🧒',baby:'👶',elderly:'👴',regular_guest:'👤',other:'👤'};
+  const SPICE_ICONS = {none:'🚫',mild:'😌',medium:'🌶',hot:'🌶🌶',very_hot:'🌶🌶🌶'};
+  el.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:8px">Cooking for these people:</div>' +
+    familyProfiles.map(function(p) {
+      const emoji = REL_EMOJI[p.relationship]||'👤';
+      const diets = (p.dietary_needs||[]).concat(p.allergies||[]).slice(0,3);
+      const spiceIcon = SPICE_ICONS[p.spice_preference]||'🌶';
+      return '<div style="display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:5px 10px;margin:3px">' +
+        '<span>'+emoji+'</span><span style="font-weight:500;color:var(--text-high)">'+esc(p.name||'')+'</span>' +
+        (diets.length ? '<span style="color:var(--danger);font-size:10px">⚠ '+esc(diets.join(', '))+'</span>' : '') +
+        '<span title="Spice preference">'+spiceIcon+'</span></div>';
+    }).join('');
+}
+
+function checkRecipeConflicts(recipe) {
+  if (!familyProfiles.length || currentMode === 'individual') return [];
+  const conflicts = [];
+  const spiceMap = {none:0,mild:1,medium:2,hot:3,very_hot:4};
+  const recipeSpice = typeof recipe.spice_level === 'number' ? recipe.spice_level : 2;
+  familyProfiles.forEach(function(p) {
+    const maxSpice = spiceMap[p.spice_preference||'medium'] || 2;
+    if (recipeSpice > maxSpice) conflicts.push(p.name + ' prefers less spice');
+    (p.dietary_needs||[]).forEach(function(d) {
+      if (d==='Vegan' && !((recipe.dietary_tags||[]).includes('Vegan'))) conflicts.push(p.name + ' is Vegan');
+      if (d==='Vegetarian' && !((recipe.dietary_tags||[]).includes('Vegetarian')) && !((recipe.dietary_tags||[]).includes('Vegan'))) conflicts.push(p.name + ' is Vegetarian');
+      if (d==='Gluten Free' && !((recipe.dietary_tags||[]).includes('Gluten Free'))) conflicts.push(p.name + ' needs Gluten Free');
+    });
+  });
+  return [...new Set(conflicts)];
+}
+
+function updateConflictSummary() {
+  const el = document.getElementById('mp-conflict-summary');
+  if (!el) return;
+  if (currentMode === 'individual' || !familyProfiles.length) { el.textContent = ''; return; }
+  el.textContent = familyProfiles.length + ' profile' + (familyProfiles.length===1?'':'s') + ' loaded';
+}
+
+// ── PANTRY-AWARE GROCERY (override from recipe-page) ─────────────
+function getPantryItems() {
+  try { return JSON.parse(localStorage.getItem('tcj_pantry')||'[]'); }
+  catch(_) { return []; }
+}
+function isInPantry(name) {
+  var n = name.toLowerCase().trim();
+  return getPantryItems().some(function(p){ return p.name && p.name.toLowerCase().trim()===n && (p.qty||0)>0; });
+}
+
+// ── RECIPE PICKER ────────────────────────────────────────────────
+function openPicker(day, meal) {
+  pickerTarget = {day, meal};
+  document.getElementById('mp-modal-title').textContent = 'Choose ' + meal + ' for ' + day;
+  document.getElementById('mp-search').value = '';
+  document.getElementById('mp-modal').classList.add('open');
+  renderResults(allRecipes);
+  setTimeout(function() { document.getElementById('mp-search').focus(); }, 100);
+}
+
+function closePicker() {
+  document.getElementById('mp-modal').classList.remove('open');
+  pickerTarget = null;
+}
+
+function searchRecipes(q) {
+  const filtered = q.trim()
+    ? allRecipes.filter(function(r) { return r.name.toLowerCase().includes(q.toLowerCase()) || (r.category||'').toLowerCase().includes(q.toLowerCase()); })
+    : allRecipes;
+  renderResults(filtered);
+}
+
+function renderResults(recipes) {
+  const el = document.getElementById('mp-results');
+  if (!recipes.length) {
+    el.innerHTML = '<div class="mp-result-empty">No recipes found. Add some via Submit Recipe!</div>';
+    return;
+  }
+  el.innerHTML = '';
+  recipes.slice(0, 40).forEach(function(r) {
+    const item = document.createElement('div');
+    item.className = 'mp-result-item';
+    const emoji = CAT_EMOJI[r.category] || '🍽';
+    item.innerHTML = '<div class="mp-result-emoji">' + emoji + '</div><div><div class="mp-result-name">' + esc(r.name||'') + '</div><div class="mp-result-cat">' + esc(r.category||'') + (r.origin_country?' · '+esc(r.origin_country):'') + '</div></div>';
+    item.addEventListener('click', function() {
+      if (!pickerTarget) return;
+      setSlot(pickerTarget.day, pickerTarget.meal, {id: r.id, name: r.name, category: r.category, image_url: r.image_url});
+      closePicker();
+      renderCalendar();
+    });
+    el.appendChild(item);
+  });
+}
+
+// ── GROCERY EXPORT ───────────────────────────────────────────────
+async function addToGrocery() {
+  const plan = getPlan();
+  const recipeIds = [];
+  DAYS.forEach(function(day) {
+    MEALS.forEach(function(meal) {
+      const r = plan[day] && plan[day][meal];
+      if (r && r.id && !recipeIds.includes(r.id)) recipeIds.push(r.id);
+    });
+  });
+  if (!recipeIds.length) { alert('No recipes planned this week.'); return; }
+
+  // Load full recipe data for each unique recipe and add to grocery list
+  const data = JSON.parse(localStorage.getItem('tcj_grocery')||'{"recipes":[]}');
+  let added = 0;
+  for (const id of recipeIds) {
+    if (data.recipes.find(function(r){return r.id===id;})) continue;
+    try {
+      const res = await fetch(SUPA_URL + '/rest/v1/submitted_recipes?id=eq.' + id + '&select=id,recipe_name,servings,ingredients', {headers:{'apikey':SUPA_KEY}});
+      const [recipe] = await res.json();
+      if (!recipe) continue;
+      const ingredients = [];
+      let skipped = 0;
+      (recipe.ingredients||[]).forEach(function(sec) {
+        (sec.items||[]).forEach(function(ing) {
+          if (isInPantry(ing.ingredient)) { skipped++; return; }
+          ingredients.push({name:ing.ingredient, qty:ing.qty, unit:ing.unit||'', section:sec.section||sec.title||''});
+        });
+      });
+      data.recipes.push({id:recipe.id, name:recipe.recipe_name, servings:recipe.servings||1, ingredients, pantry_skipped:skipped});
+      added++;
+    } catch(_) {}
+  }
+  localStorage.setItem('tcj_grocery', JSON.stringify(data));
+  if (added > 0) {
+    const pantrySkipped = data.recipes.reduce(function(t,r){return t+(r.pantry_skipped||0);},0);
+  alert(added + ' recipe(s) added to your grocery list!' + (pantrySkipped?' '+pantrySkipped+' ingredient(s) skipped — already in your pantry 🫙.':''));
+    window.location.href = 'grocery.html';
+  } else {
+    alert('All planned recipes are already in your grocery list.');
+  }
+}
+
+// ── LOAD RECIPES ─────────────────────────────────────────────────
+async function loadRecipes() {
+  try {
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_approved_recipes', {
+      method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({p_limit:100})
+    });
+    if (res.ok) {
+      allRecipes = await res.json();
+    }
+  } catch(_) {}
+  renderResults(allRecipes);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  renderCalendar();
+  loadRecipes();
+  loadFamilyProfiles();
+  loadPlanFromSupabase();
+  document.getElementById('mp-modal').addEventListener('click', function(e) {
+    if (e.target === this) closePicker();
+  });
+});
+
+
+// ── MONTH VIEW ────────────────────────────────────────────────────
+var currentView = 'week';
+var monthYear, monthMon;
+
+function setView(v, btn) {
+  currentView = v;
+  document.querySelectorAll('.mp-view-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  var weekEl  = document.getElementById('mp-grid');
+  var modeBar = document.querySelector('.mp-mode-bar');
+  var summary = document.getElementById('mp-summary');
+  var weekNav = document.querySelector('.mp-week-nav');
+  var monthEl = document.getElementById('mp-month-view');
+  if (v === 'month') {
+    if (weekEl)  weekEl.style.display  = 'none';
+    if (modeBar) modeBar.style.display = 'none';
+    if (summary) summary.style.display = 'none';
+    if (weekNav) weekNav.style.display = 'none';
+    if (monthEl) monthEl.style.display = 'block';
+    var monthNav = document.getElementById('mp-month-nav');
+    if (monthNav) monthNav.style.display = 'flex';
+    buildMonthView();
+  } else {
+    if (weekEl)  weekEl.style.display  = '';
+    if (modeBar) modeBar.style.display = '';
+    if (summary) summary.style.display = '';
+    if (weekNav) weekNav.style.display = '';
+    if (monthEl) monthEl.style.display = 'none';
+    var monthNav = document.getElementById('mp-month-nav');
+    if (monthNav) monthNav.style.display = 'none';
+    renderCalendar();
+  }
+}
+
+function changeMonthView(dir) {
+  monthMon += dir;
+  if (monthMon < 0)  { monthMon = 11; monthYear--; }
+  if (monthMon > 11) { monthMon = 0;  monthYear++; }
+  buildMonthView();
+}
+
+function getMonthWeekKey(ds) {
+  var d = new Date(ds + 'T00:00:00');
+  var day = d.getDay();
+  var mon = new Date(d); mon.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
+  var sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  return mon.toISOString().slice(0,10) + '_' + sun.toISOString().slice(0,10);
+}
+
+function buildMonthView() {
+  var n = new Date();
+  if (monthYear === undefined) { monthYear = n.getFullYear(); monthMon = n.getMonth(); }
+  syncMonthJump();
+  var DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var DAY_NAMES = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  var labelEl = document.getElementById('mth-label');
+  if (labelEl) labelEl.textContent = new Date(monthYear, monthMon, 1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+
+  var dowEl = document.getElementById('mth-dow');
+  if (dowEl && !dowEl.children.length)
+    dowEl.innerHTML = DAYS.map(function(d){ return '<div class="mth-dow">' + d + '</div>'; }).join('');
+
+  var body = document.getElementById('mth-body');
+  if (!body) return;
+  body.innerHTML = '';
+
+  var first = new Date(monthYear, monthMon, 1).getDay();
+  var days  = new Date(monthYear, monthMon + 1, 0).getDate();
+  var today = new Date().toISOString().slice(0,10);
+  var SLOTS = ['breakfast','lunch','dinner','snack'];
+
+  for (var i = 0; i < first; i++) {
+    var pd = new Date(monthYear, monthMon, 1 - first + i);
+    var cell = document.createElement('div');
+    cell.className = 'mth-cell other';
+    cell.innerHTML = '<div class="mth-day-num">' + pd.getDate() + '</div>';
+    body.appendChild(cell);
+  }
+
+  for (var d = 1; d <= days; d++) {
+    var yr  = String(monthYear);
+    var mo  = String(monthMon + 1).padStart(2, '0');
+    var dy  = String(d).padStart(2, '0');
+    var ds  = yr + '-' + mo + '-' + dy;
+    var dow = new Date(ds + 'T00:00:00').getDay();
+    var wk  = getMonthWeekKey(ds);
+    var saved = {};
+    try { saved = JSON.parse(localStorage.getItem('tcj_meals_' + wk) || '{}'); } catch(e) {}
+    var dayKey = DAY_NAMES[dow];
+    var meals = [];
+    SLOTS.forEach(function(s){
+      var slot = saved[dayKey] && saved[dayKey][s];
+      if (slot && slot.name) meals.push(slot.name);
+    });
+
+    var cell = document.createElement('div');
+    cell.className = 'mth-cell' + (ds === today ? ' today' : '');
+    cell.innerHTML = '<div class="mth-day-num">' + d + '</div>';
+    meals.slice(0,2).forEach(function(m){
+      var dot = document.createElement('div');
+      dot.className = 'mth-meal-dot';
+      dot.textContent = m;
+      cell.appendChild(dot);
+    });
+    if (meals.length > 2) {
+      var more = document.createElement('div');
+      more.className = 'mth-more';
+      more.textContent = '+' + (meals.length - 2) + ' more';
+      cell.appendChild(more);
+    }
+    (function(dateStr, weekKey){
+      cell.addEventListener('click', function(){ jumpToDay(dateStr, weekKey); });
+    })(ds, wk);
+    body.appendChild(cell);
+  }
+
+  var remaining = 7 - ((first + days) % 7 || 7);
+  for (var i = 1; i <= remaining && remaining < 7; i++) {
+    var cell2 = document.createElement('div');
+    cell2.className = 'mth-cell other';
+    cell2.innerHTML = '<div class="mth-day-num">' + i + '</div>';
+    body.appendChild(cell2);
+  }
+}
+
+function jumpToDay(ds, wk) {
+  // Compute the week offset for the clicked day relative to the current week,
+  // then open the Week view on it — meals are added there (interim until MP-04).
+  var target = new Date(ds + 'T00:00:00');
+  var tDay = target.getDay();
+  var targetMon = new Date(target); targetMon.setDate(target.getDate() - tDay + (tDay === 0 ? -6 : 1));
+  var thisMon = getWeekDates(0)[0];
+  currentWeekOffset = Math.round((targetMon - thisMon) / (7 * 86400000));
+  setView('week', document.getElementById('view-week-btn'));
+  renderCalendar();
+}
+</script>
+</body>
+</html>

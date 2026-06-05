@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Discover recipes credited to named chefs, cooks, and authors in The Culinary Journal chef directory.">
+  <link rel="canonical" href="https://theculinaryjournal.site/chefs.html">
+  <title>Chef Directory — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .ch-wrap  { max-width:1000px; margin:0 auto; padding:32px 20px 80px; }
+    .ch-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; }
+    .ch-title  { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--text-high); }
+    .ch-sub    { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-top:4px; }
+    .ch-search { font-family:'DM Sans',sans-serif; font-size:13px; padding:9px 16px; border:1px solid var(--border); border-radius:9px; background:var(--text-ghost); color:var(--text-high); outline:none; width:240px; }
+    .ch-search:focus { border-color:var(--accent); }
+
+    /* Chef list view */
+    .ch-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; }
+    .ch-card  { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:18px; cursor:pointer; transition:all 0.15s; }
+    .ch-card:hover { border-color:var(--accent-border); transform:translateY(-2px); }
+    .ch-avatar { width:44px; height:44px; border-radius:50%; background:rgb(from var(--accent) r g b / 0.15); display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:700; color:var(--accent); margin-bottom:10px; flex-shrink:0; }
+    .ch-name  { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:600; color:var(--text-high); margin-bottom:2px; }
+    .ch-handle { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--accent); margin-bottom:6px; }
+    .ch-meta  { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-bottom:8px; }
+    .ch-count { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+    .ch-count strong { color:var(--text-high); font-weight:600; }
+
+    /* Chef detail view */
+    .ch-detail { display:none; }
+    .ch-back   { background:none; border:1px solid var(--border); border-radius:8px; padding:7px 14px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); cursor:pointer; margin-bottom:20px; }
+    .ch-back:hover { border-color:var(--accent); color:var(--accent); }
+    .ch-detail-header { display:flex; align-items:center; gap:16px; margin-bottom:28px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+    .ch-detail-avatar { width:64px; height:64px; border-radius:50%; background:rgb(from var(--accent) r g b / 0.15); display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--accent); flex-shrink:0; }
+    .ch-detail-name  { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:700; color:var(--text-high); }
+    .ch-detail-handle { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--accent); }
+    .ch-detail-meta   { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); margin-top:4px; }
+    .ch-detail-url    { display:inline-block; margin-top:6px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--accent); text-decoration:none; }
+    .ch-detail-url:hover { text-decoration:underline; }
+    .ch-recipes-grid  { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+    .ch-recipe-card   { background:var(--text-ghost); border:1px solid var(--border); border-radius:10px; overflow:hidden; text-decoration:none; display:block; transition:all 0.15s; }
+    .ch-recipe-card:hover { border-color:var(--accent-border); transform:translateY(-1px); }
+    .ch-recipe-img    { height:100px; display:flex; align-items:center; justify-content:center; font-size:28px; border-bottom:1px solid var(--border); overflow:hidden; background:var(--text-ghost); }
+    .ch-recipe-img img { width:100%;height:100%;object-fit:cover; }
+    .ch-recipe-body   { padding:10px 12px; }
+    .ch-recipe-name   { font-family:'Cormorant Garamond',serif; font-size:0.95rem; font-weight:600; color:var(--text-high); margin-bottom:3px; }
+    .ch-recipe-cat    { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); }
+
+    .ch-empty { text-align:center; padding:60px 20px; }
+    .ch-empty-icon { font-size:40px; margin-bottom:10px; }
+    .ch-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; color:var(--text-high); margin-bottom:6px; }
+    .ch-empty-sub   { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
+    .ch-count-bar   { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); margin-bottom:16px; }
+  </style>
+  <script src="page-guard.js"></script>
+</head>
+<body class="page-bg cj-body">
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"></div>
+<div class="ch-wrap">
+
+  <!-- Directory View -->
+  <div id="ch-dir">
+    <div class="ch-header">
+      <div>
+        <h1 class="ch-title">👨‍🍳 Chef Directory</h1>
+        <div class="ch-sub">Recipes credited to named chefs, cooks, and authors.</div>
+      </div>
+      <input class="ch-search" type="text" placeholder="Search chefs..." oninput="filterChefs(this.value)" id="ch-search">
+    </div>
+    <div class="ch-count-bar" id="ch-count-bar"></div>
+    <div class="ch-grid" id="ch-grid">
+      <div class="ch-empty"><div class="ch-empty-icon">👨‍🍳</div><div class="ch-empty-title">Loading chefs...</div></div>
+    </div>
+  </div>
+
+  <!-- Detail View -->
+  <div class="ch-detail" id="ch-detail">
+    <button class="ch-back" onclick="backToDir()">← All Chefs</button>
+    <div class="ch-detail-header">
+      <div class="ch-detail-avatar" id="cd-avatar"></div>
+      <div>
+        <div class="ch-detail-name"   id="cd-name"></div>
+        <div class="ch-detail-handle" id="cd-handle"></div>
+        <div class="ch-detail-meta"   id="cd-meta"></div>
+        <a  class="ch-detail-url"    id="cd-profile-link" href="#" style="display:none;margin-top:4px;font-size:12px">👤 View profile page →</a>
+        <a  class="ch-detail-url"    id="cd-url" href="#" target="_blank" rel="noopener" style="display:none"></a>
+      </div>
+    </div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:12px" id="cd-recipe-label"></div>
+    <div class="ch-recipes-grid" id="cd-recipes"></div>
+  </div>
+</div>
+
+<script src="nav-init.js"></script>
+<script>
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+const CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
+
+let allChefs = [], allRecipes = [];
+
+async function load() {
+  try {
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_approved_recipes', {
+      method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({p_limit:200})
+    });
+    allRecipes = res.ok ? await res.json() : [];
+  } catch(_) { allRecipes = []; }
+
+  // Build chef map
+  const chefMap = {};
+  allRecipes.forEach(function(r) {
+    const name = (r.credit_name||'').trim();
+    if (!name) return;
+    if (!chefMap[name]) {
+      chefMap[name] = {
+        name,
+        handle: r.credit_handle||'',
+        url:    r.credit_url||'',
+        countries: new Set(),
+        categories: new Set(),
+        recipes: []
+      };
+    }
+    chefMap[name].recipes.push(r);
+    if (r.origin_country) chefMap[name].countries.add(r.origin_country);
+    if (r.category)       chefMap[name].categories.add(r.category);
+  });
+
+  allChefs = Object.values(chefMap).sort(function(a,b){return b.recipes.length - a.recipes.length;});
+  renderChefGrid(allChefs);
+}
+
+function filterChefs(q) {
+  const lower = q.toLowerCase();
+  const filtered = allChefs.filter(function(c){
+    return !q || c.name.toLowerCase().includes(lower) || (c.handle||'').toLowerCase().includes(lower);
+  });
+  renderChefGrid(filtered);
+}
+
+function renderChefGrid(chefs) {
+  const grid  = document.getElementById('ch-grid');
+  const count = document.getElementById('ch-count-bar');
+  count.textContent = chefs.length + ' chef' + (chefs.length===1?'':'s') + ' · ' + allRecipes.filter(function(r){return r.credit_name;}).length + ' credited recipes';
+
+  if (!chefs.length) {
+    if (!allRecipes.length) {
+      grid.innerHTML = '<div class="ch-empty"><div class="ch-empty-icon">👨‍🍳</div><div class="ch-empty-title">No recipes yet</div><div class="ch-empty-sub">The directory will populate as community recipes are submitted and approved.</div></div>';
+    } else {
+      grid.innerHTML = '<div class="ch-empty"><div class="ch-empty-icon">🔍</div><div class="ch-empty-title">No chefs found</div><div class="ch-empty-sub">Try a different search.</div></div>';
+    }
+    return;
+  }
+  grid.innerHTML = '';
+  chefs.forEach(function(chef) {
+    const card = document.createElement('div');
+    card.className = 'ch-card';
+    const initials = chef.name.trim().split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+    const countries = [...chef.countries].slice(0,2).join(', ');
+    const cats = [...chef.categories].slice(0,2).join(', ');
+    var profileHandle = chef.handle ? chef.handle.replace(/^@/,'') : '';
+    card.innerHTML =
+      '<div class="ch-avatar">' + initials + '</div>' +
+      '<div class="ch-name">' + esc(chef.name||'') + '</div>' +
+      (chef.handle ? '<div class="ch-handle">' + chef.handle + '</div>' : '') +
+      (countries  ? '<div class="ch-meta">' + countries + '</div>' : '') +
+      (cats       ? '<div class="ch-meta">' + cats + '</div>' : '') +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">' +
+        '<div class="ch-count"><strong>' + chef.recipes.length + '</strong> recipe' + (chef.recipes.length===1?'':'s') + '</div>' +
+        (profileHandle ? '<a href="user.html?u=' + profileHandle + '" onclick="event.stopPropagation()" style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--accent);text-decoration:none">View profile →</a>' : '') +
+      '</div>';
+    card.addEventListener('click', function() { openChef(chef); });
+    grid.appendChild(card);
+  });
+}
+
+function openChef(chef) {
+  document.getElementById('ch-dir').style.display = 'none';
+  const det = document.getElementById('ch-detail');
+  det.style.display = 'block';
+  const initials = chef.name.trim().split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+  document.getElementById('cd-avatar').textContent = initials;
+  document.getElementById('cd-name').textContent   = chef.name;
+  document.getElementById('cd-handle').textContent = chef.handle || '';
+  const countries = [...chef.countries].join(', ');
+  const cats = [...chef.categories].join(', ');
+  document.getElementById('cd-meta').textContent = [countries, cats].filter(Boolean).join(' · ');
+  const urlEl = document.getElementById('cd-url');
+  if (chef.url) {
+    urlEl.href = chef.url.startsWith('http') ? chef.url : 'https://' + chef.url;
+    urlEl.textContent = chef.url.replace(/^https?:\/\/(www\.)?/,'').split('/')[0];
+    urlEl.style.display = 'inline-block';
+  } else {
+    urlEl.style.display = 'none';
+  }
+  // Add profile link if handle looks like a CJ username
+  var profLinkEl = document.getElementById('cd-profile-link');
+  if (profLinkEl) {
+    var h = chef.handle ? chef.handle.replace(/^@/,'') : '';
+    if (h) { profLinkEl.href='user.html?u='+h; profLinkEl.style.display='inline-block'; }
+    else { profLinkEl.style.display='none'; }
+  }
+  document.getElementById('cd-recipe-label').textContent = chef.recipes.length + ' recipe' + (chef.recipes.length===1?'':'s') + ' by ' + chef.name;
+  const recipeGrid = document.getElementById('cd-recipes');
+  recipeGrid.innerHTML = '';
+  chef.recipes.forEach(function(r) {
+    const a = document.createElement('a');
+    a.className = 'ch-recipe-card';
+    a.href = 'recipe-page.html?id=' + r.id;
+    const emoji = CAT_EMOJI[r.category] || '🍳';
+    a.innerHTML =
+      '<div class="ch-recipe-img">' + (r.image_url ? '<img src="'+r.image_url+'" loading="lazy">' : emoji) + '</div>' +
+      '<div class="ch-recipe-body"><div class="ch-recipe-name">' + (r.recipe_name||'') + '</div>' +
+      '<div class="ch-recipe-cat">' + (r.category||'') + (r.origin_country?' · '+r.origin_country:'') + '</div></div>';
+    recipeGrid.appendChild(a);
+  });
+}
+
+function backToDir() {
+  document.getElementById('ch-detail').style.display = 'none';
+  document.getElementById('ch-dir').style.display = 'block';
+}
+
+document.addEventListener('DOMContentLoaded', load);
+</script>
+</body>
+</html>

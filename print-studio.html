@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Design and print recipe cards, index cards, and cookbook pages from your saved recipes.">
+  <link rel="canonical" href="https://theculinaryjournal.site/print-studio.html">
+  <title>Print Studio — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .ps-wrap  { max-width:1200px; margin:0 auto; padding:24px 20px 60px; display:grid; grid-template-columns:300px 1fr; gap:24px; }
+    @media(max-width:768px){ .ps-wrap { grid-template-columns:1fr; } }
+
+    /* Sidebar */
+    .ps-sidebar { }
+    .ps-section { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:18px; margin-bottom:16px; }
+    .ps-section-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-mid); margin-bottom:12px; }
+    .ps-btn-group { display:flex; flex-direction:column; gap:6px; }
+    .ps-opt-btn { padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); cursor:pointer; text-align:left; transition:all 0.15s; }
+    .ps-opt-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .ps-opt-btn.active { background:rgb(from var(--accent) r g b / 0.12); border-color:var(--accent); color:var(--accent); font-weight:500; }
+    .ps-print-btn { width:100%; padding:13px; background:var(--accent); border:none; border-radius:10px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; color:#fff; cursor:pointer; margin-top:8px; }
+    .ps-print-btn:hover { opacity:0.88; }
+
+    /* Preview area */
+    .ps-preview { }
+    .ps-preview-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .ps-preview-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:600; color:var(--text-high); }
+    .ps-card-count { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); }
+    .ps-cards { display:flex; flex-direction:column; gap:20px; align-items:center; }
+
+    /* Recipe cards */
+    .ps-card { background:#fff; color:#1a1a1a; border-radius:4px; box-shadow:0 4px 24px rgba(0,0,0,0.2); position:relative; overflow:hidden; page-break-inside:avoid; }
+    .ps-card.size-4x6  { width:384px; min-height:256px; padding:20px 22px; }
+    .ps-card.size-3x5  { width:360px; min-height:216px; padding:16px 18px; }
+    .ps-card.size-a5   { width:420px; min-height:594px; padding:28px 32px; }
+    .ps-card.size-a4   { width:595px; min-height:842px; padding:36px 40px; }
+    .ps-watermark { font-family:'Cormorant Garamond',serif; font-size:10px; letter-spacing:0.08em; color:rgba(150,100,40,0.35); position:absolute; top:8px; left:10px; }
+    /* Section C — BRAND LOCK: logo + name top-left of EVERY card, brand font and
+       colour, immune to layout/theme styling. !important guards against the
+       per-layout .ps-watermark overrides below ever bleeding onto the brand. */
+    .ps-brand,
+    .ps-card[class] .ps-brand {
+      font-family:'Cormorant Garamond',serif !important;
+      font-size:11px !important;
+      font-weight:600 !important;
+      letter-spacing:0.06em !important;
+      color:#C4973B !important;
+      text-transform:none !important;
+      position:absolute; top:8px; left:10px;
+      display:flex; align-items:center; gap:5px;
+    }
+    .ps-brand .ps-brand-mark { font-size:12px; line-height:1; }
+    .ps-card-num { font-family:'DM Sans',sans-serif; font-size:9px; color:rgba(0,0,0,0.3); position:absolute; bottom:8px; right:10px; }
+    .ps-card-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:700; color:#1a1a1a; margin-bottom:2px; line-height:1.2; }
+    .ps-card-subtitle { font-family:'Cormorant Garamond',serif; font-size:0.85rem; font-style:italic; color:#8b6914; margin-bottom:10px; }
+    .ps-card-meta { display:flex; gap:12px; font-family:'DM Sans',sans-serif; font-size:10px; color:#555; margin-bottom:10px; flex-wrap:wrap; padding-bottom:8px; border-bottom:0.5px solid #e8e0d0; }
+    .ps-card-meta span { display:flex; align-items:center; gap:3px; }
+    .ps-section-head { font-family:'DM Sans',sans-serif; font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#8b6914; margin:10px 0 5px; }
+    .ps-ing-list { display:grid; grid-template-columns:1fr 1fr; gap:2px 16px; }
+    .ps-ing-item { font-family:'DM Sans',sans-serif; font-size:10px; color:#333; display:flex; gap:6px; align-items:baseline; padding:1px 0; }
+    .ps-ing-qty  { color:#8b6914; font-weight:600; white-space:nowrap; flex-shrink:0; min-width:40px; }
+    .ps-step     { font-family:'DM Sans',sans-serif; font-size:10px; color:#333; margin-bottom:4px; line-height:1.5; display:flex; gap:8px; }
+    .ps-step-num { color:#8b6914; font-weight:700; flex-shrink:0; }
+    .ps-step-text { flex:1; }
+    .ps-divider  { border:none; border-top:0.5px solid #e8e0d0; margin:8px 0; }
+
+    /* No recipe state */
+    .ps-empty { text-align:center; padding:60px 20px; color:var(--text-mid); font-family:'DM Sans',sans-serif; }
+    .ps-empty-icon { font-size:48px; margin-bottom:12px; }
+    .ps-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--text-high); margin-bottom:8px; }
+
+
+    /* ── LAYOUT STYLES ───────────── */
+
+    /* Classic Index Card */
+    .ps-card.layout-classic-card { font-family:Georgia,serif; background:#fffef9; }
+    .ps-card.layout-classic-card .ps-card-title { font-family:Georgia,serif; }
+    .ps-card.layout-classic-card .ps-watermark { font-family:Georgia,serif; }
+
+    /* Classic Cookbook */
+    .ps-card.layout-cookbook { background:#faf7f0; border:none; box-shadow:none; outline:2px solid #c4973b; outline-offset:-4px; }
+    .ps-card.layout-cookbook .ps-card-title { font-family:Georgia,serif; font-size:1.6rem; border-bottom:1px solid #c4973b; padding-bottom:6px; margin-bottom:10px; }
+    .ps-card.layout-cookbook .ps-watermark { font-family:Georgia,serif; color:rgb(from var(--accent) r g b / 0.5); }
+    .ps-card.layout-cookbook .ps-section-head { color:#c4973b; border-bottom:0.5px solid #e8d5a0; padding-bottom:2px; }
+    .ps-card.layout-cookbook .ps-ing-qty { color:#8b6914; }
+
+    /* Rustic Newspaper */
+    .ps-card.layout-rustic { background:#f5f0e8; font-family:'Times New Roman',serif; border:2px solid #5c4a2a; border-radius:0; }
+    .ps-card.layout-rustic .ps-card-title { font-family:'Times New Roman',serif; font-size:1.5rem; text-transform:uppercase; letter-spacing:0.05em; text-align:center; border-bottom:3px double #5c4a2a; padding-bottom:8px; margin-bottom:10px; }
+    .ps-card.layout-rustic .ps-card-subtitle { font-family:'Times New Roman',serif; text-align:center; }
+    .ps-card.layout-rustic .ps-watermark { font-family:'Times New Roman',serif; color:rgba(92,74,42,0.4); text-transform:uppercase; letter-spacing:0.1em; }
+    .ps-card.layout-rustic .ps-section-head { font-family:'Times New Roman',serif; text-transform:uppercase; letter-spacing:0.12em; border-bottom:1px solid #5c4a2a; }
+    .ps-card.layout-rustic .ps-ing-qty { color:#5c4a2a; }
+    .ps-card.layout-rustic .ps-step-num { color:#5c4a2a; }
+    .ps-card.layout-rustic .ps-card-meta { font-family:'Times New Roman',serif; border-bottom:1px solid #5c4a2a; }
+
+    /* Modern Minimal */
+    .ps-card.layout-minimal { background:#ffffff; border:none; box-shadow:0 1px 3px rgba(0,0,0,0.06); border-radius:0; font-family:'Helvetica Neue',Arial,sans-serif; }
+    .ps-card.layout-minimal .ps-card-title { font-family:'Helvetica Neue',Arial,sans-serif; font-weight:800; font-size:1.1rem; letter-spacing:-0.02em; color:#111; text-transform:none; }
+    .ps-card.layout-minimal .ps-card-subtitle { font-family:'Helvetica Neue',Arial,sans-serif; font-style:normal; color:#888; font-size:0.8rem; }
+    .ps-card.layout-minimal .ps-watermark { font-family:'Helvetica Neue',Arial,sans-serif; font-size:8px; letter-spacing:0.2em; text-transform:uppercase; color:rgba(0,0,0,0.15); }
+    .ps-card.layout-minimal .ps-section-head { color:#111; font-size:8px; letter-spacing:0.2em; }
+    .ps-card.layout-minimal .ps-ing-qty { color:#555; font-weight:700; }
+    .ps-card.layout-minimal .ps-ing-item { font-size:10px; color:#333; }
+    .ps-card.layout-minimal .ps-step { font-size:10px; color:#333; }
+    .ps-card.layout-minimal .ps-card-meta { color:#888; border-bottom:2px solid #111; }
+
+    /* Botanical */
+    .ps-card.layout-botanical { background:#f4f8f1; border:1px solid #7a9e6c; }
+    .ps-card.layout-botanical .ps-card-title { font-family:'Palatino Linotype',Georgia,serif; color:#2d5016; }
+    .ps-card.layout-botanical .ps-card-subtitle { color:#5a7a40; }
+    .ps-card.layout-botanical .ps-watermark { font-family:'Palatino Linotype',Georgia,serif; color:rgba(122,158,108,0.4); }
+    .ps-card.layout-botanical .ps-section-head { color:#5a7a40; border-bottom:0.5px solid #7a9e6c; padding-bottom:2px; }
+    .ps-card.layout-botanical .ps-ing-qty { color:#5a7a40; font-weight:600; }
+    .ps-card.layout-botanical .ps-step-num { color:#5a7a40; }
+    .ps-card.layout-botanical .ps-card-meta { border-bottom:1px solid #7a9e6c; color:#5a7a40; }
+    .ps-card.layout-botanical::before { content:'❧'; position:absolute; top:6px; right:10px; font-size:14px; color:rgba(122,158,108,0.3); }
+
+    /* Warm Candlelit */
+    .ps-card.layout-candlelit { background:linear-gradient(135deg,#2c1a0e 0%,#1a0f07 100%); color:#e8d5b0; border:1px solid #8b6914; }
+    .ps-card.layout-candlelit .ps-card-title { color:#e8d5b0; font-family:'Palatino Linotype',Georgia,serif; }
+    .ps-card.layout-candlelit .ps-card-subtitle { color:#c4973b; }
+    .ps-card.layout-candlelit .ps-watermark { color:rgb(from var(--accent) r g b / 0.35); }
+    .ps-card.layout-candlelit .ps-section-head { color:#c4973b; border-bottom:0.5px solid rgb(from var(--accent) r g b / 0.3); padding-bottom:2px; }
+    .ps-card.layout-candlelit .ps-ing-qty { color:#c4973b; font-weight:600; }
+    .ps-card.layout-candlelit .ps-ing-item { color:#e8d5b0; }
+    .ps-card.layout-candlelit .ps-step { color:#e8d5b0; }
+    .ps-card.layout-candlelit .ps-step-num { color:#c4973b; }
+    .ps-card.layout-candlelit .ps-card-meta { color:#a08060; border-bottom:1px solid rgb(from var(--accent) r g b / 0.3); }
+    .ps-card.layout-candlelit .ps-card-num { color:rgb(from var(--accent) r g b / 0.5); }
+    @media print {
+      .ps-card.layout-candlelit { background:#2c1a0e!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    }
+
+    /* Elegant Wedding */
+    .ps-card.layout-wedding { background:linear-gradient(135deg,#fffef9 0%,#fdf8f0 100%); border:1px solid #d4b896; }
+    .ps-card.layout-wedding .ps-card-title { font-family:'Palatino Linotype',Georgia,serif; font-size:1.5rem; text-align:center; color:#8b6040; letter-spacing:0.04em; border-bottom:1px solid #d4b896; padding-bottom:8px; margin-bottom:10px; }
+    .ps-card.layout-wedding .ps-card-subtitle { text-align:center; color:#b8895a; font-family:'Palatino Linotype',Georgia,serif; }
+    .ps-card.layout-wedding .ps-watermark { font-family:'Palatino Linotype',Georgia,serif; color:rgba(180,140,100,0.3); }
+    .ps-card.layout-wedding .ps-section-head { color:#8b6040; font-size:9px; letter-spacing:0.15em; border-bottom:0.5px solid #d4b896; }
+    .ps-card.layout-wedding .ps-ing-qty { color:#b8895a; font-weight:600; }
+    .ps-card.layout-wedding .ps-card-meta { border-bottom:1px solid #d4b896; color:#8b6040; }
+    .ps-card.layout-wedding::before { content:'❧'; position:absolute; top:8px; right:12px; font-size:16px; color:rgba(180,140,100,0.25); }
+    .ps-card.layout-wedding::after  { content:'❧'; position:absolute; bottom:8px; left:12px; font-size:16px; color:rgba(180,140,100,0.25); transform:scaleX(-1); }
+
+    /* Colourful & Fun */
+    .ps-card.layout-colourful { background:#fff9f0; border:3px solid #ff7043; border-radius:16px; }
+    .ps-card.layout-colourful .ps-card-title { font-family:'Helvetica Neue',Arial,sans-serif; font-weight:900; color:#e64a19; font-size:1.2rem; }
+    .ps-card.layout-colourful .ps-card-subtitle { color:#ff7043; }
+    .ps-card.layout-colourful .ps-watermark { color:rgba(255,112,67,0.3); }
+    .ps-card.layout-colourful .ps-section-head { color:#ff7043; background:#fff3ef; border-radius:4px; padding:2px 6px; font-size:9px; }
+    .ps-card.layout-colourful .ps-ing-qty { color:#e64a19; font-weight:700; }
+    .ps-card.layout-colourful .ps-step-num { color:#ff7043; }
+    .ps-card.layout-colourful .ps-card-meta { border-bottom:2px solid #ff7043; }
+    .ps-card.layout-colourful .ps-card-num { color:#ff7043; background:#fff3ef; border-radius:4px; padding:1px 5px; }
+
+    /* Soft Pastel */
+    .ps-card.layout-pastel { background:linear-gradient(135deg,#fce4ec 0%,#f8bbd0 30%,#e8f5e9 70%,#dcedc8 100%); border:1px solid #f48fb1; }
+    .ps-card.layout-pastel .ps-card-title { font-family:'Palatino Linotype',Georgia,serif; font-size:1.3rem; color:#880e4f; }
+    .ps-card.layout-pastel .ps-card-subtitle { color:#c2185b; }
+    .ps-card.layout-pastel .ps-watermark { color:rgba(136,14,79,0.2); }
+    .ps-card.layout-pastel .ps-section-head { color:#c2185b; border-bottom:0.5px solid #f48fb1; }
+    .ps-card.layout-pastel .ps-ing-qty { color:#e91e63; font-weight:600; }
+    .ps-card.layout-pastel .ps-card-meta { border-bottom:1px solid #f48fb1; color:#c2185b; }
+    .ps-card.layout-pastel .ps-step-num { color:#c2185b; }
+
+    /* Fitness Focused */
+    .ps-card.layout-fitness { background:#0a0a0a; border:2px solid #00e676; border-radius:8px; color:#e8f5e9; }
+    .ps-card.layout-fitness .ps-card-title { font-family:'Helvetica Neue',Arial,sans-serif; font-weight:900; color:#00e676; letter-spacing:-0.01em; text-transform:uppercase; font-size:1.1rem; }
+    .ps-card.layout-fitness .ps-card-subtitle { color:#69f0ae; font-style:normal; font-family:'Helvetica Neue',sans-serif; }
+    .ps-card.layout-fitness .ps-watermark { color:rgba(0,230,118,0.2); }
+    .ps-card.layout-fitness .ps-section-head { color:#00e676; letter-spacing:0.15em; font-size:8px; border-bottom:1px solid rgba(0,230,118,0.3); }
+    .ps-card.layout-fitness .ps-ing-qty { color:#69f0ae; font-weight:700; }
+    .ps-card.layout-fitness .ps-ing-item { color:#c8e6c9; }
+    .ps-card.layout-fitness .ps-step { color:#c8e6c9; }
+    .ps-card.layout-fitness .ps-step-num { color:#00e676; }
+    .ps-card.layout-fitness .ps-card-meta { color:#4db6ac; border-bottom:1px solid rgba(0,230,118,0.3); }
+    .ps-card.layout-fitness .ps-card-num { color:rgba(0,230,118,0.5); }
+    @media print { .ps-card.layout-fitness { background:#0a0a0a!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+
+    /* Dark & Moody */
+    .ps-card.layout-dark-moody { background:linear-gradient(160deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%); border:1px solid #534b8a; color:#e0d7f8; }
+    .ps-card.layout-dark-moody .ps-card-title { font-family:'Palatino Linotype',Georgia,serif; color:#b39ddb; font-size:1.3rem; }
+    .ps-card.layout-dark-moody .ps-card-subtitle { color:#9575cd; }
+    .ps-card.layout-dark-moody .ps-watermark { color:rgba(149,117,205,0.25); }
+    .ps-card.layout-dark-moody .ps-section-head { color:#9575cd; border-bottom:0.5px solid rgba(83,75,138,0.6); }
+    .ps-card.layout-dark-moody .ps-ing-qty { color:#b39ddb; font-weight:600; }
+    .ps-card.layout-dark-moody .ps-ing-item { color:#d1c4e9; }
+    .ps-card.layout-dark-moody .ps-step { color:#d1c4e9; }
+    .ps-card.layout-dark-moody .ps-step-num { color:#9575cd; }
+    .ps-card.layout-dark-moody .ps-card-meta { color:#7e57c2; border-bottom:1px solid rgba(83,75,138,0.6); }
+    @media print { .ps-card.layout-dark-moody { background:#1a1a2e!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+
+    /* Bright & Fresh */
+    .ps-card.layout-bright { background:#f0fbff; border:1px solid #4fc3f7; }
+    .ps-card.layout-bright .ps-card-title { font-family:'Helvetica Neue',Arial,sans-serif; font-weight:800; color:#0277bd; }
+    .ps-card.layout-bright .ps-card-subtitle { color:#0288d1; font-family:'Helvetica Neue',sans-serif; font-style:normal; }
+    .ps-card.layout-bright .ps-watermark { color:rgba(2,119,189,0.2); }
+    .ps-card.layout-bright .ps-section-head { color:#0288d1; border-bottom:0.5px solid #4fc3f7; }
+    .ps-card.layout-bright .ps-ing-qty { color:#0277bd; font-weight:700; }
+    .ps-card.layout-bright .ps-card-meta { border-bottom:2px solid #4fc3f7; color:#0288d1; }
+    .ps-card.layout-bright .ps-step-num { color:#0288d1; }
+
+    /* Vintage Recipe Card */
+    .ps-card.layout-vintage { background:#fdf6e3; border:2px solid #8d6e63; border-radius:4px; box-shadow:inset 0 0 0 4px #fdf6e3, inset 0 0 0 6px #8d6e63; }
+    .ps-card.layout-vintage .ps-card-title { font-family:'Palatino Linotype',Georgia,serif; font-size:1.3rem; color:#4e342e; text-align:center; border-bottom:2px solid #8d6e63; padding-bottom:8px; margin-bottom:10px; }
+    .ps-card.layout-vintage .ps-card-subtitle { text-align:center; font-family:'Palatino Linotype',Georgia,serif; color:#6d4c41; }
+    .ps-card.layout-vintage .ps-watermark { font-family:'Palatino Linotype',Georgia,serif; color:rgba(109,76,65,0.3); }
+    .ps-card.layout-vintage .ps-section-head { font-family:'Palatino Linotype',Georgia,serif; color:#5d4037; border-bottom:1px solid #bcaaa4; letter-spacing:0.04em; }
+    .ps-card.layout-vintage .ps-ing-qty { color:#6d4c41; font-weight:600; }
+    .ps-card.layout-vintage .ps-step { font-family:'Palatino Linotype',Georgia,serif; color:#3e2723; }
+    .ps-card.layout-vintage .ps-ing-item { font-family:'Palatino Linotype',Georgia,serif; color:#3e2723; }
+    .ps-card.layout-vintage .ps-card-meta { border-bottom:1px solid #bcaaa4; color:#6d4c41; }
+
+    /* Aged Parchment */
+    .ps-card.layout-parchment { background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%23f4e4c1'/%3E%3Ccircle cx='1' cy='1' r='0.5' fill='%23e8d5a0' opacity='0.4'/%3E%3C/svg%3E") #f4e4c1; border:1px solid #a07850; }
+    .ps-card.layout-parchment .ps-card-title { font-family:'Palatino Linotype',Georgia,serif; color:#3d2b1a; font-style:italic; text-align:center; border-bottom:1px solid #c4a068; padding-bottom:8px; }
+    .ps-card.layout-parchment .ps-card-subtitle { font-family:'Palatino Linotype',Georgia,serif; color:#6b4c2a; text-align:center; }
+    .ps-card.layout-parchment .ps-watermark { font-family:'Palatino Linotype',Georgia,serif; color:rgba(107,76,42,0.25); font-style:italic; }
+    .ps-card.layout-parchment .ps-section-head { color:#6b4c2a; border-bottom:0.5px solid #c4a068; font-family:'Palatino Linotype',Georgia,serif; letter-spacing:0.04em; }
+    .ps-card.layout-parchment .ps-ing-qty { color:#8b5e3c; font-weight:600; }
+    .ps-card.layout-parchment .ps-step { font-family:'Palatino Linotype',Georgia,serif; color:#3d2b1a; line-height:1.7; }
+    .ps-card.layout-parchment .ps-ing-item { font-family:'Palatino Linotype',Georgia,serif; color:#3d2b1a; }
+    .ps-card.layout-parchment .ps-card-meta { border-bottom:1px solid #c4a068; color:#6b4c2a; }
+    /* Print styles */
+    @media print {
+      nav, .ps-sidebar, .ps-preview-header, body > *:not(.page-bg), .page-bg > *:not(.ps-wrap) { display:none!important; }
+      .ps-wrap { display:block!important; padding:0!important; margin:0!important; }
+      .ps-preview { display:block!important; }
+      .ps-card { box-shadow:none!important; margin:0!important; page-break-after:always!important; border:1px solid #ddd; }
+      .ps-card:last-child { page-break-after:auto!important; }
+      .page-bg { background:white!important; }
+    }
+  
+    .ps-mode-btn { padding:7px 16px; border-radius:8px; border:none; background:none; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:all .15s; }
+    .ps-mode-btn.active { background:var(--accent); color:#fff; }
+    /* ── Print & Post ── */
+    .po-wrap { padding:24px 0; }
+    .po-section { background:var(--text-ghost); border:1px solid var(--border); border-radius:14px; padding:22px 24px; margin-bottom:16px; }
+    .po-section-title { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:700; color:var(--text-high); margin-bottom:14px; }
+    .po-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+    .po-qty { padding:10px 14px; border:1.5px solid var(--border); border-radius:9px; text-align:center; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); transition:all .15s; }
+    .po-qty:hover { border-color:var(--accent); color:var(--accent); }
+    .po-qty.selected { border-color:var(--accent); background:rgb(from var(--accent) r g b / .1); color:var(--accent); font-weight:600; }
+    .po-qty-label { font-size:10px; color:var(--text-mid); margin-top:2px; }
+    .po-quality { display:flex; gap:10px; flex-wrap:wrap; }
+    .po-qual-opt { flex:1; min-width:120px; padding:12px; border:1.5px solid var(--border); border-radius:9px; cursor:pointer; transition:all .15s; }
+    .po-qual-opt:hover { border-color:var(--accent); }
+    .po-qual-opt.selected { border-color:var(--accent); background:rgb(from var(--accent) r g b / .1); }
+    .po-qual-name { font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; color:var(--text-high); }
+    .po-qual-desc { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); margin-top:2px; }
+    .po-price-row { display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-top:1px solid var(--border); margin-top:10px; }
+    .po-price { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:700; color:var(--accent); }
+    .po-price-note { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+    .po-input { width:100%; box-sizing:border-box; padding:10px 12px; background: var(--input-bg); border:1px solid var(--border); border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); outline:none; margin-bottom:10px; }
+    .po-input:focus { border-color:var(--accent); }
+    .po-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .po-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--text-mid); margin-bottom:5px; }
+    .po-submit { width:100%; padding:14px; background:var(--accent); color:#fff; border:none; border-radius:10px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer; margin-top:8px; transition:filter .15s; }
+    .po-submit:hover { filter:brightness(.9); }
+    .po-coming-badge { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; background: var(--success-bg); border:1px solid rgba(76,175,118,.3); border-radius:20px; font-family:'DM Sans',sans-serif; font-size:11px; color:#4caf76; margin-bottom:16px; }
+    .po-confirm { display:none; text-align:center; padding:30px 20px; }
+    .po-confirm-icon { font-size:48px; margin-bottom:12px; }
+    .po-confirm-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:700; color:var(--text-high); margin-bottom:8px; }
+    .po-confirm-text { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); line-height:1.6; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body class="page-bg cj-body">
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"></div>
+
+<div class="ps-wrap">
+  <!-- Sidebar -->
+  <div class="ps-sidebar">
+    <h1 style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:600;color:var(--text-high);margin-bottom:20px">🖨 Print Studio</h1>
+
+    <div class="ps-section">
+      <div class="ps-section-title">Card Size</div>
+      <div class="ps-btn-group">
+        <button class="ps-opt-btn active" data-size="4x6" onclick="setSize('4x6',this)">4×6 inch — Most Popular</button>
+        <button class="ps-opt-btn" data-size="3x5" onclick="setSize('3x5',this)">3×5 inch — Compact</button>
+        <button class="ps-opt-btn" data-size="a5" onclick="setSize('a5',this)">A5 — Half Page</button>
+        <button class="ps-opt-btn" data-size="a4" onclick="setSize('a4',this)">A4 — Full Page</button>
+      </div>
+    </div>
+
+    <div class="ps-section">
+      <div class="ps-section-title">Layout Style</div>
+      <div class="ps-btn-group">
+        <button class="ps-opt-btn active" data-layout="classic-card" onclick="setLayout('classic-card',this)">Classic Index Card</button>
+        <button class="ps-opt-btn" data-layout="cookbook" onclick="setLayout('cookbook',this)">Classic Cookbook</button>
+        <button class="ps-opt-btn" data-layout="rustic" onclick="setLayout('rustic',this)">Rustic Newspaper</button>
+        <button class="ps-opt-btn" data-layout="minimal" onclick="setLayout('minimal',this)">Modern Minimal</button>
+        <button class="ps-opt-btn" data-layout="botanical" onclick="setLayout('botanical',this)">Botanical</button>
+        <button class="ps-opt-btn" data-layout="candlelit" onclick="setLayout('candlelit',this)">Warm Candlelit</button>
+        <button class="ps-opt-btn" data-layout="wedding" onclick="setLayout('wedding',this)">Elegant Wedding</button>
+        <button class="ps-opt-btn" data-layout="colourful" onclick="setLayout('colourful',this)">Colourful &amp; Fun</button>
+        <button class="ps-opt-btn" data-layout="pastel" onclick="setLayout('pastel',this)">Soft Pastel</button>
+        <button class="ps-opt-btn" data-layout="fitness" onclick="setLayout('fitness',this)">Fitness Focused</button>
+        <button class="ps-opt-btn" data-layout="dark-moody" onclick="setLayout('dark-moody',this)">Dark &amp; Moody</button>
+        <button class="ps-opt-btn" data-layout="bright" onclick="setLayout('bright',this)">Bright &amp; Fresh</button>
+        <button class="ps-opt-btn" data-layout="vintage" onclick="setLayout('vintage',this)">Vintage Recipe Card</button>
+        <button class="ps-opt-btn" data-layout="parchment" onclick="setLayout('parchment',this)">Aged Parchment</button>
+      </div>
+    </div>
+
+    <div class="ps-section">
+      <div class="ps-section-title">Include on Cards</div>
+      <div class="ps-btn-group" id="ps-includes">
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-overview" checked onchange="buildCards()" style="accent-color:var(--accent)"> Overview &amp; Ingredients
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-method" checked onchange="buildCards()" style="accent-color:var(--accent)"> Procedure
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-notes" onchange="buildCards()" style="accent-color:var(--accent)"> Cooking Notes
+        </label>
+        <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid);margin:10px 0 2px">Recipe details</div>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-times" checked onchange="buildCards()" style="accent-color:var(--accent)"> Prep, cook &amp; passive times
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-serves" checked onchange="buildCards()" style="accent-color:var(--accent)"> Serving size
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-spice" checked onchange="buildCards()" style="accent-color:var(--accent)"> Spice &amp; sweet level
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-style" onchange="buildCards()" style="accent-color:var(--accent)"> Cooking style
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-origin" checked onchange="buildCards()" style="accent-color:var(--accent)"> Origin
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-dietary" onchange="buildCards()" style="accent-color:var(--accent)"> Dietary &amp; health tags
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-difficulty" onchange="buildCards()" style="accent-color:var(--accent)"> Difficulty
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-keeping" onchange="buildCards()" style="accent-color:var(--accent)"> Shelf life &amp; storage
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-nutrition" onchange="buildCards()" style="accent-color:var(--accent)"> Nutrition <span style="color:var(--text-mid);font-size:11px">(when available)</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="ps-section">
+      <div class="ps-section-title">Recipe</div>
+      <div id="ps-recipe-name" style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid)">No recipe selected</div>
+      <a href="recipes.html" style="display:block;margin-top:8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--accent)">Browse Recipes →</a>
+    </div>
+
+    <button class="ps-print-btn" onclick="printCards()">🖨 Print Cards</button>
+  </div>
+
+  <!-- Preview -->
+  <div class="ps-preview">
+    <div class="ps-preview-header">
+      <div class="ps-preview-title">Preview</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="ps-card-count" id="ps-card-count"></div>
+        <button id="pdf-btn" onclick="downloadPDF()" style="padding:7px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;display:none">⬇ Download PDF</button>
+      </div>
+    </div>
+    <div class="ps-cards" id="ps-cards">
+      <div class="ps-empty">
+        <div class="ps-empty-icon">📄</div>
+        <div class="ps-empty-title">Open a recipe to print it</div>
+        <div style="font-size:13px;margin-top:4px">Click Print on any recipe page, or browse recipes above.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="nav-init.js"></script>
+<script>
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+const FRACTIONS = {'1/8':'⅛','1/4':'¼','3/8':'⅜','1/2':'½','5/8':'⅝','3/4':'¾','7/8':'⅞','1/3':'⅓','2/3':'⅔'};
+function fmtQty(v){ if(!v)return''; let s=String(v); Object.keys(FRACTIONS).forEach(f=>{s=s.replace(new RegExp(f.replace('/','[/]'),'g'),FRACTIONS[f]);}); return s; }
+
+let currentSize = '4x6';
+let currentRecipe = null;
+
+let currentLayout = 'classic-card';
+
+function setLayout(layout, btn) {
+  currentLayout = layout;
+  document.querySelectorAll('.ps-opt-btn[data-layout]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildCards();
+}
+
+function setSize(size, btn) {
+  currentSize = size;
+  document.querySelectorAll('.ps-opt-btn[data-size]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildCards();
+}
+
+function printCards() {
+  if (!currentRecipe) { alert('No recipe loaded. Open a recipe page and click Print.'); return; }
+  // Rebuild cards with current settings before printing
+  buildCards();
+  // Give browser time to render then print
+  setTimeout(function() { window.print(); }, 300);
+}
+
+// Style-aware time labels — mirrors submit-recipe's COOKING_STYLE_CFG
+// (display subset; full dedup is on the refactor backlog).
+const PS_STYLE = {
+  '':{c:'Cook',cu:'min',x:null,xu:'min',sv:'Serves',nm:''},'stir-fry':{c:'Cook',cu:'min',x:null,xu:'min',sv:'Serves',nm:'Stir-fry'},
+  'deep-fry':{c:'Frying',cu:'min',x:null,xu:'min',sv:'Serves',nm:'Deep-fry'},'steam-poach':{c:'Steam/Poach',cu:'min',x:null,xu:'min',sv:'Serves',nm:'Steam & Poach'},
+  'roasting':{c:'Roast',cu:'min',x:'Rest',xu:'min',sv:'Serves',nm:'Roasting'},'air-fry':{c:'Air fry',cu:'min',x:null,xu:'min',sv:'Serves',nm:'Air fry'},
+  'raw':{c:'Assembly',cu:'min',x:null,xu:'min',sv:'Serves',nm:'Raw / No-cook'},'bbq':{c:'Grill/BBQ',cu:'min',x:'Rest',xu:'min',sv:'Serves',nm:'BBQ'},
+  'smoking-hot':{c:'Smoke',cu:'hr',x:'Rest',xu:'min',sv:'Serves',nm:'Smoking'},'slow-cook':{c:'Slow cook',cu:'hr',x:null,xu:'hr',sv:'Serves',nm:'Slow cook'},
+  'pressure':{c:'Pressure cook',cu:'min',x:'Natural release',xu:'min',sv:'Serves',nm:'Pressure cooking'},'sous-vide':{c:'Sous vide',cu:'hr',x:'Sear/Finish',xu:'min',sv:'Serves',nm:'Sous vide'},
+  'baking':{c:'Bake',cu:'min',x:'Rest/Cool',xu:'min',sv:'Makes',nm:'Baking'},'bread':{c:'Bake',cu:'min',x:'Prove',xu:'hr',sv:'Makes',nm:'Bread'},
+  'candy':{c:'Cook',cu:'min',x:'Set/Cool',xu:'min',sv:'Makes',nm:'Confectionery'},'marinating':{c:'Cook',cu:'min',x:'Marinade',xu:'hr',sv:'Serves',nm:'Marinating'},
+  'brining':{c:'Cook',cu:'min',x:'Brine',xu:'hr',sv:'Serves',nm:'Brining'},'pickling-q':{c:'Prep/Cook',cu:'min',x:'Pickle',xu:'hr',sv:'Makes',nm:'Quick pickling'},
+  'pickling-t':{c:'Prep/Cook',cu:'min',x:'Cure/Pickle',xu:'day',sv:'Makes',nm:'Traditional pickling'},'fermentation':{c:'Prep',cu:'min',x:'Ferment',xu:'day',sv:'Yield',nm:'Fermentation'},
+  'canning':{c:'Process',cu:'min',x:'Cool/Seal',xu:'hr',sv:'Makes',nm:'Canning'},'dehydrating':{c:'Dehydrate',cu:'hr',x:null,xu:'hr',sv:'Yield',nm:'Dehydrating'},
+  'curing':{c:'Prep',cu:'min',x:'Cure/Smoke',xu:'day',sv:'Yield',nm:'Curing'},'jam':{c:'Cook',cu:'min',x:'Set',xu:'min',sv:'Makes',nm:'Jam & Chutney'}
+};
+function psDur(v,u){const n=parseFloat(v);if(isNaN(n))return v;if(u==='min')return n+' min';if(u==='hr')return n+(n===1?' hr':' hrs');if(u==='day')return n+(n===1?' day':' days');return n+' '+u;}
+const PS_BRAND = '<div class="ps-brand"><span class="ps-brand-mark">🍽</span><span>The Culinary Journal</span></div>';
+
+function buildCards() {
+  if (!currentRecipe) return;
+  const container = document.getElementById('ps-cards');
+  const inc = id => { const el = document.getElementById(id); return el ? el.checked : false; };
+  const r = currentRecipe;
+  const cfg = PS_STYLE[r.cooking_style || ''] || PS_STYLE[''];
+  const cards = [];
+
+  // Card 1: Overview + selected recipe details + Ingredients (only checked
+  // groups emit — disabled sections reserve no space, content reflows)
+  if (inc('inc-overview')) {
+    const meta = [];
+    if (inc('inc-times')) {
+      if (r.prep_time_minutes) meta.push('⏱ Prep: ' + psDur(r.prep_time_minutes,'min'));
+      if (r.cook_time_minutes) meta.push('🔥 ' + cfg.c + ': ' + psDur(r.cook_time_minutes, cfg.cu));
+      if (r.additional_time_minutes && cfg.x) meta.push('⏳ ' + cfg.x + ': ' + psDur(r.additional_time_minutes, cfg.xu));
+    }
+    if (inc('inc-serves') && r.servings) {
+      const unit = (r.servings_unit && r.servings_unit !== 'people') ? ' ' + r.servings_unit : '';
+      meta.push('🍽 ' + cfg.sv + ' ' + r.servings + unit);
+    }
+    if (inc('inc-spice')) {
+      if (r.spice_level && r.spice_level !== 'Not Applicable') meta.push('🌶 ' + r.spice_level);
+      if (r.sweet_level && r.sweet_level !== 'Not Applicable') meta.push('🍬 ' + r.sweet_level);
+    }
+    if (inc('inc-style') && cfg.nm) meta.push('👨‍🍳 ' + cfg.nm);
+    if (inc('inc-origin') && r.origin_country) {
+      meta.push('🌍 ' + [r.origin_state, r.origin_country].filter(Boolean).join(', '));
+    }
+    if (inc('inc-difficulty') && r.difficulty) meta.push('📊 ' + r.difficulty);
+
+    let extraRows = '';
+    if (inc('inc-dietary')) {
+      const tags = [].concat(r.dietary_tags||[], r.health_tags||[]);
+      if (tags.length) extraRows += `<div class="ps-card-meta" style="border-bottom:none;margin-bottom:4px">${tags.map(t=>`<span>• ${esc(t)}</span>`).join('')}</div>`;
+    }
+    if (inc('inc-keeping')) {
+      const keep = [];
+      if (r.shelf_life_value) keep.push('Shelf life: ' + esc(r.shelf_life_value) + ' ' + esc(r.shelf_life_unit||'months') + (r.shelf_life_storage ? ' ('+esc(r.shelf_life_storage)+')' : ''));
+      if (r.after_open_value) keep.push('After opening: ' + esc(r.after_open_value) + ' ' + esc(r.after_open_unit||'weeks'));
+      if (keep.length) extraRows += `<div class="ps-card-meta" style="border-bottom:none;margin-bottom:4px">${keep.map(k=>`<span>🫙 ${k}</span>`).join('')}</div>`;
+    }
+
+    let ingHtml = '';
+    (r.ingredients || []).forEach(sec => {
+      const secTitle = sec.title || sec.section;
+      if (secTitle) ingHtml += `<div class="ps-section-head">${esc(secTitle)}</div>`;
+      ingHtml += '<div class="ps-ing-list">';
+      (sec.items || []).forEach(item => {
+        ingHtml += `<div class="ps-ing-item"><span class="ps-ing-qty">${esc(fmtQty(item.qty))||''} ${esc(item.unit||'')}</span><span>${esc(item.ingredient||'')}</span></div>`;
+      });
+      ingHtml += '</div>';
+    });
+
+    // Contextual safety lines on the printed card (alcohol / baby / preservation)
+    const safety = [];
+    const allIngs = [];
+    (r.ingredients||[]).forEach(s => (s.items||[]).forEach(i => allIngs.push((i.ingredient||'').toLowerCase())));
+    const ALC = ['wine','beer','rum','brandy','whisky','whiskey','bourbon','vodka','gin','liqueur','sherry','port','sake','marsala','vermouth','tequila','cognac','kirsch'];
+    if (allIngs.some(n => ALC.some(w => n.indexOf(w) !== -1))) safety.push('Contains alcohol — cooking reduces but may not eliminate alcohol content.');
+    if ((r.category||'').toLowerCase().indexOf('little ones') !== -1) safety.push('Baby & toddler recipe — check age stage and allergens; supervise eating.');
+    if (['pickling-q','pickling-t','fermentation','canning','dehydrating','curing','jam','brining'].indexOf(r.cooking_style||'') !== -1) safety.push('Preservation: follow sterilisation and quantities exactly — food safety depends on it.');
+    const safetyHtml = safety.length
+      ? `<div style="font-family:'DM Sans',sans-serif;font-size:8px;color:#8a7a5c;margin-top:8px;padding-top:5px;border-top:0.5px solid #e8e0d0;line-height:1.5">${safety.map(s=>'⚠ '+esc(s)).join('<br>')}</div>`
+      : '';
+
+    cards.push(`
+      ${PS_BRAND}
+      <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
+      ${r.native_title?`<div class="ps-card-subtitle">${esc(r.native_title||'')}</div>`:''}
+      ${meta.length?`<div class="ps-card-meta">${meta.map(m=>`<span>${esc(m)}</span>`).join('')}</div>`:''}
+      ${extraRows}
+      ${ingHtml}
+      ${safetyHtml}
+    `);
+  }
+
+  // Cards for Procedure (split across cards if long)
+  if (inc('inc-method')) {
+    (r.method || []).forEach(block => {
+      const blockTitle = block.title || block.section;
+      const steps = (block.steps || []).map((step, i) => {
+        const text = typeof step === 'string' ? step : (step.text || step.title || '');
+        return `<div class="ps-step"><span class="ps-step-num">${i+1}.</span><span class="ps-step-text">${esc(text)}</span></div>`;
+      }).join('');
+      if (steps) {
+        cards.push(`
+          ${PS_BRAND}
+          <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
+          ${blockTitle?`<div class="ps-section-head">${esc(blockTitle)}</div>`:'<div class="ps-section-head">Procedure</div>'}
+          ${steps}
+        `);
+      }
+    });
+  }
+
+  // Nutrition card — only when the recipe carries nutrition data
+  if (inc('inc-nutrition') && r.nutrition && (r.nutrition.calories || r.nutrition.protein)) {
+    const n = r.nutrition;
+    const rows = [['Calories', n.calories+' kcal'],['Protein', n.protein+' g'],['Carbohydrates', n.carbs+' g'],['Fat', n.fat+' g'],['Fibre', n.fibre+' g'],['Sugar', n.sugar+' g'],['Sodium', n.sodium+' mg']]
+      .filter(x => x[1] && !String(x[1]).startsWith('undefined'));
+    cards.push(`
+      ${PS_BRAND}
+      <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
+      <div class="ps-section-head">Nutrition — Per Serving (approximate)</div>
+      <div class="ps-ing-list">${rows.map(x=>`<div class="ps-ing-item"><span class="ps-ing-qty">${esc(String(x[1]))}</span><span>${esc(x[0])}</span></div>`).join('')}</div>
+    `);
+  }
+
+  // Notes card
+  if (inc('inc-notes') && esc(r.cooking_notes||'')) {
+    const notesText = Array.isArray(r.cooking_notes) ? r.cooking_notes.join('\n• ') : r.cooking_notes;
+    cards.push(`
+      ${PS_BRAND}
+      <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
+      <div class="ps-section-head">Cooking Notes</div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#444;line-height:1.6">${esc(notesText||'')}</div>
+    `);
+  }
+
+  if (!cards.length) {
+    container.innerHTML = '<div class="ps-empty"><div class="ps-empty-icon">⚠️</div><div class="ps-empty-title">Nothing selected to print</div></div>';
+    return;
+  }
+
+  document.getElementById('ps-card-count').textContent = cards.length + ' card' + (cards.length>1?'s':'');
+  container.innerHTML = cards.map((content, i) =>
+    `<div class="ps-card size-${currentSize} layout-${currentLayout}">
+      ${content}
+      <div class="ps-card-num">Card ${i+1} of ${cards.length}</div>
+    </div>`
+  ).join('');
+}
+
+function loadRecipe(recipe) {
+  currentRecipe = recipe;
+  document.getElementById('ps-recipe-name').innerHTML =
+    '<strong style="font-family:\'DM Sans\',sans-serif;font-size:13px;color:var(--text-high)">' + esc(recipe.recipe_name||'Recipe') + '</strong>';
+  buildCards();
+}
+
+// Load recipe from URL params or sessionStorage
+document.addEventListener('DOMContentLoaded', function() {
+  const id = new URLSearchParams(window.location.search).get('id');
+  // Try sessionStorage first (set by recipe page)
+  const stored = sessionStorage.getItem('tcj_print_recipe');
+  if (stored) {
+    try { loadRecipe(JSON.parse(stored)); return; } catch(_){}
+  }
+  // Try fetching by id
+  if (id) {
+    var KEY = window.SUPA_KEY;
+    fetch(window.SUPA_URL + '/rest/v1/submitted_recipes?id=eq.'+id+'&select=*',
+      {headers:{'apikey':KEY}})
+      .then(r=>r.json()).then(data=>{ if(data[0]) loadRecipe(data[0]); })
+      .catch(()=>{});
+  }
+});
+
+function downloadPDF() {
+  var btn = document.getElementById('pdf-btn');
+  var container = document.getElementById('ps-cards');
+  if (!container || !container.children.length) { alert('Build some cards first — choose a recipe, select your card size, and the cards will appear here.'); return; }
+  if (btn) { btn.textContent = '⏳ Generating PDF...'; btn.disabled = true; }
+  var opt = {
+    margin:       [4, 4, 4, 4],
+    filename:     'culinary-journal-recipe-cards.pdf',
+    image:        {type:'jpeg', quality:0.95},
+    html2canvas:  {scale:2, useCORS:true, backgroundColor:'#ffffff'},
+    jsPDF:        {unit:'mm', format:'a4', orientation:'portrait'},
+    pagebreak:    {mode:['avoid-all','css']}
+  };
+  html2pdf().set(opt).from(container).save().then(function() {
+    if (btn) { btn.textContent = '⬇ Download PDF'; btn.disabled = false; }
+  }).catch(function(e) {
+    if (btn) { btn.textContent = '⬇ Download PDF'; btn.disabled = false; }
+    alert('PDF generation failed: ' + e.message);
+  });
+}
+
+
+// ── PRINT & POST ─────────────────────────────────────────────────
+var poQty = 10, poQual = 'standard';
+var PRICES = {
+  standard:  {10:4.99, 25:9.99, 50:17.99, 100:29.99},
+  premium:   {10:6.99, 25:13.99, 50:24.99, 100:42.99},
+  laminated: {10:8.99, 25:17.99, 50:31.99, 100:54.99}
+};
+
+function setPrintMode(mode, btn) {
+  document.querySelectorAll('.ps-mode-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  var homeSection  = document.querySelector('.ps-layout');
+  var orderSection = document.getElementById('po-section');
+  if (mode === 'order') {
+    if (homeSection)  homeSection.style.display  = 'none';
+    if (orderSection) orderSection.style.display = 'block';
+  } else {
+    if (homeSection)  homeSection.style.display  = '';
+    if (orderSection) orderSection.style.display = 'none';
+  }
+}
+
+function updatePrice() {
+  var p = (PRICES[poQual] || PRICES.standard)[poQty] || 4.99;
+  var formatted = '£' + p.toFixed(2);
+  var el = document.getElementById('po-price-display');
+  var btn = document.getElementById('po-btn-price');
+  if (el) el.textContent = formatted;
+  if (btn) btn.textContent = formatted;
+}
+
+function selectQty(el) {
+  document.querySelectorAll('.po-qty').forEach(function(b){ b.classList.remove('selected'); });
+  el.classList.add('selected');
+  poQty = parseInt(el.dataset.qty);
+  updatePrice();
+}
+
+function selectQual(el) {
+  document.querySelectorAll('.po-qual-opt').forEach(function(b){ b.classList.remove('selected'); });
+  el.classList.add('selected');
+  poQual = el.dataset.qual;
+  updatePrice();
+}
+
+function submitOrder() {
+  var first = (document.getElementById('po-first')||{}).value||'';
+  var last  = (document.getElementById('po-last')||{}).value||'';
+  var addr1 = (document.getElementById('po-addr1')||{}).value||'';
+  var city  = (document.getElementById('po-city')||{}).value||'';
+  var post  = (document.getElementById('po-postcode')||{}).value||'';
+  if (!first || !addr1 || !city || !post) {
+    alert('Please fill in your name and delivery address.'); return;
+  }
+  // Show confirmation
+  var form = document.getElementById('po-form-wrap');
+  var conf = document.getElementById('po-confirm');
+  if (form) form.style.display = 'none';
+  if (conf) conf.style.display = 'block';
+}
+
+function resetOrder() {
+  var form = document.getElementById('po-form-wrap');
+  var conf = document.getElementById('po-confirm');
+  if (form) form.style.display = 'block';
+  if (conf) conf.style.display = 'none';
+}
+</script>
+
+<!-- ── PRINT & POST SECTION ── -->
+<div id="po-section" style="display:none">
+  <div class="po-wrap">
+
+    <div class="po-section">
+      <div class="po-coming-badge">📬 New Feature — Launching Soon</div>
+      <div class="po-section-title">How it works</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)">
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:20px;flex-shrink:0">1️⃣</span><div><div style="color:var(--text-high);font-weight:600;margin-bottom:2px">Choose your recipe</div>Select a recipe from your journal to print</div></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:20px;flex-shrink:0">2️⃣</span><div><div style="color:var(--text-high);font-weight:600;margin-bottom:2px">Pick size &amp; style</div>Choose card size, layout and quantity</div></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:20px;flex-shrink:0">3️⃣</span><div><div style="color:var(--text-high);font-weight:600;margin-bottom:2px">We print &amp; post</div>Cards are printed by a specialist and mailed to you</div></div>
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:20px;flex-shrink:0">4️⃣</span><div><div style="color:var(--text-high);font-weight:600;margin-bottom:2px">Delivered beautifully</div>Ready to use, gift or frame</div></div>
+      </div>
+    </div>
+
+    <!-- Order form -->
+    <div id="po-form-wrap">
+      <div class="po-section">
+        <div class="po-section-title">Quantity</div>
+        <div class="po-grid" id="po-qty-grid">
+          <div class="po-qty selected" data-qty="10" onclick="selectQty(this)"><div><strong>10</strong> cards</div><div class="po-qty-label">Starter set</div></div>
+          <div class="po-qty" data-qty="25" onclick="selectQty(this)"><div><strong>25</strong> cards</div><div class="po-qty-label">Most popular</div></div>
+          <div class="po-qty" data-qty="50" onclick="selectQty(this)"><div><strong>50</strong> cards</div><div class="po-qty-label">Great value</div></div>
+          <div class="po-qty" data-qty="100" onclick="selectQty(this)"><div><strong>100</strong> cards</div><div class="po-qty-label">Full collection</div></div>
+        </div>
+      </div>
+
+      <div class="po-section">
+        <div class="po-section-title">Card Quality</div>
+        <div class="po-quality">
+          <div class="po-qual-opt selected" data-qual="standard" onclick="selectQual(this)"><div class="po-qual-name">Standard</div><div class="po-qual-desc">300gsm white card · matte finish</div></div>
+          <div class="po-qual-opt" data-qual="premium" onclick="selectQual(this)"><div class="po-qual-name">Premium</div><div class="po-qual-desc">350gsm silk card · subtle sheen</div></div>
+          <div class="po-qual-opt" data-qual="laminated" onclick="selectQual(this)"><div class="po-qual-name">Laminated</div><div class="po-qual-desc">350gsm · wipeable · kitchen-proof</div></div>
+        </div>
+        <div class="po-price-row">
+          <div>
+            <div class="po-price" id="po-price-display">£4.99</div>
+            <div class="po-price-note">inc. delivery · printed &amp; dispatched within 5 working days</div>
+          </div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);text-align:right">
+            Card size from<br>selection above
+          </div>
+        </div>
+      </div>
+
+      <div class="po-section">
+        <div class="po-section-title">Delivery Address</div>
+        <div class="po-row">
+          <div><div class="po-label">First Name</div><input class="po-input" id="po-first" placeholder="Betty"></div>
+          <div><div class="po-label">Last Name</div><input class="po-input" id="po-last" placeholder="Jacob"></div>
+        </div>
+        <div class="po-label">Address Line 1</div>
+        <input class="po-input" id="po-addr1" placeholder="123 Spice Lane">
+        <div class="po-label">Address Line 2 (optional)</div>
+        <input class="po-input" id="po-addr2" placeholder="Apartment, suite, unit…">
+        <div class="po-row">
+          <div><div class="po-label">City</div><input class="po-input" id="po-city" placeholder="London"></div>
+          <div><div class="po-label">Postcode</div><input class="po-input" id="po-postcode" placeholder="EC1A 1BB"></div>
+        </div>
+        <div class="po-label">Country</div>
+        <input class="po-input" id="po-country" placeholder="United Kingdom">
+        <button class="po-submit" onclick="submitOrder()">📬 Place Order — <span id="po-btn-price">£4.99</span></button>
+        <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);text-align:center;margin-top:8px">Secure checkout · No payment taken until fulfilment launches</div>
+      </div>
+    </div>
+
+    <!-- Confirmation -->
+    <div class="po-confirm" id="po-confirm">
+      <div class="po-confirm-icon">🎉</div>
+      <div class="po-confirm-title">Order Request Received!</div>
+      <div class="po-confirm-text">
+        Thank you! We've captured your order details. When the print service launches you'll be among the first to receive your cards.<br><br>
+        We'll send a confirmation and payment link to your email address.
+      </div>
+      <button class="po-submit" style="max-width:280px;margin:20px auto 0" onclick="resetOrder()">Place Another Order</button>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

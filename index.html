@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="ahrefs-site-verification" content="625226412774e059f9b0b958e164c791f81b4faeb4e19ab8184b13ac7c1f46d8">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Culinary Journal — Your Complete Culinary Life</title>
+  <meta name="description" content="The Culinary Journal is your complete culinary life in one place. Browse recipes, plan meals, host events, print cookbooks, and keep your culinary diary.">
+  <link rel="canonical" href="https://theculinaryjournal.site/">
+    <!-- Social sharing (Open Graph + Twitter) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="The Culinary Journal">
+  <meta property="og:title" content="The Culinary Journal — Your Complete Culinary Life">
+  <meta property="og:description" content="Browse recipes, plan meals, host events, print cookbooks, and keep your culinary diary.">
+  <meta property="og:url" content="https://theculinaryjournal.site/">
+  <meta property="og:image" content="https://theculinaryjournal.site/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Culinary Journal — Your Complete Culinary Life">
+  <meta name="twitter:description" content="Browse recipes, plan meals, host events, print cookbooks, and keep your culinary diary.">
+  <meta name="twitter:image" content="https://theculinaryjournal.site/og-image.png">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
+  <style>
+    /* ── HOMEPAGE-SPECIFIC STYLES ── */
+    .home-hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 80px 40px 60px;
+      overflow: hidden;
+    }
+    .home-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 40%, rgb(from var(--accent) r g b / .07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .home-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .home-eyebrow-line { width: 40px; height: 0.5px; background: var(--accent-border); }
+    .home-eyebrow-text {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: .22em;
+    }
+    .home-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(52px, 8vw, 88px);
+      font-weight: 700;
+      color: var(--text-high);
+      line-height: 1.04;
+      letter-spacing: -.025em;
+      margin-bottom: 10px;
+    }
+    .home-title em { font-style: italic; color: var(--accent); }
+    .home-tagline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(18px, 3vw, 26px);
+      font-weight: 400;
+      font-style: italic;
+      color: var(--text-mid);
+      margin-bottom: 20px;
+    }
+    .home-desc {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      color: var(--text-mid);
+      max-width: 520px;
+      line-height: 1.75;
+      margin-bottom: 40px;
+    }
+    .home-cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .home-cta-primary {
+      padding: 14px 34px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: all .2s;
+    }
+    .home-cta-primary:hover { filter: brightness(.9); transform: translateY(-2px); }
+    .home-cta-secondary {
+      padding: 14px 34px;
+      background: none;
+      color: var(--text-mid);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: all .2s;
+    }
+    .home-cta-secondary:hover { border-color: var(--accent-border); color: var(--text-high); }
+    .home-scroll-hint {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      color: var(--text-low);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      animation: scrollPulse 2.5s ease-in-out infinite;
+    }
+    @keyframes scrollPulse { 0%,100%{opacity:.4;transform:translateX(-50%) translateY(0)} 50%{opacity:.8;transform:translateX(-50%) translateY(4px)} }
+
+    /* ── TRUST STRIP ── */
+    .trust-strip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      border-top: 0.5px solid var(--border);
+      border-bottom: 0.5px solid var(--border);
+      background: rgba(0,0,0,.3);
+      padding: 0;
+      overflow: hidden;
+    }
+    .trust-item {
+      flex: 1;
+      text-align: center;
+      padding: 22px 16px;
+      border-right: 0.5px solid var(--border);
+    }
+    .trust-item:last-child { border-right: none; }
+    .trust-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      display: block;
+    }
+    .trust-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      color: var(--text-low);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin-top: 4px;
+      display: block;
+    }
+
+    /* ── SECTION SHOWCASES ── */
+    .sections-intro {
+      text-align: center;
+      padding: 72px 40px 48px;
+    }
+    .sections-intro-eyebrow {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: .2em;
+      margin-bottom: 14px;
+    }
+    .sections-intro-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+      font-weight: 700;
+      color: var(--text-high);
+      line-height: 1.2;
+      max-width: 600px;
+      margin: 0 auto 16px;
+    }
+    .sections-intro-sub {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      color: var(--text-mid);
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    .showcase {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border-top: 0.5px solid var(--border);
+      max-width: 100%;
+      overflow: hidden;
+    }
+    .showcase-reverse { }
+    .showcase-text {
+      padding: 64px 56px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .showcase-visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 40px;
+      background: rgba(0,0,0,.2);
+      border-left: 0.5px solid var(--border);
+      min-height: 360px;
+    }
+    .showcase-reverse .showcase-visual { border-left: none; border-right: 0.5px solid var(--border); order: -1; }
+    .showcase-section-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--accent-border);
+      background: var(--accent-glow);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 18px;
+      width: fit-content;
+    }
+    .showcase-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+      font-weight: 700;
+      color: var(--text-high);
+      line-height: 1.15;
+      margin-bottom: 14px;
+    }
+    .showcase-desc {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      color: var(--text-mid);
+      line-height: 1.75;
+      margin-bottom: 24px;
+    }
+    .showcase-features {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+    .showcase-feature {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--text-mid);
+    }
+    .showcase-feature::before {
+      content: '✦';
+      color: var(--accent);
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+    .showcase-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid var(--accent-border);
+      padding-bottom: 2px;
+      transition: gap .2s;
+      width: fit-content;
+    }
+    .showcase-cta:hover { gap: 14px; }
+
+    /* Visual illustrations */
+    .showcase-illustration {
+      width: 100%;
+      max-width: 340px;
+    }
+    .illus-card {
+      background: var(--card-bg);
+      border: 0.5px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      transition: transform .3s;
+    }
+    .illus-card:hover { transform: translateY(-4px); }
+    .illus-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-high);
+      margin-bottom: 10px;
+    }
+    .illus-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .illus-tag {
+      padding: 3px 9px;
+      border-radius: 20px;
+      background: var(--accent-glow);
+      border: 0.5px solid var(--accent-border);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      color: var(--accent);
+    }
+    .illus-divider { height: 0.5px; background: var(--border); margin: 12px 0; }
+    .illus-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      color: var(--text-mid);
+      padding: 5px 0;
+    }
+    .illus-val { color: var(--text-high); font-weight: 500; }
+
+    /* Planning illustration */
+    .illus-week {
+      display: grid;
+      grid-template-columns: repeat(7,1fr);
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    .illus-day {
+      background: var(--card-bg);
+      border: 0.5px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 4px;
+      text-align: center;
+    }
+    .illus-day-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 9px;
+      color: var(--text-low);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 4px;
+    }
+    .illus-day-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin: 2px auto;
+      opacity: .7;
+    }
+    .illus-day-dot.empty { background: var(--border); opacity: 1; }
+    .illus-day.today { border-color: var(--accent-border); background: var(--accent-glow); }
+
+    /* Table illustration */
+    .illus-table {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      margin: 0 auto;
+    }
+    .illus-table-surface {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 100px; height: 60px;
+      background: rgb(from var(--accent) r g b / .1);
+      border: 1px solid var(--accent-border);
+      border-radius: 30px;
+    }
+    .illus-seat {
+      position: absolute;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    /* Print illustration */
+    .illus-print-card {
+      background: linear-gradient(135deg, rgb(from var(--accent) r g b / .08) 0%, rgba(0,0,0,.3) 100%);
+      border: 1px solid var(--accent-border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 8px;
+    }
+    .illus-print-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 8px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+    .illus-print-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-high);
+    }
+
+    /* ── EMOTIONAL SECTION ── */
+    .emotional {
+      padding: 100px 40px;
+      text-align: center;
+      position: relative;
+      border-top: 0.5px solid var(--border);
+      overflow: hidden;
+    }
+    .emotional::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 70% at 50% 50%, rgb(from var(--accent) r g b / .05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .emotional-quote {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1rem, 2vw, 1.3rem);
+      font-style: italic;
+      color: var(--accent);
+      letter-spacing: .04em;
+      margin-bottom: 36px;
+    }
+    .emotional-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3.8rem);
+      font-weight: 700;
+      color: var(--text-high);
+      line-height: 1.12;
+      letter-spacing: -.02em;
+      margin-bottom: 24px;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .emotional-title em { color: var(--accent); font-style: italic; }
+    .emotional-body {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      color: var(--text-mid);
+      line-height: 1.8;
+      max-width: 560px;
+      margin: 0 auto 40px;
+    }
+    .emotional-cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:900px) {
+      .showcase { grid-template-columns: 1fr; }
+      .showcase-reverse .showcase-visual { order: 0; }
+      .showcase-visual { min-height: 220px; }
+      .showcase-text { padding: 40px 28px; }
+      .trust-strip { flex-wrap: wrap; }
+      .trust-item { min-width: 45%; }
+    }
+    @media(max-width:600px) {
+      .home-hero { padding: 60px 20px 50px; }
+      .sections-intro { padding: 48px 20px 32px; }
+      .showcase-text { padding: 32px 20px; }
+      .emotional { padding: 64px 20px; }
+      .trust-item { min-width: 100%; border-right: none; border-bottom: 0.5px solid var(--border); }
+    }
+
+    /* ── RECIPE OF THE WEEK ── */
+    .rotw { max-width:900px; margin:0 auto 60px; padding:0 40px; }
+    .rotw-eyebrow { font-family:'DM Sans',sans-serif; font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--accent); margin-bottom:12px; }
+    .rotw-card { display:grid; grid-template-columns:1fr 1fr; gap:0; border:0.5px solid var(--border); border-radius:16px; overflow:hidden; background:var(--surface); }
+    .rotw-img { aspect-ratio:4/3; background:var(--surface); position:relative; overflow:hidden; }
+    .rotw-img img { width:100%; height:100%; object-fit:cover; }
+    .rotw-img-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:48px; background:var(--bg); }
+    .rotw-body { padding:32px 36px; display:flex; flex-direction:column; justify-content:center; }
+    .rotw-category { font-family:'DM Sans',sans-serif; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-low); margin-bottom:10px; }
+    .rotw-title { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:600; color:var(--text-high); line-height:1.2; margin-bottom:6px; }
+    .rotw-native { font-family:'Cormorant Garamond',serif; font-size:1rem; font-style:italic; color:var(--accent); margin-bottom:16px; }
+    .rotw-desc { font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-mid); line-height:1.6; margin-bottom:24px; flex:1; }
+    .rotw-meta { display:flex; gap:20px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-low); margin-bottom:24px; }
+    .rotw-link { display:inline-flex; align-items:center; gap:8px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--accent); text-decoration:none; border:1px solid var(--accent-border); border-radius:8px; padding:10px 20px; transition:gap .2s; }
+    .rotw-link:hover { gap:14px; }
+    @media(max-width:768px){ .rotw { padding:0 20px; } .rotw-card { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body class="page-bg">
+<div class="page-overlay">
+
+  <nav class="nav">
+    <a class="nav-logo" href="index.html">
+      <span>🍽</span>
+      <span class="nav-logo-text">The Culinary Journal</span>
+      <span class="nav-logo-badge">Est. 2025</span>
+    </a>
+    <div class="nav-btns" id="nav-btns"></div>
+  </nav>
+  <div class="tab-nav"></div>
+
+  <!-- ── HERO ── -->
+  <section class="home-hero">
+    <div class="home-eyebrow">
+      <div class="home-eyebrow-line"></div>
+      <span class="home-eyebrow-text">A culinary life, beautifully kept</span>
+      <div class="home-eyebrow-line"></div>
+    </div>
+    <h1 class="home-title">The Culinary<br><em>Journal</em></h1>
+    <p class="home-tagline">Your complete culinary life in one place.</p>
+    <p class="home-desc">From the recipe you rescued from your grandmother's drawer to the dinner party you're planning this weekend — everything lives here.</p>
+    <div class="home-cta-row">
+      <a href="login.html" class="home-cta-primary">Start your journal — it's free</a>
+      <a href="recipes.html" class="home-cta-secondary">Explore recipes</a>
+    </div>
+    <div class="home-scroll-hint">
+      <span>Discover what's inside</span>
+      <span>↓</span>
+    </div>
+  </section>
+
+  <!-- ── TRUST STRIP — content metrics (Section A Issue 3) ── -->
+  <div class="trust-strip" id="trust-strip">
+    <div class="trust-item">
+      <span class="trust-num" id="trust-recipes">—</span>
+      <span class="trust-label">Recipes on the Platform</span>
+    </div>
+    <div class="trust-item">
+      <span class="trust-num" id="trust-countries">—</span>
+      <span class="trust-label">Countries Represented</span>
+    </div>
+    <div class="trust-item">
+      <span class="trust-num">14</span>
+      <span class="trust-label">Recipe Categories</span>
+    </div>
+    <div class="trust-item">
+      <span class="trust-num" id="trust-collections">—</span>
+      <span class="trust-label">Recipe Collections</span>
+    </div>
+    <div class="trust-item">
+      <span class="trust-num" id="trust-contributors">—</span>
+      <span class="trust-label">Community Contributors</span>
+    </div>
+  </div>
+
+  <!-- ── RECIPE OF THE WEEK ── -->
+  <div class="rotw" id="rotw-section" style="display:none">
+    <div class="rotw-eyebrow">Recipe of the Week</div>
+    <div class="rotw-card" id="rotw-card"></div>
+  </div>
+
+  <!-- ── SECTIONS INTRO ── -->
+  <div class="sections-intro">
+    <div class="sections-intro-eyebrow">Five sections. One complete culinary life.</div>
+    <h2 class="sections-intro-title">More than a recipe website.<br>A culinary operating system.</h2>
+    <p class="sections-intro-sub">Browse, plan, host, publish, and journal — all in one place, all connected, all yours.</p>
+  </div>
+
+  <!-- ── 1. KNOWLEDGE ── -->
+  <div class="showcase">
+    <div class="showcase-text">
+      <div class="showcase-section-badge">📖 Knowledge</div>
+      <h3 class="showcase-title">Every recipe, every story, every technique.</h3>
+      <p class="showcase-desc">Browse thousands of recipes across 14 categories organised by cuisine, occasion, and dietary need. Follow chef profiles, explore regional cooking styles, and access a full culinary reference library.</p>
+      <div class="showcase-features">
+        <div class="showcase-feature">14 recipe categories from Rise &amp; Shine to Feast Days</div>
+        <div class="showcase-feature">Chef directory with individual profiles and recipes</div>
+        <div class="showcase-feature">Preservation library — canning, fermenting, pickling and more</div>
+        <div class="showcase-feature">Ingredient substitutes, conversions, and dietary guides</div>
+      </div>
+      <a href="recipes.html" class="showcase-cta">Browse recipes →</a>
+    </div>
+    <div class="showcase-visual">
+      <div class="showcase-illustration">
+        <div class="illus-card">
+          <div class="illus-title">Kerala Ghee Rice</div>
+          <div class="illus-meta">
+            <span class="illus-tag">Grains &amp; Comfort</span>
+            <span class="illus-tag">Kerala</span>
+            <span class="illus-tag">Vegetarian</span>
+          </div>
+          <div class="illus-divider"></div>
+          <div class="illus-row"><span>Prep time</span><span class="illus-val">15 min</span></div>
+          <div class="illus-row"><span>Cook time</span><span class="illus-val">30 min</span></div>
+          <div class="illus-row"><span>Serves</span><span class="illus-val">4 people</span></div>
+          <div class="illus-row"><span>Spice</span><span class="illus-val">🌶🌶</span></div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <div style="flex:1;background:var(--card-bg);border:0.5px solid var(--border);border-radius:10px;padding:12px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)">📖 Ingredients</div>
+          <div style="flex:1;background:var(--accent-glow);border:0.5px solid var(--accent-border);border-radius:10px;padding:12px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--accent)">👨‍🍳 Procedure</div>
+          <div style="flex:1;background:var(--card-bg);border:0.5px solid var(--border);border-radius:10px;padding:12px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)">📊 Nutrition</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 2. PLANNING ── -->
+  <div class="showcase showcase-reverse">
+    <div class="showcase-text">
+      <div class="showcase-section-badge" style="border-color:rgba(93,158,107,.4);background:rgba(93,158,107,.08);color:#5d9e6b">🗓 Planning</div>
+      <h3 class="showcase-title">Never wonder what's for dinner again.</h3>
+      <p class="showcase-desc">Plan meals by week or month. Click any recipe and it lands in your planner. Generate a grocery list automatically from your meal plan. Track your pantry so nothing gets wasted.</p>
+      <div class="showcase-features">
+        <div class="showcase-feature">Weekly and monthly meal planning views</div>
+        <div class="showcase-feature">Smart grocery list generated from your meal plan</div>
+        <div class="showcase-feature">Pantry and fridge tracker with expiry alerts</div>
+        <div class="showcase-feature">Cooking mode for Individual, Couple, Family, or Group</div>
+      </div>
+      <a href="meal-planner.html" class="showcase-cta" style="color:#5d9e6b;border-color:rgba(93,158,107,.3)">Start planning →</a>
+    </div>
+    <div class="showcase-visual">
+      <div class="showcase-illustration">
+        <div class="illus-card" style="margin-bottom:10px">
+          <div style="font-family:'DM Sans',sans-serif;font-size:10px;color:var(--text-low);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">This week</div>
+          <div class="illus-week">
+            <div class="illus-day"><div class="illus-day-label">M</div><div class="illus-day-dot"></div><div class="illus-day-dot"></div></div>
+            <div class="illus-day"><div class="illus-day-label">T</div><div class="illus-day-dot empty"></div></div>
+            <div class="illus-day today"><div class="illus-day-label">W</div><div class="illus-day-dot"></div><div class="illus-day-dot"></div><div class="illus-day-dot"></div></div>
+            <div class="illus-day"><div class="illus-day-label">T</div><div class="illus-day-dot"></div></div>
+            <div class="illus-day"><div class="illus-day-label">F</div><div class="illus-day-dot empty"></div></div>
+            <div class="illus-day"><div class="illus-day-label">S</div><div class="illus-day-dot"></div></div>
+            <div class="illus-day"><div class="illus-day-label">S</div><div class="illus-day-dot"></div></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <div style="flex:2;background:var(--card-bg);border:0.5px solid var(--border);border-radius:10px;padding:11px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)">🛒 Generate grocery list</div>
+          <div style="flex:1;background:rgba(93,158,107,.08);border:0.5px solid rgba(93,158,107,.3);border-radius:10px;padding:11px;font-family:'DM Sans',sans-serif;font-size:11px;color:#5d9e6b">🫙 Pantry</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 3. HOSTING ── -->
+  <div class="showcase">
+    <div class="showcase-text">
+      <div class="showcase-section-badge" style="border-color:rgba(160,80,96,.4);background:rgba(160,80,96,.08);color:#a05060">🪑 Hosting</div>
+      <h3 class="showcase-title">Host beautifully, every time.</h3>
+      <p class="showcase-desc">Most food apps stop at the recipe. The Culinary Journal goes all the way to the table. Plan your seating, manage dietary requirements, and create personalised dietary cards for every guest.</p>
+      <div class="showcase-features">
+        <div class="showcase-feature">Table planner with drag-and-drop seating</div>
+        <div class="showcase-feature">Guest management with dietary needs and notes</div>
+        <div class="showcase-feature">Family profiles for household dietary tracking</div>
+        <div class="showcase-feature">Printable dietary cards for events</div>
+      </div>
+      <a href="table-planner.html" class="showcase-cta" style="color:#a05060;border-color:rgba(160,80,96,.3)">Plan an event →</a>
+    </div>
+    <div class="showcase-visual">
+      <div class="showcase-illustration">
+        <div class="illus-card" style="text-align:center">
+          <div style="font-family:'DM Sans',sans-serif;font-size:10px;color:var(--text-low);text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px">Table layout</div>
+          <div class="illus-table">
+            <div class="illus-table-surface"></div>
+            <div class="illus-seat" style="top:20%;left:50%;transform:translate(-50%)">👤</div>
+            <div class="illus-seat" style="bottom:20%;left:50%;transform:translate(-50%)">👤</div>
+            <div class="illus-seat" style="top:50%;left:10%;transform:translateY(-50%)">👤</div>
+            <div class="illus-seat" style="top:50%;right:10%;transform:translateY(-50%)">👤</div>
+            <div class="illus-seat" style="top:28%;left:18%">👤</div>
+            <div class="illus-seat" style="top:28%;right:18%">👤</div>
+          </div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);margin-top:8px">6 guests · 1 vegan · 1 gluten-free</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 4. PUBLISHING ── -->
+  <div class="showcase showcase-reverse">
+    <div class="showcase-text">
+      <div class="showcase-section-badge" style="border-color:rgba(184,149,106,.4);background:rgba(184,149,106,.08);color:#b8956a">🖨 Publishing</div>
+      <h3 class="showcase-title">Print your recipes the way they deserve.</h3>
+      <p class="showcase-desc">The Print Studio turns your recipes into beautifully formatted cards in 14 layouts across every standard size. Print at home, or order professionally printed cards delivered to your door.</p>
+      <div class="showcase-features">
+        <div class="showcase-feature">14 professional print layouts</div>
+        <div class="showcase-feature">Index cards, A5, A4, and custom sizes</div>
+        <div class="showcase-feature">Print & Post — order professionally printed cards</div>
+        <div class="showcase-feature">Submit and share recipes with the community</div>
+      </div>
+      <a href="print-studio.html" class="showcase-cta" style="color:#b8956a;border-color:rgba(184,149,106,.3)">Open Print Studio →</a>
+    </div>
+    <div class="showcase-visual">
+      <div class="showcase-illustration">
+        <div class="illus-print-card">
+          <div class="illus-print-label">The Culinary Journal · Recipe Card</div>
+          <div class="illus-print-title">Malabar Biryani</div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);margin-top:6px">Kerala, India · Serves 6 · 🌶🌶🌶</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <div style="flex:1;background:var(--card-bg);border:0.5px solid var(--border);border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)">4×6 Index</div>
+          <div style="flex:1;background:rgba(184,149,106,.08);border:0.5px solid rgba(184,149,106,.3);border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:11px;color:#b8956a">A5 Card</div>
+          <div style="flex:1;background:var(--card-bg);border:0.5px solid var(--border);border-radius:8px;padding:10px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)">A4 Full</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 5. PERSONAL ── -->
+  <div class="showcase">
+    <div class="showcase-text">
+      <div class="showcase-section-badge" style="border-color:rgba(120,120,176,.4);background:rgba(120,120,176,.08);color:#7878b0">📓 Personal</div>
+      <h3 class="showcase-title">Your culinary story, told your way.</h3>
+      <p class="showcase-desc">A private diary for cooking notes, memories, and reflections. Collections to save recipes you love. A personal kitchen dashboard to track your submissions and see what the community has discovered.</p>
+      <div class="showcase-features">
+        <div class="showcase-feature">Daily diary with mood, tags, and entry types</div>
+        <div class="showcase-feature">Collections to organise your favourite recipes</div>
+        <div class="showcase-feature">Submit recipes and see them live on the platform</div>
+        <div class="showcase-feature">Streak tracking and monthly diary statistics</div>
+      </div>
+      <a href="diary.html" class="showcase-cta" style="color:#7878b0;border-color:rgba(120,120,176,.3)">Start your journal →</a>
+    </div>
+    <div class="showcase-visual">
+      <div class="showcase-illustration">
+        <div class="illus-card">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:700;color:var(--text-high);margin-bottom:6px">Today's Entry</div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:rgba(120,120,176,.8);margin-bottom:12px">📓 Reflection · 😊 · 30 May</div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);line-height:1.65">Made biryani for the first time without looking at the recipe. Fourteen years of making it and it finally lives in my hands, not in the instructions…</div>
+          <div class="illus-divider"></div>
+          <div style="display:flex;gap:6px">
+            <span style="padding:3px 9px;border-radius:20px;background:rgba(120,120,176,.1);border:0.5px solid rgba(120,120,176,.3);font-family:'DM Sans',sans-serif;font-size:10px;color:#7878b0">biryani</span>
+            <span style="padding:3px 9px;border-radius:20px;background:rgba(120,120,176,.1);border:0.5px solid rgba(120,120,176,.3);font-family:'DM Sans',sans-serif;font-size:10px;color:#7878b0">family</span>
+            <span style="padding:3px 9px;border-radius:20px;background:rgba(120,120,176,.1);border:0.5px solid rgba(120,120,176,.3);font-family:'DM Sans',sans-serif;font-size:10px;color:#7878b0">milestone</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── EMOTIONAL CLOSE ── -->
+  <section class="emotional">
+    <div class="emotional-quote">
+      "The most important recipes are the ones passed down, not printed out."
+    </div>
+    <h2 class="emotional-title">A digital culinary <em>heirloom.</em></h2>
+    <p class="emotional-body">Your grandmother's biryani. Your mother's Christmas pudding. The dish you invented on a rainy Sunday with what was left in the fridge. Every recipe has a story. Every cook has a history. The Culinary Journal is where it lives forever.</p>
+    <div class="emotional-cta-row">
+      <a href="login.html" class="home-cta-primary">Start for free</a>
+      <a href="recipe-page.html" class="home-cta-secondary">See a sample recipe</a>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer class="footer">
+    <div class="footer-text">© 2025 The Culinary Journal</div>
+    <div class="footer-links">
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Use</a>
+      <a href="ai-disclaimer.html">AI Disclaimer</a>
+      <a href="mailto:miseenplacekitchen.official@gmail.com">Contact</a>
+    </div>
+  </footer>
+
+</div>
+
+
+<script>
+// ── OAUTH CALLBACK HANDLER ────────────────────────────────────────
+// When Google OAuth redirects back, the URL contains:
+// #access_token=...&refresh_token=...&type=recovery|signup etc.
+// We read these, store in tcj_session, then clean the URL.
+(function handleOAuthCallback() {
+  var hash = window.location.hash;
+  if (!hash || hash.indexOf('access_token') === -1) return;
+
+  var params = {};
+  hash.replace(/^#/, '').split('&').forEach(function(pair) {
+    var kv = pair.split('=');
+    params[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || '');
+  });
+
+  if (!params.access_token) return;
+
+      // Get user info from the token
+  fetch(SUPA_URL + '/auth/v1/user', {
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + params.access_token
+    }
+  }).then(function(r) { return r.ok ? r.json() : null; })
+  .then(function(user) {
+    if (!user || !user.id) return;
+
+    // Get username from profile
+    return fetch(SUPA_URL + '/rest/v1/rpc/get_my_profile', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + params.access_token,
+        'Content-Type': 'application/json'
+      },
+      body: '{}'
+    }).then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(rows) {
+      var profile = Array.isArray(rows) ? rows[0] : rows;
+      var username = (profile && profile.username) || user.email.split('@')[0];
+
+      // Store in tcj_session format
+      var session = {
+        access_token:  params.access_token,
+        refresh_token: params.refresh_token || '',
+        user_id:       user.id,
+        username:      username
+      };
+      localStorage.setItem('tcj_session', JSON.stringify(session));
+
+      if (profile) {
+        localStorage.setItem('tcj_profile', JSON.stringify(profile));
+        if (profile.theme_preference && profile.theme_preference !== 'midnight-slate') {
+          localStorage.setItem('tcj_theme', profile.theme_preference);
+        }
+      }
+      // Issue A-1: all users land on My Diary after login (D1: change to dashboard.html for admins if preferred)
+      window.location.href = 'diary.html';
+      return;
+    });
+  }).catch(function() {
+    // If anything fails, clean hash and continue as normal
+    history.replaceState(null, '', window.location.pathname);
+  });
+})();
+</script>
+
+<script src="nav-init.js"></script>
+<script>
+// Issue A-1: session-aware CTA — logged-in users go straight to My Diary, never re-prompted to sign in
+(function(){
+  try {
+    var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    if (sess && sess.access_token) {
+      document.querySelectorAll('a.home-cta-primary[href="login.html"]').forEach(function(a){
+        a.href = 'diary.html';
+        a.textContent = 'Open your journal';
+      });
+    }
+  } catch(e) {}
+})();
+</script>
+<script>
+// Load live content metrics for the trust strip (Section A Issue 3)
+(function(){
+  function setNum(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
+  // Approved recipes → total, distinct countries, distinct contributors
+  fetch(SUPA_URL + '/rest/v1/submitted_recipes?select=origin_country,user_id&status=eq.approved', {
+    headers: {'apikey': SUPA_KEY, 'Accept': 'application/json'}
+  }).then(function(r){ return r.ok ? r.json() : null; })
+  .then(function(rows){
+    if (!rows) { setNum('trust-recipes','0'); setNum('trust-countries','0'); setNum('trust-contributors','0'); return; }
+    setNum('trust-recipes', rows.length.toLocaleString());
+    var countries = {}, contributors = {};
+    rows.forEach(function(x){
+      if (x.origin_country) countries[x.origin_country] = 1;
+      if (x.user_id) contributors[x.user_id] = 1;
+    });
+    setNum('trust-countries', Object.keys(countries).length.toLocaleString());
+    setNum('trust-contributors', Object.keys(contributors).length.toLocaleString());
+  }).catch(function(){ setNum('trust-recipes','0'); setNum('trust-countries','0'); setNum('trust-contributors','0'); });
+  // Public collections count
+  fetch(SUPA_URL + '/rest/v1/collections?select=id&is_public=eq.true', {
+    headers: {'apikey': SUPA_KEY, 'Prefer': 'count=exact', 'Range-Unit': 'items', 'Range': '0-0'}
+  }).then(function(r){
+    var cr = r.headers.get('content-range');
+    var total = cr ? cr.split('/')[1] : null;
+    setNum('trust-collections', (total && total !== '*') ? parseInt(total).toLocaleString() : '0');
+  }).catch(function(){ setNum('trust-collections','0'); });
+})();
+</script>
+
+
+
+
+
+
+
+<script>
+// ── Page Visibility Enforcement ─────────────────────────────────
+// Reads site_pages from Supabase and updates navigation links:
+//   hidden     → remove link entirely (no indication page exists)
+//   registered → replace with 🔒 Members badge link
+//   paid       → replace with ⭐ Premium badge link (for ALL non-paid visitors)
+//   coming_soon → replace with Coming Soon label
+// Admins bypass all restrictions and see everything as normal.
+(function applyPageVisibility() {
+      var isLoggedIn = false;
+  var isAdmin    = false;
+  var isPaid     = false;
+  try {
+    var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    isLoggedIn = !!(sess && sess.access_token);
+    var prof = JSON.parse(localStorage.getItem('tcj_profile') || 'null');
+    if (prof) {
+      isAdmin = !!prof.is_admin;
+      isPaid  = prof.subscription_tier === 'premium' || prof.subscription_tier === 'event';
+    }
+  } catch(e) {}
+
+  // Admins see everything — no changes to nav
+  if (isAdmin) return;
+
+  fetch(SUPA_URL + '/rest/v1/site_pages?select=path,visibility,coming_soon', {
+    headers: { 'apikey': SUPA_KEY, 'Accept': 'application/json' }
+  })
+  .then(function(r){ return r.ok ? r.json() : null; })
+  .then(function(pages){
+    if (!Array.isArray(pages)) return;
+
+    pages.forEach(function(page){
+      var vis  = page.visibility;
+      var soon = page.coming_soon;
+
+      // Determine if this visitor can see this page as-is
+      var canSee = vis === 'public'
+        || (vis === 'registered' && isLoggedIn)
+        || (vis === 'paid' && isPaid);
+
+      if (canSee && !soon) return; // Nothing to change
+
+      document.querySelectorAll('a[href="' + page.path + '"]').forEach(function(link){
+        var cta = link.closest('.showcase-cta, .home-cta-secondary, .home-cta-primary');
+        var target = cta || link;
+
+        if (soon) {
+          // Coming Soon — grey out with badge
+          var span = document.createElement('span');
+          span.style.cssText = 'opacity:0.4;cursor:default;';
+          span.textContent = link.textContent.replace('→','').trim();
+          var badge = document.createElement('span');
+          badge.textContent = ' Coming Soon';
+          badge.style.cssText = 'font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--text-ghost);color:var(--text-mid);margin-left:6px;text-transform:uppercase;letter-spacing:0.05em;';
+          span.appendChild(badge);
+          if (target.parentNode) target.parentNode.replaceChild(span, target);
+
+        } else if (vis === 'hidden') {
+          // Hidden — remove entirely, no explanation
+          if (target.parentNode) target.parentNode.removeChild(target);
+
+        } else if (vis === 'registered' && !isLoggedIn) {
+          // Registered members only
+          var mLink = document.createElement('a');
+          mLink.href = 'members-only.html?next=' + encodeURIComponent(page.path);
+          if (target.getAttribute('class')) mLink.className = target.getAttribute('class');
+          if (target.getAttribute('style')) mLink.setAttribute('style', target.getAttribute('style'));
+          mLink.style.opacity = '0.6';
+          mLink.innerHTML = '&#128274; ' + link.textContent.replace('→','').trim() +
+            ' <span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:20px;background:rgba(255,255,255,0.12);margin-left:4px;text-transform:uppercase;letter-spacing:0.05em;">Members</span>';
+          if (target.parentNode) target.parentNode.replaceChild(mLink, target);
+
+        } else if (vis === 'paid' && !isPaid) {
+          // Paid members only — shown to ALL non-paid visitors (logged in or not)
+          // Always directs to paid-members-only.html regardless of login status
+          var pLink = document.createElement('a');
+          pLink.href = 'paid-members-only.html?next=' + encodeURIComponent(page.path);
+          if (target.getAttribute('class')) pLink.className = target.getAttribute('class');
+          if (target.getAttribute('style')) pLink.setAttribute('style', target.getAttribute('style'));
+          pLink.style.opacity = '0.6';
+          pLink.innerHTML = '&#11088; ' + link.textContent.replace('→','').trim() +
+            ' <span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:20px;background:linear-gradient(135deg,rgba(196,151,59,0.3),rgba(232,184,75,0.3));margin-left:4px;text-transform:uppercase;letter-spacing:0.05em;">Premium</span>';
+          if (target.parentNode) target.parentNode.replaceChild(pLink, target);
+        }
+      });
+    });
+  })
+  .catch(function(){});
+})();
+</script>
+
+
+<script>
+  // ── RECIPE OF THE WEEK ──────────────────────────────────────────
+  (function() {
+            fetch(SUPA_URL + '/rest/v1/submitted_recipes?is_recipe_of_week=eq.true&status=eq.approved&select=id,recipe_name,native_title,category,origin_country,prep_time_minutes,cook_time_minutes,servings,introduction,image_url&limit=1', {
+      headers: { 'apikey': SUPA_KEY }
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(rows) {
+      if (!rows || !rows.length) return;
+      var r = rows[0];
+      var section = document.getElementById('rotw-section');
+      var card    = document.getElementById('rotw-card');
+      if (!section || !card) return;
+      var imgHtml = r.image_url
+        ? '<img src="' + r.image_url + '" alt="' + (r.recipe_name||'') + '" loading="lazy">'
+        : '<div class="rotw-img-placeholder">🍽</div>';
+      var prepCook = [];
+      if (r.prep_time_minutes) prepCook.push('Prep ' + r.prep_time_minutes + ' min');
+      if (r.cook_time_minutes) prepCook.push('Cook ' + r.cook_time_minutes + ' min');
+      if (r.servings) prepCook.push('Serves ' + r.servings);
+      card.innerHTML =
+        '<div class="rotw-img">' + imgHtml + '</div>' +
+        '<div class="rotw-body">' +
+          '<div class="rotw-category">' + (r.category||'') + (r.origin_country ? ' &middot; ' + r.origin_country : '') + '</div>' +
+          '<div class="rotw-title">' + (r.recipe_name||'') + '</div>' +
+          (r.native_title ? '<div class="rotw-native">' + r.native_title + '</div>' : '') +
+          '<div class="rotw-desc">' + (r.introduction ? r.introduction.slice(0,160) + (r.introduction.length>160?'…':'') : "This week’s featured recipe.") + '</div>' +
+          (prepCook.length ? '<div class="rotw-meta">' + prepCook.join(' &nbsp;·&nbsp; ') + '</div>' : '') +
+          '<a href="recipe-page.html?id=' + r.id + '" class="rotw-link">View recipe →</a>' +
+        '</div>';
+      section.style.display = '';
+    })
+    .catch(function(){});
+  })();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="This feature is coming soon to The Culinary Journal.">
+  <link rel="canonical" href="https://theculinaryjournal.site/coming-soon.html">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Coming Soon — The Culinary Journal</title>
+  <script src="theme-init.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; background: var(--bg, #0f1015); display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; }
+    .container { text-align: center; padding: 48px 32px; max-width: 520px; }
+    .icon { font-size: 3rem; margin-bottom: 24px; opacity: 0.6; }
+    h1 { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 700; color: var(--text-high, #fff); margin-bottom: 12px; }
+    .subtitle { font-size: 1.05rem; color: var(--text-mid, rgba(255,255,255,0.55)); line-height: 1.6; margin-bottom: 32px; }
+    .back-btn { display: inline-block; padding: 12px 32px; background: var(--accent, #C4973B); color: #fff; text-decoration: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; transition: opacity 0.2s; }
+    .back-btn:hover { opacity: 0.85; }
+    .page-name { display: inline-block; font-size: 12px; color: var(--text-mid, rgba(255,255,255,0.4)); margin-top: 20px; letter-spacing: 0.05em; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">🍳</div>
+    <h1>Coming Soon</h1>
+    <p class="subtitle">This feature is being prepared. Check back soon — we're cooking up something good.</p>
+    <a href="index.html" class="back-btn">Back to Home</a>
+    <div class="page-name" id="page-name"></div>
+  </div>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var from = params.get('from');
+    if (from) {
+      var name = from.replace('.html','').replace(/-/g,' ');
+      document.getElementById('page-name').textContent = name.charAt(0).toUpperCase() + name.slice(1);
+    }
+  </script>
+</body>
+</html>

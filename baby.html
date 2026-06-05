@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Baby and toddler food guidance with age-appropriate recipes and allergen warnings.">
+  <link rel="canonical" href="https://theculinaryjournal.site/baby.html">
+  <title>Baby & Toddler — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .bt-wrap  { max-width:960px; margin:0 auto; padding:32px 20px 80px; }
+    .bt-header { margin-bottom:32px; }
+    .bt-title  { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:700; color:var(--text-high); margin-bottom:6px; }
+    .bt-sub    { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); max-width:560px; line-height:1.6; }
+
+    /* Stage tabs */
+    .bt-stages { display:flex; gap:0; border-bottom:2px solid var(--border); margin-bottom:28px; overflow-x:auto; }
+    .bt-stage  { padding:11px 20px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-mid); background:none; border:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; white-space:nowrap; }
+    .bt-stage:hover { color:var(--text-high); }
+    .bt-stage.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+    /* Stage content */
+    .bt-stage-content { display:none; }
+    .bt-stage-content.active { display:block; }
+    .bt-stage-title { font-family:'Cormorant Garamond',serif; font-size:1.5rem; font-weight:700; color:var(--text-high); margin-bottom:4px; }
+    .bt-stage-desc  { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-bottom:20px; line-height:1.6; }
+
+    /* Info grid */
+    .bt-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:24px; }
+    @media(max-width:600px){ .bt-grid { grid-template-columns:1fr; } }
+    .bt-card  { background:var(--text-ghost); border:1px solid var(--border); border-radius:11px; padding:16px 18px; }
+    .bt-card-title { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-mid); margin-bottom:10px; }
+    .bt-item  { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); display:flex; gap:7px; margin-bottom:6px; line-height:1.5; }
+    .bt-item::before { content:'·'; color:var(--accent); flex-shrink:0; }
+    .bt-ok::before  { content:'✓'; color:#4caf76; font-weight:700; }
+    .bt-no::before  { content:'✗'; color: var(--danger); font-weight:700; }
+    .bt-warn::before{ content:'⚠'; color: var(--warn); font-weight:700; }
+
+    /* Danger banner */
+    .bt-danger { background:rgb(from var(--danger) r g b / 0.07); border:1px solid rgb(from var(--danger) r g b / 0.25); border-radius:11px; padding:16px 18px; margin-bottom:20px; }
+    .bt-danger-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color: var(--danger); margin-bottom:10px; }
+    .bt-danger-grid  { display:flex; flex-wrap:wrap; gap:8px; }
+    .bt-danger-pill  { background: var(--danger-bg); border:1px solid rgb(from var(--danger) r g b / 0.3); border-radius:20px; padding:4px 12px; font-family:'DM Sans',sans-serif; font-size:12px; color: var(--danger); font-weight:500; }
+
+    /* Recipe cards */
+    .bt-recipe-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; }
+    .bt-recipe-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:11px; overflow:hidden; text-decoration:none; display:block; transition:all 0.15s; }
+    .bt-recipe-card:hover { border-color:var(--accent-border); transform:translateY(-2px); }
+    .bt-recipe-img  { height:110px; display:flex; align-items:center; justify-content:center; font-size:32px; border-bottom:1px solid var(--border); background:var(--text-ghost); overflow:hidden; }
+    .bt-recipe-img img { width:100%;height:100%;object-fit:cover; }
+    .bt-recipe-body { padding:11px 13px; }
+    .bt-recipe-name { font-family:'Cormorant Garamond',serif; font-size:1rem; font-weight:600; color:var(--text-high); margin-bottom:3px; }
+    .bt-recipe-meta { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+    .bt-recipe-flags { display:flex; flex-wrap:wrap; gap:3px; margin-top:5px; }
+    .bt-flag-ok  { font-size:10px; padding:1px 7px; border-radius:4px; background: var(--success-bg); color:#4caf76; }
+    .bt-flag-warn{ font-size:10px; padding:1px 7px; border-radius:4px; background: var(--danger-bg); color: var(--danger); }
+
+    .bt-empty { text-align:center; padding:48px 20px; }
+    .bt-empty-icon  { font-size:40px; margin-bottom:10px; }
+    .bt-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; color:var(--text-high); margin-bottom:6px; }
+    .bt-empty-sub   { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
+  </style>
+  <script src="page-guard.js"></script>
+</head>
+<body class="page-bg cj-body">
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"></div>
+<div class="bt-wrap">
+  <div class="bt-header">
+    <h1 class="bt-title">👶 Baby &amp; Toddler</h1>
+    <div class="bt-sub">Age-appropriate recipes and food guidance. Allergen warnings are shown automatically. Always consult your paediatrician before introducing new foods.</div>
+  </div>
+
+  <!-- UNIVERSAL DANGER INGREDIENTS -->
+  <div class="bt-danger">
+    <div class="bt-danger-title">Never give to babies under 12 months</div>
+    <div class="bt-danger-grid">
+      <div class="bt-danger-pill">🍯 Honey</div>
+      <div class="bt-danger-pill">🧂 Added Salt</div>
+      <div class="bt-danger-pill">🥜 Whole Nuts</div>
+      <div class="bt-danger-pill">🐟 Raw Fish / Shellfish</div>
+      <div class="bt-danger-pill">🧃 Fruit Juice (excess)</div>
+      <div class="bt-danger-pill">🥛 Cow's Milk as main drink</div>
+      <div class="bt-danger-pill">🍭 Added Sugar</div>
+      <div class="bt-danger-pill">☕ Tea / Coffee / Caffeine</div>
+      <div class="bt-danger-pill">🧀 Unpasteurised cheese</div>
+      <div class="bt-danger-pill">🍱 Low-fat foods</div>
+    </div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);margin-top:10px">Honey carries infant botulism risk. Salt damages developing kidneys. Whole nuts are a choking hazard. These restrictions apply to under 12 months unless otherwise advised by a doctor.</div>
+  </div>
+
+  <!-- STAGE TABS -->
+  <div class="bt-stages">
+    <button class="bt-stage active" onclick="showStage('s1',this)">4–6 Months</button>
+    <button class="bt-stage" onclick="showStage('s2',this)">6–8 Months</button>
+    <button class="bt-stage" onclick="showStage('s3',this)">8–12 Months</button>
+    <button class="bt-stage" onclick="showStage('s4',this)">12 Months+</button>
+    <button class="bt-stage" onclick="showStage('recipes',this)">🥘 Community Recipes</button>
+  </div>
+
+  <!-- 4–6 MONTHS -->
+  <div id="stage-s1" class="bt-stage-content active">
+    <div class="bt-stage-title">4–6 Months — First Foods</div>
+    <div class="bt-stage-desc">At this stage, breast milk or formula remains the main source of nutrition. Solids are purely exploratory — about learning tastes and textures, not replacing milk feeds. Start with single-ingredient purées only.</div>
+    <div class="bt-grid">
+      <div class="bt-card">
+        <div class="bt-card-title">✓ Safe First Foods</div>
+        <div class="bt-item bt-ok">Iron-fortified baby rice cereal (mixed with breast milk)</div>
+        <div class="bt-item bt-ok">Puréed sweet potato</div>
+        <div class="bt-item bt-ok">Puréed pumpkin or butternut squash</div>
+        <div class="bt-item bt-ok">Puréed pear or apple (no peel)</div>
+        <div class="bt-item bt-ok">Puréed avocado</div>
+        <div class="bt-item bt-ok">Puréed carrot (well cooked)</div>
+      </div>
+      <div class="bt-card">
+        <div class="bt-card-title">✗ Not Yet</div>
+        <div class="bt-item bt-no">All added salt or sugar</div>
+        <div class="bt-item bt-no">Honey in any form</div>
+        <div class="bt-item bt-no">Cow's milk (as drink)</div>
+        <div class="bt-item bt-no">Chunky or lumpy textures</div>
+        <div class="bt-item bt-no">Citrus (can cause rash)</div>
+        <div class="bt-item bt-no">Strawberries (introduce one at a time)</div>
+      </div>
+      <div class="bt-card">
+        <div class="bt-card-title">Texture Guide</div>
+        <div class="bt-item">Completely smooth — no lumps</div>
+        <div class="bt-item">Thin runny consistency, like thick cream</div>
+        <div class="bt-item">Single ingredient only at first</div>
+        <div class="bt-item">Wait 3–5 days between new foods</div>
+        <div class="bt-item">1–2 teaspoons per feeding to start</div>
+      </div>
+      <div class="bt-card">
+        <div class="bt-card-title">Signs Baby is Ready</div>
+        <div class="bt-item">Good head and neck control</div>
+        <div class="bt-item">Sits with support, doesn't slump</div>
+        <div class="bt-item">Shows interest in food — reaches or watches</div>
+        <div class="bt-item">Tongue-thrust reflex fading</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6–8 MONTHS -->
+  <div id="stage-s2" class="bt-stage-content">
+    <div class="bt-stage-title">6–8 Months — Expanding Tastes</div>
+    <div class="bt-stage-desc">Milk feeds still dominate, but solids increase. Begin introducing lumpy textures to build chewing skills. Start introducing common allergens one at a time (with 3–5 day gaps) — early introduction reduces allergy risk.</div>
+    <div class="bt-grid">
+      <div class="bt-card">
+        <div class="bt-card-title">✓ New Foods to Introduce</div>
+        <div class="bt-item bt-ok">Puréed or mashed lentils and legumes</div>
+        <div class="bt-item bt-ok">Soft-cooked and mashed chicken or beef</div>
+        <div class="bt-item bt-ok">Yoghurt (full-fat, plain)</div>
+        <div class="bt-item bt-ok">Soft-cooked egg yolk (well cooked)</div>
+        <div class="bt-item bt-ok">Puréed mango, peach, banana</div>
+        <div class="bt-item bt-ok">Soft-cooked broccoli, peas, zucchini</div>
+        <div class="bt-item bt-ok">Thin nut pastes (thinned with water)</div>
+      </div>
+      <div class="bt-card">
+        <div class="bt-card-title">Allergen Introduction</div>
+        <div class="bt-item bt-warn">Introduce at home (not daycare/restaurant)</div>
+        <div class="bt-item bt-warn">Morning or lunchtime — observe for 2 hours</div>
+        <div class="bt-item">One new allergen at a time</div>
+        <div class="bt-item">Wait 3–5 days before next allergen</div>
+        <div class="bt-item">Start with a small amount (tip of spoon)</div>
+        <div class="bt-item">Top 9 allergens: Dairy, Egg, Peanut, Tree Nuts, Wheat/Gluten, Soy, Fish, Shellfish, Sesame</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8–12 MONTHS -->
+  <div id="stage-s3" class="bt-stage-content">
+    <div class="bt-stage-title">8–12 Months — Finger Foods</div>
+    <div class="bt-stage-desc">Baby is learning to self-feed. Offer soft finger foods that dissolve easily or can be gummed. Move to mashed rather than puréed textures. Family meals can be adapted — just hold the salt, sugar, honey, and whole nuts.</div>
+    <div class="bt-grid">
+      <div class="bt-card">
+        <div class="bt-card-title">✓ Ideal Finger Foods</div>
+        <div class="bt-item bt-ok">Soft-cooked vegetable sticks (carrot, sweet potato, zucchini)</div>
+        <div class="bt-item bt-ok">Banana pieces, soft pear, ripe mango</div>
+        <div class="bt-item bt-ok">Small pasta pieces (soft-cooked)</div>
+        <div class="bt-item bt-ok">Scrambled eggs (soft)</div>
+        <div class="bt-item bt-ok">Shredded soft-cooked chicken</div>
+        <div class="bt-item bt-ok">Toast fingers with nut butter (no honey)</div>
+        <div class="bt-item bt-ok">Soft-cooked rice</div>
+      </div>
+      <div class="bt-card">
+        <div class="bt-card-title">⚠ Choking Hazards — Avoid</div>
+        <div class="bt-item bt-no">Whole grapes, cherry tomatoes (quarter them)</div>
+        <div class="bt-item bt-no">Whole nuts and seeds</div>
+        <div class="bt-item bt-no">Raw hard vegetables (apple, carrot — grate or cook)</div>
+        <div class="bt-item bt-no">Round sausages (slice lengthways)</div>
+        <div class="bt-item bt-no">Popcorn, chips</div>
+        <div class="bt-item bt-no">Hard lollies and gummies</div>
+        <div class="bt-item bt-no">Large pieces of meat</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12 MONTHS+ -->
+  <div id="stage-s4" class="bt-stage-content">
+    <div class="bt-stage-title">12 Months+ — Family Table</div>
+    <div class="bt-stage-desc">Toddlers can now eat most family foods. Cow's milk can replace formula as a drink. The focus shifts to variety, iron-rich foods, and establishing healthy eating patterns. Salt can be introduced in small amounts from family cooking.</div>
+    <div class="bt-grid">
+      <div class="bt-card">
+        <div class="bt-card-title">✓ Now Permitted</div>
+        <div class="bt-item bt-ok">Full-fat cow's milk as main drink (up to 500ml/day)</div>
+        <div class="bt-item bt-ok">Honey (pasteurised, in small amounts)</div>
+        <div class="bt-item bt-ok">Small amounts of salt from family cooking</div>
+        <div class="bt-item bt-ok">Most family meals adapted to toddler portions</div>
+        <div class="bt-item bt-ok">Nut butters and ground nuts</div>
+        <div class="bt-item bt-ok">All fish (except swordfish and shark — mercury)</div>
+      </div>
+      <div class="bt-card">
+        <div class="bt-card-title">Still Limit or Avoid</div>
+        <div class="bt-item bt-warn">Added sugar — limit discretionary sweet treats</div>
+        <div class="bt-item bt-warn">High-salt processed foods — chips, deli meats</div>
+        <div class="bt-item bt-warn">Whole nuts (choking risk until age 5)</div>
+        <div class="bt-item bt-warn">Shark, swordfish, marlin (high mercury)</div>
+        <div class="bt-item bt-warn">Raw or undercooked eggs, meat, fish</div>
+        <div class="bt-item bt-warn">Unpasteurised foods</div>
+      </div>
+    </div>
+    <div class="bt-card" style="max-width:520px">
+      <div class="bt-card-title">Iron-Rich Foods for Toddlers</div>
+      <div class="bt-item">Red meat — best absorbed form of iron (haem iron)</div>
+      <div class="bt-item">Fortified breakfast cereals</div>
+      <div class="bt-item">Legumes, lentils, tofu (pair with vitamin C for absorption)</div>
+      <div class="bt-item">Eggs, leafy greens, broccoli</div>
+    </div>
+  </div>
+
+  <!-- COMMUNITY RECIPES TAB -->
+  <div id="stage-recipes" class="bt-stage-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+      <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid)" id="bt-recipe-count"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="filterAge('')" class="bt-stage" style="padding:6px 14px;border-radius:20px;font-size:11px" id="af-all">All</button>
+        <button onclick="filterAge('4-6 Months')" class="bt-stage" style="padding:6px 14px;border-radius:20px;font-size:11px" id="af-s1">4–6 M</button>
+        <button onclick="filterAge('6-8 Months')" class="bt-stage" style="padding:6px 14px;border-radius:20px;font-size:11px" id="af-s2">6–8 M</button>
+        <button onclick="filterAge('8-12 Months')" class="bt-stage" style="padding:6px 14px;border-radius:20px;font-size:11px" id="af-s3">8–12 M</button>
+        <button onclick="filterAge('12 Months+')" class="bt-stage" style="padding:6px 14px;border-radius:20px;font-size:11px" id="af-s4">12M+</button>
+      </div>
+    </div>
+    <div class="bt-recipe-grid" id="bt-recipe-grid">
+      <div class="bt-empty"><div class="bt-empty-icon">👶</div><div class="bt-empty-title">Loading recipes...</div></div>
+    </div>
+  </div>
+</div>
+
+<script src="nav-init.js"></script>
+<script>
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+const DANGER_INGREDIENTS = ['honey','salt','nut','nuts','peanut','shellfish','raw fish','raw egg','caffeine','alcohol'];
+const ALLERGEN_FLAGS = {'Gluten':'Gluten','Dairy':'Dairy','Eggs':'Eggs','Tree Nuts':'Nuts','Peanuts':'Peanuts','Shellfish':'Shellfish','Fish':'Fish','Soy':'Soy','Sesame':'Sesame'};
+
+let allBabyRecipes = [], currentAgeFilter = '';
+
+function showStage(id, btn) {
+  document.querySelectorAll('.bt-stage-content').forEach(function(el){el.classList.remove('active');});
+  document.querySelectorAll('.bt-stage').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('stage-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'recipes' && !allBabyRecipes.length) loadBabyRecipes();
+}
+
+async function loadBabyRecipes() {
+  try {
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_approved_recipes', {
+      method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({p_category:'Little Ones', p_limit:40})
+    });
+    allBabyRecipes = res.ok ? await res.json() : [];
+    renderBabyRecipes(allBabyRecipes);
+  } catch(_) {
+    renderBabyRecipes([]);
+  }
+}
+
+function filterAge(age) {
+  currentAgeFilter = age;
+  document.querySelectorAll('[id^="af-"]').forEach(function(b){b.classList.remove('active');});
+  const recipes = age ? allBabyRecipes.filter(function(r){
+    return (r.occasion_tags||[]).includes(age) || (r.health_tags||[]).includes(age);
+  }) : allBabyRecipes;
+  renderBabyRecipes(recipes);
+}
+
+function getDangerFlags(recipe) {
+  const warnings = [];
+  const allIngs = [];
+  (recipe.ingredients||[]).forEach(function(sec){
+    (sec.items||[]).forEach(function(i){ allIngs.push((i.ingredient||'').toLowerCase()); });
+  });
+  DANGER_INGREDIENTS.forEach(function(danger) {
+    if (allIngs.some(function(i){return i.includes(danger);})) {
+      warnings.push(danger.charAt(0).toUpperCase() + danger.slice(1));
+    }
+  });
+  return warnings;
+}
+
+function renderBabyRecipes(recipes) {
+  const grid = document.getElementById('bt-recipe-grid');
+  const count = document.getElementById('bt-recipe-count');
+  if (!recipes.length) {
+    grid.innerHTML = '<div class="bt-empty"><div class="bt-empty-icon">👶</div><div class="bt-empty-title">No recipes yet</div><div class="bt-empty-sub">Be the first to <a href="submit-recipe.html" style="color:var(--accent)">submit a baby recipe</a> in the Little Ones category.</div></div>';
+    if (count) count.textContent = '';
+    return;
+  }
+  if (count) count.textContent = recipes.length + ' recipe' + (recipes.length===1?'':'s');
+  grid.innerHTML = '';
+  recipes.forEach(function(r) {
+    const warnings = getDangerFlags(r);
+    const dietTags = (r.dietary_tags||[]).slice(0,2);
+    const card = document.createElement('a');
+    card.className = 'bt-recipe-card';
+    card.href = 'recipe-page.html?id=' + r.id;
+    card.innerHTML =
+      '<div class="bt-recipe-img">' + (r.image_url ? '<img src="'+esc(r.image_url)+'" loading="lazy">' : '👶') + '</div>' +
+      '<div class="bt-recipe-body">' +
+        '<div class="bt-recipe-name">' + esc(r.recipe_name||'') + '</div>' +
+        '<div class="bt-recipe-meta">' + esc(r.origin_country||'') + '</div>' +
+        '<div class="bt-recipe-flags">' +
+          dietTags.map(function(t){return '<span class="bt-flag-ok">'+esc(t)+'</span>';}).join('') +
+          warnings.map(function(w){return '<span class="bt-flag-warn">⚠ '+esc(w)+'</span>';}).join('') +
+        '</div>' +
+      '</div>';
+    grid.appendChild(card);
+  });
+}
+</script>
+</body>
+</html>

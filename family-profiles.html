@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Store dietary requirements for family and guests — used by meal planner and table planner.">
+  <link rel="canonical" href="https://theculinaryjournal.site/family-profiles.html">
+  <title>Family Profiles — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .fp-wrap  { max-width:920px; margin:0 auto; padding:32px 20px 80px; }
+    .fp-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
+    .fp-title  { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--text-high); }
+    .fp-sub    { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-top:3px; }
+    .fp-btn    { padding:10px 20px; border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; border:none; }
+    .fp-btn-primary { background:var(--accent); color:#fff; }
+    .fp-btn-ghost   { background:none; border:1px solid var(--border); color:var(--text-mid); }
+    .fp-btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+    .fp-btn-sm { padding:6px 12px; font-size:11px; }
+    .fp-btn-danger { background: var(--danger-bg); border:1px solid rgb(from var(--danger) r g b / 0.3); color: var(--danger); }
+
+    /* Profile cards */
+    .fp-grid  { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+    .fp-card  { background:var(--text-ghost); border:1px solid var(--border); border-radius:13px; padding:18px; }
+    .fp-card-head { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+    .fp-avatar { width:44px; height:44px; border-radius:50%; background:rgb(from var(--accent) r g b / 0.15); display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:700; color:var(--accent); flex-shrink:0; }
+    .fp-card-name { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:600; color:var(--text-high); }
+    .fp-card-rel  { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+    .fp-pills { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
+    .fp-pill  { font-family:'DM Sans',sans-serif; font-size:10px; padding:2px 8px; border-radius:4px; }
+    .fp-pill-diet    { background: var(--success-bg); color:#4caf76; }
+    .fp-pill-allergy { background: var(--danger-bg); color: var(--danger); }
+    .fp-pill-spice   { background:rgba(240,168,48,0.1); color: var(--warn); }
+    .fp-pill-health  { background:rgb(from var(--accent) r g b / 0.1); color:var(--accent); }
+    .fp-card-actions { display:flex; gap:6px; margin-top:12px; padding-top:10px; border-top:1px solid var(--border); }
+    .fp-notes { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); font-style:italic; margin-bottom:6px; }
+
+    /* Empty state */
+    .fp-empty { text-align:center; padding:60px 20px; }
+    .fp-empty-icon { font-size:48px; margin-bottom:12px; }
+    .fp-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; color:var(--text-high); margin-bottom:6px; }
+    .fp-empty-sub   { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
+
+    /* Modal */
+    .fp-modal { display:none; position:fixed; inset:0; background: var(--scrim); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+    .fp-modal.open { display:flex; }
+    .fp-modal-box { background:var(--bg); border:1px solid var(--border); border-radius:16px; width:100%; max-width:520px; padding:24px; max-height:92vh; overflow-y:auto; }
+    .fp-modal-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:600; color:var(--text-high); margin-bottom:20px; }
+    .fp-field { margin-bottom:14px; }
+    .fp-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-mid); margin-bottom:5px; display:block; }
+    .fp-input { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background: var(--input-bg); color:var(--text-high); outline:none; }
+    .fp-input:focus { border-color:var(--accent); }
+    .fp-select { -webkit-appearance:none; cursor:pointer; }
+    .fp-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .fp-checks { display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; }
+    .fp-check { display:flex; align-items:center; gap:4px; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-high); background:var(--text-ghost); border:1px solid var(--border); border-radius:6px; padding:4px 8px; cursor:pointer; }
+    .fp-check:has(input:checked) { background:rgb(from var(--accent) r g b / 0.1); border-color:rgb(from var(--accent) r g b / 0.3); }
+    .fp-modal-foot { display:flex; gap:8px; margin-top:20px; }
+  </style>
+  <script src="page-guard.js"></script>
+</head>
+<body class="page-bg cj-body">
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"></div>
+<div class="fp-wrap">
+  <div class="fp-header">
+    <div>
+      <h1 class="fp-title">👨‍👩‍👧‍👦 Family &amp; Guest Profiles</h1>
+      <div class="fp-sub">Store dietary info for everyone you cook for. Used by Meal Planner and Table Planner to flag conflicts.</div>
+    </div>
+    <button class="fp-btn fp-btn-primary" onclick="openModal()">+ Add Profile</button>
+  </div>
+  <div id="fp-grid"></div>
+</div>
+
+<!-- Modal -->
+<div class="fp-modal" id="fp-modal">
+  <div class="fp-modal-box">
+    <div class="fp-modal-title" id="fp-modal-title">Add Profile</div>
+    <input type="hidden" id="fm-id">
+    <div class="fp-row">
+      <div class="fp-field">
+        <label class="fp-label">Name *</label>
+        <input class="fp-input" id="fm-name" placeholder="e.g. Sarah">
+      </div>
+      <div class="fp-field">
+        <label class="fp-label">Relationship</label>
+        <select class="fp-input fp-select" id="fm-rel" onchange="document.getElementById('fm-rel-other-wrap').style.display = this.value==='other' ? '' : 'none'">
+          <option value="self">Myself</option>
+          <option value="partner">Partner</option>
+          <option value="child">Child</option>
+          <option value="toddler">Toddler</option>
+          <option value="baby">Baby</option>
+          <option value="elderly">Elderly relative</option>
+          <option value="regular_guest">Regular guest</option>
+          <option value="other">Other</option>
+        </select>
+        <div id="fm-rel-other-wrap" style="display:none;margin-top:8px">
+          <input class="fp-input" id="fm-rel-other" placeholder="What does 'Other' represent? (optional)" maxlength="40">
+        </div>
+      </div>
+    </div>
+    <div class="fp-row">
+      <div class="fp-field">
+        <label class="fp-label">Age Group</label>
+        <select class="fp-input fp-select" id="fm-age">
+          <option value="infant">Infant (0 to 1 year)</option>
+          <option value="toddler">Toddler (1 to 3 years)</option>
+          <option value="child">Child (3 to 12 years)</option>
+          <option value="teenager">Teenager / Adolescent (13 to 19 years)</option>
+          <option value="young_adult">Young Adult (20 to 39 years)</option>
+          <option value="middle_adult">Middle Adult (40 to 64 years)</option>
+          <option value="senior">Senior / Older Adult (65 years and above)</option>
+        </select>
+      </div>
+      <div class="fp-field">
+        <label class="fp-label">Spice Tolerance</label>
+        <select class="fp-input fp-select" id="fm-spice">
+          <option value="none">None — no spice</option>
+          <option value="mild">😌 Mild</option>
+          <option value="medium" selected>🌶 Medium</option>
+          <option value="hot">🌶🌶 Hot</option>
+          <option value="very_hot">🌶🌶🌶 Very Hot</option>
+        </select>
+      </div>
+    </div>
+    <div class="fp-field">
+      <label class="fp-label">Dietary Needs</label>
+      <div class="fp-checks" id="fm-dietary">
+        <label class="fp-check"><input type="checkbox" value="Vegan"> 🌿 Vegan</label>
+        <label class="fp-check"><input type="checkbox" value="Vegetarian"> 🥕 Vegetarian</label>
+        <label class="fp-check"><input type="checkbox" value="Gluten Free"> 🌾 Gluten Free</label>
+        <label class="fp-check"><input type="checkbox" value="Dairy Free"> 🥛 Dairy Free</label>
+        <label class="fp-check"><input type="checkbox" value="Halal"> ☪ Halal</label>
+        <label class="fp-check"><input type="checkbox" value="Kosher"> ✡ Kosher</label>
+        <label class="fp-check"><input type="checkbox" value="Nut Free"> 🥜 Nut Free</label>
+        <label class="fp-check"><input type="checkbox" value="Egg Free"> 🥚 Egg Free</label>
+        <label class="fp-check"><input type="checkbox" value="Shellfish Free"> 🦐 Shellfish Free</label>
+      </div>
+    </div>
+    <div class="fp-field">
+      <label class="fp-label">Allergies</label>
+      <div class="fp-checks" id="fm-allergies">
+        <label class="fp-check"><input type="checkbox" value="Gluten"> Gluten</label>
+        <label class="fp-check"><input type="checkbox" value="Dairy"> Dairy</label>
+        <label class="fp-check"><input type="checkbox" value="Eggs"> Eggs</label>
+        <label class="fp-check"><input type="checkbox" value="Tree Nuts"> Tree Nuts</label>
+        <label class="fp-check"><input type="checkbox" value="Peanuts"> Peanuts</label>
+        <label class="fp-check"><input type="checkbox" value="Fish"> Fish</label>
+        <label class="fp-check"><input type="checkbox" value="Shellfish"> Shellfish</label>
+        <label class="fp-check"><input type="checkbox" value="Soy"> Soy</label>
+        <label class="fp-check"><input type="checkbox" value="Sesame"> Sesame</label>
+      </div>
+    </div>
+    <div class="fp-field">
+      <label class="fp-label">Health Conditions</label>
+      <div class="fp-checks" id="fm-health">
+        <label class="fp-check"><input type="checkbox" value="Diabetic"> 🩺 Diabetic</label>
+        <label class="fp-check"><input type="checkbox" value="High Cholesterol"> ❤️ High Cholesterol</label>
+        <label class="fp-check"><input type="checkbox" value="High Blood Pressure"> 💊 High BP</label>
+        <label class="fp-check"><input type="checkbox" value="Weight Management"> ⚖️ Weight Mgmt</label>
+        <label class="fp-check"><input type="checkbox" value="Fitness Focused"> 💪 Fitness</label>
+        <label class="fp-check"><input type="checkbox" value="Pregnancy"> 🤰 Pregnancy</label>
+        <label class="fp-check"><input type="checkbox" value="Breastfeeding"> 🤱 Breastfeeding</label>
+      </div>
+    </div>
+    <div class="fp-field">
+      <label class="fp-label">Notes (optional)</label>
+      <textarea class="fp-input" id="fm-notes" rows="2" placeholder="e.g. Loves Thai food, can't stand coriander"></textarea>
+    </div>
+    <div class="fp-modal-foot">
+      <button class="fp-btn fp-btn-primary" style="flex:1" onclick="saveProfile()">Save Profile</button>
+      <button class="fp-btn fp-btn-ghost" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="nav-init.js"></script>
+<script>
+const REL_LABELS = {self:'Myself',partner:'Partner',child:'Child',toddler:'Toddler',baby:'Baby',elderly:'Elderly relative',regular_guest:'Regular guest',other:'Other'};
+const SPICE_LABELS = {none:'No spice',mild:'😌 Mild',medium:'🌶 Medium',hot:'🌶🌶 Hot',very_hot:'🌶🌶🌶 Very Hot'};
+const REL_EMOJI = {self:'👤',partner:'💑',child:'👦',toddler:'🧒',baby:'👶',elderly:'👴',regular_guest:'👤',other:'👤'};
+
+let profiles = [];
+
+async function rpc(fn, params) {
+  const session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+  const headers = {'apikey':SUPA_KEY,'Content-Type':'application/json'};
+  if (session && session.access_token) headers['Authorization'] = 'Bearer ' + session.access_token;
+  const res = await fetch(SUPA_URL + '/rest/v1/rpc/' + fn, {method:'POST',headers,body:JSON.stringify(params||{})});
+  if (!res.ok) { const e = await res.text(); throw new Error(e); }
+  return res.json().catch(function(){return null;});
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+async function load() {
+  const session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+  if (!session) {
+    document.getElementById('fp-grid').innerHTML = '<div class="fp-empty"><div class="fp-empty-icon">🔐</div><div class="fp-empty-title">Sign in to manage profiles</div><div class="fp-empty-sub"><a href="login.html" style="color:var(--accent)">Sign in →</a></div></div>';
+    return;
+  }
+  try {
+    profiles = await rpc('get_my_family_profiles',{}) || [];
+    render();
+  } catch(e) { document.getElementById('fp-grid').innerHTML = '<div class="fp-empty"><div class="fp-empty-icon">⚠</div><div class="fp-empty-title">Error loading profiles</div><div class="fp-empty-sub">'+esc(e.message)+'</div></div>'; }
+}
+
+function render() {
+  const grid = document.getElementById('fp-grid');
+  if (!profiles.length) {
+    grid.innerHTML = '<div class="fp-empty"><div class="fp-empty-icon">👨‍👩‍👧‍👦</div><div class="fp-empty-title">No profiles yet</div><div class="fp-empty-sub">Add profiles for everyone you cook for — family, regular guests, anyone with dietary needs. The Meal Planner and Table Planner will use these to flag conflicts automatically.</div></div>';
+    return;
+  }
+  grid.innerHTML = '<div class="fp-grid">' + profiles.map(function(p) {
+    const initials = (p.name||'?').charAt(0).toUpperCase();
+    const emoji = REL_EMOJI[p.relationship]||'👤';
+    const dietPills = (p.dietary_needs||[]).map(function(d){return '<span class="fp-pill fp-pill-diet">'+esc(d)+'</span>';}).join('');
+    const allergyPills = (p.allergies||[]).map(function(a){return '<span class="fp-pill fp-pill-allergy">⚠ '+esc(a)+'</span>';}).join('');
+    const healthPills = (p.health_conditions||[]).map(function(h){return '<span class="fp-pill fp-pill-health">'+esc(h)+'</span>';}).join('');
+    const spiceLabel = SPICE_LABELS[p.spice_preference]||p.spice_preference||'';
+    return '<div class="fp-card">' +
+      '<div class="fp-card-head"><div class="fp-avatar">'+emoji+'</div><div><div class="fp-card-name">'+esc(p.name)+'</div><div class="fp-card-rel">'+esc(REL_LABELS[p.relationship]||p.relationship)+'</div></div></div>' +
+      '<div class="fp-pills">'+dietPills+allergyPills+healthPills+'</div>' +
+      (spiceLabel ? '<div class="fp-pill fp-pill-spice" style="display:inline-block;margin-bottom:6px">Spice: '+esc(spiceLabel)+'</div>' : '') +
+      (p.notes ? '<div class="fp-notes">'+esc(p.notes)+'</div>' : '') +
+      '<div class="fp-card-actions">' +
+        '<button class="fp-btn fp-btn-ghost fp-btn-sm" onclick="openModal(\''+p.id+'\')">Edit</button>' +
+        '<button class="fp-btn fp-btn-sm fp-btn-danger" onclick="deleteProfile(\''+p.id+'\')">Remove</button>' +
+      '</div></div>';
+  }).join('') + '</div>';
+}
+
+function openModal(id) {
+  const p = id ? profiles.find(function(x){return x.id===id;}) : null;
+  document.getElementById('fp-modal-title').textContent = p ? 'Edit Profile' : 'Add Profile';
+  document.getElementById('fm-id').value   = p ? p.id : '';
+  document.getElementById('fm-name').value = p ? (p.name||'') : '';
+  // Relationship — known values select directly; anything else means a custom "Other" entry
+  var KNOWN_REL = ['self','partner','child','toddler','baby','elderly','regular_guest','other'];
+  var rel = p ? (p.relationship||'regular_guest') : 'regular_guest';
+  var relSel = document.getElementById('fm-rel');
+  var otherWrap = document.getElementById('fm-rel-other-wrap');
+  var otherInput = document.getElementById('fm-rel-other');
+  if (KNOWN_REL.includes(rel)) {
+    relSel.value = rel; otherInput.value = '';
+    otherWrap.style.display = rel === 'other' ? '' : 'none';
+  } else {
+    relSel.value = 'other'; otherInput.value = rel;
+    otherWrap.style.display = '';
+  }
+  // Age group — map legacy values onto the seven standardised groups (E 1.3)
+  var AGE_MAP = {baby:'infant', adult:'young_adult', elderly:'senior'};
+  var age = p ? (p.age_group||'young_adult') : 'young_adult';
+  document.getElementById('fm-age').value = AGE_MAP[age] || age;
+  if (!document.getElementById('fm-age').value) document.getElementById('fm-age').value = 'young_adult';
+  document.getElementById('fm-spice').value= p ? (p.spice_preference||'medium') : 'medium';
+  document.getElementById('fm-notes').value= p ? (p.notes||'') : '';
+  var setChecks = function(cid, vals) {
+    var v = vals||[];
+    document.querySelectorAll('#'+cid+' input').forEach(function(cb){ cb.checked=v.includes(cb.value); });
+  };
+  setChecks('fm-dietary',  p ? p.dietary_needs : []);
+  setChecks('fm-allergies',p ? p.allergies : []);
+  setChecks('fm-health',   p ? p.health_conditions : []);
+  document.getElementById('fp-modal').classList.add('open');
+  setTimeout(function(){ document.getElementById('fm-name').focus(); },50);
+}
+function closeModal() { document.getElementById('fp-modal').classList.remove('open'); }
+
+async function saveProfile() {
+  var name = document.getElementById('fm-name').value.trim();
+  if (!name) { alert('Please enter a name.'); return; }
+  var getChecked = function(cid){ return [...document.querySelectorAll('#'+cid+' input:checked')].map(function(i){return i.value;}); };
+  try {
+    var saved = await rpc('upsert_family_profile',{
+      p_id:               document.getElementById('fm-id').value||null,
+      p_name:             name,
+      p_relationship:     (function(){
+                            var v = document.getElementById('fm-rel').value;
+                            if (v !== 'other') return v;
+                            var custom = document.getElementById('fm-rel-other').value.trim();
+                            return custom || 'other';
+                          })(),
+      p_age_group:        document.getElementById('fm-age').value,
+      p_spice_preference: document.getElementById('fm-spice').value,
+      p_dietary_needs:    getChecked('fm-dietary'),
+      p_allergies:        getChecked('fm-allergies'),
+      p_health_conditions:getChecked('fm-health'),
+      p_notes:            document.getElementById('fm-notes').value.trim()
+    });
+    closeModal();
+    await load();
+  } catch(e) { alert('Error: '+e.message); }
+}
+
+async function deleteProfile(id) {
+  if (!confirm('Remove this profile?')) return;
+  try { await rpc('delete_family_profile',{p_id:id}); await load(); }
+  catch(e) { alert('Error: '+e.message); }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  load();
+  document.getElementById('fp-modal').addEventListener('click',function(e){ if(e.target===this)closeModal(); });
+});
+</script>
+</body>
+</html>

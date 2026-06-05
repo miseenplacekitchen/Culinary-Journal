@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Upgrade to Premium to access this feature on The Culinary Journal.">
+  <link rel="canonical" href="https://theculinaryjournal.site/paid-members-only.html">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Premium Members Only — The Culinary Journal</title>
+  <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
+<script src="page-guard.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100vh; background: var(--bg, #0f1015); display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif; padding: 24px; }
+    .card { text-align: center; padding: 52px 44px; max-width: 500px; width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; }
+    .icon { font-size: 2.6rem; margin-bottom: 20px; }
+    .tier-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 4px 14px; border-radius: 20px; background: linear-gradient(135deg, #C4973B, #e8b84b); color: var(--text-high); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 20px; }
+    h1 { font-family: 'Cormorant Garamond', serif; font-size: 2.1rem; font-weight: 700; color: var(--text-high, #fff); margin-bottom: 10px; }
+    .subtitle { font-size: 0.95rem; color: var(--text-mid, rgba(255,255,255,0.55)); line-height: 1.65; margin-bottom: 28px; }
+    .pricing-row { display: flex; gap: 12px; justify-content: center; margin-bottom: 28px; flex-wrap: wrap; }
+    .price-card { flex: 1; min-width: 140px; background: rgba(255,255,255,0.04); border: 1px solid var(--accent, #C4973B); border-radius: 12px; padding: 18px 16px; }
+    .price-card .amount { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 700; color: var(--accent, #C4973B); }
+    .price-card .period { font-size: 12px; color: var(--text-mid, rgba(255,255,255,0.45)); margin-top: 2px; }
+    .price-card .saving { font-size: 10px; font-weight: 600; color: #4caf76; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .feature-list { text-align: left; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 18px 22px; margin-bottom: 28px; }
+    .feature-list p { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-mid, rgba(255,255,255,0.4)); margin-bottom: 10px; }
+    .feature { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--text-high, rgba(255,255,255,0.82)); padding: 4px 0; line-height: 1.4; }
+    .feature::before { content: '★'; color: #C4973B; flex-shrink: 0; font-size: 10px; margin-top: 2px; }
+    .btn-group { display: flex; flex-direction: column; gap: 10px; }
+    .btn-premium { display: block; padding: 13px 32px; background: linear-gradient(135deg, #C4973B, #e8b84b); color: var(--text-high); text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; transition: opacity 0.2s; }
+    .btn-premium:hover { opacity: 0.88; }
+    .btn-secondary { display: block; padding: 12px 32px; background: transparent; color: var(--text-mid, rgba(255,255,255,0.6)); text-decoration: none; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; font-size: 13px; transition: border-color 0.2s, color 0.2s; }
+    .btn-secondary:hover { border-color: var(--text-low); color: var(--text-high, #fff); }
+    .note { font-size: 11px; color: var(--text-mid, rgba(255,255,255,0.3)); margin-top: 14px; }
+    .note a { color: var(--accent, #C4973B); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">⭐</div>
+    <div class="tier-badge">Premium Feature</div>
+    <h1>Upgrade to Access This</h1>
+    <p class="subtitle">This feature is available to Premium members. Join thousands of home cooks and professional chefs who use The Culinary Journal every day.</p>
+
+    <div class="pricing-row" id="pricing-row">
+      <div class="price-card">
+        <div class="amount" id="price-monthly">—</div>
+        <div class="period">per month</div>
+      </div>
+      <div class="price-card">
+        <div class="amount" id="price-annual">—</div>
+        <div class="period">per year</div>
+        <div class="saving" id="saving-label"></div>
+      </div>
+    </div>
+
+    <div class="feature-list">
+      <p>Everything in Premium</p>
+      <div class="feature">Unlimited recipe saves and collections</div>
+      <div class="feature">AI photo reading — import torn pages, screenshots, handwriting</div>
+      <div class="feature">Full nutrition tracking — completely free, always</div>
+      <div class="feature">Smart ingredient substitutions</div>
+      <div class="feature">Complete meal planning suite</div>
+      <div class="feature">Full print studio — every card size and layout</div>
+      <div class="feature">Regional ingredient intelligence</div>
+      <div class="feature">Baby &amp; toddler recipe section</div>
+      <div class="feature">Unlimited grocery lists and pantry tracker</div>
+    </div>
+
+    <div class="btn-group">
+      <a href="login.html#upgrade" class="btn-premium" id="upgrade-btn">Get Premium</a>
+      <a href="login.html" class="btn-secondary" id="signin-btn">Sign in to existing account</a>
+      <a href="index.html" class="btn-secondary">Back to Home</a>
+    </div>
+    <p class="note">Already subscribed? <a href="login.html" id="signin-link">Sign in here</a> and this page will unlock automatically.</p>
+  </div>
+
+  <script>
+            // Pass ?next= through to login
+    var params = new URLSearchParams(window.location.search);
+    var next   = params.get('next');
+    if (next) {
+      document.getElementById('upgrade-btn').href  = 'login.html?next=' + encodeURIComponent(next) + '#upgrade';
+      document.getElementById('signin-btn').href   = 'login.html?next=' + encodeURIComponent(next);
+      document.getElementById('signin-link').href  = 'login.html?next=' + encodeURIComponent(next);
+    }
+
+    // Load actual pricing from Supabase
+    fetch(SUPA_URL + '/rest/v1/site_settings?select=key,value&key=in.(price_premium_monthly,price_premium_annual,currency_symbol)', {
+      headers: { 'apikey': SUPA_KEY, 'Accept': 'application/json' }
+    })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(rows){
+      if (!Array.isArray(rows)) return;
+      var S = {};
+      rows.forEach(function(r){ S[r.key] = r.value; });
+
+      var cur  = S.currency_symbol || '$';
+      var mon  = parseFloat(S.price_premium_monthly || '4');
+      var ann  = parseFloat(S.price_premium_annual  || '40');
+      var save = Math.round((mon * 12 - ann) / (mon * 12) * 100);
+
+      document.getElementById('price-monthly').textContent = cur + mon.toFixed(2);
+      document.getElementById('price-annual').textContent  = cur + ann.toFixed(2);
+      if (save > 0) {
+        document.getElementById('saving-label').textContent = 'Save ' + save + '%';
+      }
+    })
+    .catch(function(){
+      // Fallback to hardcoded if Supabase unreachable
+      document.getElementById('price-monthly').textContent = '$4.00';
+      document.getElementById('price-annual').textContent  = '$40.00';
+      document.getElementById('saving-label').textContent  = 'Save 17%';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Site-wide settings for The Culinary Journal administrators.">
+  <link rel="canonical" href="https://theculinaryjournal.site/site-settings.html">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Site Settings — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .bp-wrap  { max-width:900px; margin:0 auto; padding:32px 20px 80px; }
+    .bp-header { margin-bottom:32px; }
+    .bp-logo   { font-family:'Cormorant Garamond',serif; font-size:1rem; color:var(--accent); letter-spacing:0.08em; margin-bottom:4px; }
+    .bp-title  { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:700; color:var(--text-high); }
+    .bp-sub    { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-top:4px; }
+
+    /* Sections */
+    .bp-section { background:var(--text-ghost); border:1px solid var(--border); border-radius:14px; padding:24px; margin-bottom:20px; }
+    .bp-sec-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-mid); margin-bottom:16px; }
+    .bp-field { margin-bottom:16px; }
+    .bp-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; color:var(--text-mid); margin-bottom:6px; letter-spacing:0.06em; text-transform:uppercase; }
+    .bp-input { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:10px 14px; border:1px solid var(--border); border-radius:9px; background: var(--input-bg); color:var(--text-high); outline:none; }
+    .bp-input:focus { border-color:var(--accent); }
+    .bp-select { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:14px; padding:10px 13px; border:1px solid var(--border); border-radius:9px; background: var(--input-bg); color:var(--text-high); outline:none; cursor:pointer; }
+    .bp-select:focus { border-color:var(--accent); }
+    .bp-hint { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-top:4px; }
+    .bp-btn { padding:11px 22px; border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; border:none; }
+    .bp-btn-primary { background:var(--accent); color:#fff; }
+    .bp-btn-primary:hover { opacity:0.88; }
+    .bp-btn-ghost   { background:none; border:1px solid var(--border); color:var(--text-mid); }
+    .bp-msg { font-family:'DM Sans',sans-serif; font-size:12px; padding:8px 14px; border-radius:7px; margin-top:12px; display:none; }
+    .bp-msg.ok  { background: var(--success-bg); color:#4caf76; display:block; }
+    .bp-msg.err { background:rgb(from var(--danger) r g b / 0.12); color: var(--danger); display:block; }
+
+    /* Theme preview */
+    .bp-theme-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin-top:10px; }
+    .bp-theme-opt  { padding:10px; border:2px solid var(--border); border-radius:10px; cursor:pointer; text-align:center; }
+    .bp-theme-opt:hover { border-color:var(--accent-border); }
+    .bp-theme-opt.selected { border-color:var(--accent); background:rgb(from var(--accent) r g b / 0.08); }
+    .bp-theme-name { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-high); margin-top:4px; }
+    .bp-theme-swatch { width:100%; height:28px; border-radius:6px; }
+
+    /* Access denied */
+    #bp-denied { display:none; text-align:center; padding:80px 20px; }
+    #bp-main   { display:none; }
+    .bp-lock-icon { font-size:48px; margin-bottom:12px; }
+  </style>
+  <script src="page-guard.js"></script>
+</head>
+<body class="page-bg cj-body">
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"></div>
+
+<div class="bp-wrap">
+  <div id="bp-denied">
+    <div class="bp-lock-icon">🔐</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;color:var(--text-high);margin-bottom:8px">Admin Access Only</div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:20px">This panel is for Betty Jacob only.</div>
+    <a href="index.html" class="bp-btn bp-btn-primary">Go Home</a>
+  </div>
+
+  <div id="bp-main">
+    <div class="bp-header">
+      <div class="bp-logo">The Culinary Journal</div>
+      <h1 class="bp-title">✨ Site Settings</h1>
+      <div class="bp-sub">Change themes, homepage content, and site settings — no code needed.</div>
+    </div>
+
+    <!-- Theme -->
+    <div class="bp-section">
+      <div class="bp-sec-title">Site Default Theme</div>
+      <div class="bp-field">
+        <div class="bp-label">Default Theme for New Visitors</div>
+        <select class="bp-select" id="bp-theme">
+          <optgroup label="Dark">
+            <option value="midnight-slate">Midnight Slate (current default)</option>
+            <option value="midnight-black">Midnight Black</option>
+            <option value="dark-forest">Dark Forest</option>
+            <option value="dark-bordeaux">Dark Bordeaux</option>
+            <option value="dark-navy">Dark Navy</option>
+            <option value="dark-chocolate">Dark Chocolate</option>
+            <option value="dark-obsidian">Dark Obsidian</option>
+          </optgroup>
+          <optgroup label="Light">
+            <option value="cream-gold">Cream &amp; Gold</option>
+            <option value="pure-white">Pure White</option>
+            <option value="soft-linen">Soft Linen</option>
+            <option value="sage-cream">Sage &amp; Cream</option>
+            <option value="blush-rose">Blush &amp; Rose</option>
+            <option value="silver-morning">Silver Morning</option>
+            <option value="lemon-fresh">Lemon Fresh</option>
+          </optgroup>
+          <optgroup label="Seasonal">
+            <option value="spring-blossom">Spring Blossom</option>
+            <option value="summer-citrus">Summer Citrus</option>
+            <option value="autumn-harvest">Autumn Harvest</option>
+            <option value="winter-frost">Winter Frost</option>
+          </optgroup>
+          <optgroup label="Festive">
+            <option value="christmas">Christmas</option>
+            <option value="diwali">Diwali</option>
+            <option value="ramadan">Ramadan</option>
+            <option value="onam">Onam</option>
+            <option value="easter">Easter</option>
+          </optgroup>
+        </select>
+        <div class="bp-hint">This becomes the default for all users who haven't set their own theme.</div>
+      </div>
+      <div id="bp-theme-preview" style="display:flex;gap:12px;align-items:center;padding:12px;background:var(--bg);border-radius:9px;border:1px solid var(--border)">
+        <div id="bp-theme-dot" style="width:32px;height:32px;border-radius:50%;background:var(--accent)"></div>
+        <div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--text-high)" id="bp-theme-preview-name">Midnight Slate</div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)">Current default theme</div>
+        </div>
+      </div>
+      <div style="margin-top:14px">
+        <button class="bp-btn bp-btn-primary" onclick="saveTheme()">Save Theme Setting</button>
+        <button class="bp-btn bp-btn-ghost" style="margin-left:8px" onclick="previewTheme()">Preview</button>
+      </div>
+      <div class="bp-msg" id="bp-theme-msg"></div>
+    </div>
+
+    <!-- Homepage Banner -->
+    <div class="bp-section">
+      <div class="bp-sec-title">Homepage Announcement</div>
+      <div class="bp-field">
+        <div class="bp-label">Banner Text (leave blank to hide)</div>
+        <input class="bp-input" id="bp-banner" type="text" placeholder="e.g. 🎉 New recipes added for Onam 2025!">
+        <div class="bp-hint">Shown at the top of the homepage. Keep it short and welcoming.</div>
+      </div>
+      <div class="bp-field">
+        <div class="bp-label">Banner Link (optional)</div>
+        <input class="bp-input" id="bp-banner-link" type="url" placeholder="https://...">
+      </div>
+      <button class="bp-btn bp-btn-primary" onclick="saveBanner()">Save Banner</button>
+      <div class="bp-msg" id="bp-banner-msg"></div>
+    </div>
+
+    <!-- Featured Recipes -->
+    <div class="bp-section">
+      <div class="bp-sec-title">Featured Recipe IDs</div>
+      <div class="bp-field">
+        <div class="bp-label">Recipe of the Day — UUID (single recipe ID)</div>
+        <input class="bp-input" id="bp-rotd" type="text" placeholder="Leave blank for automatic daily rotation">
+        <div class="bp-hint">If set, this specific recipe appears as Recipe of the Day. If blank, a different recipe is shown each day automatically.</div>
+      </div>
+      <div class="bp-field">
+        <div class="bp-label">Recipe UUIDs to feature on homepage (one per line)</div>
+        <textarea class="bp-input" id="bp-featured" rows="4" placeholder="Paste recipe IDs here, one per line...&#10;Find IDs in the Admin Dashboard → All Recipes"></textarea>
+        <div class="bp-hint">These recipes appear in the featured section on the homepage. Get IDs from the Admin Dashboard.</div>
+      </div>
+      <button class="bp-btn bp-btn-primary" onclick="saveFeatured()">Save Featured Recipes</button>
+      <div class="bp-msg" id="bp-featured-msg"></div>
+    </div>
+
+    <!-- Site Settings -->
+    <div class="bp-section">
+      <div class="bp-sec-title">Site Settings</div>
+      <div class="bp-field">
+        <div class="bp-label">New Recipe Submissions</div>
+        <select class="bp-select" id="bp-submissions">
+          <option value="open">Open — anyone can submit</option>
+          <option value="closed">Closed — submissions paused</option>
+        </select>
+      </div>
+      <div class="bp-field">
+        <div class="bp-label">New User Registrations</div>
+        <select class="bp-select" id="bp-registrations">
+          <option value="open">Open — anyone can register</option>
+          <option value="closed">Closed — registration paused</option>
+        </select>
+      </div>
+      <button class="bp-btn bp-btn-primary" onclick="saveSiteSettings()">Save Settings</button>
+      <div class="bp-msg" id="bp-settings-msg"></div>
+    </div>
+
+    <!-- Quick Links -->
+    <!-- ═══ PAGE VISIBILITY ════════════════════════════════════════ -->
+    <div class="bp-section">
+      <div class="bp-sec-title">Page Visibility</div>
+      <p style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:16px;line-height:1.6">
+        Control access to each page. Changes take effect within 5 minutes for all visitors.
+        <strong style="color:var(--text-high)">You as admin always retain access regardless of setting.</strong>
+      </p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px" id="pv-status-legend">
+        <div style="display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)"><span style="color:#4caf76">🟢</span> Live — accessible to everyone</div>
+        <div style="display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)"><span>🔵</span> Members only — must be logged in</div>
+        <div style="display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)"><span style="color:var(--accent)">🔴</span> Admin only — only you can see it</div>
+        <div style="display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)"><span>⚫</span> Offline — maintenance, nobody in</div>
+      </div>
+
+      <div id="pv-loading" style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid)">Loading page settings...</div>
+      <div id="pv-table" style="display:none"></div>
+
+      <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="bp-btn bp-btn-primary" onclick="savePageVisibility()">Save All Page Settings</button>
+        <span id="pv-msg" style="font-family:'DM Sans',sans-serif;font-size:12px;color:#4caf76;display:none">✓ Saved</span>
+      </div>
+    </div>
+
+    <div class="bp-section">
+      <div class="bp-sec-title">Quick Links</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <a href="dashboard.html" class="bp-btn bp-btn-primary">Admin Dashboard →</a>
+        <a href="recipes.html" target="_blank" class="bp-btn bp-btn-ghost">View Site →</a>
+        <a href="my-dashboard.html" class="bp-btn bp-btn-ghost">My Kitchen →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="nav-init.js"></script>
+<script>
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+const ADMIN_EMAIL = 'miseenplacekitchen.official@gmail.com';
+const SETTINGS_KEY = 'tcj_site_settings';
+
+function getSettings() {
+  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'); }
+  catch(_) { return {}; }
+}
+async function loadSettingsFromDB() {
+  try {
+    const session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+    if (!session || !session.access_token) return;
+    const res = await fetch(SUPA_URL + '/rest/v1/site_settings?select=key,value', {
+      headers: {'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + session.access_token}
+    });
+    if (!res.ok) return;
+    const rows = await res.json();
+    if (!Array.isArray(rows)) return;
+    const s = {};
+    rows.forEach(function(r) {
+      // Parse JSON values (arrays stored as JSON strings)
+      var v = r.value;
+      try {
+        var parsed = JSON.parse(v);
+        if (Array.isArray(parsed) || (parsed !== null && typeof parsed === 'object')) v = parsed;
+      } catch(_) {}
+      s[r.key] = v;
+    });
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    hydrateForm(s);
+  } catch(_) {}
+}
+async function saveSettings(s) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  // Persist each key to Supabase site_settings table
+  try {
+    const session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+    if (!session || !session.access_token) return;
+    for (const [key, value] of Object.entries(s)) {
+      await fetch(SUPA_URL + '/rest/v1/site_settings', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPA_KEY,
+          'Authorization': 'Bearer ' + session.access_token,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates,return=minimal'
+        },
+        body: JSON.stringify({ key: key, value: (Array.isArray(value) || (value !== null && typeof value === 'object')) ? JSON.stringify(value) : String(value) })
+      });
+    }
+  } catch(_) {}
+}
+
+function showMsg(id, text, ok) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'bp-msg ' + (ok?'ok':'err');
+  setTimeout(function() { el.className='bp-msg'; }, 3000);
+}
+
+function previewTheme() {
+  const t = document.getElementById('bp-theme').value;
+  document.body.className = document.body.className.replace(/theme-\S+/g,'').trim();
+  if (t !== 'midnight-slate') document.body.classList.add('theme-'+t);
+}
+
+async function saveTheme() {
+  const t = document.getElementById('bp-theme').value;
+  const s = getSettings();
+  s.default_theme = t;
+  await saveSettings(s);
+  // Apply for current visitor too
+  localStorage.setItem('tcj_theme', t);
+  previewTheme();
+  showMsg('bp-theme-msg', '✓ Default theme saved.', true);
+}
+
+async function saveBanner() {
+  const s = getSettings();
+  s.banner_text = document.getElementById('bp-banner').value.trim();
+  s.banner_link = document.getElementById('bp-banner-link').value.trim();
+  await saveSettings(s);
+  showMsg('bp-banner-msg', '✓ Banner saved.', true);
+}
+
+async function saveFeatured() {
+  const ids  = document.getElementById('bp-featured').value.trim().split('\n').map(function(s){return s.trim();}).filter(Boolean);
+  const rotd = (document.getElementById('bp-rotd') || {}).value || '';
+  const s = getSettings();
+  s.featured_ids  = ids;
+  s.recipe_of_day = rotd.trim();
+  await saveSettings(s);
+  showMsg('bp-featured-msg', '✓ ' + ids.length + ' featured recipe(s) saved.', true);
+}
+
+async function saveSiteSettings() {
+  const s = getSettings();
+  s.submissions    = document.getElementById('bp-submissions').value;
+  s.registrations  = document.getElementById('bp-registrations').value;
+  await saveSettings(s);
+  showMsg('bp-settings-msg', '✓ Settings saved.', true);
+}
+
+async function initAdmin() {
+  loadSavedSettings();          // populate from localStorage immediately (fast)
+  await loadSettingsFromDB();   // then override with DB values
+  await loadPageVisibility();
+}
+
+function hydrateForm(s) {
+  // Alias used by loadSettingsFromDB — populates form fields from a settings object
+  if (s.default_theme) { const el = document.getElementById('bp-theme'); if (el) el.value = s.default_theme; }
+  if (s.banner_text)   { const el = document.getElementById('bp-banner'); if (el) el.value = s.banner_text; }
+  if (s.banner_link)   { const el = document.getElementById('bp-banner-link'); if (el) el.value = s.banner_link; }
+  if (s.featured_ids)  { const el = document.getElementById('bp-featured'); if (el) el.value = (Array.isArray(s.featured_ids) ? s.featured_ids : [s.featured_ids]).join('\n'); }
+  if (s.recipe_of_day) { const el = document.getElementById('bp-rotd'); if (el) el.value = s.recipe_of_day; }
+  if (s.submissions)   { const el = document.getElementById('bp-submissions'); if (el) el.value = s.submissions; }
+  if (s.registrations) { const el = document.getElementById('bp-registrations'); if (el) el.value = s.registrations; }
+}
+
+function loadSavedSettings() {
+  const s = getSettings();
+  if (s.default_theme) document.getElementById('bp-theme').value = s.default_theme;
+  if (s.banner_text)   document.getElementById('bp-banner').value = s.banner_text;
+  if (s.banner_link)   document.getElementById('bp-banner-link').value = s.banner_link;
+  if (s.featured_ids)  document.getElementById('bp-featured').value = (Array.isArray(s.featured_ids) ? s.featured_ids : [s.featured_ids]).join('\n');
+  if (s.recipe_of_day) document.getElementById('bp-rotd').value = s.recipe_of_day;
+  if (s.submissions)   document.getElementById('bp-submissions').value = s.submissions;
+  if (s.registrations) document.getElementById('bp-registrations').value = s.registrations;
+}
+
+async function init() {
+  const session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+  const profile  = JSON.parse(localStorage.getItem('tcj_profile')||'null');
+  const isAdmin = profile && (profile.is_admin === true || profile.email === ADMIN_EMAIL);
+  if (!session || !isAdmin) {
+    document.getElementById('bp-denied').style.display = 'block';
+    return;
+  }
+  document.getElementById('bp-main').style.display = 'block';
+  loadSavedSettings();
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+  var session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+  var profile  = JSON.parse(localStorage.getItem('tcj_profile')||'null');
+  var isAdminUser = profile && (profile.is_admin === true || profile.email === 'miseenplacekitchen.official@gmail.com');
+  if (!session || !isAdminUser) {
+    document.getElementById('bp-denied').style.display = 'block';
+    return;
+  }
+  document.getElementById('bp-main').style.display = 'block';
+  await initAdmin();
+});
+
+// ── PAGE VISIBILITY ──────────────────────────────────────────────
+const MANAGED_PAGES = [
+  {id:'recipes',         label:'Browse Recipes',       icon:'📖'},
+  {id:'recipe-page',     label:'Recipe Pages',          icon:'🍳'},
+  {id:'submit-recipe',   label:'Submit Recipe',         icon:'📝'},
+  {id:'search',          label:'Global Search',         icon:'🔍'},
+  {id:'my-dashboard',    label:'My Kitchen (Dashboard)',icon:'🏠'},
+  {id:'profile',         label:'User Profile',          icon:'👤'},
+  {id:'grocery',         label:'Grocery List',          icon:'🛒'},
+  {id:'meal-planner',    label:'Meal Planner',          icon:'🗓'},
+  {id:'pantry',          label:'Pantry & Fridge',       icon:'🫙'},
+  {id:'collections',     label:'Collections',           icon:'📁'},
+  {id:'family-profiles', label:'Family Profiles',       icon:'👨‍👩‍👧'},
+  {id:'table-planner',   label:'Table Planner',         icon:'🪑'},
+  {id:'print-studio',    label:'Print Studio',          icon:'🖨'},
+  {id:'chefs',           label:'Chef Directory',        icon:'👨‍🍳'},
+  {id:'baby',            label:'Baby & Toddler',        icon:'👶'},
+  {id:'preservation',    label:'Preservation Library',  icon:'🫙'},
+  {id:'conversions',     label:'Conversion Tools',      icon:'⚖️'},
+];
+
+var currentPageSettings = {};
+
+async function loadPageVisibility() {
+  try {
+    var res = await fetch(
+      SUPA_URL + '/rest/v1/rpc/get_page_settings',
+      {method:'POST', headers:{'apikey': SUPA_KEY,'Content-Type':'application/json'}, body:'{}'}
+    );
+    var rows = res.ok ? await res.json() : [];
+    rows.forEach(function(r){ currentPageSettings[r.page_id] = {visibility:r.visibility, message:r.message||''}; });
+    renderPageTable();
+    document.getElementById('pv-loading').style.display = 'none';
+    document.getElementById('pv-table').style.display   = 'block';
+  } catch(e) {
+    document.getElementById('pv-loading').textContent = 'Error loading page settings: ' + e.message;
+  }
+}
+
+var STATUS_ICON = {'public':'🟢', 'registered':'🔵', 'paid':'🟡', 'hidden':'🔴'};
+var STATUS_LABEL = {'public':'Public', 'registered':'Members Only', 'paid':'Paid Only', 'hidden':'Hidden'};
+
+function renderPageTable() {
+  var table = document.getElementById('pv-table');
+  if (!table) return;
+  table.innerHTML = '';
+  var tbl = document.createElement('table');
+  tbl.style.cssText = 'width:100%;border-collapse:collapse';
+  var thead = document.createElement('thead');
+  thead.innerHTML = '<tr>' +
+    '<th style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid);padding:8px 10px;border-bottom:1px solid var(--border);text-align:left">Page</th>' +
+    '<th style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid);padding:8px 10px;border-bottom:1px solid var(--border);text-align:left">Visibility</th>' +
+    '<th style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid);padding:8px 10px;border-bottom:1px solid var(--border);text-align:left">Custom Message (optional)</th>' +
+    '</tr>';
+  tbl.appendChild(thead);
+  var tbody = document.createElement('tbody');
+  MANAGED_PAGES.forEach(function(page) {
+    var s = currentPageSettings[page.id] || {visibility:'public',message:''};
+    var vis = s.visibility || 'public';
+    var tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+    // Name cell
+    var tdName = document.createElement('td');
+    tdName.style.cssText = 'padding:10px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high)';
+    tdName.textContent = page.icon + ' ' + page.label;
+    tr.appendChild(tdName);
+    // Visibility dropdown
+    var tdVis = document.createElement('td');
+    tdVis.style.padding = '10px';
+    var sel = document.createElement('select');
+    sel.id = 'pv-vis-' + page.id;
+    sel.style.cssText = 'font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text-high);outline:none;cursor:pointer';
+    [['public','🟢 Public'],['registered','🔵 Members Only'],['paid','🟡 Paid Only'],['hidden','🔴 Hidden']].forEach(function(opt) {
+      var o = document.createElement('option');
+      o.value = opt[0]; o.textContent = opt[1];
+      if (vis === opt[0]) o.selected = true;
+      sel.appendChild(o);
+    });
+    tdVis.appendChild(sel);
+    tr.appendChild(tdVis);
+    // Message input
+    var tdMsg = document.createElement('td');
+    tdMsg.style.padding = '10px';
+    var inp = document.createElement('input');
+    inp.id = 'pv-msg-' + page.id;
+    inp.type = 'text';
+    inp.value = s.message || '';
+    inp.placeholder = 'e.g. Coming back soon!';
+    inp.style.cssText = 'width:100%;box-sizing:border-box;font-family:DM Sans,sans-serif;font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text-high);outline:none';
+    tdMsg.appendChild(inp);
+    tr.appendChild(tdMsg);
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);
+  table.appendChild(tbl);
+}
+
+
+async function savePageVisibility() {
+  var session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+  if (!session) { alert('Not signed in.'); return; }
+  var headers = {
+    'apikey': SUPA_KEY,
+    'Content-Type':'application/json',
+    'Authorization':'Bearer '+session.access_token
+  };
+  var errors = 0;
+  for (var i=0; i<MANAGED_PAGES.length; i++) {
+    var page = MANAGED_PAGES[i];
+    var visEl = document.getElementById('pv-vis-' + page.id);
+    var msgEl = document.getElementById('pv-msg-' + page.id);
+    if (!visEl) continue;
+    try {
+      var res = await fetch(SUPA_URL + '/rest/v1/rpc/set_page_visibility', {
+        method:'POST', headers:headers,
+        body:JSON.stringify({p_page_id:page.id, p_visibility:visEl.value, p_message:msgEl?msgEl.value.trim():''})
+      });
+      if (!res.ok) errors++;
+    } catch(_) { errors++; }
+  }
+  // Invalidate cache
+  try { sessionStorage.removeItem('tcj_page_vis'); } catch(_) {}
+  var msgEl = document.getElementById('pv-msg');
+  if (errors) {
+    msgEl.textContent = errors + ' error(s) saving. Try again.';
+    msgEl.style.color = 'var(--danger)';
+  } else {
+    msgEl.textContent = '✓ All page settings saved';
+    msgEl.style.color = 'var(--success)';
+  }
+  msgEl.style.display = 'inline';
+  setTimeout(function(){ msgEl.style.display='none'; }, 3000);
+}
+
+</script>
+</body>
+</html>

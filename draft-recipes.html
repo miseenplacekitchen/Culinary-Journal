@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="site.webmanifest">
+  <meta name="theme-color" content="#DEA82B">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="The Culinary Journal">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="View and manage your saved recipe drafts and submission status on The Culinary Journal.">
+  <link rel="canonical" href="https://theculinaryjournal.site/draft-recipes.html">
+  <meta name="robots" content="noindex, nofollow">
+  <title>My Recipes &amp; Drafts — The Culinary Journal</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="nav-init.js" defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    .dr-page { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    /* Header */
+    .dr-header { margin-bottom: 40px; }
+    .dr-header h1 { font-family: "Cormorant Garamond", serif; font-size: clamp(2rem,5vw,2.8rem); font-weight: 500; color: var(--text-high); margin: 0 0 6px; letter-spacing: 0.02em; }
+    .dr-header p  { font-family: "DM Sans", sans-serif; font-size: 14px; color: var(--text-mid); margin: 0; }
+
+    /* Toolbar */
+    .dr-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; gap: 12px; flex-wrap: wrap; }
+    .dr-count { font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-mid); }
+    .dr-new-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: "DM Sans", sans-serif; font-size: 13px; font-weight: 500;
+      color: #fff; background: var(--accent); border: none; border-radius: 8px;
+      padding: 10px 20px; cursor: pointer; text-decoration: none; transition: opacity 0.15s;
+    }
+    .dr-new-btn:hover { opacity: 0.85; }
+
+    /* Grid */
+    .dr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+
+    /* Draft Card */
+    .dr-card {
+      background: var(--text-ghost);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+    .dr-card:hover { border-color: rgb(from var(--accent) r g b / 0.5); box-shadow: 0 4px 20px rgb(from var(--accent) r g b / 0.08); }
+
+    /* Photo */
+    .dr-card-photo {
+      width: 100%; height: 160px;
+      background-size: cover; background-position: center; background-color: var(--border);
+      position: relative;
+    }
+    .dr-card-photo-empty {
+      width: 100%; height: 160px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgb(from var(--accent) r g b / 0.05);
+      font-size: 36px; color: var(--border);
+    }
+    .dr-card-status {
+      position: absolute; top: 10px; left: 10px;
+      font-family: "DM Sans", sans-serif; font-size: 10px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      background: rgba(0,0,0,0.6); color: #fff;
+      padding: 3px 9px; border-radius: 20px;
+      backdrop-filter: blur(4px);
+    }
+
+    /* Body */
+    .dr-card-body { padding: 18px 18px 14px; }
+    .dr-card-name { font-family: "Cormorant Garamond", serif; font-size: 1.2rem; font-weight: 600; color: var(--text-high); margin: 0 0 4px; line-height: 1.3; }
+    .dr-card-meta { font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--text-mid); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .dr-card-meta-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+
+    /* Actions */
+    .dr-card-actions { display: flex; gap: 8px; }
+    .dr-btn {
+      flex: 1; padding: 8px 0; border-radius: 7px; font-family: "DM Sans", sans-serif;
+      font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s;
+      text-align: center; border: 1px solid var(--border); background: none;
+      color: var(--text-high); text-decoration: none; display: inline-flex;
+      align-items: center; justify-content: center; gap: 5px;
+    }
+    .dr-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .dr-btn-edit { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .dr-btn-edit:hover { opacity: 0.85; color: var(--text-high); }
+    .dr-btn-delete:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* Empty state */
+    .dr-empty {
+      grid-column: 1 / -1;
+      text-align: center; padding: 80px 20px;
+    }
+    .dr-empty-icon { font-size: 52px; margin-bottom: 16px; opacity: 0.4; }
+    .dr-empty-title { font-family: "Cormorant Garamond", serif; font-size: 1.6rem; font-weight: 500; color: var(--text-high); margin: 0 0 8px; }
+    .dr-empty-sub { font-family: "DM Sans", sans-serif; font-size: 14px; color: var(--text-mid); margin: 0 0 28px; }
+
+    /* Delete confirm overlay */
+    .dr-confirm-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      display: none; align-items: center; justify-content: center;
+      z-index: 9999; backdrop-filter: blur(4px);
+    }
+    .dr-confirm-overlay.open { display: flex; }
+    .dr-confirm-box {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 14px;
+      padding: 32px; max-width: 380px; width: 90%; text-align: center;
+    }
+    .dr-confirm-box h3 { font-family: "Cormorant Garamond", serif; font-size: 1.4rem; font-weight: 600; color: var(--text-high); margin: 0 0 8px; }
+    .dr-confirm-box p  { font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-mid); margin: 0 0 24px; }
+    .dr-confirm-btns { display: flex; gap: 10px; }
+    .dr-confirm-cancel { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: none; color: var(--text-high); font-family: "DM Sans", sans-serif; font-size: 13px; cursor: pointer; }
+    .dr-confirm-delete { flex: 1; padding: 10px; border: none; border-radius: 8px; background: var(--danger); color: var(--text-high); font-family: "DM Sans", sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; }
+
+    @media (max-width: 600px) { .dr-grid { grid-template-columns: 1fr; } }
+  </style>
+  <script src="page-guard.js"></script>
+</head>
+<body class="cj-body">
+
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"></div>
+
+<div class="dr-page">
+
+  <!-- Auth guard -->
+  <div id="auth-guard" style="display:none; text-align:center; padding:80px 20px;">
+    <p style="font-family:'DM Sans',sans-serif; color:var(--text-mid); margin-bottom:20px">Sign in to see your draft recipes.</p>
+    <a href="login.html" style="font-family:'DM Sans',sans-serif; font-size:14px; color:var(--accent)">Sign In →</a>
+  </div>
+
+  <div id="main-content" style="display:none">
+    <div class="dr-header">
+      <h1>My Recipes &amp; Drafts</h1>
+      <p>Your saved works in progress, plus everything you've submitted for review.</p>
+    </div>
+
+    <div class="dr-toolbar">
+      <div class="dr-count" id="dr-count"></div>
+      <a href="submit-recipe.html" class="dr-new-btn">✦ Start New Recipe</a>
+    </div>
+
+    <div class="dr-grid" id="dr-grid"></div>
+
+    <!-- Submitted recipes — pending / approved / rejected -->
+    <div class="dr-header" style="margin-top:48px">
+      <h2 style="font-size:clamp(1.5rem,4vw,2rem)">My Submissions</h2>
+      <p>Recipes you've submitted for review and their current status.</p>
+    </div>
+    <div class="dr-count" id="sub-count" style="margin-bottom:14px"></div>
+    <div class="dr-grid" id="sub-grid"></div>
+  </div>
+
+</div>
+
+<!-- Delete confirmation overlay -->
+<div class="dr-confirm-overlay" id="dr-confirm">
+  <div class="dr-confirm-box">
+    <h3>Delete this draft?</h3>
+    <p id="dr-confirm-name">This will permanently remove the draft. It cannot be recovered.</p>
+    <div class="dr-confirm-btns">
+      <button class="dr-confirm-cancel" onclick="closeConfirm()">Keep it</button>
+      <button class="dr-confirm-delete" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+const DRAFTS_INDEX_KEY = 'tcj_drafts_index';
+let pendingDeleteId = null;
+let session = null;
+
+function lsGet(k) { try { return localStorage.getItem(k); } catch(_) { return null; } }
+function lsRemove(k) { try { localStorage.removeItem(k); } catch(_) {} }
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = now - d;
+  const mins  = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days  = Math.floor(diff / 86400000);
+  if (mins  <  1) return 'Just now';
+  if (mins  < 60) return mins + ' minute' + (mins  === 1 ? '' : 's') + ' ago';
+  if (hours < 24) return hours + ' hour'   + (hours === 1 ? '' : 's') + ' ago';
+  if (days  <  7) return days + ' day'     + (days  === 1 ? '' : 's') + ' ago';
+  return d.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function loadDrafts() {
+  let index = [];
+  try { index = JSON.parse(lsGet(DRAFTS_INDEX_KEY) || '[]'); } catch(_) {}
+
+  // Also pick up the auto-save draft if it exists and isn't in the index
+  const autoSave = lsGet('tcj_recipe_draft');
+  if (autoSave) {
+    try {
+      const d = JSON.parse(autoSave);
+      const name = d.recipe_name || 'Untitled Recipe';
+      const autoId = 'autosave';
+      if (!index.find(x => x.id === autoId)) {
+        index.unshift({ id: autoId, recipe_name: name, category: d.category || '', image_url: d.image_url || '', saved_at: new Date().toISOString() });
+      }
+    } catch(_) {}
+  }
+
+  const grid = document.getElementById('dr-grid');
+  const countEl = document.getElementById('dr-count');
+
+  if (index.length === 0) {
+    countEl.textContent = '';
+    grid.innerHTML = `
+      <div class="dr-empty">
+        <div class="dr-empty-icon">📝</div>
+        <div class="dr-empty-title">No drafts yet</div>
+        <div class="dr-empty-sub">Start writing a recipe and save it as a draft to see it here.</div>
+        <a href="submit-recipe.html" class="dr-new-btn" style="display:inline-flex">✦ Start a Recipe</a>
+      </div>`;
+    return;
+  }
+
+  countEl.textContent = index.length + ' draft' + (index.length === 1 ? '' : 's');
+
+  grid.innerHTML = index.map(draft => {
+    const hasPhoto = draft.image_url && draft.image_url.trim();
+    const photoHtml = hasPhoto
+      ? `<div class="dr-card-photo" style="background-image:url('${draft.image_url}')"><span class="dr-card-status">Draft</span></div>`
+      : `<div class="dr-card-photo-empty"><span>🍽</span><span class="dr-card-status" style="position:static;margin-top:8px;display:block">Draft</span></div>`;
+
+    const category = draft.category ? `<span>${draft.category}</span><span class="dr-card-meta-dot"></span>` : '';
+    const saved = `<span>Saved ${formatDate(draft.saved_at)}</span>`;
+
+    return `
+      <div class="dr-card" id="card-${draft.id}">
+        ${photoHtml}
+        <div class="dr-card-body">
+          <div class="dr-card-name">${draft.recipe_name || 'Untitled Recipe'}</div>
+          <div class="dr-card-meta">${category}${saved}</div>
+          <div class="dr-card-actions">
+            <a href="submit-recipe.html?draft=${draft.id}" class="dr-btn dr-btn-edit">✎ Continue Editing</a>
+            <button class="dr-btn dr-btn-delete" onclick="event.stopPropagation(); askDelete('${draft.id}', '${(draft.recipe_name||'this draft').replace(/'/g,"\\'")}')" title="Delete Draft" aria-label="Delete Draft">🗑</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function askDelete(id, name) {
+  pendingDeleteId = id;
+  document.getElementById('dr-confirm-name').textContent = '"' + name + '" will be permanently deleted.';
+  document.getElementById('dr-confirm').classList.add('open');
+}
+function closeConfirm() {
+  pendingDeleteId = null;
+  document.getElementById('dr-confirm').classList.remove('open');
+}
+function confirmDelete() {
+  if (!pendingDeleteId) return;
+  lsRemove('tcj_draft_' + pendingDeleteId);
+  if (pendingDeleteId === 'autosave') lsRemove('tcj_recipe_draft');
+  // Remove from index
+  let index = [];
+  try { index = JSON.parse(lsGet(DRAFTS_INDEX_KEY) || '[]'); } catch(_) {}
+  index = index.filter(d => d.id !== pendingDeleteId);
+  localStorage.setItem(DRAFTS_INDEX_KEY, JSON.stringify(index));
+  closeConfirm();
+  loadDrafts();
+}
+
+// Auth check
+try { session = JSON.parse(lsGet('tcj_session') || 'null'); } catch(_) {}
+if (!session || !session.access_token) {
+  document.getElementById('auth-guard').style.display = 'block';
+} else {
+  document.getElementById('main-content').style.display = 'block';
+  loadDrafts();
+  loadSubmissions();
+}
+
+// ── MY SUBMISSIONS — pending / approved / rejected ────────────────
+async function loadSubmissions() {
+  const grid = document.getElementById('sub-grid');
+  const countEl = document.getElementById('sub-count');
+  if (!grid) return;
+  grid.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:10px 0">Loading your submissions…</div>';
+  try {
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_my_submissions', {
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json'},
+      body:'{}'
+    });
+    if (!res.ok) throw new Error('Could not load submissions');
+    const rows = await res.json() || [];
+    if (countEl) countEl.textContent = rows.length + ' submission' + (rows.length === 1 ? '' : 's');
+    if (!rows.length) {
+      grid.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:10px 0">Nothing submitted yet — finish a draft and submit it for review.</div>';
+      return;
+    }
+    const STATUS = {
+      pending:  { label:'⏳ Pending review', color:'var(--warn)' },
+      approved: { label:'✓ Approved',        color:'var(--success)' },
+      rejected: { label:'✗ Needs updates',   color:'var(--danger)' }
+    };
+    grid.innerHTML = rows.map(function(r){
+      const st = STATUS[r.status] || { label: esc(r.status||'unknown'), color:'var(--text-mid)' };
+      const img = r.image_url
+        ? '<img src="'+esc(r.image_url)+'" alt="" style="width:100%;height:120px;object-fit:cover;border-radius:10px 10px 0 0">'
+        : '<div style="height:120px;display:flex;align-items:center;justify-content:center;font-size:34px;background:var(--text-ghost);border-radius:10px 10px 0 0">🍽</div>';
+      const action = r.status === 'rejected'
+        ? '<a href="submit-recipe.html?id='+esc(r.id)+'" style="color:var(--accent);font-size:12px;text-decoration:none;font-weight:600">Edit &amp; Resubmit →</a>'
+        : '<a href="recipe-page.html?id='+esc(r.id)+'" style="color:var(--accent);font-size:12px;text-decoration:none;font-weight:600">'+(r.status==='approved'?'View Recipe →':'Preview →')+'</a>';
+      const notes = (r.status === 'rejected' && r.reviewer_notes)
+        ? '<div style="font-size:11px;color:var(--danger);margin-top:6px;line-height:1.4">Reason: '+esc(r.reviewer_notes)+'</div>' : '';
+      return '<div style="border:1px solid var(--border);border-radius:10px;background:var(--card-bg);overflow:hidden">'
+        + img
+        + '<div style="padding:12px 14px;font-family:DM Sans,sans-serif">'
+        +   '<div style="font-weight:600;color:var(--text-high);font-size:14px;margin-bottom:4px">'+esc(r.recipe_name)+'</div>'
+        +   '<div style="font-size:11px;color:var(--text-mid);margin-bottom:6px">'+esc(r.category||'')+' · submitted '+formatDate(r.submitted_at)+'</div>'
+        +   '<div style="font-size:12px;font-weight:600;color:'+st.color+'">'+st.label+'</div>'
+        +   notes
+        +   '<div style="margin-top:8px">'+action+'</div>'
+        + '</div></div>';
+    }).join('');
+  } catch(e) {
+    grid.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:10px 0">Could not load submissions: '+esc(e.message)+'</div>';
+  }
+}
+</script>
+</body>
+</html>

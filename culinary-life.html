@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Your personal culinary life hub — collections, diary, submissions, and kitchen activity.">
+  <link rel="canonical" href="https://theculinaryjournal.site/culinary-life.html">
+  <meta name="robots" content="noindex, nofollow">
+  <title>My Culinary Life — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
+  <style>
+    .cl-wrap { max-width:1100px; margin:0 auto; padding:28px 24px 80px; }
+
+    /* ── Header ── */
+    .cl-header { margin-bottom:32px; }
+    .cl-eyebrow { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
+    .cl-title   { font-family:'Cormorant Garamond',serif; font-size:2.2rem; font-weight:700; color:var(--text-high); line-height:1.1; }
+    .cl-sub     { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-top:4px; }
+
+    /* ── Stats ── */
+    .cl-stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin-bottom:32px; }
+    .cl-stat  { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:16px 14px; text-align:center; }
+    .cl-stat-num   { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:700; color:var(--accent); line-height:1; }
+    .cl-stat-label { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-mid); margin-top:4px; }
+
+    /* ── Two-column layout ── */
+    .cl-layout { display:grid; grid-template-columns:1fr 340px; gap:20px; }
+    @media(max-width:900px){ .cl-layout { grid-template-columns:1fr; } }
+
+    /* ── Section card ── */
+    .cl-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:16px; }
+    .cl-card-head { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
+    .cl-card-title { font-family:'Cormorant Garamond',serif; font-size:1.05rem; font-weight:700; color:var(--text-high); }
+    .cl-card-action { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--accent); text-decoration:none; }
+    .cl-card-body { padding:16px 20px; }
+
+    /* ── Log cooking form ── */
+    .cl-log-form { display:flex; flex-direction:column; gap:10px; }
+    .cl-log-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .cl-input, .cl-select, .cl-textarea {
+      background: var(--input-bg); border:1px solid var(--border); border-radius:9px;
+      padding:10px 13px; font-family:'DM Sans',sans-serif; font-size:14px;
+      color:var(--text-high); outline:none; width:100%; box-sizing:border-box; transition:border-color .15s;
+    }
+    .cl-input:focus,.cl-select:focus,.cl-textarea:focus { border-color:var(--accent); }
+    .cl-label { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-mid); margin-bottom:4px; display:block; }
+    .cl-field { display:flex; flex-direction:column; }
+    .cl-stars { display:flex; gap:4px; }
+    .cl-star { font-size:20px; cursor:pointer; color:var(--text-ghost); filter:grayscale(1); transition:all .1s; }
+    .cl-star.lit { color:#f0c040; filter:none; }
+    .cl-btn { padding:10px 20px; border:none; border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:filter .15s; }
+    .cl-btn:hover { filter:brightness(.9); }
+    .cl-btn-primary { background:var(--accent); color:#fff; }
+    .cl-btn-secondary { background:var(--text-ghost); color:var(--text-mid); border:1px solid var(--border); }
+
+    /* ── Activity feed ── */
+    .cl-event { display:flex; gap:14px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,.04); align-items:flex-start; }
+    .cl-event-actions { display:flex; gap:4px; opacity:0; transition:opacity .15s; }
+    .cl-event:hover .cl-event-actions { opacity:1; }
+    .cl-evt-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:3px 7px; font-size:11px; cursor:pointer; color:var(--text-mid); }
+    .cl-evt-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .cl-evt-danger:hover { border-color:var(--danger); color:var(--danger); }
+    @media (hover:none) { .cl-event-actions { opacity:1; } }
+    .cl-event:last-child { border-bottom:none; }
+    .cl-event-icon { width:34px; height:34px; border-radius:50%; background:var(--accent-glow); border:1px solid var(--accent-border); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+    .cl-event-body { flex:1; min-width:0; }
+    .cl-event-label { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-high); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .cl-event-meta  { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-top:2px; }
+    .cl-event-date  { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-low); flex-shrink:0; }
+
+    /* ── Family Favourites ── */
+    .cl-fav { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+    .cl-fav:last-child { border-bottom:none; }
+    .cl-fav-rank { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:700; color:var(--accent); opacity:.5; width:24px; text-align:center; flex-shrink:0; }
+    .cl-fav-info { flex:1; min-width:0; }
+    .cl-fav-name { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-high); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .cl-fav-meta { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-top:2px; }
+    .cl-fav-count { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:700; color:var(--accent); }
+
+    /* ── Year chart ── */
+    .cl-year-bars { display:flex; align-items:flex-end; gap:4px; height:80px; margin:8px 0 4px; }
+    .cl-year-bar-wrap { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; }
+    .cl-year-bar { width:100%; background:var(--accent); border-radius:3px 3px 0 0; transition:height .4s; min-height:2px; }
+    .cl-year-bar:hover { filter:brightness(1.2); }
+    .cl-year-label { font-family:'DM Sans',sans-serif; font-size:9px; color:var(--text-low); }
+    .cl-year-empty { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); text-align:center; padding:20px 0; }
+
+    /* ── Milestones ── */
+    .cl-milestone { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+    .cl-milestone:last-child { border-bottom:none; }
+    .cl-milestone-icon { font-size:22px; flex-shrink:0; }
+    .cl-milestone-label { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); }
+    .cl-milestone-date  { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+
+    /* ── Cooking history list ── */
+    .cl-cook-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+    .cl-cook-row:last-child { border-bottom:none; }
+    .cl-cook-name { flex:1; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .cl-cook-date { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); flex-shrink:0; }
+    .cl-cook-rating { font-size:11px; }
+    .cl-cook-del { background:none; border:none; color:var(--text-low); cursor:pointer; font-size:14px; padding:0 2px; flex-shrink:0; }
+    .cl-cook-del:hover { color: var(--danger); }
+
+    /* ── Empty states ── */
+    .cl-empty { text-align:center; padding:40px 20px; }
+    .cl-empty-icon  { font-size:40px; margin-bottom:12px; }
+    .cl-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:700; color:var(--text-high); margin-bottom:6px; }
+    .cl-empty-sub   { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); line-height:1.6; }
+
+    /* ── Modal ── */
+    .cl-modal { display:none; position:fixed; inset:0; background: var(--scrim); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+    .cl-modal.open { display:flex; }
+    .cl-modal-box { background:var(--bg,#0f1011); border:1px solid var(--border); border-radius:16px; width:100%; max-width:500px; overflow-y:auto; max-height:90vh; }
+    .cl-modal-head { display:flex; align-items:center; justify-content:space-between; padding:18px 22px 14px; border-bottom:1px solid var(--border); }
+    .cl-modal-title { font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:700; color:var(--text-high); }
+    .cl-modal-close { background:none; border:1px solid var(--border); border-radius:7px; color:var(--text-mid); width:30px; height:30px; cursor:pointer; font-size:14px; }
+    .cl-modal-body  { padding:20px 22px; display:flex; flex-direction:column; gap:12px; }
+    .cl-modal-foot  { padding:14px 22px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; }
+  </style>
+  <script src="page-guard.js"></script>
+</head>
+<body class="page-bg cj-body section-personal">
+
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"></div>
+
+<div class="cl-wrap">
+
+  <!-- Header -->
+  <div class="cl-header">
+    <div class="cl-eyebrow">Your culinary story</div>
+    <h1 class="cl-title">My Culinary Life</h1>
+    <p class="cl-sub" id="cl-sub">Every meal cooked, every memory kept — this is what you've built.</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="cl-stats" id="cl-stats">
+    <div class="cl-stat"><div class="cl-stat-num" id="s-total">—</div><div class="cl-stat-label">Meals Cooked</div></div>
+    <div class="cl-stat"><div class="cl-stat-num" id="s-year">—</div><div class="cl-stat-label">This Year</div></div>
+    <div class="cl-stat"><div class="cl-stat-num" id="s-unique">—</div><div class="cl-stat-label">Unique Recipes</div></div>
+    <div class="cl-stat"><div class="cl-stat-num" id="s-diary">—</div><div class="cl-stat-label">Diary Entries</div></div>
+    <div class="cl-stat"><div class="cl-stat-num" id="s-collections">—</div><div class="cl-stat-label">Collections</div></div>
+    <div class="cl-stat"><div class="cl-stat-num" id="s-recipes">—</div><div class="cl-stat-label">Recipes Published</div></div>
+  </div>
+
+  <div class="cl-layout">
+
+    <!-- LEFT: main content -->
+    <div>
+
+      <!-- Log a Cook -->
+      <div class="cl-card">
+        <div class="cl-card-head">
+          <div class="cl-card-title">🍳 Log a Cook</div>
+        </div>
+        <div class="cl-card-body">
+          <div class="cl-log-form">
+            <div class="cl-field">
+              <label class="cl-label">What did you cook?</label>
+              <input class="cl-input" id="log-name" placeholder="e.g. Kerala Ghee Rice">
+            </div>
+            <div class="cl-log-row">
+              <div class="cl-field">
+                <label class="cl-label">Date</label>
+                <input class="cl-input" type="date" id="log-date">
+              </div>
+              <div class="cl-field">
+                <label class="cl-label">Occasion</label>
+                <select class="cl-select" id="log-occasion">
+                  <option value="">Just cooking</option>
+                  <option value="weeknight">Weeknight meal</option>
+                  <option value="weekend">Weekend cooking</option>
+                  <option value="family_dinner">Family dinner</option>
+                  <option value="birthday">Birthday</option>
+                  <option value="christmas">Christmas</option>
+                  <option value="easter">Easter</option>
+                  <option value="eid">Eid</option>
+                  <option value="diwali">Diwali</option>
+                  <option value="onam">Onam</option>
+                  <option value="dinner_party">Dinner party</option>
+                  <option value="meal_prep">Meal prep</option>
+                </select>
+              </div>
+            </div>
+            <div class="cl-field">
+              <label class="cl-label">Notes (optional)</label>
+              <input class="cl-input" id="log-notes" placeholder="How did it turn out?">
+            </div>
+            <div class="cl-field">
+              <label class="cl-label">Rating</label>
+              <div class="cl-stars" id="log-stars">
+                <span class="cl-star" data-v="1">★</span>
+                <span class="cl-star" data-v="2">★</span>
+                <span class="cl-star" data-v="3">★</span>
+                <span class="cl-star" data-v="4">★</span>
+                <span class="cl-star" data-v="5">★</span>
+              </div>
+            </div>
+            <button class="cl-btn cl-btn-primary" onclick="logCook()" style="align-self:flex-start">Save to my culinary life</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Family Favourites -->
+      <div class="cl-card">
+        <div class="cl-card-head">
+          <div class="cl-card-title">❤️ Family Favourites</div>
+          <span style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)">Discovered by the system</span>
+        </div>
+        <div class="cl-card-body" id="favourites-list">
+          <div class="cl-empty">
+            <div class="cl-empty-icon">❤️</div>
+            <div class="cl-empty-title">Your favourites will appear here</div>
+            <div class="cl-empty-sub">When you cook a recipe multiple times, the system will recognise it as a family favourite — no manual labelling needed.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cooking History -->
+      <div class="cl-card">
+        <div class="cl-card-head">
+          <div class="cl-card-title">📅 Cooking History</div>
+          <a href="#" class="cl-card-action" onclick="loadMoreCooks(); return false">Load more</a>
+        </div>
+        <div class="cl-card-body" id="history-list">
+          <div class="cl-empty">
+            <div class="cl-empty-icon">🍽</div>
+            <div class="cl-empty-title">Every great cook has a story</div>
+            <div class="cl-empty-sub">Log your first meal above and start building your culinary history.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: sidebar -->
+    <div>
+
+      <!-- Year in Review -->
+      <div class="cl-card" style="margin-bottom:16px">
+        <div class="cl-card-head">
+          <div class="cl-card-title">📊 <span id="year-label">This Year</span></div>
+        </div>
+        <div class="cl-card-body">
+          <div class="cl-year-bars" id="year-bars">
+            <div class="cl-year-empty">Log meals to see your year unfold</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-family:'DM Sans',sans-serif;font-size:9px;color:var(--text-low)" id="month-labels"></div>
+          <div id="year-highlights" style="margin-top:14px;display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="cl-card" style="margin-bottom:16px">
+        <div class="cl-card-head">
+          <div class="cl-card-title">🕰 My Timeline</div>
+        </div>
+        <div class="cl-card-body" id="timeline-list">
+          <div class="cl-empty">
+            <div class="cl-empty-icon">🕰</div>
+            <div class="cl-empty-title">Your culinary story starts here</div>
+            <div class="cl-empty-sub">Cooking events, diary entries, and milestones will appear in your timeline as you use the journal.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Milestones -->
+      <div class="cl-card">
+        <div class="cl-card-head">
+          <div class="cl-card-title">🏆 Milestones</div>
+        </div>
+        <div class="cl-card-body" id="milestone-list">
+          <div class="cl-empty">
+            <div class="cl-empty-icon">🏆</div>
+            <div class="cl-empty-title">Milestones await</div>
+            <div class="cl-empty-sub">Cook your first meal to unlock your first milestone.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="nav-init.js"></script>
+<script>
+let session = null, starRating = 0, cookHistory = [], cookOffset = 0;
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function getSession() { try { return JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch(_){ return null; } }
+
+async function rpc(fn, params) {
+  const s = getSession();
+  if (!s) return null;
+  const r = await fetch(SUPA_URL+'/rest/v1/rpc/'+fn, {
+    method:'POST',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+s.access_token,'Content-Type':'application/json'},
+    body: JSON.stringify(params||{})
+  });
+  if (!r.ok) {
+    const e = await r.json().catch(()=>{});
+    throw new Error(e?.message || ('Error ' + r.status));   // surface failures — no more silent nulls
+  }
+  const t = await r.text();          // void RPCs return 204 No Content —
+  return t ? JSON.parse(t) : null;   // r.json() on an empty body throws.
+}
+
+// ── STARS ────────────────────────────────────────────────────────
+document.getElementById('log-stars').addEventListener('click', function(e) {
+  const star = e.target.closest('.cl-star');
+  if (!star) return;
+  starRating = parseInt(star.dataset.v);
+  document.querySelectorAll('.cl-star').forEach(function(s) {
+    s.classList.toggle('lit', parseInt(s.dataset.v) <= starRating);
+  });
+});
+
+// ── DATE DEFAULT ─────────────────────────────────────────────────
+document.getElementById('log-date').value = new Date().toISOString().slice(0,10);
+
+// ── LOG A COOK ───────────────────────────────────────────────────
+async function logCook() {
+  const name = document.getElementById('log-name').value.trim();
+  if (!name) { document.getElementById('log-name').focus(); return; }
+  const date     = document.getElementById('log-date').value || new Date().toISOString().slice(0,10);
+  const notes    = document.getElementById('log-notes').value.trim();
+  const occasion = document.getElementById('log-occasion').value;
+  const btn = document.querySelector('.cl-btn-primary');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    await rpc('log_cooking_event', {
+      p_recipe_name: name, p_cooked_at: date, p_notes: notes,
+      p_occasion: occasion, p_rating: starRating || null
+    });
+    document.getElementById('log-name').value  = '';
+    document.getElementById('log-notes').value = '';
+    document.getElementById('log-occasion').value = '';
+    document.getElementById('log-date').value  = new Date().toISOString().slice(0,10);
+    starRating = 0;
+    document.querySelectorAll('.cl-star').forEach(function(s){ s.classList.remove('lit'); });
+    btn.textContent = '✓ Saved to your culinary life!';
+    setTimeout(function(){ btn.textContent='Save to my culinary life'; btn.disabled=false; }, 2000);
+    loadAll();
+  } catch(e) {
+    btn.textContent = 'Error — try again'; btn.disabled = false;
+  }
+}
+
+// ── LOAD ALL DATA ────────────────────────────────────────────────
+async function loadAll() {
+  const s = getSession();
+  if (!s) {
+    document.getElementById('cl-sub').textContent = 'Sign in to track your culinary life.';
+    return;
+  }
+  // Each section loads independently — one failing RPC must not blank
+  // the others (Recent History carries the delete buttons).
+  const safe = function (fn, label) {
+    return fn().catch(function (e) { console.warn('culinary-life ' + label + ':', e.message); });
+  };
+  await Promise.all([
+    safe(loadStats, 'stats'), safe(loadFavourites, 'favourites'),
+    safe(loadHistory, 'history'), safe(loadTimeline, 'timeline'),
+    safe(loadYearReview, 'year'), safe(loadMilestones, 'milestones')
+  ]);
+}
+
+// ── STATS ────────────────────────────────────────────────────────
+async function loadStats() {
+  const data = await rpc('get_culinary_life');
+  if (!data) return;
+  document.getElementById('s-total').textContent       = data.total_cooks       || 0;
+  document.getElementById('s-year').textContent        = data.this_year_cooks   || 0;
+  document.getElementById('s-unique').textContent      = data.unique_recipes     || 0;
+  document.getElementById('s-diary').textContent       = data.diary_entries      || 0;
+  document.getElementById('s-collections').textContent = data.collections        || 0;
+  document.getElementById('s-recipes').textContent     = data.published_recipes  || 0;
+}
+
+// ── FAMILY FAVOURITES ────────────────────────────────────────────
+async function loadFavourites() {
+  const favs = await rpc('get_family_favourites', {p_limit:8});
+  const el = document.getElementById('favourites-list');
+  if (!favs || !favs.length) {
+    el.innerHTML = '<div class="cl-empty"><div class="cl-empty-icon">❤️</div><div class="cl-empty-title">Your favourites will appear here</div><div class="cl-empty-sub">Cook a recipe multiple times and the system will recognise it as a family favourite — no manual labelling needed.</div></div>';
+    return;
+  }
+  el.innerHTML = favs.map(function(f, i) {
+    const stars = f.avg_rating ? '★'.repeat(Math.round(f.avg_rating)) : '';
+    const meta  = f.cook_count + (f.cook_count===1?' cook':' cooks')
+                + (f.diary_mentions ? ' · '+f.diary_mentions+' diary mention'+(f.diary_mentions>1?'s':'') : '')
+                + (stars ? ' · '+stars : '');
+    const link  = f.recipe_id ? 'recipe-page.html?id='+f.recipe_id : '';
+    return '<div class="cl-fav">'
+      + '<div class="cl-fav-rank">'+(i+1)+'</div>'
+      + '<div class="cl-fav-info">'
+      + (link ? '<a href="'+link+'" style="text-decoration:none" class="cl-fav-name">'+esc(f.recipe_name)+'</a>' : '<div class="cl-fav-name">'+esc(f.recipe_name)+'</div>')
+      + '<div class="cl-fav-meta">'+meta+'</div>'
+      + '</div>'
+      + '<div class="cl-fav-count">'+f.cook_count+'×</div>'
+      + '</div>';
+  }).join('');
+}
+
+// ── COOKING HISTORY ──────────────────────────────────────────────
+async function loadHistory() {
+  const data = await rpc('get_recent_cooks', {p_limit:12});
+  cookHistory = data || [];
+  renderHistory();
+}
+async function loadMoreCooks() {
+  const data = await rpc('get_recent_cooks', {p_limit: cookOffset + 24});
+  cookHistory = data || [];
+  cookOffset += 12;
+  renderHistory();
+}
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  if (!cookHistory.length) {
+    el.innerHTML = '<div class="cl-empty"><div class="cl-empty-icon">🍽</div><div class="cl-empty-title">Every great cook has a story</div><div class="cl-empty-sub">Log your first meal above and start building your culinary history.</div></div>';
+    return;
+  }
+  el.innerHTML = cookHistory.map(function(c) {
+    const stars = c.rating ? '★'.repeat(c.rating) : '';
+    const date  = fmtDate(c.cooked_at);
+    return '<div class="cl-cook-row">'
+      + '<div class="cl-cook-name">'+esc(c.recipe_name)+'</div>'
+      + '<div class="cl-cook-rating">'+stars+'</div>'
+      + '<div class="cl-cook-date">'+date+'</div>'
+      + '<button class="cl-cook-del" onclick="deleteCook(\''+c.id+'\')" title="Remove">✕</button>'
+      + '</div>';
+  }).join('');
+}
+async function deleteCook(id) {
+  if (!confirm('Remove this entry from your cooking history?')) return;
+  try {
+    await rpc('delete_cooking_event', {p_id: id});
+    loadAll();
+  } catch(e) {
+    alert('Could not remove this entry: ' + e.message);
+  }
+}
+
+// ── TIMELINE ────────────────────────────────────────────────────
+async function loadTimeline() {
+  const events = await rpc('get_culinary_timeline', {p_limit:15});
+  const el = document.getElementById('timeline-list');
+  if (!events || !events.length) { el.innerHTML = '<div class="cl-empty"><div class="cl-empty-icon">🕰</div><div class="cl-empty-title">Your culinary story starts here</div><div class="cl-empty-sub">Cooking events, diary entries, and milestones appear in your timeline as you use the journal.</div></div>'; return; }
+  const ICONS = {cook:'🍳', diary:'📓', recipe:'📖', milestone:'🏆'};
+  el.innerHTML = events.map(function(e) {
+    const icon  = ICONS[e.event_type] || '•';
+    const date  = fmtDate(e.event_date);
+    const label = esc(e.label || '');
+    const meta  = e.detail ? esc(e.detail).slice(0,60)+(e.detail.length>60?'…':'') : '';
+    // AP-03 (per D-1 recommendation): edit/delete on diary entries and
+    // cooking events only. Milestones are system-generated; recipe events
+    // mirror submissions — both stay read-only here.
+    const editable = (e.event_type === 'diary' || e.event_type === 'cook') && e.source_id;
+    const controls = editable
+      ? '<div class="cl-event-actions">'
+        + '<button class="cl-evt-btn" title="Edit" onclick="editTimelineItem(\''+e.event_type+'\',\''+esc(e.source_id)+'\')">✏</button>'
+        + '<button class="cl-evt-btn cl-evt-danger" title="Delete" onclick="deleteTimelineItem(\''+e.event_type+'\',\''+esc(e.source_id)+'\',\''+label.replace(/'/g,'&#39;')+'\')">🗑</button>'
+        + '</div>'
+      : '';
+    return '<div class="cl-event">'
+      + '<div class="cl-event-icon">'+icon+'</div>'
+      + '<div class="cl-event-body"><div class="cl-event-label">'+label+'</div>'+(meta?'<div class="cl-event-meta">'+meta+'</div>':'')+'</div>'
+      + controls
+      + '<div class="cl-event-date">'+date+'</div>'
+      + '</div>';
+  }).join('');
+}
+
+// ── AP-03: TIMELINE EDIT / DELETE ────────────────────────────────
+async function deleteTimelineItem(type, id, label) {
+  if (!confirm('Delete "' + label + '" from your ' + (type === 'diary' ? 'diary' : 'cooking history') + '? This cannot be undone.')) return;
+  try {
+    if (type === 'diary')      await rpc('delete_diary_entry',  {p_id: id});
+    else if (type === 'cook')  await rpc('delete_cooking_event', {p_id: id});
+    else return;
+    await refreshAfterTimelineChange();
+  } catch(e) { alert('Could not delete: ' + (e.message || e)); }
+}
+
+function editTimelineItem(type, id) {
+  if (type === 'diary') { location.href = 'diary.html?edit=' + encodeURIComponent(id); return; }
+  if (type !== 'cook') return;
+  // Inline edit form for a cooking event
+  const name   = prompt('Recipe name (leave blank to keep):') ;
+  if (name === null) return;
+  const dateIn = prompt('Date cooked, YYYY-MM-DD (leave blank to keep):');
+  if (dateIn === null) return;
+  if (dateIn && !/^\d{4}-\d{2}-\d{2}$/.test(dateIn)) { alert('Date must be YYYY-MM-DD.'); return; }
+  const rating = prompt('Rating 1–5 (leave blank to keep):');
+  if (rating === null) return;
+  if (rating && !/^[1-5]$/.test(rating)) { alert('Rating must be 1 to 5.'); return; }
+  const note   = prompt('Note (leave blank to keep):');
+  if (note === null) return;
+  rpc('update_cooking_event', {
+    p_id: id,
+    p_recipe_name: name || null,
+    p_cooked_at:   dateIn || null,
+    p_rating:      rating ? parseInt(rating) : null,
+    p_notes:       note || null
+  }).then(refreshAfterTimelineChange)
+    .catch(function(e){ alert('Could not save: ' + (e.message || e)); });
+}
+
+async function refreshAfterTimelineChange() {
+  // Timeline, Cooking History and the stat cards share the same data
+  try { await loadTimeline(); } catch(_) {}
+  try { await loadHistory(); }  catch(_) {}
+  try { await loadStats(); }    catch(_) {}
+}
+
+// ── YEAR IN REVIEW ───────────────────────────────────────────────
+async function loadYearReview() {
+  const yr = await rpc('get_year_in_review', {});
+  if (!yr) return;
+  document.getElementById('year-label').textContent = yr.year + ' in Review';
+  const months = yr.months || [];
+  const max = months.reduce(function(m,d){ return Math.max(m,d.cooks); },1);
+  const barsEl  = document.getElementById('year-bars');
+  const labsEl  = document.getElementById('month-labels');
+  if (!months.length) { barsEl.innerHTML = '<div class="cl-year-empty">Log meals to see your year unfold</div>'; return; }
+  barsEl.innerHTML = '';
+  labsEl.innerHTML = '';
+  for (var m=1; m<=12; m++) {
+    const entry = months.find(function(d){ return d.month===m; });
+    const count = entry ? entry.cooks : 0;
+    const pct   = Math.round((count/max)*100) || 2;
+    const wrap  = document.createElement('div'); wrap.className='cl-year-bar-wrap';
+    const bar   = document.createElement('div'); bar.className='cl-year-bar'; bar.style.height=pct+'%'; bar.title=MONTHS[m-1]+': '+count+' cook'+(count===1?'':'s');
+    wrap.appendChild(bar);
+    barsEl.appendChild(wrap);
+    const lbl = document.createElement('span'); lbl.textContent=MONTHS[m-1].slice(0,1);
+    labsEl.appendChild(lbl);
+  }
+  const hl = document.getElementById('year-highlights');
+  hl.innerHTML = '';
+  if (yr.top_recipe) {
+    var r = document.createElement('div');
+    r.style.cssText='font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)';
+    r.innerHTML='<span style="color:var(--accent)">Most cooked:</span> '+esc(yr.top_recipe);
+    hl.appendChild(r);
+  }
+  if (yr.total_cooks) {
+    var t = document.createElement('div');
+    t.style.cssText='font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)';
+    t.innerHTML='<span style="color:var(--accent)">'+yr.total_cooks+'</span> meal'+(yr.total_cooks===1?'':'s')+' cooked across '+yr.unique_recipes+' recipe'+(yr.unique_recipes===1?'':'s');
+    hl.appendChild(t);
+  }
+}
+
+// ── MILESTONES ───────────────────────────────────────────────────
+async function loadMilestones() {
+  const s = getSession();
+  if (!s) return;
+  const r = await fetch(SUPA_URL+'/rest/v1/user_milestones?user_id=eq.'+s.user_id+'&order=achieved_at.desc&limit=10', {
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+s.access_token}
+  });
+  const data = r.ok ? await r.json() : [];
+  const el = document.getElementById('milestone-list');
+  if (!data.length) { el.innerHTML = '<div class="cl-empty"><div class="cl-empty-icon">🏆</div><div class="cl-empty-title">Milestones await</div><div class="cl-empty-sub">Cook your first meal to unlock your first milestone.</div></div>'; return; }
+  const ICONS = {first_cook:'🍳',first_recipe:'📖','10_cooks':'🔥','50_cooks':'⭐','100_cooks':'🏆',first_print:'🖨'};
+  el.innerHTML = data.map(function(m) {
+    const icon = ICONS[m.milestone] || '🏆';
+    return '<div class="cl-milestone">'
+      + '<div class="cl-milestone-icon">'+icon+'</div>'
+      + '<div style="flex:1"><div class="cl-milestone-label">'+esc(m.label)+'</div><div class="cl-milestone-date">'+fmtDate(m.achieved_at?.slice(0,10))+'</div></div>'
+      + '</div>';
+  }).join('');
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────
+function fmtDate(d) {
+  if (!d) return '';
+  const dt = new Date(d+'T00:00:00');
+  return dt.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+
+// ── PREFILL FROM RECIPE PAGE ──────────────────────────────────────
+(function checkPrefill(){
+  try {
+    var prefill = JSON.parse(localStorage.getItem('tcj_log_prefill')||'null');
+    if (prefill && prefill.name) {
+      document.getElementById('log-name').value = prefill.name;
+      localStorage.removeItem('tcj_log_prefill');
+      document.getElementById('log-name').scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  } catch(_) {}
+})();
+
+// ── INIT ─────────────────────────────────────────────────────────
+(function init(){
+  const s = getSession();
+  if (!s) {
+    document.getElementById('cl-sub').innerHTML = '<a href="login.html" style="color:var(--accent)">Sign in</a> to start tracking your culinary life.';
+    return;
+  }
+  loadAll();
+})();
+</script>
+</body>
+</html>

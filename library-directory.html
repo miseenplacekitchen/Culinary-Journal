@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Explore The Library — ingredients, spices, tools, cuts, and preservation reference guides.">
+  <link rel="canonical" href="https://theculinaryjournal.site/library-directory.html">
+<title>Library Directory — The Culinary Journal</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
+<script src="nav-init.js"></script>
+<style>
+.lib-page { min-height:100vh; background:var(--bg); }
+.lib-hero { padding:80px 40px 48px; max-width:1100px; margin:0 auto; }
+.lib-eyebrow { font-family:'DM Sans',sans-serif; font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--accent); margin-bottom:14px; }
+.lib-title { font-family:'Cormorant Garamond',serif; font-size:clamp(2.2rem,5vw,3.6rem); font-weight:600; color:var(--text-high); line-height:1.1; margin-bottom:12px; }
+.lib-title em { font-style:italic; color:var(--accent); }
+.lib-desc { font-family:'DM Sans',sans-serif; font-size:15px; color:var(--text-mid); max-width:540px; line-height:1.7; }
+
+/* Type tabs */
+.lib-tabs { display:flex; flex-wrap:wrap; row-gap:8px; gap:4px; padding:0 40px 32px; max-width:1100px; margin:0 auto; }
+.lib-tab { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; padding:9px 18px; border-radius:9px; border:1px solid var(--border); background:none; color:var(--text-mid); cursor:pointer; white-space:nowrap; transition:all .15s; }
+.lib-tab:hover { border-color:var(--accent); color:var(--accent); }
+.lib-tab.active { background:var(--accent); border-color:var(--accent); color:#0C0702; }
+
+/* Search */
+.lib-search-wrap { padding:0 40px 32px; max-width:1100px; margin:0 auto; }
+.lib-search { display:flex; gap:10px; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 18px; max-width:480px; }
+.lib-search input { flex:1; background:none; border:none; outline:none; font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-high); }
+.lib-search input::placeholder { color:var(--text-muted); }
+
+/* Grid */
+.lib-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:20px; padding:0 40px 80px; max-width:1100px; margin:0 auto; }
+.lib-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; text-decoration:none; transition:border-color .2s,transform .2s; display:flex; flex-direction:column; }
+.lib-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+.lib-card-img { aspect-ratio:4/3; background:var(--bg); position:relative; overflow:hidden; }
+.lib-card-img img { width:100%; height:100%; object-fit:cover; }
+.lib-card-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:32px; }
+.lib-card-body { padding:18px; flex:1; }
+.lib-card-tag { font-family:'DM Sans',sans-serif; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); margin-bottom:6px; }
+.lib-card-name { font-family:'Cormorant Garamond',serif; font-size:1.25rem; font-weight:600; color:var(--text-high); line-height:1.2; margin-bottom:4px; }
+.lib-card-aka { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-muted); font-style:italic; }
+.lib-empty { grid-column:1/-1; text-align:center; padding:80px 20px; font-family:'DM Sans',sans-serif; color:var(--text-muted); font-size:14px; }
+.lib-loading { grid-column:1/-1; display:flex; justify-content:center; padding:60px; }
+.spinner { width:28px; height:28px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+@media(max-width:768px){ .lib-hero,.lib-tabs,.lib-search-wrap,.lib-grid { padding-left:20px; padding-right:20px; } }
+</style>
+</head>
+<body class="lib-page">
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"><!-- populated by nav-init.js --></div>
+</nav>
+<div class="tab-nav"></div>
+<div class="lib-hero">
+  <div class="lib-eyebrow">The Library</div>
+  <h1 class="lib-title" id="lib-title">Loading…</h1>
+  <p class="lib-desc" id="lib-desc"></p>
+</div>
+<div class="lib-tabs" id="lib-tabs"></div>
+<div class="lib-search-wrap">
+  <div class="lib-search">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--text-muted);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="lib-search-input" placeholder="Search…" oninput="debounceSearch(this.value)">
+  </div>
+</div>
+<div class="lib-grid" id="lib-grid">
+  <div class="lib-loading"><div class="spinner"></div></div>
+</div>
+
+<script>
+const TYPES = {
+  ingredient:   { label:'Ingredients',   emoji:'🌿', desc:'Profiles of every ingredient in our kitchen — where it comes from, how to use it, what it does.',    tagField:'category' },
+  spice:        { label:'Spice Directory',emoji:'🌶', desc:'Every spice and herb — flavour, heat, technique, and the science of why it works.',                 tagField:'heat_level' },
+  tool:         { label:'Tools & Appliances',emoji:'🔪', desc:'Every piece of kitchen equipment — what it does, how to use it properly, and how to care for it.', tagField:'tool_category' },
+  cut:          { label:'Cuts & Prep',   emoji:'🥩', desc:'Meat and seafood anatomy — every cut, how to clean it, how to prep it, the best way to cook it.',   tagField:'protein_type' },
+  preservation: { label:'Preservation', emoji:'🫙', desc:'Every preservation technique — the science, the safety, and the step by step.',                     tagField:'technique_type' },
+};
+
+const params  = new URLSearchParams(window.location.search);
+let currentType = params.get('type') || 'ingredient';
+let searchTimer = null;
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+function buildTabs() {
+  const wrap = document.getElementById('lib-tabs');
+  wrap.innerHTML = Object.entries(TYPES).map(([type, info]) =>
+    `<button class="lib-tab${type===currentType?' active':''}" onclick="switchType('${type}')">${info.emoji} ${info.label}</button>`
+  ).join('')
+  // AP-01: plain link pills — NOT entries in TYPES (they are standalone
+  // pages, not ?type= directory filters)
+  + `<button class="lib-tab" onclick="location.href='conversions.html'">⚖️ Conversions &amp; Weights</button>`
+  + `<button class="lib-tab" onclick="location.href='baby.html'">👶 Baby &amp; Toddler</button>`;
+}
+
+function switchType(type) {
+  currentType = type;
+  const url = new URL(window.location);
+  url.searchParams.set('type', type);
+  window.history.replaceState({}, '', url);
+  document.getElementById('lib-search-input').value = '';
+  buildTabs();
+  updateHero();
+  loadProfiles();
+}
+
+function updateHero() {
+  const t = TYPES[currentType];
+  document.title = t.label + ' — The Culinary Journal';
+  document.getElementById('lib-title').innerHTML = t.label.replace(' ', '<br><em>') + '</em>';
+  document.getElementById('lib-desc').textContent = t.desc;
+}
+
+function debounceSearch(val) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadProfiles(val), 350);
+}
+
+async function loadProfiles(search) {
+  const grid = document.getElementById('lib-grid');
+  grid.innerHTML = '<div class="lib-loading"><div class="spinner"></div></div>';
+  try {
+    const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
+    const headers = { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' };
+    if (sess?.access_token) headers['Authorization'] = 'Bearer ' + sess.access_token;
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_library_directory', {
+      method: 'POST', headers,
+      body: JSON.stringify({ p_type: currentType, p_search: search || null, p_limit: 48, p_offset: 0 })
+    });
+    const items = await res.json();
+    renderGrid(Array.isArray(items) ? items : []);
+  } catch(e) {
+    grid.innerHTML = '<div class="lib-empty">Could not load profiles — please try again.</div>';
+  }
+}
+
+function renderGrid(items) {
+  const grid = document.getElementById('lib-grid');
+  if (!items.length) {
+    grid.innerHTML = '<div class="lib-empty">No profiles published yet — check back soon.</div>';
+    return;
+  }
+  const t = TYPES[currentType];
+  grid.innerHTML = items.map(item => {
+    const tag = item.type_extra ? esc(item.type_extra) : '';
+    const img = item.image_url
+      ? `<img src="${esc(item.image_url)}" alt="${esc(item.name)}" loading="lazy">`
+      : `<div class="lib-card-placeholder">${t.emoji}</div>`;
+    return `<a href="library-profile.html?type=${currentType}&slug=${esc(item.slug)}" class="lib-card">
+      <div class="lib-card-img">${img}</div>
+      <div class="lib-card-body">
+        ${tag ? `<div class="lib-card-tag">${tag}</div>` : ''}
+        <div class="lib-card-name">${esc(item.name)}</div>
+        ${item.also_known_as ? `<div class="lib-card-aka">${esc(item.also_known_as)}</div>` : ''}
+      </div>
+    </a>`;
+  }).join('');
+}
+
+buildTabs();
+updateHero();
+loadProfiles();
+</script>
+</body>
+</html>

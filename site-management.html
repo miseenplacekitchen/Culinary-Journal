@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Site management console for The Culinary Journal administrators.">
+  <link rel="canonical" href="https://theculinaryjournal.site/site-management.html">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Site Management — The Culinary Journal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
+  <script>
+    // Apply admin theme immediately — reads from same keys as dashboard
+    (function(){
+      var theme = localStorage.getItem('tcj_theme') || 
+                  (function(){ try { var p=JSON.parse(localStorage.getItem('tcj_profile')||'null'); return p&&p.theme_preference||''; } catch(e){return '';} })() ||
+                  'Midnight Slate';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text-high); min-height: 100vh; }
+    .sm-wrap  { display: flex; min-height: 100vh; }
+    .sm-side  { width: 220px; flex-shrink: 0; background: var(--surface-2, rgba(255,255,255,0.03)); border-right: 1px solid var(--border); padding: 28px 0; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    .sm-logo  { padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .sm-logo-title { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 700; color: var(--text-high); }
+    .sm-logo-sub   { font-size: 10px; color: var(--text-mid); margin-top: 2px; }
+    .sm-nav-item   { display: block; padding: 10px 20px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-mid); cursor: pointer; border: none; background: none; width: 100%; text-align: left; transition: all 0.15s; border-left: 3px solid transparent; }
+    .sm-nav-item:hover  { color: var(--text-high); background: rgba(255,255,255,0.04); }
+    .sm-nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgb(from var(--accent) r g b / 0.08); font-weight: 600; }
+    .sm-side-foot { margin-top: auto; padding: 16px 20px; border-top: 1px solid var(--border); }
+    .sm-back { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-mid); text-decoration: none; }
+    .sm-back:hover { color: var(--accent); }
+    .sm-main  { flex: 1; padding: 36px; min-width: 0; max-width: 1000px; }
+    .sm-title { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 700; color: var(--text-high); margin-bottom: 4px; }
+    .sm-sub   { font-size: 13px; color: var(--text-mid); margin-bottom: 28px; }
+    .sm-panel { display: none; }
+    .sm-panel.active { display: block; }
+    .sm-section { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; }
+    .sm-section-title { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 700; color: var(--text-high); margin-bottom: 6px; }
+    .sm-section-desc  { font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text-mid); margin-bottom: 16px; }
+    .sm-label { display: block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-mid); margin-bottom: 4px; }
+    .sm-input, .sm-select, .sm-textarea {
+      width: 100%; padding: 10px 13px; background: var(--input-bg); border: 1px solid var(--border);
+      border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text-high);
+      outline: none; transition: border-color 0.15s;
+    }
+    .sm-input:focus, .sm-select:focus, .sm-textarea:focus { border-color: var(--accent); }
+    .sm-textarea { resize: vertical; height: 80px; }
+    .sm-btn { padding: 8px 20px; background: var(--accent); border: none; border-radius: 8px; color: #fff; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+    .sm-btn:hover { opacity: 0.85; }
+    .sm-btn-ghost { background: none; border: 1px solid var(--border); color: var(--text-mid); }
+    .sm-btn-ghost:hover { border-color: var(--accent); color: var(--accent); opacity: 1; }
+    .sm-btn-danger { background: none; border: 1px solid var(--danger); color: var(--danger); }
+    .sm-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .sm-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+    .sm-grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+    .sm-field  { margin-bottom: 14px; }
+    .sm-row    { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 9px; margin-bottom: 8px; }
+    .sm-row-info { flex: 1; }
+    .sm-row-label { font-size: 13px; font-weight: 500; color: var(--text-high); }
+    .sm-row-desc  { font-size: 11px; color: var(--text-mid); margin-top: 2px; }
+    .sm-toggle    { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+    .sm-tag-green { font-size: 11px; font-weight: 600; color: #4caf76; }
+    .sm-tag-red   { font-size: 11px; font-weight: 600; color: var(--danger); }
+    .sm-save-msg  { margin-left: 12px; font-size: 12px; color: #4caf76; }
+    .ap-table { width: 100%; border-collapse: collapse; }
+    .ap-th { padding: 10px 12px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-mid); border-bottom: 1px solid var(--border); }
+    .ap-td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    .denied { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 12px; }
+    .denied p { font-size: 14px; color: var(--text-mid); }
+  </style>
+  <script src="nav-init.js"></script>
+</head>
+<body>
+
+<div id="screen-denied" class="denied">
+  <div style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;color:var(--text-high)">Access Denied</div>
+  <p>This area is for administrators only.</p>
+  <a href="login.html" style="color:var(--accent);font-size:13px">← Sign in</a>
+</div>
+
+<div id="screen-main" class="sm-wrap" style="display:none">
+
+  <!-- Sidebar -->
+  <aside class="sm-side">
+    <div class="sm-logo">
+      <h1 class="sm-logo-title">Site Management</h1>
+      <div class="sm-logo-sub">The Culinary Journal</div>
+    </div>
+    <button class="sm-nav-item active" data-panel="pages"         onclick="showPanel('pages')">Pages</button>
+    <button class="sm-nav-item"        data-panel="features"      onclick="showPanel('features')">Features</button>
+    <button class="sm-nav-item"        data-panel="announcements" onclick="showPanel('announcements')">Announcements</button>
+    <button class="sm-nav-item"        data-panel="content"       onclick="showPanel('content')">Content</button>
+    <button class="sm-nav-item"        data-panel="themes"        onclick="showPanel('themes')">Themes</button>
+    <button class="sm-nav-item"        data-panel="email"         onclick="showPanel('email')">Email Templates</button>
+    <button class="sm-nav-item"        data-panel="settings"      onclick="showPanel('settings')">Settings</button>
+    <div class="sm-side-foot">
+      <a href="dashboard.html" class="sm-back">← Back to Dashboard</a>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="sm-main">
+    <div class="sm-title" id="panel-title">Pages</div>
+    <div class="sm-sub"   id="panel-sub">Control page visibility and SEO settings.</div>
+
+    <!-- PAGES -->
+    <div id="panel-pages" class="sm-panel active">
+      <div id="pages-content"><div style="color:var(--text-mid);font-size:13px">Loading&hellip;</div></div>
+    </div>
+
+    <!-- FEATURES -->
+    <div id="panel-features" class="sm-panel">
+      <div id="features-content"><div style="color:var(--text-mid);font-size:13px">Loading&hellip;</div></div>
+    </div>
+
+    <!-- ANNOUNCEMENTS -->
+    <div id="panel-announcements" class="sm-panel">
+      <div id="announcements-content"><div style="color:var(--text-mid);font-size:13px">Loading&hellip;</div></div>
+    </div>
+
+    <!-- CONTENT -->
+    <div id="panel-content" class="sm-panel">
+      <div id="content-content"><div style="color:var(--text-mid);font-size:13px">Loading&hellip;</div></div>
+    </div>
+
+    <!-- THEMES -->
+    <div id="panel-themes" class="sm-panel">
+      <div id="themes-content"><div style="color:var(--text-mid);font-size:13px">Loading&hellip;</div></div>
+    </div>
+
+    <!-- EMAIL -->
+    <div id="panel-email" class="sm-panel">
+      <div id="email-content"><div style="color:var(--text-mid);font-size:13px">Loading&hellip;</div></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="panel-settings" class="sm-panel">
+      <div id="settings-content"><div style="color:var(--text-mid);font-size:13px">Loading&hellip;</div></div>
+    </div>
+  </main>
+</div>
+
+<script>
+let session = null;
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+// rpc() provided by supabase-config.js
+
+
+async function init() {
+  let sess;
+  try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(e) {}
+  if (!sess || !sess.access_token) { window.location.href = 'login.html'; return; }
+  session = sess;
+  let isAdmin = false;
+  try {
+    const p = JSON.parse(localStorage.getItem('tcj_profile') || 'null');
+    if (p) isAdmin = !!p.is_admin;
+    else {
+      const rows = await rpc('get_my_profile', {});
+      const pr = Array.isArray(rows) ? rows[0] : rows;
+      if (pr) { isAdmin = !!pr.is_admin; localStorage.setItem('tcj_profile', JSON.stringify(pr)); }
+    }
+  } catch(e) {}
+  if (!isAdmin) { document.getElementById('screen-denied').style.display='flex'; return; }
+  document.getElementById('screen-main').style.display = 'flex';
+  const saved = localStorage.getItem('tcj_sm_panel') || 'pages';
+  showPanel(saved);
+}
+
+const PANEL_META = {
+  pages:         {title:'Pages',          sub:'Control which pages are public, members-only, hidden, or coming soon. Set SEO meta per page.'},
+  features:      {title:'Features',       sub:'Toggle site features on or off instantly.'},
+  announcements: {title:'Announcements',  sub:'Show a banner message on the homepage.'},
+  content:       {title:'Content',        sub:'Homepage display settings and category order.'},
+  themes:        {title:'Themes',         sub:'Enable or disable themes and set a seasonal default.'},
+  email:         {title:'Email Templates',sub:'Edit the transactional emails sent to users.'},
+  settings:      {title:'Settings',       sub:'Watermark, footer, maintenance mode, and legal text.'}
+};
+
+const loaded = {};
+
+function showPanel(key) {
+  localStorage.setItem('tcj_sm_panel', key);
+  document.querySelectorAll('.sm-nav-item').forEach(function(b){ b.classList.toggle('active', b.dataset.panel === key); });
+  document.querySelectorAll('.sm-panel').forEach(function(p){ p.classList.remove('active'); });
+  const panel = document.getElementById('panel-' + key);
+  if (panel) panel.classList.add('active');
+  const meta = PANEL_META[key] || {};
+  document.getElementById('panel-title').textContent = meta.title || key;
+  document.getElementById('panel-sub').textContent   = meta.sub   || '';
+  if (!loaded[key]) { loaded[key] = true; loadPanel(key); }
+}
+
+function loadPanel(key) {
+  if (key === 'pages')         loadPages();
+  else if (key === 'features')      loadFeatures();
+  else if (key === 'announcements') loadAnnouncements();
+  else if (key === 'content')       loadContent();
+  else if (key === 'themes')        loadThemes();
+  else if (key === 'email')         loadEmail();
+  else if (key === 'settings')      loadSettings();
+}
+
+function err(containerId, msg) {
+  const el = document.getElementById(containerId);
+  if (el) el.innerHTML = '<div style="color:var(--danger);font-size:13px;padding:20px;background:rgb(from var(--danger) r g b / 0.08);border:1px solid rgb(from var(--danger) r g b / 0.3);border-radius:10px">Error: ' + esc(msg) + '<br><br><strong>Make sure you have run site_management.sql in Supabase.</strong></div>';
+}
+
+// ── PAGES ─────────────────────────────────────────────────────────
+async function loadPages() {
+  try {
+    const pages = await rpc('admin_get_site_pages', {}) || [];
+    const el = document.getElementById('pages-content');
+    el.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'overflow-x:auto;border:1px solid var(--border);border-radius:12px';
+    const tbl = document.createElement('table');
+    tbl.className = 'ap-table';
+    tbl.innerHTML = '<thead><tr><th class="ap-th">Page</th><th class="ap-th">Path</th><th class="ap-th" style="width:140px">Visibility</th><th class="ap-th" style="width:110px">Coming Soon</th><th class="ap-th">Meta Title</th><th class="ap-th">Meta Description</th><th class="ap-th" style="width:70px">Save</th></tr></thead>';
+    const tbody = document.createElement('tbody');
+    pages.forEach(function(p) {
+      const tr = document.createElement('tr');
+      function inp(id, val, ph) {
+        return '<input id="' + id + '" value="' + esc(val||'') + '" placeholder="' + esc(ph||'') + '" class="sm-input" style="padding:5px 8px;font-size:12px">';
+      }
+      tr.innerHTML =
+        '<td class="ap-td" style="font-size:13px;font-weight:500;color:var(--text-high)">' + esc(p.name) + '</td>' +
+        '<td class="ap-td" style="font-size:11px;color:var(--text-mid)">' + esc(p.path) + '</td>' +
+        '<td class="ap-td"><select id="vis-' + esc(p.path) + '" class="sm-select" style="padding:5px 8px;font-size:12px">' +
+          ['public','registered','paid','hidden'].map(function(v){var labels={'public':'Public','registered':'Members Only','paid':'Paid Only','hidden':'Hidden'};return '<option value="'+v+'"'+(p.visibility===v?' selected':'')+'>'+(labels[v]||v)+'</option>';}).join('') +
+        '</select></td>' +
+        '<td class="ap-td" style="text-align:center"><input type="checkbox" id="cs-' + esc(p.path) + '" class="sm-toggle"' + (p.coming_soon?' checked':'') + '></td>' +
+        '<td class="ap-td">' + inp('mt-'+p.path, p.meta_title, 'SEO title') + '</td>' +
+        '<td class="ap-td">' + inp('md-'+p.path, p.meta_desc, 'SEO description') + '</td>' +
+        '<td class="ap-td"></td>';
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'sm-btn'; saveBtn.style.cssText = 'padding:5px 12px;font-size:11px'; saveBtn.textContent = 'Save';
+      saveBtn.addEventListener('click', (function(path, btn){return async function(){
+        btn.disabled = true; btn.textContent = '…';
+        try {
+          await rpc('admin_update_site_page', {
+            p_path: path,
+            p_visibility: document.getElementById('vis-'+path).value,
+            p_meta_title: document.getElementById('mt-'+path).value || null,
+            p_meta_desc:  document.getElementById('md-'+path).value || null,
+            p_coming_soon: document.getElementById('cs-'+path).checked
+          });
+          btn.textContent = '✓'; setTimeout(function(){btn.textContent='Save';btn.disabled=false;}, 2000);
+        } catch(e) { btn.textContent = 'Save'; btn.disabled = false; alert('Error: '+e.message); }
+      };})(p.path, saveBtn));
+      tr.lastElementChild.appendChild(saveBtn);
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody); wrap.appendChild(tbl); el.appendChild(wrap);
+  } catch(e) { err('pages-content', e.message); }
+}
+
+// ── FEATURES ──────────────────────────────────────────────────────
+async function loadFeatures() {
+  try {
+    const features = await rpc('admin_get_site_features', {}) || [];
+    const el = document.getElementById('features-content');
+    el.innerHTML = '';
+    features.forEach(function(f) {
+      const row = document.createElement('div');
+      row.className = 'sm-row';
+      const info = document.createElement('div'); info.className = 'sm-row-info';
+      const nameEl = document.createElement('div'); nameEl.className = 'sm-row-label'; nameEl.textContent = f.name;
+      const descEl = document.createElement('div'); descEl.className = 'sm-row-desc'; descEl.textContent = f.description || '';
+      const status = document.createElement('span');
+      status.className = f.enabled ? 'sm-tag-green' : 'sm-tag-red';
+      status.textContent = f.enabled ? 'Enabled' : 'Disabled';
+      info.appendChild(nameEl); info.appendChild(descEl);
+      const right = document.createElement('div'); right.style.cssText = 'display:flex;align-items:center;gap:12px';
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'sm-toggle'; cb.checked = f.enabled;
+      cb.addEventListener('change', (function(key, st){return async function(){
+        try {
+          await rpc('admin_toggle_site_feature', {p_key: key, p_enabled: this.checked});
+          st.textContent = this.checked ? 'Enabled' : 'Disabled';
+          st.className   = this.checked ? 'sm-tag-green' : 'sm-tag-red';
+        } catch(e) { this.checked = !this.checked; alert('Error: '+e.message); }
+      };})(f.key, status));
+      right.appendChild(status); right.appendChild(cb);
+      row.appendChild(info); row.appendChild(right);
+      el.appendChild(row);
+    });
+  } catch(e) { err('features-content', e.message); }
+}
+
+// ── ANNOUNCEMENTS ─────────────────────────────────────────────────
+async function loadAnnouncements() {
+  try {
+    const anns = await rpc('admin_get_announcements', {}) || [];
+    const el = document.getElementById('announcements-content');
+    el.innerHTML = '';
+
+    // Create form
+    const form = document.createElement('div'); form.className = 'sm-section';
+    form.innerHTML = '<div class="sm-section-title">New Announcement</div>';
+    const grid = document.createElement('div'); grid.className = 'sm-grid-2'; grid.style.marginBottom = '12px';
+    grid.innerHTML =
+      '<div><label class="sm-label">Announcement Text</label><input id="ann-text" class="sm-input" placeholder="Message shown to users…"></div>' +
+      '<div><label class="sm-label">Type</label><select id="ann-type" class="sm-select"><option value="info">Info</option><option value="success">Success</option><option value="warning">Warning</option><option value="error">Error</option></select></div>' +
+      '<div><label class="sm-label">Expires (optional)</label><input id="ann-exp" type="datetime-local" class="sm-input"></div>' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-top:20px"><input type="checkbox" id="ann-active" class="sm-toggle" checked><label style="font-size:13px;color:var(--text-high)">Active</label></div>';
+    form.appendChild(grid);
+    const addBtn = document.createElement('button'); addBtn.className = 'sm-btn'; addBtn.textContent = 'Add Announcement';
+    addBtn.addEventListener('click', async function() {
+      const text = (document.getElementById('ann-text').value || '').trim();
+      if (!text) { alert('Text is required.'); return; }
+      addBtn.disabled = true; addBtn.textContent = 'Saving…';
+      try {
+        await rpc('admin_save_announcement', {p_id:0, p_text:text, p_type:document.getElementById('ann-type').value, p_active:document.getElementById('ann-active').checked, p_expires_at:document.getElementById('ann-exp').value||null});
+        document.getElementById('ann-text').value = '';
+        loaded['announcements'] = false; loadAnnouncements();
+      } catch(e) { addBtn.disabled=false; addBtn.textContent='Add Announcement'; alert('Error: '+e.message); }
+    });
+    form.appendChild(addBtn);
+    el.appendChild(form);
+
+    if (!anns.length) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'font-size:13px;color:var(--text-mid);padding:20px 0';
+      empty.textContent = 'No announcements yet.';
+      el.appendChild(empty);
+      return;
+    }
+
+    const TYPE_COLOR = {info:'var(--info)', success:'var(--success)', warning:'var(--warn)', error:'var(--danger)'};
+    anns.forEach(function(a) {
+      const card = document.createElement('div');
+      card.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;justify-content:space-between';
+      const left = document.createElement('div'); left.style.flex = '1';
+      left.innerHTML =
+        '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;background:rgba(0,0,0,0.2);color:'+(TYPE_COLOR[a.type]||'var(--text-mid)')+'">'+esc(a.type.toUpperCase())+'</span>' +
+        '<div style="font-size:13px;color:var(--text-high);margin-top:6px">'+esc(a.text)+'</div>' +
+        (!a.active ? '<div style="font-size:11px;color:var(--text-mid);margin-top:4px">Inactive</div>' : '') +
+        (a.expires_at ? '<div style="font-size:11px;color:var(--text-mid);margin-top:2px">Expires: '+new Date(a.expires_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+'</div>' : '');
+      const btns = document.createElement('div'); btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0';
+      const toggleBtn = document.createElement('button');
+      toggleBtn.className = 'sm-btn sm-btn-ghost'; toggleBtn.style.cssText = 'padding:5px 12px;font-size:11px';
+      toggleBtn.textContent = a.active ? 'Deactivate' : 'Activate';
+      toggleBtn.addEventListener('click', async function(){
+        try { await rpc('admin_save_announcement',{p_id:a.id,p_text:a.text,p_type:a.type,p_active:!a.active,p_expires_at:a.expires_at||null}); loaded['announcements']=false; loadAnnouncements(); }
+        catch(e){ alert('Error: '+e.message); }
+      });
+      const delBtn = document.createElement('button');
+      delBtn.className = 'sm-btn sm-btn-danger'; delBtn.style.cssText = 'padding:5px 12px;font-size:11px';
+      delBtn.textContent = 'Delete';
+      delBtn.addEventListener('click', async function(){
+        if(!confirm('Delete this announcement?'))return;
+        try{ await rpc('admin_delete_announcement',{p_id:a.id}); loaded['announcements']=false; loadAnnouncements(); }
+        catch(e){ alert('Error: '+e.message); }
+      });
+      btns.appendChild(toggleBtn); btns.appendChild(delBtn);
+      card.appendChild(left); card.appendChild(btns);
+      el.appendChild(card);
+    });
+  } catch(e) { err('announcements-content', e.message); }
+}
+
+// ── CONTENT ────────────────────────────────────────────────────────
+async function loadContent() {
+  try {
+    const settings = await rpc('admin_get_site_settings', {}) || {};
+    const el = document.getElementById('content-content');
+    el.innerHTML = '';
+
+    // Homepage toggles
+    const sec1 = document.createElement('div'); sec1.className = 'sm-section';
+    sec1.innerHTML = '<div class="sm-section-title">Homepage Display</div><div class="sm-section-desc">Control which sections appear on the homepage.</div>';
+    function toggle(key, label, desc, value) {
+      const row = document.createElement('div'); row.className = 'sm-row';
+      row.innerHTML = '<div class="sm-row-info"><div class="sm-row-label">'+esc(label)+'</div><div class="sm-row-desc">'+esc(desc)+'</div></div>';
+      const cb = document.createElement('input'); cb.type='checkbox'; cb.className='sm-toggle'; cb.checked=value==='true';
+      cb.addEventListener('change', async function(){
+        try { await rpc('admin_save_site_setting',{p_key:key,p_value:String(this.checked)}); }
+        catch(e){ this.checked=!this.checked; alert('Error: '+e.message); }
+      });
+      row.appendChild(cb); return row;
+    }
+    sec1.appendChild(toggle('homepage_show_featured','Featured Recipes','Show the featured recipes section on the homepage', settings.homepage_show_featured||'true'));
+    sec1.appendChild(toggle('homepage_show_rotw','Recipe of the Week','Show the Recipe of the Week on the homepage', settings.homepage_show_rotw||'true'));
+    el.appendChild(sec1);
+
+    // Category order
+    const sec2 = document.createElement('div'); sec2.className = 'sm-section';
+    sec2.innerHTML = '<div class="sm-section-title">Category Display Order</div><div class="sm-section-desc">Reorder categories using the arrows. Changes save immediately.</div>';
+    let cats = [];
+    try { cats = JSON.parse(settings.homepage_categories_order||'[]'); } catch(_) {}
+    const catList = document.createElement('div');
+    function renderCats() {
+      catList.innerHTML = '';
+      cats.forEach(function(cat, i) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 14px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;margin-bottom:6px';
+        row.innerHTML = '<span style="font-size:10px;color:var(--text-mid);width:20px;text-align:center">'+(i+1)+'</span><span style="flex:1;font-size:13px;color:var(--text-high)">'+esc(cat)+'</span>';
+        const up = document.createElement('button'); up.className='sm-btn sm-btn-ghost'; up.style.cssText='padding:3px 10px;font-size:11px'; up.textContent='▲';
+        up.addEventListener('click', async function(){
+          if(i>0){ cats.splice(i-1,0,cats.splice(i,1)[0]); renderCats(); await rpc('admin_save_site_setting',{p_key:'homepage_categories_order',p_value:JSON.stringify(cats)}); }
+        });
+        const dn = document.createElement('button'); dn.className='sm-btn sm-btn-ghost'; dn.style.cssText='padding:3px 10px;font-size:11px'; dn.textContent='▼';
+        dn.addEventListener('click', async function(){
+          if(i<cats.length-1){ cats.splice(i+1,0,cats.splice(i,1)[0]); renderCats(); await rpc('admin_save_site_setting',{p_key:'homepage_categories_order',p_value:JSON.stringify(cats)}); }
+        });
+        row.appendChild(up); row.appendChild(dn); catList.appendChild(row);
+      });
+    }
+    renderCats();
+    sec2.appendChild(catList);
+    el.appendChild(sec2);
+  } catch(e) { err('content-content', e.message); }
+}
+
+// ── THEMES ─────────────────────────────────────────────────────────
+async function loadThemes() {
+  try {
+    const settings = await rpc('admin_get_site_settings', {}) || {};
+    const el = document.getElementById('themes-content');
+    el.innerHTML = '';
+    let disabled = [];
+    try { disabled = JSON.parse(settings.disabled_themes||'[]'); } catch(_) {}
+
+    // Seasonal default
+    const sec1 = document.createElement('div'); sec1.className = 'sm-section';
+    sec1.innerHTML = '<div class="sm-section-title">Seasonal Default</div><div class="sm-section-desc">Override the site default theme. Leave blank for Midnight Slate.</div>';
+    const defSel = document.createElement('select'); defSel.className = 'sm-select'; defSel.style.maxWidth = '300px';
+    const ALL_THEMES = ['','Midnight Slate','Midnight Black','Dark Forest','Dark Bordeaux','Dark Navy','Dark Chocolate','Dark Obsidian','Cream & Gold','Pure White','Soft Linen','Sage & Cream','Blush & Rose','Silver Morning','Lemon Fresh','Spring Blossom','Summer Citrus','Autumn Harvest','Winter Frost','Christmas','Diwali','Ramadan','New Year','Onam','Easter','Wedding White','Birthday Cake','Baby Shower','Fine Dining','Old Cookbook','World Kitchen','Silk & Whisper','Midnight Garden','Crystal & Pearl','The Secret Garden','Bridal Blush','Pure Petals','Violet Storm','Golden Hour','Forest Rain','Enchanted Winter','Emerald Night','Still Waters',"Heaven's Gate",'Ocean Breeze','Wildfire','Full Bloom','Lunar Gold'];
+    ALL_THEMES.forEach(function(t){
+      const o = document.createElement('option'); o.value=t; o.textContent=t||'— No Override (Midnight Slate) —'; o.selected=t===(settings.seasonal_default_theme||''); defSel.appendChild(o);
+    });
+    defSel.addEventListener('change', async function(){
+      try { await rpc('admin_save_site_setting',{p_key:'seasonal_default_theme',p_value:this.value}); } catch(e){ alert('Error: '+e.message); }
+    });
+    sec1.appendChild(defSel);
+    el.appendChild(sec1);
+
+    // Theme enable/disable
+    const sec2 = document.createElement('div'); sec2.className = 'sm-section';
+    sec2.innerHTML = '<div class="sm-section-title">Enable / Disable Themes</div><div class="sm-section-desc">Disabled themes are hidden from users.</div>';
+    const grid = document.createElement('div'); grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px';
+    ALL_THEMES.slice(1).forEach(function(t) {
+      const isDisabled = disabled.includes(t);
+      const card = document.createElement('div');
+      card.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid '+(isDisabled?'var(--border)':'var(--accent)')+';border-radius:8px;opacity:'+(isDisabled?'0.5':'1');
+      card.appendChild(Object.assign(document.createElement('span'),{style:'font-size:12px;color:var(--text-high)',textContent:t}));
+      const cb = document.createElement('input'); cb.type='checkbox'; cb.className='sm-toggle'; cb.checked=!isDisabled;
+      cb.addEventListener('change', (function(theme, c){return async function(){
+        const nowDisabled = !this.checked;
+        if(nowDisabled){if(!disabled.includes(theme))disabled.push(theme);} else{disabled=disabled.filter(function(d){return d!==theme;});}
+        try {
+          await rpc('admin_save_site_setting',{p_key:'disabled_themes',p_value:JSON.stringify(disabled)});
+          c.style.borderColor=nowDisabled?'var(--border)':'var(--accent)'; c.style.opacity=nowDisabled?'0.5':'1';
+        } catch(e){ this.checked=!this.checked; alert('Error: '+e.message); }
+      };})(t, card));
+      card.appendChild(cb); grid.appendChild(card);
+    });
+    sec2.appendChild(grid);
+    el.appendChild(sec2);
+  } catch(e) { err('themes-content', e.message); }
+}
+
+// ── EMAIL TEMPLATES ────────────────────────────────────────────────
+async function loadEmail() {
+  try {
+    const templates = await rpc('admin_get_email_templates', {}) || [];
+    const el = document.getElementById('email-content');
+    el.innerHTML = '<p style="font-size:13px;color:var(--text-mid);margin-bottom:20px">Use {{name}}, {{recipe_name}}, {{reviewer_notes}}, {{reset_link}} as placeholders.</p>';
+    templates.forEach(function(t) {
+      const sec = document.createElement('div'); sec.className = 'sm-section';
+      sec.innerHTML = '<div class="sm-section-title">'+esc(t.name)+'</div>';
+      const subj = document.createElement('div'); subj.className = 'sm-field';
+      subj.innerHTML = '<label class="sm-label">Subject</label><input id="et-s-'+t.key+'" class="sm-input" value="'+esc(t.subject||'')+'"></div>';
+      const body = document.createElement('div'); body.className = 'sm-field';
+      body.innerHTML = '<label class="sm-label">Body</label><textarea id="et-b-'+t.key+'" class="sm-textarea" rows="6">'+esc(t.body||'')+'</textarea>';
+      const row = document.createElement('div'); row.style.cssText='display:flex;align-items:center;gap:10px';
+      const saveBtn = document.createElement('button'); saveBtn.className='sm-btn'; saveBtn.textContent='Save';
+      const msg = document.createElement('span'); msg.className='sm-save-msg';
+      saveBtn.addEventListener('click', (function(key, btn, m){return async function(){
+        btn.disabled=true; btn.textContent='Saving…';
+        try{
+          await rpc('admin_save_email_template',{p_key:key,p_subject:document.getElementById('et-s-'+key).value,p_body:document.getElementById('et-b-'+key).value});
+          btn.textContent='✓ Saved'; setTimeout(function(){btn.textContent='Save';btn.disabled=false;},2000);
+        }catch(e){btn.textContent='Save';btn.disabled=false;alert('Error: '+e.message);}
+      };})(t.key,saveBtn,msg));
+      row.appendChild(saveBtn); row.appendChild(msg);
+      sec.appendChild(subj); sec.appendChild(body); sec.appendChild(row);
+      el.appendChild(sec);
+    });
+  } catch(e) { err('email-content', e.message); }
+}
+
+// ── SETTINGS ──────────────────────────────────────────────────────
+async function loadSettings() {
+  try {
+    const settings = await rpc('admin_get_site_settings', {}) || {};
+    const el = document.getElementById('settings-content');
+    el.innerHTML = '';
+
+    function sec(title, desc) {
+      const d = document.createElement('div'); d.className = 'sm-section';
+      d.innerHTML = '<div class="sm-section-title">'+esc(title)+'</div>'+(desc?'<div class="sm-section-desc">'+esc(desc)+'</div>':'');
+      return d;
+    }
+    function field(key, label, value, type) {
+      const w = document.createElement('div'); w.className = 'sm-field';
+      w.innerHTML = '<label class="sm-label">'+esc(label)+'</label>';
+      const i = document.createElement(type==='textarea'?'textarea':'input');
+      i.id = 'ss-'+key; i.className = type==='textarea'?'sm-textarea':'sm-input';
+      if(type==='textarea') i.textContent = value||''; else i.value = value||'';
+      if(type==='textarea') i.rows=5;
+      w.appendChild(i); return w;
+    }
+    function saveBtn(keys, label) {
+      const row = document.createElement('div'); row.style.cssText='display:flex;align-items:center;gap:10px;margin-top:4px';
+      const btn = document.createElement('button'); btn.className='sm-btn'; btn.textContent=label||'Save';
+      const msg = document.createElement('span'); msg.className='sm-save-msg';
+      btn.addEventListener('click', async function(){
+        btn.disabled=true; btn.textContent='Saving…';
+        try{
+          for(let k of keys){ const e=document.getElementById('ss-'+k); if(e) await rpc('admin_save_site_setting',{p_key:k,p_value:e.value||''}); }
+          btn.textContent='✓ Saved'; setTimeout(function(){btn.textContent=label||'Save';btn.disabled=false;},2000);
+        }catch(e){btn.textContent=label||'Save';btn.disabled=false;alert('Error: '+e.message);}
+      });
+      row.appendChild(btn); row.appendChild(msg); return row;
+    }
+
+    // Maintenance Mode
+    const maint = sec('Maintenance Mode', 'Instantly takes the site offline. All visitors see the message below.');
+    const maintRow = document.createElement('div'); maintRow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:14px';
+    maintRow.innerHTML = '<span style="font-size:13px;font-weight:500;color:var(--text-high)">Maintenance Mode</span>';
+    const maintCb = document.createElement('input'); maintCb.type='checkbox'; maintCb.className='sm-toggle'; maintCb.checked=settings.maintenance_enabled==='true';
+    maintCb.addEventListener('change', async function(){
+      try{ await rpc('admin_save_site_setting',{p_key:'maintenance_enabled',p_value:String(this.checked)}); }
+      catch(e){ this.checked=!this.checked; alert('Error: '+e.message); }
+    });
+    maintRow.appendChild(maintCb); maint.appendChild(maintRow);
+    maint.appendChild(field('maintenance_message','Message',settings.maintenance_message,'textarea'));
+    maint.appendChild(saveBtn(['maintenance_message'],'Save Message'));
+    el.appendChild(maint);
+
+    // Watermark
+    const wm = sec('Watermark','Applied to all recipe images.');
+    const wg = document.createElement('div'); wg.className='sm-grid-2';
+    wg.appendChild(field('watermark_font','Font Family',settings.watermark_font));
+    wg.appendChild(field('watermark_opacity','Opacity (0.0–1.0)',settings.watermark_opacity));
+    wg.appendChild(field('watermark_size','Font Size (px)',settings.watermark_size));
+    const pos = document.createElement('div');
+    pos.innerHTML='<label class="sm-label">Positions</label><div class="sm-grid-2"><input id="ss-watermark_position_site" class="sm-input" value="'+esc(settings.watermark_position_site||'')+'" placeholder="Site name position"><input id="ss-watermark_position_user" class="sm-input" value="'+esc(settings.watermark_position_user||'')+'" placeholder="Username position"></div>';
+    wm.appendChild(wg); wm.appendChild(pos);
+    wm.appendChild(saveBtn(['watermark_font','watermark_opacity','watermark_size','watermark_position_site','watermark_position_user'],'Save Watermark'));
+    el.appendChild(wm);
+
+    // Footer
+    const foot = sec('Footer');
+    foot.appendChild(field('footer_copyright','Copyright Text',settings.footer_copyright));
+    let soc={}; try{soc=JSON.parse(settings.footer_social||'{}');}catch(_){}
+    const sg = document.createElement('div'); sg.className='sm-grid-3';
+    sg.innerHTML='<div><label class="sm-label">Instagram</label><input id="ss-soc-instagram" class="sm-input" value="'+esc(soc.instagram||'')+'" placeholder="@handle"></div><div><label class="sm-label">Facebook</label><input id="ss-soc-facebook" class="sm-input" value="'+esc(soc.facebook||'')+'" placeholder="@handle"></div><div><label class="sm-label">Pinterest</label><input id="ss-soc-pinterest" class="sm-input" value="'+esc(soc.pinterest||'')+'" placeholder="@handle"></div>';
+    foot.appendChild(sg);
+    const footSaveBtn = document.createElement('button'); footSaveBtn.className='sm-btn'; footSaveBtn.style.marginTop='12px'; footSaveBtn.textContent='Save Footer';
+    footSaveBtn.addEventListener('click', async function(){
+      footSaveBtn.disabled=true; footSaveBtn.textContent='Saving…';
+      try{
+        await rpc('admin_save_site_setting',{p_key:'footer_copyright',p_value:document.getElementById('ss-footer_copyright').value||''});
+        await rpc('admin_save_site_setting',{p_key:'footer_social',p_value:JSON.stringify({instagram:document.getElementById('ss-soc-instagram').value,facebook:document.getElementById('ss-soc-facebook').value,pinterest:document.getElementById('ss-soc-pinterest').value})});
+        footSaveBtn.textContent='✓ Saved'; setTimeout(function(){footSaveBtn.textContent='Save Footer';footSaveBtn.disabled=false;},2000);
+      }catch(e){footSaveBtn.textContent='Save Footer';footSaveBtn.disabled=false;alert('Error: '+e.message);}
+    });
+    foot.appendChild(footSaveBtn);
+    el.appendChild(foot);
+
+    // Legal
+    const legal = sec('Legal & Policy','Editable without code. Supports plain text or HTML.');
+    legal.appendChild(field('legal_ai_disclaimer','AI Disclaimer (shown at signup)',settings.legal_ai_disclaimer,'textarea'));
+    legal.appendChild(field('legal_terms','Terms of Use',settings.legal_terms,'textarea'));
+    legal.appendChild(field('legal_privacy','Privacy Policy',settings.legal_privacy,'textarea'));
+    legal.appendChild(saveBtn(['legal_ai_disclaimer','legal_terms','legal_privacy'],'Save Legal Text'));
+    el.appendChild(legal);
+
+  } catch(e) { err('settings-content', e.message); }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

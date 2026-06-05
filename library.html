@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Legacy preservation library — browse fermentation, canning, and preserved recipe guides.">
+  <link rel="canonical" href="https://theculinaryjournal.site/library-directory.html?type=preservation">
+  <meta name="robots" content="noindex, follow">
+  <title>Preservation Library — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
+  <style>
+    .page-bg  { min-height:100vh; background:var(--bg); }
+    .lib-wrap { max-width:1000px; margin:0 auto; padding:32px 20px 80px; }
+    .lib-header { margin-bottom:32px; }
+    .lib-title  { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:700; color:var(--text-high); margin-bottom:6px; }
+    .lib-sub    { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); max-width:580px; line-height:1.7; }
+
+    /* Tabs */
+    .lib-tabs  { display:flex; gap:0; border-bottom:2px solid var(--border); margin-bottom:28px; overflow-x:auto; }
+    .lib-tab   { padding:11px 22px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-mid); background:none; border:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; white-space:nowrap; transition:color .15s; }
+    .lib-tab:hover { color:var(--text-high); }
+    .lib-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+    .lib-panel { display:none; }
+    .lib-panel.active { display:block; }
+
+    /* Technique cards */
+    .lib-grid   { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; margin-bottom:28px; }
+    .lib-card   { background:var(--text-ghost); border:1px solid var(--border); border-radius:13px; padding:20px; cursor:pointer; transition:border-color .15s; }
+    .lib-card:hover { border-color:var(--accent); }
+    .lib-card-icon  { font-size:28px; margin-bottom:10px; }
+    .lib-card-name  { font-family:'Cormorant Garamond',serif; font-size:1.15rem; font-weight:700; color:var(--text-high); margin-bottom:5px; }
+    .lib-card-desc  { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); line-height:1.6; }
+    .lib-card-tags  { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+    .lib-tag        { font-family:'DM Sans',sans-serif; font-size:10px; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.06); color:var(--text-mid); }
+
+    /* Detail panel */
+    .lib-detail { background:var(--text-ghost); border:1px solid var(--border); border-radius:13px; padding:24px; margin-bottom:20px; display:none; }
+    .lib-detail.open { display:block; }
+    .lib-detail-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px; }
+    .lib-detail-title{ font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:700; color:var(--text-high); }
+    .lib-detail-close{ background:none; border:none; color:var(--text-mid); font-size:18px; cursor:pointer; padding:0 0 0 12px; }
+    .lib-section-head{ font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text-mid); margin:16px 0 8px; }
+    .lib-step   { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); line-height:1.7; margin-bottom:6px; display:flex; gap:10px; }
+    .lib-step-n { color:var(--accent); font-weight:700; flex-shrink:0; min-width:18px; }
+    .lib-tip    { background:rgb(from var(--accent) r g b / .08); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; padding:10px 14px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-high); line-height:1.6; margin-bottom:8px; }
+    .lib-warn   { background:rgb(from var(--danger) r g b / .07); border-left:3px solid var(--danger); border-radius:0 8px 8px 0; padding:10px 14px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-high); line-height:1.6; margin-bottom:8px; }
+
+    /* Recipe cards */
+    .lib-recipe-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+    .lib-recipe-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:11px; overflow:hidden; text-decoration:none; transition:border-color .15s; }
+    .lib-recipe-card:hover { border-color:var(--accent); }
+    .lib-recipe-img  { width:100%; aspect-ratio:4/3; object-fit:cover; background:var(--border); display:flex; align-items:center; justify-content:center; font-size:32px; }
+    .lib-recipe-img img { width:100%; height:100%; object-fit:cover; }
+    .lib-recipe-body { padding:12px; }
+    .lib-recipe-name { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-high); margin-bottom:3px; }
+    .lib-recipe-meta { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+
+    .lib-empty { text-align:center; padding:40px 20px; color:var(--text-mid); font-family:'DM Sans',sans-serif; font-size:13px; }
+    .lib-loading { color:var(--text-mid); font-family:'DM Sans',sans-serif; font-size:13px; padding:20px 0; }
+  </style>
+</head>
+<body class="page-bg">
+
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <span>🍽</span>
+    <span class="nav-logo-text">The Culinary Journal</span>
+    <span class="nav-logo-badge">Est. 2025</span>
+  </a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+
+<div class="lib-wrap">
+  <div class="lib-header">
+    <h1 class="lib-title">🫙 The Library</h1>
+    <div class="lib-sub">Preservation techniques, fermentation guides, and every recipe from the Preserved &amp; Cherished collection — nothing lost, everything documented.</div>
+  </div>
+
+  <div class="lib-tabs">
+    <button class="lib-tab active" onclick="switchTab('techniques',this)">Techniques</button>
+    <button class="lib-tab" onclick="switchTab('preserved',this)">Preserved &amp; Cherished</button>
+    <button class="lib-tab" onclick="switchTab('fermentation',this)">Fermentation</button>
+    <button class="lib-tab" onclick="switchTab('canning',this)">Canning &amp; Bottling</button>
+  </div>
+
+  <!-- TECHNIQUES -->
+  <div id="panel-techniques" class="lib-panel active">
+    <div id="lib-detail" class="lib-detail"></div>
+    <div class="lib-grid" id="technique-grid"></div>
+  </div>
+
+  <!-- PRESERVED & CHERISHED RECIPES -->
+  <div id="panel-preserved" class="lib-panel">
+    <div class="lib-loading" id="preserved-loading">Loading recipes…</div>
+    <div class="lib-recipe-grid" id="preserved-grid"></div>
+  </div>
+
+  <!-- FERMENTATION -->
+  <div id="panel-fermentation" class="lib-panel">
+    <div id="lib-detail-ferm" class="lib-detail"></div>
+    <div class="lib-grid" id="ferm-grid"></div>
+  </div>
+
+  <!-- CANNING & BOTTLING -->
+  <div id="panel-canning" class="lib-panel">
+    <div id="lib-detail-can" class="lib-detail"></div>
+    <div class="lib-grid" id="can-grid"></div>
+  </div>
+</div>
+
+<script src="page-guard.js"></script>
+<script src="nav-init.js"></script>
+<script>
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+function switchTab(name, btn){
+  document.querySelectorAll('.lib-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.lib-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  if(name==='preserved') loadPreservedRecipes();
+}
+
+// ── Technique data ─────────────────────────────────────────────────────
+const TECHNIQUES = [
+  {
+    id:'pickling', icon:'🥒', name:'Pickling',
+    desc:'Preserve vegetables and fruits in acidified brine for weeks to months.',
+    tags:['Vinegar','Brine','Salt','Quick & Long'],
+    overview:'Pickling uses acidity — either vinegar or fermented lactic acid — to create an environment hostile to spoilage. Quick pickles (fridge) use vinegar and last weeks. Lacto-fermented pickles develop their own acid and last months.',
+    steps:[
+      'Prepare clean jars — wash in hot soapy water and rinse.',
+      'Make your brine: typically 1 cup vinegar + 1 cup water + 1 tbsp salt per 500ml jar.',
+      'Pack vegetables tightly into jars, adding aromatics (garlic, dill, peppercorns).',
+      'Pour hot brine over, leaving 1cm headspace.',
+      'Seal and refrigerate for quick pickles (ready in 24–48 hours) or process in a water bath for shelf-stable jars.'
+    ],
+    tips:['Use pickling salt — iodised salt can cloud the brine.','Cucumbers: trim blossom end to keep them crisp.','Ratio for strong pickles: increase vinegar. For milder: add sugar.'],
+    warnings:['Always use 5% acidity vinegar for safe shelf-stable pickles.','Do not alter vinegar-to-water ratio in tested recipes.']
+  },
+  {
+    id:'jam', icon:'🍓', name:'Jams & Preserves',
+    desc:'Capture the flavour of seasonal fruit and keep it year-round.',
+    tags:['Fruit','Sugar','Pectin','Heat'],
+    overview:'Jam sets through the combination of pectin (natural or added), acid, and sugar in the right proportions. Soft-set jams have a looser texture; firm-set jams hold their shape. Preserves contain larger pieces of fruit.',
+    steps:[
+      'Weigh fruit and use equal weight of sugar for most recipes.',
+      'Combine fruit, sugar, and lemon juice in a heavy pan. Stir over low heat until sugar dissolves.',
+      'Bring to a rolling boil. Test for set using the wrinkle test: put a drop on a cold saucer, push with finger — it wrinkles when ready.',
+      'Skim off foam, pour into sterilised jars, and seal immediately.',
+      'Process in water bath for 10 minutes for shelf stability.'
+    ],
+    tips:['Slightly underripe fruit has more natural pectin.','Low-sugar jams need added pectin.','Always sterilise jars before filling.'],
+    warnings:['Never reduce sugar below 60% — it is a preservative, not just sweetener.','Always check seal before storing.']
+  },
+  {
+    id:'chutney', icon:'🌶', name:'Chutneys & Relishes',
+    desc:'Sweet-sour-spiced condiments that improve with age.',
+    tags:['Vinegar','Spices','Fruit & Veg','Long shelf life'],
+    overview:'Chutneys combine fruit or vegetables with vinegar, sugar, and spices to create complex condiments. Unlike jam, they rely on both vinegar and sugar for preservation, and the flavour deepens significantly after 4–6 weeks in the jar.',
+    steps:[
+      'Chop fruit or vegetables into uniform pieces.',
+      'Combine with vinegar, sugar, onions, and spices in a large pan.',
+      'Cook over medium heat, stirring regularly, until thick and jammy — no liquid should pool when you drag a spoon through.',
+      'Fill hot sterilised jars to the rim, seal immediately.',
+      'Rest for at least 4 weeks before opening for best flavour.'
+    ],
+    tips:['Use malt vinegar for traditional flavour; cider vinegar for a milder result.','Chutney thickens further on cooling — don\'t overcook.','Date and label every jar.'],
+    warnings:['Copper or brass pans can react with vinegar — use stainless steel.']
+  },
+  {
+    id:'dehydrating', icon:'🍋', name:'Dehydrating',
+    desc:'Remove moisture to concentrate flavour and extend shelf life dramatically.',
+    tags:['Fruit','Herbs','Veg','Air-dry or Oven'],
+    overview:'Dehydration removes the water that bacteria and mould need to grow. Properly dried food can last months to years. Fruits, herbs, mushrooms, tomatoes and chillies all dehydrate exceptionally well.',
+    steps:[
+      'Wash and dry produce thoroughly. Slice uniformly — thicker pieces take longer.',
+      'Pre-treat fruit: dip in lemon juice solution to prevent browning.',
+      'Arrange in single layers on dehydrator trays or oven racks.',
+      'Dry at 55–70°C. Time varies: herbs 1–2 hours; fruit 6–12 hours; vegetables 4–8 hours.',
+      'Test: fruit should be pliable but not sticky. Herbs should crumble. Store in airtight containers away from light.'
+    ],
+    tips:['Rotate trays halfway through if using an oven.','Tomatoes: remove seeds for faster drying.','Label with date — colour fades and they all look similar.'],
+    warnings:['Ensure food is fully dry before storing — any moisture causes mould.','Meat jerky must reach 70°C internally for food safety.']
+  },
+  {
+    id:'oil-infusion', icon:'🫒', name:'Infused Oils',
+    desc:'Capture herbs, spices, and aromatics in oil for cooking and finishing.',
+    tags:['Cold-infused','Heated','Herbs','Spices'],
+    overview:'Infused oils bring flavour to oils through heat or cold steeping. They should be treated as refrigerated condiments — commercially stabilised infused oils are different from homemade ones.',
+    steps:[
+      'Choose a neutral oil (light olive, grape seed) or extra virgin olive oil for robust herbs.',
+      'Dry herbs thoroughly — any water encourages mould.',
+      'Cold infuse: combine herbs and oil in a sterilised jar. Store refrigerated and use within 2 weeks.',
+      'Heated infuse: gently warm oil and dried aromatics to 80°C for 20 minutes. Strain and bottle.',
+    ],
+    tips:['Garlic in oil at room temperature is a botulism risk — always refrigerate.','Dried chillies and peppercorns are safer than fresh herbs for longer infusions.'],
+    warnings:['Never store fresh herb or garlic oils at room temperature — botulism risk.','Use within 2 weeks refrigerated for fresh-ingredient infusions.']
+  },
+  {
+    id:'salt-curing', icon:'🧂', name:'Salt Curing',
+    desc:'Use salt to draw out moisture and build flavour in meats, fish, and vegetables.',
+    tags:['Salt','Dry Cure','Wet Brine','Meat & Fish'],
+    overview:'Salt curing is one of the oldest preservation methods. It draws water out of food via osmosis, reducing the water activity that microbes need. Used for cured meats, smoked salmon, preserved lemons, and salted vegetables.',
+    steps:[
+      'Choose your method: dry cure (pack in salt) or wet brine (submerge in salted water).',
+      'Basic dry cure ratio: 3% salt by weight of the food.',
+      'Rub salt mixture all over, pack in a sealed container, refrigerate.',
+      'Curing time varies: fish 24–48 hours; pork belly (pancetta) 7–14 days.',
+      'After curing, rinse off excess salt and dry before using or further processing.'
+    ],
+    tips:['Prague Powder #1 (curing salt) is needed for any meat cured over 7 days or cold-smoked.','Preserved lemons: quarter lemons, pack in salt, add juice. Ready in 4 weeks.','Weigh ingredients — curing is a precise process.'],
+    warnings:['Do not use regular iodised salt for long cures — use pure sea salt or kosher salt.','Extended meat curing requires proper curing salts (nitrate/nitrite) to prevent botulism.']
+  }
+];
+
+const FERMENTATION = [
+  {
+    id:'lacto', icon:'🥬', name:'Lacto-Fermentation',
+    desc:'Use salt and natural bacteria to create living, probiotic-rich preserved foods.',
+    tags:['Salt','No vinegar','Living cultures','Sauerkraut • Kimchi • Kvass'],
+    overview:'Lactobacillus bacteria convert sugars to lactic acid in an anaerobic environment, preserving food and creating distinctive tangy flavour. No starter culture needed — beneficial bacteria are present on the vegetables themselves.',
+    steps:[
+      'Shred or chop vegetables. Weigh them.',
+      'Add 2% salt by weight (20g salt per 1kg vegetables).',
+      'Massage until vegetables release their own liquid, or make a 2% brine to top up.',
+      'Pack tightly into a clean jar, pressing down so vegetables are submerged under brine.',
+      'Cover loosely (not airtight) — gases must escape. Leave at room temperature 18–24°C.',
+      'Taste daily from day 3. Move to fridge when flavour suits you. Ready in 5–14 days.'
+    ],
+    tips:['Keep vegetables submerged — anything above the brine can develop mould.','Bubbles are good: this is active fermentation.','Funkier vegetables need longer — taste is your guide.'],
+    warnings:['Fuzzy mould (not just cloudy brine) means discard and start over.','Always use clean equipment — soap is fine; bleach leaves residue.']
+  },
+  {
+    id:'kombucha', icon:'🫖', name:'Kombucha',
+    desc:'Fermented tea with a live culture, lightly effervescent and tangy.',
+    tags:['Tea','SCOBY','Live culture','Long process'],
+    overview:'Kombucha is made by fermenting sweetened tea with a SCOBY (symbiotic culture of bacteria and yeast). A first fermentation produces the base; a sealed second fermentation builds carbonation.',
+    steps:[
+      'Brew 1L strong black tea. Dissolve 70g sugar while hot. Cool to room temperature.',
+      'Pour into a clean glass jar. Add your SCOBY and 200ml starter liquid (previous kombucha).',
+      'Cover with a cloth secured with a rubber band. Ferment 7–14 days at room temperature.',
+      'Taste — it should be tangy, slightly sweet. Remove SCOBY and reserve starter.',
+      'For second fermentation (carbonation): bottle with fruit juice or flavouring. Seal airtight for 2–3 days at room temperature, then refrigerate.'
+    ],
+    tips:['SCOBY will grow thicker with each batch — peel off layers to share or compost.','Second ferment bottles can be very pressurised — burp daily.','Temperature matters: too cold = slow, too warm = vinegary.'],
+    warnings:['Open second ferment bottles carefully — they pressurise significantly.','Use glass bottles rated for carbonation.']
+  }
+];
+
+const CANNING = [
+  {
+    id:'waterbath', icon:'🫙', name:'Water Bath Canning',
+    desc:'For high-acid foods: jams, pickles, tomatoes, fruit.',
+    tags:['High acid','pH below 4.6','Jam • Pickle • Tomato'],
+    overview:'Water bath canning uses boiling water (100°C) to kill spoilage organisms in high-acid foods. It is safe for foods with pH below 4.6 — primarily fruit, jams, pickles, and acidified tomatoes.',
+    steps:[
+      'Sterilise jars: wash in hot soapy water, then heat in oven at 120°C for 15 minutes.',
+      'Heat lids in simmering (not boiling) water.',
+      'Fill hot jars with hot product, leaving specified headspace (usually 5–10mm).',
+      'Wipe jar rims with a clean damp cloth. Apply lids and rings fingertip-tight.',
+      'Lower into boiling water bath — jars must be covered by at least 3cm of water.',
+      'Process for the time specified in your tested recipe. Start timing when water returns to a full boil.',
+      'Remove jars and cool undisturbed for 12–24 hours. Check seals — lid should not flex.'
+    ],
+    tips:['Always use tested recipes — headspace and processing time are not guesswork.','Adjust processing time for altitude above 300m.','A properly sealed lid curves inward and does not click.'],
+    warnings:['NEVER use water bath canning for low-acid foods (meat, fish, most vegetables) — use a pressure canner.','Do not adjust headspace or processing time.']
+  },
+  {
+    id:'pressure', icon:'⚗️', name:'Pressure Canning',
+    desc:'For low-acid foods: vegetables, meat, fish, beans.',
+    tags:['Low acid','pH above 4.6','Meat • Veg • Beans'],
+    overview:'Pressure canning reaches 115–121°C, destroying Clostridium botulinum spores that water bath canning cannot. It is the only safe method for low-acid foods.',
+    steps:[
+      'Follow your pressure canner manufacturer instructions exactly.',
+      'Fill prepared jars with product and correct headspace.',
+      'Seal jars and place in canner with the specified amount of water.',
+      'Heat until steam vents steadily for 10 minutes, then attach weight/close petcock.',
+      'Process at the required pressure for the specified time.',
+      'Turn off heat. Allow pressure to drop naturally — never force cool.',
+      'Remove jars and cool undisturbed 12–24 hours.'
+    ],
+    tips:['Dial-gauge canners need annual testing — use a weighted gauge for reliability.','Do not double-stack jars without a rack between them.','Thin liquids process faster than dense ones.'],
+    warnings:['Never attempt to shortcut the venting or de-pressurising steps.','Only use tested, approved recipes for pressure canning times.','Improperly pressure-canned food can cause fatal botulism with no visible sign of spoilage.']
+  }
+];
+
+function renderTechniqueGrid(data, gridId, detailId){
+  const grid = document.getElementById(gridId);
+  if(!grid) return;
+  grid.innerHTML = data.map(t=>`
+    <div class="lib-card" onclick="openDetail('${t.id}','${detailId}')">
+      <div class="lib-card-icon">${t.icon}</div>
+      <div class="lib-card-name">${esc(t.name)}</div>
+      <div class="lib-card-desc">${esc(t.desc)}</div>
+      <div class="lib-card-tags">${(t.tags||[]).map(tag=>`<span class="lib-tag">${esc(tag)}</span>`).join('')}</div>
+    </div>`).join('');
+}
+
+function openDetail(id, detailId){
+  const allData = [...TECHNIQUES, ...FERMENTATION, ...CANNING];
+  const t = allData.find(x=>x.id===id);
+  if(!t) return;
+  const el = document.getElementById(detailId);
+  el.innerHTML = `
+    <div class="lib-detail-head">
+      <div>
+        <div style="font-size:28px;margin-bottom:6px">${t.icon}</div>
+        <div class="lib-detail-title">${esc(t.name)}</div>
+      </div>
+      <button class="lib-detail-close" onclick="this.closest('.lib-detail').classList.remove('open')">✕</button>
+    </div>
+    <p style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);line-height:1.7;margin-bottom:16px">${esc(t.overview)}</p>
+    ${t.steps ? `<div class="lib-section-head">Steps</div>
+      ${t.steps.map((s,i)=>`<div class="lib-step"><span class="lib-step-n">${i+1}.</span><span>${esc(s)}</span></div>`).join('')}` : ''}
+    ${t.tips && t.tips.length ? `<div class="lib-section-head">Tips</div>
+      ${t.tips.map(tip=>`<div class="lib-tip">${esc(tip)}</div>`).join('')}` : ''}
+    ${t.warnings && t.warnings.length ? `<div class="lib-section-head">Safety</div>
+      ${t.warnings.map(w=>`<div class="lib-warn">⚠ ${esc(w)}</div>`).join('')}` : ''}
+  `;
+  el.classList.add('open');
+  el.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+async function loadPreservedRecipes(){
+  const grid = document.getElementById('preserved-grid');
+  const loading = document.getElementById('preserved-loading');
+  if(grid.children.length) return; // already loaded
+  try {
+    const res = await fetch(
+      SUPA_URL + "/rest/v1/submitted_recipes?select=id,recipe_name,image_url,origin_country,category&category=eq.Preserved%20%26%20Cherished&status=eq.approved&order=recipe_name",
+      {headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'}}
+    );
+    const recipes = res.ok ? await res.json() : [];
+    if(loading) loading.style.display = 'none';
+    if(!Array.isArray(recipes) || !recipes.length){
+      grid.innerHTML = '<div class="lib-empty">No preserved recipes yet. <a href="submit-recipe.html" style="color:var(--accent)">Submit the first one →</a></div>';
+      return;
+    }
+    grid.innerHTML = recipes.map(r=>`
+      <a class="lib-recipe-card" href="recipe-page.html?id=${r.id}">
+        <div class="lib-recipe-img">${r.image_url ? `<img src="${esc(r.image_url)}" loading="lazy">` : '🫙'}</div>
+        <div class="lib-recipe-body">
+          <div class="lib-recipe-name">${esc(r.recipe_name||'')}</div>
+          <div class="lib-recipe-meta">${esc(r.origin_country||'')}</div>
+        </div>
+      </a>`).join('');
+  } catch(e){
+    if(loading) loading.textContent = 'Could not load recipes.';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  renderTechniqueGrid(TECHNIQUES,   'technique-grid', 'lib-detail');
+  renderTechniqueGrid(FERMENTATION, 'ferm-grid',      'lib-detail-ferm');
+  renderTechniqueGrid(CANNING,      'can-grid',       'lib-detail-can');
+});
+</script>
+</body>
+</html>
