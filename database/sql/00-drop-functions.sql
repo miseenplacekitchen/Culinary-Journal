@@ -28,6 +28,7 @@ DROP FUNCTION IF EXISTS public.quick_update_recipe(uuid, text, text, text);
 
 -- Admin — recipes
 DROP FUNCTION IF EXISTS public.admin_get_recipes(text);
+DROP FUNCTION IF EXISTS public.admin_get_recipes(text, text, text, integer, integer);
 DROP FUNCTION IF EXISTS public.admin_get_stats();
 DROP FUNCTION IF EXISTS public.admin_review_recipe(uuid, text, text);
 DROP FUNCTION IF EXISTS public.admin_get_submitter(uuid);
@@ -35,7 +36,7 @@ DROP FUNCTION IF EXISTS public.admin_get_analytics();
 DROP FUNCTION IF EXISTS public.admin_create_notification(uuid, text, uuid, text, text);
 
 -- Admin — ingredients
-DROP FUNCTION IF EXISTS public.admin_get_ingredients(text, text, int, int);
+DROP FUNCTION IF EXISTS public.admin_get_ingredients(text, text, int, int, text, text);
 DROP FUNCTION IF EXISTS public.admin_count_ingredients(text, text);
 DROP FUNCTION IF EXISTS public.admin_get_ingredient_units();
 DROP FUNCTION IF EXISTS public.admin_export_ingredients(text, text);

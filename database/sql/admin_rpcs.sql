@@ -829,6 +829,40 @@ GRANT  EXECUTE ON FUNCTION admin_get_ingredient_distinct_values() TO authenticat
 GRANT  EXECUTE ON FUNCTION admin_get_ingredient_units() TO authenticated;
 GRANT  EXECUTE ON FUNCTION admin_get_deleted_extra_fields() TO authenticated;
 
+-- AP-06e: grants for the 29 functions revoked above but never re-granted.
+-- All carry the internal is_admin() guard — verified — so granting to
+-- authenticated exposes nothing to non-admins.
+-- Rule: every DROP+CREATE deployment must end with its REVOKE/GRANT pair.
+GRANT EXECUTE ON FUNCTION public.admin_bulk_approve_recipes(uuid[]) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_export_user_data(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_get_inactive_users(int) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_get_appeals() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_review_appeal(bigint, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_log_action(text, text, text, text, text, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_get_audit_log(int, int) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_get_ingredients(text, text, int, int, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_count_ingredients(text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_upsert_ingredient(integer, text, text, text, text, text, float8, text, text, text, text, text, text, text, jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_delete_ingredient(int) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_export_ingredients(text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_get_ingredient_analytics() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_get_pending_ingredients() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_resolve_pending_ingredient(int, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_clear_ingredient_category(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_save_extra_fields(int, jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_delete_extra_field(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_rename_extra_field(text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_rename_reference_value(text, text, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_get_brand_mappings() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_upsert_brand_mapping(bigint, text, text, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_save_brand(bigint, text, text, text, text, text, text, boolean) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_delete_brand_mapping(bigint) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_delete_all_brand_mappings() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_bulk_upsert_brand_mappings(jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_sync_brands_from_ingredients() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_bulk_award_badge(uuid[], text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_bulk_upsert_ingredients(jsonb) TO authenticated;
+
 -- ════════════════════════════════════════════════════════════════════
 -- MISSING TABLES: site_pages, site_settings
 -- email_templates is created in email_templates.sql — not duplicated here

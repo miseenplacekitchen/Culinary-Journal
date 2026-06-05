@@ -513,36 +513,6 @@ GRANT EXECUTE ON FUNCTION public.admin_get_analytics() TO authenticated;
 DO $$ DECLARE r record;
 BEGIN
   FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
-           WHERE proname = 'admin_get_ingredients' AND pronamespace = 'public'::regnamespace
-  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
-END $$;
-DO $$ DECLARE r record;
-BEGIN
-  FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
-           WHERE proname = 'admin_count_ingredients' AND pronamespace = 'public'::regnamespace
-  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
-END $$;
-DO $$ DECLARE r record;
-BEGIN
-  FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
-           WHERE proname = 'admin_get_ingredient_units' AND pronamespace = 'public'::regnamespace
-  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
-END $$;
-DO $$ DECLARE r record;
-BEGIN
-  FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
-           WHERE proname = 'admin_export_ingredients' AND pronamespace = 'public'::regnamespace
-  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
-END $$;
-DO $$ DECLARE r record;
-BEGIN
-  FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
-           WHERE proname = 'admin_delete_ingredient' AND pronamespace = 'public'::regnamespace
-  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
-END $$;
-DO $$ DECLARE r record;
-BEGIN
-  FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
            WHERE proname = 'admin_bulk_update_field' AND pronamespace = 'public'::regnamespace
   LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
 END $$;
@@ -571,12 +541,6 @@ $$;
 GRANT EXECUTE ON FUNCTION public.admin_bulk_update_field(int[],text,text) TO authenticated;
 
 -- Definitive bulk upsert — handles inserts, updates and restored-deleted rows
-DO $$ DECLARE r record;
-BEGIN
-  FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
-           WHERE proname = 'admin_bulk_upsert_ingredients' AND pronamespace = 'public'::regnamespace
-  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
-END $$;
 -- ── ADMIN — USERS ─────────────────────────────────────────────────
 
 DO $$ DECLARE r record;
