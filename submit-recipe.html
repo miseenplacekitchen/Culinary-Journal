@@ -1671,7 +1671,7 @@ async function loadIngredients() {
     // No Authorization header — ingredients are public reference data.
     // This means expired JWTs don't break autocomplete. The RLS policy
     // in enable-ingredients-rls-read.sql allows anon SELECT.
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/ingredients?select=*&limit=2000`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/ingredients?select=${encodeURIComponent('"Ingredient Name","Also Known As","Category","Unit"')}&limit=2000`, {
       headers: { 'apikey': SUPABASE_KEY }
     });
     if (!res.ok) {

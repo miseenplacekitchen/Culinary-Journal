@@ -382,7 +382,7 @@ function addToGroceryLow() {
 // Load ingredient names for autocomplete
 async function loadIngredientNames() {
   try {
-    const res = await fetch(SUPA_URL + '/rest/v1/ingredients?select=Ingredient Name&limit=200&order=Ingredient Name', {headers:{'apikey':SUPA_KEY}});
+    const res = await fetch(SUPA_URL + '/rest/v1/ingredients?select=' + encodeURIComponent('"Ingredient Name"') + '&limit=200&order=' + encodeURIComponent('"Ingredient Name"'), {headers:{'apikey':SUPA_KEY}});
     const rows = await res.json();
     const dl = document.getElementById('pt-ingredients-list');
     if (dl && rows.length) {
