@@ -339,20 +339,30 @@ CREATE FUNCTION admin_get_ingredients(
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 -- AP-07: returns a plain jsonb ARRAY of complete rows (all columns incl.
 -- extra_fields). The frontend slices/filters the array and fetches the
--- total separately via admin_count_ingredients. Do not change this to an
--- object shape. AP-06f (sort params accepted but unused) remains open —
--- implement only with a strict column whitelist, never raw interpolation.
-DECLARE v_rows jsonb;
+-- total separately via admin_count_ingredients. Do not change to an object.
+-- AP-06f: sorting implemented with a strict whitelist — p_sort_col is
+-- matched against known column names and NEVER interpolated raw.
+DECLARE
+  v_rows jsonb;
+  v_col  text;
+  v_dir  text;
 BEGIN
   IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  SELECT jsonb_agg(to_jsonb(i)) INTO v_rows FROM (
-    SELECT *
-    FROM ingredients
-    WHERE (p_search IS NULL OR "Ingredient Name" ILIKE '%'||p_search||'%')
-      AND (p_category IS NULL OR "Category" = p_category)
-    ORDER BY "Ingredient Name" ASC
-    LIMIT p_limit OFFSET p_offset
-  ) i;
+  v_col := CASE WHEN p_sort_col IN (
+      'ID','Ingredient Name','Also Known As','Category','Sub Category',
+      'Standard Qty','Standard Weight (g or ml)','Unit','Liquid (Yes/No)',
+      'CJ Recommended Brand','Allergen','Vegan (Yes/No)','Vegetarian (Yes/No)','Notes')
+    THEN p_sort_col ELSE 'Ingredient Name' END;
+  v_dir := CASE WHEN lower(p_sort_dir) = 'desc' THEN 'DESC' ELSE 'ASC' END;
+  EXECUTE format(
+    'SELECT jsonb_agg(to_jsonb(i)) FROM (
+       SELECT * FROM ingredients
+       WHERE ($1 IS NULL OR "Ingredient Name" ILIKE ''%%''||$1||''%%'')
+         AND ($2 IS NULL OR "Category" = $2)
+       ORDER BY %I %s
+       LIMIT $3 OFFSET $4
+     ) i', v_col, v_dir)
+  INTO v_rows USING p_search, p_category, p_limit, p_offset;
   RETURN COALESCE(v_rows, '[]'::jsonb);
 END; $$;
 

@@ -186,6 +186,7 @@ BEGIN
     -- Cooking events
     SELECT
       'cook'         AS event_type,
+      id::text       AS source_id,
       cooked_at      AS event_date,
       recipe_name    AS label,
       notes          AS detail,
@@ -197,6 +198,7 @@ BEGIN
     -- Diary entries
     SELECT
       'diary'        AS event_type,
+      id::text       AS source_id,
       entry_date     AS event_date,
       COALESCE(NULLIF(title,''), 'Journal Entry') AS label,
       LEFT(content, 100) AS detail,
@@ -208,6 +210,7 @@ BEGIN
     -- Recipe submissions
     SELECT
       'recipe'       AS event_type,
+      id::text       AS source_id,
       submitted_at::date AS event_date,
       recipe_name    AS label,
       status         AS detail,
@@ -219,6 +222,7 @@ BEGIN
     -- Milestones
     SELECT
       'milestone'    AS event_type,
+      NULL::text     AS source_id,
       achieved_at::date AS event_date,
       label          AS label,
       milestone      AS detail,
@@ -330,3 +334,23 @@ BEGIN
 END;
 $$;
 GRANT EXECUTE ON FUNCTION public.delete_cooking_event(uuid) TO authenticated;
+
+-- ── UPDATE COOKING EVENT (AP-03) ─────────────────────────────────
+DROP FUNCTION IF EXISTS public.update_cooking_event(uuid, text, date, int, text);
+CREATE FUNCTION public.update_cooking_event(
+  p_id uuid, p_recipe_name text DEFAULT NULL, p_cooked_at date DEFAULT NULL,
+  p_rating int DEFAULT NULL, p_notes text DEFAULT NULL
+)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  UPDATE cooking_events SET
+    recipe_name = COALESCE(NULLIF(p_recipe_name,''), recipe_name),
+    cooked_at   = COALESCE(p_cooked_at, cooked_at),
+    rating      = COALESCE(p_rating, rating),
+    notes       = COALESCE(p_notes, notes)
+  WHERE id = p_id AND user_id = auth.uid();
+  IF NOT FOUND THEN RAISE EXCEPTION 'not_found_or_not_yours'; END IF;
+END; $$;
+REVOKE ALL ON FUNCTION public.update_cooking_event(uuid, text, date, int, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.update_cooking_event(uuid, text, date, int, text) TO authenticated;
