@@ -505,6 +505,18 @@ function buildCards() {
       ingHtml += '</div>';
     });
 
+    // Contextual safety lines on the printed card (alcohol / baby / preservation)
+    const safety = [];
+    const allIngs = [];
+    (r.ingredients||[]).forEach(s => (s.items||[]).forEach(i => allIngs.push((i.ingredient||'').toLowerCase())));
+    const ALC = ['wine','beer','rum','brandy','whisky','whiskey','bourbon','vodka','gin','liqueur','sherry','port','sake','marsala','vermouth','tequila','cognac','kirsch'];
+    if (allIngs.some(n => ALC.some(w => n.indexOf(w) !== -1))) safety.push('Contains alcohol — cooking reduces but may not eliminate alcohol content.');
+    if ((r.category||'').toLowerCase().indexOf('little ones') !== -1) safety.push('Baby & toddler recipe — check age stage and allergens; supervise eating.');
+    if (['pickling-q','pickling-t','fermentation','canning','dehydrating','curing','jam','brining'].indexOf(r.cooking_style||'') !== -1) safety.push('Preservation: follow sterilisation and quantities exactly — food safety depends on it.');
+    const safetyHtml = safety.length
+      ? `<div style="font-family:'DM Sans',sans-serif;font-size:8px;color:#8a7a5c;margin-top:8px;padding-top:5px;border-top:0.5px solid #e8e0d0;line-height:1.5">${safety.map(s=>'⚠ '+esc(s)).join('<br>')}</div>`
+      : '';
+
     cards.push(`
       ${PS_BRAND}
       <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
@@ -512,6 +524,7 @@ function buildCards() {
       ${meta.length?`<div class="ps-card-meta">${meta.map(m=>`<span>${esc(m)}</span>`).join('')}</div>`:''}
       ${extraRows}
       ${ingHtml}
+      ${safetyHtml}
     `);
   }
 

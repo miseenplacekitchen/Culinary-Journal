@@ -443,6 +443,9 @@
     <!-- STORAGE & KEEPING (style-dependent: shelf life, storage method, after opening) -->
     <div class="rp-tags" id="rp-keeping" style="display:none"></div>
 
+    <!-- CONTEXTUAL SAFETY NOTES (baby / preservation / health / alcohol) -->
+    <div id="rp-disclaimers" style="display:none;margin-top:6px"></div>
+
     <!-- CREDIT -->
     <div class="rp-credit" id="rp-credit" style="display:none">
       <span class="rp-credit-badge" id="credit-badge">Original</span>
@@ -1216,6 +1219,9 @@ function renderRecipe(r) {
   // Shelf life / storage / after opening (4.7)
   renderKeeping(r);
 
+  // Contextual safety notes (baby / preservation / health / alcohol)
+  try { renderDisclaimers(r); } catch(_) {}
+
   // Tags
   renderTags(r);
 
@@ -1307,6 +1313,40 @@ function renderKeeping(r) {
   if (!bits.length) { el.style.display = 'none'; return; }
   el.innerHTML = bits.map(b => '<span class="rp-tag">' + b + '</span>').join('');
   el.style.display = 'flex';
+}
+
+// ── CONTEXTUAL SAFETY NOTES ───────────────────────────
+// Mechanical, data-driven: category, cooking style and ingredient names
+// decide which notes appear. No note when nothing applies.
+const PRESERVATION_STYLES = ['pickling-q','pickling-t','fermentation','canning','dehydrating','curing','jam','brining'];
+const ALCOHOL_WORDS = ['wine','beer','rum','brandy','whisky','whiskey','bourbon','vodka','gin','liqueur','sherry','port','sake','cider (alcoholic)','marsala','vermouth','tequila','cognac','kirsch'];
+
+function renderDisclaimers(r) {
+  const el = document.getElementById('rp-disclaimers');
+  if (!el) return;
+  const notes = [];
+  const cat = (r.category || '').toLowerCase();
+
+  if (cat.indexOf('little ones') !== -1 || (r.meal_type_tags||[]).some(t => /baby|toddler/i.test(t))) {
+    notes.push('👶 <strong>Baby & toddler safety:</strong> always check ingredients against your child\u2019s age stage and allergen history, supervise eating, and consult your child health nurse or GP about introducing new foods.');
+  }
+  if (PRESERVATION_STYLES.indexOf(r.cooking_style || '') !== -1) {
+    notes.push('🫙 <strong>Preservation safety:</strong> follow sterilisation steps and stated quantities exactly — incorrect processing, salt or acid levels can allow harmful bacteria, including botulism, to develop. When in doubt, throw it out.');
+  }
+  if (cat.indexOf('nourish') !== -1 || (r.health_tags||[]).length) {
+    notes.push('🩺 <strong>General information only:</strong> health-related notes on this recipe are not medical advice. Speak with your doctor or an accredited dietitian about your individual needs.');
+  }
+  const ingNames = [];
+  (r.ingredients||[]).forEach(s => (s.items||[]).forEach(i => ingNames.push((i.ingredient||'').toLowerCase())));
+  if (ingNames.some(n => ALCOHOL_WORDS.some(w => n.indexOf(w) !== -1))) {
+    notes.push('🍷 <strong>Contains alcohol:</strong> this recipe uses an alcoholic ingredient. Cooking reduces but does not always eliminate alcohol content.');
+  }
+
+  if (!notes.length) { el.style.display = 'none'; return; }
+  el.innerHTML = notes.map(n =>
+    '<div style="font-family:\'DM Sans\',sans-serif;font-size:11.5px;color:var(--text-mid);line-height:1.55;padding:7px 10px;border-left:2px solid var(--accent);background:var(--text-ghost);border-radius:0 8px 8px 0;margin-bottom:6px">' + n + '</div>'
+  ).join('');
+  el.style.display = 'block';
 }
 
 // ── WATERMARK ─────────────────────────────────────────
