@@ -644,7 +644,7 @@ async function loadAllergenMap() {
   if (ingredientAllergenMap) return ingredientAllergenMap;
   try {
     const res = await fetch(
-      SUPABASE_URL + '/rest/v1/ingredients?select=Ingredient Name,Also Known As,Allergen&Allergen=neq.&limit=300',
+      SUPABASE_URL + '/rest/v1/ingredients?select=' + encodeURIComponent('"Ingredient Name","Also Known As",Allergen') + '&Allergen=neq.&limit=300',
       {headers: {'apikey': SUPABASE_KEY}}
     );
     if (!res.ok) return null;
@@ -1001,7 +1001,7 @@ async function enrichIngredientInfo(r) {
     if (!_ingredientCache) {
       const headers = { 'apikey': SUPABASE_KEY };
       if (session) headers['Authorization'] = 'Bearer ' + session.access_token;
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/ingredients?select=*`, { headers });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/ingredients?select=${encodeURIComponent('"Ingredient Name","CJ Recommended Brand"')}`, { headers });
       if (!res.ok) return;
       _ingredientCache = await res.json();
     }
@@ -1659,7 +1659,17 @@ const UNIT_TO_G = {
   'handful':30,'pinch':1,'dash':1
 };
 
-const OFP_CACHE = {};
+// CJ-013: cache persists across visits — repeat opens of the Nutrition tab are instant
+const OFP_CACHE = (function(){
+  try { return JSON.parse(lsGet('tcj_off_cache') || '{}') || {}; } catch(_) { return {}; }
+})();
+function persistOFPCache() {
+  try {
+    const keys = Object.keys(OFP_CACHE);
+    if (keys.length > 400) keys.slice(0, keys.length - 400).forEach(k => delete OFP_CACHE[k]);
+    lsSet('tcj_off_cache', JSON.stringify(OFP_CACHE));
+  } catch(_) {}
+}
 
 async function fetchNutrition(ingredientName) {
   const key = ingredientName.toLowerCase().trim();
@@ -1715,20 +1725,29 @@ async function loadNutritionFromOFF(recipe, servings) {
   }
 
   const totals = {calories:0,protein:0,carbs:0,fat:0,fibre:0,sugar:0,sodium:0};
-  let found = 0;
+  let found = 0, done = 0;
   const prog = document.getElementById('nut-prog');
 
-  for (let i = 0; i < allIngredients.length; i++) {
-    const item = allIngredients[i];
-    if (prog) prog.textContent = '(' + (i+1) + '/' + allIngredients.length + ')';
-    const n = await fetchNutrition(item.ingredient);
-    if (!n) continue;
-    const grams = toGrams(item.qty, item.unit);
-    if (!grams) continue;
-    const scale = grams / 100;
-    Object.keys(totals).forEach(function(k) { totals[k] += (n[k]||0) * scale; });
-    found++;
+  // CJ-013: bounded-parallel lookups (5 at a time) instead of one-by-one —
+  // a 15-ingredient recipe drops from ~15 serial requests to ~3 parallel waves.
+  const CONCURRENCY = 5;
+  let next = 0;
+  async function worker() {
+    while (next < allIngredients.length) {
+      const item = allIngredients[next++];
+      const n = await fetchNutrition(item.ingredient);
+      done++;
+      if (prog) prog.textContent = '(' + done + '/' + allIngredients.length + ')';
+      if (!n) continue;
+      const grams = toGrams(item.qty, item.unit);
+      if (!grams) continue;
+      const scale = grams / 100;
+      Object.keys(totals).forEach(function(k) { totals[k] += (n[k]||0) * scale; });
+      found++;
+    }
   }
+  await Promise.all(Array.from({length: Math.min(CONCURRENCY, allIngredients.length)}, worker));
+  persistOFPCache();
 
   if (!found) {
     container.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:14px;color:var(--text-muted);padding:20px 0">Nutritional data not available for these ingredients.</p>';

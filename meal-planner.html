@@ -179,6 +179,7 @@
   <div class="mp-grid" id="mp-grid"></div>
 
   <div id="mp-month-view">
+  <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:10px">💡 Click any day to open that week and add or edit meals.</div>
   <div class="mth-cal">
     <div class="mth-cal-head" id="mth-dow"></div>
     <div class="mth-body" id="mth-body"></div>
@@ -278,7 +279,7 @@ async function loadPlanFromSupabase() {
     const remote = await res.json();
     if (remote && typeof remote === 'object' && Object.keys(remote).length) {
       localStorage.setItem(key, JSON.stringify(remote));
-      renderWeek();
+      renderCalendar();
     }
   } catch(_) {}
 }
@@ -659,7 +660,7 @@ function setView(v, btn) {
     if (monthEl) monthEl.style.display = 'none';
     var monthNav = document.getElementById('mp-month-nav');
     if (monthNav) monthNav.style.display = 'none';
-    renderWeek();
+    renderCalendar();
   }
 }
 
@@ -755,10 +756,15 @@ function buildMonthView() {
 }
 
 function jumpToDay(ds, wk) {
-  var parts = wk.split('_');
-  if (parts.length === 2) weekStart = new Date(parts[0] + 'T00:00:00');
+  // Compute the week offset for the clicked day relative to the current week,
+  // then open the Week view on it — meals are added there (interim until MP-04).
+  var target = new Date(ds + 'T00:00:00');
+  var tDay = target.getDay();
+  var targetMon = new Date(target); targetMon.setDate(target.getDate() - tDay + (tDay === 0 ? -6 : 1));
+  var thisMon = getWeekDates(0)[0];
+  currentWeekOffset = Math.round((targetMon - thisMon) / (7 * 86400000));
   setView('week', document.getElementById('view-week-btn'));
-  renderWeek();
+  renderCalendar();
 }
 </script>
 </body>

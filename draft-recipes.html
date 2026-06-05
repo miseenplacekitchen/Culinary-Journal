@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="The Culinary Journal">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Draft Recipes — The Culinary Journal</title>
+  <title>My Recipes &amp; Drafts — The Culinary Journal</title>
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
   <script src="supabase-config.js"></script>
@@ -161,8 +161,8 @@
 
   <div id="main-content" style="display:none">
     <div class="dr-header">
-      <h1>Draft Recipes</h1>
-      <p>Your saved works in progress — pick up where you left off.</p>
+      <h1>My Recipes &amp; Drafts</h1>
+      <p>Your saved works in progress, plus everything you've submitted for review.</p>
     </div>
 
     <div class="dr-toolbar">
@@ -171,6 +171,14 @@
     </div>
 
     <div class="dr-grid" id="dr-grid"></div>
+
+    <!-- Submitted recipes — pending / approved / rejected -->
+    <div class="dr-header" style="margin-top:48px">
+      <h1 style="font-size:clamp(1.5rem,4vw,2rem)">My Submissions</h1>
+      <p>Recipes you've submitted for review and their current status.</p>
+    </div>
+    <div class="dr-count" id="sub-count" style="margin-bottom:14px"></div>
+    <div class="dr-grid" id="sub-grid"></div>
   </div>
 
 </div>
@@ -299,6 +307,56 @@ if (!session || !session.access_token) {
 } else {
   document.getElementById('main-content').style.display = 'block';
   loadDrafts();
+  loadSubmissions();
+}
+
+// ── MY SUBMISSIONS — pending / approved / rejected ────────────────
+async function loadSubmissions() {
+  const grid = document.getElementById('sub-grid');
+  const countEl = document.getElementById('sub-count');
+  if (!grid) return;
+  grid.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:10px 0">Loading your submissions…</div>';
+  try {
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_my_submissions', {
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+session.access_token,'Content-Type':'application/json'},
+      body:'{}'
+    });
+    if (!res.ok) throw new Error('Could not load submissions');
+    const rows = await res.json() || [];
+    if (countEl) countEl.textContent = rows.length + ' submission' + (rows.length === 1 ? '' : 's');
+    if (!rows.length) {
+      grid.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:10px 0">Nothing submitted yet — finish a draft and submit it for review.</div>';
+      return;
+    }
+    const STATUS = {
+      pending:  { label:'⏳ Pending review', color:'var(--warn)' },
+      approved: { label:'✓ Approved',        color:'var(--success)' },
+      rejected: { label:'✗ Needs updates',   color:'var(--danger)' }
+    };
+    grid.innerHTML = rows.map(function(r){
+      const st = STATUS[r.status] || { label: esc(r.status||'unknown'), color:'var(--text-mid)' };
+      const img = r.image_url
+        ? '<img src="'+esc(r.image_url)+'" alt="" style="width:100%;height:120px;object-fit:cover;border-radius:10px 10px 0 0">'
+        : '<div style="height:120px;display:flex;align-items:center;justify-content:center;font-size:34px;background:var(--text-ghost);border-radius:10px 10px 0 0">🍽</div>';
+      const action = r.status === 'rejected'
+        ? '<a href="submit-recipe.html?id='+esc(r.id)+'" style="color:var(--accent);font-size:12px;text-decoration:none;font-weight:600">Edit &amp; Resubmit →</a>'
+        : '<a href="recipe-page.html?id='+esc(r.id)+'" style="color:var(--accent);font-size:12px;text-decoration:none;font-weight:600">'+(r.status==='approved'?'View Recipe →':'Preview →')+'</a>';
+      const notes = (r.status === 'rejected' && r.reviewer_notes)
+        ? '<div style="font-size:11px;color:var(--danger);margin-top:6px;line-height:1.4">Reason: '+esc(r.reviewer_notes)+'</div>' : '';
+      return '<div style="border:1px solid var(--border);border-radius:10px;background:var(--card-bg);overflow:hidden">'
+        + img
+        + '<div style="padding:12px 14px;font-family:DM Sans,sans-serif">'
+        +   '<div style="font-weight:600;color:var(--text-high);font-size:14px;margin-bottom:4px">'+esc(r.recipe_name)+'</div>'
+        +   '<div style="font-size:11px;color:var(--text-mid);margin-bottom:6px">'+esc(r.category||'')+' · submitted '+formatDate(r.submitted_at)+'</div>'
+        +   '<div style="font-size:12px;font-weight:600;color:'+st.color+'">'+st.label+'</div>'
+        +   notes
+        +   '<div style="margin-top:8px">'+action+'</div>'
+        + '</div></div>';
+    }).join('');
+  } catch(e) {
+    grid.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:10px 0">Could not load submissions: '+esc(e.message)+'</div>';
+  }
 }
 </script>
 </body>
