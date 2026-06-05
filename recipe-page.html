@@ -371,7 +371,7 @@
       <div class="rp-meta-item">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <div class="rp-serves-wrap">
-          <span class="rp-serves-label">Serves</span>
+          <span class="rp-serves-label" id="serves-label">Serves</span>
           <button class="rp-serves-btn" onclick="adjustServes(-1)">−</button>
           <span class="rp-serves-num" id="serves-num" contenteditable="true" onblur="validateServes(this)">4</span>
           <button class="rp-serves-btn" onclick="adjustServes(1)">+</button>
@@ -392,6 +392,14 @@
       <div class="rp-meta-item" id="meta-cook" style="display:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         <span id="meta-cook-text"></span>
+      </div>
+
+      <div class="rp-meta-divider" id="div-3" style="display:none"></div>
+
+      <!-- Additional / passive time (style-dependent: prove, rest, marinade, ferment…) -->
+      <div class="rp-meta-item" id="meta-extra" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 22h14M5 2h14M7 22v-4.172a2 2 0 0 1 .586-1.414L12 12l4.414 4.414A2 2 0 0 1 17 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>
+        <span id="meta-extra-text"></span>
       </div>
 
       <div class="rp-meta-divider"></div>
@@ -418,6 +426,9 @@
 
     <!-- TAGS -->
     <div class="rp-tags" id="rp-tags"></div>
+
+    <!-- STORAGE & KEEPING (style-dependent: shelf life, storage method, after opening) -->
+    <div class="rp-tags" id="rp-keeping" style="display:none"></div>
 
     <!-- CREDIT -->
     <div class="rp-credit" id="rp-credit" style="display:none">
@@ -1160,21 +1171,37 @@ function renderRecipe(r) {
   renderSpice(currentSpice);
   renderSweet(r.sweet_level);
 
-  // Serves
+  // Serves — label and unit follow the cooking style (4.7)
   currentServes = r.servings || 4;
   baseServes = currentServes;
   document.getElementById('serves-num').textContent = currentServes;
+  const styleCfg = CJ_STYLE_CFG[r.cooking_style || ''] || CJ_STYLE_CFG[''];
+  const servesLabelEl = document.getElementById('serves-label');
+  if (servesLabelEl) {
+    const unit = (r.servings_unit && r.servings_unit !== 'people') ? ' ' + r.servings_unit : '';
+    servesLabelEl.textContent = styleCfg.servesLabel + (unit ? ' —' + unit : '');
+  }
 
-  // Prep/Cook time
+  // Prep / Cook / Additional time — labels and units follow the cooking style (4.7)
   if (r.prep_time_minutes) {
     document.getElementById('meta-prep-text').textContent = formatTime(r.prep_time_minutes) + ' prep';
     document.getElementById('meta-prep').style.display = 'flex';
     document.getElementById('div-2').style.display = 'block';
   }
   if (r.cook_time_minutes) {
-    document.getElementById('meta-cook-text').textContent = formatTime(r.cook_time_minutes) + ' cook';
+    document.getElementById('meta-cook-text').textContent =
+      formatDur(r.cook_time_minutes, styleCfg.cookUnit) + ' ' + styleCfg.cookLabel.toLowerCase();
     document.getElementById('meta-cook').style.display = 'flex';
   }
+  if (r.additional_time_minutes && styleCfg.extraLabel) {
+    document.getElementById('meta-extra-text').textContent =
+      formatDur(r.additional_time_minutes, styleCfg.extraUnit) + ' ' + styleCfg.extraLabel.toLowerCase();
+    document.getElementById('meta-extra').style.display = 'flex';
+    var d3 = document.getElementById('div-3'); if (d3) d3.style.display = 'block';
+  }
+
+  // Shelf life / storage / after opening (4.7)
+  renderKeeping(r);
 
   // Tags
   renderTags(r);
@@ -1209,6 +1236,64 @@ function formatTime(mins) {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return m > 0 ? h + 'h ' + m + 'min' : h + 'h';
+}
+
+// ── 4.7: COOKING-STYLE CARRY-THROUGH ──────────────────────────────
+// Display subset of submit-recipe's COOKING_STYLE_CFG. Time values are
+// stored in the unit the submit form showed for that style (cookUnit /
+// extraUnit), so the recipe page must render with the same labels+units.
+const CJ_STYLE_CFG = {
+  '':             { cookLabel:'Cook Time',               cookUnit:'min', extraLabel:null,                   extraUnit:'min', servesLabel:'Serves' },
+  'stir-fry':     { cookLabel:'Cook Time',               cookUnit:'min', extraLabel:null,                   extraUnit:'min', servesLabel:'Serves' },
+  'deep-fry':     { cookLabel:'Frying Time',             cookUnit:'min', extraLabel:null,                   extraUnit:'min', servesLabel:'Serves' },
+  'steam-poach':  { cookLabel:'Steam / Poach Time',      cookUnit:'min', extraLabel:null,                   extraUnit:'min', servesLabel:'Serves' },
+  'roasting':     { cookLabel:'Roasting Time',           cookUnit:'min', extraLabel:'Rest Time',            extraUnit:'min', servesLabel:'Serves' },
+  'air-fry':      { cookLabel:'Air Fry Time',            cookUnit:'min', extraLabel:null,                   extraUnit:'min', servesLabel:'Serves' },
+  'raw':          { cookLabel:'Assembly Time',           cookUnit:'min', extraLabel:null,                   extraUnit:'min', servesLabel:'Serves' },
+  'bbq':          { cookLabel:'Grill / BBQ Time',        cookUnit:'min', extraLabel:'Rest Time',            extraUnit:'min', servesLabel:'Serves' },
+  'smoking-hot':  { cookLabel:'Smoking Time',            cookUnit:'hr',  extraLabel:'Rest Time',            extraUnit:'min', servesLabel:'Serves' },
+  'slow-cook':    { cookLabel:'Slow Cook Time',          cookUnit:'hr',  extraLabel:null,                   extraUnit:'hr',  servesLabel:'Serves' },
+  'pressure':     { cookLabel:'Pressure Cook Time',      cookUnit:'min', extraLabel:'Natural Release Time', extraUnit:'min', servesLabel:'Serves' },
+  'sous-vide':    { cookLabel:'Sous Vide Time',          cookUnit:'hr',  extraLabel:'Sear / Finish Time',   extraUnit:'min', servesLabel:'Serves' },
+  'baking':       { cookLabel:'Baking Time',             cookUnit:'min', extraLabel:'Rest / Cool Time',     extraUnit:'min', servesLabel:'Makes'  },
+  'bread':        { cookLabel:'Baking Time',             cookUnit:'min', extraLabel:'Prove Time',           extraUnit:'hr',  servesLabel:'Makes'  },
+  'candy':        { cookLabel:'Cook Time',               cookUnit:'min', extraLabel:'Set / Cool Time',      extraUnit:'min', servesLabel:'Makes'  },
+  'marinating':   { cookLabel:'Cook Time',               cookUnit:'min', extraLabel:'Marinade Time',        extraUnit:'hr',  servesLabel:'Serves' },
+  'brining':      { cookLabel:'Cook Time',               cookUnit:'min', extraLabel:'Brine Time',           extraUnit:'hr',  servesLabel:'Serves' },
+  'pickling-q':   { cookLabel:'Active Prep / Cook Time', cookUnit:'min', extraLabel:'Pickle Time',          extraUnit:'hr',  servesLabel:'Makes'  },
+  'pickling-t':   { cookLabel:'Active Prep / Cook Time', cookUnit:'min', extraLabel:'Cure / Pickle Time',   extraUnit:'day', servesLabel:'Makes'  },
+  'fermentation': { cookLabel:'Active Prep Time',        cookUnit:'min', extraLabel:'Fermentation Time',    extraUnit:'day', servesLabel:'Yield'  },
+  'canning':      { cookLabel:'Processing Time',         cookUnit:'min', extraLabel:'Cool / Seal Time',     extraUnit:'hr',  servesLabel:'Makes'  },
+  'dehydrating':  { cookLabel:'Dehydration Time',        cookUnit:'hr',  extraLabel:null,                   extraUnit:'hr',  servesLabel:'Yield'  },
+  'curing':       { cookLabel:'Active Prep Time',        cookUnit:'min', extraLabel:'Cure / Smoke Time',    extraUnit:'day', servesLabel:'Yield'  },
+  'jam':          { cookLabel:'Cook Time',               cookUnit:'min', extraLabel:'Set Time',             extraUnit:'min', servesLabel:'Makes'  }
+};
+
+function formatDur(value, unit) {
+  const n = parseFloat(value);
+  if (isNaN(n)) return value;
+  if (unit === 'min') return formatTime(n);
+  if (unit === 'hr')  return n + (n === 1 ? ' hour' : ' hours');
+  if (unit === 'day') return n + (n === 1 ? ' day' : ' days');
+  if (unit === 'week') return n + (n === 1 ? ' week' : ' weeks');
+  return n + ' ' + unit;
+}
+
+function renderKeeping(r) {
+  const el = document.getElementById('rp-keeping');
+  if (!el) return;
+  const bits = [];
+  if (r.shelf_life_value) {
+    let s = '🫙 Shelf life: ' + escapeHtml(r.shelf_life_value) + ' ' + escapeHtml(r.shelf_life_unit || 'months');
+    if (r.shelf_life_storage) s += ' (' + escapeHtml(r.shelf_life_storage) + ')';
+    bits.push(s);
+  }
+  if (r.after_open_value) {
+    bits.push('🔓 After opening: ' + escapeHtml(r.after_open_value) + ' ' + escapeHtml(r.after_open_unit || 'weeks'));
+  }
+  if (!bits.length) { el.style.display = 'none'; return; }
+  el.innerHTML = bits.map(b => '<span class="rp-tag">' + b + '</span>').join('');
+  el.style.display = 'flex';
 }
 
 // ── WATERMARK ─────────────────────────────────────────
@@ -1826,16 +1911,33 @@ function markTriedIt() {
   const btn      = document.getElementById('tried-it-btn');
   const label    = document.getElementById('tried-it-label');
   if (already) {
-    // Untoggle
+    // Untoggle — local state only; the Culinary Life history entry remains
     localStorage.removeItem(key);
     if (btn)   btn.classList.remove('done');
     if (label) label.textContent = 'Tried It';
-    showToast('Removed from your made list');
+    showToast('Removed from your made list (your Culinary Life history entry remains)');
   } else {
     localStorage.setItem(key, '1');
     if (btn)   btn.classList.add('done');
     if (label) label.textContent = '✓ Made this';
-    showToast('Added to your made list! 👨‍🍳');
+    // 4.4: route to Culinary Life history via log_cooking_event (signed-in users)
+    if (session && recipe && recipe.id) {
+      fetch(SUPABASE_URL + '/rest/v1/rpc/log_cooking_event', {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          p_recipe_id:   recipe.id,
+          p_recipe_name: recipe.recipe_name || '',
+          p_cooked_at:   new Date().toISOString().slice(0,10),
+          p_servings:    currentServes || 1
+        })
+      }).then(function(res){
+        if (res.ok) showToast('Added to your made list — logged in your Culinary Life 👨‍🍳');
+        else showToast('Added to your made list! 👨‍🍳');
+      }).catch(function(){ showToast('Added to your made list! 👨‍🍳'); });
+    } else {
+      showToast('Added to your made list! 👨‍🍳' + (session ? '' : ' Sign in to keep it in your Culinary Life history.'));
+    }
   }
 }
 
