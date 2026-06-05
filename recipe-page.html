@@ -925,12 +925,15 @@ window.addEventListener('DOMContentLoaded', async () => {
   try {
     if (recipeId) {
       await loadRecipe(recipeId);
-    } else {
+    } else if (params.get('demo') === '1') {
+      // Explicit demo mode only — for layout/print testing
       loadDemoRecipe();
+    } else {
+      showRecipeNotFound();
     }
   } catch(e) {
     console.error('Recipe load error:', e);
-    loadDemoRecipe();
+    showRecipeNotFound(true);
   }
 
   try { setupSwipe(); } catch(_) {}
@@ -1001,7 +1004,23 @@ async function loadRecipe(id) {
       }
     }
   } catch(e) {}
-  loadDemoRecipe();
+  showRecipeNotFound();
+}
+
+// A-4: never show a fabricated recipe on the live site. No id, an unknown
+// id, or a failed load lands here instead of the old demo fallback.
+function showRecipeNotFound(isError) {
+  const main = document.getElementById('rp-wrap') || document.body;
+  main.innerHTML =
+    '<div style="text-align:center;padding:100px 20px;font-family:\'DM Sans\',sans-serif">' +
+      '<div style="font-size:44px;margin-bottom:14px">🍽</div>' +
+      '<div style="font-family:\'Cormorant Garamond\',serif;font-size:1.6rem;color:var(--text-high);margin-bottom:8px">' +
+        (isError ? 'We couldn\u2019t load that recipe' : 'Recipe not found') + '</div>' +
+      '<div style="font-size:14px;color:var(--text-mid);margin-bottom:24px">' +
+        (isError ? 'Something went wrong fetching it. Please try again in a moment.'
+                 : 'This recipe may have been moved, unpublished, or the link is incomplete.') + '</div>' +
+      '<a href="recipes.html" style="color:var(--accent);font-size:14px;text-decoration:none;font-weight:600">Browse all recipes →</a>' +
+    '</div>';
 }
 
 // ── INGREDIENT ⓘ ENRICHMENT (best-effort) ─────────────
