@@ -40,6 +40,21 @@
     .ps-card.size-a5   { width:420px; min-height:594px; padding:28px 32px; }
     .ps-card.size-a4   { width:595px; min-height:842px; padding:36px 40px; }
     .ps-watermark { font-family:'Cormorant Garamond',serif; font-size:10px; letter-spacing:0.08em; color:rgba(150,100,40,0.35); position:absolute; top:8px; left:10px; }
+    /* Section C — BRAND LOCK: logo + name top-left of EVERY card, brand font and
+       colour, immune to layout/theme styling. !important guards against the
+       per-layout .ps-watermark overrides below ever bleeding onto the brand. */
+    .ps-brand,
+    .ps-card[class] .ps-brand {
+      font-family:'Cormorant Garamond',serif !important;
+      font-size:11px !important;
+      font-weight:600 !important;
+      letter-spacing:0.06em !important;
+      color:#C4973B !important;
+      text-transform:none !important;
+      position:absolute; top:8px; left:10px;
+      display:flex; align-items:center; gap:5px;
+    }
+    .ps-brand .ps-brand-mark { font-size:12px; line-height:1; }
     .ps-card-num { font-family:'DM Sans',sans-serif; font-size:9px; color:rgba(0,0,0,0.3); position:absolute; bottom:8px; right:10px; }
     .ps-card-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:700; color:#1a1a1a; margin-bottom:2px; line-height:1.2; }
     .ps-card-subtitle { font-family:'Cormorant Garamond',serif; font-size:0.85rem; font-style:italic; color:#8b6914; margin-bottom:10px; }
@@ -314,15 +329,43 @@
 
     <div class="ps-section">
       <div class="ps-section-title">Include on Cards</div>
-      <div class="ps-btn-group">
+      <div class="ps-btn-group" id="ps-includes">
         <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
-          <input type="checkbox" id="inc-overview" checked onchange="buildCards()" style="accent-color:var(--accent)"> Overview & Ingredients
+          <input type="checkbox" id="inc-overview" checked onchange="buildCards()" style="accent-color:var(--accent)"> Overview &amp; Ingredients
         </label>
         <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
           <input type="checkbox" id="inc-method" checked onchange="buildCards()" style="accent-color:var(--accent)"> Procedure
         </label>
         <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
           <input type="checkbox" id="inc-notes" onchange="buildCards()" style="accent-color:var(--accent)"> Cooking Notes
+        </label>
+        <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid);margin:10px 0 2px">Recipe details</div>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-times" checked onchange="buildCards()" style="accent-color:var(--accent)"> Prep, cook &amp; passive times
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-serves" checked onchange="buildCards()" style="accent-color:var(--accent)"> Serving size
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-spice" checked onchange="buildCards()" style="accent-color:var(--accent)"> Spice &amp; sweet level
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-style" onchange="buildCards()" style="accent-color:var(--accent)"> Cooking style
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-origin" checked onchange="buildCards()" style="accent-color:var(--accent)"> Origin
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-dietary" onchange="buildCards()" style="accent-color:var(--accent)"> Dietary &amp; health tags
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-difficulty" onchange="buildCards()" style="accent-color:var(--accent)"> Difficulty
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-keeping" onchange="buildCards()" style="accent-color:var(--accent)"> Shelf life &amp; storage
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-nutrition" onchange="buildCards()" style="accent-color:var(--accent)"> Nutrition <span style="color:var(--text-mid);font-size:11px">(when available)</span>
         </label>
       </div>
     </div>
@@ -389,28 +432,72 @@ function printCards() {
   setTimeout(function() { window.print(); }, 300);
 }
 
+// Style-aware time labels — mirrors submit-recipe's COOKING_STYLE_CFG
+// (display subset; full dedup is on the refactor backlog).
+const PS_STYLE = {
+  '':{c:'Cook',cu:'min',x:null,xu:'min',sv:'Serves',nm:''},'stir-fry':{c:'Cook',cu:'min',x:null,xu:'min',sv:'Serves',nm:'Stir-fry'},
+  'deep-fry':{c:'Frying',cu:'min',x:null,xu:'min',sv:'Serves',nm:'Deep-fry'},'steam-poach':{c:'Steam/Poach',cu:'min',x:null,xu:'min',sv:'Serves',nm:'Steam & Poach'},
+  'roasting':{c:'Roast',cu:'min',x:'Rest',xu:'min',sv:'Serves',nm:'Roasting'},'air-fry':{c:'Air fry',cu:'min',x:null,xu:'min',sv:'Serves',nm:'Air fry'},
+  'raw':{c:'Assembly',cu:'min',x:null,xu:'min',sv:'Serves',nm:'Raw / No-cook'},'bbq':{c:'Grill/BBQ',cu:'min',x:'Rest',xu:'min',sv:'Serves',nm:'BBQ'},
+  'smoking-hot':{c:'Smoke',cu:'hr',x:'Rest',xu:'min',sv:'Serves',nm:'Smoking'},'slow-cook':{c:'Slow cook',cu:'hr',x:null,xu:'hr',sv:'Serves',nm:'Slow cook'},
+  'pressure':{c:'Pressure cook',cu:'min',x:'Natural release',xu:'min',sv:'Serves',nm:'Pressure cooking'},'sous-vide':{c:'Sous vide',cu:'hr',x:'Sear/Finish',xu:'min',sv:'Serves',nm:'Sous vide'},
+  'baking':{c:'Bake',cu:'min',x:'Rest/Cool',xu:'min',sv:'Makes',nm:'Baking'},'bread':{c:'Bake',cu:'min',x:'Prove',xu:'hr',sv:'Makes',nm:'Bread'},
+  'candy':{c:'Cook',cu:'min',x:'Set/Cool',xu:'min',sv:'Makes',nm:'Confectionery'},'marinating':{c:'Cook',cu:'min',x:'Marinade',xu:'hr',sv:'Serves',nm:'Marinating'},
+  'brining':{c:'Cook',cu:'min',x:'Brine',xu:'hr',sv:'Serves',nm:'Brining'},'pickling-q':{c:'Prep/Cook',cu:'min',x:'Pickle',xu:'hr',sv:'Makes',nm:'Quick pickling'},
+  'pickling-t':{c:'Prep/Cook',cu:'min',x:'Cure/Pickle',xu:'day',sv:'Makes',nm:'Traditional pickling'},'fermentation':{c:'Prep',cu:'min',x:'Ferment',xu:'day',sv:'Yield',nm:'Fermentation'},
+  'canning':{c:'Process',cu:'min',x:'Cool/Seal',xu:'hr',sv:'Makes',nm:'Canning'},'dehydrating':{c:'Dehydrate',cu:'hr',x:null,xu:'hr',sv:'Yield',nm:'Dehydrating'},
+  'curing':{c:'Prep',cu:'min',x:'Cure/Smoke',xu:'day',sv:'Yield',nm:'Curing'},'jam':{c:'Cook',cu:'min',x:'Set',xu:'min',sv:'Makes',nm:'Jam & Chutney'}
+};
+function psDur(v,u){const n=parseFloat(v);if(isNaN(n))return v;if(u==='min')return n+' min';if(u==='hr')return n+(n===1?' hr':' hrs');if(u==='day')return n+(n===1?' day':' days');return n+' '+u;}
+const PS_BRAND = '<div class="ps-brand"><span class="ps-brand-mark">🍽</span><span>The Culinary Journal</span></div>';
+
 function buildCards() {
   if (!currentRecipe) return;
   const container = document.getElementById('ps-cards');
-  const incOverview = document.getElementById('inc-overview').checked;
-  const incMethod   = document.getElementById('inc-method').checked;
-  const incNotes    = document.getElementById('inc-notes').checked;
+  const inc = id => { const el = document.getElementById(id); return el ? el.checked : false; };
   const r = currentRecipe;
+  const cfg = PS_STYLE[r.cooking_style || ''] || PS_STYLE[''];
   const cards = [];
 
-  // Card 1: Overview + Ingredients
-  if (incOverview) {
-    const meta = [
-      r.prep_time_minutes ? '⏱ Prep: ' + r.prep_time_minutes + ' min' : '',
-      r.cook_time_minutes ? '🔥 Cook: ' + r.cook_time_minutes + ' min' : '',
-      r.servings ? '🍽 Serves ' + r.servings : '',
-      r.spice_level && r.spice_level !== 'Not Applicable' ? '🌶 ' + r.spice_level : '',
-      r.origin_country ? '🌍 ' + r.origin_country : '',
-    ].filter(Boolean);
+  // Card 1: Overview + selected recipe details + Ingredients (only checked
+  // groups emit — disabled sections reserve no space, content reflows)
+  if (inc('inc-overview')) {
+    const meta = [];
+    if (inc('inc-times')) {
+      if (r.prep_time_minutes) meta.push('⏱ Prep: ' + psDur(r.prep_time_minutes,'min'));
+      if (r.cook_time_minutes) meta.push('🔥 ' + cfg.c + ': ' + psDur(r.cook_time_minutes, cfg.cu));
+      if (r.additional_time_minutes && cfg.x) meta.push('⏳ ' + cfg.x + ': ' + psDur(r.additional_time_minutes, cfg.xu));
+    }
+    if (inc('inc-serves') && r.servings) {
+      const unit = (r.servings_unit && r.servings_unit !== 'people') ? ' ' + r.servings_unit : '';
+      meta.push('🍽 ' + cfg.sv + ' ' + r.servings + unit);
+    }
+    if (inc('inc-spice')) {
+      if (r.spice_level && r.spice_level !== 'Not Applicable') meta.push('🌶 ' + r.spice_level);
+      if (r.sweet_level && r.sweet_level !== 'Not Applicable') meta.push('🍬 ' + r.sweet_level);
+    }
+    if (inc('inc-style') && cfg.nm) meta.push('👨‍🍳 ' + cfg.nm);
+    if (inc('inc-origin') && r.origin_country) {
+      meta.push('🌍 ' + [r.origin_state, r.origin_country].filter(Boolean).join(', '));
+    }
+    if (inc('inc-difficulty') && r.difficulty) meta.push('📊 ' + r.difficulty);
+
+    let extraRows = '';
+    if (inc('inc-dietary')) {
+      const tags = [].concat(r.dietary_tags||[], r.health_tags||[]);
+      if (tags.length) extraRows += `<div class="ps-card-meta" style="border-bottom:none;margin-bottom:4px">${tags.map(t=>`<span>• ${esc(t)}</span>`).join('')}</div>`;
+    }
+    if (inc('inc-keeping')) {
+      const keep = [];
+      if (r.shelf_life_value) keep.push('Shelf life: ' + esc(r.shelf_life_value) + ' ' + esc(r.shelf_life_unit||'months') + (r.shelf_life_storage ? ' ('+esc(r.shelf_life_storage)+')' : ''));
+      if (r.after_open_value) keep.push('After opening: ' + esc(r.after_open_value) + ' ' + esc(r.after_open_unit||'weeks'));
+      if (keep.length) extraRows += `<div class="ps-card-meta" style="border-bottom:none;margin-bottom:4px">${keep.map(k=>`<span>🫙 ${k}</span>`).join('')}</div>`;
+    }
 
     let ingHtml = '';
     (r.ingredients || []).forEach(sec => {
-      if (sec.title) ingHtml += `<div class="ps-section-head">${esc(sec.title||'')}</div>`;
+      const secTitle = sec.title || sec.section;
+      if (secTitle) ingHtml += `<div class="ps-section-head">${esc(secTitle)}</div>`;
       ingHtml += '<div class="ps-ing-list">';
       (sec.items || []).forEach(item => {
         ingHtml += `<div class="ps-ing-item"><span class="ps-ing-qty">${esc(fmtQty(item.qty))||''} ${esc(item.unit||'')}</span><span>${esc(item.ingredient||'')}</span></div>`;
@@ -419,39 +506,55 @@ function buildCards() {
     });
 
     cards.push(`
-      <div class="ps-watermark">The Culinary Journal</div>
+      ${PS_BRAND}
       <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
       ${r.native_title?`<div class="ps-card-subtitle">${esc(r.native_title||'')}</div>`:''}
-      <div class="ps-card-meta">${meta.map(m=>`<span>${esc(m)}</span>`).join('')}</div>
+      ${meta.length?`<div class="ps-card-meta">${meta.map(m=>`<span>${esc(m)}</span>`).join('')}</div>`:''}
+      ${extraRows}
       ${ingHtml}
     `);
   }
 
   // Cards for Procedure (split across cards if long)
-  if (incMethod) {
+  if (inc('inc-method')) {
     (r.method || []).forEach(block => {
+      const blockTitle = block.title || block.section;
       const steps = (block.steps || []).map((step, i) => {
         const text = typeof step === 'string' ? step : (step.text || step.title || '');
         return `<div class="ps-step"><span class="ps-step-num">${i+1}.</span><span class="ps-step-text">${esc(text)}</span></div>`;
       }).join('');
       if (steps) {
         cards.push(`
-          <div class="ps-watermark">The Culinary Journal</div>
+          ${PS_BRAND}
           <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
-          ${block.title?`<div class="ps-section-head">${esc(block.title||'')}</div>`:'<div class="ps-section-head">Procedure</div>'}
+          ${blockTitle?`<div class="ps-section-head">${esc(blockTitle)}</div>`:'<div class="ps-section-head">Procedure</div>'}
           ${steps}
         `);
       }
     });
   }
 
-  // Notes card
-  if (incNotes && esc(r.cooking_notes||'')) {
+  // Nutrition card — only when the recipe carries nutrition data
+  if (inc('inc-nutrition') && r.nutrition && (r.nutrition.calories || r.nutrition.protein)) {
+    const n = r.nutrition;
+    const rows = [['Calories', n.calories+' kcal'],['Protein', n.protein+' g'],['Carbohydrates', n.carbs+' g'],['Fat', n.fat+' g'],['Fibre', n.fibre+' g'],['Sugar', n.sugar+' g'],['Sodium', n.sodium+' mg']]
+      .filter(x => x[1] && !String(x[1]).startsWith('undefined'));
     cards.push(`
-      <div class="ps-watermark">The Culinary Journal</div>
+      ${PS_BRAND}
+      <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
+      <div class="ps-section-head">Nutrition — Per Serving (approximate)</div>
+      <div class="ps-ing-list">${rows.map(x=>`<div class="ps-ing-item"><span class="ps-ing-qty">${esc(String(x[1]))}</span><span>${esc(x[0])}</span></div>`).join('')}</div>
+    `);
+  }
+
+  // Notes card
+  if (inc('inc-notes') && esc(r.cooking_notes||'')) {
+    const notesText = Array.isArray(r.cooking_notes) ? r.cooking_notes.join('\n• ') : r.cooking_notes;
+    cards.push(`
+      ${PS_BRAND}
       <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
       <div class="ps-section-head">Cooking Notes</div>
-      <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#444;line-height:1.6">${esc(r.cooking_notes||'')}</div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#444;line-height:1.6">${esc(notesText||'')}</div>
     `);
   }
 
