@@ -345,6 +345,12 @@
 <div class="tp-modal" id="table-modal">
   <div class="tp-modal-box">
     <div class="tp-modal-title">Add Table</div>
+    <div class="tp-field"><label class="tp-label">Table Type</label>
+      <select class="tp-input tp-select" id="tm-type" onchange="onTableTypeChange()">
+        <option value="guest">Guest Table — seats your guests</option>
+        <option value="buffet">Buffet &amp; Serving Table — holds the food, no seats</option>
+      </select>
+    </div>
     <div class="tp-field"><label class="tp-label">Table Name</label><input class="tp-input" id="tm-name" placeholder="e.g. Table 1, Bridal Table..."></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="tp-field"><label class="tp-label">Shape</label>
@@ -356,11 +362,19 @@
           <option value="lshape">L-Shape</option>
         </select>
       </div>
-      <div class="tp-field"><label class="tp-label">Seats</label>
+      <div class="tp-field" id="tm-seats-field"><label class="tp-label">Seats</label>
         <select class="tp-input tp-select" id="tm-seats">
           <option value="2">2 seats</option><option value="4">4 seats</option>
           <option value="6">6 seats</option><option value="8" selected>8 seats</option>
           <option value="10">10 seats</option><option value="12">12 seats</option>
+        </select>
+      </div>
+      <div class="tp-field" id="tm-size-field" style="display:none"><label class="tp-label">Buffet Size</label>
+        <select class="tp-input tp-select" id="tm-size">
+          <option value="small">Small (~1.2 m)</option>
+          <option value="medium" selected>Medium (~1.8 m)</option>
+          <option value="large">Large (~2.4 m)</option>
+          <option value="xlarge">Extra Large (~3.0 m)</option>
         </select>
       </div>
     </div>
@@ -589,13 +603,19 @@ function renderLayout() {
 function createTableEl(t) {
   const canvas = document.getElementById('layout-canvas');
   const el = document.createElement('div');
-  el.className = 'tp-table-el ' + getTableClass(t.shape||'rect');
+  const isBuffet = t.type === 'buffet';
+  el.className = 'tp-table-el ' + getTableClass(t.shape||'rect') + (isBuffet ? ' tp-buffet-el' : '');
   el.dataset.tableId = t.id;
-  const w = TABLE_W[t.shape||'rect'] || 100;
-  const h = TABLE_H[t.shape||'rect'] || 70;
-  el.style.cssText = 'width:'+w+'px;height:'+h+'px;left:'+t.x+'px;top:'+t.y+'px;';
+  let w = TABLE_W[t.shape||'rect'] || 100;
+  let h = TABLE_H[t.shape||'rect'] || 70;
+  if (isBuffet) { w = BUFFET_SIZE_W[t.size] || 130; h = Math.max(50, Math.round(h * 0.7)); }
+  el.style.cssText = 'width:'+w+'px;height:'+h+'px;left:'+t.x+'px;top:'+t.y+'px;' +
+    (isBuffet ? 'border-style:dashed;border-color:var(--success);' : '');
 
   const assignedCount = currentGuests.filter(function(g){return g.seat_assignment && g.seat_assignment.startsWith(t.id+':');}).length;
+  const subline = isBuffet
+    ? '🍽 Serving — ' + ({small:'~1.2 m',medium:'~1.8 m',large:'~2.4 m',xlarge:'~3.0 m'}[t.size] || '')
+    : assignedCount + '/' + t.seats + ' seated';
 
   el.innerHTML =
     '<div class="tp-table-actions">' +
@@ -603,7 +623,7 @@ function createTableEl(t) {
       '<button class="tp-tact-btn" onclick="removeTable(\'' + t.id + '\')" title="Remove" style="color:var(--danger)">🗑</button>' +
     '</div>' +
     '<div class="tp-table-label">' + escHtml(t.name) + '</div>' +
-    '<div class="tp-table-count">' + assignedCount + '/' + t.seats + ' seated</div>';
+    '<div class="tp-table-count">' + subline + '</div>';
 
   // Click to select
   el.addEventListener('click', function(e) {
@@ -676,19 +696,40 @@ function onDragEnd() {
 
 function openAddTableModal() {
   document.getElementById('tm-name').value = 'Table ' + ((currentLayout.tables||[]).length + 1);
-  document.getElementById('tp-modal-box','table-modal');
+  const typeEl = document.getElementById('tm-type');
+  if (typeEl) { typeEl.value = 'guest'; onTableTypeChange(); }
   openModal('table-modal');
 }
 
+function onTableTypeChange() {
+  const isBuffet = document.getElementById('tm-type').value === 'buffet';
+  document.getElementById('tm-seats-field').style.display = isBuffet ? 'none' : '';
+  document.getElementById('tm-size-field').style.display  = isBuffet ? '' : 'none';
+  const nameEl = document.getElementById('tm-name');
+  if (nameEl) {
+    const v = nameEl.value.trim();
+    const autoGuest = /^Table \d+$/.test(v);
+    const autoBuffet = v === 'Buffet Table';
+    if (isBuffet && (autoGuest || !v)) nameEl.value = 'Buffet Table';
+    if (!isBuffet && (autoBuffet || !v)) nameEl.value = 'Table ' + ((currentLayout.tables||[]).length + 1);
+  }
+}
+
+const BUFFET_SIZE_W = { small:90, medium:130, large:170, xlarge:210 };
+
 function addTable() {
-  const name  = document.getElementById('tm-name').value.trim() || ('Table ' + ((currentLayout.tables||[]).length + 1));
+  const type  = document.getElementById('tm-type') ? document.getElementById('tm-type').value : 'guest';
+  const isBuffet = type === 'buffet';
+  const name  = document.getElementById('tm-name').value.trim() ||
+                (isBuffet ? 'Buffet Table' : ('Table ' + ((currentLayout.tables||[]).length + 1)));
   const shape = document.getElementById('tm-shape').value;
-  const seats = parseInt(document.getElementById('tm-seats').value) || 8;
+  const seats = isBuffet ? 0 : (parseInt(document.getElementById('tm-seats').value) || 8);
+  const size  = isBuffet ? (document.getElementById('tm-size').value || 'medium') : null;
   if (!currentLayout.tables) currentLayout.tables = [];
   const id = 't' + Date.now();
   // Stagger position
   const offset = currentLayout.tables.length * 20;
-  const t = {id, name, shape, seats, x: 60 + (offset%300), y: 60 + Math.floor(offset/300)*120};
+  const t = {id, name, shape, seats, type, size, x: 60 + (offset%300), y: 60 + Math.floor(offset/300)*120};
   currentLayout.tables.push(t);
   createTableEl(t);
   closeModal('table-modal');
@@ -1271,6 +1312,14 @@ function setDiningStyle(style, btn) {
     rpc('save_event_layout',{p_id:currentEvent.id,p_layout:layout}).catch(function(){});
   }
   if (document.getElementById('tab-dishes').style.display !== 'none') renderDishPlacement();
+  // Buffet style without a serving table → nudge (one per session)
+  if (style === 'buffet' && !window._buffetNudged) {
+    const hasBuffet = (currentLayout.tables||[]).some(function(t){ return t.type === 'buffet'; });
+    if (!hasBuffet && typeof showToast === 'function') {
+      window._buffetNudged = true;
+      showToast('Buffet style selected — use “Add Table” and choose “Buffet & Serving Table” to place where the food goes 🍽');
+    }
+  }
 }
 
 // ── TABLE SHAPES ────────────────────────────────────────────────
