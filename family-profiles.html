@@ -106,7 +106,7 @@
       </div>
       <div class="fp-field">
         <label class="fp-label">Relationship</label>
-        <select class="fp-input fp-select" id="fm-rel">
+        <select class="fp-input fp-select" id="fm-rel" onchange="document.getElementById('fm-rel-other-wrap').style.display = this.value==='other' ? '' : 'none'">
           <option value="self">Myself</option>
           <option value="partner">Partner</option>
           <option value="child">Child</option>
@@ -116,17 +116,22 @@
           <option value="regular_guest">Regular guest</option>
           <option value="other">Other</option>
         </select>
+        <div id="fm-rel-other-wrap" style="display:none;margin-top:8px">
+          <input class="fp-input" id="fm-rel-other" placeholder="What does 'Other' represent? (optional)" maxlength="40">
+        </div>
       </div>
     </div>
     <div class="fp-row">
       <div class="fp-field">
         <label class="fp-label">Age Group</label>
         <select class="fp-input fp-select" id="fm-age">
-          <option value="adult">Adult</option>
-          <option value="child">Child (3–12)</option>
-          <option value="toddler">Toddler (1–3)</option>
-          <option value="baby">Baby (under 1)</option>
-          <option value="elderly">Elderly</option>
+          <option value="infant">Infant (0 to 1 year)</option>
+          <option value="toddler">Toddler (1 to 3 years)</option>
+          <option value="child">Child (3 to 12 years)</option>
+          <option value="teenager">Teenager / Adolescent (13 to 19 years)</option>
+          <option value="young_adult">Young Adult (20 to 39 years)</option>
+          <option value="middle_adult">Middle Adult (40 to 64 years)</option>
+          <option value="senior">Senior / Older Adult (65 years and above)</option>
         </select>
       </div>
       <div class="fp-field">
@@ -252,8 +257,24 @@ function openModal(id) {
   document.getElementById('fp-modal-title').textContent = p ? 'Edit Profile' : 'Add Profile';
   document.getElementById('fm-id').value   = p ? p.id : '';
   document.getElementById('fm-name').value = p ? (p.name||'') : '';
-  document.getElementById('fm-rel').value  = p ? (p.relationship||'guest') : 'guest';
-  document.getElementById('fm-age').value  = p ? (p.age_group||'adult') : 'adult';
+  // Relationship — known values select directly; anything else means a custom "Other" entry
+  var KNOWN_REL = ['self','partner','child','toddler','baby','elderly','regular_guest','other'];
+  var rel = p ? (p.relationship||'regular_guest') : 'regular_guest';
+  var relSel = document.getElementById('fm-rel');
+  var otherWrap = document.getElementById('fm-rel-other-wrap');
+  var otherInput = document.getElementById('fm-rel-other');
+  if (KNOWN_REL.includes(rel)) {
+    relSel.value = rel; otherInput.value = '';
+    otherWrap.style.display = rel === 'other' ? '' : 'none';
+  } else {
+    relSel.value = 'other'; otherInput.value = rel;
+    otherWrap.style.display = '';
+  }
+  // Age group — map legacy values onto the seven standardised groups (E 1.3)
+  var AGE_MAP = {baby:'infant', adult:'young_adult', elderly:'senior'};
+  var age = p ? (p.age_group||'young_adult') : 'young_adult';
+  document.getElementById('fm-age').value = AGE_MAP[age] || age;
+  if (!document.getElementById('fm-age').value) document.getElementById('fm-age').value = 'young_adult';
   document.getElementById('fm-spice').value= p ? (p.spice_preference||'medium') : 'medium';
   document.getElementById('fm-notes').value= p ? (p.notes||'') : '';
   var setChecks = function(cid, vals) {
@@ -276,7 +297,12 @@ async function saveProfile() {
     var saved = await rpc('upsert_family_profile',{
       p_id:               document.getElementById('fm-id').value||null,
       p_name:             name,
-      p_relationship:     document.getElementById('fm-rel').value,
+      p_relationship:     (function(){
+                            var v = document.getElementById('fm-rel').value;
+                            if (v !== 'other') return v;
+                            var custom = document.getElementById('fm-rel-other').value.trim();
+                            return custom || 'other';
+                          })(),
       p_age_group:        document.getElementById('fm-age').value,
       p_spice_preference: document.getElementById('fm-spice').value,
       p_dietary_needs:    getChecked('fm-dietary'),

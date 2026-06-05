@@ -12,15 +12,15 @@ var CJ_SECTIONS = [
     pages:['recipes.html','chefs.html','search.html','submit-recipe.html','draft-recipes.html'],
     links:[
       {href:'recipes.html',      emoji:'🍽', label:'Browse Recipes'},
-      {href:'search.html',       emoji:'🔍', label:'Search'},
       {href:'chefs.html',        emoji:'👨‍🍳', label:'Chef Directory'},
       {href:'submit-recipe.html',emoji:'📝', label:'Submit a Recipe'},
     ]
   },
   {
     id:'miseenplace', label:'Mise en Place', emoji:'🍳', primaryPage:'meal-planner.html',
-    pages:['meal-planner.html','grocery.html','pantry.html','print-studio.html'],
+    pages:['meal-planner.html','grocery.html','pantry.html','print-studio.html','family-profiles.html'],
     links:[
+      {href:'family-profiles.html', emoji:'👨‍👩‍👧', label:'Family Profiles'},
       {href:'meal-planner.html', emoji:'🗓', label:'Meal Planner'},
       {href:'grocery.html',      emoji:'🛒', label:'Grocery List'},
       {href:'pantry.html',       emoji:'🫙', label:'Pantry & Fridge'},
@@ -29,10 +29,9 @@ var CJ_SECTIONS = [
   },
   {
     id:'guestlist', label:'The Guest List', emoji:'🪑', primaryPage:'table-planner.html',
-    pages:['table-planner.html','family-profiles.html','dietary-card.html'],
+    pages:['table-planner.html','dietary-card.html'],
     links:[
       {href:'table-planner.html',   emoji:'🪑', label:'Table Planner'},
-      {href:'family-profiles.html', emoji:'👨‍👩‍👧', label:'Family Profiles'},
     ]
   },
   {
@@ -321,7 +320,10 @@ function buildSectionNav() {
                 (fullName ? '<div class="cj-menu-name">' + escapeHtml(fullName) + '</div>' : '') +
                 '<div class="cj-menu-handle">@' + escapeHtml(username || 'me') + '</div>' +
               '</div><div class="cj-menu-sep"></div>' : '') +
-            (isAdmin ? item('dashboard.html', IC.dashboard, 'Admin Panel') + item('library-submit.html', IC.drafts, '📚 Submit Library Profile') + '<div class="cj-menu-sep"></div>' : '') +
+            (isAdmin ? item('dashboard.html', IC.dashboard, 'Admin Panel') : '') +
+            item('submit-recipe.html', IC.submit, 'Submit a Recipe') +
+            (isAdmin ? item('library-submit.html', IC.drafts, '📚 Submit Library Profile') : '') +
+            '<div class="cj-menu-sep"></div>' +
             item('profile.html',       IC.profile, 'My Profile') +
             item('my-dashboard.html',  IC.profile, 'My Dashboard') +
             '<div class="cj-menu-sep"></div>' +

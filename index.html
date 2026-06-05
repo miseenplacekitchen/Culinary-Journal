@@ -525,27 +525,27 @@
     </div>
   </section>
 
-  <!-- ── TRUST STRIP ── -->
+  <!-- ── TRUST STRIP — content metrics (Section A Issue 3) ── -->
   <div class="trust-strip" id="trust-strip">
     <div class="trust-item">
-      <span class="trust-num" id="trust-recipes">14</span>
-      <span class="trust-label">Recipe Categories</span>
+      <span class="trust-num" id="trust-recipes">—</span>
+      <span class="trust-label">Recipes on the Platform</span>
     </div>
     <div class="trust-item">
-      <span class="trust-num">20+</span>
-      <span class="trust-label">Features Built</span>
+      <span class="trust-num" id="trust-countries">—</span>
+      <span class="trust-label">Countries Represented</span>
     </div>
     <div class="trust-item">
       <span class="trust-num">14</span>
-      <span class="trust-label">Print Layouts</span>
+      <span class="trust-label">Recipe Categories</span>
     </div>
     <div class="trust-item">
-      <span class="trust-num">47</span>
-      <span class="trust-label">Visual Themes</span>
+      <span class="trust-num" id="trust-collections">—</span>
+      <span class="trust-label">Recipe Collections</span>
     </div>
     <div class="trust-item">
-      <span class="trust-num">∞</span>
-      <span class="trust-label">Recipes, Memories & Stories</span>
+      <span class="trust-num" id="trust-contributors">—</span>
+      <span class="trust-label">Community Contributors</span>
     </div>
   </div>
 
@@ -812,14 +812,10 @@
         if (profile.theme_preference && profile.theme_preference !== 'midnight-slate') {
           localStorage.setItem('tcj_theme', profile.theme_preference);
         }
-        // Admin redirect
-        if (profile.is_admin) {
-          window.location.href = 'dashboard.html';
-          return;
-        }
       }
-      // Clean the hash from URL
-      history.replaceState(null, '', window.location.pathname);
+      // Issue A-1: all users land on My Diary after login (D1: change to dashboard.html for admins if preferred)
+      window.location.href = 'diary.html';
+      return;
     });
   }).catch(function() {
     // If anything fails, clean hash and continue as normal
@@ -830,20 +826,46 @@
 
 <script src="nav-init.js"></script>
 <script>
-// Load live recipe count from Supabase
+// Issue A-1: session-aware CTA — logged-in users go straight to My Diary, never re-prompted to sign in
 (function(){
-      fetch(SUPA_URL + '/rest/v1/submitted_recipes?select=id&status=eq.approved', {
-    headers: {'apikey': SUPA_KEY, 'Prefer': 'count=exact', 'Range-Unit': 'items', 'Range': '0-0'}
-  }).then(function(r) {
-    var count = r.headers.get('content-range');
-    if (count) {
-      var total = count.split('/')[1];
-      if (total && parseInt(total) > 0) {
-        var el = document.getElementById('trust-recipes');
-        if (el) el.textContent = parseInt(total).toLocaleString();
-      }
+  try {
+    var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    if (sess && sess.access_token) {
+      document.querySelectorAll('a.home-cta-primary[href="login.html"]').forEach(function(a){
+        a.href = 'diary.html';
+        a.textContent = 'Open your journal';
+      });
     }
-  }).catch(function(){});
+  } catch(e) {}
+})();
+</script>
+<script>
+// Load live content metrics for the trust strip (Section A Issue 3)
+(function(){
+  function setNum(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
+  // Approved recipes → total, distinct countries, distinct contributors
+  fetch(SUPA_URL + '/rest/v1/submitted_recipes?select=origin_country,user_id&status=eq.approved', {
+    headers: {'apikey': SUPA_KEY, 'Accept': 'application/json'}
+  }).then(function(r){ return r.ok ? r.json() : null; })
+  .then(function(rows){
+    if (!rows) { setNum('trust-recipes','0'); setNum('trust-countries','0'); setNum('trust-contributors','0'); return; }
+    setNum('trust-recipes', rows.length.toLocaleString());
+    var countries = {}, contributors = {};
+    rows.forEach(function(x){
+      if (x.origin_country) countries[x.origin_country] = 1;
+      if (x.user_id) contributors[x.user_id] = 1;
+    });
+    setNum('trust-countries', Object.keys(countries).length.toLocaleString());
+    setNum('trust-contributors', Object.keys(contributors).length.toLocaleString());
+  }).catch(function(){ setNum('trust-recipes','0'); setNum('trust-countries','0'); setNum('trust-contributors','0'); });
+  // Public collections count
+  fetch(SUPA_URL + '/rest/v1/collections?select=id&is_public=eq.true', {
+    headers: {'apikey': SUPA_KEY, 'Prefer': 'count=exact', 'Range-Unit': 'items', 'Range': '0-0'}
+  }).then(function(r){
+    var cr = r.headers.get('content-range');
+    var total = cr ? cr.split('/')[1] : null;
+    setNum('trust-collections', (total && total !== '*') ? parseInt(total).toLocaleString() : '0');
+  }).catch(function(){ setNum('trust-collections','0'); });
 })();
 </script>
 
@@ -907,7 +929,7 @@
           span.textContent = link.textContent.replace('→','').trim();
           var badge = document.createElement('span');
           badge.textContent = ' Coming Soon';
-          badge.style.cssText = 'font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);margin-left:6px;text-transform:uppercase;letter-spacing:0.05em;';
+          badge.style.cssText = 'font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--text-ghost);color:var(--text-mid);margin-left:6px;text-transform:uppercase;letter-spacing:0.05em;';
           span.appendChild(badge);
           if (target.parentNode) target.parentNode.replaceChild(span, target);
 

@@ -148,11 +148,15 @@
         <button class="mp-week-btn" onclick="prevWeek()">← Prev</button>
         <div class="mp-week-label" id="week-label"></div>
         <button class="mp-week-btn" onclick="nextWeek()">Next →</button>
+        <button class="mp-week-btn" onclick="goThisWeek()" title="Jump to the current week">This Week</button>
       </div>
       <div id="mp-month-nav" style="display:none;align-items:center;gap:8px">
         <button class="mp-week-btn" onclick="changeMonthView(-1)">← Prev</button>
         <div id="mth-label" style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--text-high);min-width:130px;text-align:center"></div>
         <button class="mp-week-btn" onclick="changeMonthView(1)">Next →</button>
+        <button class="mp-week-btn" onclick="goThisMonth()" title="Jump to the current month">This Month</button>
+        <select id="mth-jump-month" onchange="jumpMonthYear()" style="padding:6px 8px;font-size:12px"></select>
+        <select id="mth-jump-year" onchange="jumpMonthYear()" style="padding:6px 8px;font-size:12px"></select>
       </div>
       <div class="mp-actions">
         <button class="mp-btn mp-btn-ghost" onclick="clearWeek()">Clear Week</button>
@@ -166,7 +170,7 @@
     <span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid)">Cooking for:</span>
     <button class="mp-mode-btn active" data-mode="individual" onclick="setMode('individual',this)">👤 Individual</button>
     <button class="mp-mode-btn" data-mode="couple" onclick="setMode('couple',this)">💑 Couple</button>
-    <button class="mp-mode-btn" data-mode="family" onclick="setMode('family',this)">👨‍👩‍👧‍👦 Family</button>
+    <button class="mp-mode-btn" data-mode="family" onclick="setMode('family',this)" title="To add a family profile, go to Mise en Place → Family Profiles and create profiles there">👨‍👩‍👧‍👦 Family</button>
     <button class="mp-mode-btn" data-mode="group" onclick="setMode('group',this)">🎉 Group</button>
     <span id="mp-conflict-summary" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)"></span>
   </div>
@@ -299,9 +303,37 @@ function clearSlot(day, meal) {
 
 function prevWeek() { currentWeekOffset--; renderCalendar(); }
 function nextWeek() { currentWeekOffset++; renderCalendar(); }
+function goThisWeek() { currentWeekOffset = 0; renderCalendar(); }
+
+function goThisMonth() {
+  var n = new Date();
+  monthMon = n.getMonth(); monthYear = n.getFullYear();
+  buildMonthView();
+}
+
+function jumpMonthYear() {
+  var m = document.getElementById('mth-jump-month');
+  var y = document.getElementById('mth-jump-year');
+  if (!m || !y) return;
+  monthMon = parseInt(m.value, 10); monthYear = parseInt(y.value, 10);
+  buildMonthView();
+}
+
+function syncMonthJump() {
+  var m = document.getElementById('mth-jump-month');
+  var y = document.getElementById('mth-jump-year');
+  if (!m || !y) return;
+  if (!m.options.length) {
+    var names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    names.forEach(function(n,i){ var o=document.createElement('option'); o.value=i; o.textContent=n; m.appendChild(o); });
+    var thisYear = new Date().getFullYear();
+    for (var yy = thisYear - 2; yy <= thisYear + 3; yy++) { var o=document.createElement('option'); o.value=yy; o.textContent=yy; y.appendChild(o); }
+  }
+  m.value = monthMon; y.value = monthYear;
+}
 
 function clearWeek() {
-  if (!confirm('Clear all meals for this week?')) return;
+  if (!confirm('Clear ALL meal prep entries for this entire week?\n\nThis cannot be undone. Press OK to confirm, or Cancel to keep your entries.')) return;
   localStorage.removeItem(getWeekKey(currentWeekOffset));
   renderCalendar();
 }
@@ -433,7 +465,7 @@ async function loadFamilyProfiles() {
 function renderFamilyFlags() {
   const el = document.getElementById('mp-family-flags');
   if (!familyProfiles.length) {
-    el.innerHTML = '<span style="color:var(--text-mid)">No family profiles set up yet. <a href="family-profiles.html" style="color:var(--accent)">Add profiles →</a></span>';
+    el.innerHTML = '<span style="color:var(--text-mid)">No family profiles set up yet. To add a family profile, go to <strong>Mise en Place → Family Profiles</strong> and complete the profile creation process there. <a href="family-profiles.html" style="color:var(--accent)">Add profiles →</a></span>';
     return;
   }
   const REL_EMOJI = {self:'👤',partner:'💑',child:'👦',toddler:'🧒',baby:'👶',elderly:'👴',regular_guest:'👤',other:'👤'};
@@ -649,6 +681,7 @@ function getMonthWeekKey(ds) {
 function buildMonthView() {
   var n = new Date();
   if (monthYear === undefined) { monthYear = n.getFullYear(); monthMon = n.getMonth(); }
+  syncMonthJump();
   var DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   var DAY_NAMES = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
   var labelEl = document.getElementById('mth-label');

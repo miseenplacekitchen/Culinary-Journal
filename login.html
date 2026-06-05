@@ -327,7 +327,7 @@
               <div class="str-bar" id="str-3"></div>
               <div class="str-bar" id="str-4"></div>
             </div>
-            <div id="strength-label" style="font-family:'DM Sans',sans-serif;font-size:11px;color:rgba(255,255,255,0.4)"></div>
+            <div id="strength-label" style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-low)"></div>
           </div>
           <!-- REQUIREMENTS -->
           <div id="pwd-rules" style="margin-top:8px;display:none">
@@ -353,7 +353,7 @@
 
       <!-- FORGOT PASSWORD FORM -->
       <div id="forgot-form" style="display:none">
-        <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(255,255,255,0.65);margin-bottom:18px;line-height:1.5">
+        <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:18px;line-height:1.5">
           Enter the email address you used to register. We'll send you a link to reset your password.
         </div>
         <div class="auth-field">
@@ -609,7 +609,8 @@ async function doLogin() {
       if (returnTo && /^[a-z0-9_\-]+\.html$/i.test(returnTo)) {
         window.location.href = returnTo;
       } else {
-        window.location.href = isAdmin ? 'dashboard.html' : 'index.html';
+        // Issue A-1: all users land on My Diary after login (D1: revert admins to 'dashboard.html' here if preferred)
+        window.location.href = 'diary.html';
       }
     }, 1000);
 
