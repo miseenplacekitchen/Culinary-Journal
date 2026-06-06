@@ -52,6 +52,8 @@
     .mp-mode-btn:hover { border-color:var(--accent); color:var(--accent); }
     .mp-mode-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
     .mp-conflict-badge { display:inline-block; background: var(--danger-bg); border:1px solid rgb(from var(--danger) r g b / 0.3); border-radius:4px; font-family:'DM Sans',sans-serif; font-size:10px; color: var(--danger); padding:1px 6px; margin-left:4px; }
+    .mp-allergy-strip { font-family:'DM Sans',sans-serif; font-size:9px; color:var(--danger); background:var(--danger-bg); border-radius:4px; padding:2px 5px; margin-top:4px; line-height:1.35; }
+    .mp-result-warn { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--danger); margin-top:2px; }
     .mp-member-flags { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
     .mp-member-flag { font-size:10px; padding:1px 7px; border-radius:4px; background:rgba(240,168,48,0.1); color: var(--warn); font-family:'DM Sans',sans-serif; }
     .mp-member-flag.ok { background: var(--success-bg); color:#4caf76; }
@@ -184,7 +186,7 @@
     <span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid)">Cooking for:</span>
     <button class="mp-mode-btn active" data-mode="individual" onclick="setMode('individual',this)">👤 Individual</button>
     <button class="mp-mode-btn" data-mode="couple" onclick="setMode('couple',this)">💑 Couple</button>
-    <button class="mp-mode-btn" data-mode="family" onclick="setMode('family',this)" title="To add a family profile, go to Mise en Place → Family Profiles and create profiles there">👨‍👩‍👧‍👦 Family</button>
+    <button class="mp-mode-btn" data-mode="family" onclick="setMode('family',this)" title="Set up allergies and dietary needs in Mise en Place → Family Profiles first. Warnings appear when planning meals — they never block you.">👨‍👩‍👧‍👦 Family</button>
     <button class="mp-mode-btn" data-mode="group" onclick="setMode('group',this)">🎉 Group</button>
     <span id="mp-conflict-summary" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)"></span>
   </div>
@@ -220,6 +222,7 @@
 </div>
 
 <script src="grocery-utils.js"></script>
+<script src="allergy-engine.js"></script>
 <script src="nav-init.js"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -447,7 +450,7 @@ function renderCalendar() {
           '<div class="mp-recipe-cat">' + esc(recipe.category||'') + '</div>' +
           assigneeNote + mealNote +
           (statusLabel ? '<div class="mp-status-label">' + statusLabel + '</div>' : '') +
-          (conflicts.length ? '<div class="mp-member-flags">' + conflicts.slice(0,2).map(function(c){return '<span class="mp-member-flag warn">⚠ '+esc(c)+'</span>';}).join('') + '</div>' : '') +
+          (conflicts.length ? '<div class="mp-allergy-strip" title="' + esc(conflicts.join(' · ')) + '">' + esc(conflicts[0]) + (conflicts.length > 1 ? ' +' + (conflicts.length - 1) : '') + '</div>' : '') +
           '<div class="mp-status-btns">' +
             (st !== 'cooked' ? '<button class="mp-status-btn" data-st="cooked" title="Cooked">✓</button>' : '') +
             (st !== 'skipped' ? '<button class="mp-status-btn" data-st="skipped">Skip</button>' : '') +
@@ -488,6 +491,7 @@ function renderCalendar() {
 
   renderSummary();
   renderTodayPanel();
+  updateConflictSummary();
 }
 
 function renderTodayPanel() {
@@ -621,27 +625,24 @@ function renderFamilyFlags() {
 }
 
 function checkRecipeConflicts(recipe) {
-  if (!familyProfiles.length || currentMode === 'individual') return [];
-  const conflicts = [];
-  const spiceMap = {none:0,mild:1,medium:2,hot:3,very_hot:4};
-  const recipeSpice = typeof recipe.spice_level === 'number' ? recipe.spice_level : 2;
-  familyProfiles.forEach(function(p) {
-    const maxSpice = spiceMap[p.spice_preference||'medium'] || 2;
-    if (recipeSpice > maxSpice) conflicts.push(p.name + ' prefers less spice');
-    (p.dietary_needs||[]).forEach(function(d) {
-      if (d==='Vegan' && !((recipe.dietary_tags||[]).includes('Vegan'))) conflicts.push(p.name + ' is Vegan');
-      if (d==='Vegetarian' && !((recipe.dietary_tags||[]).includes('Vegetarian')) && !((recipe.dietary_tags||[]).includes('Vegan'))) conflicts.push(p.name + ' is Vegetarian');
-      if (d==='Gluten Free' && !((recipe.dietary_tags||[]).includes('Gluten Free'))) conflicts.push(p.name + ' needs Gluten Free');
-    });
-  });
-  return [...new Set(conflicts)];
+  if (typeof AllergyEngine === 'undefined') return [];
+  return AllergyEngine.checkRecipe(recipe, familyProfiles, currentMode);
 }
 
 function updateConflictSummary() {
   const el = document.getElementById('mp-conflict-summary');
   if (!el) return;
-  if (currentMode === 'individual' || !familyProfiles.length) { el.textContent = ''; return; }
-  el.textContent = familyProfiles.length + ' profile' + (familyProfiles.length===1?'':'s') + ' loaded';
+  if (currentMode === 'individual' || !familyProfiles.length) { el.innerHTML = ''; return; }
+  var warnCount = 0;
+  var plan = getPlan();
+  DAYS.forEach(function(day) {
+    MEALS.forEach(function(meal) {
+      var slot = plan[day] && plan[day][meal];
+      if (slot) warnCount += checkRecipeConflicts(slot).length;
+    });
+  });
+  el.innerHTML = '<span title="Allergies checked via family profiles + ingredient keywords (v1)">👪 ' + familyProfiles.length + ' profile' + (familyProfiles.length === 1 ? '' : 's') + '</span>' +
+    (warnCount ? ' · <span class="mp-conflict-badge">' + warnCount + ' warning' + (warnCount === 1 ? '' : 's') + ' this week</span>' : '');
 }
 
 // ── PANTRY-AWARE GROCERY (override from recipe-page) ─────────────
@@ -784,18 +785,43 @@ function renderResults(recipes) {
     const item = document.createElement('div');
     item.className = 'mp-result-item';
     const emoji = CAT_EMOJI[r.category] || '🍽';
-    item.innerHTML = '<div class="mp-result-emoji">' + emoji + '</div><div><div class="mp-result-name">' + esc(r.name||'') + '</div><div class="mp-result-cat">' + esc(r.category||'') + (r.origin_country?' · '+esc(r.origin_country):'') + '</div></div>';
-    item.addEventListener('click', function() {
-      if (!pickerTarget) return;
-      setSlot(pickerTarget.day, pickerTarget.meal, {
-        id: r.id, recipe_id: r.id, name: r.name, category: r.category, image_url: r.image_url,
-        meal_type: pickerTarget.meal, status: 'planned'
-      });
-      closePicker();
-      renderCalendar();
-    });
+    var quickWarn = checkRecipeConflicts(r);
+    item.innerHTML = '<div class="mp-result-emoji">' + emoji + '</div><div style="flex:1"><div class="mp-result-name">' + esc(r.name||'') + '</div><div class="mp-result-cat">' + esc(r.category||'') + (r.origin_country?' · '+esc(r.origin_country):'') + '</div>' +
+      (quickWarn.length ? '<div class="mp-result-warn">' + esc(quickWarn[0]) + '</div>' : '') + '</div>';
+    item.addEventListener('click', function() { assignRecipeFromPicker(r); });
     el.appendChild(item);
   });
+}
+
+async function assignRecipeFromPicker(r) {
+  if (!pickerTarget) return;
+  var recipe = Object.assign({}, r, { name: r.name || r.recipe_name || '' });
+  if (currentMode !== 'individual' && familyProfiles.length && r.id) {
+    try {
+      var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+      var headers = { apikey: SUPA_KEY, 'Content-Type': 'application/json' };
+      if (sess && sess.access_token) headers.Authorization = 'Bearer ' + sess.access_token;
+      var res = await fetch(SUPA_URL + '/rest/v1/rpc/get_public_recipe', {
+        method: 'POST', headers: headers, body: JSON.stringify({ p_id: r.id })
+      });
+      if (res.ok) {
+        var full = await res.json();
+        if (full) recipe = Object.assign({}, recipe, full, { name: full.recipe_name || recipe.name });
+      }
+    } catch(_) {}
+    var warnings = checkRecipeConflicts(recipe);
+    if (warnings.length && typeof AllergyEngine !== 'undefined') {
+      if (!confirm('Allergy / dietary warning\n\n' + AllergyEngine.formatConfirmList(warnings) + '\n\nAssign this meal anyway?')) return;
+    }
+  }
+  setSlot(pickerTarget.day, pickerTarget.meal, {
+    id: r.id, recipe_id: r.id, name: recipe.name, category: r.category, image_url: r.image_url,
+    dietary_tags: recipe.dietary_tags || r.dietary_tags,
+    spice_level: recipe.spice_level || r.spice_level,
+    meal_type: pickerTarget.meal, status: 'planned'
+  });
+  closePicker();
+  renderCalendar();
 }
 
 // ── GROCERY EXPORT ───────────────────────────────────────────────
@@ -886,7 +912,10 @@ async function loadRecipes() {
       body:JSON.stringify({p_limit:100})
     });
     if (res.ok) {
-      allRecipes = await res.json();
+      var rows = await res.json();
+      allRecipes = (Array.isArray(rows) ? rows : []).map(function(r) {
+        return Object.assign({}, r, { name: r.recipe_name || r.name || '' });
+      });
     }
   } catch(_) {}
   renderResults(allRecipes);
