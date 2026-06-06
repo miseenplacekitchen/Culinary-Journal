@@ -326,13 +326,19 @@ GRANT EXECUTE ON FUNCTION public.check_cooking_milestones() TO authenticated;
 -- ── DELETE A COOKING EVENT ──────────────────────────────────────
 DROP FUNCTION IF EXISTS public.delete_cooking_event(uuid);
 CREATE FUNCTION public.delete_cooking_event(p_id uuid)
-RETURNS void
+RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_count int;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  IF p_id IS NULL THEN RAISE EXCEPTION 'missing_id'; END IF;
   DELETE FROM cooking_events WHERE id = p_id AND user_id = auth.uid();
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  IF v_count = 0 THEN RAISE EXCEPTION 'cooking_event_not_found'; END IF;
+  RETURN jsonb_build_object('deleted', v_count);
 END;
 $$;
+REVOKE ALL ON FUNCTION public.delete_cooking_event(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.delete_cooking_event(uuid) TO authenticated;
 
 -- ── UPDATE COOKING EVENT (AP-03) ─────────────────────────────────

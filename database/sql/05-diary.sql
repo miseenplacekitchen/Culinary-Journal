@@ -102,14 +102,20 @@ GRANT EXECUTE ON FUNCTION public.upsert_diary_entry(uuid,date,text,text,text,tex
 -- Delete a diary entry
 DROP FUNCTION IF EXISTS public.delete_diary_entry(uuid);
 CREATE FUNCTION public.delete_diary_entry(p_id uuid)
-RETURNS void
+RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
+DECLARE v_count int;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  IF p_id IS NULL THEN RAISE EXCEPTION 'missing_id'; END IF;
   DELETE FROM public.diary_entries WHERE id = p_id AND user_id = auth.uid();
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  IF v_count = 0 THEN RAISE EXCEPTION 'diary_entry_not_found'; END IF;
+  RETURN jsonb_build_object('deleted', v_count);
 END;
 $$;
+REVOKE ALL ON FUNCTION public.delete_diary_entry(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.delete_diary_entry(uuid) TO authenticated;
 
 -- Diary stats (streak + count)

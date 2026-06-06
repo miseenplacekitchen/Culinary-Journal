@@ -256,6 +256,7 @@
       <div class="dj-modal-title">Entry</div>
       <div style="display:flex;gap:8px">
         <button class="dj-btn dj-btn-secondary" style="padding:6px 14px;font-size:12px" onclick="editFromView()">Edit</button>
+        <button class="dj-btn dj-btn-danger" style="padding:6px 14px;font-size:12px" onclick="deleteViewingEntry()">Delete</button>
         <button class="dj-modal-close" onclick="closeView()">✕</button>
       </div>
     </div>
@@ -288,9 +289,34 @@ async function rpc(fn,params){
   const h = {'apikey':SUPA_KEY,'Content-Type':'application/json'};
   if(s && s.access_token) h['Authorization']='Bearer '+s.access_token;
   const r = await fetch(SUPA_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:h,body:JSON.stringify(params||{})});
-  if(!r.ok){ const e=await r.json().catch(()=>{}); throw new Error(e?.message||r.status); }
-  const t = await r.text();          // void RPCs return 204 No Content —
-  return t ? JSON.parse(t) : null;   // r.json() on an empty body throws.
+  if(!r.ok){
+    const txt = await r.text().catch(()=> '');
+    let msg = String(r.status);
+    try { const e = JSON.parse(txt); msg = e.message || e.error || msg; } catch(_){ if(txt) msg = txt; }
+    throw new Error(msg);
+  }
+  const t = await r.text();
+  return t ? JSON.parse(t) : null;
+}
+async function apiDeleteRow(table, id){
+  const s = getSession();
+  if(!s || !s.access_token) throw new Error('Please sign in again.');
+  const r = await fetch(SUPA_URL+'/rest/v1/'+table+'?id=eq.'+encodeURIComponent(id),{
+    method:'DELETE',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+s.access_token,'Prefer':'return=minimal'}
+  });
+  if(!r.ok){
+    const txt = await r.text().catch(()=> '');
+    throw new Error(txt || ('Delete failed ('+r.status+')'));
+  }
+}
+async function removeDiaryEntry(id){
+  if(!id) throw new Error('Missing entry id.');
+  try {
+    await rpc('delete_diary_entry',{p_id:id});
+  } catch(rpcErr) {
+    await apiDeleteRow('diary_entries', id);
+  }
 }
 function fmtDate(d){ const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
 function todayStr(){ return new Date().toISOString().slice(0,10); }
@@ -482,7 +508,7 @@ async function saveEntry(){
 
 // ── View entry ───────────────────────────────────────────────────
 function viewEntry(id){
-  const e = allEntries.find(x=>x.id===id);
+  const e = allEntries.find(x=>String(x.id)===String(id));
   if(!e) return;
   viewingEntry = e;
   document.getElementById('view-mood').textContent    = e.mood||'';
@@ -516,8 +542,17 @@ async function deleteEntry(){
   if(!id) return;
   if(!confirm('Delete this entry? This cannot be undone.')) return;
   try{
-    await rpc('delete_diary_entry',{p_id:id});
+    await removeDiaryEntry(id);
     closeModal();
+    loadEntries();
+  }catch(e){ alert('Could not delete: '+e.message); }
+}
+async function deleteViewingEntry(){
+  if(!viewingEntry || !viewingEntry.id) return;
+  if(!confirm('Delete this entry? This cannot be undone.')) return;
+  try{
+    await removeDiaryEntry(viewingEntry.id);
+    closeView();
     loadEntries();
   }catch(e){ alert('Could not delete: '+e.message); }
 }

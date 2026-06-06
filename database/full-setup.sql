@@ -1,6 +1,6 @@
 -- ======================================================================
 -- THE CULINARY JOURNAL — FULL DATABASE SETUP
--- Generated: 2026-06-06 01:41 UTC
+-- Generated: 2026-06-06 01:49 UTC
 -- Source: database/manifest.json → database/build-setup.py
 --
 -- Run this ONCE in Supabase Dashboard → SQL Editor on a fresh project.

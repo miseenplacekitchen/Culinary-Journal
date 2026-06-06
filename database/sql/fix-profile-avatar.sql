@@ -2,6 +2,17 @@
 -- Safe to re-run.
 
 -- 1) Return avatar_url + last_seen from get_my_profile (fixes stale/missing avatars)
+DO $$ DECLARE r record;
+BEGIN
+  FOR r IN
+    SELECT p.oid::regprocedure AS sig FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = 'get_my_profile'
+  LOOP
+    EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig;
+  END LOOP;
+END $$;
+
 CREATE OR REPLACE FUNCTION public.get_my_profile()
 RETURNS TABLE (
   id                  uuid,

@@ -309,11 +309,41 @@ async function rpc(fn, params) {
     body: JSON.stringify(params||{})
   });
   if (!r.ok) {
-    const e = await r.json().catch(()=>{});
-    throw new Error(e?.message || ('Error ' + r.status));   // surface failures — no more silent nulls
+    const txt = await r.text().catch(()=> '');
+    let msg = 'Error ' + r.status;
+    try { const e = JSON.parse(txt); msg = e.message || e.error || msg; } catch(_){ if(txt) msg = txt; }
+    throw new Error(msg);
   }
-  const t = await r.text();          // void RPCs return 204 No Content —
-  return t ? JSON.parse(t) : null;   // r.json() on an empty body throws.
+  const t = await r.text();
+  return t ? JSON.parse(t) : null;
+}
+async function apiDeleteRow(table, id) {
+  const s = getSession();
+  if (!s || !s.access_token) throw new Error('Please sign in again.');
+  const r = await fetch(SUPA_URL+'/rest/v1/'+table+'?id=eq.'+encodeURIComponent(id), {
+    method:'DELETE',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+s.access_token,'Prefer':'return=minimal'}
+  });
+  if (!r.ok) {
+    const txt = await r.text().catch(()=> '');
+    throw new Error(txt || ('Delete failed ('+r.status+')'));
+  }
+}
+async function removeCookingEvent(id) {
+  if (!id) throw new Error('Missing entry id.');
+  try {
+    await rpc('delete_cooking_event', {p_id: id});
+  } catch (rpcErr) {
+    await apiDeleteRow('cooking_events', id);
+  }
+}
+async function removeDiaryEntry(id) {
+  if (!id) throw new Error('Missing entry id.');
+  try {
+    await rpc('delete_diary_entry', {p_id: id});
+  } catch (rpcErr) {
+    await apiDeleteRow('diary_entries', id);
+  }
 }
 
 // ── STARS ────────────────────────────────────────────────────────
@@ -445,7 +475,7 @@ function renderHistory() {
 async function deleteCook(id) {
   if (!confirm('Remove this entry from your cooking history?')) return;
   try {
-    await rpc('delete_cooking_event', {p_id: id});
+    await removeCookingEvent(id);
     loadAll();
   } catch(e) {
     alert('Could not remove this entry: ' + e.message);
@@ -467,10 +497,11 @@ async function loadTimeline() {
     // cooking events only. Milestones are system-generated; recipe events
     // mirror submissions — both stay read-only here.
     const editable = (e.event_type === 'diary' || e.event_type === 'cook') && e.source_id;
+    const safeId = String(e.source_id).replace(/\\/g,'\\\\').replace(/'/g,'\\\'');
     const controls = editable
       ? '<div class="cl-event-actions">'
-        + '<button class="cl-evt-btn" title="Edit" onclick="editTimelineItem(\''+e.event_type+'\',\''+esc(e.source_id)+'\')">✏</button>'
-        + '<button class="cl-evt-btn cl-evt-danger" title="Delete" onclick="deleteTimelineItem(\''+e.event_type+'\',\''+esc(e.source_id)+'\',\''+label.replace(/'/g,'&#39;')+'\')">🗑</button>'
+        + '<button class="cl-evt-btn" title="Edit" onclick="editTimelineItem(\''+e.event_type+'\',\''+safeId+'\')">✏</button>'
+        + '<button class="cl-evt-btn cl-evt-danger" title="Delete" onclick="deleteTimelineItem(\''+e.event_type+'\',\''+safeId+'\',\''+label.replace(/'/g,'&#39;')+'\')">🗑</button>'
         + '</div>'
       : '';
     return '<div class="cl-event">'
@@ -486,8 +517,8 @@ async function loadTimeline() {
 async function deleteTimelineItem(type, id, label) {
   if (!confirm('Delete "' + label + '" from your ' + (type === 'diary' ? 'diary' : 'cooking history') + '? This cannot be undone.')) return;
   try {
-    if (type === 'diary')      await rpc('delete_diary_entry',  {p_id: id});
-    else if (type === 'cook')  await rpc('delete_cooking_event', {p_id: id});
+    if (type === 'diary')      await removeDiaryEntry(id);
+    else if (type === 'cook')  await removeCookingEvent(id);
     else return;
     await refreshAfterTimelineChange();
   } catch(e) { alert('Could not delete: ' + (e.message || e)); }
