@@ -438,6 +438,7 @@ function loadRMInterface() {
   var savedTab = localStorage.getItem('tcj_active_rm_tab') || 'analytics';
   var RM_TABS = [
     {key: 'analytics',   label: '\uD83D\uDCCA Analytics'},
+    {key: 'taxonomy',    label: 'Sub-cats & Divisions'},
     {key: 'collections', label: 'Collections'},
     {key: 'featured',    label: '\u2b50 Featured'},
     {key: 'nutrition',   label: 'Nutrition'},
@@ -475,6 +476,7 @@ function loadRMInterface() {
 function loadRMTab(key, container) {
   if (!container) return;
   if (key === 'analytics')   loadRMAnalytics(container);
+  else if (key === 'taxonomy')    loadRMTaxonomy(container);
   else if (key === 'collections') loadRMCollections(container);
   else if (key === 'featured')    loadRMFeatured(container);
   else if (key === 'nutrition')   buildUMStub(container, 'Nutrition Queue', 'Recipes missing nutrition data will appear here once Open Food Facts integration is built. Betty can manually trigger nutrition matching per recipe.');
@@ -920,4 +922,77 @@ async function reviewNote(id, status) {
     await rpc('admin_review_note', { p_id: id, p_status: status });
     loadRecipeNotes();
   } catch(e) { alert('Error: ' + (e.message||e)); }
+}
+
+async function loadRMTaxonomy(container) {
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
+  var CATS = ['Rise & Shine','The Evening Table','Garden & Earth','Meat & Fire','Ocean & River',
+    'Slow & Soulful','Grains & Comfort','Breads & Bakes','Sweet Serenades','Sips & Stories',
+    'Preserved & Cherished','Feast Days','Little Ones','Nourish & Heal'];
+  try {
+    var rows = await rpc('get_recipe_taxonomy', { p_category: null }) || [];
+    container.innerHTML = '';
+    function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
+    var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
+    note.textContent = 'Manage sub-categories and divisions for recipe browse and submit. Divisions support emoji, subtitle, description and tags.';
+    container.appendChild(note);
+
+    CATS.forEach(function(cat) {
+      var subs = {};
+      rows.filter(function(r) { return r.subcategory_category === cat; }).forEach(function(r) {
+        if (!r.subcategory_id) return;
+        if (!subs[r.subcategory_id]) subs[r.subcategory_id] = { id: r.subcategory_id, name: r.subcategory_name, divisions: [] };
+        if (r.division_id) subs[r.subcategory_id].divisions.push(r);
+      });
+      var subList = Object.values(subs);
+      var box = mk('div', 'margin-bottom:20px;padding:16px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px');
+      box.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px', cat));
+
+      if (!subList.length) {
+        box.appendChild(mk('div', 'font-size:12px;color:var(--text-mid);margin-bottom:10px', 'No sub-categories yet.'));
+      } else {
+        subList.forEach(function(sc) {
+          var scRow = mk('div', 'margin-bottom:12px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px');
+          scRow.appendChild(mk('div', 'font-size:13px;font-weight:600;color:var(--text-high);margin-bottom:6px', sc.name));
+          (sc.divisions || []).forEach(function(d) {
+            var dRow = mk('div', 'font-size:12px;color:var(--text-mid);padding:4px 0;border-top:1px solid rgba(255,255,255,0.04)');
+            dRow.textContent = (d.division_emoji || '') + ' ' + (d.division_name || '') + (d.division_subtitle ? ' — ' + d.division_subtitle : '');
+            scRow.appendChild(dRow);
+          });
+          var addDiv = mk('button', 'margin-top:6px;padding:4px 10px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-mid);cursor:pointer');
+          addDiv.textContent = '+ Division';
+          addDiv.addEventListener('click', function() {
+            var name = prompt('Division name for ' + sc.name + ':');
+            if (!name || !name.trim()) return;
+            var emoji = prompt('Emoji (optional):', '🍽') || '🍽';
+            var subtitle = prompt('Subtitle (optional):', '') || '';
+            rpc('admin_upsert_recipe_division', {
+              p_id: null, p_category: cat, p_subcategory: sc.name, p_name: name.trim(),
+              p_emoji: emoji, p_subtitle: subtitle, p_description: null, p_tags: [], p_sort_order: (sc.divisions || []).length + 1
+            }).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
+          });
+          scRow.appendChild(addDiv);
+          box.appendChild(scRow);
+        });
+      }
+
+      var addRow = mk('div', 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px');
+      var inp = mk('input', 'flex:1;min-width:140px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-high)');
+      inp.placeholder = 'New sub-category…';
+      var btn = mk('button', 'padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;cursor:pointer', 'Add');
+      btn.addEventListener('click', function() {
+        var v = inp.value.trim();
+        if (!v) return;
+        rpc('admin_upsert_recipe_subcategory', { p_id: null, p_category: cat, p_name: v, p_sort_order: subList.length + 1 })
+          .then(function() { loadRMTaxonomy(container); })
+          .catch(function(e) { alert(e.message); });
+      });
+      addRow.appendChild(inp);
+      addRow.appendChild(btn);
+      box.appendChild(addRow);
+      container.appendChild(box);
+    });
+  } catch (e) {
+    container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
+  }
 }

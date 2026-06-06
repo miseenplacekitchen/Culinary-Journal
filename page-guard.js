@@ -24,7 +24,7 @@
   if (!path || raw === '/') path = 'index.html';
 
   // Pages exempt from the guard (always accessible)
-  var exempt = ['index.html','login.html','coming-soon.html','members-only.html',
+  var exempt = ['index.html','login.html','onboarding.html','coming-soon.html','members-only.html',
                 'paid-members-only.html','404.html','reset-password.html','dashboard.html'];
   if (exempt.indexOf(path) !== -1) return;
 

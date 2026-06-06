@@ -154,11 +154,53 @@ async function buildSMAnnouncements(container) {
 async function buildSMEmail(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
   try {
+    var queueBox = document.createElement('div');
+    queueBox.style.cssText = 'background:rgba(91,143,212,0.08);border:1px solid rgba(91,143,212,0.25);border-radius:12px;padding:16px 20px;margin-bottom:20px';
+    try {
+      var pending = await rpc('admin_get_email_queue', { p_status: 'pending', p_limit: 5 }) || [];
+      var failed  = await rpc('admin_get_email_queue', { p_status: 'failed', p_limit: 5 }) || [];
+      var sent    = await rpc('admin_get_email_queue', { p_status: 'sent', p_limit: 3 }) || [];
+      queueBox.innerHTML = '<div style="font-family:Cormorant Garamond,serif;font-size:1.1rem;font-weight:700;color:#5B8FD4;margin-bottom:8px">Email Queue</div>' +
+        '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);line-height:1.6;margin-bottom:10px">' +
+        '<strong>' + pending.length + '</strong> pending (showing up to 5) · <strong>' + failed.length + '</strong> failed · <strong>' + sent.length + '</strong> recent sent</div>' +
+        '<div style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid);margin-bottom:12px">Sending uses the Supabase Edge Function <code>send-queued-emails</code> + Resend (see send-queued-emails.js). Schedule via pg_cron every 5 minutes.</div>';
+      if (pending.length) {
+        var ul = document.createElement('ul');
+        ul.style.cssText = 'margin:0 0 12px;padding-left:18px;font-size:11px;color:var(--text-high)';
+        pending.forEach(function(q) {
+          var li = document.createElement('li');
+          li.textContent = (q.template_key || '?') + ' → ' + (q.to_email || '');
+          ul.appendChild(li);
+        });
+        queueBox.appendChild(ul);
+      }
+      var retryBtn = document.createElement('button');
+      retryBtn.className = 'ing-add-btn';
+      retryBtn.textContent = 'Retry failed emails';
+      retryBtn.addEventListener('click', async function() {
+        retryBtn.disabled = true;
+        try {
+          var n = await rpc('admin_reset_failed_emails', {});
+          alert('Reset ' + (n || 0) + ' failed email(s) to pending.');
+          container.dataset.built = '';
+          buildSMEmail(container);
+        } catch (e) { alert(e.message); retryBtn.disabled = false; }
+      });
+      queueBox.appendChild(retryBtn);
+    } catch (qe) {
+      queueBox.innerHTML = '<div style="font-size:12px;color:var(--text-mid)">Email queue unavailable — run fix-phase6-batch.sql</div>';
+    }
+
     var res = await apiFetch(SUPABASE_URL+'/rest/v1/email_templates?order=key');
     if (!res||!res.ok) throw new Error(res?res.status+': '+await res.text():'Session expired');
     var templates = await res.json();
     if(!Array.isArray(templates)||!templates.length){container.dataset.built='';container.innerHTML='<div style="padding:16px;font-size:13px;color:var(--text-mid)">No email templates. Run seed_settings.sql in Supabase.</div>';return;}
-    container.innerHTML='<p style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px">Use {{name}}, {{recipe_name}}, {{reset_link}} as placeholders.</p>';
+    container.innerHTML='';
+    container.appendChild(queueBox);
+    var tplNote = document.createElement('p');
+    tplNote.style.cssText = 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px';
+    tplNote.textContent = 'Use {{name}}, {{recipe_name}}, {{reset_link}} as placeholders.';
+    container.appendChild(tplNote);
     templates.forEach(function(t){
       var sec=document.createElement('div');sec.style.cssText='background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:14px';
       var prevSec = sec; prevSec._tkey = t.key; prevSec._tbody = t.body||''; // Build email template inputs via DOM — no user data in innerHTML

@@ -883,7 +883,13 @@
           localStorage.setItem('tcj_theme', profile.theme_preference);
         }
       }
-      window.location.href = (profile && profile.is_admin) ? 'dashboard.html' : 'diary.html';
+      if (profile && profile.is_admin) {
+        window.location.href = 'dashboard.html';
+      } else if (profile && profile.onboarding_completed === false) {
+        window.location.href = 'onboarding.html';
+      } else {
+        window.location.href = 'diary.html';
+      }
       return;
     });
   }).catch(function() {

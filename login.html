@@ -633,10 +633,16 @@ async function doLogin() {
     setTimeout(() => {
       const params = new URLSearchParams(window.location.search);
       const returnTo = params.get('return_to');
+      let profile = null;
+      try { profile = JSON.parse(localStorage.getItem('tcj_profile') || 'null'); } catch(_) {}
       if (returnTo && /^[a-z0-9_\-]+\.html$/i.test(returnTo)) {
         window.location.href = returnTo;
+      } else if (isAdmin) {
+        window.location.href = 'dashboard.html';
+      } else if (profile && profile.onboarding_completed === false) {
+        window.location.href = 'onboarding.html';
       } else {
-        window.location.href = isAdmin ? 'dashboard.html' : 'diary.html';
+        window.location.href = 'diary.html';
       }
     }, 1000);
 

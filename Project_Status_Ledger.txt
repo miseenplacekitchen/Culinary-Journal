@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phase 5 complete — code + SQL)
+Last updated: 9 June 2026 (Phase 6 batch)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -25,6 +25,17 @@ fix-tier2-surfaces.sql    | Notifications, dietary-card RPCs       | Ran ✅
 fix-phase3-batch.sql      | Chef of Month, ROTW, email on review   | Ran ✅
 fix-phase4-batch.sql      | Follows, Friends, family refs, baby    | Ran ✅
 fix-phase5-batch.sql      | Follower notify on approve, link check | Ran ✅
+fix-phase6-batch.sql      | Onboarding, taxonomy, email queue RPCs | **RUN NEXT**
+
+══════════════════════════════════════════════════════════════════════
+PHASE 6 (THIS BATCH) — SHIPPED IN CODE
+══════════════════════════════════════════════════════════════════════
+• fix-phase6-batch.sql — onboarding_completed, complete_my_onboarding, recipe taxonomy tables/RPCs, email queue admin RPCs, handle_new_user update
+• onboarding.html — 3-step dietary/allergy/health wizard for new signups
+• login.html + index.html — redirect new users to onboarding
+• dashboard-recipes.js — Sub-cats & Divisions admin tab
+• dashboard-site.js — Email queue panel + retry failed
+• print-studio.html — Swipe card preview mode
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 5 — COMPLETE (CODE + SQL)
@@ -88,14 +99,14 @@ CJ-006 / admin panel  | Spine exists; Betty to confirm all tabs on live
 Recipe page defects   | Many fixed; hero deferred; full Issue 4 set not re-audited
 Dead-link checking    | Client check + DB persist (phase 5); no scheduled cron
 Follow notifications  | SQL on approve (phase 5) — live test recommended
-Email sending         | Queue only — no Resend/SendGrid worker
 Allergy engine        | Keyword v1 on meal planner; not site-wide enforced
 Nutrition/substitutes | Display blocks exist; no full substitution engine
 Pantry/grocery depth  | PF-01–09, GL-05/07/11, governed ingredient_id not done
-Print Studio advanced | Swipe card view, booklet generator, premium themes (D4)
+Print Studio advanced | Swipe view (phase 6); booklet generator, premium themes (D4) still open
 Library (D3)          | Admin library-mgmt exists; full public content model thin
-Admin taxonomy        | Sub-category/division CRUD (Issues 3/3.1) missing
-Registration onboard  | profile.html has fields; first-login onboarding partial
+Registration onboard  | onboarding.html wizard (phase 6); needs fix-phase6 SQL + new signup test
+Admin taxonomy        | CRUD tab (phase 6); submit-recipe/browse wiring still partial
+Email sending         | Edge function send-queued-emails.js exists; deploy + cron; admin queue UI (phase 6)
 Terms/Privacy         | Shell pages; lawyer hardening pending
 Regional intelligence | Not started
 Microsoft OAuth       | Not started
@@ -119,6 +130,8 @@ Recent commits:
   fcd9d7d — Phase 3 (Chef of Month, legal shells, meal planner sync, email queue)
   57ca559 — Phase 4 (follows, Friends, cultural pages, cook mode, MP-14, print cards)
   10ade59 — Phase 5 (follower notify SQL, legal shells, family refs, MP-09)
+  deea492 — Ledger update (Phase 5 SQL confirmed)
+  [pending] — Phase 6 (onboarding, taxonomy, email queue UI)
 
 Untracked (intentional): Master_Incomplete_Items_List.txt
 
@@ -134,12 +147,12 @@ LIVE VERIFICATION CHECKLIST (Phase 5)
 4. Recipe with credit_url → dead-link banner + DB source_link_status (admin/contributor only RPC)
 
 ══════════════════════════════════════════════════════════════════════
-NEXT SUGGESTED BATCH (Phase 6 — not started)
+NEXT SUGGESTED BATCH (Phase 7 — not started)
 ══════════════════════════════════════════════════════════════════════
-• Email worker (Resend) for recipe_approved / recipe_rejected templates
-• Registration onboarding wizard (allergies at signup)
-• Admin sub-category/division CRUD
-• Print Studio swipe view / booklet (if D4 approved)
+• Deploy send-queued-emails edge function + pg_cron (Betty ops)
+• Wire sub_category/division pickers on submit-recipe.html
 • Re-audit recipe page Issue 4 (excluding hero) on live
+• Registration: welcome email on first login after confirm
+• Print Studio booklet generator
 
 Contact: miseenplacekitchen.official@gmail.com

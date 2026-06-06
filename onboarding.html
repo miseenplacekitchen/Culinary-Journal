@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Set up your dietary preferences and allergies on The Culinary Journal.">
+  <link rel="canonical" href="https://theculinaryjournal.site/onboarding.html">
+  <title>Welcome — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .ob-wrap { max-width:560px; margin:0 auto; padding:40px 20px 80px; }
+    .ob-box { background:var(--text-ghost); border:1px solid var(--border); border-radius:16px; padding:32px 28px; }
+    .ob-title { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--text-high); margin-bottom:8px; }
+    .ob-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); line-height:1.6; margin-bottom:24px; }
+    .ob-steps { display:flex; gap:8px; margin-bottom:24px; }
+    .ob-step { flex:1; height:4px; border-radius:2px; background:var(--border); }
+    .ob-step.done { background:var(--accent); }
+    .ob-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mid); margin:16px 0 8px; }
+    .ob-checks { display:flex; flex-wrap:wrap; gap:6px; }
+    .ob-check { display:flex; align-items:center; gap:5px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-high); background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer; }
+    .ob-check:has(input:checked) { border-color:var(--accent); background:rgb(from var(--accent) r g b / 0.1); }
+    .ob-actions { display:flex; gap:10px; margin-top:28px; flex-wrap:wrap; }
+    .ob-btn { padding:11px 20px; border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; border:none; }
+    .ob-btn-primary { background:var(--accent); color:#fff; flex:1; }
+    .ob-btn-ghost { background:none; border:1px solid var(--border); color:var(--text-mid); }
+    .ob-panel { display:none; }
+    .ob-panel.active { display:block; }
+    .ob-style { width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--text-high); font-family:'DM Sans',sans-serif; font-size:13px; }
+  </style>
+</head>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+<div class="ob-wrap">
+  <div class="ob-box">
+    <div class="ob-steps" id="ob-steps">
+      <div class="ob-step done" data-i="0"></div>
+      <div class="ob-step" data-i="1"></div>
+      <div class="ob-step" data-i="2"></div>
+    </div>
+
+    <div class="ob-panel active" id="ob-p0">
+      <h1 class="ob-title">Welcome to your kitchen journal</h1>
+      <p class="ob-sub">A quick setup helps us flag recipes that may not suit you. You can change everything later in your profile.</p>
+      <div class="ob-actions">
+        <button class="ob-btn ob-btn-primary" onclick="nextStep()">Get started</button>
+        <button class="ob-btn ob-btn-ghost" onclick="skipAll()">Skip for now</button>
+      </div>
+    </div>
+
+    <div class="ob-panel" id="ob-p1">
+      <h1 class="ob-title">Dietary needs &amp; allergies</h1>
+      <p class="ob-sub">Select anything that applies to <strong>you</strong> (not family members — add those in Family Profiles).</p>
+      <div class="ob-label">Dietary needs</div>
+      <div class="ob-checks" id="ob-dietary"><span style="font-size:12px;color:var(--text-mid)">Loading…</span></div>
+      <div class="ob-label">Allergies</div>
+      <div class="ob-checks" id="ob-allergies"><span style="font-size:12px;color:var(--text-mid)">Loading…</span></div>
+      <div class="ob-actions">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">Back</button>
+        <button class="ob-btn ob-btn-primary" onclick="nextStep()">Continue</button>
+      </div>
+    </div>
+
+    <div class="ob-panel" id="ob-p2">
+      <h1 class="ob-title">Health &amp; cooking style</h1>
+      <p class="ob-sub">Optional — helps personalise suggestions across the site.</p>
+      <div class="ob-label">Health conditions</div>
+      <div class="ob-checks" id="ob-health"><span style="font-size:12px;color:var(--text-mid)">Loading…</span></div>
+      <div class="ob-label">How do you usually cook?</div>
+      <select class="ob-style" id="ob-style">
+        <option value="">— Select —</option>
+        <option value="quick_weeknight">Quick weeknight meals</option>
+        <option value="weekend_project">Weekend projects &amp; baking</option>
+        <option value="healthy_focus">Health-focused</option>
+        <option value="entertaining">Entertaining &amp; feasts</option>
+        <option value="family_kids">Cooking for family &amp; kids</option>
+      </select>
+      <div class="ob-actions">
+        <button class="ob-btn ob-btn-ghost" onclick="prevStep()">Back</button>
+        <button class="ob-btn ob-btn-primary" onclick="finish()">Finish &amp; go to My Diary</button>
+        <button class="ob-btn ob-btn-ghost" onclick="skipAll()">Skip</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="nav-init.js"></script>
+<script>
+var step = 0;
+var REF_FALLBACK = {
+  dietary_needs: ['Vegan','Vegetarian','Gluten-free','Dairy-free','Halal','Kosher','Low sodium','Low sugar'],
+  allergies: ['Peanuts','Tree nuts','Shellfish','Fish','Eggs','Dairy','Wheat / gluten','Soy','Sesame'],
+  health_conditions: ['Diabetes','High cholesterol','Hypertension','Elderly / reduced mobility','Pregnancy','New parent']
+};
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function rpc(fn, params) {
+  var sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
+  if (!sess || !sess.access_token) { window.location.href = 'login.html?return_to=onboarding.html'; return null; }
+  var res = await fetch(SUPA_URL + '/rest/v1/rpc/' + fn, {
+    method:'POST',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+sess.access_token,'Content-Type':'application/json'},
+    body: JSON.stringify(params||{})
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json().catch(function(){ return null; });
+}
+
+function showStep(n) {
+  step = n;
+  document.querySelectorAll('.ob-panel').forEach(function(p,i){ p.classList.toggle('active', i===n); });
+  document.querySelectorAll('.ob-step').forEach(function(s,i){ s.classList.toggle('done', i<=n); });
+}
+
+function nextStep() { if (step < 2) showStep(step + 1); }
+function prevStep() { if (step > 0) showStep(step - 1); }
+
+function getChecked(id) {
+  return [...document.querySelectorAll('#'+id+' input:checked')].map(function(i){ return i.value; });
+}
+
+function buildChecks(id, values) {
+  var el = document.getElementById(id);
+  el.innerHTML = values.map(function(v) {
+    return '<label class="ob-check"><input type="checkbox" value="'+esc(v)+'"> '+esc(v)+'</label>';
+  }).join('');
+}
+
+async function loadRefs() {
+  try {
+    var rows = await rpc('get_family_reference_lists', { p_category: null }) || [];
+    var pick = function(cat) {
+      var fromDb = rows.filter(function(r){ return r.category === cat; }).map(function(r){ return r.value; });
+      return fromDb.length ? fromDb : REF_FALLBACK[cat];
+    };
+    buildChecks('ob-dietary', pick('dietary_needs'));
+    buildChecks('ob-allergies', pick('allergies'));
+    buildChecks('ob-health', pick('health_conditions'));
+  } catch(_) {
+    buildChecks('ob-dietary', REF_FALLBACK.dietary_needs);
+    buildChecks('ob-allergies', REF_FALLBACK.allergies);
+    buildChecks('ob-health', REF_FALLBACK.health_conditions);
+  }
+}
+
+async function saveOnboarding() {
+  await rpc('complete_my_onboarding', {
+    p_dietary_preferences: getChecked('ob-dietary'),
+    p_allergies: getChecked('ob-allergies'),
+    p_health_conditions: getChecked('ob-health'),
+    p_cooking_style: document.getElementById('ob-style').value || ''
+  });
+  try {
+    var prof = JSON.parse(localStorage.getItem('tcj_profile')||'null') || {};
+    prof.onboarding_completed = true;
+    prof.dietary_preferences = getChecked('ob-dietary');
+    prof.allergies = getChecked('ob-allergies');
+    prof.health_conditions = getChecked('ob-health');
+    localStorage.setItem('tcj_profile', JSON.stringify(prof));
+  } catch(_) {}
+}
+
+async function finish() {
+  try {
+    await saveOnboarding();
+    window.location.href = 'diary.html';
+  } catch(e) { alert('Could not save: ' + e.message); }
+}
+
+async function skipAll() {
+  try {
+    await rpc('complete_my_onboarding', { p_dietary_preferences: [], p_allergies: [], p_health_conditions: [], p_cooking_style: '' });
+    var prof = JSON.parse(localStorage.getItem('tcj_profile')||'null') || {};
+    prof.onboarding_completed = true;
+    localStorage.setItem('tcj_profile', JSON.stringify(prof));
+    window.location.href = 'diary.html';
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+  var sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
+  if (!sess || !sess.access_token) { window.location.href = 'login.html?return_to=onboarding.html'; return; }
+  try {
+    var rows = await rpc('get_my_profile', {});
+    var p = Array.isArray(rows) ? rows[0] : rows;
+    if (p && p.onboarding_completed) { window.location.href = 'diary.html'; return; }
+    if (p) localStorage.setItem('tcj_profile', JSON.stringify(p));
+  } catch(_) {}
+  loadRefs();
+});
+</script>
+</body>
+</html>

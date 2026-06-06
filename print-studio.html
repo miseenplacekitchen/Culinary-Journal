@@ -34,6 +34,8 @@
     .ps-preview-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:600; color:var(--text-high); }
     .ps-card-count { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); }
     .ps-cards { display:flex; flex-direction:column; gap:20px; align-items:center; }
+    .ps-cards.swipe-view { flex-direction:row; align-items:stretch; overflow-x:auto; scroll-snap-type:x mandatory; padding:12px 4px 20px; gap:16px; max-width:100%; -webkit-overflow-scrolling:touch; }
+    .ps-cards.swipe-view .ps-card { flex:0 0 min(92vw, 420px); scroll-snap-align:center; }
 
     /* Recipe cards */
     .ps-card { background:#fff; color:#1a1a1a; border-radius:4px; box-shadow:0 4px 24px rgba(0,0,0,0.2); position:relative; overflow:hidden; page-break-inside:avoid; }
@@ -325,6 +327,14 @@
     </div>
 
     <div class="ps-section">
+      <div class="ps-section-title">Preview Mode</div>
+      <div class="ps-btn-group">
+        <button class="ps-opt-btn active" id="ps-view-stack" onclick="setCardView('stack',this)">Stacked</button>
+        <button class="ps-opt-btn" id="ps-view-swipe" onclick="setCardView('swipe',this)">Swipe cards</button>
+      </div>
+    </div>
+
+    <div class="ps-section">
       <div class="ps-section-title">Include on Cards</div>
       <div class="ps-btn-group" id="ps-includes">
         <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
@@ -439,6 +449,14 @@ function setSize(size, btn) {
   btn.classList.add('active');
   try { localStorage.setItem('tcj_print_card_size', size); } catch(_){}
   buildCards();
+}
+
+function setCardView(mode, btn) {
+  var container = document.getElementById('ps-cards');
+  if (container) container.classList.toggle('swipe-view', mode === 'swipe');
+  document.getElementById('ps-view-stack').classList.toggle('active', mode === 'stack');
+  document.getElementById('ps-view-swipe').classList.toggle('active', mode === 'swipe');
+  try { localStorage.setItem('tcj_print_card_view', mode); } catch(_) {}
 }
 
 function printCards() {
