@@ -187,6 +187,20 @@ async function buildSMEmail(container) {
         } catch (e) { alert(e.message); retryBtn.disabled = false; }
       });
       queueBox.appendChild(retryBtn);
+      var sendNowBtn = document.createElement('button');
+      sendNowBtn.className = 'ing-add-btn';
+      sendNowBtn.style.marginLeft = '8px';
+      sendNowBtn.textContent = 'Send pending now';
+      sendNowBtn.addEventListener('click', async function() {
+        sendNowBtn.disabled = true;
+        try {
+          await rpc('admin_invoke_edge_function', { p_function: 'send-queued-emails' });
+          alert('Email worker triggered. Refresh in ~15 seconds.');
+          container.dataset.built = '';
+          buildSMEmail(container);
+        } catch (e) { alert(e.message); sendNowBtn.disabled = false; }
+      });
+      queueBox.appendChild(sendNowBtn);
     } catch (qe) {
       queueBox.innerHTML = '<div style="font-size:12px;color:var(--text-mid)">Email queue unavailable — run fix-phase6-batch.sql</div>';
     }

@@ -303,8 +303,13 @@ async function openRecipeModal(id) {
     spiceSel.style.cssText = catSel.style.cssText;
     ['Not Applicable','Mild','Medium','Hot','Very Hot','Extremely Hot'].forEach(function(s) { var o = document.createElement('option'); o.value = s; o.textContent = s; o.selected = (r.spice_level === s); spiceSel.appendChild(o); });
     spiceWrap.appendChild(spiceSel);
+    var locWrap = editField('Origin locality (village/area)', 'rm-edit-locality', r.origin_locality, 'text');
+    var stateWrap = editField('Origin state/region', 'rm-edit-state', r.origin_state, 'text');
+    var countryWrap = editField('Origin country', 'rm-edit-country', r.origin_country, 'text');
     editGrid.appendChild(nameWrap); editGrid.appendChild(nativeWrap);
     editGrid.appendChild(catWrap);  editGrid.appendChild(spiceWrap);
+    editGrid.appendChild(locWrap); editGrid.appendChild(stateWrap);
+    editGrid.appendChild(countryWrap);
     editBlock.appendChild(editGrid);
     var saveEditBtn = mk('button','margin-top:10px;padding:6px 16px;background:none;border:1px solid var(--accent);border-radius:7px;color:var(--accent);font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer','Save Edits');
     saveEditBtn.addEventListener('click', function(){ saveRecipeEdits(r.id); });
@@ -402,13 +407,18 @@ async function saveRecipeEdits(id) {
   var name   = (document.getElementById('rm-edit-name')   || {}).value || '';
   var native = (document.getElementById('rm-edit-native') || {}).value || '';
   var cat    = (document.getElementById('rm-edit-cat')    || {}).value || '';
-  var spice  = (document.getElementById('rm-edit-spice')  || {}).value || '';
+  var spice   = (document.getElementById('rm-edit-spice')  || {}).value || '';
+  var locality = (document.getElementById('rm-edit-locality') || {}).value || '';
+  var state   = (document.getElementById('rm-edit-state')   || {}).value || '';
+  var country = (document.getElementById('rm-edit-country') || {}).value || '';
   var msg    = document.getElementById('rm-edit-msg');
   try {
     await rpc('admin_edit_recipe', {
       p_id: id, p_recipe_name: name || null, p_category: cat || null,
       p_spice_level: spice || null, p_native_title: native || null,
-      p_introduction: null, p_cooking_notes: null, p_servings: null
+      p_introduction: null, p_cooking_notes: null, p_servings: null,
+      p_origin_locality: locality || null, p_origin_state: state || null,
+      p_origin_country: country || null
     });
     auditLog('Recipe Management', 'Recipe Edited', name, id, name, 'Before approval');
     if (msg) { msg.textContent = '\u2713 Saved'; msg.style.color = '#4caf76'; setTimeout(function(){ if (msg) msg.textContent = ''; }, 3000); }
@@ -650,7 +660,25 @@ async function loadRMSourceLinks(container) {
     container.innerHTML = '';
     function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
     container.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:14px;line-height:1.6',
-      'Approved recipes with a credit URL. Status is updated by the weekly check-dead-links cron job (Sundays 03:00 UTC).'));
+      'Approved recipes with a credit URL. Status is updated by the weekly check-dead-links cron (Sundays 03:00 UTC) or Run link check now.'));
+    var btnRow = mk('div', 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px');
+    var runBtn = mk('button', 'padding:8px 14px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;cursor:pointer', 'Run link check now');
+    runBtn.addEventListener('click', function() {
+      runBtn.disabled = true;
+      rpc('admin_invoke_edge_function', { p_function: 'check-dead-links' })
+        .then(function() { alert('Link check triggered. Refresh in ~15 seconds.'); loadRMSourceLinks(container); })
+        .catch(function(e) { alert(e.message); })
+        .finally(function() { runBtn.disabled = false; });
+    });
+    var queueBtn = mk('button', 'padding:8px 14px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Queue all for re-check');
+    queueBtn.addEventListener('click', function() {
+      rpc('admin_queue_all_link_rechecks', {})
+        .then(function(n) { alert('Queued ' + (n || 0) + ' recipe(s) for next check.'); loadRMSourceLinks(container); })
+        .catch(function(e) { alert(e.message); });
+    });
+    btnRow.appendChild(runBtn);
+    btnRow.appendChild(queueBtn);
+    container.appendChild(btnRow);
     if (!rows.length) {
       container.appendChild(mk('div', 'font-size:13px;color:var(--text-mid)', 'No approved recipes with source URLs yet.'));
       return;
@@ -658,7 +686,7 @@ async function loadRMSourceLinks(container) {
     var statusColor = { ok: '#4caf76', dead: '#dc5050', unknown: '#c4973b' };
     var wrap = mk('div', 'overflow-x:auto');
     var tbl = mk('table', 'width:100%;border-collapse:collapse;font-size:12px;min-width:720px');
-    tbl.innerHTML = '<thead><tr style="text-align:left;color:var(--text-mid);font-size:10px;text-transform:uppercase;letter-spacing:0.08em"><th style="padding:8px">Recipe</th><th style="padding:8px">URL</th><th style="padding:8px">Status</th><th style="padding:8px">Checked</th></tr></thead>';
+    tbl.innerHTML = '<thead><tr style="text-align:left;color:var(--text-mid);font-size:10px;text-transform:uppercase;letter-spacing:0.08em"><th style="padding:8px">Recipe</th><th style="padding:8px">URL</th><th style="padding:8px">Status</th><th style="padding:8px">Checked</th><th style="padding:8px"></th></tr></thead>';
     var tbody = mk('tbody');
     rows.forEach(function(r) {
       var tr = mk('tr');
@@ -688,6 +716,21 @@ async function loadRMSourceLinks(container) {
       tr.appendChild(stTd);
       var chk = r.source_link_checked_at ? new Date(r.source_link_checked_at).toLocaleString() : 'Never';
       tr.appendChild(mk('td', 'padding:8px;color:var(--text-mid)', chk));
+      if (r.credit_url && String(r.credit_url).trim().toLowerCase().indexOf('http') === 0) {
+        var actTd = mk('td', 'padding:8px');
+        var reBtn = mk('button', 'padding:4px 8px;font-size:10px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-mid);cursor:pointer', 'Re-check');
+        reBtn.addEventListener('click', function() {
+          reBtn.disabled = true;
+          rpc('admin_reset_source_link_check', { p_recipe_id: r.id })
+            .then(function() { alert('Queued for re-check.'); loadRMSourceLinks(container); })
+            .catch(function(e) { alert(e.message); })
+            .finally(function() { reBtn.disabled = false; });
+        });
+        actTd.appendChild(reBtn);
+        tr.appendChild(actTd);
+      } else {
+        tr.appendChild(mk('td', 'padding:8px'));
+      }
       tbody.appendChild(tr);
     });
     tbl.appendChild(tbody);
