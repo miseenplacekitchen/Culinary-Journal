@@ -45,6 +45,12 @@
     .gl-item-name { flex:1; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); }
     .gl-item-qty { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--accent); font-weight:500; white-space:nowrap; }
     .gl-item-note { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); display:flex; align-items:center; gap:4px; }
+    .gl-pantry-badge { font-family:'DM Sans',sans-serif; font-size:10px; color:#4caf76; margin-left:6px; }
+    .gl-staple-badge { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--accent); margin-left:6px; }
+    .gl-item.in-pantry { opacity:0.55; }
+    .gl-item.is-staple { opacity:0.45; }
+    .gl-filter-bar { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); }
+    .gl-filter-bar label { display:flex; align-items:center; gap:6px; cursor:pointer; }
 
     /* Combined tab category headers */
     .gl-category-header { padding:10px 18px 6px; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); background:var(--text-ghost); border-bottom:1px solid var(--border); }
@@ -88,6 +94,11 @@
   <div class="gl-tabs">
     <button class="gl-tab active" id="tab-by-recipe" onclick="switchTab('recipe',this)">By Recipe</button>
     <button class="gl-tab" id="tab-combined" onclick="switchTab('combined',this)">Combined Shopping List</button>
+  </div>
+
+  <div class="gl-filter-bar">
+    <label><input type="checkbox" id="gl-hide-pantry" onchange="render()"> Hide items already in pantry</label>
+    <label><input type="checkbox" id="gl-hide-staples" checked onchange="render()"> Hide always-have staples</label>
   </div>
 
   <div id="view-recipe"></div>
@@ -174,6 +185,44 @@ function parseFraction(v){
 const FRACTIONS = {'1/8':'⅛','1/4':'¼','3/8':'⅜','1/2':'½','5/8':'⅝','3/4':'¾','1/3':'⅓','2/3':'⅔'};
 function fmtQty(v){ if(!v)return ''; let s=String(v); Object.keys(FRACTIONS).forEach(f=>{s=s.replace(new RegExp(f.replace('/','[/]'),'g'),FRACTIONS[f]);}); return s; }
 
+function getPantryIndex(){
+  try {
+    const items = JSON.parse(localStorage.getItem('tcj_pantry')||'[]');
+    const idx = {};
+    items.forEach(function(p){
+      if (p.name) idx[p.name.toLowerCase().trim()] = p;
+    });
+    return idx;
+  } catch(_) { return {}; }
+}
+
+function pantryInfoFor(name){
+  const p = getPantryIndex()[(name||'').toLowerCase().trim()];
+  if (!p) return null;
+  return {
+    inPantry: (p.qty||0) > 0,
+    isStaple: !!p.is_staple,
+    location: p.location || 'pantry',
+    qty: p.qty
+  };
+}
+
+function shouldHideGroceryItem(name){
+  const info = pantryInfoFor(name);
+  if (!info) return false;
+  if (document.getElementById('gl-hide-staples')?.checked && info.isStaple) return true;
+  if (document.getElementById('gl-hide-pantry')?.checked && info.inPantry) return true;
+  return false;
+}
+
+function pantryBadgeHtml(name){
+  const info = pantryInfoFor(name);
+  if (!info) return '';
+  if (info.isStaple) return '<span class="gl-staple-badge">⭐ always have</span>';
+  if (info.inPantry) return '<span class="gl-pantry-badge">🫙 in ' + esc(info.location) + '</span>';
+  return '';
+}
+
 function getList(){ try{return JSON.parse(localStorage.getItem('tcj_grocery')||'{"recipes":[],"checked":[]}');}catch(_){return{recipes:[],checked:[]};} }
 function saveList(list){ localStorage.setItem('tcj_grocery',JSON.stringify(list)); scheduleSyncToSupabase(); }
 function getChecked(){ try{return JSON.parse(localStorage.getItem('tcj_grocery_checked')||'[]');}catch(_){return[];} }
@@ -245,11 +294,14 @@ function renderByRecipe(list){
     Object.keys(groupedBySection).forEach(section=>{
       if(Object.keys(groupedBySection).length>1) itemsHtml+=`<div class="gl-category-header">${esc(section)}</div>`;
       groupedBySection[section].forEach(ing=>{
+        if (shouldHideGroceryItem(ing.name)) return;
         const key = recipe.id+':'+ing.name;
         const isChecked = checked.includes(key);
-        itemsHtml+=`<div class="gl-item${isChecked?' checked':''}">
+        const pinfo = pantryInfoFor(ing.name);
+        const extraCls = (pinfo?.isStaple ? ' is-staple' : '') + (pinfo?.inPantry ? ' in-pantry' : '');
+        itemsHtml+=`<div class="gl-item${isChecked?' checked':''}${extraCls}">
           <input type="checkbox" class="gl-check" ${isChecked?'checked':''} data-key="${esc(key)}">
-          <span class="gl-item-name">${esc(ing.name)}</span>
+          <span class="gl-item-name">${esc(ing.name)}${pantryBadgeHtml(ing.name)}</span>
           <span class="gl-item-qty">${esc(fmtQty(ing.qty))} ${esc(ing.unit||'')}</span>
         </div>`;
       });
@@ -316,13 +368,16 @@ function renderCombined(list){
     div.className = 'gl-recipe-section';
     div.innerHTML = `<div class="gl-category-header">${esc(cat)}</div>`;
     byCategory[cat].forEach(item=>{
+      if (shouldHideGroceryItem(item.name)) return;
       const checkKey = 'combined:'+item.name.toLowerCase();
       const isChecked = checked.includes(checkKey);
+      const pinfo = pantryInfoFor(item.name);
+      const extraCls = (pinfo?.isStaple ? ' is-staple' : '') + (pinfo?.inPantry ? ' in-pantry' : '');
       const row = document.createElement('div');
-      row.className = 'gl-item'+(isChecked?' checked':'');
+      row.className = 'gl-item'+(isChecked?' checked':'')+extraCls;
       row.innerHTML = `
         <input type="checkbox" class="gl-check" ${isChecked?'checked':''} data-key="${esc(checkKey)}">
-        <span class="gl-item-name">${esc(item.name)}</span>
+        <span class="gl-item-name">${esc(item.name)}${pantryBadgeHtml(item.name)}</span>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
           <span class="gl-item-qty">${esc(item.qtyText)}</span>
           <span class="gl-item-note">from ${esc(item.recipes.join(', '))}</span>
@@ -350,7 +405,7 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 
 // Listen for storage changes (when recipe page adds items)
-window.addEventListener('storage', e=>{ if(e.key==='tcj_grocery') render(); });
+window.addEventListener('storage', e=>{ if(e.key==='tcj_grocery' || e.key==='tcj_pantry') render(); });
 </script>
 </body>
 </html>

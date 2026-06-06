@@ -1571,6 +1571,11 @@ function renderIngredients(sections, containerId = 'ingredients-content') {
 function renderIngRow(item, section, idx) {
   const hasInfo = item.chef_rec || item.substitute;
   const inGrocery = Array.isArray(groceryList) && groceryList.some(g => (g.name || g.ingredient) === item.ingredient);
+  const pantryInfo = getPantryInfo(item.ingredient);
+  const pantryNote = pantryInfo
+    ? (pantryInfo.isStaple ? ' <span style="font-size:10px;color:var(--accent)">⭐ staple</span>'
+      : pantryInfo.inPantry ? ' <span style="font-size:10px;color:#4caf76">🫙 in pantry</span>' : '')
+    : '';
   const baseNum = parseFloat(item.qty);
   const qtyHtml = !isNaN(baseNum)
     ? `<span class="rp-ing-qty" data-base="${baseNum}" data-unit="${item.unit || ''}">${item.qty}</span>`
@@ -1595,7 +1600,7 @@ function renderIngRow(item, section, idx) {
     <div class="rp-ing-row">
       <input type="checkbox" class="rp-ing-cb" onchange="toggleIngredient(this)">
       ${qtyHtml}
-      <span class="rp-ing-name">${item.ingredient}${item.note ? ' <span style="font-size:11px;color:var(--text-muted);font-style:italic">— ' + item.note + '</span>' : ''}</span>
+      <span class="rp-ing-name">${item.ingredient}${pantryNote}${item.note ? ' <span style="font-size:11px;color:var(--text-muted);font-style:italic">— ' + item.note + '</span>' : ''}</span>
       ${hasAnyInfo ? `
         <button class="rp-ing-info-btn" onclick="toggleInfo(this)" title="Substitutes & chef tips">
           <div class="rp-ing-info-icon">i</div>
@@ -1640,6 +1645,11 @@ function toggleGrocery(btn, ingredient, qty, unit) {
     btn.classList.remove('added');
     showToast('Removed from grocery list');
   } else {
+    if (isInPantry(ingredient)) {
+      const info = getPantryInfo(ingredient);
+      showToast(info && info.isStaple ? 'This is an always-have staple — no need to shop for it' : 'Already in your pantry 🫙');
+      return;
+    }
     recipeEntry.ingredients.push({name: ingredient, qty, unit, section: ''});
     btn.classList.add('added');
     showToast('Added to grocery list ✓');
@@ -1652,12 +1662,23 @@ function getPantryItems() {
   try { return JSON.parse(localStorage.getItem('tcj_pantry')||'[]'); } catch(_) { return []; }
 }
 
-function isInPantry(ingredientName) {
+function getPantryInfo(ingredientName) {
+  const name = (ingredientName || '').toLowerCase().trim();
   const pantry = getPantryItems();
-  const name = ingredientName.toLowerCase().trim();
-  return pantry.some(function(p) {
-    return p.name && p.name.toLowerCase().trim() === name && (p.qty||0) > 0;
-  });
+  const item = pantry.find(function(p) { return p.name && p.name.toLowerCase().trim() === name; });
+  if (!item) return null;
+  return {
+    inPantry: (item.qty || 0) > 0,
+    isStaple: !!item.is_staple,
+    location: item.location || 'pantry'
+  };
+}
+
+function isInPantry(ingredientName) {
+  const info = getPantryInfo(ingredientName);
+  if (!info) return false;
+  if (info.isStaple) return true;
+  return info.inPantry;
 }
 
 function addAllToGrocery() {
@@ -1674,7 +1695,7 @@ function addAllToGrocery() {
     sec.items.forEach(item => {
       if (recipeEntry.ingredients.some(i => i.name === item.ingredient)) return;
       if (isInPantry(item.ingredient)) { skipped++; return; }
-      recipeEntry.ingredients.push({name: item.ingredient, qty: item.qty, unit: item.unit||'', section: sec.title||''});
+      recipeEntry.ingredients.push({name: item.ingredient, qty: item.qty, unit: item.unit||'', section: sec.section || sec.section_name || ''});
       added++;
     });
   });

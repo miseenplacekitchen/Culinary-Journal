@@ -31,8 +31,11 @@
     .pt-search:focus { border-color:var(--accent); }
 
     /* Stats */
-    .pt-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
-    @media(max-width:600px){ .pt-stats { grid-template-columns:repeat(2,1fr); } }
+    .pt-stats { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:16px; }
+    @media(max-width:700px){ .pt-stats { grid-template-columns:repeat(2,1fr); } }
+    .pt-loc-filters { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+    .pt-loc-badge { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); margin-top:2px; }
+    .pt-staple-badge { font-size:10px; color:var(--accent); margin-left:6px; }
     .pt-stat { background:var(--text-ghost); border:1px solid var(--border); border-radius:11px; padding:14px 16px; }
     .pt-stat-num { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--accent); }
     .pt-stat-label { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); text-transform:uppercase; letter-spacing:0.08em; }
@@ -95,7 +98,15 @@
 
   <div class="pt-stats" id="pt-stats"></div>
 
-  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+  <div class="pt-loc-filters" id="pt-location-filters">
+    <button class="pt-filter active" onclick="setLocationFilter('all',this)">Everywhere</button>
+    <button class="pt-filter" onclick="setLocationFilter('pantry',this)">🫙 Pantry</button>
+    <button class="pt-filter" onclick="setLocationFilter('fridge',this)">🧊 Fridge</button>
+    <button class="pt-filter" onclick="setLocationFilter('freezer',this)">❄️ Freezer</button>
+    <button class="pt-filter" onclick="setLocationFilter('staples',this)">⭐ Always Have</button>
+  </div>
+
+  <div id="pt-status-filters" style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
     <input class="pt-search" type="text" placeholder="Search pantry..." oninput="renderList(this.value)" id="pt-search">
     <button class="pt-filter active" onclick="setFilter('all',this)">All</button>
     <button class="pt-filter" onclick="setFilter('ok',this)">✓ Good</button>
@@ -150,6 +161,21 @@
     </div>
     <div class="pt-row">
       <div class="pt-field" style="flex:1">
+        <div class="pt-label">Location</div>
+        <select class="pt-input" id="pt-location">
+          <option value="pantry">🫙 Pantry</option>
+          <option value="fridge">🧊 Fridge</option>
+          <option value="freezer">❄️ Freezer</option>
+        </select>
+      </div>
+      <div class="pt-field" style="flex:1;display:flex;align-items:flex-end;padding-bottom:2px">
+        <label style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="pt-staple"> Always-have staple
+        </label>
+      </div>
+    </div>
+    <div class="pt-row">
+      <div class="pt-field" style="flex:1">
         <div class="pt-label">Low Stock Alert Below</div>
         <input class="pt-input" id="pt-min" type="number" min="0" step="0.1" placeholder="e.g. 0.5">
       </div>
@@ -170,7 +196,16 @@
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 let activeFilter = 'all';
+let activeLocationFilter = 'all';
 let pantryIngIndex = {};
+
+const PT_LOC_LABEL = { pantry:'🫙 Pantry', fridge:'🧊 Fridge', freezer:'❄️ Freezer' };
+
+function normalizePantryItem(item) {
+  if (!item.location) item.location = 'pantry';
+  if (item.is_staple === undefined) item.is_staple = false;
+  return item;
+}
 
 function getPantry() {
   try { return JSON.parse(localStorage.getItem('tcj_pantry') || '[]'); }
@@ -238,28 +273,42 @@ function getExpiryStatus(item) {
 
 function setFilter(f, btn) {
   activeFilter = f;
-  document.querySelectorAll('.pt-filter').forEach(function(b) { b.classList.remove('active'); });
-  btn.classList.add('active');
+  document.querySelectorAll('#pt-status-filters .pt-filter').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderList(document.getElementById('pt-search').value);
+}
+
+function setLocationFilter(loc, btn) {
+  activeLocationFilter = loc;
+  document.querySelectorAll('#pt-location-filters .pt-filter').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
   renderList(document.getElementById('pt-search').value);
 }
 
 function renderStats() {
-  const items = getPantry();
+  const items = getPantry().map(normalizePantryItem);
   const ok  = items.filter(function(i) { return getStatus(i)==='ok'; }).length;
   const low = items.filter(function(i) { return getStatus(i)==='low'; }).length;
   const out = items.filter(function(i) { return getStatus(i)==='out'; }).length;
+  const staples = items.filter(function(i) { return i.is_staple; }).length;
   document.getElementById('pt-stats').innerHTML =
     '<div class="pt-stat"><div class="pt-stat-num">' + items.length + '</div><div class="pt-stat-label">Total Items</div></div>' +
     '<div class="pt-stat"><div class="pt-stat-num" style="color:#4caf76">' + ok + '</div><div class="pt-stat-label">Well Stocked</div></div>' +
     '<div class="pt-stat"><div class="pt-stat-num" style="color:var(--warn)">' + low + '</div><div class="pt-stat-label">Running Low</div></div>' +
-    '<div class="pt-stat"><div class="pt-stat-num" style="color:var(--danger)">' + out + '</div><div class="pt-stat-label">Out of Stock</div></div>';
+    '<div class="pt-stat"><div class="pt-stat-num" style="color:var(--danger)">' + out + '</div><div class="pt-stat-label">Out of Stock</div></div>' +
+    '<div class="pt-stat"><div class="pt-stat-num" style="color:var(--accent)">' + staples + '</div><div class="pt-stat-label">Staples</div></div>';
 }
 
 function renderList(search) {
   const items = getPantry();
   const q = (search||'').toLowerCase();
-  const filtered = items.filter(function(item) {
+  const filtered = items.map(normalizePantryItem).filter(function(item) {
     if (q && !item.name.toLowerCase().includes(q)) return false;
+    if (activeLocationFilter === 'staples') {
+      if (!item.is_staple) return false;
+    } else if (activeLocationFilter !== 'all') {
+      if ((item.location || 'pantry') !== activeLocationFilter) return false;
+    }
     const status = getStatus(item);
     if (activeFilter === 'expiring') {
       const exp = getExpiryStatus(item);
@@ -284,9 +333,11 @@ function renderList(search) {
     const expBadge = expInfo && expInfo.status !== 'ok'
       ? '<div style="font-family:\'DM Sans\',sans-serif;font-size:10px;margin-top:3px;color:' +
         (expInfo.status === 'expired' ? 'var(--danger)' : 'var(--warn)') + '">' + esc(expInfo.label) + '</div>' : '';
+    const locLabel = PT_LOC_LABEL[item.location || 'pantry'] || item.location;
     row.innerHTML =
-      '<div style="flex:1"><div class="pt-item-name">' + esc(item.name||'') + '</div>' +
-      (item.category ? '<div class="pt-item-cat">' + esc(item.category||'') + '</div>' : '') +
+      '<div style="flex:1"><div class="pt-item-name">' + esc(item.name||'') +
+        (item.is_staple ? '<span class="pt-staple-badge">⭐ staple</span>' : '') + '</div>' +
+      '<div class="pt-loc-badge">' + locLabel + (item.category ? ' · ' + esc(item.category) : '') + '</div>' +
       expBadge + '</div>' +
       '<div class="pt-item-qty">' +
         '<button class="pt-qty-btn" data-item-id="' + esc(String(item.id)) + '" data-delta="-1">−</button>' +
@@ -294,6 +345,9 @@ function renderList(search) {
         '<button class="pt-qty-btn" data-item-id="' + esc(String(item.id)) + '" data-delta="1">+</button>' +
       '</div>' +
       '<span class="pt-status ' + status + '">' + (status==='ok'?'Good':status==='low'?'Low':'Out') + '</span>' +
+      (item.is_staple ? '' : '<button class="pt-btn pt-btn-ghost" style="font-size:10px;padding:4px 8px" data-action="low" data-item-id="' + esc(String(item.id)) + '" title="Mark running low">Low</button>') +
+      '<button class="pt-btn pt-btn-ghost" style="font-size:10px;padding:4px 8px" data-action="restock" data-item-id="' + esc(String(item.id)) + '" title="Mark restocked">✓</button>' +
+      (item.is_staple ? '' : '<button class="pt-btn pt-btn-ghost" style="font-size:10px;padding:4px 8px" data-action="grocery" data-item-id="' + esc(String(item.id)) + '" title="Add to grocery">🛒</button>') +
       '<button class="pt-btn pt-btn-ghost" style="font-size:11px;padding:5px 10px" data-action="edit" data-item-id="' + esc(String(item.id)) + '">Edit</button>' +
       '<button class="pt-del-btn" data-action="delete" data-item-id="' + esc(String(item.id)) + '" title="Delete">🗑</button>';
     el.appendChild(row);
@@ -322,6 +376,8 @@ function openAddModal() {
   ['pt-name','pt-qty','pt-unit','pt-min','pt-expiry'].forEach(function(id) { document.getElementById(id).value = ''; });
   document.getElementById('pt-category').value = '';
   document.getElementById('pt-ingredient-id').value = '';
+  document.getElementById('pt-location').value = 'pantry';
+  document.getElementById('pt-staple').checked = false;
   var hint = document.getElementById('pt-ing-hint'); if (hint) hint.style.display = 'none';
   document.getElementById('pt-modal').classList.add('open');
   setTimeout(function() { document.getElementById('pt-name').focus(); }, 50);
@@ -339,6 +395,8 @@ function editItem(id) {
   document.getElementById('pt-ingredient-id').value = item.ingredient_id || '';
   document.getElementById('pt-min').value  = item.min_qty||'';
   document.getElementById('pt-expiry').value = item.expiry_date||'';
+  document.getElementById('pt-location').value = item.location || 'pantry';
+  document.getElementById('pt-staple').checked = !!item.is_staple;
   onPantryNameInput();
   document.getElementById('pt-modal').classList.add('open');
 }
@@ -360,6 +418,8 @@ function saveItem() {
     category: document.getElementById('pt-category').value,
     min_qty: parseFloat(document.getElementById('pt-min').value)||null,
     expiry_date: document.getElementById('pt-expiry').value||null,
+    location: document.getElementById('pt-location').value || 'pantry',
+    is_staple: !!document.getElementById('pt-staple').checked,
     updated: new Date().toISOString()
   };
   if (editId) {
@@ -371,9 +431,41 @@ function saveItem() {
   renderList(document.getElementById('pt-search').value);
 }
 
+function markItemLow(id) {
+  const list = getPantry();
+  const item = list.find(function(i) { return i.id === id; });
+  if (!item || item.is_staple) return;
+  item.qty = 0;
+  savePantry(list);
+  renderList(document.getElementById('pt-search').value);
+}
+
+function markItemRestocked(id) {
+  const list = getPantry();
+  const item = list.find(function(i) { return i.id === id; });
+  if (!item) return;
+  const target = Math.max((parseFloat(item.min_qty) || 1) + 1, 1);
+  item.qty = target;
+  savePantry(list);
+  renderList(document.getElementById('pt-search').value);
+}
+
+function addItemToGrocery(id) {
+  const item = getPantry().find(function(i) { return i.id === id; });
+  if (!item || item.is_staple) return;
+  const data = JSON.parse(localStorage.getItem('tcj_grocery') || '{"recipes":[]}');
+  let entry = data.recipes.find(function(r) { return r.id === 'pantry-restock'; });
+  if (!entry) { entry = { id:'pantry-restock', name:'Pantry Restock', servings:1, ingredients:[] }; data.recipes.push(entry); }
+  if (!entry.ingredients.find(function(i) { return i.name === item.name; })) {
+    entry.ingredients.push({ name:item.name, qty:item.min_qty || 1, unit:item.unit || '', section:'Restock', category:item.category || 'Pantry' });
+    localStorage.setItem('tcj_grocery', JSON.stringify(data));
+  }
+  window.location.href = 'grocery.html';
+}
+
 function addToGroceryLow() {
-  const items = getPantry().filter(function(i) { return getStatus(i) !== 'ok'; });
-  if (!items.length) { alert('All items are well stocked!'); return; }
+  const items = getPantry().filter(function(i) { return !i.is_staple && getStatus(i) !== 'ok'; });
+  if (!items.length) { alert('All non-staple items are well stocked!'); return; }
   const data = JSON.parse(localStorage.getItem('tcj_grocery')||'{"recipes":[]}');
   let entry = data.recipes.find(function(r){ return r.id==='pantry-restock'; });
   if (!entry) { entry = {id:'pantry-restock',name:'Pantry Restock',servings:1,ingredients:[]}; data.recipes.push(entry); }
@@ -447,9 +539,12 @@ document.addEventListener('DOMContentLoaded', function() {
     var btn = e.target.closest('[data-item-id]');
     if (!btn) return;
     var id = btn.dataset.itemId;
-    if (btn.dataset.action === 'edit')   { editItem(id); return; }
-    if (btn.dataset.action === 'delete') { deleteItem(id); return; }
-    if (btn.dataset.delta !== undefined) { adjustQty(id, parseInt(btn.dataset.delta||0)); }
+    if (btn.dataset.action === 'edit')    { editItem(id); return; }
+    if (btn.dataset.action === 'delete')  { deleteItem(id); return; }
+    if (btn.dataset.action === 'low')     { markItemLow(id); return; }
+    if (btn.dataset.action === 'restock') { markItemRestocked(id); return; }
+    if (btn.dataset.action === 'grocery') { addItemToGrocery(id); return; }
+    if (btn.dataset.delta !== undefined)  { adjustQty(id, parseInt(btn.dataset.delta||0)); }
   });
 
   renderStats();
