@@ -134,6 +134,28 @@
     .mth-meal-dot { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-high); padding:2px 5px; border-radius:4px; margin-bottom:2px; background:rgb(from var(--accent) r g b / .1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.4; }
     .mth-more { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--accent); }
     @media(max-width:600px){ .mth-cell { min-height:60px; } .mth-meal-dot { display:none; } }
+    .mp-filter-bar { display:flex; gap:6px; flex-wrap:wrap; padding:10px 20px; border-bottom:1px solid var(--border); }
+    .mp-filter-chip { padding:4px 10px; border-radius:14px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); cursor:pointer; }
+    .mp-filter-chip.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .mp-grocery-menu { position:relative; display:inline-block; }
+    .mp-grocery-drop { display:none; position:absolute; right:0; top:100%; margin-top:4px; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:6px; min-width:180px; z-index:50; box-shadow:0 8px 24px rgba(0,0,0,0.12); }
+    .mp-grocery-drop.open { display:block; }
+    .mp-grocery-drop button { display:block; width:100%; text-align:left; padding:8px 12px; border:none; background:none; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-high); cursor:pointer; border-radius:6px; }
+    .mp-grocery-drop button:hover { background:var(--text-ghost); }
+    @media print {
+      .nav,.tab-nav,.mp-header,.mp-mode-bar,#mp-today,.mp-summary,#mp-month-view,.mp-modal,button { display:none !important; }
+      #mp-print-output { display:block !important; }
+      .page-bg { background:#fff; }
+    }
+    #mp-print-output { display:none; padding:20px; font-family:'DM Sans',sans-serif; color:#111; }
+    .mp-print-title { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:700; margin-bottom:4px; }
+    .mp-print-sub { font-size:12px; color:#666; margin-bottom:18px; }
+    .mp-print-table { width:100%; border-collapse:collapse; font-size:12px; }
+    .mp-print-table th,.mp-print-table td { border:1px solid #ccc; padding:8px 10px; text-align:left; vertical-align:top; }
+    .mp-print-table th { background:#f5f5f5; font-size:10px; text-transform:uppercase; letter-spacing:0.06em; }
+    .mp-print-slot { line-height:1.4; }
+    .mp-print-warn { color:#b33; font-size:10px; }
+    .mp-print-status { color:#666; font-size:10px; }
   </style>
   <script src="page-guard.js"></script>
 </head>
@@ -173,8 +195,15 @@
         <select id="mth-jump-year" onchange="jumpMonthYear()" style="padding:6px 8px;font-size:12px"></select>
       </div>
       <div class="mp-actions">
+        <button class="mp-btn mp-btn-ghost" onclick="printWeek()" title="Print this week's meal plan">🖨 Print Week</button>
         <button class="mp-btn mp-btn-ghost" onclick="clearWeek()">Clear Week</button>
-        <button class="mp-btn mp-btn-primary" onclick="addToGrocery()">🛒 Add to Grocery List</button>
+        <div class="mp-grocery-menu">
+          <button class="mp-btn mp-btn-primary" onclick="toggleGroceryMenu(event)">🛒 Grocery ▾</button>
+          <div class="mp-grocery-drop" id="mp-grocery-drop">
+            <button type="button" onclick="addToGrocery(); closeGroceryMenu()">This week</button>
+            <button type="button" onclick="addToGroceryRange(); closeGroceryMenu()">Custom date range…</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -203,6 +232,7 @@
 </div>
 
 <div class="mp-summary" id="mp-summary"></div>
+<div id="mp-print-output"></div>
 </div>
 
 <!-- Recipe picker modal -->
@@ -213,7 +243,14 @@
       <button class="mp-modal-close" onclick="closePicker()">&#215;</button>
     </div>
     <div class="mp-modal-search">
-      <input type="text" id="mp-search" placeholder="Search recipes..." oninput="searchRecipes(this.value)" autocomplete="off">
+      <input type="text" id="mp-search" placeholder="Search recipes..." oninput="applyRecipeFilters()" autocomplete="off">
+    </div>
+    <div class="mp-filter-bar" id="mp-prep-filters">
+      <span style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;color:var(--text-mid);align-self:center">Prep:</span>
+      <button type="button" class="mp-filter-chip active" data-prep="all" onclick="setPrepFilter('all',this)">All</button>
+      <button type="button" class="mp-filter-chip" data-prep="30" onclick="setPrepFilter('30',this)">≤30 min</button>
+      <button type="button" class="mp-filter-chip" data-prep="60" onclick="setPrepFilter('60',this)">≤60 min</button>
+      <button type="button" class="mp-filter-chip" data-prep="120" onclick="setPrepFilter('120',this)">≤2 hr</button>
     </div>
     <div class="mp-modal-results" id="mp-results">
       <div class="mp-result-empty">Loading recipes...</div>
@@ -234,6 +271,31 @@ const CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Ear
 let currentWeekOffset = 0;
 let pickerTarget = null; // {day, meal}
 let allRecipes = [];
+let prepFilterMax = null;
+
+function recipeTotalMinutes(r) {
+  var prep = parseInt(r.prep_time_minutes, 10) || 0;
+  var cook = parseInt(r.cook_time_minutes, 10) || 0;
+  return prep + cook;
+}
+
+function getWeekKeyForDate(date) {
+  var d = new Date(date);
+  var day = d.getDay();
+  var monday = new Date(d);
+  monday.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+  return 'tcj_meal_' + monday.toISOString().slice(0, 10);
+}
+
+function dayKeyForDateStr(dateStr) {
+  var jsDay = new Date(dateStr + 'T00:00:00').getDay();
+  return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][jsDay];
+}
+
+function getPlanByKey(weekKey) {
+  try { return JSON.parse(localStorage.getItem(weekKey) || '{}'); }
+  catch (_) { return {}; }
+}
 
 function getWeekDates(offset) {
   const today = new Date();
@@ -757,6 +819,10 @@ function openPicker(day, meal) {
   pickerTarget = {day, meal};
   document.getElementById('mp-modal-title').textContent = 'Choose ' + meal + ' for ' + day;
   document.getElementById('mp-search').value = '';
+  prepFilterMax = null;
+  document.querySelectorAll('.mp-filter-chip').forEach(function (b) {
+    b.classList.toggle('active', b.dataset.prep === 'all');
+  });
   document.getElementById('mp-modal').classList.add('open');
   renderResults(allRecipes);
   setTimeout(function() { document.getElementById('mp-search').focus(); }, 100);
@@ -767,12 +833,27 @@ function closePicker() {
   pickerTarget = null;
 }
 
-function searchRecipes(q) {
-  const filtered = q.trim()
-    ? allRecipes.filter(function(r) { return r.name.toLowerCase().includes(q.toLowerCase()) || (r.category||'').toLowerCase().includes(q.toLowerCase()); })
-    : allRecipes;
+function setPrepFilter(max, btn) {
+  prepFilterMax = max === 'all' ? null : parseInt(max, 10);
+  document.querySelectorAll('.mp-filter-chip').forEach(function (b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  applyRecipeFilters();
+}
+
+function applyRecipeFilters() {
+  var q = (document.getElementById('mp-search').value || '').trim().toLowerCase();
+  var filtered = allRecipes.filter(function (r) {
+    if (q && r.name.toLowerCase().indexOf(q) < 0 && (r.category || '').toLowerCase().indexOf(q) < 0) return false;
+    if (prepFilterMax != null) {
+      var total = recipeTotalMinutes(r);
+      if (!total || total > prepFilterMax) return false;
+    }
+    return true;
+  });
   renderResults(filtered);
 }
+
+function searchRecipes(q) { applyRecipeFilters(); }
 
 function renderResults(recipes) {
   const el = document.getElementById('mp-results');
@@ -786,7 +867,9 @@ function renderResults(recipes) {
     item.className = 'mp-result-item';
     const emoji = CAT_EMOJI[r.category] || '🍽';
     var quickWarn = checkRecipeConflicts(r);
-    item.innerHTML = '<div class="mp-result-emoji">' + emoji + '</div><div style="flex:1"><div class="mp-result-name">' + esc(r.name||'') + '</div><div class="mp-result-cat">' + esc(r.category||'') + (r.origin_country?' · '+esc(r.origin_country):'') + '</div>' +
+    var mins = recipeTotalMinutes(r);
+    var timeNote = mins ? ' · ⏱ ' + mins + ' min' : '';
+    item.innerHTML = '<div class="mp-result-emoji">' + emoji + '</div><div style="flex:1"><div class="mp-result-name">' + esc(r.name||'') + '</div><div class="mp-result-cat">' + esc(r.category||'') + (r.origin_country?' · '+esc(r.origin_country):'') + timeNote + '</div>' +
       (quickWarn.length ? '<div class="mp-result-warn">' + esc(quickWarn[0]) + '</div>' : '') + '</div>';
     item.addEventListener('click', function() { assignRecipeFromPicker(r); });
     el.appendChild(item);
@@ -825,83 +908,165 @@ async function assignRecipeFromPicker(r) {
 }
 
 // ── GROCERY EXPORT ───────────────────────────────────────────────
-async function addToGrocery() {
-  const plan = getPlan();
-  const weekKey = getWeekKey(currentWeekOffset);
-  let slotCount = 0;
-  DAYS.forEach(function(day) {
-    MEALS.forEach(function(meal) {
-      if (plan[day] && plan[day][meal] && plan[day][meal].id) slotCount++;
+function toggleGroceryMenu(e) {
+  if (e) e.stopPropagation();
+  var drop = document.getElementById('mp-grocery-drop');
+  if (drop) drop.classList.toggle('open');
+}
+
+function closeGroceryMenu() {
+  var drop = document.getElementById('mp-grocery-drop');
+  if (drop) drop.classList.remove('open');
+}
+
+async function addSlotToGroceryData(data, slot, day, meal, weekKey, stats) {
+  if (!slot || !slot.id) return;
+  var st = slot.status || 'planned';
+  if (st === 'skipped' || st === 'eating-out' || st === 'cooked') return;
+  var entryId = slot.id + '@' + day + '-' + meal;
+  if (data.recipes.find(function (r) { return r.id === entryId; })) { stats.skippedDup++; return; }
+  try {
+    var res = await fetch(SUPA_URL + '/rest/v1/rpc/get_public_recipe', {
+      method: 'POST', headers: stats.headers,
+      body: JSON.stringify({ p_id: slot.id })
     });
-  });
-  if (!slotCount) { alert('No recipes planned this week.'); return; }
+    if (!res.ok) return;
+    var recipe = await res.json();
+    if (!recipe) return;
+    var serves = slot.servings_override || slot.servings || recipe.servings || 1;
+    var baseServes = recipe.servings || 1;
+    var scale = baseServes ? serves / baseServes : 1;
+    var ingredients = [];
+    var label = day + ' · ' + meal;
+    (recipe.ingredients || []).forEach(function (sec) {
+      var sectionName = sec.section || sec.section_name || sec.title || '';
+      (sec.items || []).forEach(function (ing) {
+        var name = ing.ingredient || ing.name || '';
+        if (!name) return;
+        if (isInPantry(name)) { stats.skipped++; return; }
+        var qty = ing.qty;
+        if (scale !== 1 && qty != null && qty !== '') {
+          var n = parseFloat(String(qty).replace(/[^\d./]/g, ''));
+          if (!isNaN(n)) qty = String(Math.round(n * scale * 100) / 100);
+        }
+        ingredients.push(GroceryUtils.enrichIngredient({
+          name: name, qty: qty, unit: ing.unit || '', section: sectionName,
+          category: ing.category || 'Other',
+          source: 'meal-plan', source_ref: weekKey + ':' + day + ':' + meal,
+          source_label: label
+        }, { source: 'meal-plan', source_ref: entryId, source_label: label }));
+      });
+    });
+    data.recipes.push({
+      id: entryId,
+      name: (recipe.recipe_name || slot.name) + ' (' + day + ' ' + meal + ')',
+      servings: serves,
+      source: 'meal-plan',
+      ingredients: ingredients
+    });
+    stats.added++;
+  } catch (_) {}
+}
 
-  const data = GroceryUtils.loadGrocery();
-  let added = 0, skipped = 0, skippedDup = 0;
-  const sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
-  const headers = { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' };
-  if (sess && sess.access_token) headers.Authorization = 'Bearer ' + sess.access_token;
-
-  for (const day of DAYS) {
-    for (const meal of MEALS) {
-      const slot = plan[day] && plan[day][meal];
-      if (!slot || !slot.id) continue;
-      var st = slot.status || 'planned';
-      if (st === 'skipped' || st === 'eating-out' || st === 'cooked') continue;
-      const entryId = slot.id + '@' + day + '-' + meal;
-      if (data.recipes.find(function(r) { return r.id === entryId; })) { skippedDup++; continue; }
-      try {
-        const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_public_recipe', {
-          method: 'POST', headers: headers,
-          body: JSON.stringify({ p_id: slot.id })
-        });
-        if (!res.ok) continue;
-        const recipe = await res.json();
-        if (!recipe) continue;
-        const serves = slot.servings_override || slot.servings || recipe.servings || 1;
-        const baseServes = recipe.servings || 1;
-        const scale = baseServes ? serves / baseServes : 1;
-        const ingredients = [];
-        const label = day + ' · ' + meal;
-        (recipe.ingredients || []).forEach(function(sec) {
-          const sectionName = sec.section || sec.section_name || sec.title || '';
-          (sec.items || []).forEach(function(ing) {
-            const name = ing.ingredient || ing.name || '';
-            if (!name) return;
-            if (isInPantry(name)) { skipped++; return; }
-            let qty = ing.qty;
-            if (scale !== 1 && qty != null && qty !== '') {
-              const n = parseFloat(String(qty).replace(/[^\d./]/g, ''));
-              if (!isNaN(n)) qty = String(Math.round(n * scale * 100) / 100);
-            }
-            ingredients.push(GroceryUtils.enrichIngredient({
-              name: name, qty: qty, unit: ing.unit || '', section: sectionName,
-              category: ing.category || 'Other',
-              source: 'meal-plan', source_ref: weekKey + ':' + day + ':' + meal,
-              source_label: label
-            }, { source: 'meal-plan', source_ref: entryId, source_label: label }));
-          });
-        });
-        data.recipes.push({
-          id: entryId,
-          name: (recipe.recipe_name || slot.name) + ' (' + day + ' ' + meal + ')',
-          servings: serves,
-          source: 'meal-plan',
-          ingredients: ingredients
-        });
-        added++;
-      } catch(_) {}
-    }
+async function exportMealsToGrocery(slots, emptyMsg) {
+  if (!slots.length) { alert(emptyMsg || 'No recipes planned for that range.'); return; }
+  var data = GroceryUtils.loadGrocery();
+  var stats = { added: 0, skipped: 0, skippedDup: 0, headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json' } };
+  var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+  if (sess && sess.access_token) stats.headers.Authorization = 'Bearer ' + sess.access_token;
+  for (var i = 0; i < slots.length; i++) {
+    var s = slots[i];
+    await addSlotToGroceryData(data, s.slot, s.day, s.meal, s.weekKey, stats);
   }
   GroceryUtils.saveGrocery(data);
-  if (added > 0) {
-    alert(added + ' meal(s) added to your grocery list!' +
-      (skipped ? ' ' + skipped + ' ingredient(s) skipped (pantry/staples).' : '') +
-      (skippedDup ? ' ' + skippedDup + ' already on list.' : ''));
+  if (stats.added > 0) {
+    alert(stats.added + ' meal(s) added to your grocery list!' +
+      (stats.skipped ? ' ' + stats.skipped + ' ingredient(s) skipped (pantry/staples).' : '') +
+      (stats.skippedDup ? ' ' + stats.skippedDup + ' already on list.' : ''));
     window.location.href = 'grocery.html';
   } else {
-    alert(skippedDup ? 'All planned meals are already on your grocery list.' : 'Could not load recipe data for planned meals.');
+    alert(stats.skippedDup ? 'All planned meals are already on your grocery list.' : 'Could not load recipe data for planned meals.');
   }
+}
+
+async function addToGrocery() {
+  var plan = getPlan();
+  var weekKey = getWeekKey(currentWeekOffset);
+  var slots = [];
+  DAYS.forEach(function (day) {
+    MEALS.forEach(function (meal) {
+      var slot = plan[day] && plan[day][meal];
+      if (slot && slot.id) slots.push({ slot: slot, day: day, meal: meal, weekKey: weekKey });
+    });
+  });
+  await exportMealsToGrocery(slots, 'No recipes planned this week.');
+}
+
+async function addToGroceryRange() {
+  var dates = getWeekDates(currentWeekOffset);
+  var defaultStart = dates[0].toISOString().slice(0, 10);
+  var defaultEnd = dates[6].toISOString().slice(0, 10);
+  var start = prompt('Grocery list start date (YYYY-MM-DD)', defaultStart);
+  if (start === null) return;
+  var end = prompt('Grocery list end date (YYYY-MM-DD)', defaultEnd);
+  if (end === null) return;
+  start = start.trim(); end = end.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) {
+    alert('Please use YYYY-MM-DD format.'); return;
+  }
+  if (start > end) { alert('Start date must be on or before end date.'); return; }
+  var slots = [];
+  var cur = new Date(start + 'T00:00:00');
+  var endD = new Date(end + 'T00:00:00');
+  while (cur <= endD) {
+    var ds = cur.toISOString().slice(0, 10);
+    var plan = getPlanByKey(getWeekKeyForDate(cur));
+    var day = dayKeyForDateStr(ds);
+    MEALS.forEach(function (meal) {
+      var slot = plan[day] && plan[day][meal];
+      if (slot && slot.id) slots.push({ slot: slot, day: day, meal: meal, weekKey: getWeekKeyForDate(cur) });
+    });
+    cur.setDate(cur.getDate() + 1);
+  }
+  await exportMealsToGrocery(slots, 'No recipes planned between ' + start + ' and ' + end + '.');
+}
+
+function printWeek() {
+  var dates = getWeekDates(currentWeekOffset);
+  var from = dates[0].toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+  var to = dates[6].toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+  var plan = getPlan();
+  var html = '<div class="mp-print-title">Meal Plan</div>' +
+    '<div class="mp-print-sub">' + esc(from) + ' – ' + esc(to) + '</div>' +
+    '<table class="mp-print-table"><thead><tr><th>Meal</th>';
+  dates.forEach(function (d, i) {
+    html += '<th>' + esc(DAYS[i]) + '<br><span style="font-weight:400">' + d.getDate() + ' ' + d.toLocaleDateString('en-AU', { month: 'short' }) + '</span></th>';
+  });
+  html += '</tr></thead><tbody>';
+  MEALS.forEach(function (meal) {
+    html += '<tr><th>' + esc(meal) + '</th>';
+    DAYS.forEach(function (day) {
+      var slot = plan[day] && plan[day][meal];
+      if (!slot) {
+        html += '<td>—</td>';
+      } else {
+        var st = { cooked: 'Cooked', skipped: 'Skipped', 'eating-out': 'Eating out', leftovers: 'Leftovers' }[slot.status] || '';
+        var warns = checkRecipeConflicts(slot);
+        html += '<td class="mp-print-slot"><strong>' + esc(slot.name || '') + '</strong>';
+        if (slot.assignee) html += '<br>👤 ' + esc(slot.assignee);
+        if (slot.servings_override) html += '<br>' + esc(String(slot.servings_override)) + ' serves';
+        if (slot.note) html += '<br><em>' + esc(slot.note) + '</em>';
+        if (st) html += '<br><span class="mp-print-status">' + esc(st) + '</span>';
+        if (warns.length) html += '<br><span class="mp-print-warn">' + esc(warns[0]) + '</span>';
+        html += '</td>';
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  var out = document.getElementById('mp-print-output');
+  if (out) out.innerHTML = html;
+  window.print();
 }
 
 // ── LOAD RECIPES ─────────────────────────────────────────────────
@@ -929,6 +1094,9 @@ document.addEventListener('DOMContentLoaded', function() {
   loadPlanFromSupabase();
   document.getElementById('mp-modal').addEventListener('click', function(e) {
     if (e.target === this) closePicker();
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.mp-grocery-menu')) closeGroceryMenu();
   });
 });
 
@@ -975,11 +1143,7 @@ function changeMonthView(dir) {
 }
 
 function getMonthWeekKey(ds) {
-  var d = new Date(ds + 'T00:00:00');
-  var day = d.getDay();
-  var mon = new Date(d); mon.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
-  var sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-  return mon.toISOString().slice(0,10) + '_' + sun.toISOString().slice(0,10);
+  return getWeekKeyForDate(new Date(ds + 'T00:00:00'));
 }
 
 function buildMonthView() {
@@ -1002,8 +1166,6 @@ function buildMonthView() {
   var first = new Date(monthYear, monthMon, 1).getDay();
   var days  = new Date(monthYear, monthMon + 1, 0).getDate();
   var today = new Date().toISOString().slice(0,10);
-  var SLOTS = ['breakfast','lunch','dinner','snack'];
-
   for (var i = 0; i < first; i++) {
     var pd = new Date(monthYear, monthMon, 1 - first + i);
     var cell = document.createElement('div');
@@ -1019,12 +1181,11 @@ function buildMonthView() {
     var ds  = yr + '-' + mo + '-' + dy;
     var dow = new Date(ds + 'T00:00:00').getDay();
     var wk  = getMonthWeekKey(ds);
-    var saved = {};
-    try { saved = JSON.parse(localStorage.getItem('tcj_meals_' + wk) || '{}'); } catch(e) {}
-    var dayKey = DAY_NAMES[dow];
+    var saved = getPlanByKey(wk);
+    var dayKey = dayKeyForDateStr(ds);
     var meals = [];
-    SLOTS.forEach(function(s){
-      var slot = saved[dayKey] && saved[dayKey][s];
+    MEALS.forEach(function(meal){
+      var slot = saved[dayKey] && saved[dayKey][meal];
       if (slot && slot.name) meals.push(slot.name);
     });
 
