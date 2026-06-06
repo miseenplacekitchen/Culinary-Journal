@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phase 21 admin control centre shipped)
+Last updated: 9 June 2026 (Phase 22 Lane 3 — household + library links)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -31,9 +31,10 @@ schedule-dead-link-cron.sql | Weekly check-dead-links (job 3)      | Ran ✅
 fix-phase10-batch.sql       | Email template polish + link cleanup | Ran ✅
 fix-phases-11-20-batch.sql  | Link re-check, edge invoke, origin   | Ran ✅ + cron_secret ✅
 fix-phase21-batch.sql       | Page min_tier, billing tiers, refund   | Ran ✅
+fix-phase22-batch.sql       | Household grocery + library links      | Betty to run ⏳
 
 ══════════════════════════════════════════════════════════════════════
-PHASE STATUS (11–21)
+PHASE STATUS (11–22)
 ══════════════════════════════════════════════════════════════════════
 Phase | Label                         | Status
 ------|-------------------------------|----------------------------------
@@ -43,11 +44,12 @@ Phase | Label                         | Status
 14    | Recipe page live sign-off     | DONE ✅ (hero still deferred)
 15    | Nutrition queue               | DONE ✅ — top-level RM tab
 16    | Print queue                   | DONE ✅ — top-level RM tab
-17    | Pantry / grocery depth        | PARTIAL — P0 fixes shipped; GL-11 still open
-18    | Library / collections (D3)    | BLOCKED
+17    | Pantry / grocery depth        | DONE ✅ — GL-11 household sharing in Phase 22
+18    | Library / collections (D3)    | PARTIAL — profiles + recipe links; depth ongoing
 19    | Allergy engine site-wide      | PARTIAL — engine + family banner + ing_id shipped
-20    | Monetisation / tiers (G1–G4)  | PARTIAL — admin tiers + page gates (no Stripe)
+20    | Monetisation / tiers (G1–G4)  | PARTIAL — manual tiers + login upgrade panel
 21    | Admin control centre (opt C)  | DONE ✅ — RM refactor + SM pages/tiers (SQL ✅)
+22    | Lane 3 household + library    | DONE ✅ code — SQL pending
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 14 — LIVE AUDIT (test recipe, hero excluded from scope)
@@ -77,7 +79,26 @@ grocery.html — Combined tab archive removes merged ingredient names
 meal-planner.html — pantry cloud sync on cook; optional leftovers prompt
 my-dashboard.html — manual grocery line count uses g.items not g.manual
 
-Still open: GL-11 shared household list
+GL-11 household: see Phase 22 below
+
+══════════════════════════════════════════════════════════════════════
+PHASE 22 — LANE 3 (household + library + stripe scaffold)
+══════════════════════════════════════════════════════════════════════
+fix-phase22-batch.sql:
+  • households, household_members, household_invites
+  • Shared grocery via get/save_my_grocery_list (household-aware)
+  • RPCs: create/invite/accept/leave/remove household
+  • ingredient_profiles.governed_ingredient_id + get_library_links_for_ingredients
+  • stripe_enabled / stripe_checkout_mode settings seeds
+  • site_pages: household.html (registered)
+
+UI:
+  • household.html — create household, invite partner, accept invites
+  • grocery.html — shared list bar + 20s poll when in household
+  • nav-init.js — Household under Mise en Place
+  • recipe-page.html — 📚 Library link on ingredients when profile linked
+  • login.html — #upgrade panel with tier prices + refund banner
+  • library-directory — ingredient-first copy
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 19 — ALLERGY ENGINE DEPTH (shipped in code)
@@ -108,11 +129,20 @@ DEFERRED — DO NOT TOUCH UNTIL BETTY ASKS
 ══════════════════════════════════════════════════════════════════════
 GIT / DEPLOY
 ══════════════════════════════════════════════════════════════════════
-Branch: main — phase 21 pushed
+Branch: main — phase 22 pending push
 
 ══════════════════════════════════════════════════════════════════════
-LANE 2 — END-TO-END JOURNEY CHECK (in progress)
+BETTY — RUN SQL THEN CHECK
 ══════════════════════════════════════════════════════════════════════
+SQL: fix-phase22-batch.sql
+
+Phase 22 checks:
+1. household.html — create household, invite partner email
+2. Partner signs in → accept invite → both see same grocery
+3. grocery.html — blue shared bar + list syncs within ~20s
+4. Admin links library profile to governed ingredient ID → recipe shows 📚 Library
+5. login.html#upgrade — tier prices + no-refunds banner
+
 Phase 21 checks (Betty confirmed ✅):
 1. Dashboard → Recipe Management — work tabs visible (Taxonomy, Source Links, etc.)
 2. RM Interface tab — rejection reasons + Site Management shortcuts only

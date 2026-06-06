@@ -58,6 +58,10 @@ const SEO = {
     canonical: `${BASE}/family-profiles.html`,
     description: 'Store dietary requirements for family and guests — used by meal planner and table planner.',
   },
+  'household.html': {
+    canonical: `${BASE}/household.html`,
+    description: 'Link your partner and share one grocery list on The Culinary Journal.',
+  },
   'table-planner.html': {
     canonical: `${BASE}/table-planner.html`,
     description: 'Plan events, seating arrangements, place cards, and guest dietary requirements.',

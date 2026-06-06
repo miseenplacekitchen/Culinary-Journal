@@ -17,6 +17,9 @@
     .gl-wrap { max-width:900px; margin:0 auto; padding:24px 20px 80px; }
     .gl-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
     .gl-title { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:600; color:var(--text-high); }
+    .gl-household-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:18px; padding:12px 16px; background:rgba(91,143,212,0.08); border:1px solid rgba(91,143,212,0.25); border-radius:12px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); }
+    .gl-household-bar strong { color:var(--text-high); }
+    .gl-household-bar a { color:var(--accent); text-decoration:none; font-weight:600; }
     .gl-actions { display:flex; gap:8px; }
     .gl-btn { padding:8px 16px; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; cursor:pointer; border:none; }
     .gl-btn-primary { background:var(--accent); color:#fff; }
@@ -121,6 +124,7 @@
 <div class="tab-nav"></div>
 
 <div class="gl-wrap">
+  <div id="gl-household-bar" class="gl-household-bar" style="display:none"></div>
   <div class="gl-header">
     <h1 class="gl-title">🛒 Grocery List</h1>
     <div class="gl-actions">
@@ -214,17 +218,36 @@ async function callRPC(fn, params){
   return res.json();
 }
 
-async function syncFromSupabase(){
+var _glHouseholdShared = false;
+
+function updateHouseholdBar(data){
+  var bar = document.getElementById('gl-household-bar');
+  if(!bar) return;
+  if(data && data.shared){
+    bar.style.display = 'flex';
+    bar.innerHTML = '<span>🏠 <strong>'+esc(data.household_name||'Household')+'</strong> — shared grocery list (syncs with your partner)</span>'+
+      '<a href="household.html">Manage household →</a>';
+    _glHouseholdShared = true;
+  } else {
+    bar.style.display = getSession() ? 'flex' : 'none';
+    if(getSession()){
+      bar.innerHTML = '<span>Personal grocery list</span><a href="household.html">Link partner →</a>';
+    }
+    _glHouseholdShared = false;
+  }
+}
+
+async function syncFromSupabase(force){
   try{
     const data = await callRPC('get_my_grocery_list',{});
-    if(!data) return; // not logged in or no saved list
+    if(!data) return;
+    updateHouseholdBar(data);
     const remote = data.list_data||{recipes:[]};
     const remoteChecked = data.checked||[];
     const remoteTime = data.updated_at ? new Date(data.updated_at).getTime() : 0;
-    // Only overwrite local if remote is newer
     const localRaw = localStorage.getItem('tcj_grocery_ts');
     const localTime = localRaw ? parseInt(localRaw) : 0;
-    if(remoteTime > localTime){
+    if(force || remoteTime > localTime || (data.shared && remoteTime >= localTime)){
       localStorage.setItem('tcj_grocery', JSON.stringify(GroceryUtils.normalizeGroceryList(remote)));
       localStorage.setItem('tcj_grocery_checked', JSON.stringify(remoteChecked));
       localStorage.setItem('tcj_grocery_ts', String(remoteTime));
@@ -934,7 +957,11 @@ function renderCombined(list){
 document.addEventListener('DOMContentLoaded', function(){
   render();
   loadGlIngredients();
-  syncFromSupabase();
+  syncFromSupabase(true);
+  setInterval(function(){ if(_glHouseholdShared) syncFromSupabase(false); }, 20000);
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden && _glHouseholdShared) syncFromSupabase(false);
+  });
   document.getElementById('view-recipe').addEventListener('click', function(e){
     const cb = e.target.closest('.gl-check[data-key]');
     if(cb) { toggleItem(cb.dataset.key); return; }

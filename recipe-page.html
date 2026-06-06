@@ -770,6 +770,7 @@ document.addEventListener('click', function(e){
 const SERIOUS_ALLERGENS = new Set(['Peanuts','Tree Nuts','Shellfish','Fish','Eggs','Egg','Dairy','Gluten','Soy','Sesame','Sulphites','Mustard']);
 let ingredientAllergenMap = null;
 let rpIngIndex = {};
+let _libLinksByIngId = {};
 
 async function loadAllergenMap() {
   if (ingredientAllergenMap) return ingredientAllergenMap;
@@ -852,6 +853,30 @@ async function loadRpIngredientIndex() {
 
 function resolveIngredientMeta(name) {
   return rpIngIndex[(name || '').toLowerCase().trim()] || null;
+}
+
+async function loadLibraryLinks(r) {
+  if (!r || !Array.isArray(r.ingredients)) return;
+  const ids = [];
+  r.ingredients.forEach(function(sec) {
+    (sec.items || []).forEach(function(it) {
+      const meta = resolveIngredientMeta(it.ingredient);
+      if (meta && meta.id) ids.push(meta.id);
+    });
+  });
+  if (!ids.length) return;
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_library_links_for_ingredients', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: SUPABASE_KEY },
+      body: JSON.stringify({ p_ids: ids })
+    });
+    if (!res.ok) return;
+    _libLinksByIngId = await res.json() || {};
+    renderIngredients(r.ingredients);
+    if (currentView === 'combined') renderIngredients(r.ingredients, 'ingredients-combined');
+    if (currentServes !== baseServes) scaleIngredients(currentServes);
+  } catch (_) {}
 }
 
 async function renderFamilyAllergyWarnings(r) {
@@ -1193,6 +1218,7 @@ async function loadRecipe(id) {
         }
         renderRecipe(recipe);
         enrichIngredientInfo(recipe);
+        loadLibraryLinks(recipe);
         return;
       }
       showRecipeUnavailable('This recipe may be private, under review, or no longer available.');
@@ -1823,6 +1849,13 @@ function renderIngRow(item, section, idx) {
   const allSubs = dbSubs.length ? dbSubs : (item.substitute ? [{substitute:item.substitute,ratio:'',notes:'',dietary_benefit:''}] : []);
   const hasAnyInfo = hasInfo || allSubs.length > 0;
 
+  const meta = resolveIngredientMeta(item.ingredient);
+  const libEntry = meta && _libLinksByIngId[String(meta.id)];
+  const libHtml = libEntry && libEntry.slug
+    ? ' <a href="library-profile.html?type=ingredient&amp;slug=' + escapeHtml(libEntry.slug) +
+      '" style="font-size:10px;color:var(--accent);text-decoration:none;white-space:nowrap" title="How this ingredient works in your favour">📚 Library</a>'
+    : '';
+
   const subsHtml = allSubs.map(s => `
     <div class="rp-info-row" style="flex-direction:column;align-items:flex-start;gap:2px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
       <div style="display:flex;align-items:center;gap:6px">
@@ -1838,7 +1871,7 @@ function renderIngRow(item, section, idx) {
     <div class="rp-ing-row">
       <input type="checkbox" class="rp-ing-cb" onchange="toggleIngredient(this)">
       ${qtyHtml}
-      <span class="rp-ing-name">${item.ingredient}${pantryNote}${item.note ? ' <span style="font-size:11px;color:var(--text-muted);font-style:italic">— ' + item.note + '</span>' : ''}</span>
+      <span class="rp-ing-name">${item.ingredient}${libHtml}${pantryNote}${item.note ? ' <span style="font-size:11px;color:var(--text-muted);font-style:italic">— ' + item.note + '</span>' : ''}</span>
       ${hasAnyInfo ? `
         <button class="rp-ing-info-btn" onclick="toggleInfo(this)" title="Substitutes & chef tips">
           <div class="rp-ing-info-icon">i</div>

@@ -18,9 +18,10 @@ var CJ_SECTIONS = [
   },
   {
     id:'miseenplace', label:'Mise en Place', emoji:'🍳', primaryPage:'meal-planner.html',
-    pages:['meal-planner.html','grocery.html','pantry.html','print-studio.html','family-profiles.html'],
+    pages:['meal-planner.html','grocery.html','pantry.html','print-studio.html','family-profiles.html','household.html'],
     links:[
       {href:'family-profiles.html', emoji:'👨‍👩‍👧', label:'Family Profiles'},
+      {href:'household.html',     emoji:'🏠', label:'Household'},
       {href:'meal-planner.html', emoji:'🗓', label:'Meal Planner'},
       {href:'grocery.html',      emoji:'🛒', label:'Grocery List'},
       {href:'pantry.html',       emoji:'🫙', label:'Pantry & Fridge'},

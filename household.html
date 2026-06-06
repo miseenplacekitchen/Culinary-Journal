@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Link your partner and share one grocery list on The Culinary Journal.">
+  <link rel="canonical" href="https://theculinaryjournal.site/household.html">
+  <title>Household — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="page-guard.js"></script>
+  <script src="nav-init.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .hh-wrap { max-width:720px; margin:0 auto; padding:32px 20px 80px; }
+    .hh-header { margin-bottom:28px; }
+    .hh-title { font-family:'Cormorant Garamond',serif; font-size:1.9rem; font-weight:700; color:var(--text-high); }
+    .hh-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-top:6px; line-height:1.55; }
+    .hh-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:14px; padding:22px; margin-bottom:18px; }
+    .hh-card-title { font-family:'Cormorant Garamond',serif; font-size:1.15rem; font-weight:700; color:var(--text-high); margin-bottom:12px; }
+    .hh-btn { padding:10px 18px; border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; border:none; }
+    .hh-btn-primary { background:var(--accent); color:#fff; }
+    .hh-btn-ghost { background:none; border:1px solid var(--border); color:var(--text-mid); }
+    .hh-btn-danger { background:none; border:1px solid rgba(220,80,80,0.4); color:#dc5050; }
+    .hh-field { margin-bottom:12px; }
+    .hh-label { display:block; font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-mid); margin-bottom:5px; }
+    .hh-input { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--text-high); }
+    .hh-member { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+    .hh-member:last-child { border-bottom:none; }
+    .hh-member-name { font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-high); font-weight:500; }
+    .hh-member-meta { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+    .hh-badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; background:rgba(196,151,59,0.15); color:var(--accent); margin-left:8px; }
+    .hh-invite { padding:12px 14px; background:rgba(91,143,212,0.08); border:1px solid rgba(91,143,212,0.25); border-radius:10px; margin-bottom:10px; }
+    .hh-msg { font-family:'DM Sans',sans-serif; font-size:12px; margin-top:10px; }
+    .hh-msg.ok { color:#4caf76; }
+    .hh-msg.err { color:#dc5050; }
+    .hh-note { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); line-height:1.55; margin-top:10px; }
+  </style>
+</head>
+<body class="page-bg cj-body">
+<nav class="nav">
+  <a class="nav-logo" href="index.html"><span>🍽</span><span class="nav-logo-text">The Culinary Journal</span></a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+
+<div class="hh-wrap">
+  <div class="hh-header">
+    <h1 class="hh-title">🏠 Household</h1>
+    <p class="hh-sub">Link your partner with their own login. You share one grocery list — changes sync for both of you.</p>
+  </div>
+  <div id="hh-content"><div class="hh-card" style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading…</div></div>
+</div>
+
+<script>
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function getSession(){ try{ return JSON.parse(localStorage.getItem('tcj_session')||'null'); }catch(_){ return null; } }
+
+async function callRPC(fn, params){
+  var sess = getSession();
+  if(!sess||!sess.access_token) return null;
+  var res = await fetch(SUPA_URL+'/rest/v1/rpc/'+fn, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+sess.access_token},
+    body: JSON.stringify(params||{})
+  });
+  if(!res.ok){ var t = await res.text(); throw new Error(t||res.status); }
+  return res.json();
+}
+
+function showMsg(el, text, ok){
+  if(!el) return;
+  el.textContent = text;
+  el.className = 'hh-msg ' + (ok ? 'ok' : 'err');
+}
+
+async function loadHousehold(){
+  var root = document.getElementById('hh-content');
+  if(!getSession()){
+    root.innerHTML = '<div class="hh-card"><p class="hh-sub">Please <a href="login.html?next=household.html" style="color:var(--accent)">sign in</a> to manage your household.</p></div>';
+    return;
+  }
+  try {
+    var household = await callRPC('get_my_household',{});
+    var invites = await callRPC('get_pending_household_invites',{}) || [];
+    if(!Array.isArray(invites)) invites = [];
+    root.innerHTML = '';
+
+    if(invites.length){
+      var invCard = document.createElement('div');
+      invCard.className = 'hh-card';
+      invCard.innerHTML = '<div class="hh-card-title">Invitations for you</div>';
+      invites.forEach(function(inv){
+        var box = document.createElement('div');
+        box.className = 'hh-invite';
+        box.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high);margin-bottom:8px"><strong>'+esc(inv.household_name)+'</strong> — invited by '+esc(inv.invited_by_name||'someone')+'</div>';
+        var acts = document.createElement('div');
+        acts.style.cssText = 'display:flex;gap:8px';
+        var acc = document.createElement('button');
+        acc.className = 'hh-btn hh-btn-primary'; acc.textContent = 'Accept';
+        acc.addEventListener('click', async function(){
+          acc.disabled = true;
+          try { await callRPC('accept_household_invite',{p_invite_id:inv.id}); loadHousehold(); }
+          catch(e){ alert(e.message); acc.disabled=false; }
+        });
+        var dec = document.createElement('button');
+        dec.className = 'hh-btn hh-btn-ghost'; dec.textContent = 'Decline';
+        dec.addEventListener('click', async function(){
+          try { await callRPC('decline_household_invite',{p_invite_id:inv.id}); loadHousehold(); }
+          catch(e){ alert(e.message); }
+        });
+        acts.appendChild(acc); acts.appendChild(dec);
+        box.appendChild(acts);
+        invCard.appendChild(box);
+      });
+      root.appendChild(invCard);
+    }
+
+    if(!household){
+      var create = document.createElement('div');
+      create.className = 'hh-card';
+      create.innerHTML = '<div class="hh-card-title">Start a household</div>'+
+        '<p class="hh-note">Your current grocery list moves with you. Invite your partner by email after creating.</p>';
+      var nameF = document.createElement('div');
+      nameF.className = 'hh-field';
+      nameF.innerHTML = '<label class="hh-label">Household name</label>';
+      var nameIn = document.createElement('input');
+      nameIn.className = 'hh-input'; nameIn.value = 'Our Kitchen'; nameIn.id = 'hh-new-name';
+      nameF.appendChild(nameIn);
+      create.appendChild(nameF);
+      var msg = document.createElement('div'); msg.id = 'hh-create-msg';
+      var btn = document.createElement('button');
+      btn.className = 'hh-btn hh-btn-primary'; btn.textContent = 'Create household';
+      btn.addEventListener('click', async function(){
+        btn.disabled = true;
+        try {
+          await callRPC('create_household',{p_name: nameIn.value.trim()});
+          showMsg(msg,'Household created!',true);
+          setTimeout(loadHousehold, 800);
+        } catch(e){ showMsg(msg,e.message,false); btn.disabled=false; }
+      });
+      create.appendChild(btn); create.appendChild(msg);
+      root.appendChild(create);
+      return;
+    }
+
+    var card = document.createElement('div');
+    card.className = 'hh-card';
+    card.innerHTML = '<div class="hh-card-title">'+esc(household.name)+' <span class="hh-badge">Shared grocery</span></div>';
+    var members = household.members || [];
+    members.forEach(function(m){
+      var row = document.createElement('div');
+      row.className = 'hh-member';
+      row.innerHTML = '<div><div class="hh-member-name">'+esc(m.full_name||m.username||'Member')+
+        (m.role==='owner'?' <span class="hh-badge">Owner</span>':'')+
+        '</div><div class="hh-member-meta">@'+esc(m.username||'')+'</div></div>';
+      if(household.my_role==='owner' && m.role!=='owner'){
+        var rm = document.createElement('button');
+        rm.className = 'hh-btn hh-btn-danger hh-btn'; rm.style.fontSize='11px'; rm.textContent='Remove';
+        rm.addEventListener('click', async function(){
+          if(!confirm('Remove this member from the household?')) return;
+          try { await callRPC('remove_household_member',{p_user_id:m.user_id}); loadHousehold(); }
+          catch(e){ alert(e.message); }
+        });
+        row.appendChild(rm);
+      }
+      card.appendChild(row);
+    });
+    root.appendChild(card);
+
+    if(household.my_role==='owner' && (household.member_count||0) < 2){
+      var inv = document.createElement('div');
+      inv.className = 'hh-card';
+      inv.innerHTML = '<div class="hh-card-title">Invite your partner</div>'+
+        '<p class="hh-note">They need their own account using this email. Max one partner per household.</p>';
+      var em = document.createElement('input');
+      em.className = 'hh-input'; em.type='email'; em.placeholder='partner@email.com'; em.id='hh-invite-email';
+      inv.appendChild(em);
+      var invMsg = document.createElement('div'); invMsg.id='hh-inv-msg';
+      var invBtn = document.createElement('button');
+      invBtn.className = 'hh-btn hh-btn-primary'; invBtn.style.marginTop='10px'; invBtn.textContent='Send invite';
+      invBtn.addEventListener('click', async function(){
+        invBtn.disabled = true;
+        try {
+          await callRPC('invite_household_member',{p_email: em.value.trim()});
+          showMsg(invMsg,'Invite sent!',true);
+          setTimeout(loadHousehold, 600);
+        } catch(e){ showMsg(invMsg,e.message,false); invBtn.disabled=false; }
+      });
+      inv.appendChild(invBtn); inv.appendChild(invMsg);
+      (household.pending_invites||[]).forEach(function(pi){
+        var p = document.createElement('p');
+        p.style.cssText = 'font-size:12px;color:var(--text-mid);margin-top:8px';
+        p.textContent = 'Pending: '+pi.invitee_email;
+        inv.appendChild(p);
+      });
+      root.appendChild(inv);
+    }
+
+    var actions = document.createElement('div');
+    actions.className = 'hh-card';
+    actions.innerHTML = '<div class="hh-card-title">Grocery list</div>'+
+      '<p class="hh-note">Both members see the same list. Open grocery to shop together.</p>';
+    var gl = document.createElement('a');
+    gl.href = 'grocery.html'; gl.className = 'hh-btn hh-btn-primary'; gl.textContent = 'Open shared grocery →';
+    gl.style.display = 'inline-block'; gl.style.textDecoration = 'none'; gl.style.marginTop = '8px';
+    actions.appendChild(gl);
+    var leave = document.createElement('button');
+    leave.className = 'hh-btn hh-btn-ghost'; leave.style.marginLeft='10px'; leave.textContent='Leave household';
+    leave.addEventListener('click', async function(){
+      if(!confirm('Leave this household? You will get a fresh personal grocery list.')) return;
+      try { await callRPC('leave_household',{}); loadHousehold(); }
+      catch(e){ alert(e.message); }
+    });
+    actions.appendChild(leave);
+    root.appendChild(actions);
+
+  } catch(e) {
+    root.innerHTML = '<div class="hh-card" style="color:#dc5050">Error: '+esc(e.message)+'</div>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadHousehold);
+</script>
+</body>
+</html>
