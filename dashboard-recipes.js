@@ -180,7 +180,8 @@ async function openRecipeModal(id) {
         if (Array.isArray(ings)) {
           ings.forEach(function(section) {
             var items = Array.isArray(section) ? section : (section.items || [section]);
-            if (section.section_name) ingBlock.appendChild(mk('div',"font-size:12px;font-weight:600;color:var(--text-high);margin:8px 0 4px", section.section_name));
+            var secName = section.section || section.section_name;
+            if (secName) ingBlock.appendChild(mk('div',"font-size:12px;font-weight:600;color:var(--text-high);margin:8px 0 4px", secName));
             items.forEach(function(item) {
               var name = typeof item === 'string' ? item : (item.ingredient || item.name || '');
               var qty  = typeof item === 'object' ? ((item.qty || item.quantity || '') + ' ' + (item.unit || '')).trim() : '';
@@ -203,7 +204,8 @@ async function openRecipeModal(id) {
         var steps = typeof r.method === 'string' ? JSON.parse(r.method) : r.method;
         if (Array.isArray(steps)) {
           steps.forEach(function(step, i) {
-            var text = typeof step === 'string' ? step : (step.step || step.text || JSON.stringify(step));
+            var text = typeof step === 'string' ? step
+              : (step.title && step.text ? step.title + ': ' + step.text : (step.step || step.text || JSON.stringify(step)));
             var line = mk('div',"font-size:12px;color:var(--text-mid);margin-bottom:6px;line-height:1.6");
             line.innerHTML = '<span style="color:var(--accent);font-weight:600">' + (i+1) + '.</span> ' + esc(text);
             methScroll.appendChild(line);

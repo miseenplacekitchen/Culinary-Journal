@@ -91,6 +91,7 @@ SECTION_FILES = [
     ("Recipe admin RPCs", "fix-admin-recipes.sql"),
     ("Ingredient sort RPC", "fix-admin-ingredient-sort.sql"),
     ("CSV import RPC", "fix-admin-bulk-import.sql"),
+    ("CJ-006 recipe pipeline", "fix-cj006-pipeline.sql"),
 ]
 
 # Inline snippets not worth separate files — write helper files first

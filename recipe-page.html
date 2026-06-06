@@ -52,9 +52,9 @@
     /* ── 4.5: spice/sweet matrix — copied verbatim from Submit-a-Recipe ── */
     .chilli {
       display: inline-block;
-      width: 14px;
-      height: 14px;
-      margin: 0;
+      width: 22px;
+      height: 22px;
+      margin: 0 1px;
       vertical-align: middle;
       background-size: contain;
       background-repeat: no-repeat;
@@ -270,7 +270,7 @@
     .rp-print-btn:hover { border-color: var(--accent); color: var(--accent); }
 
     /* ── TAGS ROW ────────────────────────────── */
-    .rp-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+    .rp-tags { display: flex; flex-wrap: nowrap; gap: 6px; margin-bottom: 20px; overflow-x: auto; scrollbar-width: thin; }
     .rp-tag { font-family: "DM Sans", sans-serif; font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); color: var(--text-muted); }
     .rp-tag.original { background: rgb(from var(--accent) r g b / 0.15); color: var(--accent); border-color: rgb(from var(--accent) r g b / 0.3); }
     .rp-tag.external { background: rgba(85,150,220,0.1); color: #5596dc; border-color: rgba(85,150,220,0.3); }
@@ -833,8 +833,22 @@ function getSubstitutes(ingredientName) {
 // shape the renderers expect. Idempotent: data already in the right
 // shape (e.g. the demo) passes through unchanged. This is what lets a
 // REAL submitted recipe render correctly, not just the demo.
+function parseJsonArray(val, fallback) {
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string' && val.trim()) {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : fallback;
+    } catch(_) {}
+  }
+  return fallback;
+}
+
 function normalizeRecipe(r) {
   if (!r || r.__normalized) return r;
+
+  // Native title from submit form → also_known_as for display
+  if (!r.also_known_as && r.native_title) r.also_known_as = r.native_title;
 
   // Spice: accept number OR text label
   if (typeof r.spice_level === 'string') {
@@ -853,16 +867,26 @@ function normalizeRecipe(r) {
     r.cooking_notes = [];
   }
 
-  // Method: accept the demo's rich {title,text,multiple,items} OR the
-  // form's flat array-of-strings per section. renderProcedure handles
-  // both, so we only guarantee it's an array here.
-  if (!Array.isArray(r.method)) r.method = [];
+  // Ingredients: parse JSONB/string and normalise section + items shape
+  r.ingredients = parseJsonArray(r.ingredients, []).map(sec => {
+    if (!sec || typeof sec !== 'object') return { section: '', items: [] };
+    const section = sec.section || sec.section_name || '';
+    let items = sec.items;
+    if (!Array.isArray(items)) items = [];
+    return { section, items };
+  });
 
-  // Ingredients: guarantee array shape
-  if (!Array.isArray(r.ingredients)) r.ingredients = [];
+  // Method: parse JSONB/string; guarantee section + steps arrays
+  r.method = parseJsonArray(r.method, []).map(block => {
+    if (!block || typeof block !== 'object') return { section: '', steps: [] };
+    const section = block.section || block.section_name || '';
+    let steps = block.steps;
+    if (!Array.isArray(steps)) steps = [];
+    return { section, steps };
+  });
 
   // Tags: guarantee arrays
-  ['dietary_tags','health_tags','occasion_tags','style_tags'].forEach(k => {
+  ['dietary_tags','health_tags','occasion_tags','style_tags','meal_type_tags','flavor_profile_tags'].forEach(k => {
     if (!Array.isArray(r[k])) r[k] = [];
   });
 
@@ -946,38 +970,31 @@ function updateNav() {
 }
 
 // ── LOAD RECIPE ───────────────────────────────────────
+function showRecipeUnavailable(msg) {
+  var wrap = document.getElementById('rp-wrap') || document.body;
+  wrap.innerHTML = '<div style="max-width:600px;margin:80px auto;text-align:center;padding:40px 20px">'
+    + '<div style="font-size:48px;margin-bottom:16px">🔒</div>'
+    + '<div style="font-family:Cormorant Garamond,serif;font-size:1.6rem;font-weight:700;color:var(--text-high,#e8e5e0);margin-bottom:10px">Recipe Unavailable</div>'
+    + '<div style="font-family:DM Sans,sans-serif;font-size:14px;color:var(--text-mid,#7a736d);line-height:1.6;margin-bottom:24px">' + msg + '</div>'
+    + '<a href="recipes.html" style="display:inline-block;padding:11px 28px;background:var(--accent,#c4973b);color:#fff;text-decoration:none;border-radius:9px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600">Browse Recipes</a>'
+    + '</div>';
+}
+
 async function loadRecipe(id) {
   try {
-    const headers = { 'apikey': SUPABASE_KEY };
-    if (session) headers['Authorization'] = 'Bearer ' + session.access_token;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/submitted_recipes?id=eq.${id}&select=*`, { headers });
+    const headers = { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' };
+    if (session?.access_token) headers['Authorization'] = 'Bearer ' + session.access_token;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_public_recipe`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ p_id: id })
+    });
     if (res.ok) {
-      const data = await res.json();
-      if (data.length > 0) {
-        recipe = data[0];
-        // Check visibility: only approved+public are viewable by non-owners
+      recipe = await res.json();
+      if (recipe && recipe.id) {
         const isOwner = session && recipe.user_id &&
           (session.user_id === recipe.user_id || session.user?.id === recipe.user_id);
         const isApprovedPublic = recipe.status === 'approved' && recipe.visibility === 'Public';
-        if (!isOwner && !isApprovedPublic) {
-          // Show appropriate message instead of recipe
-          var msg = recipe.status === 'pending'
-            ? 'This recipe is currently under review and will be visible once approved.'
-            : recipe.status === 'rejected'
-            ? 'This recipe is not currently available.'
-            : recipe.visibility !== 'Public'
-            ? 'This recipe is private.'
-            : 'Recipe not available.';
-          var wrap = document.getElementById('rp-wrap') || document.body;
-          wrap.innerHTML = '<div style="max-width:600px;margin:80px auto;text-align:center;padding:40px 20px">'
-            + '<div style="font-size:48px;margin-bottom:16px">🔒</div>'
-            + '<div style="font-family:Cormorant Garamond,serif;font-size:1.6rem;font-weight:700;color:var(--text-high,#e8e5e0);margin-bottom:10px">Recipe Unavailable</div>'
-            + '<div style="font-family:DM Sans,sans-serif;font-size:14px;color:var(--text-mid,#7a736d);line-height:1.6;margin-bottom:24px">' + msg + '</div>'
-            + '<a href="recipes.html" style="display:inline-block;padding:11px 28px;background:var(--accent,#c4973b);color:#fff;text-decoration:none;border-radius:9px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600">Browse Recipes</a>'
-            + '</div>';
-          return;
-        }
-        // Owner viewing own pending/rejected recipe — show preview banner
         if (isOwner && !isApprovedPublic) {
           var bannerColour = recipe.status === 'pending' ? 'var(--warn)' : 'var(--danger)';
           var bannerMsg = recipe.status === 'pending'
@@ -994,8 +1011,10 @@ async function loadRecipe(id) {
         enrichIngredientInfo(recipe);
         return;
       }
+      showRecipeUnavailable('This recipe may be private, under review, or no longer available.');
+      return;
     }
-  } catch(e) {}
+  } catch(e) { console.error('Recipe load error:', e); }
   showRecipeNotFound();
 }
 
@@ -1146,9 +1165,10 @@ function renderRecipe(r) {
 
   // Title
   document.getElementById('rp-title').textContent = r.recipe_name;
-  if (r.also_known_as) {
+  const aka = r.also_known_as || r.native_title;
+  if (aka) {
     const ak = document.getElementById('rp-also-known');
-    ak.textContent = r.also_known_as;
+    ak.textContent = aka;
     ak.style.display = 'block';
   }
 
@@ -1259,6 +1279,7 @@ function renderRecipe(r) {
   try { renderEquipment(r); } catch(_) {}
   try { detectAllergens(r); } catch(_) {}
   try { if (r.credit_url) checkSourceUrl(r.credit_url); } catch(_) {}
+  try { initTriedIt(); } catch(_) {}
 }
 
 function formatTime(mins) {
@@ -1362,16 +1383,23 @@ function renderDisclaimers(r) {
 
 // ── WATERMARK ─────────────────────────────────────────
 function applyWatermark(r) {
-  const theme = lsGet('tcj_theme') || 'midnight-slate';
   const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#C4973B';
   const wm = document.getElementById('hero-wm-tl');
   wm.style.color = accentColor;
+  const br = document.getElementById('hero-wm-br');
+  if (!br) return;
+  let handle = '';
   if (r.credit_handle && r.source_type !== 'Original') {
-    const br = document.getElementById('hero-wm-br');
-    const handle = r.credit_handle.replace(/^@/, '');
+    handle = r.credit_handle.replace(/^@/, '');
+  } else if (r.username) {
+    handle = r.username.replace(/^@/, '');
+  }
+  if (handle) {
     br.textContent = '@' + handle;
     br.style.color = accentColor;
     br.style.display = 'block';
+  } else {
+    br.style.display = 'none';
   }
 }
 
@@ -1503,12 +1531,20 @@ function formatQty(n) {
 function renderIngredients(sections, containerId = 'ingredients-content') {
   const container = document.getElementById(containerId);
   if (!container) return;
-  container.innerHTML = sections.map(sec => `
+  const list = Array.isArray(sections) ? sections : [];
+  if (!list.length) {
+    container.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:14px;color:var(--text-muted);padding:12px 0">No ingredients listed for this recipe yet.</p>';
+    return;
+  }
+  container.innerHTML = list.map(sec => {
+    const title = escapeHtml(sec.section || sec.section_name || 'Ingredients');
+    const items = Array.isArray(sec.items) ? sec.items : [];
+    return `
     <div class="rp-ing-section">
-      <div class="rp-ing-section-title">${sec.section}</div>
-      ${sec.items.map((item, idx) => renderIngRow(item, sec.section, idx)).join('')}
-    </div>
-  `).join('');
+      <div class="rp-ing-section-title">${title}</div>
+      ${items.map((item, idx) => renderIngRow(item, title, idx)).join('')}
+    </div>`;
+  }).join('');
 }
 
 function renderIngRow(item, section, idx) {
@@ -1664,7 +1700,7 @@ function renderProcedure(method, containerId = 'procedure-content') {
 
     return `
     <div class="rp-proc-block">
-      <div class="rp-proc-block-title">${escapeHtml(block.section || '')}</div>
+      <div class="rp-proc-block-title">${escapeHtml(block.section || block.section_name || '')}</div>
       ${inner}
     </div>`;
   }).join('');

@@ -1596,6 +1596,43 @@ function lsGet(key) { try { return localStorage.getItem(key); } catch(_) { retur
 function lsSet(key, value) { try { localStorage.setItem(key, value); } catch(_) {} }
 function lsRemove(key) { try { localStorage.removeItem(key); } catch(_) {} }
 
+// ── LOAD REJECTED/PENDING SUBMISSION FOR EDIT (?id=) ──
+async function loadSubmissionForEdit(recipeId) {
+  try {
+    const res = await fetch(
+      SUPABASE_URL + '/rest/v1/submitted_recipes?id=eq.' + encodeURIComponent(recipeId) + '&select=*',
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token } }
+    );
+    if (!res.ok) return false;
+    const rows = await res.json();
+    if (!rows || !rows.length) {
+      showMsg('Recipe not found or you do not have access to edit it.', 'error');
+      return false;
+    }
+    const r = rows[0];
+    if (r.status !== 'rejected' && r.status !== 'pending') {
+      showMsg('Only pending or rejected submissions can be edited here.', 'error');
+      return false;
+    }
+    const secWrap  = document.getElementById('ingredient-sections');
+    const methWrap = document.getElementById('method-sections');
+    if (secWrap)  { secWrap.innerHTML = '';  ingSectionCount = 0; }
+    if (methWrap) { methWrap.innerHTML = ''; methodSectionCount = 0; }
+    window._editRecipeId = recipeId;
+    restoreDraft(JSON.stringify(r));
+    const submitBtn = document.getElementById('submit-btn') || document.querySelector('#main-form button[type="submit"]');
+    if (submitBtn) submitBtn.textContent = r.status === 'rejected' ? 'Resubmit for Review' : 'Update Submission';
+    if (r.status === 'rejected' && r.reviewer_notes) {
+      showMsg('Reviewer feedback: ' + r.reviewer_notes, 'error');
+    }
+    return true;
+  } catch(e) {
+    console.error('Edit load error:', e);
+    showMsg('Could not load that recipe for editing.', 'error');
+    return false;
+  }
+}
+
 // ── INIT ─────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
   try { session = JSON.parse(lsGet('tcj_session') || 'null'); } catch(_) { session = null; }
@@ -1625,29 +1662,33 @@ window.addEventListener('DOMContentLoaded', async () => {
   try { initSectionSorting(); } catch(e) { console.error('sort init', e); }
   try { addMethodSection('PREP WORK'); } catch(e) { console.error(e); }
   try { addMethodSection('DIRECTIONS'); } catch(e) { console.error(e); }
-  // Check for a specific draft ID in the URL — ?draft=ID
-  // If present, load that named draft; otherwise load the auto-save
+  // Resubmit rejected/pending submission — ?id=UUID (takes priority over drafts)
+  // Or load a named draft — ?draft=ID — otherwise auto-save
   try {
     const urlParams = new URLSearchParams(window.location.search);
-    const draftId   = urlParams.get('draft');
-    if (draftId) {
-      const namedKey = 'tcj_draft_' + draftId;
-      const namedRaw = lsGet(namedKey);
-      if (namedRaw) {
-        // Load the specific named draft
-        const secWrap  = document.getElementById('ingredient-sections');
-        const methWrap = document.getElementById('method-sections');
-        if (secWrap)  { secWrap.innerHTML = '';  ingSectionCount = 0; }
-        if (methWrap) { methWrap.innerHTML = ''; methodSectionCount = 0; }
-        restoreDraft(namedRaw);
-        // Mark this draft as the active edit target
-        window._activeDraftId = draftId;
+    const editId    = urlParams.get('id');
+    let formLoaded  = false;
+    if (editId) {
+      formLoaded = await loadSubmissionForEdit(editId);
+    }
+    if (!formLoaded) {
+      const draftId = urlParams.get('draft');
+      if (draftId) {
+        const namedKey = 'tcj_draft_' + draftId;
+        const namedRaw = lsGet(namedKey);
+        if (namedRaw) {
+          const secWrap  = document.getElementById('ingredient-sections');
+          const methWrap = document.getElementById('method-sections');
+          if (secWrap)  { secWrap.innerHTML = '';  ingSectionCount = 0; }
+          if (methWrap) { methWrap.innerHTML = ''; methodSectionCount = 0; }
+          restoreDraft(namedRaw);
+          window._activeDraftId = draftId;
+        } else {
+          loadDraftSilent();
+        }
       } else {
-        // Draft ID not found — fall back to auto-save
         loadDraftSilent();
       }
-    } else {
-      loadDraftSilent();
     }
   } catch(e) { console.error('Draft load error:', e); loadDraftSilent(); }
   try { setupSourceToggle(); } catch(e) { console.error(e); }

@@ -102,7 +102,7 @@ CREATE POLICY "Users can view own submissions"
 
 CREATE POLICY "Users can update own submissions"
   ON public.submitted_recipes FOR UPDATE TO authenticated
-  USING (auth.uid() = user_id AND status = 'pending')
+  USING (auth.uid() = user_id AND status IN ('pending', 'rejected'))
   WITH CHECK (auth.uid() = user_id AND status = 'pending');
 
 CREATE POLICY "Anyone can read approved public recipes"

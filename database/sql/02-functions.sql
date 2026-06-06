@@ -357,6 +357,37 @@ END;
 $$;
 GRANT EXECUTE ON FUNCTION public.get_approved_recipes(text,text,text,text,int,int) TO anon, authenticated;
 
+-- Public recipe page fetch — includes submitter username; enforces visibility server-side
+DROP FUNCTION IF EXISTS public.get_public_recipe(uuid);
+CREATE OR REPLACE FUNCTION public.get_public_recipe(p_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_row   public.submitted_recipes%ROWTYPE;
+  v_user  text;
+  v_uid   uuid;
+BEGIN
+  IF p_id IS NULL THEN RETURN NULL; END IF;
+  SELECT * INTO v_row
+    FROM public.submitted_recipes
+   WHERE id = p_id;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+  SELECT username INTO v_user
+    FROM public.profiles
+   WHERE id = v_row.user_id;
+  v_uid := auth.uid();
+  IF is_admin()
+     OR (v_uid IS NOT NULL AND v_row.user_id = v_uid)
+     OR (v_row.status = 'approved' AND v_row.visibility = 'Public')
+  THEN
+    RETURN to_jsonb(v_row) || jsonb_build_object('username', v_user);
+  END IF;
+  RETURN NULL;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.get_public_recipe(uuid) TO anon, authenticated;
+
 -- Quick edit: name, visibility, description only
 -- FIX: stores correct case — 'Public'/'Private'/'Archived' not lowercased
 DO $$ DECLARE r record;
