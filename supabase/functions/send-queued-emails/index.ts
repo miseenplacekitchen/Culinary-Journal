@@ -7,6 +7,15 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const RESEND_API = 'https://api.resend.com/emails';
 const FROM       = 'The Culinary Journal <noreply@theculinaryjournal.site>';
 
+function formatError(e: unknown): string {
+  if (e && typeof e === 'object') {
+    const o = e as Record<string, unknown>;
+    const parts = [o.message, o.details, o.code, o.hint].filter(Boolean).map(String);
+    if (parts.length) return parts.join(' | ');
+  }
+  return String(e);
+}
+
 Deno.serve(async (req) => {
   const CRON_SECRET = Deno.env.get('CRON_SECRET');
   if (!CRON_SECRET) {
@@ -25,10 +34,18 @@ Deno.serve(async (req) => {
     return new Response('Unauthorized', { status: 401 });
   }
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL'),
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    );
+    // SUPABASE_* env vars are auto-injected — do not add them as custom secrets (name blocked).
+    // Optional fallback: TCJ_SERVICE_ROLE_KEY if your deploy omits the auto value.
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+                     ?? Deno.env.get('TCJ_SERVICE_ROLE_KEY')
+                     ?? '';
+    if (!supabaseUrl || !serviceKey) {
+      return new Response(JSON.stringify({
+        error: 'Missing database credentials. SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY should be auto-set; or add TCJ_SERVICE_ROLE_KEY (service_role JWT from Project Settings → API).'
+      }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    }
+    const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
     const RESEND_KEY = Deno.env.get('RESEND_API_KEY');
     if (!RESEND_KEY) return new Response('RESEND_API_KEY not set', { status: 500 });
 
@@ -61,7 +78,7 @@ Deno.serve(async (req) => {
           .from('email_templates')
           .select('subject, body')
           .eq('key', item.template_key)
-          .single();
+          .maybeSingle();
 
         if (!tmpl) {
           await supabase.from('email_queue').update({ status: 'failed', error_msg: 'Template not found' }).eq('id', item.id);
@@ -133,7 +150,7 @@ ${body}
         const newAttempts = (item.attempts || 0) + 1;
         await supabase.from('email_queue').update({
           status: newAttempts >= 3 ? 'failed' : 'pending',
-          error_msg: String(e),
+          error_msg: formatError(e),
           attempts: newAttempts,
           last_attempt_at: new Date().toISOString()
         }).eq('id', item.id);
@@ -144,6 +161,6 @@ ${body}
     return new Response(JSON.stringify({ sent, failed }), { headers: { 'Content-Type': 'application/json' } });
 
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ error: formatError(e) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 });

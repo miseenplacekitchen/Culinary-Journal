@@ -100,6 +100,7 @@
     /* ── SPICE DISPLAY ───────────────────────── */
 
     /* ── 4.5: spice/sweet matrix — copied verbatim from Submit-a-Recipe ── */
+    #spice-display .chilli, #sweet-display .sugar-cube { opacity: 1; filter: none; }
     .chilli {
       display: inline-block;
       width: 22px;
@@ -1391,7 +1392,12 @@ function renderRecipe(r) {
   try { if (r.id && r.category) loadRelatedRecipes(r.id, r.category); } catch(_) {}
   try { renderEquipment(r); } catch(_) {}
   try { detectAllergens(r); } catch(_) {}
-  try { if (r.credit_url) checkSourceUrl(r.credit_url); } catch(_) {}
+  try {
+    if (r.credit_url) {
+      if (r.source_link_status === 'dead') showDeadLink(r.credit_url);
+      else checkSourceUrl(r.credit_url);
+    }
+  } catch(_) {}
   try { initTriedIt(); } catch(_) {}
   try { showCookHistoryBridge(); } catch(_) {}
   try {

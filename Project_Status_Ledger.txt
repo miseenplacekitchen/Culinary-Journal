@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phase 8 shipped — awaiting SQL + edge deploy)
+Last updated: 9 June 2026 (Phase 8 complete + Phase 9 shipped in code)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -28,18 +28,31 @@ fix-phase5-batch.sql      | Follower notify on approve, link check | Ran ✅
 fix-phase6-batch.sql      | Onboarding, taxonomy, email queue RPCs | Ran ✅
 fix-phase7-batch.sql      | Taxonomy browse RPC, welcome email       | Ran ✅
 fix-phase8-batch.sql      | Bulk taxonomy backfill RPCs              | Pending Betty
-schedule-email-cron.sql   | pg_cron for send-queued-emails           | Pending Betty (after edge deploy)
+fix-email-queue-grants.sql| service_role access for email worker     | Ran ✅
+schedule-email-cron.sql   | pg_cron send-queued-emails (job id 2)    | Ran ✅
+fix-phase9-batch.sql      | Dead-link cron grants + admin RPC        | Pending Betty
+schedule-dead-link-cron.sql | Weekly check-dead-links cron           | Pending Betty
 
 ══════════════════════════════════════════════════════════════════════
-PHASE 8 — SHIPPED (CODE); SQL + EDGE DEPLOY PENDING
+PHASE 9 — SHIPPED (CODE); SQL + EDGE DEPLOY PENDING
+══════════════════════════════════════════════════════════════════════
+• fix-phase9-batch.sql — service_role grants on submitted_recipes; admin_get_source_link_status
+• schedule-dead-link-cron.sql — weekly pg_cron → check-dead-links (reuse CRON_SECRET)
+• supabase/functions/check-dead-links/index.ts — server-side link sweep (15 recipes/run)
+• recipe-page.html — show dead-link banner from DB source_link_status; spice icons full opacity
+
+══════════════════════════════════════════════════════════════════════
+PHASE 8 — COMPLETE (CODE + SQL + LIVE EMAIL)
 ══════════════════════════════════════════════════════════════════════
 • fix-phase8-batch.sql — admin_list_recipes_missing_taxonomy, admin_bulk_set_recipe_taxonomy
-• schedule-email-cron.sql — Betty runs after edge function + secrets
-• supabase/functions/send-queued-emails/index.ts — deploy via Supabase CLI
+• fix-email-queue-grants.sql — GRANT email_queue/email_templates to service_role
+• schedule-email-cron.sql — pg_cron every 5 min (job id 2, active)
+• send-queued-emails edge function — deployed; RESEND_API_KEY + CRON_SECRET set
+• Live verify: welcome email sent to tcj.verify@outlook.com (200 sent:1)
 • dashboard-recipes.js — bulk backfill panel on Taxonomy tab
 • print-studio.html — Booklet sheets preview (2-up A4 landscape print)
 • recipe-page.html — tag row nowrap, print shows all tab panels
-• table-planner.html — dietary link uses canonical URL + UUID guard
+• table-planner.html — dietary link canonical URL + UUID guard
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 7 — COMPLETE (CODE + SQL)
@@ -50,26 +63,6 @@ PHASE 7 — COMPLETE (CODE + SQL)
 • recipe-page.html — show sub_category · division in category eyebrow
 
 ══════════════════════════════════════════════════════════════════════
-PHASE 6 — COMPLETE (CODE + SQL)
-══════════════════════════════════════════════════════════════════════
-• fix-phase6-batch.sql — onboarding_completed, complete_my_onboarding, recipe taxonomy tables/RPCs, email queue admin RPCs, handle_new_user update
-• onboarding.html — 3-step dietary/allergy/health wizard for new signups
-• login.html + index.html — redirect new users to onboarding
-• dashboard-recipes.js — Sub-cats & Divisions admin tab
-• dashboard-site.js — Email queue panel + retry failed
-• print-studio.html — Swipe card preview mode
-
-══════════════════════════════════════════════════════════════════════
-PHASE 5 — COMPLETE (CODE + SQL)
-══════════════════════════════════════════════════════════════════════
-• fix-phase5-batch.sql — follower in-app notifications when followed user’s recipe approved; record_source_link_check RPC; source_link_status columns
-• Legal shells: event-seating-policy, data-breach, credit-preservation, subscription-terms
-• family-profiles.html — dietary/allergy/health checkboxes from get_family_reference_lists (admin-managed)
-• meal-planner.html — MP-09 per-member view filter (Couple/Family/Group modes)
-• recipe-page.html — persists dead-link check result via record_source_link_check
-• Footer links on index.html + cookies.html
-
-══════════════════════════════════════════════════════════════════════
 DEFERRED — DO NOT TOUCH UNTIL BETTY ASKS
 ══════════════════════════════════════════════════════════════════════
 • Recipe hero / circular image (Issue 4.1) — user: “fix later, I think you broke it”
@@ -78,110 +71,44 @@ DEFERRED — DO NOT TOUCH UNTIL BETTY ASKS
 • Full monetisation / payment provider integration
 
 ══════════════════════════════════════════════════════════════════════
-DONE — CORE PLATFORM
-══════════════════════════════════════════════════════════════════════
-Auth & profiles       | Email signup, login, profile.html allergies/health
-Notifications         | In-app bell, mark read, admin inbox tab
-Deactivation          | Soft deactivate users (admin)
-Recipe submit/review  | Submit, pending, approve/reject, reviewer notes
-Public recipe page    | Ingredients, steps, nutrition block, tried-it, collections
-Cook mode (a11y)      | High-contrast ◐ Cook + font size (hero deferred)
-Spice filter          | recipes.html category + spice filters
-Chef of the Month     | Homepage + admin picker
-Recipe of the Week    | Admin can clear (NULL)
-Chef directory        | Search, sort, country, CJ Original badge
-Follow contributor    | user.html follow button + SQL (phase 4)
-Friends visibility    | submit-recipe + my-dashboard option (phase 4)
-Email queue on review | Rows queued on approve/reject (no sender yet)
-Legal (shells)        | Community, DMCA, UGC, attribution, food-safety, photo-upload,
-                      | cookies, accessibility, copyright, AI disclaimer,
-                      | event-seating, data-breach, credit-preservation, subscription-terms
-Cultural pages        | food-map, festival-calendar, onam-sadya, eid-feast, christmas-roast
-JSON-LD               | index.html structured data
-404 page              | Branded 404.html
-Skip link + focus     | Global a11y styles
-
-══════════════════════════════════════════════════════════════════════
-DONE — MISE EN PLACE
-══════════════════════════════════════════════════════════════════════
-Meal planner          | Week/month views, today panel, status (cooked/skip/out/leftovers),
-                      | print week, grocery export, pantry-aware prompts, MP-14 attendance,
-                      | MP-09 per-member filter (phase 5)
-Family profiles       | CRUD, baby food stage, admin reference lists wired (phase 5)
-Grocery list          | Multi-recipe, print, local + sync surfaces
-Pantry                | Local storage model, use-up prompts from meal planner
-Print Studio          | Card types (tips, substitutes, allergy, baby, divider), QR, split
-Table planner         | Layout, RSVP, baby/elderly seating hints
-My dashboard          | Expanded analytics (tried, planned, cooked, grocery lines)
-
-══════════════════════════════════════════════════════════════════════
 PARTIAL — NEEDS DEPTH OR LIVE VERIFY
 ══════════════════════════════════════════════════════════════════════
 CJ-006 / admin panel  | Spine exists; Betty to confirm all tabs on live
-Recipe page defects   | Many fixed; hero deferred; full Issue 4 set not re-audited
-Dead-link checking    | Client check + DB persist (phase 5); no scheduled cron
-Follow notifications  | SQL on approve (phase 5) — live test recommended
-Allergy engine        | Keyword v1 on meal planner; not site-wide enforced
-Nutrition/substitutes | Display blocks exist; no full substitution engine
-Pantry/grocery depth  | PF-01–09, GL-05/07/11, governed ingredient_id not done
-Print Studio advanced | Booklet sheets (phase 8); premium themes (D4) still open
-Library (D3)          | Admin library-mgmt exists; full public content model thin
-Registration onboard  | onboarding.html live — test with new signup account
-Admin taxonomy        | CRUD + bulk backfill UI (phase 8); run fix-phase8-batch.sql
-Email sending         | Edge fn scaffold in repo; Betty deploy + schedule-email-cron.sql
+Recipe page defects   | Issue 4 largely done minus hero; live re-audit recommended
+Dead-link checking    | Client + DB persist; server cron ships Phase 9 (deploy pending)
+Email sending         | LIVE — cron + Resend verified 6 Jun 2026
+Admin taxonomy        | Bulk UI live; run fix-phase8-batch.sql for RPCs
 Terms/Privacy         | Shell pages; lawyer hardening pending
-Regional intelligence | Not started
-Microsoft OAuth       | Not started
-Performance / PWA     | Not started
-
-══════════════════════════════════════════════════════════════════════
-OPEN — BLOCKED OR NOT STARTED
-══════════════════════════════════════════════════════════════════════
-G1–G4 gated           | Recipe hierarchy, family groups, quantity model, household sharing
-D1–D5 decisions       | See Master doc end — blocks monetisation & library depth
-Scheduled link cron   | Server-side dead-link sweep
-Payment provider      | Stripe/etc. for subscription-terms to be real
-Monetisation limits   | Tier gates in page-guard.js exist; limits not fully enforced
-Chrome / Android      | Deferred
+G1–G4, D1–D5          | Gated items still blocked
 
 ══════════════════════════════════════════════════════════════════════
 GIT / DEPLOY
 ══════════════════════════════════════════════════════════════════════
-Branch: main (protected — push requires approval)
+Branch: main
 Recent commits:
-  fcd9d7d — Phase 3 (Chef of Month, legal shells, meal planner sync, email queue)
-  57ca559 — Phase 4 (follows, Friends, cultural pages, cook mode, MP-14, print cards)
-  10ade59 — Phase 5 (follower notify SQL, legal shells, family refs, MP-09)
-  deea492 — Ledger update (Phase 5 SQL confirmed)
-  284a9bd — Phase 6 (onboarding, taxonomy, email queue UI, print swipe)
-  d74b6f2 — Ledger (Phase 6 SQL confirmed)
-  513b64d — Phase 7 (taxonomy submit/browse, welcome email SQL)
-  a691194 — Ledger (Phase 7 SQL confirmed)
-  (pending) — Phase 8
-
-Untracked (intentional): Master_Incomplete_Items_List.txt
+  6a70102 — Phase 8 (bulk taxonomy, booklet print, email edge scaffold)
+  (pending) — Phase 8 ledger + grants + Phase 9
 
 ══════════════════════════════════════════════════════════════════════
-LIVE VERIFICATION CHECKLIST (Phase 8)
+LIVE VERIFICATION CHECKLIST (Phase 9)
 ══════════════════════════════════════════════════════════════════════
-1. Run fix-phase8-batch.sql in Supabase
-2. Betty ops — edge email worker:
-   • supabase link --project-ref kzywmodvfbyexqgipcjt
-   • supabase secrets set RESEND_API_KEY=re_...
-   • supabase secrets set CRON_SECRET=<random>
-   • supabase functions deploy send-queued-emails
-   • Run schedule-email-cron.sql (replace YOUR_CRON_SECRET)
-3. Hard-refresh:
-   • Admin → Recipe Management → Taxonomy — bulk backfill panel for recipes missing sub/division
-   • https://www.theculinaryjournal.site/print-studio.html?id=5ba4215b-182f-49ff-80a4-21a36b7190b5 — Booklet sheets → Print
-   • Recipe page — tags on one scrollable row; Print shows ingredients + procedure
-   • Table planner — save guest → Copy Dietary Form → link opens dietary-card.html
+1. Run fix-phase9-batch.sql
+2. Deploy check-dead-links edge function (JWT verify OFF, same CRON_SECRET)
+3. Run schedule-dead-link-cron.sql (YOUR_CRON_SECRET)
+4. Manual test:
+   SELECT net.http_post(
+     url := 'https://kzywmodvfbyexqgipcjt.supabase.co/functions/v1/check-dead-links',
+     headers := jsonb_build_object('Content-Type','application/json','Authorization','Bearer YOUR_CRON_SECRET'),
+     body := '{}'::jsonb);
+5. Recipe with dead credit_url — banner shows without waiting for client check
+6. Still valid: email queue sends; print booklet; taxonomy bulk panel
 
 ══════════════════════════════════════════════════════════════════════
-NEXT SUGGESTED BATCH (Phase 9 — not started)
+NEXT SUGGESTED BATCH (Phase 10 — not started)
 ══════════════════════════════════════════════════════════════════════
-• Live re-audit recipe page Issue 4 (excluding hero)
-• Scheduled dead-link cron
-• Email template polish + live send verification
+• Run fix-phase8-batch.sql if not yet done
+• Admin UI tab for source link status (admin_get_source_link_status)
+• Recipe page live audit sign-off (excluding hero)
+• Email template HTML polish
 
 Contact: miseenplacekitchen.official@gmail.com
