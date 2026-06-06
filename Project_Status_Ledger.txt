@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phase 17 pantry/grocery depth shipped)
+Last updated: 9 June 2026 (Phase 19 allergy engine depth shipped)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -44,7 +44,7 @@ Phase | Label                         | Status
 16    | Print queue                   | PARTIAL — admin tab → Print Studio
 17    | Pantry / grocery depth        | PARTIAL — P0 fixes shipped; GL-11 still open
 18    | Library / collections (D3)    | BLOCKED
-19    | Allergy engine site-wide      | PARTIAL — false-positive fix shipped
+19    | Allergy engine site-wide      | PARTIAL — engine + family banner + ing_id shipped
 20    | Monetisation / tiers (G1–G4)  | BLOCKED/DEFERRED
 
 ══════════════════════════════════════════════════════════════════════
@@ -75,7 +75,16 @@ grocery.html — Combined tab archive removes merged ingredient names
 meal-planner.html — pantry cloud sync on cook; optional leftovers prompt
 my-dashboard.html — manual grocery line count uses g.items not g.manual
 
-Still open: GL-11 shared household list, ingredient_id on recipe grocery lines, PF-02 notify
+Still open: GL-11 shared household list
+
+══════════════════════════════════════════════════════════════════════
+PHASE 19 — ALLERGY ENGINE DEPTH (shipped in code)
+══════════════════════════════════════════════════════════════════════
+allergy-engine.js — word-boundary keyword matching (meal planner, browse, table planner)
+recipe-page.html — family dietary banner when logged in + family profiles exist
+recipe-page.html — ingredient_id + category on grocery adds from governed DB
+grocery.html — submit unknown ingredient for PF-02 review from manual add modal
+PF-02 notify — already in admin_resolve_pending_ingredient → notifications table
 
 ══════════════════════════════════════════════════════════════════════
 DEFERRED — DO NOT TOUCH UNTIL BETTY ASKS
@@ -87,14 +96,14 @@ DEFERRED — DO NOT TOUCH UNTIL BETTY ASKS
 ══════════════════════════════════════════════════════════════════════
 GIT / DEPLOY
 ══════════════════════════════════════════════════════════════════════
-Branch: main — pushed through phase 16; phase 17 pending push
+Branch: main — phase 19 pending push
 
 ══════════════════════════════════════════════════════════════════════
-BETTY — PHASE 17 CHECKS
+BETTY — PHASE 19 CHECKS
 ══════════════════════════════════════════════════════════════════════
-1. Recipe page: change Serves to 8 → add one ingredient → qty should scale
-2. Add from recipe while logged in → open grocery on another device/tab → should sync
-3. Grocery Combined tab: check items → Archive Checked → lines removed
-4. Meal planner: mark cooked → pantry changes sync when logged in
+1. Sign in + set up Family Profiles → open recipe → Family dietary notes banner
+2. Add governed ingredient to grocery from recipe → should link ingredient_id
+3. Grocery manual add unknown name → Submit name for database review
+4. Notifications page after admin approves pending ingredient
 
 Contact: miseenplacekitchen.official@gmail.com

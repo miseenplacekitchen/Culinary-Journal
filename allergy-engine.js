@@ -49,13 +49,20 @@ window.AllergyEngine = (function () {
     return parts.join(' ').toLowerCase();
   }
 
+  /** Word-boundary match — avoids substring false positives (e.g. raw → crawfish). */
+  function keywordInBlob(kw, blob) {
+    if (!kw || kw.length < 2 || !blob) return false;
+    var escaped = String(kw).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('(?:^|\\b)' + escaped + '(?:\\b|$)').test(blob);
+  }
+
   function detectInRecipe(recipe) {
     var found = new Set();
     var blob = ingredientBlob(recipe);
     if (!blob) return [];
     Object.keys(KEYWORDS).forEach(function (allergen) {
       KEYWORDS[allergen].forEach(function (kw) {
-        if (blob.indexOf(kw) >= 0) found.add(allergen);
+        if (keywordInBlob(kw, blob)) found.add(allergen);
       });
     });
     return Array.from(found);
@@ -87,11 +94,11 @@ window.AllergyEngine = (function () {
         var canon = canonAllergen(a);
         var hit = detected.indexOf(canon) >= 0;
         if (!hit && canon && KEYWORDS[canon]) {
-          hit = KEYWORDS[canon].some(function (kw) { return ingredientBlob(recipe).indexOf(kw) >= 0; });
+          var blob = ingredientBlob(recipe);
+          hit = KEYWORDS[canon].some(function (kw) { return keywordInBlob(kw, blob); });
         }
         if (!hit && a) {
-          var al = String(a).toLowerCase();
-          hit = ingredientBlob(recipe).indexOf(al) >= 0;
+          hit = keywordInBlob(String(a).toLowerCase(), ingredientBlob(recipe));
         }
         if (hit) warnings.push('⚠ ' + (p.name || 'Member') + ' — allergic to ' + a);
       });
@@ -139,9 +146,9 @@ window.AllergyEngine = (function () {
   function allergenHitsBlob(allergenItem, blob) {
     var canon = canonAllergen(allergenItem);
     if (KEYWORDS[canon]) {
-      if (KEYWORDS[canon].some(function (kw) { return blob.indexOf(kw) >= 0; })) return true;
+      if (KEYWORDS[canon].some(function (kw) { return keywordInBlob(kw, blob); })) return true;
     }
-    return blob.indexOf(String(allergenItem).toLowerCase()) >= 0;
+    return keywordInBlob(String(allergenItem).toLowerCase(), blob);
   }
 
   function getAdjacentSeatNums(table, seatNum) {

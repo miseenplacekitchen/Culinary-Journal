@@ -367,6 +367,7 @@
   </style>
   <script src="page-guard.js"></script>
   <script src="grocery-utils.js"></script>
+  <script src="allergy-engine.js"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
   <script src="nav-init.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -428,6 +429,13 @@
       <div class="rp-allergen-text">
         <span class="rp-allergen-label">Allergen information</span>
         <div class="rp-allergen-pills" id="allergen-pills"></div>
+      </div>
+    </div>
+    <div id="family-allergy-banner" style="display:none" class="rp-allergen-banner">
+      <div class="rp-allergen-icon">👨‍👩‍👧‍👦</div>
+      <div class="rp-allergen-text">
+        <span class="rp-allergen-label">Family dietary notes</span>
+        <div id="family-allergy-lines" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-high);margin-top:6px;line-height:1.55"></div>
       </div>
     </div>
 
@@ -759,14 +767,15 @@ document.addEventListener('click', function(e){
 
 
 // ── ALLERGEN DETECTION ────────────────────────────────────────
-const SERIOUS_ALLERGENS = new Set(['Peanuts','Tree Nuts','Shellfish','Fish','Eggs','Dairy','Gluten','Soy','Sesame','Sulphites','Mustard']);
+const SERIOUS_ALLERGENS = new Set(['Peanuts','Tree Nuts','Shellfish','Fish','Eggs','Egg','Dairy','Gluten','Soy','Sesame','Sulphites','Mustard']);
 let ingredientAllergenMap = null;
+let rpIngIndex = {};
 
 async function loadAllergenMap() {
   if (ingredientAllergenMap) return ingredientAllergenMap;
   try {
     const res = await fetch(
-      SUPABASE_URL + '/rest/v1/ingredients?select=' + encodeURIComponent('"Ingredient Name","Also Known As",Allergen') + '&Allergen=neq.&limit=300',
+      SUPABASE_URL + '/rest/v1/ingredients?select=' + encodeURIComponent('"Ingredient Name","Also Known As",Allergen') + '&Allergen=neq.&limit=500',
       {headers: {'apikey': SUPABASE_KEY}}
     );
     if (!res.ok) return null;
@@ -822,6 +831,54 @@ async function detectAllergens(recipe) {
     pills.appendChild(pill);
   });
   banner.style.display = 'flex';
+}
+
+async function loadRpIngredientIndex() {
+  try {
+    const res = await fetch(
+      SUPABASE_URL + '/rest/v1/ingredients?select=' + encodeURIComponent('"ID","Ingredient Name",Category,Unit') +
+      '&order=' + encodeURIComponent('"Ingredient Name"') + '&limit=500',
+      { headers: { apikey: SUPABASE_KEY } }
+    );
+    if (!res.ok) return;
+    const rows = await res.json();
+    rpIngIndex = {};
+    (rows || []).forEach(function(r) {
+      const n = (r['Ingredient Name'] || '').toLowerCase().trim();
+      if (n) rpIngIndex[n] = { id: r.ID, category: r.Category || '', unit: r.Unit || '' };
+    });
+  } catch (_) {}
+}
+
+function resolveIngredientMeta(name) {
+  return rpIngIndex[(name || '').toLowerCase().trim()] || null;
+}
+
+async function renderFamilyAllergyWarnings(r) {
+  if (typeof AllergyEngine === 'undefined' || !session || !r) return;
+  const banner = document.getElementById('family-allergy-banner');
+  const lines = document.getElementById('family-allergy-lines');
+  if (!banner || !lines) return;
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_my_family_profiles', {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: 'Bearer ' + session.access_token,
+        'Content-Type': 'application/json'
+      },
+      body: '{}'
+    });
+    if (!res.ok) return;
+    const profiles = await res.json();
+    if (!Array.isArray(profiles) || !profiles.length) return;
+    const warnings = AllergyEngine.checkRecipe(r, profiles, 'family');
+    if (!warnings.length) return;
+    lines.innerHTML = warnings.map(function(w) {
+      return '<div style="margin-bottom:4px">' + escapeHtml(w) + '</div>';
+    }).join('');
+    banner.style.display = 'flex';
+  } catch (_) {}
 }
 
 
@@ -1052,6 +1109,7 @@ window.addEventListener('beforeprint', function() {
 
 window.addEventListener('DOMContentLoaded', async () => {
   loadSubstitutions(); // load in background, non-blocking
+  loadRpIngredientIndex();
   try { session = JSON.parse(lsGet('tcj_session') || 'null'); } catch(_) { session = null; }
   try { updateNav(); } catch(e) { console.error('Nav error:', e); }
 
@@ -1401,6 +1459,7 @@ function renderRecipe(r) {
   try { if (r.id && r.category) loadRelatedRecipes(r.id, r.category); } catch(_) {}
   try { renderEquipment(r); } catch(_) {}
   try { detectAllergens(r); } catch(_) {}
+  try { renderFamilyAllergyWarnings(r); } catch(_) {}
   try {
     if (r.credit_url) {
       if (r.source_link_status === 'dead') showDeadLink(r.credit_url);
@@ -1835,8 +1894,11 @@ function toggleGrocery(btn, ingredient, qty, unit) {
       showToast(info && info.isStaple ? 'This is an always-have staple — no need to shop for it' : 'Already in your pantry 🫙');
       return;
     }
+    const meta = resolveIngredientMeta(ingredient);
     recipeEntry.ingredients.push(GroceryUtils.enrichIngredient({
-      name: ingredient, qty: scaledQty, unit, section: '',
+      name: ingredient, qty: scaledQty, unit: unit || (meta && meta.unit) || '', section: '',
+      category: meta ? GroceryUtils.mapDbCategory(meta.category) : 'Other',
+      ingredient_id: meta ? meta.id : null,
       source: 'recipe', source_label: recipeName
     }, { source: 'recipe', source_ref: recipeId, source_label: recipeName }));
     btn.classList.add('added');
@@ -1892,10 +1954,12 @@ function addAllToGrocery() {
         return;
       }
       if (isInPantry(item.ingredient)) { skipped++; return; }
+      const meta = resolveIngredientMeta(item.ingredient);
       recipeEntry.ingredients.push(GroceryUtils.enrichIngredient({
-        name: item.ingredient, qty: scaledQty, unit: item.unit || '',
+        name: item.ingredient, qty: scaledQty, unit: item.unit || (meta && meta.unit) || '',
         section: sec.section || sec.section_name || '',
-        category: item.category || 'Other',
+        category: item.category || (meta ? GroceryUtils.mapDbCategory(meta.category) : 'Other'),
+        ingredient_id: meta ? meta.id : null,
         source: 'recipe', source_label: recipeName
       }, { source: 'recipe', source_ref: recipeId, source_label: recipeName }));
       added++;

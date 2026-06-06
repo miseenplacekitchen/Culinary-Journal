@@ -169,6 +169,7 @@
       <input id="gl-add-name" placeholder="Start typing…" list="gl-ingredients-list" autocomplete="off" oninput="onGlNameInput()">
       <datalist id="gl-ingredients-list"></datalist>
       <div id="gl-add-hint" class="gl-add-hint" style="display:none"></div>
+      <button type="button" id="gl-submit-unknown" class="gl-btn gl-btn-ghost" style="display:none;margin-top:8px;font-size:11px" onclick="submitUnknownGroceryIngredient()">Submit name for database review</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="gl-field"><label>Quantity</label><input id="gl-add-qty" placeholder="1"></div>
@@ -375,6 +376,8 @@ function openAddItemModal(){
   document.getElementById('gl-ingredient-id').value = '';
   var hint = document.getElementById('gl-add-hint');
   if (hint) { hint.style.display = 'none'; hint.textContent = ''; }
+  var submitBtn = document.getElementById('gl-submit-unknown');
+  if (submitBtn) submitBtn.style.display = 'none';
   document.getElementById('gl-add-modal').classList.add('open');
   setTimeout(function() { document.getElementById('gl-add-name').focus(); }, 50);
 }
@@ -384,15 +387,21 @@ function onGlNameInput() {
   var name = (document.getElementById('gl-add-name').value || '').trim();
   var hint = document.getElementById('gl-add-hint');
   var match = glIngIndex[name.toLowerCase()];
+  var submitBtn = document.getElementById('gl-submit-unknown');
   if (!match) {
     document.getElementById('gl-ingredient-id').value = '';
     if (name.length >= 2 && hint) {
       hint.textContent = 'Free text — not in governed database (still OK to add)';
       hint.style.color = 'var(--text-mid)';
       hint.style.display = 'block';
-    } else if (hint) hint.style.display = 'none';
+      if (submitBtn) submitBtn.style.display = 'inline-block';
+    } else {
+      if (hint) hint.style.display = 'none';
+      if (submitBtn) submitBtn.style.display = 'none';
+    }
     return;
   }
+  if (submitBtn) submitBtn.style.display = 'none';
   document.getElementById('gl-ingredient-id').value = match.id;
   var cat = GroceryUtils.mapDbCategory(match.category);
   var catSel = document.getElementById('gl-add-category');
@@ -405,6 +414,32 @@ function onGlNameInput() {
     hint.textContent = '✓ Linked to ingredient #' + match.id + (match.category ? ' · ' + match.category : '');
     hint.style.color = '#4caf76';
     hint.style.display = 'block';
+  }
+}
+
+async function submitUnknownGroceryIngredient() {
+  var name = (document.getElementById('gl-add-name').value || '').trim();
+  if (!name) { alert('Enter an ingredient name first.'); return; }
+  var sess = getSession();
+  if (!sess || !sess.access_token) {
+    alert('Please sign in to submit for review.');
+    window.location.href = 'login.html';
+    return;
+  }
+  var notes = prompt('Optional note for the admin (e.g. brand, variety):', '') || '';
+  try {
+    var res = await callRPC('submit_pending_ingredient', {
+      p_name: name,
+      p_type: 'ingredient',
+      p_category: document.getElementById('gl-add-category').value || null,
+      p_unit: (document.getElementById('gl-add-unit').value || '').trim() || null,
+      p_notes: notes || null
+    });
+    if (res === null) throw new Error('Submission failed');
+    alert('Submitted for review. Check Notifications when an admin approves it.');
+    document.getElementById('gl-submit-unknown').style.display = 'none';
+  } catch (e) {
+    alert(e.message || 'Submission failed.');
   }
 }
 
