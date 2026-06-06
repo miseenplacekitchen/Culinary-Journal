@@ -79,7 +79,16 @@
         <h1 class="ch-title">👨‍🍳 Chef Directory</h1>
         <div class="ch-sub">Recipes credited to named chefs, cooks, and authors.</div>
       </div>
-      <input class="ch-search" type="text" placeholder="Search chefs..." oninput="filterChefs(this.value)" id="ch-search">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input class="ch-search" type="text" placeholder="Search chefs..." oninput="filterChefs()" id="ch-search">
+        <select class="ch-search" id="ch-sort" onchange="filterChefs()" style="width:auto">
+          <option value="recipes">Most recipes</option>
+          <option value="name">Name A–Z</option>
+        </select>
+        <select class="ch-search" id="ch-country" onchange="filterChefs()" style="width:auto">
+          <option value="">All countries</option>
+        </select>
+      </div>
     </div>
     <div class="ch-count-bar" id="ch-count-bar"></div>
     <div class="ch-grid" id="ch-grid">
@@ -142,15 +151,32 @@ async function load() {
     if (r.category)       chefMap[name].categories.add(r.category);
   });
 
-  allChefs = Object.values(chefMap).sort(function(a,b){return b.recipes.length - a.recipes.length;});
+  allChefs = Object.values(chefMap).map(function(c) {
+    c.is_cj_original = c.recipes.some(function(r) { return r.source_type === 'Original'; });
+    return c;
+  }).sort(function(a,b){return b.recipes.length - a.recipes.length;});
+  var countries = {};
+  allChefs.forEach(function(c) { c.countries.forEach(function(co) { countries[co] = 1; }); });
+  var countrySel = document.getElementById('ch-country');
+  if (countrySel) {
+    Object.keys(countries).sort().forEach(function(co) {
+      var o = document.createElement('option'); o.value = co; o.textContent = co; countrySel.appendChild(o);
+    });
+  }
   renderChefGrid(allChefs);
 }
 
-function filterChefs(q) {
-  const lower = q.toLowerCase();
-  const filtered = allChefs.filter(function(c){
+function filterChefs() {
+  var q = (document.getElementById('ch-search') || {}).value || '';
+  var sort = (document.getElementById('ch-sort') || {}).value || 'recipes';
+  var country = (document.getElementById('ch-country') || {}).value || '';
+  var lower = q.toLowerCase();
+  var filtered = allChefs.filter(function(c) {
+    if (country && !c.countries.has(country)) return false;
     return !q || c.name.toLowerCase().includes(lower) || (c.handle||'').toLowerCase().includes(lower);
   });
+  if (sort === 'name') filtered.sort(function(a,b) { return a.name.localeCompare(b.name); });
+  else filtered.sort(function(a,b) { return b.recipes.length - a.recipes.length; });
   renderChefGrid(filtered);
 }
 
@@ -177,7 +203,7 @@ function renderChefGrid(chefs) {
     var profileHandle = chef.handle ? chef.handle.replace(/^@/,'') : '';
     card.innerHTML =
       '<div class="ch-avatar">' + initials + '</div>' +
-      '<div class="ch-name">' + esc(chef.name||'') + '</div>' +
+      '<div class="ch-name">' + esc(chef.name||'') + (chef.is_cj_original ? ' <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(196,151,59,0.15);color:var(--accent);vertical-align:middle">CJ Original</span>' : '') + '</div>' +
       (chef.handle ? '<div class="ch-handle">' + chef.handle + '</div>' : '') +
       (countries  ? '<div class="ch-meta">' + countries + '</div>' : '') +
       (cats       ? '<div class="ch-meta">' + cats + '</div>' : '') +

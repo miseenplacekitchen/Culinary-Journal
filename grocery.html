@@ -97,11 +97,15 @@
 
     /* Print */
     @media print {
-      body::before { content:'The Culinary Journal'; display:block; text-align:center; font-family:'Cormorant Garamond',serif; font-size:14px; color:#8b6914; padding:12px 0 8px; border-bottom:1px solid #e8e0d0; margin-bottom:12px; }
-      nav, .gl-actions, .gl-tabs, .gl-filter-bar, .gl-shop-bar, .gl-store-bar, .gl-remove-recipe, .gl-check, .gl-trolley-toggle { display:none!important; }
+      body::before { content:'The Culinary Journal — Grocery List'; display:block; text-align:center; font-family:'Cormorant Garamond',serif; font-size:16px; font-weight:700; color:#8b6914; padding:12px 0 4px; }
+      body::after { content:'Printed from theculinaryjournal.site'; display:block; text-align:center; font-family:'DM Sans',sans-serif; font-size:9px; color:#999; margin-top:24px; padding-top:8px; border-top:1px solid #e8e0d0; }
+      nav, .tab-nav, .gl-actions, .gl-tabs, .gl-filter-bar, .gl-shop-bar, .gl-store-bar, .gl-remove-recipe, .gl-check, .gl-trolley-toggle { display:none!important; }
       .page-bg { background:white!important; }
+      .gl-wrap { max-width:100%; padding:0 12px; }
+      .gl-title { font-size:1.2rem; color:#333!important; margin-bottom:12px; }
       .gl-item-name, .gl-item-qty, .gl-recipe-name { color:#000!important; }
       .gl-item.checked { display:none; }
+      .gl-section-title { color:#8b6914!important; border-color:#e8e0d0!important; }
     }
   </style>
 </head>

@@ -472,21 +472,84 @@ async function loadUMDeactivated(container) {
 
 // Chef Directory
 
-function loadUMChefs(container) {
-  container.innerHTML =
-    '<div style="font-family:\'Cormorant Garamond\',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:16px">Chef Directory</div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
-      _umChefCard('Chef of the Month', 'Select a featured contributor shown on the homepage. Auto-expires after 7 days.', '\uD83C\uDFC6', '#C4973B') +
-      _umChefCard('Guest Chefs', 'Users with the Guest Chef badge. Invite professional chefs via the Invite System tab.', '\uD83D\uDC68\u200D\uD83C\uDF73', '#5B8FD4') +
-    '</div>';
-}
+async function loadUMChefs(container) {
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
+  try {
+    var current = await rpc('get_chef_of_month', {});
+    if (current === null) current = null;
+    var res = await apiFetch(SUPABASE_URL + '/rest/v1/rpc/admin_get_users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_search: null, p_status: 'active', p_limit: 200, p_offset: 0 })
+    });
+    var users = [];
+    if (res && res.ok) {
+      var raw = await res.json();
+      users = Array.isArray(raw) ? raw : (raw && raw.users ? raw.users : []);
+    }
+    if (!users.length) {
+      var res2 = await apiFetch(SUPABASE_URL + '/rest/v1/profiles?select=id,username,full_name,is_active&is_active=eq.true&order=username.asc&limit=200');
+      if (res2 && res2.ok) users = await res2.json();
+    }
 
-function _umChefCard(title, desc, icon, color) {
-  return '<div style="padding:20px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px">' +
-    '<div style="font-size:1.6rem;margin-bottom:8px">'+icon+'</div>' +
-    '<div style="font-family:\'Cormorant Garamond\',serif;font-size:1rem;font-weight:700;color:'+color+';margin-bottom:6px">'+title+'</div>' +
-    '<div style="font-family:\'DM Sans\',sans-serif;font-size:12px;color:var(--text-mid)">'+desc+'</div>' +
-  '</div>';
+    container.innerHTML = '';
+    function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
+
+    var title = mk('div', "font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:16px", 'Chef Directory');
+    container.appendChild(title);
+
+    var comCard = mk('div', 'padding:20px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;margin-bottom:16px');
+    comCard.appendChild(mk('div', 'font-size:1.4rem;margin-bottom:8px', '\uD83C\uDFC6'));
+    comCard.appendChild(mk('div', "font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:#C4973B;margin-bottom:6px", 'Chef of the Month'));
+    comCard.appendChild(mk('p', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin:0 0 14px;line-height:1.6', 'Featured contributor on the homepage. Expires automatically after 30 days.'));
+
+    if (current && current.username) {
+      var cur = mk('div', 'padding:10px 14px;background:rgba(196,151,59,0.08);border:1px solid rgba(196,151,59,0.25);border-radius:8px;margin-bottom:12px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high)');
+      cur.innerHTML = 'Current: <strong>@' + esc(current.username) + '</strong>' +
+        (current.recipe_count ? ' \u00b7 ' + current.recipe_count + ' recipes' : '') +
+        (current.chef_of_month_expires ? '<div style="font-size:11px;color:var(--text-mid);margin-top:4px">Expires ' + new Date(current.chef_of_month_expires).toLocaleDateString('en-GB') + '</div>' : '');
+      comCard.appendChild(cur);
+      var clearBtn = mk('button', 'margin-bottom:14px;padding:6px 14px;background:none;border:1px solid #dc5050;border-radius:7px;color:#dc5050;font-family:DM Sans,sans-serif;font-size:11px;cursor:pointer', 'Clear Chef of the Month');
+      clearBtn.addEventListener('click', async function () {
+        if (!confirm('Clear Chef of the Month?')) return;
+        try { await rpc('admin_set_chef_of_month', { p_user_id: null }); loadUMChefs(container); } catch (e) { alert(e.message); }
+      });
+      comCard.appendChild(clearBtn);
+    }
+
+    var sel = document.createElement('select');
+    sel.style.cssText = 'width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high);margin-bottom:10px';
+    var blank = document.createElement('option'); blank.value = ''; blank.textContent = '\u2014 Select contributor \u2014'; sel.appendChild(blank);
+    (users || []).forEach(function (u) {
+      if (!u.id || !u.username) return;
+      var o = document.createElement('option');
+      o.value = u.id;
+      o.textContent = '@' + u.username + (u.full_name ? ' (' + u.full_name + ')' : '');
+      if (current && current.id === u.id) o.selected = true;
+      sel.appendChild(o);
+    });
+    comCard.appendChild(sel);
+    var setBtn = mk('button', 'padding:8px 18px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;cursor:pointer', 'Set Chef of the Month');
+    setBtn.addEventListener('click', async function () {
+      var uid = sel.value;
+      if (!uid) { alert('Select a contributor first.'); return; }
+      if (!confirm('Set this contributor as Chef of the Month for 30 days?')) return;
+      try {
+        await rpc('admin_set_chef_of_month', { p_user_id: uid });
+        loadUMChefs(container);
+      } catch (e) { alert(e.message); }
+    });
+    comCard.appendChild(setBtn);
+    container.appendChild(comCard);
+
+    var guestCard = mk('div', 'padding:20px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px');
+    guestCard.innerHTML = '<div style="font-size:1.4rem;margin-bottom:8px">\uD83D\uDC68\u200D\uD83C\uDF73</div>' +
+      '<div style="font-family:\'Cormorant Garamond\',serif;font-size:1rem;font-weight:700;color:#5B8FD4;margin-bottom:6px">Guest Chefs</div>' +
+      '<div style="font-family:\'DM Sans\',sans-serif;font-size:12px;color:var(--text-mid)">Award the Guest Chef badge via User Management. Invite professionals via the Invite System tab.</div>';
+    container.appendChild(guestCard);
+  } catch (e) {
+    container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
+  }
 }
 
 // Invite System

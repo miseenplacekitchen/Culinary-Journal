@@ -166,15 +166,17 @@ RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
 BEGIN
   IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
-  -- Clear existing recipe of the week
-  UPDATE public.submitted_recipes SET is_recipe_of_week = false, recipe_of_week_expires = NULL
-  WHERE is_recipe_of_week = true;
-  -- Set new one, expires in 7 days
-  UPDATE public.submitted_recipes SET
-    is_recipe_of_week = true,
-    recipe_of_week_at = now(),
-    recipe_of_week_expires = now() + interval '7 days'
-  WHERE id = p_id;
+  UPDATE public.submitted_recipes
+     SET is_recipe_of_week = false, recipe_of_week_at = NULL, recipe_of_week_expires = NULL
+   WHERE is_recipe_of_week = true;
+  IF p_id IS NOT NULL THEN
+    UPDATE public.submitted_recipes SET
+      is_recipe_of_week = true,
+      recipe_of_week_at = now(),
+      recipe_of_week_expires = now() + interval '7 days'
+    WHERE id = p_id;
+    IF NOT FOUND THEN RAISE EXCEPTION 'recipe_not_found'; END IF;
+  END IF;
 END;
 $$;
 

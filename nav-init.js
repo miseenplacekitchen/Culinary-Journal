@@ -303,7 +303,22 @@ function buildSectionNav() {
   }
   handleOAuthCallback();
 
+  function injectSkipLink() {
+    if (document.getElementById('cj-skip-link')) return;
+    var main = document.querySelector('main, [role="main"], .gl-wrap, .ch-wrap, .rp-wrap, .legal-wrap, .nf-wrap, #rp-wrap');
+    if (!main) return;
+    if (!main.id) main.id = 'main-content';
+    if (!main.getAttribute('tabindex')) main.setAttribute('tabindex', '-1');
+    var a = document.createElement('a');
+    a.id = 'cj-skip-link';
+    a.className = 'cj-skip-link';
+    a.href = '#' + main.id;
+    a.textContent = 'Skip to content';
+    document.body.insertBefore(a, document.body.firstChild);
+  }
+
   function init() {
+    injectSkipLink();
     canonicalizeLogo();
     buildSectionNav();
     var host = document.getElementById('nav-btns') || document.querySelector('[data-nav-host]');

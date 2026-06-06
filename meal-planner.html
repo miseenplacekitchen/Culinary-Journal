@@ -452,9 +452,25 @@ function syncMonthJump() {
   m.value = monthMon; y.value = monthYear;
 }
 
-function clearWeek() {
+async function clearWeek() {
   if (!confirm('Clear ALL meal prep entries for this entire week?\n\nThis cannot be undone. Press OK to confirm, or Cancel to keep your entries.')) return;
-  localStorage.removeItem(getWeekKey(currentWeekOffset));
+  var key = getWeekKey(currentWeekOffset);
+  localStorage.removeItem(key);
+  clearTimeout(window._mpSyncTimer);
+  try {
+    var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    if (sess && sess.access_token) {
+      await fetch(SUPA_URL + '/rest/v1/rpc/save_my_meal_plan', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPA_KEY,
+          'Authorization': 'Bearer ' + sess.access_token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_week_key: key, p_plan_data: {} })
+      });
+    }
+  } catch (_) {}
   renderCalendar();
 }
 

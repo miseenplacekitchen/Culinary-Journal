@@ -532,6 +532,15 @@
     .rotw-link { display:inline-flex; align-items:center; gap:8px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--accent); text-decoration:none; border:1px solid var(--accent-border); border-radius:8px; padding:10px 20px; transition:gap .2s; }
     .rotw-link:hover { gap:14px; }
     @media(max-width:768px){ .rotw { padding:0 20px; } .rotw-card { grid-template-columns:1fr; } }
+    .comt { max-width:900px; margin:0 auto 48px; padding:0 40px; }
+    .comt-card { display:flex; align-items:center; gap:24px; padding:28px 32px; border:0.5px solid var(--border); border-radius:16px; background:var(--surface); }
+    .comt-avatar { width:72px; height:72px; border-radius:50%; background:rgb(from var(--accent) r g b / 0.15); display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:700; color:var(--accent); flex-shrink:0; overflow:hidden; }
+    .comt-avatar img { width:100%; height:100%; object-fit:cover; }
+    .comt-name { font-family:'Cormorant Garamond',serif; font-size:1.5rem; font-weight:600; color:var(--text-high); margin-bottom:4px; }
+    .comt-handle { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--accent); margin-bottom:8px; }
+    .comt-meta { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); margin-bottom:14px; }
+    .comt-link { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--accent); text-decoration:none; border:1px solid var(--accent-border); border-radius:8px; padding:8px 16px; }
+    @media(max-width:768px){ .comt { padding:0 20px; } .comt-card { flex-direction:column; text-align:center; } }
   </style>
 </head>
 <body class="page-bg">
@@ -595,6 +604,12 @@
   <div class="rotw" id="rotw-section" style="display:none">
     <div class="rotw-eyebrow">Recipe of the Week</div>
     <div class="rotw-card" id="rotw-card"></div>
+  </div>
+
+  <!-- ── CHEF OF THE MONTH ── -->
+  <div class="comt" id="comt-section" style="display:none">
+    <div class="rotw-eyebrow">Chef of the Month</div>
+    <div class="comt-card" id="comt-card"></div>
   </div>
 
   <!-- ── SECTIONS INTRO ── -->
@@ -791,6 +806,9 @@
     <div class="footer-links">
       <a href="privacy.html">Privacy Policy</a>
       <a href="terms.html">Terms of Use</a>
+      <a href="cookies.html">Cookies</a>
+      <a href="copyright.html">Copyright</a>
+      <a href="accessibility.html">Accessibility</a>
       <a href="ai-disclaimer.html">AI Disclaimer</a>
       <a href="mailto:miseenplacekitchen.official@gmail.com">Contact</a>
     </div>
@@ -1042,6 +1060,36 @@
           '<div class="rotw-desc">' + (r.introduction ? r.introduction.slice(0,160) + (r.introduction.length>160?'…':'') : "This week’s featured recipe.") + '</div>' +
           (prepCook.length ? '<div class="rotw-meta">' + prepCook.join(' &nbsp;·&nbsp; ') + '</div>' : '') +
           '<a href="recipe-page.html?id=' + r.id + '" class="rotw-link">View recipe →</a>' +
+        '</div>';
+      section.style.display = '';
+    })
+    .catch(function(){});
+  })();
+
+  // ── CHEF OF THE MONTH ─────────────────────────────────────────
+  (function() {
+    fetch(SUPA_URL + '/rest/v1/rpc/get_chef_of_month', {
+      method: 'POST',
+      headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
+      body: '{}'
+    })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(chef) {
+      if (!chef || !chef.username) return;
+      var section = document.getElementById('comt-section');
+      var card = document.getElementById('comt-card');
+      if (!section || !card) return;
+      var initials = (chef.full_name || chef.username || '?').trim().split(' ').map(function(w){ return w[0] || ''; }).join('').slice(0, 2).toUpperCase();
+      var avatar = chef.avatar_url
+        ? '<img src="' + chef.avatar_url + '" alt="">'
+        : initials;
+      card.innerHTML =
+        '<div class="comt-avatar">' + avatar + '</div>' +
+        '<div>' +
+          '<div class="comt-name">' + (chef.full_name || chef.username) + '</div>' +
+          '<div class="comt-handle">@' + chef.username + '</div>' +
+          '<div class="comt-meta">' + (chef.recipe_count ? chef.recipe_count + ' published recipe' + (chef.recipe_count === 1 ? '' : 's') : 'Community contributor') + '</div>' +
+          '<a href="user.html?u=' + encodeURIComponent(chef.username) + '" class="comt-link">View their recipes →</a>' +
         '</div>';
       section.style.display = '';
     })
