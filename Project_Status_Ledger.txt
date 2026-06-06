@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phase 7 batch)
+Last updated: 9 June 2026 (Phase 7 complete — code + SQL)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -26,10 +26,10 @@ fix-phase3-batch.sql      | Chef of Month, ROTW, email on review   | Ran ✅
 fix-phase4-batch.sql      | Follows, Friends, family refs, baby    | Ran ✅
 fix-phase5-batch.sql      | Follower notify on approve, link check | Ran ✅
 fix-phase6-batch.sql      | Onboarding, taxonomy, email queue RPCs | Ran ✅
-fix-phase7-batch.sql      | Taxonomy browse RPC, welcome email       | **RUN NEXT**
+fix-phase7-batch.sql      | Taxonomy browse RPC, welcome email       | Ran ✅
 
 ══════════════════════════════════════════════════════════════════════
-PHASE 7 (THIS BATCH) — SHIPPED IN CODE
+PHASE 7 — COMPLETE (CODE + SQL)
 ══════════════════════════════════════════════════════════════════════
 • fix-phase7-batch.sql — get_approved_recipes sub_category/division filters; welcome email on onboarding
 • submit-recipe.html — sub-category & division pickers (admin taxonomy)
@@ -142,20 +142,20 @@ Recent commits:
   deea492 — Ledger update (Phase 5 SQL confirmed)
   284a9bd — Phase 6 (onboarding, taxonomy, email queue UI, print swipe)
   d74b6f2 — Ledger (Phase 6 SQL confirmed)
-  [pending] — Phase 7 (taxonomy wiring, welcome email SQL)
+  513b64d — Phase 7 (taxonomy submit/browse, welcome email SQL)
 
 Untracked (intentional): Master_Incomplete_Items_List.txt
 
 ══════════════════════════════════════════════════════════════════════
-LIVE VERIFICATION CHECKLIST (Phase 6)
+LIVE VERIFICATION CHECKLIST (Phase 7)
 ══════════════════════════════════════════════════════════════════════
-1. ~~Run fix-phase6-batch.sql~~ ✅ Done
+1. ~~Run fix-phase7-batch.sql~~ ✅ Done
 2. Hard-refresh (Ctrl+Shift+R):
-   • Admin → Recipe Management → Interface → Sub-cats & Divisions
-   • Admin → Site Management → Email (queue panel + retry)
-   • https://www.theculinaryjournal.site/print-studio.html → Swipe cards
-   • New test signup → onboarding.html after first login
-3. Phase 5 checks still valid:
+   • https://www.theculinaryjournal.site/submit-recipe.html — pick category → sub-category/division dropdowns
+   • https://www.theculinaryjournal.site/recipes.html — Community → sub-category chips
+   • Recipe page — category eyebrow shows sub_category · division when set
+   • New signup → complete onboarding → Site Management → Email queue shows welcome (pending)
+3. Phase 5–6 checks still valid:
    • https://www.theculinaryjournal.site/family-profiles.html — open Add Profile; checkboxes match admin lists
    • https://www.theculinaryjournal.site/meal-planner.html — Family mode → “View meals for:” chips
    • https://www.theculinaryjournal.site/event-seating-policy.html (and other new legal URLs)
