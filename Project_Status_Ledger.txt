@@ -30,7 +30,7 @@ fix-phase9-batch.sql        | Dead-link grants + admin link RPC    | Ran ✅
 schedule-dead-link-cron.sql | Weekly check-dead-links (job 3)      | Ran ✅
 fix-phase10-batch.sql       | Email template polish + link cleanup | Ran ✅
 fix-phases-11-20-batch.sql  | Link re-check, edge invoke, origin   | Ran ✅ + cron_secret ✅
-fix-phase21-batch.sql       | Page min_tier, billing tiers, refund   | Betty to run ⏳
+fix-phase21-batch.sql       | Page min_tier, billing tiers, refund   | Ran ✅
 
 ══════════════════════════════════════════════════════════════════════
 PHASE STATUS (11–21)
@@ -47,7 +47,7 @@ Phase | Label                         | Status
 18    | Library / collections (D3)    | BLOCKED
 19    | Allergy engine site-wide      | PARTIAL — engine + family banner + ing_id shipped
 20    | Monetisation / tiers (G1–G4)  | PARTIAL — admin tiers + page gates (no Stripe)
-21    | Admin control centre (opt C)  | DONE ✅ — RM refactor + SM pages/tiers
+21    | Admin control centre (opt C)  | DONE ✅ — RM refactor + SM pages/tiers (SQL ✅)
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 14 — LIVE AUDIT (test recipe, hero excluded from scope)
@@ -108,14 +108,12 @@ DEFERRED — DO NOT TOUCH UNTIL BETTY ASKS
 ══════════════════════════════════════════════════════════════════════
 GIT / DEPLOY
 ══════════════════════════════════════════════════════════════════════
-Branch: main — phase 21 pending push
+Branch: main — phase 21 pushed
 
 ══════════════════════════════════════════════════════════════════════
-BETTY — RUN SQL THEN CHECK
+LANE 2 — END-TO-END JOURNEY CHECK (in progress)
 ══════════════════════════════════════════════════════════════════════
-SQL: fix-phase21-batch.sql in Supabase SQL editor
-
-Phase 21 checks:
+Phase 21 checks (Betty confirmed ✅):
 1. Dashboard → Recipe Management — work tabs visible (Taxonomy, Source Links, etc.)
 2. RM Interface tab — rejection reasons + Site Management shortcuts only
 3. Site Management → Pages — min tier column + soft launch preset
