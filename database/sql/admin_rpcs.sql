@@ -354,15 +354,37 @@ BEGIN
       'CJ Recommended Brand','Allergen','Vegan (Yes/No)','Vegetarian (Yes/No)','Notes')
     THEN p_sort_col ELSE 'Ingredient Name' END;
   v_dir := CASE WHEN lower(p_sort_dir) = 'desc' THEN 'DESC' ELSE 'ASC' END;
-  EXECUTE format(
-    'SELECT jsonb_agg(to_jsonb(i)) FROM (
-       SELECT * FROM ingredients
-       WHERE ($1 IS NULL OR "Ingredient Name" ILIKE ''%%''||$1||''%%'')
-         AND ($2 IS NULL OR "Category" = $2)
-       ORDER BY %I %s
-       LIMIT $3 OFFSET $4
-     ) i', v_col, v_dir)
-  INTO v_rows USING p_search, p_category, p_limit, p_offset;
+  IF v_col = 'ID' THEN
+    EXECUTE format(
+      'SELECT jsonb_agg(to_jsonb(i)) FROM (
+         SELECT * FROM ingredients
+         WHERE ($1 IS NULL OR "Ingredient Name" ILIKE ''%%''||$1||''%%'')
+           AND ($2 IS NULL OR "Category" = $2)
+         ORDER BY "ID" %s
+         LIMIT $3 OFFSET $4
+       ) i', v_dir)
+    INTO v_rows USING p_search, p_category, p_limit, p_offset;
+  ELSIF v_col = 'Standard Weight (g or ml)' THEN
+    EXECUTE format(
+      'SELECT jsonb_agg(to_jsonb(i)) FROM (
+         SELECT * FROM ingredients
+         WHERE ($1 IS NULL OR "Ingredient Name" ILIKE ''%%''||$1||''%%'')
+           AND ($2 IS NULL OR "Category" = $2)
+         ORDER BY NULLIF(regexp_replace("Standard Weight (g or ml)", ''[^0-9.\-]'', '''', ''g''), '''')::numeric %s NULLS LAST
+         LIMIT $3 OFFSET $4
+       ) i', v_dir)
+    INTO v_rows USING p_search, p_category, p_limit, p_offset;
+  ELSE
+    EXECUTE format(
+      'SELECT jsonb_agg(to_jsonb(i)) FROM (
+         SELECT * FROM ingredients
+         WHERE ($1 IS NULL OR "Ingredient Name" ILIKE ''%%''||$1||''%%'')
+           AND ($2 IS NULL OR "Category" = $2)
+         ORDER BY %I %s NULLS LAST
+         LIMIT $3 OFFSET $4
+       ) i', v_col, v_dir)
+    INTO v_rows USING p_search, p_category, p_limit, p_offset;
+  END IF;
   RETURN COALESCE(v_rows, '[]'::jsonb);
 END; $$;
 

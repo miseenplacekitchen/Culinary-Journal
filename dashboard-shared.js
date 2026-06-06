@@ -2624,12 +2624,41 @@ function getColOrder() {
   return STD_COLS.map(function(c){return c.key;}).concat(_extraColKeys.map(function(k){return 'extra:'+k;}));
 }
 
+function sortIngValue(row, col) {
+  if (!row) return '';
+  if (col && col.indexOf('extra:') === 0) {
+    var k = col.slice(6);
+    return (row.extra_fields && row.extra_fields[k]) != null ? row.extra_fields[k] : '';
+  }
+  return row[col] != null ? row[col] : '';
+}
+
+function sortIngRows(rows, col, dir) {
+  if (!rows || !rows.length || !col) return rows || [];
+  var mul = dir === 'desc' ? -1 : 1;
+  return rows.slice().sort(function(a, b) {
+    var av = sortIngValue(a, col), bv = sortIngValue(b, col);
+    if (col === 'ID') {
+      return mul * ((parseInt(av, 10) || 0) - (parseInt(bv, 10) || 0));
+    }
+    if (col === 'Standard Weight (g or ml)') {
+      return mul * ((parseFloat(av) || 0) - (parseFloat(bv) || 0));
+    }
+    return mul * String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' });
+  });
+}
+
 function sortIngBy(col) {
   _ingSortDir=(_ingSortCol===col&&_ingSortDir==='asc')?'desc':'asc';
   _ingSortCol=col;
   document.querySelectorAll('.sort-icon').forEach(function(el){el.className='sort-icon';});
   const icon=document.querySelector('.sort-icon[data-col="'+col+'"]');
   if(icon)icon.className='sort-icon '+_ingSortDir;
+  if (col && col.indexOf('extra:') === 0) {
+    _ingAllData = sortIngRows(_ingAllData, col, _ingSortDir);
+    renderIngFiltered();
+    return;
+  }
   loadIngredients(1);
 }
 
@@ -2644,6 +2673,7 @@ function renderIngFiltered() {
       });
     }
   });
+  data = sortIngRows(data, _ingSortCol, _ingSortDir);
   renderIngRows(data);
   const countEl=document.getElementById('ing-count');
   if(countEl){

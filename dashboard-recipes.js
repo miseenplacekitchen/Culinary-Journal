@@ -16,6 +16,10 @@ function switchRecipeTab(tab) {
   if (listPanel) listPanel.style.display = (tab==='all'||tab==='pending'||tab==='approved'||tab==='rejected') ? 'block' : 'none';
   if (anaPanel)  anaPanel.style.display  = tab==='analytics'  ? 'block' : 'none';
   if (rmPanel)   rmPanel.style.display   = (tab==='rmsettings'||tab==='rotw'||tab==='notes') ? 'block' : 'none';
+  var ifaceEl = document.getElementById('rm-interface-content');
+  var rotwEl  = document.getElementById('rm-panel');
+  if (ifaceEl) ifaceEl.style.display = tab==='rmsettings' ? 'block' : 'none';
+  if (rotwEl)  rotwEl.style.display  = (tab==='rotw'||tab==='notes') ? 'block' : 'none';
   if (tab==='analytics')  { loadRecipeAnalytics(); return; }
   if (tab==='rmsettings') { loadRMInterface();     return; }
   if (tab==='rotw')       { loadROTW();            return; }
