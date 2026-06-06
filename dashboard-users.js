@@ -629,7 +629,7 @@ async function buildFiMembers(container) {
     var search = mk('input','flex:1;min-width:180px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)');
     search.placeholder = 'Search by name or email\u2026';
     var filter = mk('select','padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)');
-    ['All Tiers','free','premium','event'].forEach(function(t){var o=document.createElement('option');o.value=t==='All Tiers'?'':t;o.textContent=t==='All Tiers'?'All Tiers':t.charAt(0).toUpperCase()+t.slice(1);filter.appendChild(o);});
+    ['All Tiers','free','daily','weekly','monthly','yearly','premium','event'].forEach(function(t){var o=document.createElement('option');o.value=t==='All Tiers'?'':t;o.textContent=t==='All Tiers'?'All Tiers':t.charAt(0).toUpperCase()+t.slice(1);filter.appendChild(o);});
     toolbar.appendChild(search); toolbar.appendChild(filter);
     container.appendChild(toolbar);
 
@@ -638,7 +638,7 @@ async function buildFiMembers(container) {
     tbl.innerHTML = '<thead><tr style="border-bottom:1px solid var(--border)"><th class="ap-th">Member</th><th class="ap-th">Email</th><th class="ap-th">Current Tier</th><th class="ap-th">Change Tier</th><th class="ap-th">Save</th></tr></thead>';
     var tbody = document.createElement('tbody');
 
-    var TIER_COLOR = { free:'var(--text-mid)', premium:'var(--accent)', event:'#5B8FD4' };
+    var TIER_COLOR = { free:'var(--text-mid)', daily:'#8ab4d4', weekly:'#6a9fd4', monthly:'#5B8FD4', yearly:'var(--accent)', premium:'var(--accent)', event:'#5B8FD4' };
 
     function renderRow(m) {
       var tr = document.createElement('tr'); tr.style.borderBottom='1px solid rgba(255,255,255,0.04)';
@@ -648,7 +648,7 @@ async function buildFiMembers(container) {
 
       var tier = m.subscription_tier || 'free';
       var sel = '<select id="fit-'+m.id+'" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)">'+
-        ['free','premium','event'].map(function(t){return '<option value="'+t+'"'+(tier===t?' selected':'')+'>'+t.charAt(0).toUpperCase()+t.slice(1)+'</option>';}).join('')+'</select>';
+        ['free','daily','weekly','monthly','yearly','premium','event'].map(function(t){return '<option value="'+t+'"'+(tier===t?' selected':'')+'>'+t.charAt(0).toUpperCase()+t.slice(1)+'</option>';}).join('')+'</select>';
       tr.innerHTML =
         '<td class="ap-td"><div style="font-size:13px;font-weight:500;color:var(--text-high)">'+(m.full_name||m.username||'—')+'</div><div style="font-size:11px;color:var(--text-mid)">@'+(m.username||'')+'</div></td>'+
         '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+(m.email||'')+'</td>'+

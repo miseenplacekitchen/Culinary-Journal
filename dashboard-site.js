@@ -34,10 +34,15 @@ function switchSMTab(tab) {
 
 // ── SITE MANAGEMENT BUILD FUNCTIONS ──────────────────────────────
 
+var _SM_TIER_OPTS = [
+  {v:'free',l:'Free'},{v:'daily',l:'Daily'},{v:'weekly',l:'Weekly'},
+  {v:'monthly',l:'Monthly'},{v:'yearly',l:'Yearly'},{v:'premium',l:'Premium'},{v:'event',l:'Event'}
+];
+var _SM_SOFT_LAUNCH_PUBLIC = ['index.html','recipes.html','recipe-page.html','login.html','reset-password.html'];
+
 async function buildSMPages(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
   try {
-    // Fetch pages and site_settings in parallel — S needed for SEO field values
     var pagesRes = apiFetch(SUPABASE_URL + '/rest/v1/site_pages?order=sort_order');
     var settingsRes = apiFetch(SUPABASE_URL + '/rest/v1/site_settings?select=key,value');
     var res = await pagesRes; var sRes = await settingsRes;
@@ -51,41 +56,76 @@ async function buildSMPages(container) {
       return;
     }
     container.innerHTML = '';
+    var launchCard = document.createElement('div');
+    launchCard.style.cssText = 'background:rgba(196,151,59,0.08);border:1px solid rgba(196,151,59,0.25);border-radius:12px;padding:16px 20px;margin-bottom:16px';
+    launchCard.innerHTML = '<div style="font-family:Cormorant Garamond,serif;font-size:1.05rem;font-weight:700;color:var(--accent);margin-bottom:6px">Soft Launch Preset</div>' +
+      '<div style="font-size:12px;color:var(--text-mid);line-height:1.55;margin-bottom:12px">Hides every page except Home, Recipes, Recipe Page, and Login. Open features one-by-one when ready. Dashboard stays hidden.</div>';
+    var launchBtn = document.createElement('button');
+    launchBtn.className = 'ing-add-btn';
+    launchBtn.textContent = 'Apply soft launch (hide all except core)';
+    launchBtn.addEventListener('click', async function() {
+      if (!confirm('Hide all pages except index, recipes, recipe-page, login, and reset-password?')) return;
+      launchBtn.disabled = true;
+      try {
+        for (var i = 0; i < pages.length; i++) {
+          var pg = pages[i];
+          var vis = _SM_SOFT_LAUNCH_PUBLIC.indexOf(pg.path) !== -1 ? 'public' : 'hidden';
+          var pr = await apiFetch(SUPABASE_URL + '/rest/v1/site_pages?path=eq.' + encodeURIComponent(pg.path), {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ visibility: vis, coming_soon: false })
+          });
+          if (!pr || !pr.ok) throw new Error('Failed on ' + pg.path);
+        }
+        alert('Soft launch preset applied.');
+        container.dataset.built = '';
+        buildSMPages(container);
+      } catch (e) { alert(e.message); launchBtn.disabled = false; }
+    });
+    launchCard.appendChild(launchBtn);
+    container.appendChild(launchCard);
+    if (S.billing_no_refunds_banner) {
+      var refundNote = document.createElement('p');
+      refundNote.style.cssText = 'font-size:11px;color:var(--text-mid);margin-bottom:14px;padding:10px 14px;background:rgba(220,80,80,0.08);border:1px solid rgba(220,80,80,0.2);border-radius:8px';
+      refundNote.textContent = S.billing_no_refunds_banner;
+      container.appendChild(refundNote);
+    }
     var wrap = document.createElement('div'); wrap.style.cssText = 'overflow-x:auto;border:1px solid var(--border);border-radius:12px';
     var tbl = document.createElement('table'); tbl.className = 'ap-table';
-    tbl.innerHTML = '<thead><tr style="border-bottom:1px solid var(--border)"><th class="ap-th">Page</th><th class="ap-th">Path</th><th class="ap-th">Visibility</th><th class="ap-th" style="text-align:center">Coming Soon</th><th class="ap-th">Save</th></tr></thead>';
+    tbl.innerHTML = '<thead><tr style="border-bottom:1px solid var(--border)"><th class="ap-th">Page</th><th class="ap-th">Path</th><th class="ap-th">Visibility</th><th class="ap-th">Min Tier</th><th class="ap-th" style="text-align:center">Coming Soon</th><th class="ap-th">Save</th></tr></thead>';
     var tbody = document.createElement('tbody');
     pages.forEach(function(p) {
       var tr = document.createElement('tr'); tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
       var vis = '<select id="smv-'+esc(p.path||'')+'" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)">'+
         [{v:'public',l:'Public — Everyone'},{v:'registered',l:'Registered Members'},{v:'paid',l:'Paid Members Only'},{v:'hidden',l:'Hidden'}].map(function(o){return '<option value="'+o.v+'"'+(p.visibility===o.v?' selected':'')+'>'+o.l+'</option>';}).join('')+'</select>';
+      var minTier = p.min_tier || 'free';
+      var tierSel = '<select id="smt-'+esc(p.path||'')+'" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)">'+
+        _SM_TIER_OPTS.map(function(o){return '<option value="'+o.v+'"'+(minTier===o.v?' selected':'')+'>'+o.l+'</option>';}).join('')+'</select>';
       tr.innerHTML = '<td class="ap-td" style="font-size:13px;font-weight:500;color:var(--text-high)">'+esc(p.name||'')+'</td>'+
         '<td class="ap-td" style="font-size:11px;color:var(--text-mid)">'+esc(p.path||'')+'</td>'+
         '<td class="ap-td">'+vis+'</td>'+
+        '<td class="ap-td">'+tierSel+'</td>'+
         '<td class="ap-td" style="text-align:center"><input type="checkbox" id="smcs-'+esc(p.path||'')+'"'+(p.coming_soon?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent)"></td>'+
         '<td class="ap-td"></td>';
       var seoWrap = document.createElement('tr');
       seoWrap.style.cssText = 'border-bottom:1px solid rgba(255,255,255,0.04)';
       var seoCel = document.createElement('td');
-      seoCel.setAttribute('colspan','5');
+      seoCel.setAttribute('colspan','6');
       seoCel.style.cssText = 'padding:0 8px 10px;display:none';
       seoCel.id = 'seo-row-' + esc(p.path||'');
-      // Build SEO inputs via DOM to avoid unescaped values in innerHTML
       var seoGrid = document.createElement('div');
       seoGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 0';
       var seoMakeLabeledInput = function(labelText, inputId, inputValue) {
-        var wrap = document.createElement('div');
-        var lbl  = document.createElement('label');
+        var w = document.createElement('div');
+        var lbl = document.createElement('label');
         lbl.style.cssText = 'display:block;font-size:10px;text-transform:uppercase;color:var(--text-mid);margin-bottom:3px';
         lbl.textContent = labelText;
-        var inp  = document.createElement('input');
-        inp.id   = inputId;
-        inp.value = inputValue;
+        var inp = document.createElement('input');
+        inp.id = inputId; inp.value = inputValue;
         inp.style.cssText = 'width:100%;box-sizing:border-box;padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-high)';
-        wrap.appendChild(lbl); wrap.appendChild(inp);
-        return wrap;
+        w.appendChild(lbl); w.appendChild(inp);
+        return w;
       };
-      seoGrid.appendChild(seoMakeLabeledInput('Meta Title',       'seo-t-'+(p.path||''), S['seo_'+(p.path||'')+'_title']||''));
+      seoGrid.appendChild(seoMakeLabeledInput('Meta Title', 'seo-t-'+(p.path||''), S['seo_'+(p.path||'')+'_title']||''));
       seoGrid.appendChild(seoMakeLabeledInput('Meta Description', 'seo-d-'+(p.path||''), S['seo_'+(p.path||'')+'_desc']||''));
       seoCel.appendChild(seoGrid);
       seoWrap.appendChild(seoCel);
@@ -95,7 +135,12 @@ async function buildSMPages(container) {
       btn.addEventListener('click', (function(path, b) { return async function() {
         b.disabled=true; b.textContent='\u2026';
         try {
-          var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_pages?path=eq.'+encodeURIComponent(path),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({visibility:document.getElementById('smv-'+path).value,coming_soon:document.getElementById('smcs-'+path).checked})});
+          var body = {
+            visibility: document.getElementById('smv-'+path).value,
+            coming_soon: document.getElementById('smcs-'+path).checked,
+            min_tier: document.getElementById('smt-'+path).value
+          };
+          var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_pages?path=eq.'+encodeURIComponent(path),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(body)});
           var rBody = await r.json(); if(!Array.isArray(rBody)||!rBody.length) throw new Error('Row not found — no changes saved');
           b.textContent='\u2713 Saved'; setTimeout(function(){var c=document.getElementById('upanel-sm-pages');if(c){c.dataset.built='';buildSMPages(c);}},1500);
         } catch(e){b.textContent='Save';b.disabled=false;alert('Save failed: '+e.message);}
@@ -281,6 +326,27 @@ async function buildSMSettings(container) {
     seo.appendChild(inp('seo_og_image','Social Share Image URL',S.seo_og_image));
     seo.appendChild(saveBtn(['seo_site_title','seo_site_description','seo_og_image'],'Save SEO'));
     container.appendChild(seo);
+    var bill = card('Billing & Refund Policy');
+    bill.appendChild(mk('p','font-size:11px;color:var(--text-mid);margin-bottom:12px;line-height:1.55','Shown on paid-members-only.html. All sales final — make this unmistakable.'));
+    var rpWrap = mk('div','margin-bottom:12px');
+    rpWrap.appendChild(mk('label','display:block;font-size:10px;text-transform:uppercase;color:var(--text-mid);margin-bottom:4px','Refund Policy (full text)'));
+    var rpTa = mk('textarea','width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--text-high);resize:vertical');
+    rpTa.id = 'ss-refund_policy'; rpTa.rows = 3; rpTa.value = S.refund_policy || '';
+    rpWrap.appendChild(rpTa); bill.appendChild(rpWrap);
+    bill.appendChild(inp('billing_no_refunds_banner','Short banner (upgrade page)',S.billing_no_refunds_banner));
+    var billSave = saveBtn(['billing_no_refunds_banner'],'Save Billing Copy');
+    billSave.addEventListener('click', async function() {
+      billSave.disabled = true; billSave.textContent = 'Saving\u2026';
+      try {
+        await ssSave('refund_policy', rpTa.value || '');
+        var ban = document.getElementById('ss-billing_no_refunds_banner');
+        if (ban) await ssSave('billing_no_refunds_banner', ban.value || '');
+        billSave.textContent = '\u2713 Saved';
+        setTimeout(function(){ var c = document.getElementById('upanel-sm-settings'); if (c) { c.dataset.built = ''; buildSMSettings(c); } }, 1500);
+      } catch (e) { billSave.textContent = 'Save Billing Copy'; billSave.disabled = false; alert(e.message); }
+    });
+    bill.appendChild(billSave);
+    container.appendChild(bill);
     container.dataset.built='1';
   } catch(e){container.dataset.built='';container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>';}
 }

@@ -36,6 +36,8 @@
     .btn-secondary:hover { border-color: var(--text-low); color: var(--text-high, #fff); }
     .note { font-size: 11px; color: var(--text-mid, rgba(255,255,255,0.3)); margin-top: 14px; }
     .note a { color: var(--accent, #C4973B); text-decoration: none; }
+    .refund-banner { font-size: 11px; font-weight: 600; color: #dc5050; background: rgba(220,80,80,0.1); border: 1px solid rgba(220,80,80,0.35); border-radius: 8px; padding: 10px 14px; margin-bottom: 20px; line-height: 1.5; }
+    .refund-full { font-size: 11px; color: var(--text-mid, rgba(255,255,255,0.45)); margin-top: 12px; line-height: 1.55; text-align: left; }
   </style>
 </head>
 <body>
@@ -43,15 +45,24 @@
     <div class="icon">⭐</div>
     <div class="tier-badge">Premium Feature</div>
     <h1>Upgrade to Access This</h1>
-    <p class="subtitle">This feature is available to Premium members. Join thousands of home cooks and professional chefs who use The Culinary Journal every day.</p>
+    <p class="subtitle" id="upgrade-subtitle">This feature requires a paid subscription. Choose a plan that fits how you cook.</p>
+    <div class="refund-banner" id="refund-banner">All subscription payments are final. We do not offer refunds.</div>
 
     <div class="pricing-row" id="pricing-row">
-      <div class="price-card">
+      <div class="price-card" id="card-daily">
+        <div class="amount" id="price-daily">—</div>
+        <div class="period">per day</div>
+      </div>
+      <div class="price-card" id="card-weekly">
+        <div class="amount" id="price-weekly">—</div>
+        <div class="period">per week</div>
+      </div>
+      <div class="price-card" id="card-monthly">
         <div class="amount" id="price-monthly">—</div>
         <div class="period">per month</div>
       </div>
-      <div class="price-card">
-        <div class="amount" id="price-annual">—</div>
+      <div class="price-card" id="card-yearly">
+        <div class="amount" id="price-yearly">—</div>
         <div class="period">per year</div>
         <div class="saving" id="saving-label"></div>
       </div>
@@ -75,21 +86,27 @@
       <a href="login.html" class="btn-secondary" id="signin-btn">Sign in to existing account</a>
       <a href="index.html" class="btn-secondary">Back to Home</a>
     </div>
+    <p class="refund-full" id="refund-full"></p>
     <p class="note">Already subscribed? <a href="login.html" id="signin-link">Sign in here</a> and this page will unlock automatically.</p>
   </div>
 
   <script>
-            // Pass ?next= through to login
     var params = new URLSearchParams(window.location.search);
     var next   = params.get('next');
+    var reqTier = params.get('tier') || 'monthly';
+    var TIER_LABEL = { daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly', yearly: 'Yearly', premium: 'Premium', event: 'Event' };
+    if (TIER_LABEL[reqTier]) {
+      document.getElementById('upgrade-subtitle').textContent =
+        'This page requires a ' + TIER_LABEL[reqTier] + ' plan or higher.';
+      document.querySelector('.tier-badge').textContent = TIER_LABEL[reqTier] + ' access';
+    }
     if (next) {
       document.getElementById('upgrade-btn').href  = 'login.html?next=' + encodeURIComponent(next) + '#upgrade';
       document.getElementById('signin-btn').href   = 'login.html?next=' + encodeURIComponent(next);
       document.getElementById('signin-link').href  = 'login.html?next=' + encodeURIComponent(next);
     }
 
-    // Load actual pricing from Supabase
-    fetch(SUPA_URL + '/rest/v1/site_settings?select=key,value&key=in.(price_premium_monthly,price_premium_annual,currency_symbol)', {
+    fetch(SUPA_URL + '/rest/v1/site_settings?select=key,value&key=in.(price_daily,price_weekly,price_premium_monthly,price_yearly,price_premium_annual,currency_symbol,refund_policy,billing_no_refunds_banner)', {
       headers: { 'apikey': SUPA_KEY, 'Accept': 'application/json' }
     })
     .then(function(r){ return r.ok ? r.json() : null; })
@@ -99,20 +116,31 @@
       rows.forEach(function(r){ S[r.key] = r.value; });
 
       var cur  = S.currency_symbol || '$';
-      var mon  = parseFloat(S.price_premium_monthly || '4');
-      var ann  = parseFloat(S.price_premium_annual  || '40');
-      var save = Math.round((mon * 12 - ann) / (mon * 12) * 100);
+      var daily = parseFloat(S.price_daily || '0.99');
+      var week  = parseFloat(S.price_weekly || '2.99');
+      var mon   = parseFloat(S.price_premium_monthly || S.price_premium_monthly || '4');
+      var year  = parseFloat(S.price_yearly || S.price_premium_annual || '40');
+      var save  = mon > 0 ? Math.round((mon * 12 - year) / (mon * 12) * 100) : 0;
 
+      document.getElementById('price-daily').textContent   = cur + daily.toFixed(2);
+      document.getElementById('price-weekly').textContent  = cur + week.toFixed(2);
       document.getElementById('price-monthly').textContent = cur + mon.toFixed(2);
-      document.getElementById('price-annual').textContent  = cur + ann.toFixed(2);
-      if (save > 0) {
-        document.getElementById('saving-label').textContent = 'Save ' + save + '%';
-      }
+      document.getElementById('price-yearly').textContent  = cur + year.toFixed(2);
+      if (save > 0) document.getElementById('saving-label').textContent = 'Save ' + save + '%';
+
+      if (S.billing_no_refunds_banner) document.getElementById('refund-banner').textContent = S.billing_no_refunds_banner;
+      if (S.refund_policy) document.getElementById('refund-full').textContent = S.refund_policy;
+
+      var highlight = { daily: 'card-daily', weekly: 'card-weekly', monthly: 'card-monthly', yearly: 'card-yearly', premium: 'card-monthly', event: 'card-monthly' };
+      var hid = highlight[reqTier] || 'card-monthly';
+      var el = document.getElementById(hid);
+      if (el) el.style.boxShadow = '0 0 0 2px var(--accent, #C4973B)';
     })
     .catch(function(){
-      // Fallback to hardcoded if Supabase unreachable
+      document.getElementById('price-daily').textContent   = '$0.99';
+      document.getElementById('price-weekly').textContent  = '$2.99';
       document.getElementById('price-monthly').textContent = '$4.00';
-      document.getElementById('price-annual').textContent  = '$40.00';
+      document.getElementById('price-yearly').textContent  = '$40.00';
       document.getElementById('saving-label').textContent  = 'Save 17%';
     });
   </script>

@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phase 19 allergy engine depth shipped)
+Last updated: 9 June 2026 (Phase 21 admin control centre shipped)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -30,9 +30,10 @@ fix-phase9-batch.sql        | Dead-link grants + admin link RPC    | Ran ✅
 schedule-dead-link-cron.sql | Weekly check-dead-links (job 3)      | Ran ✅
 fix-phase10-batch.sql       | Email template polish + link cleanup | Ran ✅
 fix-phases-11-20-batch.sql  | Link re-check, edge invoke, origin   | Ran ✅ + cron_secret ✅
+fix-phase21-batch.sql       | Page min_tier, billing tiers, refund   | Betty to run ⏳
 
 ══════════════════════════════════════════════════════════════════════
-PHASE STATUS (11–20)
+PHASE STATUS (11–21)
 ══════════════════════════════════════════════════════════════════════
 Phase | Label                         | Status
 ------|-------------------------------|----------------------------------
@@ -40,12 +41,13 @@ Phase | Label                         | Status
 12    | Run email/link workers now    | DONE ✅
 13    | Admin edit origin locality    | DONE ✅
 14    | Recipe page live sign-off     | DONE ✅ (hero still deferred)
-15    | Nutrition queue               | PARTIAL — admin tab + OFF tab link
-16    | Print queue                   | PARTIAL — admin tab → Print Studio
+15    | Nutrition queue               | DONE ✅ — top-level RM tab
+16    | Print queue                   | DONE ✅ — top-level RM tab
 17    | Pantry / grocery depth        | PARTIAL — P0 fixes shipped; GL-11 still open
 18    | Library / collections (D3)    | BLOCKED
 19    | Allergy engine site-wide      | PARTIAL — engine + family banner + ing_id shipped
-20    | Monetisation / tiers (G1–G4)  | BLOCKED/DEFERRED
+20    | Monetisation / tiers (G1–G4)  | PARTIAL — admin tiers + page gates (no Stripe)
+21    | Admin control centre (opt C)  | DONE ✅ — RM refactor + SM pages/tiers
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 14 — LIVE AUDIT (test recipe, hero excluded from scope)
@@ -87,23 +89,41 @@ grocery.html — submit unknown ingredient for PF-02 review from manual add moda
 PF-02 notify — already in admin_resolve_pending_ingredient → notifications table
 
 ══════════════════════════════════════════════════════════════════════
+PHASE 21 — ADMIN CONTROL CENTRE (Option C)
+══════════════════════════════════════════════════════════════════════
+RM tabs: work queues at top level; RM Interface = settings only (reject reasons, SM links)
+Site Management → Pages: min_tier column, soft-launch preset, refund banner
+Site Management → Settings: refund policy editor
+page-guard.js: tier hierarchy (free→daily→weekly→monthly→yearly→premium/event)
+paid-members-only.html: daily/weekly/monthly/yearly pricing + no-refunds copy
+Product_Direction_Draft.txt — Betty product north star (planning doc)
+
+══════════════════════════════════════════════════════════════════════
 DEFERRED — DO NOT TOUCH UNTIL BETTY ASKS
 ══════════════════════════════════════════════════════════════════════
 • Recipe hero / circular image polish (Issue 4.1)
 • Phase 2 AI, Chrome extension, Android app
-• Full monetisation / payment provider
+• Stripe / payment provider (admin manual tiers work first)
 
 ══════════════════════════════════════════════════════════════════════
 GIT / DEPLOY
 ══════════════════════════════════════════════════════════════════════
-Branch: main — phase 19 pending push
+Branch: main — phase 21 pending push
 
 ══════════════════════════════════════════════════════════════════════
-BETTY — PHASE 19 CHECKS
+BETTY — RUN SQL THEN CHECK
 ══════════════════════════════════════════════════════════════════════
-1. Sign in + set up Family Profiles → open recipe → Family dietary notes banner
-2. Add governed ingredient to grocery from recipe → should link ingredient_id
-3. Grocery manual add unknown name → Submit name for database review
-4. Notifications page after admin approves pending ingredient
+SQL: fix-phase21-batch.sql in Supabase SQL editor
+
+Phase 21 checks:
+1. Dashboard → Recipe Management — work tabs visible (Taxonomy, Source Links, etc.)
+2. RM Interface tab — rejection reasons + Site Management shortcuts only
+3. Site Management → Pages — min tier column + soft launch preset
+4. Set table-planner.html to paid + yearly → visit logged out → upgrade page shows tiers + refund banner
+
+Phase 19 checks (still valid):
+1. Family Profiles → recipe page dietary banner
+2. Grocery add from recipe links ingredient_id
+3. Manual add unknown ingredient → PF-02 submit
 
 Contact: miseenplacekitchen.official@gmail.com

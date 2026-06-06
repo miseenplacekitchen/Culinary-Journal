@@ -2,6 +2,17 @@
 // This file is loaded by dashboard.html
 // Requires: supabase-config.js to be loaded first
 
+var _RM_LIST_TABS = ['all','pending','approved','rejected'];
+var _RM_OPS_TABS  = ['taxonomy','sourcelinks','nutrition','printqueue','collections','featured','audit'];
+
+function getRejectReasons() {
+  try {
+    var s = localStorage.getItem('tcj_rm_reject_reasons');
+    if (s) { var a = JSON.parse(s); if (Array.isArray(a) && a.length) return a; }
+  } catch(_) {}
+  return ['Incomplete ingredients','Unclear method','Duplicate recipe','Inappropriate content','Missing source credit','Poor formatting','Other'];
+}
+
 function switchRecipeTab(tab) {
   _currentRecipeTab = tab;
   localStorage.setItem('tcj_active_recipe_tab', tab);
@@ -10,20 +21,23 @@ function switchRecipeTab(tab) {
   });
   var listPanel = document.getElementById('rmgmt-list-panel');
   var anaPanel  = document.getElementById('rmgmt-analytics-panel');
-  var rmPanel   = document.getElementById('rmgmt-rmsettings-panel');
-  // rotw and notes reuse rm-panel dynamically
-  var rmMgmtPanel = document.getElementById('rm-panel') || document.getElementById('rmgmt-rmsettings-panel');
-  if (listPanel) listPanel.style.display = (tab==='all'||tab==='pending'||tab==='approved'||tab==='rejected') ? 'block' : 'none';
-  if (anaPanel)  anaPanel.style.display  = tab==='analytics'  ? 'block' : 'none';
-  if (rmPanel)   rmPanel.style.display   = (tab==='rmsettings'||tab==='rotw'||tab==='notes') ? 'block' : 'none';
-  var ifaceEl = document.getElementById('rm-interface-content');
-  var rotwEl  = document.getElementById('rm-panel');
-  if (ifaceEl) ifaceEl.style.display = tab==='rmsettings' ? 'block' : 'none';
-  if (rotwEl)  rotwEl.style.display  = (tab==='rotw'||tab==='notes') ? 'block' : 'none';
-  if (tab==='analytics')  { loadRecipeAnalytics(); return; }
-  if (tab==='rmsettings') { loadRMInterface();     return; }
-  if (tab==='rotw')       { loadROTW();            return; }
-  if (tab==='notes')      { loadRecipeNotes();     return; }
+  var opsPanel  = document.getElementById('rmgmt-ops-panel');
+  var setPanel  = document.getElementById('rmgmt-rmsettings-panel');
+  var extPanel  = document.getElementById('rmgmt-extra-panel');
+  if (listPanel) listPanel.style.display = _RM_LIST_TABS.indexOf(tab) !== -1 ? 'block' : 'none';
+  if (anaPanel)  anaPanel.style.display  = tab === 'analytics' ? 'block' : 'none';
+  if (opsPanel)  opsPanel.style.display  = _RM_OPS_TABS.indexOf(tab) !== -1 ? 'block' : 'none';
+  if (setPanel)  setPanel.style.display  = tab === 'rmsettings' ? 'block' : 'none';
+  if (extPanel)  extPanel.style.display  = (tab === 'rotw' || tab === 'notes') ? 'block' : 'none';
+  if (tab === 'analytics')  { loadRecipeAnalytics(); return; }
+  if (tab === 'rmsettings') { loadRMInterfaceSettings(); return; }
+  if (_RM_OPS_TABS.indexOf(tab) !== -1) {
+    var opsEl = document.getElementById('rm-ops-content');
+    if (opsEl) loadRMTab(tab, opsEl);
+    return;
+  }
+  if (tab === 'rotw')  { loadROTW(); return; }
+  if (tab === 'notes') { loadRecipeNotes(); return; }
   loadRecipeMgmt(tab);
 }
 
@@ -124,7 +138,7 @@ async function openRecipeModal(id) {
     var dt = r.submitted_at
       ? new Date(r.submitted_at).toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'})
       : '\u2014';
-    var REJECT_REASONS = ['Incomplete ingredients','Unclear method','Duplicate recipe','Inappropriate content','Missing source credit','Poor formatting','Other'];
+    var REJECT_REASONS = getRejectReasons();
 
     // Build panel with DOM (avoids all quote nesting issues)
     panel.innerHTML = '';
@@ -438,50 +452,52 @@ async function doSetRecipeOfWeek(id) {
   } catch(e) { alert('Error: ' + e.message); }
 }
 
-function loadRMInterface() {
+function loadRMInterfaceSettings() {
   var el = document.getElementById('rm-interface-content');
   if (!el) return;
-  if (el.dataset.built === '1') return;
-  el.dataset.built = '1';
   el.innerHTML = '';
+  function mk(tag, style, text) { var e = document.createElement(tag); if (style) e.style.cssText = style; if (text !== undefined) e.textContent = text; return e; }
+  function card(title) {
+    var d = mk('div', 'background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');
+    d.appendChild(mk('div', "font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px", title));
+    return d;
+  }
+  el.appendChild(mk('p', "font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6",
+    'Settings only — work queues live in the tabs above. Page visibility and tiers are in Site Management \u2192 Pages.'));
 
-  var savedTab = localStorage.getItem('tcj_active_rm_tab') || 'analytics';
-  var RM_TABS = [
-    {key: 'analytics',   label: '\uD83D\uDCCA Analytics'},
-    {key: 'taxonomy',    label: 'Sub-cats & Divisions'},
-    {key: 'collections', label: 'Collections'},
-    {key: 'featured',    label: '\u2b50 Featured'},
-    {key: 'sourcelinks', label: 'Source Links'},
-    {key: 'nutrition',   label: 'Nutrition'},
-    {key: 'printqueue',  label: 'Print Queue'},
-    {key: 'audit',       label: 'Audit Trail'}
-  ];
-
-  // Build top bar ONCE outside the loop
-  var topBar = document.createElement('div');
-  topBar.style.cssText = 'display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px';
-  el.appendChild(topBar);
-
-  var rmPanels = {};
-  RM_TABS.forEach(function(td) {
-    var btn = document.createElement('button');
-    btn.style.cssText = "padding:9px 18px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--text-mid);margin-bottom:-1px;white-space:nowrap";
-    btn.textContent = td.label;
-    if (td.key === savedTab) { btn.style.borderBottomColor = 'var(--accent)'; btn.style.color = 'var(--accent)'; }
-    var panel = document.createElement('div');
-    panel.style.display = td.key === savedTab ? 'block' : 'none';
-    rmPanels[td.key] = panel;
-    btn.addEventListener('click', (function(key, b) { return function() {
-      localStorage.setItem('tcj_active_rm_tab', key);
-      topBar.querySelectorAll('button').forEach(function(x){ x.style.borderBottomColor='transparent'; x.style.color='var(--text-mid)'; });
-      b.style.borderBottomColor='var(--accent)'; b.style.color='var(--accent)';
-      Object.keys(rmPanels).forEach(function(k){ rmPanels[k].style.display = k===key?'block':'none'; });
-      loadRMTab(key, rmPanels[key]);
-    }; })(td.key, btn));
-    topBar.appendChild(btn);
-    el.appendChild(panel);
+  var rejCard = card('Rejection Reasons');
+  rejCard.appendChild(mk('p', 'font-size:11px;color:var(--text-mid);margin-bottom:10px', 'One reason per line. Used in the recipe review panel when rejecting submissions.'));
+  var rejTa = mk('textarea', 'width:100%;box-sizing:border-box;min-height:140px;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high);resize:vertical');
+  rejTa.value = getRejectReasons().join('\n');
+  rejCard.appendChild(rejTa);
+  var rejBtn = mk('button', "margin-top:10px;padding:8px 18px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer", 'Save Reasons');
+  rejBtn.addEventListener('click', function() {
+    var lines = rejTa.value.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+    if (!lines.length) { alert('Add at least one reason.'); return; }
+    localStorage.setItem('tcj_rm_reject_reasons', JSON.stringify(lines));
+    rejBtn.textContent = '\u2713 Saved';
+    setTimeout(function(){ rejBtn.textContent = 'Save Reasons'; }, 2000);
+    auditLog('RM Interface', 'Rejection Reasons Updated', null, null, null, lines.length + ' reasons');
   });
-  loadRMTab(savedTab, rmPanels[savedTab]);
+  rejCard.appendChild(rejBtn);
+  el.appendChild(rejCard);
+
+  var smCard = card('Site Management Shortcuts');
+  var smGrid = mk('div', 'display:flex;flex-wrap:wrap;gap:10px');
+  [
+    { label: 'Pages & visibility', tab: 'sm-pages' },
+    { label: 'Feature toggles', tab: 'sm-features' },
+    { label: 'Billing & refund copy', tab: 'sm-settings' }
+  ].forEach(function(link) {
+    var b = mk('button', "padding:8px 16px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer", link.label + ' \u2192');
+    b.addEventListener('click', function() {
+      switchView('site-mgmt');
+      switchSMTab(link.tab);
+    });
+    smGrid.appendChild(b);
+  });
+  smCard.appendChild(smGrid);
+  el.appendChild(smCard);
 }
 
 function loadRMTab(key, container) {
@@ -881,11 +897,33 @@ async function buildSMFeatures(container) {
     var features = await res.json();
     if (!Array.isArray(features)||!features.length){container.dataset.built='';container.innerHTML='<div style="padding:16px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">No features found.</div>';return;}
     container.innerHTML='';
+    var tierOpts = [{v:'free',l:'Free'},{v:'daily',l:'Daily'},{v:'weekly',l:'Weekly'},{v:'monthly',l:'Monthly'},{v:'yearly',l:'Yearly'},{v:'premium',l:'Premium'},{v:'event',l:'Event'}];
     features.forEach(function(f){
-      var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:9px;margin-bottom:8px';
+      var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:9px;margin-bottom:8px;flex-wrap:wrap;gap:10px';
       var info=document.createElement('div');
       info.innerHTML='<div style="font-family:DM Sans,sans-serif;font-size:13px;font-weight:500;color:var(--text-high)">'+(f.name||'')+'</div>'+(f.description?'<div style="font-size:11px;color:var(--text-mid);margin-top:2px">'+(f.description||'')+'</div>':'');
-      var right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:10px';
+      var right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:10px;flex-wrap:wrap';
+      if (f.min_tier !== undefined) {
+        var tierSel = document.createElement('select');
+        tierSel.style.cssText = 'padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-high)';
+        tierOpts.forEach(function(o) {
+          var opt = document.createElement('option');
+          opt.value = o.v; opt.textContent = o.l;
+          if ((f.min_tier || 'free') === o.v) opt.selected = true;
+          tierSel.appendChild(opt);
+        });
+        tierSel.addEventListener('change', (function(key, sel) { return async function() {
+          var prev = sel.value;
+          try {
+            var r = await apiFetch(SUPABASE_URL + '/rest/v1/site_features?key=eq.' + encodeURIComponent(key), {
+              method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+              body: JSON.stringify({ min_tier: sel.value })
+            });
+            if (!r || !r.ok) throw new Error(r ? r.status + ': ' + await r.text() : 'Session expired');
+          } catch (e) { sel.value = prev; alert('Tier save failed: ' + e.message); }
+        }; })(f.key, tierSel));
+        right.appendChild(tierSel);
+      }
       var st=document.createElement('span');st.style.cssText='font-size:11px;font-weight:600;color:'+(f.enabled?'#4caf76':'#dc5050');st.textContent=f.enabled?'Enabled':'Disabled';
       var cb=document.createElement('input');cb.type='checkbox';cb.checked=!!f.enabled;cb.style.cssText='width:16px;height:16px;accent-color:var(--accent);cursor:pointer';
       cb.addEventListener('change',(function(key,s){return async function(){

@@ -536,14 +536,21 @@
 
     <div id="v-recipe-mgmt" style="display:none">
       <div class="ap-inner-tabs">
-        <button class="ap-inner-tab active" data-tab="all"       onclick="switchRecipeTab('all')">All Recipes</button>
-        <button class="ap-inner-tab"        data-tab="pending"   onclick="switchRecipeTab('pending')">Pending Review <span class="ap-nav-badge" id="rtab-badge-pending" style="position:static;margin-left:4px">0</span></button>
-        <button class="ap-inner-tab"        data-tab="approved"  onclick="switchRecipeTab('approved')">Approved</button>
-        <button class="ap-inner-tab"        data-tab="rejected"  onclick="switchRecipeTab('rejected')">Rejected</button>
+        <button class="ap-inner-tab active" data-tab="all"         onclick="switchRecipeTab('all')">All Recipes</button>
+        <button class="ap-inner-tab"        data-tab="pending"     onclick="switchRecipeTab('pending')">Pending Review <span class="ap-nav-badge" id="rtab-badge-pending" style="position:static;margin-left:4px">0</span></button>
+        <button class="ap-inner-tab"        data-tab="approved"    onclick="switchRecipeTab('approved')">Approved</button>
+        <button class="ap-inner-tab"        data-tab="rejected"    onclick="switchRecipeTab('rejected')">Rejected</button>
         <button class="ap-inner-tab"        data-tab="analytics"   onclick="switchRecipeTab('analytics')">&#128202; Analytics</button>
+        <button class="ap-inner-tab"        data-tab="taxonomy"    onclick="switchRecipeTab('taxonomy')">Sub-cats &amp; Divisions</button>
+        <button class="ap-inner-tab"        data-tab="sourcelinks" onclick="switchRecipeTab('sourcelinks')">Source Links</button>
+        <button class="ap-inner-tab"        data-tab="nutrition"   onclick="switchRecipeTab('nutrition')">Nutrition</button>
+        <button class="ap-inner-tab"        data-tab="printqueue"  onclick="switchRecipeTab('printqueue')">Print Queue</button>
+        <button class="ap-inner-tab"        data-tab="collections" onclick="switchRecipeTab('collections')">Collections</button>
+        <button class="ap-inner-tab"        data-tab="featured"    onclick="switchRecipeTab('featured')">&#11088; Featured</button>
+        <button class="ap-inner-tab"        data-tab="audit"       onclick="switchRecipeTab('audit')">Audit Trail</button>
         <button class="ap-inner-tab"        data-tab="rmsettings"  onclick="switchRecipeTab('rmsettings')">&#9881;&#65039; RM Interface</button>
-        <button class="ap-inner-tab" data-tab="rotw" onclick="switchRecipeTab('rotw')">⭐ Recipe of the Week</button>
-        <button class="ap-inner-tab" data-tab="notes" onclick="switchRecipeTab('notes')">📝 Cooking Tips <span class="ap-nav-badge" id="rtab-badge-notes" style="position:static;margin-left:4px">0</span></button>
+        <button class="ap-inner-tab"        data-tab="rotw"        onclick="switchRecipeTab('rotw')">&#11088; Recipe of the Week</button>
+        <button class="ap-inner-tab"        data-tab="notes"       onclick="switchRecipeTab('notes')">&#128221; Cooking Tips <span class="ap-nav-badge" id="rtab-badge-notes" style="position:static;margin-left:4px">0</span></button>
       </div>
       <div id="rmgmt-list-panel">
         <div class="ap-stats" style="margin-bottom:16px">
@@ -580,8 +587,13 @@
           </div>
         </div>
       </div>
+      <div id="rmgmt-ops-panel" style="display:none">
+        <div id="rm-ops-content"></div>
+      </div>
       <div id="rmgmt-rmsettings-panel" style="display:none">
         <div id="rm-interface-content"></div>
+      </div>
+      <div id="rmgmt-extra-panel" style="display:none">
         <div id="rm-panel"></div>
       </div>
     </div>

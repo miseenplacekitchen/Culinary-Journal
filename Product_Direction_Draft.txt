@@ -1,0 +1,51 @@
+THE CULINARY JOURNAL — PRODUCT DIRECTION (Betty, June 2026)
+Status: ACTIVE — supersedes stale Master_Incomplete_Items_List.txt for planning
+
+══════════════════════════════════════════════════════════════════════
+NORTH STAR
+══════════════════════════════════════════════════════════════════════
+A gentle, ingredient-wise kitchen companion for everyone. Betty soft-launches
+alone until satisfied; full public rollout when ready. Household sharing (partner
+login, shared grocery) is planned. Library teaches how ingredients work in your
+favour — depth without overwhelm.
+
+══════════════════════════════════════════════════════════════════════
+BETTY'S DECISIONS (9 June 2026)
+══════════════════════════════════════════════════════════════════════
+1. Audience: Everyone — soft launch solo until happy
+2. Household: Yes — separate logins, shared lists (Phase 22+)
+3. Library: Full vision — curated core + approved contributions; ingredient-first
+4. Money: Admin-controlled tiers; daily/weekly/yearly; NO REFUNDS — clear in UI
+5. Control: Admin Interface tabs (IM pattern) + Site Management page visibility
+6. Admin pain: RM/UM "Interface" tabs were misnamed — Phase 21 fixes RM
+
+══════════════════════════════════════════════════════════════════════
+DEFAULTS (until Betty changes them)
+══════════════════════════════════════════════════════════════════════
+• Soft launch: most pages Hidden; open one-by-one from Site Management → Pages
+• G1 hierarchy: Light — bulk taxonomy OK; strict enforcement later
+• G3 pantry: Presence + low-stock (not strict numeric)
+• G4 household: Defer implementation; design acknowledged
+• Payments API (Stripe): Defer until admin manual tiers feel right
+• Deferred: hero 4.1, AI, Chrome, Android
+
+══════════════════════════════════════════════════════════════════════
+ADMIN MODEL (target state)
+══════════════════════════════════════════════════════════════════════
+Each panel:
+  WORK TABS     — queues and operations (Pending Review, Taxonomy, etc.)
+  INTERFACE TAB — dropdowns, labels, reference data only (Ingredients = model)
+
+Site Management:
+  Pages     — public / registered / paid / hidden + min tier + coming soon
+  Features  — enable/disable site capabilities
+  Settings  — refund policy, billing copy
+
+══════════════════════════════════════════════════════════════════════
+LANES (work order)
+══════════════════════════════════════════════════════════════════════
+Lane 1 — Control Centre     Phase 21 ✅ in progress
+Lane 2 — Core journeys      Ongoing verify
+Lane 3 — Household + Stripe + library depth   After Lane 1 + Betty go
+
+Contact: miseenplacekitchen.official@gmail.com

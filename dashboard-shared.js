@@ -194,7 +194,7 @@ async function loadDashboard() {
       } else {
         rotwEl.innerHTML =
           '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:12px">No Recipe of the Week is currently set.</div>'+
-          '<button onclick="switchView(&quot;recipe-mgmt&quot;);switchRecipeTab(&quot;rmsettings&quot;)" style="padding:7px 16px;background:rgba(91,143,212,0.1);border:1px solid rgba(91,143,212,0.3);border-radius:7px;color:#5B8FD4;font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer">Choose from Approved Recipes &#8594;</button>';
+          '<button onclick="switchView(&quot;recipe-mgmt&quot;);switchRecipeTab(&quot;rotw&quot;)" style="padding:7px 16px;background:rgba(91,143,212,0.1);border:1px solid rgba(91,143,212,0.3);border-radius:7px;color:#5B8FD4;font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer">Choose from Approved Recipes &#8594;</button>';
       }
     }
   } catch(e) { console.warn('dash rotw', e); }
@@ -240,7 +240,7 @@ async function loadDashboard() {
         items.push({icon:'&#128100;',color:'#d4a017',text:pendingUsers+' new member'+(pendingUsers===1?'':'s')+' awaiting approval',action:"switchView('user-mgmt');switchUserTab('pending')",label:'Review'});
       var rotwSet = !!(document.getElementById('dash-rotw')||{}).querySelector && document.getElementById('dash-rotw').querySelector('button[onclick*="openRecipeModal"]');
       if (!rotwSet)
-        items.push({icon:'&#127942;',color:'#5B8FD4',text:'Recipe of the Week is not set',action:"switchView('recipe-mgmt');switchRecipeTab('rmsettings')",label:'Set Now'});
+        items.push({icon:'&#127942;',color:'#5B8FD4',text:'Recipe of the Week is not set',action:"switchView('recipe-mgmt');switchRecipeTab('rotw')",label:'Set Now'});
       if (!items.length)
         items.push({icon:'&#10003;',color:'#4caf76',text:'Inbox clear — no pending actions.',action:null,label:null});
       var html = items.map(function(item){
