@@ -98,7 +98,7 @@
       </div>
       <div class="fp-field">
         <label class="fp-label">Relationship</label>
-        <select class="fp-input fp-select" id="fm-rel" onchange="document.getElementById('fm-rel-other-wrap').style.display = this.value==='other' ? '' : 'none'">
+        <select class="fp-input fp-select" id="fm-rel" onchange="toggleFoodStageField(); document.getElementById('fm-rel-other-wrap').style.display = this.value==='other' ? '' : 'none'">
           <option value="self">Myself</option>
           <option value="partner">Partner</option>
           <option value="child">Child</option>
@@ -113,10 +113,22 @@
         </div>
       </div>
     </div>
+    <div class="fp-field" id="fm-food-stage-wrap" style="display:none">
+      <label class="fp-label">Baby / Toddler Food Stage</label>
+      <select class="fp-input fp-select" id="fm-food-stage">
+        <option value="">— Not applicable —</option>
+        <option value="milk_only">Milk only (0–4 months)</option>
+        <option value="first_purees">First purées (4–6 months)</option>
+        <option value="thicker_purees">Thicker purées &amp; mashes (6–8 months)</option>
+        <option value="finger_foods">Soft finger foods (8–12 months)</option>
+        <option value="family_food_adapted">Family food, adapted (12+ months)</option>
+        <option value="toddler_plates">Toddler plates (1–3 years)</option>
+      </select>
+    </div>
     <div class="fp-row">
       <div class="fp-field">
         <label class="fp-label">Age Group</label>
-        <select class="fp-input fp-select" id="fm-age">
+        <select class="fp-input fp-select" id="fm-age" onchange="toggleFoodStageField()">
           <option value="infant">Infant (0 to 1 year)</option>
           <option value="toddler">Toddler (1 to 3 years)</option>
           <option value="child">Child (3 to 12 years)</option>
@@ -193,6 +205,18 @@
 const REL_LABELS = {self:'Myself',partner:'Partner',child:'Child',toddler:'Toddler',baby:'Baby',elderly:'Elderly relative',regular_guest:'Regular guest',other:'Other'};
 const SPICE_LABELS = {none:'No spice',mild:'😌 Mild',medium:'🌶 Medium',hot:'🌶🌶 Hot',very_hot:'🌶🌶🌶 Very Hot'};
 const REL_EMOJI = {self:'👤',partner:'💑',child:'👦',toddler:'🧒',baby:'👶',elderly:'👴',regular_guest:'👤',other:'👤'};
+const FOOD_STAGE_LABELS = {
+  milk_only:'Milk only', first_purees:'First purées', thicker_purees:'Thicker purées',
+  finger_foods:'Finger foods', family_food_adapted:'Family food (adapted)', toddler_plates:'Toddler plates'
+};
+
+function toggleFoodStageField() {
+  var rel = document.getElementById('fm-rel').value;
+  var age = document.getElementById('fm-age').value;
+  var show = rel === 'baby' || rel === 'toddler' || rel === 'child' ||
+    age === 'infant' || age === 'toddler' || age === 'child';
+  document.getElementById('fm-food-stage-wrap').style.display = show ? '' : 'none';
+}
 
 let profiles = [];
 
@@ -236,6 +260,7 @@ function render() {
       '<div class="fp-card-head"><div class="fp-avatar">'+emoji+'</div><div><div class="fp-card-name">'+esc(p.name)+'</div><div class="fp-card-rel">'+esc(REL_LABELS[p.relationship]||p.relationship)+'</div></div></div>' +
       '<div class="fp-pills">'+dietPills+allergyPills+healthPills+'</div>' +
       (spiceLabel ? '<div class="fp-pill fp-pill-spice" style="display:inline-block;margin-bottom:6px">Spice: '+esc(spiceLabel)+'</div>' : '') +
+      (p.baby_food_stage ? '<div class="fp-pill fp-pill-health" style="display:inline-block;margin-bottom:6px">🍼 '+esc(FOOD_STAGE_LABELS[p.baby_food_stage]||p.baby_food_stage)+'</div>' : '') +
       (p.notes ? '<div class="fp-notes">'+esc(p.notes)+'</div>' : '') +
       '<div class="fp-card-actions">' +
         '<button class="fp-btn fp-btn-ghost fp-btn-sm" onclick="openModal(\''+p.id+'\')">Edit</button>' +
@@ -268,7 +293,9 @@ function openModal(id) {
   document.getElementById('fm-age').value = AGE_MAP[age] || age;
   if (!document.getElementById('fm-age').value) document.getElementById('fm-age').value = 'young_adult';
   document.getElementById('fm-spice').value= p ? (p.spice_preference||'medium') : 'medium';
+  document.getElementById('fm-food-stage').value = p ? (p.baby_food_stage || '') : '';
   document.getElementById('fm-notes').value= p ? (p.notes||'') : '';
+  toggleFoodStageField();
   var setChecks = function(cid, vals) {
     var v = vals||[];
     document.querySelectorAll('#'+cid+' input').forEach(function(cb){ cb.checked=v.includes(cb.value); });
@@ -300,7 +327,12 @@ async function saveProfile() {
       p_dietary_needs:    getChecked('fm-dietary'),
       p_allergies:        getChecked('fm-allergies'),
       p_health_conditions:getChecked('fm-health'),
-      p_notes:            document.getElementById('fm-notes').value.trim()
+      p_notes:            document.getElementById('fm-notes').value.trim(),
+      p_baby_food_stage:  (function() {
+        var wrap = document.getElementById('fm-food-stage-wrap');
+        if (!wrap || wrap.style.display === 'none') return null;
+        return document.getElementById('fm-food-stage').value || null;
+      })()
     });
     closeModal();
     await load();

@@ -83,6 +83,8 @@
     .pt-useitup-card:hover { border-color:var(--accent); }
     .pt-useitup-name { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; color:var(--text-high); }
     .pt-useitup-meta { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-top:4px; }
+    .pt-expiry-alert { margin-bottom:16px; padding:12px 16px; background:var(--warn-bg); border:1px solid rgb(from var(--warn) r g b / 0.35); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-high); }
+    .pt-expiry-alert strong { color:var(--warn); }
   </style>
 </head>
 <body class="page-bg cj-body">
@@ -106,6 +108,8 @@
   </div>
 
   <div class="pt-stats" id="pt-stats"></div>
+
+  <div id="pt-expiry-alert" style="display:none"></div>
 
   <div class="pt-useitup" id="pt-useitup" style="display:none">
     <div class="pt-useitup-title">🍳 Use it up</div>
@@ -308,6 +312,23 @@ function setLocationFilter(loc, btn) {
   renderList(document.getElementById('pt-search').value);
 }
 
+function renderExpiryAlert() {
+  var el = document.getElementById('pt-expiry-alert');
+  if (!el) return;
+  var urgent = getPantry().map(normalizePantryItem).filter(function(item) {
+    var exp = getExpiryStatus(item);
+    return exp && (exp.status === 'expiring' || exp.status === 'expired');
+  });
+  if (!urgent.length) { el.style.display = 'none'; return; }
+  el.className = 'pt-expiry-alert';
+  el.style.display = 'block';
+  el.innerHTML = '<strong>⏰ Use soon:</strong> ' + urgent.slice(0, 6).map(function(i) {
+    var exp = getExpiryStatus(i);
+    return esc(i.name) + ' (' + esc(exp.label) + ')';
+  }).join(' · ') + (urgent.length > 6 ? ' · +' + (urgent.length - 6) + ' more' : '') +
+    ' — <a href="#" style="color:var(--accent)" onclick="setFilter(\'expiring\',document.querySelector(\'#pt-status-filters .pt-filter:nth-child(6)\'));return false;">Show all</a>';
+}
+
 function renderStats() {
   const items = getPantry().map(normalizePantryItem);
   const ok  = items.filter(function(i) { return getStatus(i)==='ok'; }).length;
@@ -376,6 +397,7 @@ function renderList(search) {
     el.appendChild(row);
   });
   renderStats();
+  renderExpiryAlert();
 }
 
 function adjustQty(id, delta) {
@@ -713,6 +735,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   renderStats();
+  renderExpiryAlert();
   renderList('');
   loadIngredientNames();
   loadPantryFromSupabase().then(loadUseItUpSuggestions);

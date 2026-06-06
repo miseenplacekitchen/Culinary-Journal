@@ -71,6 +71,17 @@
     .mp-cooked-btn { position:absolute; bottom:4px; right:4px; background:none; border:1px solid rgb(from #4caf76 r g b / 0.4); border-radius:4px; color:#4caf76; cursor:pointer; font-size:10px; padding:1px 5px; font-family:'DM Sans',sans-serif; }
     .mp-cooked-btn:hover { background:rgb(from #4caf76 r g b / 0.15); }
     .mp-cooked-label { font-family:'DM Sans',sans-serif; font-size:9px; color:#4caf76; margin-top:4px; }
+    .mp-recipe-card.skipped { opacity:0.45; border-style:dashed; }
+    .mp-recipe-card.eating-out { border-color:rgb(from var(--warn) r g b / 0.45); background:rgb(from var(--warn) r g b / 0.08); }
+    .mp-recipe-card.leftovers { border-color:rgb(from #5b8fd4 r g b / 0.45); background:rgb(from #5b8fd4 r g b / 0.08); }
+    .mp-status-label { font-family:'DM Sans',sans-serif; font-size:9px; margin-top:4px; color:var(--text-mid); }
+    .mp-status-btns { display:flex; gap:2px; margin-top:5px; flex-wrap:wrap; }
+    .mp-status-btn { font-family:'DM Sans',sans-serif; font-size:8px; padding:1px 4px; border-radius:3px; border:1px solid var(--border); background:none; color:var(--text-mid); cursor:pointer; }
+    .mp-status-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .mp-today { margin-bottom:18px; padding:14px 16px; background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; }
+    .mp-today-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mid); margin-bottom:10px; }
+    .mp-today-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 0; border-bottom:1px solid rgba(from var(--border) r g b / 0.35); font-family:'DM Sans',sans-serif; font-size:12px; }
+    .mp-today-row:last-child { border-bottom:none; }
 
     /* Weekly summary */
     .mp-summary { margin-top:20px; background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:18px 20px; }
@@ -160,6 +171,8 @@
       </div>
     </div>
   </div>
+
+  <div id="mp-today" class="mp-today" style="display:none"></div>
 
   <!-- Mode & Family panel -->
   <div class="mp-mode-bar">
@@ -378,23 +391,35 @@ function renderCalendar() {
 
       if (recipe) {
         const card = document.createElement('div');
-        card.className = 'mp-recipe-card' + (recipe.status === 'cooked' ? ' cooked' : '');
+        var st = recipe.status || 'planned';
+        card.className = 'mp-recipe-card' + (st !== 'planned' ? ' ' + st : '');
         const emoji = CAT_EMOJI[recipe.category] || '🍽';
         var conflicts = checkRecipeConflicts(recipe);
+        var statusLabel = {cooked:'✓ Cooked',skipped:'— Skipped','eating-out':'🍽 Out',leftovers:'🥡 Leftovers'}[st] || '';
         card.innerHTML = '<div class="mp-recipe-name">' + emoji + ' ' + esc(recipe.name||'') + '</div>' +
           '<div class="mp-recipe-cat">' + esc(recipe.category||'') + '</div>' +
-          (recipe.status === 'cooked' ? '<div class="mp-cooked-label">✓ Cooked</div>' : '') +
+          (statusLabel ? '<div class="mp-status-label">' + statusLabel + '</div>' : '') +
           (conflicts.length ? '<div class="mp-member-flags">' + conflicts.slice(0,2).map(function(c){return '<span class="mp-member-flag warn">⚠ '+esc(c)+'</span>';}).join('') + '</div>' : '') +
-          (recipe.status !== 'cooked' ? '<button class="mp-cooked-btn" title="Mark as cooked">✓</button>' : '') +
+          '<div class="mp-status-btns">' +
+            (st !== 'cooked' ? '<button class="mp-status-btn" data-st="cooked" title="Cooked">✓</button>' : '') +
+            (st !== 'skipped' ? '<button class="mp-status-btn" data-st="skipped">Skip</button>' : '') +
+            (st !== 'eating-out' ? '<button class="mp-status-btn" data-st="eating-out">Out</button>' : '') +
+            (st !== 'leftovers' ? '<button class="mp-status-btn" data-st="leftovers">Left</button>' : '') +
+          '</div>' +
           '<button class="mp-recipe-remove" title="Remove">×</button>';
         card.querySelector('.mp-recipe-remove').addEventListener('click', function(e) {
           e.stopPropagation(); clearSlot(day, meal); renderCalendar();
         });
-        var cookBtn = card.querySelector('.mp-cooked-btn');
-        if (cookBtn) {
-          cookBtn.addEventListener('click', function(e) { markMealCooked(day, meal, e); });
-        }
-        card.addEventListener('click', function() { openPicker(day, meal); });
+        card.querySelectorAll('.mp-status-btn').forEach(function(btn) {
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            setMealStatus(day, meal, btn.dataset.st, e);
+          });
+        });
+        card.addEventListener('click', function(e) {
+          if (e.target.closest('.mp-status-btn') || e.target.closest('.mp-recipe-remove')) return;
+          openPicker(day, meal);
+        });
         slot.appendChild(card);
       } else {
         const empty = document.createElement('div');
@@ -411,6 +436,33 @@ function renderCalendar() {
   grid.style.gridTemplateColumns = '90px repeat(7,1fr)';
 
   renderSummary();
+  renderTodayPanel();
+}
+
+function renderTodayPanel() {
+  var el = document.getElementById('mp-today');
+  if (!el || currentView !== 'week') { if (el) el.style.display = 'none'; return; }
+  var dates = getWeekDates(currentWeekOffset);
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var todayIdx = -1;
+  dates.forEach(function(d, i) { if (d.getTime() === today.getTime()) todayIdx = i; });
+  if (todayIdx < 0) { el.style.display = 'none'; return; }
+  var day = DAYS[todayIdx];
+  var plan = getPlan();
+  var rows = [];
+  MEALS.forEach(function(meal) {
+    var slot = plan[day] && plan[day][meal];
+    if (slot) rows.push({ meal: meal, slot: slot });
+  });
+  if (!rows.length) { el.style.display = 'none'; return; }
+  var dateLabel = dates[todayIdx].toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' });
+  el.style.display = 'block';
+  el.innerHTML = '<div class="mp-today-title">Today · ' + esc(dateLabel) + '</div>' +
+    rows.map(function(r) {
+      var st = {cooked:'✓ Cooked',skipped:'Skipped','eating-out':'Eating out',leftovers:'Leftovers'}[r.slot.status] || 'Planned';
+      return '<div class="mp-today-row"><span><strong>' + esc(r.meal) + '</strong> · ' + esc(r.slot.name || '') +
+        ' <span style="color:var(--text-mid);font-size:11px">(' + esc(st) + ')</span></span></div>';
+    }).join('');
 }
 
 function renderSummary() {
@@ -523,6 +575,64 @@ function isInPantry(name) {
   return (item.qty || 0) > 0;
 }
 
+function setMealStatus(day, meal, status, e) {
+  if (e) e.stopPropagation();
+  var slot = getSlot(day, meal);
+  if (!slot) return;
+  if (status === 'cooked') { markMealCooked(day, meal, e); return; }
+  setSlot(day, meal, Object.assign({}, slot, { status: status }));
+  renderCalendar();
+}
+
+async function promptPantryUseUp(slot) {
+  if (!slot || !slot.id) return;
+  try {
+    var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    var headers = { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' };
+    if (sess && sess.access_token) headers.Authorization = 'Bearer ' + sess.access_token;
+    var res = await fetch(SUPA_URL + '/rest/v1/rpc/get_public_recipe', {
+      method: 'POST', headers: headers, body: JSON.stringify({ p_id: slot.id })
+    });
+    if (!res.ok) return;
+    var recipe = await res.json();
+    if (!recipe) return;
+    var pantry = getPantryItems();
+    var matched = [];
+    (recipe.ingredients || []).forEach(function(sec) {
+      (sec.items || []).forEach(function(ing) {
+        var n = (ing.ingredient || ing.name || '').toLowerCase().trim();
+        if (!n) return;
+        var p = pantry.find(function(x) { return x.name && x.name.toLowerCase().trim() === n && (x.qty || 0) > 0; });
+        if (p) matched.push(p);
+      });
+    });
+    if (!matched.length) return;
+    var names = matched.map(function(p) { return p.name; }).join(', ');
+    if (!confirm('Use up pantry items for this meal?\n\n' + names)) return;
+    matched.forEach(function(p) { p.qty = Math.max(0, (parseFloat(p.qty) || 0) - 1); });
+    localStorage.setItem('tcj_pantry', JSON.stringify(pantry));
+  } catch(_) {}
+}
+
+async function promptLeftoversToFridge(day, meal, slot) {
+  if (!confirm('Save leftovers from "' + (slot.name || 'this meal') + '" to your fridge?\n\nDefault expiry: 3 days.')) return;
+  var pantry = getPantryItems();
+  var exp = new Date();
+  exp.setDate(exp.getDate() + 3);
+  pantry.push({
+    id: 'pt_' + Date.now(),
+    name: (slot.name || 'Leftovers') + ' (' + day + ' ' + meal + ')',
+    qty: 1,
+    unit: 'portion',
+    category: 'Other',
+    location: 'fridge',
+    expiry_date: exp.toISOString().slice(0, 10),
+    is_staple: false,
+    updated: new Date().toISOString()
+  });
+  localStorage.setItem('tcj_pantry', JSON.stringify(pantry));
+}
+
 async function markMealCooked(day, meal, e) {
   if (e) e.stopPropagation();
   var slot = getSlot(day, meal);
@@ -553,6 +663,8 @@ async function markMealCooked(day, meal, e) {
     }
   } catch(_) {}
   setSlot(day, meal, Object.assign({}, slot, { status: 'cooked', cooked_at: cookedDate }));
+  await promptPantryUseUp(slot);
+  await promptLeftoversToFridge(day, meal, slot);
   renderCalendar();
 }
 
