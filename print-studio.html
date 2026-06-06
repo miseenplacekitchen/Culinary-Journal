@@ -58,6 +58,10 @@
     }
     .ps-brand .ps-brand-mark { font-size:12px; line-height:1; }
     .ps-card-num { font-family:'DM Sans',sans-serif; font-size:9px; color:rgba(0,0,0,0.3); position:absolute; bottom:8px; right:10px; }
+    .ps-card-type { font-family:'DM Sans',sans-serif; font-size:9px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#8b6914; margin:28px 0 6px; }
+    .ps-qr { position:absolute; bottom:24px; left:10px; width:52px; height:52px; }
+    .ps-qr img, .ps-qr canvas { width:52px!important; height:52px!important; display:block; }
+    .ps-card.has-qr { padding-bottom:72px; }
     .ps-card-title { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:700; color:#1a1a1a; margin-bottom:2px; line-height:1.2; }
     .ps-card-subtitle { font-family:'Cormorant Garamond',serif; font-size:0.85rem; font-style:italic; color:#8b6914; margin-bottom:10px; }
     .ps-card-meta { display:flex; gap:12px; font-family:'DM Sans',sans-serif; font-size:10px; color:#555; margin-bottom:10px; flex-wrap:wrap; padding-bottom:8px; border-bottom:0.5px solid #e8e0d0; }
@@ -272,6 +276,7 @@
     .po-confirm-text { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); line-height:1.6; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="page-bg cj-body">
 <nav class="nav">
@@ -359,6 +364,9 @@
         <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
           <input type="checkbox" id="inc-nutrition" onchange="buildCards()" style="accent-color:var(--accent)"> Nutrition <span style="color:var(--text-mid);font-size:11px">(when available)</span>
         </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer;margin-top:6px">
+          <input type="checkbox" id="inc-qr" checked onchange="buildCards()" style="accent-color:var(--accent)"> QR code (links to recipe page)
+        </label>
       </div>
     </div>
 
@@ -406,6 +414,7 @@ function setLayout(layout, btn) {
   currentLayout = layout;
   document.querySelectorAll('.ps-opt-btn[data-layout]').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  try { localStorage.setItem('tcj_print_layout', layout); } catch(_){}
   buildCards();
 }
 
@@ -413,6 +422,7 @@ function setSize(size, btn) {
   currentSize = size;
   document.querySelectorAll('.ps-opt-btn[data-size]').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  try { localStorage.setItem('tcj_print_card_size', size); } catch(_){}
   buildCards();
 }
 
@@ -443,138 +453,254 @@ const PS_STYLE = {
 function psDur(v,u){const n=parseFloat(v);if(isNaN(n))return v;if(u==='min')return n+' min';if(u==='hr')return n+(n===1?' hr':' hrs');if(u==='day')return n+(n===1?' day':' days');return n+' '+u;}
 const PS_BRAND = '<div class="ps-brand"><span class="ps-brand-mark">🍽</span><span>The Culinary Journal</span></div>';
 
+const PS_CAPACITY = {
+  '4x6': { ingredients: 12, firstIngredients: 8, steps: 6 },
+  '3x5': { ingredients: 8, firstIngredients: 6, steps: 4 },
+  'a5':  { ingredients: 24, firstIngredients: 18, steps: 10 },
+  'a4':  { ingredients: 36, firstIngredients: 28, steps: 14 }
+};
+
+function psCapacity() { return PS_CAPACITY[currentSize] || PS_CAPACITY['4x6']; }
+
+function psChunk(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out.length ? out : [[]];
+}
+
+function psIngredientPairs(recipe) {
+  const pairs = [];
+  (recipe.ingredients || []).forEach(sec => {
+    const secTitle = sec.title || sec.section || 'Ingredients';
+    (sec.items || []).forEach(item => pairs.push({ section: secTitle, item }));
+  });
+  return pairs;
+}
+
+function psRenderIngredientPairs(pairs) {
+  if (!pairs.length) return '';
+  let html = '';
+  let lastSec = '';
+  let listOpen = false;
+  pairs.forEach(p => {
+    if (p.section !== lastSec) {
+      if (listOpen) html += '</div>';
+      html += `<div class="ps-section-head">${esc(p.section)}</div><div class="ps-ing-list">`;
+      lastSec = p.section;
+      listOpen = true;
+    }
+    const item = p.item;
+    html += `<div class="ps-ing-item"><span class="ps-ing-qty">${esc(fmtQty(item.qty))||''} ${esc(item.unit||'')}</span><span>${esc(item.ingredient||'')}</span></div>`;
+  });
+  if (listOpen) html += '</div>';
+  return html;
+}
+
+function psBuildMeta(r, inc, cfg) {
+  const meta = [];
+  if (inc('inc-times')) {
+    if (r.prep_time_minutes) meta.push('⏱ Prep: ' + psDur(r.prep_time_minutes,'min'));
+    if (r.cook_time_minutes) meta.push('🔥 ' + cfg.c + ': ' + psDur(r.cook_time_minutes, cfg.cu));
+    if (r.additional_time_minutes && cfg.x) meta.push('⏳ ' + cfg.x + ': ' + psDur(r.additional_time_minutes, cfg.xu));
+  }
+  if (inc('inc-serves') && r.servings) {
+    const unit = (r.servings_unit && r.servings_unit !== 'people') ? ' ' + r.servings_unit : '';
+    meta.push('🍽 ' + cfg.sv + ' ' + r.servings + unit);
+  }
+  if (inc('inc-spice')) {
+    if (r.spice_level && r.spice_level !== 'Not Applicable') meta.push('🌶 ' + r.spice_level);
+    if (r.sweet_level && r.sweet_level !== 'Not Applicable') meta.push('🍬 ' + r.sweet_level);
+  }
+  if (inc('inc-style') && cfg.nm) meta.push('👨‍🍳 ' + cfg.nm);
+  if (inc('inc-origin') && r.origin_country) {
+    meta.push('🌍 ' + [r.origin_state, r.origin_country].filter(Boolean).join(', '));
+  }
+  if (inc('inc-difficulty') && r.difficulty) meta.push('📊 ' + r.difficulty);
+  return meta;
+}
+
+function psBuildExtraRows(r, inc) {
+  let extraRows = '';
+  if (inc('inc-dietary')) {
+    const tags = [].concat(r.dietary_tags||[], r.health_tags||[]);
+    if (tags.length) extraRows += `<div class="ps-card-meta" style="border-bottom:none;margin-bottom:4px">${tags.map(t=>`<span>• ${esc(t)}</span>`).join('')}</div>`;
+  }
+  if (inc('inc-keeping')) {
+    const keep = [];
+    if (r.shelf_life_value) keep.push('Shelf life: ' + esc(r.shelf_life_value) + ' ' + esc(r.shelf_life_unit||'months') + (r.shelf_life_storage ? ' ('+esc(r.shelf_life_storage)+')' : ''));
+    if (r.after_open_value) keep.push('After opening: ' + esc(r.after_open_value) + ' ' + esc(r.after_open_unit||'weeks'));
+    if (keep.length) extraRows += `<div class="ps-card-meta" style="border-bottom:none;margin-bottom:4px">${keep.map(k=>`<span>🫙 ${k}</span>`).join('')}</div>`;
+  }
+  return extraRows;
+}
+
+function psBuildSafetyHtml(r) {
+  const safety = [];
+  const allIngs = [];
+  (r.ingredients||[]).forEach(s => (s.items||[]).forEach(i => allIngs.push((i.ingredient||'').toLowerCase())));
+  const ALC = ['wine','beer','rum','brandy','whisky','whiskey','bourbon','vodka','gin','liqueur','sherry','port','sake','marsala','vermouth','tequila','cognac','kirsch'];
+  if (allIngs.some(n => ALC.some(w => n.indexOf(w) !== -1))) safety.push('Contains alcohol — cooking reduces but may not eliminate alcohol content.');
+  if ((r.category||'').toLowerCase().indexOf('little ones') !== -1) safety.push('Baby & toddler recipe — check age stage and allergens; supervise eating.');
+  if (['pickling-q','pickling-t','fermentation','canning','dehydrating','curing','jam','brining'].indexOf(r.cooking_style||'') !== -1) safety.push('Preservation: follow sterilisation and quantities exactly — food safety depends on it.');
+  return safety.length
+    ? `<div style="font-family:'DM Sans',sans-serif;font-size:8px;color:#8a7a5c;margin-top:8px;padding-top:5px;border-top:0.5px solid #e8e0d0;line-height:1.5">${safety.map(s=>'⚠ '+esc(s)).join('<br>')}</div>`
+    : '';
+}
+
+function psOverviewHeader(r, meta, extraRows) {
+  return `
+    <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
+    ${r.native_title?`<div class="ps-card-subtitle">${esc(r.native_title||'')}</div>`:''}
+    ${meta.length?`<div class="ps-card-meta">${meta.map(m=>`<span>${esc(m)}</span>`).join('')}</div>`:''}
+    ${extraRows}
+  `;
+}
+
+function psContinuationTitle(r) {
+  return `<div class="ps-card-title" style="font-size:1rem;margin-bottom:6px">${esc(r.recipe_name||'')}</div>`;
+}
+
+function psRenderSteps(steps, startNum) {
+  return steps.map((text, i) =>
+    `<div class="ps-step"><span class="ps-step-num">${startNum + i}.</span><span class="ps-step-text">${esc(text)}</span></div>`
+  ).join('');
+}
+
+function psRecipePageUrl(recipe) {
+  const id = recipe.id || recipe.recipe_id;
+  if (!id) return '';
+  const base = window.location.href.replace(/[^/]*$/, '');
+  return base + 'recipe-page.html?id=' + encodeURIComponent(id);
+}
+
+function renderPrintQRCodes(recipe, showQr) {
+  if (!showQr || typeof QRCode === 'undefined') return;
+  const url = psRecipePageUrl(recipe);
+  if (!url) return;
+  document.querySelectorAll('.ps-qr').forEach(el => {
+    el.innerHTML = '';
+    try {
+      new QRCode(el, { text: url, width: 52, height: 52, colorDark: '#1a1a1a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+    } catch(_){}
+  });
+}
+
 function buildCards() {
   if (!currentRecipe) return;
   const container = document.getElementById('ps-cards');
   const inc = id => { const el = document.getElementById(id); return el ? el.checked : false; };
   const r = currentRecipe;
   const cfg = PS_STYLE[r.cooking_style || ''] || PS_STYLE[''];
-  const cards = [];
+  const cap = psCapacity();
+  const showQr = inc('inc-qr');
+  const cardDefs = [];
 
-  // Card 1: Overview + selected recipe details + Ingredients (only checked
-  // groups emit — disabled sections reserve no space, content reflows)
   if (inc('inc-overview')) {
-    const meta = [];
-    if (inc('inc-times')) {
-      if (r.prep_time_minutes) meta.push('⏱ Prep: ' + psDur(r.prep_time_minutes,'min'));
-      if (r.cook_time_minutes) meta.push('🔥 ' + cfg.c + ': ' + psDur(r.cook_time_minutes, cfg.cu));
-      if (r.additional_time_minutes && cfg.x) meta.push('⏳ ' + cfg.x + ': ' + psDur(r.additional_time_minutes, cfg.xu));
-    }
-    if (inc('inc-serves') && r.servings) {
-      const unit = (r.servings_unit && r.servings_unit !== 'people') ? ' ' + r.servings_unit : '';
-      meta.push('🍽 ' + cfg.sv + ' ' + r.servings + unit);
-    }
-    if (inc('inc-spice')) {
-      if (r.spice_level && r.spice_level !== 'Not Applicable') meta.push('🌶 ' + r.spice_level);
-      if (r.sweet_level && r.sweet_level !== 'Not Applicable') meta.push('🍬 ' + r.sweet_level);
-    }
-    if (inc('inc-style') && cfg.nm) meta.push('👨‍🍳 ' + cfg.nm);
-    if (inc('inc-origin') && r.origin_country) {
-      meta.push('🌍 ' + [r.origin_state, r.origin_country].filter(Boolean).join(', '));
-    }
-    if (inc('inc-difficulty') && r.difficulty) meta.push('📊 ' + r.difficulty);
+    const meta = psBuildMeta(r, inc, cfg);
+    const extraRows = psBuildExtraRows(r, inc);
+    const safetyHtml = psBuildSafetyHtml(r);
+    const pairs = psIngredientPairs(r);
 
-    let extraRows = '';
-    if (inc('inc-dietary')) {
-      const tags = [].concat(r.dietary_tags||[], r.health_tags||[]);
-      if (tags.length) extraRows += `<div class="ps-card-meta" style="border-bottom:none;margin-bottom:4px">${tags.map(t=>`<span>• ${esc(t)}</span>`).join('')}</div>`;
-    }
-    if (inc('inc-keeping')) {
-      const keep = [];
-      if (r.shelf_life_value) keep.push('Shelf life: ' + esc(r.shelf_life_value) + ' ' + esc(r.shelf_life_unit||'months') + (r.shelf_life_storage ? ' ('+esc(r.shelf_life_storage)+')' : ''));
-      if (r.after_open_value) keep.push('After opening: ' + esc(r.after_open_value) + ' ' + esc(r.after_open_unit||'weeks'));
-      if (keep.length) extraRows += `<div class="ps-card-meta" style="border-bottom:none;margin-bottom:4px">${keep.map(k=>`<span>🫙 ${k}</span>`).join('')}</div>`;
-    }
-
-    let ingHtml = '';
-    (r.ingredients || []).forEach(sec => {
-      const secTitle = sec.title || sec.section;
-      if (secTitle) ingHtml += `<div class="ps-section-head">${esc(secTitle)}</div>`;
-      ingHtml += '<div class="ps-ing-list">';
-      (sec.items || []).forEach(item => {
-        ingHtml += `<div class="ps-ing-item"><span class="ps-ing-qty">${esc(fmtQty(item.qty))||''} ${esc(item.unit||'')}</span><span>${esc(item.ingredient||'')}</span></div>`;
+    if (!pairs.length) {
+      cardDefs.push({
+        type: 'Overview',
+        html: psOverviewHeader(r, meta, extraRows) + safetyHtml
       });
-      ingHtml += '</div>';
-    });
+    } else {
+      const firstChunk = pairs.slice(0, cap.firstIngredients);
+      const rest = pairs.slice(cap.firstIngredients);
+      const restChunks = psChunk(rest, cap.ingredients);
 
-    // Contextual safety lines on the printed card (alcohol / baby / preservation)
-    const safety = [];
-    const allIngs = [];
-    (r.ingredients||[]).forEach(s => (s.items||[]).forEach(i => allIngs.push((i.ingredient||'').toLowerCase())));
-    const ALC = ['wine','beer','rum','brandy','whisky','whiskey','bourbon','vodka','gin','liqueur','sherry','port','sake','marsala','vermouth','tequila','cognac','kirsch'];
-    if (allIngs.some(n => ALC.some(w => n.indexOf(w) !== -1))) safety.push('Contains alcohol — cooking reduces but may not eliminate alcohol content.');
-    if ((r.category||'').toLowerCase().indexOf('little ones') !== -1) safety.push('Baby & toddler recipe — check age stage and allergens; supervise eating.');
-    if (['pickling-q','pickling-t','fermentation','canning','dehydrating','curing','jam','brining'].indexOf(r.cooking_style||'') !== -1) safety.push('Preservation: follow sterilisation and quantities exactly — food safety depends on it.');
-    const safetyHtml = safety.length
-      ? `<div style="font-family:'DM Sans',sans-serif;font-size:8px;color:#8a7a5c;margin-top:8px;padding-top:5px;border-top:0.5px solid #e8e0d0;line-height:1.5">${safety.map(s=>'⚠ '+esc(s)).join('<br>')}</div>`
-      : '';
+      cardDefs.push({
+        type: 'Overview & Ingredients',
+        html: psOverviewHeader(r, meta, extraRows) + psRenderIngredientPairs(firstChunk) + (restChunks.length ? '' : safetyHtml)
+      });
 
-    cards.push(`
-      ${PS_BRAND}
-      <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
-      ${r.native_title?`<div class="ps-card-subtitle">${esc(r.native_title||'')}</div>`:''}
-      ${meta.length?`<div class="ps-card-meta">${meta.map(m=>`<span>${esc(m)}</span>`).join('')}</div>`:''}
-      ${extraRows}
-      ${ingHtml}
-      ${safetyHtml}
-    `);
+      restChunks.forEach((chunk, ci) => {
+        const isLastIng = ci === restChunks.length - 1;
+        cardDefs.push({
+          type: 'Ingredients (continued)',
+          html: psContinuationTitle(r) + psRenderIngredientPairs(chunk) + (isLastIng ? safetyHtml : '')
+        });
+      });
+    }
   }
 
-  // Cards for Procedure (split across cards if long)
   if (inc('inc-method')) {
     (r.method || []).forEach(block => {
-      const blockTitle = block.title || block.section;
-      const steps = (block.steps || []).map((step, i) => {
-        const text = typeof step === 'string' ? step : (step.text || step.title || '');
-        return `<div class="ps-step"><span class="ps-step-num">${i+1}.</span><span class="ps-step-text">${esc(text)}</span></div>`;
-      }).join('');
-      if (steps) {
-        cards.push(`
-          ${PS_BRAND}
-          <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
-          ${blockTitle?`<div class="ps-section-head">${esc(blockTitle)}</div>`:'<div class="ps-section-head">Procedure</div>'}
-          ${steps}
-        `);
-      }
+      const blockTitle = block.title || block.section || 'Procedure';
+      const stepTexts = (block.steps || []).map(step =>
+        typeof step === 'string' ? step : (step.text || step.title || '')
+      ).filter(Boolean);
+      if (!stepTexts.length) return;
+
+      const stepChunks = psChunk(stepTexts, cap.steps);
+      let stepOffset = 0;
+      stepChunks.forEach((chunk, ci) => {
+        const continued = ci > 0;
+        const typeLabel = stepChunks.length > 1
+          ? blockTitle + (continued ? ' (continued)' : '')
+          : blockTitle;
+        cardDefs.push({
+          type: typeLabel,
+          html: psContinuationTitle(r)
+            + `<div class="ps-section-head">${esc(blockTitle)}${continued ? ' — continued' : ''}</div>`
+            + psRenderSteps(chunk, stepOffset + 1)
+        });
+        stepOffset += chunk.length;
+      });
     });
   }
 
-  // Nutrition card — only when the recipe carries nutrition data
   if (inc('inc-nutrition') && r.nutrition && (r.nutrition.calories || r.nutrition.protein)) {
     const n = r.nutrition;
     const rows = [['Calories', n.calories+' kcal'],['Protein', n.protein+' g'],['Carbohydrates', n.carbs+' g'],['Fat', n.fat+' g'],['Fibre', n.fibre+' g'],['Sugar', n.sugar+' g'],['Sodium', n.sodium+' mg']]
       .filter(x => x[1] && !String(x[1]).startsWith('undefined'));
-    cards.push(`
-      ${PS_BRAND}
-      <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
-      <div class="ps-section-head">Nutrition — Per Serving (approximate)</div>
-      <div class="ps-ing-list">${rows.map(x=>`<div class="ps-ing-item"><span class="ps-ing-qty">${esc(String(x[1]))}</span><span>${esc(x[0])}</span></div>`).join('')}</div>
-    `);
+    cardDefs.push({
+      type: 'Nutrition',
+      html: psContinuationTitle(r)
+        + '<div class="ps-section-head">Nutrition — Per Serving (approximate)</div>'
+        + `<div class="ps-ing-list">${rows.map(x=>`<div class="ps-ing-item"><span class="ps-ing-qty">${esc(String(x[1]))}</span><span>${esc(x[0])}</span></div>`).join('')}</div>`
+    });
   }
 
-  // Notes card
   if (inc('inc-notes') && esc(r.cooking_notes||'')) {
     const notesText = Array.isArray(r.cooking_notes) ? r.cooking_notes.join('\n• ') : r.cooking_notes;
-    cards.push(`
-      ${PS_BRAND}
-      <div class="ps-card-title">${esc(r.recipe_name||'')}</div>
-      <div class="ps-section-head">Cooking Notes</div>
-      <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#444;line-height:1.6">${esc(notesText||'')}</div>
-    `);
+    cardDefs.push({
+      type: 'Cooking Notes',
+      html: psContinuationTitle(r)
+        + '<div class="ps-section-head">Cooking Notes</div>'
+        + `<div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#444;line-height:1.6">${esc(notesText||'')}</div>`
+    });
   }
 
-  if (!cards.length) {
+  const pdfBtn = document.getElementById('pdf-btn');
+  if (!cardDefs.length) {
     container.innerHTML = '<div class="ps-empty"><div class="ps-empty-icon">⚠️</div><div class="ps-empty-title">Nothing selected to print</div></div>';
+    if (pdfBtn) pdfBtn.style.display = 'none';
+    document.getElementById('ps-card-count').textContent = '';
     return;
   }
 
-  document.getElementById('ps-card-count').textContent = cards.length + ' card' + (cards.length>1?'s':'');
-  container.innerHTML = cards.map((content, i) =>
-    `<div class="ps-card size-${currentSize} layout-${currentLayout}">
-      ${content}
-      <div class="ps-card-num">Card ${i+1} of ${cards.length}</div>
-    </div>`
-  ).join('');
+  const total = cardDefs.length;
+  document.getElementById('ps-card-count').textContent = total + ' card' + (total > 1 ? 's' : '');
+  if (pdfBtn) pdfBtn.style.display = '';
+
+  container.innerHTML = cardDefs.map((def, i) => {
+    const numSuffix = i < total - 1 ? ' — continue' : '';
+    const qrHtml = showQr ? '<div class="ps-qr"></div>' : '';
+    const qrClass = showQr ? ' has-qr' : '';
+    const typeHtml = def.type ? `<div class="ps-card-type">${esc(def.type)}</div>` : '';
+    return `<div class="ps-card size-${currentSize} layout-${currentLayout}${qrClass}">
+      ${PS_BRAND}
+      ${typeHtml}
+      ${def.html}
+      ${qrHtml}
+      <div class="ps-card-num">Card ${i + 1} of ${total}${numSuffix}</div>
+    </div>`;
+  }).join('');
+
+  renderPrintQRCodes(r, showQr);
 }
 
 function loadRecipe(recipe) {
@@ -584,8 +710,28 @@ function loadRecipe(recipe) {
   buildCards();
 }
 
+function restorePrintPrefs() {
+  try {
+    const savedSize = localStorage.getItem('tcj_print_card_size');
+    if (savedSize && PS_CAPACITY[savedSize]) {
+      currentSize = savedSize;
+      document.querySelectorAll('.ps-opt-btn[data-size]').forEach(b => b.classList.remove('active'));
+      const sizeBtn = document.querySelector('.ps-opt-btn[data-size="' + savedSize + '"]');
+      if (sizeBtn) sizeBtn.classList.add('active');
+    }
+    const savedLayout = localStorage.getItem('tcj_print_layout');
+    if (savedLayout) {
+      currentLayout = savedLayout;
+      document.querySelectorAll('.ps-opt-btn[data-layout]').forEach(b => b.classList.remove('active'));
+      const layoutBtn = document.querySelector('.ps-opt-btn[data-layout="' + savedLayout + '"]');
+      if (layoutBtn) layoutBtn.classList.add('active');
+    }
+  } catch(_){}
+}
+
 // Load recipe from URL params or sessionStorage
 document.addEventListener('DOMContentLoaded', function() {
+  restorePrintPrefs();
   const id = new URLSearchParams(window.location.search).get('id');
   // Try sessionStorage first (set by recipe page)
   const stored = sessionStorage.getItem('tcj_print_recipe');
