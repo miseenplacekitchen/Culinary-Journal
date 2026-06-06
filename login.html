@@ -587,6 +587,7 @@ async function doLogin() {
     const data = await supaAuth('token?grant_type=password', { email, password });
 
     // Save session
+    localStorage.removeItem('tcj_profile');
     const sessionObj = {
       access_token:  data.access_token,
       refresh_token: data.refresh_token || '',
@@ -609,9 +610,14 @@ async function doLogin() {
       });
       if (profileRes.ok) {
         const profileData = await profileRes.json();
-        const profile = Array.isArray(profileData) ? profileData[0] : profileData;
+        let profile = Array.isArray(profileData) ? profileData[0] : profileData;
         if (profile) {
+          if (typeof enrichProfile === 'function') {
+            profile = await enrichProfile(profile, sessionObj);
+          }
           localStorage.setItem('tcj_profile', JSON.stringify(profile));
+          sessionObj.username = profile.username || username;
+          localStorage.setItem('tcj_session', JSON.stringify(sessionObj));
           isAdmin = !!profile.is_admin;
           // Save theme immediately so every page applies it on first load
           if (profile.theme_preference && profile.theme_preference !== 'midnight-slate') {

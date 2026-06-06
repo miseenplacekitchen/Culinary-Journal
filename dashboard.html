@@ -10,17 +10,6 @@
 <title>Admin Panel — The Culinary Journal</title>
 <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
-<script>
-/* Purge stale profile/avatar cache from another account session */
-(function () {
-  try {
-    var s = JSON.parse(localStorage.getItem('tcj_session') || 'null');
-    var p = JSON.parse(localStorage.getItem('tcj_profile') || 'null');
-    if (!s || !s.user_id) { localStorage.removeItem('tcj_profile'); return; }
-    if (p && p.id && p.id !== s.user_id) localStorage.removeItem('tcj_profile');
-  } catch (_) { try { localStorage.removeItem('tcj_profile'); } catch (e) {} }
-})();
-</script>
   
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
@@ -980,11 +969,11 @@
   </div>
 </div>
   <!-- Dashboard modules — split from monolithic dashboard.html -->
-  <script src="dashboard-shared.js"></script>
-  <script src="dashboard-recipes.js"></script>
-  <script src="dashboard-users.js"></script>
-  <script src="dashboard-ingredients.js"></script>
-  <script src="dashboard-site.js"></script>
-  <script src="dashboard-analytics.js"></script>
+  <script src="dashboard-shared.js?v=20260606"></script>
+  <script src="dashboard-recipes.js?v=20260606"></script>
+  <script src="dashboard-users.js?v=20260606"></script>
+  <script src="dashboard-ingredients.js?v=20260606"></script>
+  <script src="dashboard-site.js?v=20260606"></script>
+  <script src="dashboard-analytics.js?v=20260606"></script>
 </body>
 </html>

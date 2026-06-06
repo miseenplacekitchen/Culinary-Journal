@@ -95,7 +95,9 @@ RETURNS TABLE (
   health_conditions   text[],
   cooking_style       text,
   font_size           text,
-  created_at          timestamptz
+  avatar_url          text,
+  created_at          timestamptz,
+  last_seen           timestamptz
 )
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
@@ -114,7 +116,9 @@ BEGIN
            COALESCE(p.health_conditions, '{}')::text[],
            COALESCE(p.cooking_style, '')::text,
            COALESCE(p.font_size, 'medium')::text,
-           u.created_at
+           p.avatar_url::text,
+           u.created_at,
+           p.last_seen
     FROM public.profiles p
     JOIN auth.users u ON u.id = p.id
     WHERE p.id = auth.uid();

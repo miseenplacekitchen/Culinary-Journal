@@ -535,7 +535,7 @@ CREATE FUNCTION public.update_avatar_url(p_url text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
-  UPDATE profiles SET avatar_url = p_url WHERE id = auth.uid();
+  UPDATE profiles SET avatar_url = p_url, last_seen = now() WHERE id = auth.uid();
 END; $$;
 REVOKE ALL ON FUNCTION public.update_avatar_url(text) FROM PUBLIC;
 GRANT  EXECUTE ON FUNCTION public.update_avatar_url(text) TO authenticated;

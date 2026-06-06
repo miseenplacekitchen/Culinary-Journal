@@ -6,22 +6,6 @@
 // SUPABASE_URL and SUPABASE_KEY are provided by supabase-config.js
 let session = null;
 
-function avatarBust(url, stamp) {
-  if (!url || url.indexOf('data:') === 0) return url;
-  var sep = url.indexOf('?') >= 0 ? '&' : '?';
-  var v = stamp ? String(new Date(stamp).getTime()) : String(Date.now());
-  return url + sep + 'v=' + v;
-}
-
-function purgeStaleProfileCache() {
-  try {
-    var s = JSON.parse(localStorage.getItem('tcj_session') || 'null');
-    var p = JSON.parse(localStorage.getItem('tcj_profile') || 'null');
-    if (!s || !s.user_id) { localStorage.removeItem('tcj_profile'); return; }
-    if (p && p.id && p.id !== s.user_id) localStorage.removeItem('tcj_profile');
-  } catch (_) { try { localStorage.removeItem('tcj_profile'); } catch (e) {} }
-}
-
 function showSessionExpired() {
   var existing = document.getElementById('session-expired-banner');
   if (existing) return;
@@ -162,11 +146,14 @@ async function loadDashboard() {
       if (uList.length) {
         uEl.innerHTML = uList.map(function(u) {
           var ini = (u.full_name||u.username||'?').split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
+          var avHtml = u.avatar_url
+            ? '<img src="'+esc(typeof avatarBust==='function'?avatarBust(u.avatar_url,u.id,u.last_seen):u.avatar_url)+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0" alt="">'
+            : '<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8a6a28);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">'+ini+'</div>';
           var joined = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
           var tierBadge = u.subscription_tier && u.subscription_tier !== 'free'
             ? '<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:rgba(196,151,59,0.2);color:var(--accent);font-weight:700;margin-left:5px">'+u.subscription_tier.toUpperCase()+'</span>' : '';
           return '<div style="display:flex;align-items:center;gap:10px;padding:9px 18px;border-bottom:1px solid rgba(255,255,255,0.04)">' +
-            '<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8a6a28);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">'+ini+'</div>' +
+            avHtml +
             '<div style="flex:1"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high);display:flex;align-items:center">'+esc(u.full_name||u.username)+tierBadge+'</div>' +
             '<div style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid)">Joined '+joined+'</div></div></div>';
         }).join('');
@@ -225,7 +212,11 @@ async function loadDashboard() {
 }
 
 async function init() {
-  purgeStaleProfileCache();
+  if (typeof purgeStaleProfileCache === 'function') purgeStaleProfileCache();
+  if (location.protocol === 'file:') {
+    document.body.innerHTML = '<div style="font-family:DM Sans,sans-serif;padding:40px;text-align:center;color:#fff;background:#0f1011;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><div style="font-family:Cormorant Garamond,serif;font-size:1.5rem">Admin Panel</div><p style="max-width:420px;color:#aaa;line-height:1.6">This page must be served over HTTP — not opened as a local file. Visit <a href="https://www.theculinaryjournal.site/dashboard.html" style="color:#C4973B">theculinaryjournal.site/dashboard.html</a> or run a local server in this folder.</p></div>';
+    return;
+  }
   try {
     var sess = null;
     try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(e) {}
@@ -245,7 +236,10 @@ async function init() {
       if (pr) {
         isAdmin = !!pr.is_admin;
         adminName = pr.full_name || pr.username || 'miseenplacekitchen';
-        if (pr.avatar_url) pr.avatar_url = avatarBust(pr.avatar_url, pr.updated_at);
+        if (typeof enrichProfile === 'function') pr = await enrichProfile(pr, sess);
+        if (pr.avatar_url && typeof avatarBust === 'function') {
+          pr.avatar_url = avatarBust(pr.avatar_url, pr.id, pr.last_seen);
+        }
         // Update cache after server confirms
         localStorage.setItem('tcj_profile', JSON.stringify(pr));
       }

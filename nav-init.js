@@ -288,9 +288,15 @@ function buildSectionNav() {
           'Content-Type':  'application/json'
         },
         body: JSON.stringify({})
-      }).then(function(r){ return r.json(); }).then(function(d){
+      }).then(function(r){ return r.json(); }).then(async function(d){
         var p = Array.isArray(d) ? d[0] : d;
-        if (p) localStorage.setItem('tcj_profile', JSON.stringify(p));
+        if (!p) return;
+        if (typeof enrichProfile === 'function') {
+          p = await enrichProfile(p, stored);
+        }
+        stored.username = p.username || stored.username || '';
+        localStorage.setItem('tcj_session', JSON.stringify(stored));
+        localStorage.setItem('tcj_profile', JSON.stringify(p));
       }).catch(function(){});
     } catch(e) { console.error('OAuth callback error:', e); }
   }
@@ -363,6 +369,40 @@ function buildSectionNav() {
     }
     host.innerHTML = html;
     wire(host);
+
+    if (loggedIn && session && session.access_token) {
+      refreshNavProfile(session, host);
+    }
+  }
+
+  function refreshNavProfile(session, host) {
+    fetch(window.SUPA_URL + '/rest/v1/rpc/get_my_profile', {
+      method: 'POST',
+      headers: {
+        'apikey':        window.SUPA_KEY,
+        'Authorization': 'Bearer ' + session.access_token,
+        'Content-Type':  'application/json'
+      },
+      body: JSON.stringify({})
+    }).then(function(r){ return r.ok ? r.json() : null; }).then(async function(d){
+      if (!d) return;
+      var p = Array.isArray(d) ? d[0] : d;
+      if (!p) return;
+      if (typeof enrichProfile === 'function') {
+        p = await enrichProfile(p, session);
+      }
+      localStorage.setItem('tcj_profile', JSON.stringify(p));
+      if (p.username && p.username !== session.username) {
+        session.username = p.username;
+        localStorage.setItem('tcj_session', JSON.stringify(session));
+      }
+      var trigger = host.querySelector('#cj-user-trigger .cj-handle');
+      if (trigger) trigger.textContent = '@' + (p.username || session.username || 'me');
+      var menuName = host.querySelector('.cj-menu-name');
+      if (menuName && p.full_name) menuName.textContent = p.full_name;
+      var menuHandle = host.querySelector('.cj-menu-handle');
+      if (menuHandle) menuHandle.textContent = '@' + (p.username || session.username || 'me');
+    }).catch(function(){});
   }
 
   function wire(host) {

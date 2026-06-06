@@ -85,5 +85,7 @@ ON CONFLICT (page_id) DO NOTHING;
 -- ── GRANT ADMIN ACCESS ────────────────────────────────────────────
 -- Sets your account as admin. Run once after signing up.
 UPDATE public.profiles
-   SET is_admin = true
+   SET is_admin = true,
+       username = 'miseenplacekitchen',
+       full_name = 'miseenplacekitchen'
  WHERE email = 'miseenplacekitchen.official@gmail.com';

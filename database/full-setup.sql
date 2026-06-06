@@ -1,6 +1,6 @@
 -- ======================================================================
 -- THE CULINARY JOURNAL — FULL DATABASE SETUP
--- Generated: 2026-06-05 23:57 UTC
+-- Generated: 2026-06-06 01:10 UTC
 -- Source: database/manifest.json → database/build-setup.py
 --
 -- Run this ONCE in Supabase Dashboard → SQL Editor on a fresh project.
@@ -472,7 +472,9 @@ RETURNS TABLE (
   health_conditions   text[],
   cooking_style       text,
   font_size           text,
-  created_at          timestamptz
+  avatar_url          text,
+  created_at          timestamptz,
+  last_seen           timestamptz
 )
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
@@ -491,7 +493,9 @@ BEGIN
            COALESCE(p.health_conditions, '{}')::text[],
            COALESCE(p.cooking_style, '')::text,
            COALESCE(p.font_size, 'medium')::text,
-           u.created_at
+           p.avatar_url::text,
+           u.created_at,
+           p.last_seen
     FROM public.profiles p
     JOIN auth.users u ON u.id = p.id
     WHERE p.id = auth.uid();
@@ -1265,7 +1269,9 @@ ON CONFLICT (page_id) DO NOTHING;
 -- ── GRANT ADMIN ACCESS ────────────────────────────────────────────
 -- Sets your account as admin. Run once after signing up.
 UPDATE public.profiles
-   SET is_admin = true
+   SET is_admin = true,
+       username = 'miseenplacekitchen',
+       full_name = 'miseenplacekitchen'
  WHERE email = 'miseenplacekitchen.official@gmail.com';
 
 
@@ -3116,7 +3122,7 @@ CREATE FUNCTION public.update_avatar_url(p_url text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
-  UPDATE profiles SET avatar_url = p_url WHERE id = auth.uid();
+  UPDATE profiles SET avatar_url = p_url, last_seen = now() WHERE id = auth.uid();
 END; $$;
 REVOKE ALL ON FUNCTION public.update_avatar_url(text) FROM PUBLIC;
 GRANT  EXECUTE ON FUNCTION public.update_avatar_url(text) TO authenticated;

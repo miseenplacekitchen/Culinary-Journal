@@ -49,4 +49,66 @@
     var text = await res.text();
     return text ? JSON.parse(text) : null;
   };
+
+  // ── Profile / avatar cache helpers ───────────────────────────────────
+  window.purgeStaleProfileCache = function() {
+    try {
+      var s = window.getSession();
+      var p = JSON.parse(localStorage.getItem('tcj_profile') || 'null');
+      if (!s || !s.user_id) {
+        localStorage.removeItem('tcj_profile');
+        return;
+      }
+      if (p && p.id && p.id !== s.user_id) {
+        localStorage.removeItem('tcj_profile');
+      }
+    } catch (_) {
+      try { localStorage.removeItem('tcj_profile'); } catch (e) {}
+    }
+  };
+
+  window.avatarCacheKey = function(userId) {
+    var uid = userId || (window.getSession() && window.getSession().user_id) || '';
+    return 'tcj_avatar_v_' + uid;
+  };
+
+  window.bumpAvatarCache = function(userId) {
+    var uid = userId || (window.getSession() && window.getSession().user_id) || '';
+    if (uid) localStorage.setItem(window.avatarCacheKey(uid), String(Date.now()));
+  };
+
+  window.avatarBust = function(url, userId, serverStamp) {
+    if (!url || url.indexOf('data:') === 0) return url;
+    var sep = url.indexOf('?') >= 0 ? '&' : '?';
+    var uid = userId || (window.getSession() && window.getSession().user_id) || '';
+    var v = serverStamp
+      ? String(new Date(serverStamp).getTime())
+      : (localStorage.getItem(window.avatarCacheKey(uid)) || String(Date.now()));
+    return url + sep + 'v=' + v;
+  };
+
+  window.enrichProfile = async function(profile, session) {
+    profile = profile || {};
+    session = session || window.getSession();
+    if (!session || !session.access_token) return profile;
+    if (profile.avatar_url) return profile;
+    try {
+      var uid = profile.id || session.user_id;
+      if (!uid) return profile;
+      var res = await fetch(
+        URL + '/rest/v1/profiles?id=eq.' + encodeURIComponent(uid) + '&select=avatar_url,last_seen',
+        { headers: { apikey: KEY, Authorization: 'Bearer ' + session.access_token } }
+      );
+      if (res.ok) {
+        var rows = await res.json();
+        if (rows[0]) {
+          if (rows[0].avatar_url) profile.avatar_url = rows[0].avatar_url;
+          if (rows[0].last_seen) profile.last_seen = rows[0].last_seen;
+        }
+      }
+    } catch (_) {}
+    return profile;
+  };
+
+  window.purgeStaleProfileCache();
 })();
