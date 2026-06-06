@@ -10,6 +10,17 @@
 <title>Admin Panel — The Culinary Journal</title>
 <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
+<script>
+/* Purge stale profile/avatar cache from another account session */
+(function () {
+  try {
+    var s = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    var p = JSON.parse(localStorage.getItem('tcj_profile') || 'null');
+    if (!s || !s.user_id) { localStorage.removeItem('tcj_profile'); return; }
+    if (p && p.id && p.id !== s.user_id) localStorage.removeItem('tcj_profile');
+  } catch (_) { try { localStorage.removeItem('tcj_profile'); } catch (e) {} }
+})();
+</script>
   
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
@@ -428,6 +439,7 @@
 
 <div id="ap-side-backdrop" class="ap-side-backdrop" onclick="closeApSide()"></div>
 
+<!-- ══ ADMIN LAYOUT SHELL — compiled 2026-06-06 (ap-side + ap-main-col + mobile bar) ══ -->
 <div id="screen-main" class="ap-wrap" style="display:none">
   <aside class="ap-side">
     <div class="ap-logo">
@@ -453,7 +465,7 @@
       </div>
     </nav>
     <div class="ap-side-foot">
-      <div class="ap-side-user"><strong id="admin-name">Admin</strong> Administrator</div>
+      <div class="ap-side-user"><strong id="admin-name">miseenplacekitchen</strong> Administrator</div>
       <button class="ap-sign-out" onclick="signOut()">Sign out</button>
     </div>
   </aside>

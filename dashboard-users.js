@@ -104,7 +104,7 @@ async function loadMembers(page) {
 function renderMemberRow(u) {
   var ini = ((u.full_name||u.username||'?').split(' ').map(function(w){return w[0]||'';})).join('').toUpperCase().slice(0,2);
   var av  = u.avatar_url
-    ? '<img src="'+esc(u.avatar_url)+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0">'
+    ? '<img src="'+esc(typeof avatarBust==='function'?avatarBust(u.avatar_url,u.updated_at):u.avatar_url)+'" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0">'
     : '<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8a6a28);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">'+ini+'</div>';
   var jd = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '\u2014';
   var statusColor = {
@@ -303,7 +303,7 @@ async function openUserDetail(uid) {
         '<button onclick="closeUserDetail()" style="background:none;border:none;color:var(--text-mid);font-size:18px;cursor:pointer;padding:4px 8px">\u2715</button>' +
       '</div>' +
       '<div style="padding:18px 20px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border)">' +
-        (p.avatar_url ? '<img src="'+esc(p.avatar_url)+'" style="width:54px;height:54px;border-radius:50%;object-fit:cover">'
+        (p.avatar_url ? '<img src="'+esc(typeof avatarBust==='function'?avatarBust(p.avatar_url,p.updated_at):p.avatar_url)+'" style="width:54px;height:54px;border-radius:50%;object-fit:cover">'
           : '<div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8a6a28);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff">'+ini+'</div>') +
         '<div>' +
           '<div style="font-family:Cormorant Garamond,serif;font-size:1.1rem;font-weight:700;color:var(--text-high)">'+esc(p.full_name||p.username||'\u2014')+'</div>' +
@@ -421,7 +421,7 @@ async function loadPendingUsers() {
     if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" class="ap-empty-row">No inactive accounts.</td></tr>'; return; }
     tbody.innerHTML = list.map(function(u){
       var ini = ((u.full_name||u.username||'?').split(' ').map(function(w){return w[0]||'';})).join('').toUpperCase().slice(0,2);
-      var av  = u.avatar_url ? '<img src="'+esc(u.avatar_url)+'" style="width:30px;height:30px;border-radius:50%;object-fit:cover">'
+      var av  = u.avatar_url ? '<img src="'+esc(typeof avatarBust==='function'?avatarBust(u.avatar_url,u.updated_at):u.avatar_url)+'" style="width:30px;height:30px;border-radius:50%;object-fit:cover">'
         : '<div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8a6a28);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff">'+ini+'</div>';
       var jd = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '\u2014';
       return '<tr style="border-bottom:1px solid rgba(255,255,255,0.04)">' +

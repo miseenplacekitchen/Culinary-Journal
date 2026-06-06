@@ -6,7 +6,21 @@
 // SUPABASE_URL and SUPABASE_KEY are provided by supabase-config.js
 let session = null;
 
+function avatarBust(url, stamp) {
+  if (!url || url.indexOf('data:') === 0) return url;
+  var sep = url.indexOf('?') >= 0 ? '&' : '?';
+  var v = stamp ? String(new Date(stamp).getTime()) : String(Date.now());
+  return url + sep + 'v=' + v;
+}
 
+function purgeStaleProfileCache() {
+  try {
+    var s = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    var p = JSON.parse(localStorage.getItem('tcj_profile') || 'null');
+    if (!s || !s.user_id) { localStorage.removeItem('tcj_profile'); return; }
+    if (p && p.id && p.id !== s.user_id) localStorage.removeItem('tcj_profile');
+  } catch (_) { try { localStorage.removeItem('tcj_profile'); } catch (e) {} }
+}
 
 function showSessionExpired() {
   var existing = document.getElementById('session-expired-banner');
@@ -211,7 +225,7 @@ async function loadDashboard() {
 }
 
 async function init() {
-  
+  purgeStaleProfileCache();
   try {
     var sess = null;
     try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(e) {}
@@ -223,14 +237,15 @@ async function init() {
     // Try to refresh token silently — don't block if it fails
     try { await tryRefreshToken(); } catch(_) {}
     var isAdmin = false;
-    var adminName = 'Admin';
+    var adminName = 'miseenplacekitchen';
     try {
       // Always verify admin status server-side — never trust localStorage alone
       var rows = await rpc('get_my_profile', {});
       var pr = Array.isArray(rows) ? rows[0] : rows;
       if (pr) {
         isAdmin = !!pr.is_admin;
-        adminName = pr.full_name || pr.username || 'Admin';
+        adminName = pr.full_name || pr.username || 'miseenplacekitchen';
+        if (pr.avatar_url) pr.avatar_url = avatarBust(pr.avatar_url, pr.updated_at);
         // Update cache after server confirms
         localStorage.setItem('tcj_profile', JSON.stringify(pr));
       }

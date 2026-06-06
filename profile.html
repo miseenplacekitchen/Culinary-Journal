@@ -15,6 +15,22 @@
 <script src="supabase-config.js"></script>
   <script src="nav-init.js" defer></script>
   <script>
+    function avatarBust(url, stamp) {
+      if (!url || url.indexOf('data:') === 0) return url;
+      var sep = url.indexOf('?') >= 0 ? '&' : '?';
+      var v = stamp ? String(new Date(stamp).getTime()) : String(Date.now());
+      return url + sep + 'v=' + v;
+    }
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+        var p = JSON.parse(localStorage.getItem('tcj_profile') || 'null');
+        if (!s || !s.user_id) { localStorage.removeItem('tcj_profile'); return; }
+        if (p && p.id && p.id !== s.user_id) localStorage.removeItem('tcj_profile');
+      } catch (_) { try { localStorage.removeItem('tcj_profile'); } catch (e) {} }
+    })();
+  </script>
+  <script>
     // Apply saved theme as early as possible (prevents flash on subsequent loads).
     (function(){
       try {
@@ -849,7 +865,7 @@ async function handleAvatarSelect(e) {
       }
       const avatarEl = document.getElementById('acct-avatar');
       if (avatarEl && PROFILE && PROFILE.avatar_url) {
-        avatarEl.innerHTML = '<img src="' + PROFILE.avatar_url + '" alt="Profile photo">';
+        avatarEl.innerHTML = '<img src="' + avatarBust(PROFILE.avatar_url, PROFILE.updated_at) + '" alt="Profile photo">';
       }
       return;
     }
@@ -868,7 +884,7 @@ async function handleAvatarSelect(e) {
     // Restore previous avatar if available
     const avatarEl = document.getElementById('acct-avatar');
     if (avatarEl && PROFILE && PROFILE.avatar_url && !PROFILE.avatar_url.startsWith('data:')) {
-      avatarEl.innerHTML = '<img src="' + PROFILE.avatar_url + '" alt="Profile photo">';
+      avatarEl.innerHTML = '<img src="' + avatarBust(PROFILE.avatar_url, PROFILE.updated_at) + '" alt="Profile photo">';
     }
   } finally {
     if (uploading) uploading.style.display = 'none';
@@ -1125,7 +1141,7 @@ function hydrateUI() {
   ).toUpperCase();
   const avatarEl = document.getElementById('acct-avatar');
   if (PROFILE.avatar_url) {
-    avatarEl.innerHTML = '<img src="' + PROFILE.avatar_url + '" alt="Profile photo">';
+    avatarEl.innerHTML = '<img src="' + avatarBust(PROFILE.avatar_url, PROFILE.updated_at) + '" alt="Profile photo">';
   } else {
     avatarEl.textContent = initials || '?';
   }
