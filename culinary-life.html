@@ -122,6 +122,10 @@
     .cl-modal-close { background:none; border:1px solid var(--border); border-radius:7px; color:var(--text-mid); width:30px; height:30px; cursor:pointer; font-size:14px; }
     .cl-modal-body  { padding:20px 22px; display:flex; flex-direction:column; gap:12px; }
     .cl-modal-foot  { padding:14px 22px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; }
+    .cl-btn-danger { background: var(--danger-bg); color: var(--danger); border:1px solid rgb(from var(--danger) r g b / .3); }
+    .cl-view-row { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
+    .cl-view-row strong { display:block; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-low); margin-bottom:4px; }
+    .cl-view-name { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:700; color:var(--text-high); margin-bottom:8px; }
   </style>
   <script src="page-guard.js"></script>
 </head>
@@ -298,6 +302,18 @@
   </div>
 </div>
 
+<!-- Cook entry view / edit -->
+<div class="cl-modal" id="cl-cook-modal">
+  <div class="cl-modal-box">
+    <div class="cl-modal-head">
+      <div class="cl-modal-title" id="cl-cook-modal-title">Logged meal</div>
+      <button type="button" class="cl-modal-close" onclick="closeCookModal()">✕</button>
+    </div>
+    <div class="cl-modal-body" id="cl-cook-modal-body"></div>
+    <div class="cl-modal-foot" id="cl-cook-modal-foot"></div>
+  </div>
+</div>
+
 <script src="nav-init.js"></script>
 <script>
 let session = null, starRating = 0, cookHistory = [], cookOffset = 0;
@@ -471,7 +487,7 @@ function renderHistory() {
     window._cookById[c.id] = c;
     const stars = c.rating ? '★'.repeat(c.rating) : '';
     const date  = fmtDate(c.cooked_at);
-    return '<div class="cl-cook-row" data-cook-id="'+esc(c.id)+'" title="Click to edit">'
+    return '<div class="cl-cook-row" data-cook-id="'+esc(c.id)+'" title="Click to view">'
       + '<div class="cl-cook-name">'+esc(c.recipe_name)+'</div>'
       + '<div class="cl-cook-rating">'+stars+'</div>'
       + '<div class="cl-cook-date">'+date+'</div>'
@@ -511,7 +527,7 @@ async function loadTimeline() {
         + '<button type="button" class="cl-evt-btn cl-evt-danger" title="Delete" data-tl-action="delete" data-tl-type="'+esc(e.event_type)+'" data-tl-id="'+sid+'" data-tl-label="'+label+'">🗑</button>'
         + '</div>'
       : '';
-    return '<div class="cl-event'+(editable?' cl-event--editable':'')+'" data-tl-type="'+esc(e.event_type)+'" data-tl-id="'+sid+'" data-tl-label="'+label+'" title="'+(editable?'Click to edit':'')+'">'
+    return '<div class="cl-event'+(editable?' cl-event--editable':'')+'" data-tl-type="'+esc(e.event_type)+'" data-tl-id="'+sid+'" data-tl-label="'+label+'" title="'+(editable?'Click to view':'')+'">'
       + '<div class="cl-event-icon">'+icon+'</div>'
       + '<div class="cl-event-body"><div class="cl-event-label">'+label+'</div>'+(meta?'<div class="cl-event-meta">'+meta+'</div>':'')+'</div>'
       + controls
@@ -533,26 +549,97 @@ async function deleteTimelineItem(type, id, label) {
 
 function editTimelineItem(type, id) {
   if (type === 'diary') { location.href = 'diary.html?edit=' + encodeURIComponent(id); return; }
-  if (type !== 'cook') return;
-  // Inline edit form for a cooking event
-  const name   = prompt('Recipe name (leave blank to keep):') ;
-  if (name === null) return;
-  const dateIn = prompt('Date cooked, YYYY-MM-DD (leave blank to keep):');
-  if (dateIn === null) return;
-  if (dateIn && !/^\d{4}-\d{2}-\d{2}$/.test(dateIn)) { alert('Date must be YYYY-MM-DD.'); return; }
-  const rating = prompt('Rating 1–5 (leave blank to keep):');
-  if (rating === null) return;
-  if (rating && !/^[1-5]$/.test(rating)) { alert('Rating must be 1 to 5.'); return; }
-  const note   = prompt('Note (leave blank to keep):');
-  if (note === null) return;
-  rpc('update_cooking_event', {
-    p_id: id,
-    p_recipe_name: name || null,
-    p_cooked_at:   dateIn || null,
-    p_rating:      rating ? parseInt(rating) : null,
-    p_notes:       note || null
-  }).then(refreshAfterTimelineChange)
-    .catch(function(e){ alert('Could not save: ' + (e.message || e)); });
+  if (type === 'cook') { openCookModal(id, 'edit'); return; }
+}
+
+let _activeCook = null;
+
+async function fetchCookById(id) {
+  if (window._cookById && window._cookById[id]) return window._cookById[id];
+  const s = getSession();
+  if (!s) return null;
+  const r = await fetch(SUPA_URL + '/rest/v1/cooking_events?id=eq.' + encodeURIComponent(id) + '&select=*', {
+    headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + s.access_token }
+  });
+  if (!r.ok) return null;
+  const rows = await r.json();
+  return rows && rows[0] ? rows[0] : null;
+}
+
+function closeCookModal() {
+  document.getElementById('cl-cook-modal').classList.remove('open');
+  _activeCook = null;
+}
+
+function renderCookView(c) {
+  const stars = c.rating ? '★'.repeat(c.rating) : '—';
+  document.getElementById('cl-cook-modal-title').textContent = 'Logged meal';
+  document.getElementById('cl-cook-modal-body').innerHTML =
+    '<div class="cl-view-name">'+esc(c.recipe_name)+'</div>'
+    + '<div class="cl-view-row"><strong>Date cooked</strong>'+esc(fmtDate(c.cooked_at))+'</div>'
+    + '<div class="cl-view-row"><strong>Rating</strong>'+stars+'</div>'
+    + (c.occasion ? '<div class="cl-view-row"><strong>Occasion</strong>'+esc(c.occasion)+'</div>' : '')
+    + (c.notes ? '<div class="cl-view-row"><strong>Notes</strong>'+esc(c.notes)+'</div>' : '');
+  document.getElementById('cl-cook-modal-foot').innerHTML =
+    '<button type="button" class="cl-btn cl-btn-danger" style="margin-right:auto" onclick="deleteCookFromModal()">Delete</button>'
+    + '<button type="button" class="cl-btn cl-btn-secondary" onclick="closeCookModal()">Close</button>'
+    + '<button type="button" class="cl-btn cl-btn-primary" onclick="openCookModal(\''+esc(c.id)+'\', \'edit\')">Edit</button>';
+}
+
+function renderCookEditForm(c) {
+  document.getElementById('cl-cook-modal-title').textContent = 'Edit logged meal';
+  document.getElementById('cl-cook-modal-body').innerHTML =
+    '<div class="cl-field"><label class="cl-label">Recipe name</label>'
+    + '<input class="cl-input" id="cl-edit-name" value="'+esc(c.recipe_name)+'"></div>'
+    + '<div class="cl-field"><label class="cl-label">Date cooked</label>'
+    + '<input class="cl-input" type="date" id="cl-edit-date" value="'+esc((c.cooked_at||'').slice(0,10))+'"></div>'
+    + '<div class="cl-field"><label class="cl-label">Rating (1–5, or leave blank)</label>'
+    + '<input class="cl-input" id="cl-edit-rating" inputmode="numeric" maxlength="1" value="'+(c.rating||'')+'"></div>'
+    + '<div class="cl-field"><label class="cl-label">Notes</label>'
+    + '<input class="cl-input" id="cl-edit-notes" value="'+esc(c.notes||'')+'"></div>';
+  document.getElementById('cl-cook-modal-foot').innerHTML =
+    '<button type="button" class="cl-btn cl-btn-secondary" onclick="openCookModal(\''+esc(c.id)+'\', \'view\')">Cancel</button>'
+    + '<button type="button" class="cl-btn cl-btn-primary" onclick="saveCookFromModal()">Save changes</button>';
+}
+
+async function openCookModal(id, mode) {
+  const c = await fetchCookById(id);
+  if (!c) { alert('Could not load this meal.'); return; }
+  _activeCook = c;
+  if (mode === 'edit') renderCookEditForm(c);
+  else renderCookView(c);
+  document.getElementById('cl-cook-modal').classList.add('open');
+}
+
+async function saveCookFromModal() {
+  if (!_activeCook) return;
+  const ratingVal = document.getElementById('cl-edit-rating').value.trim();
+  if (ratingVal && !/^[1-5]$/.test(ratingVal)) { alert('Rating must be 1 to 5, or leave blank.'); return; }
+  try {
+    await rpc('update_cooking_event', {
+      p_id: _activeCook.id,
+      p_recipe_name: document.getElementById('cl-edit-name').value.trim() || null,
+      p_cooked_at: document.getElementById('cl-edit-date').value || null,
+      p_rating: ratingVal ? parseInt(ratingVal, 10) : null,
+      p_notes: document.getElementById('cl-edit-notes').value.trim() || null
+    });
+    closeCookModal();
+    await refreshAfterTimelineChange();
+  } catch (e) {
+    alert('Could not save: ' + (e.message || e));
+  }
+}
+
+async function deleteCookFromModal() {
+  if (!_activeCook) return;
+  if (!confirm('Remove "' + (_activeCook.recipe_name || 'this meal') + '" from your cooking history?')) return;
+  try {
+    await removeCookingEvent(_activeCook.id);
+    closeCookModal();
+    await refreshAfterTimelineChange();
+  } catch (e) {
+    alert('Could not delete: ' + (e.message || e));
+  }
 }
 
 async function refreshAfterTimelineChange() {
@@ -664,7 +751,7 @@ function esc(s) {
     const row = ev.target.closest('.cl-cook-row');
     if (row) {
       const id = row.getAttribute('data-cook-id');
-      if (id) editTimelineItem('cook', id);
+      if (id) openCookModal(id, 'view');
     }
   });
 
@@ -685,8 +772,13 @@ function esc(s) {
     if (row) {
       const type = row.getAttribute('data-tl-type');
       const id = row.getAttribute('data-tl-id');
-      if (type && id) editTimelineItem(type, id);
+      if (type === 'diary' && id) location.href = 'diary.html?edit=' + encodeURIComponent(id);
+      else if (type === 'cook' && id) openCookModal(id, 'view');
     }
+  });
+
+  document.getElementById('cl-cook-modal').addEventListener('click', function(ev) {
+    if (ev.target === this) closeCookModal();
   });
 
   loadAll();
