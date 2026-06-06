@@ -458,7 +458,8 @@ function renderEntries(entries){
     const label  = esc(TYPE_LABELS[e.entry_type]||'General');
     const tags   = (e.tags||[]).map(t=>`<span class="dj-entry-tag">${esc(t)}</span>`).join('');
     const preview = (e.content||'').slice(0,120).replace(/\n/g,' ');
-    return `<div class="dj-entry" onclick="viewEntry(${JSON.stringify(e.id)})">
+    const contentLen = (e.content || '').length;
+    return `<div class="dj-entry" data-entry-id="${esc(e.id)}" role="button" tabindex="0">
       <div class="dj-entry-head">
         <div class="dj-entry-meta">
           <span class="dj-entry-date">${fmtDate(e.entry_date)}</span>
@@ -466,8 +467,8 @@ function renderEntries(entries){
         </div>
         ${e.mood?`<span class="dj-entry-mood">${e.mood}</span>`:''}
       </div>
-      ${e.title?`<div class="dj-entry-title">${e.title}</div>`:''}
-      ${preview?`<div class="dj-entry-preview">${preview}${e.content.length>120?'…':''}</div>`:''}
+      ${e.title?`<div class="dj-entry-title">${esc(e.title)}</div>`:''}
+      ${preview?`<div class="dj-entry-preview">${esc(preview)}${contentLen>120?'…':''}</div>`:''}
       ${tags?`<div class="dj-entry-tags">${tags}</div>`:''}
     </div>`;
   }).join('');
@@ -508,7 +509,8 @@ async function saveEntry(){
 
 // ── View entry ───────────────────────────────────────────────────
 function viewEntry(id){
-  const e = allEntries.find(x=>String(x.id)===String(id));
+  const e = allEntries.find(x=>String(x.id)===String(id))
+         || filteredEntries.find(x=>String(x.id)===String(id));
   if(!e) return;
   viewingEntry = e;
   document.getElementById('view-mood').textContent    = e.mood||'';
@@ -568,6 +570,20 @@ async function deleteViewingEntry(){
   // Close modals on backdrop click
   document.getElementById('dj-modal').addEventListener('click', function(e){ if(e.target===this) closeModal(); });
   document.getElementById('dj-view').addEventListener('click',  function(e){ if(e.target===this) closeView();  });
+  document.getElementById('dj-entries').addEventListener('click', function(e){
+    const card = e.target.closest('.dj-entry');
+    if(!card) return;
+    const id = card.getAttribute('data-entry-id');
+    if(id) viewEntry(id);
+  });
+  document.getElementById('dj-entries').addEventListener('keydown', function(e){
+    if(e.key !== 'Enter' && e.key !== ' ') return;
+    const card = e.target.closest('.dj-entry');
+    if(!card) return;
+    e.preventDefault();
+    const id = card.getAttribute('data-entry-id');
+    if(id) viewEntry(id);
+  });
   // Keyboard shortcut: N = new entry
   document.addEventListener('keydown', e=>{ if(e.key==='n'&&!e.target.matches('input,textarea,select')) openNewEntry(); });
 })();

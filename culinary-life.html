@@ -59,8 +59,7 @@
 
     /* ── Activity feed ── */
     .cl-event { display:flex; gap:14px; padding:12px 0; border-bottom:1px solid rgba(255,255,255,.04); align-items:flex-start; }
-    .cl-event-actions { display:flex; gap:4px; opacity:0; transition:opacity .15s; }
-    .cl-event:hover .cl-event-actions { opacity:1; }
+    .cl-event-actions { display:flex; gap:4px; opacity:1; }
     .cl-evt-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:3px 7px; font-size:11px; cursor:pointer; color:var(--text-mid); }
     .cl-evt-btn:hover { border-color:var(--accent); color:var(--accent); }
     .cl-evt-danger:hover { border-color:var(--danger); color:var(--danger); }
@@ -97,7 +96,10 @@
     .cl-milestone-date  { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
 
     /* ── Cooking history list ── */
-    .cl-cook-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+    .cl-cook-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.04); cursor:pointer; }
+    .cl-cook-row:hover .cl-cook-name { color:var(--accent); }
+    .cl-event--editable { cursor:pointer; }
+    .cl-event--editable:hover .cl-event-label { color:var(--accent); }
     .cl-cook-row:last-child { border-bottom:none; }
     .cl-cook-name { flex:1; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .cl-cook-date { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); flex-shrink:0; }
@@ -230,7 +232,10 @@
       <!-- Cooking History -->
       <div class="cl-card">
         <div class="cl-card-head">
-          <div class="cl-card-title">📅 Cooking History</div>
+          <div>
+            <div class="cl-card-title">📅 Cooking History</div>
+            <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);margin-top:2px">Logged meals only — diary entries and milestones appear in My Timeline →</div>
+          </div>
           <a href="#" class="cl-card-action" onclick="loadMoreCooks(); return false">Load more</a>
         </div>
         <div class="cl-card-body" id="history-list">
@@ -457,18 +462,20 @@ async function loadMoreCooks() {
 }
 function renderHistory() {
   const el = document.getElementById('history-list');
+  window._cookById = {};
   if (!cookHistory.length) {
     el.innerHTML = '<div class="cl-empty"><div class="cl-empty-icon">🍽</div><div class="cl-empty-title">Every great cook has a story</div><div class="cl-empty-sub">Log your first meal above and start building your culinary history.</div></div>';
     return;
   }
   el.innerHTML = cookHistory.map(function(c) {
+    window._cookById[c.id] = c;
     const stars = c.rating ? '★'.repeat(c.rating) : '';
     const date  = fmtDate(c.cooked_at);
-    return '<div class="cl-cook-row">'
+    return '<div class="cl-cook-row" data-cook-id="'+esc(c.id)+'" title="Click to edit">'
       + '<div class="cl-cook-name">'+esc(c.recipe_name)+'</div>'
       + '<div class="cl-cook-rating">'+stars+'</div>'
       + '<div class="cl-cook-date">'+date+'</div>'
-      + '<button class="cl-cook-del" onclick="deleteCook(\''+c.id+'\')" title="Remove">✕</button>'
+      + '<button type="button" class="cl-cook-del" data-cook-id="'+esc(c.id)+'" title="Remove">✕</button>'
       + '</div>';
   }).join('');
 }
@@ -497,14 +504,14 @@ async function loadTimeline() {
     // cooking events only. Milestones are system-generated; recipe events
     // mirror submissions — both stay read-only here.
     const editable = (e.event_type === 'diary' || e.event_type === 'cook') && e.source_id;
-    const safeId = String(e.source_id).replace(/\\/g,'\\\\').replace(/'/g,'\\\'');
+    const sid = esc(e.source_id);
     const controls = editable
       ? '<div class="cl-event-actions">'
-        + '<button class="cl-evt-btn" title="Edit" onclick="editTimelineItem(\''+e.event_type+'\',\''+safeId+'\')">✏</button>'
-        + '<button class="cl-evt-btn cl-evt-danger" title="Delete" onclick="deleteTimelineItem(\''+e.event_type+'\',\''+safeId+'\',\''+label.replace(/'/g,'&#39;')+'\')">🗑</button>'
+        + '<button type="button" class="cl-evt-btn" title="Edit" data-tl-action="edit" data-tl-type="'+esc(e.event_type)+'" data-tl-id="'+sid+'">✏</button>'
+        + '<button type="button" class="cl-evt-btn cl-evt-danger" title="Delete" data-tl-action="delete" data-tl-type="'+esc(e.event_type)+'" data-tl-id="'+sid+'" data-tl-label="'+label+'">🗑</button>'
         + '</div>'
       : '';
-    return '<div class="cl-event">'
+    return '<div class="cl-event'+(editable?' cl-event--editable':'')+'" data-tl-type="'+esc(e.event_type)+'" data-tl-id="'+sid+'" data-tl-label="'+label+'" title="'+(editable?'Click to edit':'')+'">'
       + '<div class="cl-event-icon">'+icon+'</div>'
       + '<div class="cl-event-body"><div class="cl-event-label">'+label+'</div>'+(meta?'<div class="cl-event-meta">'+meta+'</div>':'')+'</div>'
       + controls
@@ -644,6 +651,44 @@ function esc(s) {
     document.getElementById('cl-sub').innerHTML = '<a href="login.html" style="color:var(--accent)">Sign in</a> to start tracking your culinary life.';
     return;
   }
+
+  document.getElementById('history-list').addEventListener('click', function(ev) {
+    const del = ev.target.closest('.cl-cook-del');
+    if (del) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const id = del.getAttribute('data-cook-id');
+      if (id) deleteCook(id);
+      return;
+    }
+    const row = ev.target.closest('.cl-cook-row');
+    if (row) {
+      const id = row.getAttribute('data-cook-id');
+      if (id) editTimelineItem('cook', id);
+    }
+  });
+
+  document.getElementById('timeline-list').addEventListener('click', function(ev) {
+    const btn = ev.target.closest('[data-tl-action]');
+    if (btn) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const action = btn.getAttribute('data-tl-action');
+      const type = btn.getAttribute('data-tl-type');
+      const id = btn.getAttribute('data-tl-id');
+      const label = btn.getAttribute('data-tl-label') || '';
+      if (action === 'delete') deleteTimelineItem(type, id, label);
+      else if (action === 'edit') editTimelineItem(type, id);
+      return;
+    }
+    const row = ev.target.closest('.cl-event--editable');
+    if (row) {
+      const type = row.getAttribute('data-tl-type');
+      const id = row.getAttribute('data-tl-id');
+      if (type && id) editTimelineItem(type, id);
+    }
+  });
+
   loadAll();
 })();
 </script>
