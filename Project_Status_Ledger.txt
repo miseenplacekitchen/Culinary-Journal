@@ -1,0 +1,148 @@
+THE CULINARY JOURNAL — PROJECT STATUS LEDGER
+Last updated: 9 June 2026 (Phase 5 batch)
+Live site: https://www.theculinaryjournal.site
+Test account: tcj.verify@outlook.com / username tcj.verify
+Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
+
+══════════════════════════════════════════════════════════════════════
+HOW TO READ THIS LEDGER
+══════════════════════════════════════════════════════════════════════
+DONE     = shipped in code AND (where SQL applies) Betty confirmed run on Supabase
+PARTIAL  = UI or RPC exists; depth, enforcement, or live verification incomplete
+DEFERRED = explicitly postponed (user decision or blocked on D/G decisions)
+OPEN     = not started or only stubbed
+
+Master_Incomplete_Items_List.txt (6 June) is STALE — many [MISSING] items are now DONE.
+Do not commit Master_Incomplete_Items_List.txt.
+
+══════════════════════════════════════════════════════════════════════
+SQL SCRIPTS — RUN ORDER
+══════════════════════════════════════════════════════════════════════
+Script                    | Purpose                              | Betty status
+--------------------------|--------------------------------------|------------------
+fix-all-live.sql          | Admin spine, RPCs, diary, CJ-006     | Ran earlier
+fix-tier2-surfaces.sql    | Notifications, dietary-card RPCs       | Ran ✅
+fix-phase3-batch.sql      | Chef of Month, ROTW, email on review   | Ran ✅
+fix-phase4-batch.sql      | Follows, Friends, family refs, baby    | Ran ✅
+fix-phase5-batch.sql      | Follower notify on approve, link check | **RUN NEXT**
+
+After fix-phase5-batch.sql: Supabase → SQL Editor → paste file → Run.
+Expect: `fix-phase5-batch.sql complete`
+
+══════════════════════════════════════════════════════════════════════
+PHASE 5 (THIS BATCH) — SHIPPED IN CODE
+══════════════════════════════════════════════════════════════════════
+• fix-phase5-batch.sql — follower in-app notifications when followed user’s recipe approved; record_source_link_check RPC; source_link_status columns
+• Legal shells: event-seating-policy, data-breach, credit-preservation, subscription-terms
+• family-profiles.html — dietary/allergy/health checkboxes from get_family_reference_lists (admin-managed)
+• meal-planner.html — MP-09 per-member view filter (Couple/Family/Group modes)
+• recipe-page.html — persists dead-link check result via record_source_link_check
+• Footer links on index.html + cookies.html
+
+══════════════════════════════════════════════════════════════════════
+DEFERRED — DO NOT TOUCH UNTIL BETTY ASKS
+══════════════════════════════════════════════════════════════════════
+• Recipe hero / circular image (Issue 4.1) — user: “fix later, I think you broke it”
+• Phase 2 AI — photo import, handwriting, AI recipe tools
+• Chrome extension, Android app
+• Full monetisation / payment provider integration
+
+══════════════════════════════════════════════════════════════════════
+DONE — CORE PLATFORM
+══════════════════════════════════════════════════════════════════════
+Auth & profiles       | Email signup, login, profile.html allergies/health
+Notifications         | In-app bell, mark read, admin inbox tab
+Deactivation          | Soft deactivate users (admin)
+Recipe submit/review  | Submit, pending, approve/reject, reviewer notes
+Public recipe page    | Ingredients, steps, nutrition block, tried-it, collections
+Cook mode (a11y)      | High-contrast ◐ Cook + font size (hero deferred)
+Spice filter          | recipes.html category + spice filters
+Chef of the Month     | Homepage + admin picker
+Recipe of the Week    | Admin can clear (NULL)
+Chef directory        | Search, sort, country, CJ Original badge
+Follow contributor    | user.html follow button + SQL (phase 4)
+Friends visibility    | submit-recipe + my-dashboard option (phase 4)
+Email queue on review | Rows queued on approve/reject (no sender yet)
+Legal (shells)        | Community, DMCA, UGC, attribution, food-safety, photo-upload,
+                      | cookies, accessibility, copyright, AI disclaimer,
+                      | event-seating, data-breach, credit-preservation, subscription-terms
+Cultural pages        | food-map, festival-calendar, onam-sadya, eid-feast, christmas-roast
+JSON-LD               | index.html structured data
+404 page              | Branded 404.html
+Skip link + focus     | Global a11y styles
+
+══════════════════════════════════════════════════════════════════════
+DONE — MISE EN PLACE
+══════════════════════════════════════════════════════════════════════
+Meal planner          | Week/month views, today panel, status (cooked/skip/out/leftovers),
+                      | print week, grocery export, pantry-aware prompts, MP-14 attendance,
+                      | MP-09 per-member filter (phase 5)
+Family profiles       | CRUD, baby food stage, admin reference lists wired (phase 5)
+Grocery list          | Multi-recipe, print, local + sync surfaces
+Pantry                | Local storage model, use-up prompts from meal planner
+Print Studio          | Card types (tips, substitutes, allergy, baby, divider), QR, split
+Table planner         | Layout, RSVP, baby/elderly seating hints
+My dashboard          | Expanded analytics (tried, planned, cooked, grocery lines)
+
+══════════════════════════════════════════════════════════════════════
+PARTIAL — NEEDS DEPTH OR LIVE VERIFY
+══════════════════════════════════════════════════════════════════════
+CJ-006 / admin panel  | Spine exists; Betty to confirm all tabs on live
+Recipe page defects   | Many fixed; hero deferred; full Issue 4 set not re-audited
+Dead-link checking    | Client check + DB persist (phase 5); no scheduled cron
+Follow notifications  | SQL on approve (phase 5); needs fix-phase5-batch.sql + live test
+Email sending         | Queue only — no Resend/SendGrid worker
+Allergy engine        | Keyword v1 on meal planner; not site-wide enforced
+Nutrition/substitutes | Display blocks exist; no full substitution engine
+Pantry/grocery depth  | PF-01–09, GL-05/07/11, governed ingredient_id not done
+Print Studio advanced | Swipe card view, booklet generator, premium themes (D4)
+Library (D3)          | Admin library-mgmt exists; full public content model thin
+Admin taxonomy        | Sub-category/division CRUD (Issues 3/3.1) missing
+Registration onboard  | profile.html has fields; first-login onboarding partial
+Terms/Privacy         | Shell pages; lawyer hardening pending
+Regional intelligence | Not started
+Microsoft OAuth       | Not started
+Performance / PWA     | Not started
+
+══════════════════════════════════════════════════════════════════════
+OPEN — BLOCKED OR NOT STARTED
+══════════════════════════════════════════════════════════════════════
+G1–G4 gated           | Recipe hierarchy, family groups, quantity model, household sharing
+D1–D5 decisions       | See Master doc end — blocks monetisation & library depth
+Scheduled link cron   | Server-side dead-link sweep
+Payment provider      | Stripe/etc. for subscription-terms to be real
+Monetisation limits   | Tier gates in page-guard.js exist; limits not fully enforced
+Chrome / Android      | Deferred
+
+══════════════════════════════════════════════════════════════════════
+GIT / DEPLOY
+══════════════════════════════════════════════════════════════════════
+Branch: main (protected — push requires approval)
+Recent commits:
+  fcd9d7d — Phase 3 (Chef of Month, legal shells, meal planner sync, email queue)
+  57ca559 — Phase 4 (follows, Friends, cultural pages, cook mode, MP-14, print cards)
+  [pending] — Phase 5 (this batch)
+
+Untracked (intentional): Master_Incomplete_Items_List.txt
+
+══════════════════════════════════════════════════════════════════════
+LIVE VERIFICATION CHECKLIST (after Phase 5 deploy + SQL)
+══════════════════════════════════════════════════════════════════════
+1. Run fix-phase5-batch.sql in Supabase → confirm complete message
+2. Hard-refresh (Ctrl+Shift+R):
+   • https://www.theculinaryjournal.site/family-profiles.html — open Add Profile; checkboxes match admin lists
+   • https://www.theculinaryjournal.site/meal-planner.html — Family mode → “View meals for:” chips
+   • https://www.theculinaryjournal.site/event-seating-policy.html (and other new legal URLs)
+3. Follow flow: sign in as tcj.verify → follow a contributor → admin approves their recipe → follower gets notification (after SQL)
+4. Recipe with credit_url → dead-link banner + DB source_link_status (admin/contributor only RPC)
+
+══════════════════════════════════════════════════════════════════════
+NEXT SUGGESTED BATCH (Phase 6 — not started)
+══════════════════════════════════════════════════════════════════════
+• Email worker (Resend) for recipe_approved / recipe_rejected templates
+• Registration onboarding wizard (allergies at signup)
+• Admin sub-category/division CRUD
+• Print Studio swipe view / booklet (if D4 approved)
+• Re-audit recipe page Issue 4 (excluding hero) on live
+
+Contact: miseenplacekitchen.official@gmail.com

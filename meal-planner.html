@@ -220,6 +220,9 @@
     <span id="mp-conflict-summary" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)"></span>
   </div>
   <div id="mp-family-flags" style="display:none;background:var(--text-ghost);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-family:'DM Sans',sans-serif;font-size:12px"></div>
+  <div id="mp-member-filter" class="mp-filter-bar" style="display:none;margin-bottom:16px;padding:12px 14px;background:var(--text-ghost);border:1px solid var(--border);border-radius:10px;align-items:center">
+    <span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);margin-right:8px">View meals for:</span>
+  </div>
 
   <div class="mp-grid" id="mp-grid"></div>
 
@@ -521,6 +524,18 @@ function renderCalendar() {
       slot.className = 'mp-slot';
 
       if (recipe) {
+        var filterProfile = getMemberFilterProfile();
+        if (filterProfile && !slotAppliesToMember(recipe, filterProfile)) {
+          const hidden = document.createElement('div');
+          hidden.className = 'mp-slot-empty';
+          hidden.style.opacity = '0.35';
+          hidden.style.cursor = 'default';
+          hidden.title = 'Not scheduled for ' + (filterProfile.name || 'this member');
+          hidden.innerHTML = '<span class="mp-slot-add" style="font-size:11px;color:var(--text-mid)">—</span>';
+          slot.appendChild(hidden);
+          grid.appendChild(slot);
+          return;
+        }
         const card = document.createElement('div');
         var st = recipe.status || 'planned';
         card.className = 'mp-recipe-card' + (st !== 'planned' ? ' ' + st : '');
@@ -662,19 +677,62 @@ function renderSummary() {
 // ── MODES & FAMILY PROFILES ─────────────────────────────────────
 let currentMode = 'individual';
 let familyProfiles = [];
+let memberFilterId = null;
 
 function setMode(mode, btn) {
   currentMode = mode;
   document.querySelectorAll('.mp-mode-btn').forEach(function(b){b.classList.remove('active');});
   btn.classList.add('active');
   const familyPanel = document.getElementById('mp-family-flags');
-  if (mode === 'family' || mode === 'couple') {
+  if (mode === 'family' || mode === 'couple' || mode === 'group') {
     renderFamilyFlags();
     familyPanel.style.display = 'block';
+    renderMemberFilterBar();
   } else {
     familyPanel.style.display = 'none';
+    memberFilterId = null;
+    var mf = document.getElementById('mp-member-filter');
+    if (mf) mf.style.display = 'none';
   }
   updateConflictSummary();
+  renderCalendar();
+}
+
+function getMemberFilterProfile() {
+  if (!memberFilterId) return null;
+  return familyProfiles.find(function(p) { return p.id === memberFilterId; }) || null;
+}
+
+function slotAppliesToMember(slot, profile) {
+  if (!profile || !slot) return true;
+  var name = (profile.name || '').toLowerCase();
+  if (!name) return true;
+  if (slot.assignee && slot.assignee.toLowerCase() !== name) return false;
+  if (slot.members_away && slot.members_away.some(function(a) { return a.toLowerCase() === name; })) return false;
+  return true;
+}
+
+function setMemberFilter(id, chip) {
+  memberFilterId = id || null;
+  document.querySelectorAll('#mp-member-filter .mp-filter-chip').forEach(function(b) {
+    b.classList.toggle('active', chip ? b === chip : !b.dataset.member);
+  });
+  renderCalendar();
+}
+
+function renderMemberFilterBar() {
+  var bar = document.getElementById('mp-member-filter');
+  if (!bar) return;
+  if (!familyProfiles.length || currentMode === 'individual') {
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = 'flex';
+  var chips = '<button type="button" class="mp-filter-chip' + (memberFilterId ? '' : ' active') + '" data-member="" onclick="setMemberFilter(null,this)">All household</button>';
+  familyProfiles.forEach(function(p) {
+    chips += '<button type="button" class="mp-filter-chip' + (memberFilterId === p.id ? ' active' : '') + '" data-member="' + esc(p.id) + '" onclick="setMemberFilter(\'' + p.id + '\',this)">' + esc(p.name || 'Member') + '</button>';
+  });
+  bar.innerHTML = '<span style="font-family:\'DM Sans\',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);margin-right:8px">View meals for:</span>' + chips;
 }
 
 async function loadFamilyProfiles() {
@@ -686,6 +744,8 @@ async function loadFamilyProfiles() {
       body:JSON.stringify({})
     });
     if (res.ok) familyProfiles = await res.json() || [];
+    if (memberFilterId && !familyProfiles.some(function(p) { return p.id === memberFilterId; })) memberFilterId = null;
+    renderMemberFilterBar();
     updateConflictSummary();
   } catch(_) {}
 }

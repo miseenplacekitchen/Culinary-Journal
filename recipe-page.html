@@ -640,7 +640,11 @@ document.addEventListener('click', function(e) {
 async function checkSourceUrl(url) {
   if (!url || !url.startsWith('http')) return;
   var cached = sessionStorage.getItem('dlcheck_' + url);
-  if (cached) { if (cached === 'dead') showDeadLink(url); return; }
+  if (cached) {
+    if (cached === 'dead') showDeadLink(url);
+    if (recipe && recipe.id) persistSourceLinkStatus(cached === 'dead' ? 'dead' : 'ok');
+    return;
+  }
   try {
     var res = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url), {signal: AbortSignal.timeout(6000)});
     var data = await res.json();
@@ -648,10 +652,27 @@ async function checkSourceUrl(url) {
     if (!data.contents || (code && code >= 400)) {
       sessionStorage.setItem('dlcheck_' + url, 'dead');
       showDeadLink(url);
+      if (recipe && recipe.id) persistSourceLinkStatus('dead');
     } else {
       sessionStorage.setItem('dlcheck_' + url, 'ok');
+      if (recipe && recipe.id) persistSourceLinkStatus('ok');
     }
   } catch(_) {} // Network error — don't flag as dead
+}
+async function persistSourceLinkStatus(status) {
+  try {
+    var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    if (!sess || !sess.access_token || !recipe || !recipe.id) return;
+    await fetch(SUPABASE_URL + '/rest/v1/rpc/record_source_link_check', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + sess.access_token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ p_recipe_id: recipe.id, p_status: status })
+    });
+  } catch(_) {}
 }
 function showDeadLink(url) {
   var existing = document.querySelector('.rp-deadlink');

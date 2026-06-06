@@ -151,43 +151,15 @@
     </div>
     <div class="fp-field">
       <label class="fp-label">Dietary Needs</label>
-      <div class="fp-checks" id="fm-dietary">
-        <label class="fp-check"><input type="checkbox" value="Vegan"> 🌿 Vegan</label>
-        <label class="fp-check"><input type="checkbox" value="Vegetarian"> 🥕 Vegetarian</label>
-        <label class="fp-check"><input type="checkbox" value="Gluten Free"> 🌾 Gluten Free</label>
-        <label class="fp-check"><input type="checkbox" value="Dairy Free"> 🥛 Dairy Free</label>
-        <label class="fp-check"><input type="checkbox" value="Halal"> ☪ Halal</label>
-        <label class="fp-check"><input type="checkbox" value="Kosher"> ✡ Kosher</label>
-        <label class="fp-check"><input type="checkbox" value="Nut Free"> 🥜 Nut Free</label>
-        <label class="fp-check"><input type="checkbox" value="Egg Free"> 🥚 Egg Free</label>
-        <label class="fp-check"><input type="checkbox" value="Shellfish Free"> 🦐 Shellfish Free</label>
-      </div>
+      <div class="fp-checks" id="fm-dietary"><span style="font-size:11px;color:var(--text-mid)">Loading…</span></div>
     </div>
     <div class="fp-field">
       <label class="fp-label">Allergies</label>
-      <div class="fp-checks" id="fm-allergies">
-        <label class="fp-check"><input type="checkbox" value="Gluten"> Gluten</label>
-        <label class="fp-check"><input type="checkbox" value="Dairy"> Dairy</label>
-        <label class="fp-check"><input type="checkbox" value="Eggs"> Eggs</label>
-        <label class="fp-check"><input type="checkbox" value="Tree Nuts"> Tree Nuts</label>
-        <label class="fp-check"><input type="checkbox" value="Peanuts"> Peanuts</label>
-        <label class="fp-check"><input type="checkbox" value="Fish"> Fish</label>
-        <label class="fp-check"><input type="checkbox" value="Shellfish"> Shellfish</label>
-        <label class="fp-check"><input type="checkbox" value="Soy"> Soy</label>
-        <label class="fp-check"><input type="checkbox" value="Sesame"> Sesame</label>
-      </div>
+      <div class="fp-checks" id="fm-allergies"><span style="font-size:11px;color:var(--text-mid)">Loading…</span></div>
     </div>
     <div class="fp-field">
       <label class="fp-label">Health Conditions</label>
-      <div class="fp-checks" id="fm-health">
-        <label class="fp-check"><input type="checkbox" value="Diabetic"> 🩺 Diabetic</label>
-        <label class="fp-check"><input type="checkbox" value="High Cholesterol"> ❤️ High Cholesterol</label>
-        <label class="fp-check"><input type="checkbox" value="High Blood Pressure"> 💊 High BP</label>
-        <label class="fp-check"><input type="checkbox" value="Weight Management"> ⚖️ Weight Mgmt</label>
-        <label class="fp-check"><input type="checkbox" value="Fitness Focused"> 💪 Fitness</label>
-        <label class="fp-check"><input type="checkbox" value="Pregnancy"> 🤰 Pregnancy</label>
-        <label class="fp-check"><input type="checkbox" value="Breastfeeding"> 🤱 Breastfeeding</label>
-      </div>
+      <div class="fp-checks" id="fm-health"><span style="font-size:11px;color:var(--text-mid)">Loading…</span></div>
     </div>
     <div class="fp-field">
       <label class="fp-label">Notes (optional)</label>
@@ -219,6 +191,36 @@ function toggleFoodStageField() {
 }
 
 let profiles = [];
+var REF_FALLBACK = {
+  dietary_needs: ['Vegan','Vegetarian','Gluten-free','Dairy-free','Halal','Kosher','Low sodium','Low sugar'],
+  allergies: ['Peanuts','Tree nuts','Shellfish','Fish','Eggs','Dairy','Wheat / gluten','Soy','Sesame'],
+  health_conditions: ['Diabetes','High cholesterol','Hypertension','Elderly / reduced mobility','Pregnancy','New parent']
+};
+
+function buildRefChecks(containerId, values) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = (values || []).map(function(v) {
+    return '<label class="fp-check"><input type="checkbox" value="' + esc(v) + '"> ' + esc(v) + '</label>';
+  }).join('');
+}
+
+async function loadReferenceLists() {
+  try {
+    var rows = await rpc('get_family_reference_lists', { p_category: null }) || [];
+    var pick = function(cat) {
+      var fromDb = rows.filter(function(r) { return r.category === cat; }).map(function(r) { return r.value; });
+      return fromDb.length ? fromDb : REF_FALLBACK[cat];
+    };
+    buildRefChecks('fm-dietary', pick('dietary_needs'));
+    buildRefChecks('fm-allergies', pick('allergies'));
+    buildRefChecks('fm-health', pick('health_conditions'));
+  } catch(_) {
+    buildRefChecks('fm-dietary', REF_FALLBACK.dietary_needs);
+    buildRefChecks('fm-allergies', REF_FALLBACK.allergies);
+    buildRefChecks('fm-health', REF_FALLBACK.health_conditions);
+  }
+}
 
 async function rpc(fn, params) {
   const session = JSON.parse(localStorage.getItem('tcj_session')||'null');
@@ -346,6 +348,7 @@ async function deleteProfile(id) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  loadReferenceLists();
   load();
   document.getElementById('fp-modal').addEventListener('click',function(e){ if(e.target===this)closeModal(); });
 });
