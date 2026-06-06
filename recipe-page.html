@@ -20,7 +20,7 @@
   <meta name="description" content="Full recipe with ingredients, method, notes, and nutritional guidance from The Culinary Journal.">
   <link rel="canonical" href="https://theculinaryjournal.site/recipe-page.html">
   <title>Recipe — The Culinary Journal</title>
-  <meta name="tcj-build" content="20260609-hero-v2">
+  <meta name="tcj-build" content="20260609-phase14">
   <link rel="stylesheet" href="style.css?v=20260609">
   <script src="theme-init.js"></script>
   <script src="supabase-config.js"></script>
@@ -794,14 +794,18 @@ async function detectAllergens(recipe) {
   });
   allIngredients.forEach(function(name) {
     const lower = name.toLowerCase().trim();
+    if (!lower) return;
     // Exact match
     if (map.has(lower)) {
       map.get(lower).split(',').forEach(function(a) { found.add(a.trim()); });
       return;
     }
-    // Partial match — check if any known allergen ingredient is contained in name
+    // Word-boundary match only (avoids "raw mango" → "crawfish" false positives)
     map.forEach(function(allergen, key) {
-      if (lower.includes(key) || key.includes(lower.split(' ')[0])) {
+      if (key.length < 3 || lower === key) return;
+      const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp('(?:^|\\b)' + escaped + '(?:\\b|$)');
+      if (re.test(lower)) {
         allergen.split(',').forEach(function(a) { found.add(a.trim()); });
       }
     });
@@ -1067,6 +1071,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     console.error('Recipe load error:', e);
     showRecipeNotFound(true);
   }
+
+  try {
+    const openTab = params.get('tab');
+    if (openTab && document.getElementById('tab-' + openTab)) switchTab(openTab);
+  } catch(_) {}
 
   try { setupSwipe(); } catch(_) {}
   try { initRecipeFontSize(); } catch(_) {}

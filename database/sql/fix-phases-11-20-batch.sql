@@ -2,8 +2,19 @@
 -- fix-phases-11-20-batch.sql — Admin ops polish (achievable non-gated slice)
 -- Safe to re-run. Run after fix-phase10-batch.sql.
 --
--- AFTER RUNNING — one-time (use same CRON_SECRET as edge functions + cron jobs):
+-- AFTER RUNNING — set cron_secret (pick ONE method):
+--
+-- A) SQL editor (recommended) — copies secret from cron job #2:
+--   Run the BOOTSTRAP block at the bottom of this file.
+--
+-- B) SQL editor — paste secret manually:
+--   INSERT INTO public.admin_edge_config (key, value)
+--   VALUES ('cron_secret', 'YOUR_CRON_SECRET')
+--   ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();
+--
+-- C) Logged-in admin on live site (NOT SQL editor):
 --   SELECT admin_set_edge_config('cron_secret', 'YOUR_CRON_SECRET');
+--   (SQL editor has no auth.uid() — this RPC returns "Not authorized" there.)
 -- ══════════════════════════════════════════════════════════════════════
 
 -- PHASE 11 — Source link re-check controls
@@ -134,4 +145,22 @@ GRANT EXECUTE ON FUNCTION public.admin_edit_recipe(
   uuid,text,text,text,text,text,text,int,text,text,text
 ) TO authenticated;
 
-SELECT 'fix-phases-11-20-batch.sql complete — run admin_set_edge_config for cron_secret' AS status;
+SELECT 'fix-phases-11-20-batch.sql complete — run BOOTSTRAP below for cron_secret' AS status;
+
+-- ══════════════════════════════════════════════════════════════════════
+-- BOOTSTRAP — run once in SQL editor (postgres role; no auth session)
+-- Copies CRON_SECRET from send-queued-emails cron job into admin_edge_config.
+-- ══════════════════════════════════════════════════════════════════════
+INSERT INTO public.admin_edge_config (key, value, updated_at)
+SELECT
+  'cron_secret',
+  btrim(substring(j.command FROM 'Bearer\s+([^'']+)')),
+  now()
+FROM cron.job j
+WHERE j.jobname = 'send-queued-emails'
+  AND j.command ~ 'Bearer\s+[^'']+'
+ON CONFLICT (key) DO UPDATE
+  SET value = EXCLUDED.value, updated_at = now();
+
+-- Verify (value should be non-empty; do not share publicly):
+-- SELECT key, length(value) AS secret_len, updated_at FROM admin_edge_config WHERE key = 'cron_secret';

@@ -491,8 +491,8 @@ function loadRMTab(key, container) {
   else if (key === 'collections') loadRMCollections(container);
   else if (key === 'featured')    loadRMFeatured(container);
   else if (key === 'sourcelinks') loadRMSourceLinks(container);
-  else if (key === 'nutrition')   buildUMStub(container, 'Nutrition Queue', 'Recipes missing nutrition data will appear here once Open Food Facts integration is built. Betty can manually trigger nutrition matching per recipe.');
-  else if (key === 'printqueue')  buildUMStub(container, 'Print Queue', 'Approved recipes not yet in the Print Studio will appear here.');
+  else if (key === 'nutrition')   loadRMNutritionQueue(container);
+  else if (key === 'printqueue')  loadRMPrintQueue(container);
   else if (key === 'audit')       loadRMAudit(container);
 }
 
@@ -651,6 +651,91 @@ async function loadRMFeatured(container) {
     }
     container.appendChild(featCard);
   } catch(e) { container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>'; }
+}
+
+async function loadRMPrintQueue(container) {
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
+  try {
+    var rows = await rpc('admin_get_recipes', { p_status: 'approved', p_search: null, p_category: null, p_limit: 100, p_offset: 0 }) || [];
+    if (!Array.isArray(rows)) rows = [];
+    container.innerHTML = '';
+    function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
+    container.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:14px;line-height:1.6',
+      'Approved recipes ready for Print Studio. Open a recipe to preview cards, booklet sheets, or PDF export.'));
+    if (!rows.length) {
+      container.appendChild(mk('div', 'font-size:13px;color:var(--text-mid)', 'No approved recipes yet.'));
+      return;
+    }
+    var wrap = mk('div', 'overflow-x:auto');
+    var tbl = mk('table', 'width:100%;border-collapse:collapse;font-size:12px;min-width:640px');
+    tbl.innerHTML = '<thead><tr style="text-align:left;color:var(--text-mid);font-size:10px;text-transform:uppercase;letter-spacing:0.08em"><th style="padding:8px">Recipe</th><th style="padding:8px">Category</th><th style="padding:8px">Print</th><th style="padding:8px">Recipe page</th></tr></thead>';
+    var tbody = mk('tbody');
+    rows.forEach(function(r) {
+      var tr = mk('tr');
+      tr.style.borderTop = '1px solid rgba(255,255,255,0.06)';
+      tr.appendChild(mk('td', 'padding:8px;color:var(--text-high);font-weight:500', r.recipe_name || 'Recipe'));
+      tr.appendChild(mk('td', 'padding:8px;color:var(--text-mid)', r.category || '\u2014'));
+      var printTd = mk('td', 'padding:8px');
+      var printLink = mk('a', 'color:var(--accent);text-decoration:none;font-weight:500');
+      printLink.href = 'print-studio.html?id=' + encodeURIComponent(r.id);
+      printLink.target = '_blank';
+      printLink.textContent = 'Open in Print Studio';
+      printTd.appendChild(printLink);
+      tr.appendChild(printTd);
+      var pageTd = mk('td', 'padding:8px');
+      var pageLink = mk('a', 'color:var(--text-mid);text-decoration:none');
+      pageLink.href = 'recipe-page.html?id=' + encodeURIComponent(r.id);
+      pageLink.target = '_blank';
+      pageLink.textContent = 'View';
+      pageTd.appendChild(pageLink);
+      tr.appendChild(pageTd);
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    wrap.appendChild(tbl);
+    container.appendChild(wrap);
+  } catch (e) {
+    container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
+  }
+}
+
+async function loadRMNutritionQueue(container) {
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
+  try {
+    var rows = await rpc('admin_get_recipes', { p_status: 'approved', p_search: null, p_category: null, p_limit: 100, p_offset: 0 }) || [];
+    if (!Array.isArray(rows)) rows = [];
+    container.innerHTML = '';
+    function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
+    container.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:14px;line-height:1.6',
+      'Approved recipes — open the Nutrition tab to run Open Food Facts lookup per recipe. Results are approximate and cached in the browser.'));
+    if (!rows.length) {
+      container.appendChild(mk('div', 'font-size:13px;color:var(--text-mid)', 'No approved recipes yet.'));
+      return;
+    }
+    var wrap = mk('div', 'overflow-x:auto');
+    var tbl = mk('table', 'width:100%;border-collapse:collapse;font-size:12px;min-width:560px');
+    tbl.innerHTML = '<thead><tr style="text-align:left;color:var(--text-mid);font-size:10px;text-transform:uppercase;letter-spacing:0.08em"><th style="padding:8px">Recipe</th><th style="padding:8px">Category</th><th style="padding:8px">Check OFF nutrition</th></tr></thead>';
+    var tbody = mk('tbody');
+    rows.forEach(function(r) {
+      var tr = mk('tr');
+      tr.style.borderTop = '1px solid rgba(255,255,255,0.06)';
+      tr.appendChild(mk('td', 'padding:8px;color:var(--text-high);font-weight:500', r.recipe_name || 'Recipe'));
+      tr.appendChild(mk('td', 'padding:8px;color:var(--text-mid)', r.category || '\u2014'));
+      var actTd = mk('td', 'padding:8px');
+      var link = mk('a', 'color:var(--accent);text-decoration:none;font-weight:500');
+      link.href = 'recipe-page.html?id=' + encodeURIComponent(r.id) + '&tab=nutrition';
+      link.target = '_blank';
+      link.textContent = 'Open Nutrition tab';
+      actTd.appendChild(link);
+      tr.appendChild(actTd);
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    wrap.appendChild(tbl);
+    container.appendChild(wrap);
+  } catch (e) {
+    container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
+  }
 }
 
 async function loadRMSourceLinks(container) {

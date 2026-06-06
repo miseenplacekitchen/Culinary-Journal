@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phases 8–10 SQL complete; Phases 11–13 shipped in code)
+Last updated: 9 June 2026 (Phases 11–16 progress; Phase 14 live-audited)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -13,8 +13,7 @@ DEFERRED = explicitly postponed (user decision or blocked on D/G decisions)
 OPEN     = not started or only stubbed
 BLOCKED  = needs Betty decision before any build
 
-Master_Incomplete_Items_List.txt (6 June) is STALE — many [MISSING] items are now DONE.
-Do not commit Master_Incomplete_Items_List.txt.
+Master_Incomplete_Items_List.txt (6 June) is STALE — do not commit.
 
 ══════════════════════════════════════════════════════════════════════
 SQL SCRIPTS — RUN ORDER
@@ -23,64 +22,54 @@ Script                      | Purpose                              | Betty statu
 ----------------------------|--------------------------------------|------------------
 fix-all-live.sql            | Admin spine, RPCs, diary, CJ-006     | Ran earlier
 fix-tier2-surfaces.sql      | Notifications, dietary-card RPCs     | Ran ✅
-fix-phase3-batch.sql        | Chef of Month, ROTW, email on review | Ran ✅
-fix-phase4-batch.sql        | Follows, Friends, family refs, baby   | Ran ✅
-fix-phase5-batch.sql        | Follower notify on approve, link check| Ran ✅
-fix-phase6-batch.sql        | Onboarding, taxonomy, email queue RPCs| Ran ✅
-fix-phase7-batch.sql        | Taxonomy browse RPC, welcome email    | Ran ✅
-fix-phase8-batch.sql        | Bulk taxonomy backfill RPCs           | Ran ✅
+fix-phase3 through 7        | Social, onboarding, taxonomy, email  | Ran ✅
+fix-phase8-batch.sql        | Bulk taxonomy backfill RPCs          | Ran ✅
 fix-email-queue-grants.sql  | service_role email queue access       | Ran ✅
 schedule-email-cron.sql     | pg_cron send-queued-emails (job 2)    | Ran ✅
-fix-phase9-batch.sql        | Dead-link grants + admin link RPC     | Ran ✅
-schedule-dead-link-cron.sql | Weekly check-dead-links (job 3)       | Ran ✅
-fix-phase10-batch.sql       | Email template polish + link cleanup  | Ran ✅
-fix-phases-11-20-batch.sql  | Link re-check, edge invoke, origin edit| Pending Betty
+fix-phase9-batch.sql        | Dead-link grants + admin link RPC    | Ran ✅
+schedule-dead-link-cron.sql | Weekly check-dead-links (job 3)      | Ran ✅
+fix-phase10-batch.sql       | Email template polish + link cleanup | Ran ✅
+fix-phases-11-20-batch.sql  | Link re-check, edge invoke, origin   | Ran ✅ + cron_secret ✅
 
 ══════════════════════════════════════════════════════════════════════
-PHASES 11–20 — CAN WE DO THEM ALL NOW?
+PHASE STATUS (11–20)
 ══════════════════════════════════════════════════════════════════════
-Short answer: NO — not honestly. Phases 11–13 are buildable now (shipped).
-Phases 14–20 mix live sign-off, stubs, gated decisions, and deferred work.
-
-Phase | Label                         | Status now        | Why not "all now"
-------|-------------------------------|-------------------|---------------------------
-11    | Source link admin controls    | CODE DONE         | Run SQL + set cron_secret
-12    | Run email/link workers now    | CODE DONE         | Same SQL batch
-13    | Admin edit origin locality    | CODE DONE         | Same SQL batch
-14    | Recipe page live sign-off     | MANUAL VERIFY     | Betty walks live site (hero excluded)
-15    | Nutrition queue (OFF API)     | OPEN (stub tab)   | Needs Open Food Facts integration
-16    | Print queue automation        | OPEN (stub tab)   | Needs print-studio queue logic
-17    | Pantry / grocery depth        | PARTIAL           | Exists; needs depth + live audit
-18    | Library / collections (D3)    | BLOCKED           | Gated on D3 household decision
-19    | Allergy engine site-wide      | PARTIAL           | Dietary card exists; full engine TBD
-20    | Monetisation / tiers (G1–G4)  | BLOCKED/DEFERRED  | Payment provider + tier rules
+Phase | Label                         | Status
+------|-------------------------------|----------------------------------
+11    | Source link admin controls    | DONE ✅
+12    | Run email/link workers now    | DONE ✅
+13    | Admin edit origin locality    | DONE ✅
+14    | Recipe page live sign-off     | DONE ✅ (hero still deferred)
+15    | Nutrition queue               | PARTIAL — admin tab + OFF tab link
+16    | Print queue                   | PARTIAL — admin tab → Print Studio
+17    | Pantry / grocery depth        | PARTIAL — exists; live audit TBD
+18    | Library / collections (D3)    | BLOCKED
+19    | Allergy engine site-wide      | PARTIAL — false-positive fix shipped
+20    | Monetisation / tiers (G1–G4)  | BLOCKED/DEFERRED
 
 ══════════════════════════════════════════════════════════════════════
-PHASES 11–13 — SHIPPED IN CODE (SQL PENDING)
+PHASE 14 — LIVE AUDIT (test recipe, hero excluded from scope)
 ══════════════════════════════════════════════════════════════════════
-fix-phases-11-20-batch.sql:
-  • admin_reset_source_link_check, admin_queue_all_link_rechecks
-  • admin_edge_config + admin_set_edge_config + admin_invoke_edge_function
-  • admin_edit_recipe extended with origin_locality/state/country
-
-dashboard-recipes.js — Source Links: Run link check now, Queue all, per-row Re-check
-dashboard-recipes.js — Recipe detail: origin locality/state/country edit fields
-dashboard-site.js — Email panel: Send pending now button
-
-AFTER SQL — one-time in Supabase (same CRON_SECRET as cron jobs):
-  SELECT admin_set_edge_config('cron_secret', 'YOUR_CRON_SECRET');
+Verified on live site:
+  • Title, native title, intro, category eyebrow, tags (nowrap)
+  • Spice display-only (no +/- controls)
+  • Ingredients, procedure, notes, combined view, print, tried-it
+  • Hero image loads (4.1 circular polish still deferred)
+Fixed in code:
+  • Allergen false positives ("raw mango" no longer matches crawfish keys)
+  • ?tab=nutrition deep-link on recipe page
 
 ══════════════════════════════════════════════════════════════════════
-PHASES 8–10 — COMPLETE (CODE + SQL + LIVE)
+PHASES 15–16 — ADMIN TABS (no new SQL)
 ══════════════════════════════════════════════════════════════════════
-• Email cron job 2, dead-link cron job 3 — active
-• Source Links tab, bulk taxonomy, polished email templates
-• Live verify: welcome email sent; link check cron tested
+dashboard-recipes.js:
+  • Nutrition tab — list approved recipes → recipe-page?tab=nutrition
+  • Print Queue tab — list approved → print-studio.html?id=...
 
 ══════════════════════════════════════════════════════════════════════
 DEFERRED — DO NOT TOUCH UNTIL BETTY ASKS
 ══════════════════════════════════════════════════════════════════════
-• Recipe hero / circular image (Issue 4.1)
+• Recipe hero / circular image polish (Issue 4.1)
 • Phase 2 AI, Chrome extension, Android app
 • Full monetisation / payment provider
 
@@ -88,17 +77,13 @@ DEFERRED — DO NOT TOUCH UNTIL BETTY ASKS
 GIT / DEPLOY
 ══════════════════════════════════════════════════════════════════════
 Branch: main
-Pending: commit phases 11–13 batch + ledger update
+Local commits ahead of origin (phases 11–14 batch) — push when ready
 
 ══════════════════════════════════════════════════════════════════════
-BETTY CHECKLIST (Phases 11–13)
+BETTY — QUICK CHECKS AFTER DEPLOY
 ══════════════════════════════════════════════════════════════════════
-1. Run fix-phases-11-20-batch.sql in Supabase SQL editor
-2. SELECT admin_set_edge_config('cron_secret', '<same secret as cron jobs>');
-3. Hard-refresh admin → Source Links → test Run link check now
-4. Site Management → Email → test Send pending now
-5. Open any recipe in admin → edit origin fields → Save Edits
-6. Optional: redeploy check-dead-links if empty-URL skip not live yet
-7. Phase 14: walk recipe page on live site (exclude hero) and note any gaps
+1. Hard-refresh admin → Nutrition + Print Queue tabs
+2. Re-check Salted Raw Mango allergen banner (should be gone or accurate)
+3. recipe-page.html?id=...&tab=nutrition opens Nutrition tab directly
 
 Contact: miseenplacekitchen.official@gmail.com
