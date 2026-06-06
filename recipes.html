@@ -191,8 +191,16 @@
         <button class="cr-filter" data-spice="Very Hot" onclick="filterSpice('Very Hot',this)">🌶🌶🌶🌶 Very Hot</button>
         <button class="cr-filter" data-spice="Extremely Hot" onclick="filterSpice('Extremely Hot',this)">🌶🌶🌶🌶🌶 Extreme</button>
       </div>
+      <div id="cr-taxonomy-row" style="display:none;margin-top:10px">
+        <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px">Sub-category</div>
+        <div class="cr-filters" id="cr-sub-filters"></div>
+        <div id="cr-division-row" style="display:none;margin-top:8px">
+          <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px">Division</div>
+          <div class="cr-filters" id="cr-div-filters"></div>
+        </div>
+      </div>
       <!-- Chef filter — populated once recipes load -->
-      <div id="cr-chef-row" style="display:none;margin-top:8px;display:none">
+      <div id="cr-chef-row" style="display:none;margin-top:8px">
         <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px">Filter by Chef</div>
         <div class="cr-filters" id="cr-chef-filters"></div>
       </div>
@@ -364,7 +372,9 @@ document.addEventListener('click', function(e) {
 //  LOAD FROM SUPABASE
 // ══════════════════════════════════════════════════════════
 let curCat=null, curCatName=null, curDish=null;
+let curSubFilter=null, curDivFilter=null;
 let allRecipes = [];
+let browseTaxonomy = [];
 
 // Load categories from Supabase
 // Categories ALWAYS show — filters only affect recipes inside them
@@ -429,8 +439,10 @@ async function loadCategories() {
 // Load dishes for a category
 async function openCat(id, name) {
   curCat=id; curCatName=name;
+  curSubFilter=null; curDivFilter=null;
   hide('cats-view'); hide('styles-view'); hide('search-view');
   document.getElementById('dishes-lbl').textContent = name + ' — Dishes';
+  buildBrowseTaxonomyFilters(name);
   const g = document.getElementById('dish-grid');
   g.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Loading dishes...</div>';
   show('dishes-view');
@@ -541,7 +553,12 @@ async function loadDishRecipes(dishName, categoryName) {
     var res = await fetch(
       SUPA_URL + '/rest/v1/rpc/get_approved_recipes',
       { method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
-        body: JSON.stringify({p_category: categoryName, p_limit: 12}) }
+        body: JSON.stringify({
+          p_category: categoryName,
+          p_sub_category: curSubFilter || null,
+          p_division: curDivFilter || null,
+          p_limit: 12
+        }) }
     );
     var recipes = res.ok ? await res.json() : [];
     var dishLower = dishName.toLowerCase();
@@ -595,7 +612,7 @@ async function loadDishRecipes(dishName, categoryName) {
       name.textContent = r.recipe_name || '';
       var meta = document.createElement('div');
       meta.style.cssText = 'font-family:DM Sans,sans-serif;font-size:10px;color:var(--text-mid)';
-      meta.textContent = (r.origin_country ? r.origin_country + ' · ' : '') + (r.spice_level||'');
+      meta.textContent = [r.sub_category, r.division, r.origin_country, r.spice_level].filter(Boolean).join(' · ');
       info.appendChild(name); info.appendChild(meta);
       if (warns.length) {
         var badge = document.createElement('div');
@@ -718,6 +735,8 @@ var browseFamilyProfiles = [];
 var activeDietFilter = '';
 var activeChefFilter = '';
 var activeSpiceFilter = '';
+var activeSubFilter = '';
+var activeDivFilter = '';
 var SUPA_URL_CR = window.SUPA_URL;
 var SUPA_KEY_CR = window.SUPA_KEY;
 var CR_CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
@@ -764,18 +783,128 @@ function browseAllergyWarnings(recipe) {
   return AllergyEngine.checkRecipeLight(stub, browseFamilyProfiles);
 }
 
+async function loadBrowseTaxonomy() {
+  try {
+    var res = await fetch(SUPA_URL_CR + '/rest/v1/rpc/get_recipe_taxonomy', {
+      method:'POST', headers:{'apikey':SUPA_KEY_CR,'Content-Type':'application/json'},
+      body:JSON.stringify({p_category:null})
+    });
+    browseTaxonomy = res.ok ? await res.json() : [];
+  } catch(_) { browseTaxonomy = []; }
+}
+
+function buildBrowseTaxonomyFilters(categoryName) {
+  var row = document.getElementById('cr-taxonomy-row');
+  var subEl = document.getElementById('cr-sub-filters');
+  var divRow = document.getElementById('cr-division-row');
+  var divEl = document.getElementById('cr-div-filters');
+  if (!row || !subEl) return;
+  var subs = [];
+  var seen = {};
+  browseTaxonomy.filter(function(r){ return r.subcategory_category === categoryName; }).forEach(function(r) {
+    if (r.subcategory_name && !seen[r.subcategory_name]) { seen[r.subcategory_name] = true; subs.push(r.subcategory_name); }
+  });
+  if (!subs.length) { row.style.display = 'none'; return; }
+  row.style.display = 'block';
+  subEl.innerHTML = '<button class="cr-filter active" data-sub="" type="button">All</button>' +
+    subs.map(function(s){ return '<button class="cr-filter" data-sub="'+s.replace(/"/g,'&quot;')+'" type="button">'+s+'</button>'; }).join('');
+  if (divRow) divRow.style.display = 'none';
+  if (divEl) divEl.innerHTML = '';
+  subEl.onclick = function(e) {
+    var btn = e.target.closest('.cr-filter');
+    if (!btn) return;
+    subEl.querySelectorAll('.cr-filter').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    curSubFilter = btn.dataset.sub || null;
+    curDivFilter = null;
+    var divs = browseTaxonomy.filter(function(r){
+      return r.subcategory_category === categoryName && r.subcategory_name === curSubFilter && r.division_name;
+    });
+    if (divRow && divEl && divs.length) {
+      divRow.style.display = 'block';
+      divEl.innerHTML = '<button class="cr-filter active" data-div="" type="button">All</button>' +
+        divs.map(function(r){
+          var n = r.division_name;
+          return '<button class="cr-filter" data-div="'+n.replace(/"/g,'&quot;')+'" type="button">'+(r.division_emoji||'')+' '+n+'</button>';
+        }).join('');
+      divEl.onclick = function(ev) {
+        var db = ev.target.closest('.cr-filter');
+        if (!db) return;
+        divEl.querySelectorAll('.cr-filter').forEach(function(b){ b.classList.remove('active'); });
+        db.classList.add('active');
+        curDivFilter = db.dataset.div || null;
+        if (curDish) loadDishRecipes(curDish.name, curCatName);
+      };
+    } else if (divRow) divRow.style.display = 'none';
+    if (curDish) loadDishRecipes(curDish.name, curCatName);
+  };
+}
+
+function buildCommunityTaxonomyFilters() {
+  var row = document.getElementById('cr-taxonomy-row');
+  var subEl = document.getElementById('cr-sub-filters');
+  if (!row || !subEl) return;
+  var subs = {};
+  allCommunityRecipes.forEach(function(r){ if (r.sub_category) subs[r.sub_category] = true; });
+  var names = Object.keys(subs).sort();
+  if (!names.length) { row.style.display = 'none'; return; }
+  row.style.display = 'block';
+  subEl.innerHTML = '<button class="cr-filter' + (activeSubFilter ? '' : ' active') + '" data-sub="" type="button">All</button>' +
+    names.map(function(s){
+      return '<button class="cr-filter' + (activeSubFilter === s ? ' active' : '') + '" data-sub="'+s.replace(/"/g,'&quot;')+'" type="button">'+s+'</button>';
+    }).join('');
+  subEl.onclick = function(e) {
+    var btn = e.target.closest('.cr-filter');
+    if (!btn) return;
+    subEl.querySelectorAll('.cr-filter').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    activeSubFilter = btn.dataset.sub || '';
+    activeDivFilter = '';
+    buildCommunityDivisionFilters();
+    renderCommunityRecipes();
+  };
+  buildCommunityDivisionFilters();
+}
+
+function buildCommunityDivisionFilters() {
+  var divRow = document.getElementById('cr-division-row');
+  var divEl = document.getElementById('cr-div-filters');
+  if (!divRow || !divEl) return;
+  if (!activeSubFilter) { divRow.style.display = 'none'; return; }
+  var divs = {};
+  allCommunityRecipes.filter(function(r){ return r.sub_category === activeSubFilter && r.division; })
+    .forEach(function(r){ divs[r.division] = true; });
+  var names = Object.keys(divs).sort();
+  if (!names.length) { divRow.style.display = 'none'; return; }
+  divRow.style.display = 'block';
+  divEl.innerHTML = '<button class="cr-filter' + (activeDivFilter ? '' : ' active') + '" data-div="" type="button">All</button>' +
+    names.map(function(s){
+      return '<button class="cr-filter' + (activeDivFilter === s ? ' active' : '') + '" data-div="'+s.replace(/"/g,'&quot;')+'" type="button">'+s+'</button>';
+    }).join('');
+  divEl.onclick = function(e) {
+    var btn = e.target.closest('.cr-filter');
+    if (!btn) return;
+    divEl.querySelectorAll('.cr-filter').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    activeDivFilter = btn.dataset.div || '';
+    renderCommunityRecipes();
+  };
+}
+
 async function loadCommunityRecipes() {
   var grid = document.getElementById('community-grid');
   if (!grid) return;
   grid.innerHTML = '<div class="cr-empty">Loading community recipes...</div>';
   try {
     await loadBrowseFamilyProfiles();
+    await loadBrowseTaxonomy();
     var res = await fetch(SUPA_URL_CR + '/rest/v1/rpc/get_approved_recipes', {
       method:'POST', headers:{'apikey':SUPA_KEY_CR,'Content-Type':'application/json'},
       body:JSON.stringify({p_limit:40})
     });
     allCommunityRecipes = res.ok ? await res.json() : [];
     buildChefFilter();
+    buildCommunityTaxonomyFilters();
     renderCommunityRecipes();
   } catch(_) {
     if (grid) grid.innerHTML = '<div class="cr-empty">Could not load community recipes.</div>';
@@ -847,6 +976,8 @@ function renderCommunityRecipes() {
   var filtered = allCommunityRecipes.filter(function(r) {
     if (activeDietFilter && !(r.dietary_tags||[]).includes(activeDietFilter)) return false;
     if (activeSpiceFilter && (r.spice_level || '') !== activeSpiceFilter) return false;
+    if (activeSubFilter && (r.sub_category || '') !== activeSubFilter) return false;
+    if (activeDivFilter && (r.division || '') !== activeDivFilter) return false;
     if (activeChefFilter) {
       var chefName = r.credit_name || (r.username ? '@'+r.username : '');
       if (chefName !== activeChefFilter) return false;
@@ -896,7 +1027,9 @@ function renderCommunityRecipes() {
 
     var metaEl = document.createElement('div');
     metaEl.className = 'cr-meta';
-    metaEl.textContent = (r.category || '') + (r.origin_country ? ' · ' + r.origin_country : '') + (r.spice_level && r.spice_level !== 'Not Applicable' ? ' · ' + r.spice_level : '');
+    var metaParts = [r.category, r.sub_category, r.division, r.origin_country];
+    if (r.spice_level && r.spice_level !== 'Not Applicable') metaParts.push(r.spice_level);
+    metaEl.textContent = metaParts.filter(Boolean).join(' · ');
     body.appendChild(metaEl);
 
     // Chef line

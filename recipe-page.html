@@ -1280,7 +1280,10 @@ function renderRecipe(r) {
   if (catEl) {
     if (r.category) {
       var catEmoji = CAT_EMOJI_RP[r.category] || '';
-      catEl.textContent = (catEmoji ? catEmoji + ' ' : '') + r.category;
+      var catLine = (catEmoji ? catEmoji + ' ' : '') + r.category;
+      if (r.sub_category) catLine += ' · ' + r.sub_category;
+      if (r.division) catLine += ' · ' + r.division;
+      catEl.textContent = catLine;
       catEl.style.display = 'block';
     } else {
       catEl.style.display = 'none';

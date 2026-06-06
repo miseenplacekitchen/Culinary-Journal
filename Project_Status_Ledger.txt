@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phase 6 complete — code + SQL)
+Last updated: 9 June 2026 (Phase 7 batch)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -26,6 +26,15 @@ fix-phase3-batch.sql      | Chef of Month, ROTW, email on review   | Ran ✅
 fix-phase4-batch.sql      | Follows, Friends, family refs, baby    | Ran ✅
 fix-phase5-batch.sql      | Follower notify on approve, link check | Ran ✅
 fix-phase6-batch.sql      | Onboarding, taxonomy, email queue RPCs | Ran ✅
+fix-phase7-batch.sql      | Taxonomy browse RPC, welcome email       | **RUN NEXT**
+
+══════════════════════════════════════════════════════════════════════
+PHASE 7 (THIS BATCH) — SHIPPED IN CODE
+══════════════════════════════════════════════════════════════════════
+• fix-phase7-batch.sql — get_approved_recipes sub_category/division filters; welcome email on onboarding
+• submit-recipe.html — sub-category & division pickers (admin taxonomy)
+• recipes.html — taxonomy filters on community grid + category browse
+• recipe-page.html — show sub_category · division in category eyebrow
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 6 — COMPLETE (CODE + SQL)
@@ -105,7 +114,7 @@ Pantry/grocery depth  | PF-01–09, GL-05/07/11, governed ingredient_id not done
 Print Studio advanced | Swipe view (phase 6); booklet generator, premium themes (D4) still open
 Library (D3)          | Admin library-mgmt exists; full public content model thin
 Registration onboard  | onboarding.html live — test with new signup account
-Admin taxonomy        | CRUD tab live; submit-recipe/browse wiring still partial
+Admin taxonomy        | CRUD + submit/browse wired (phase 7); backfill old recipes optional
 Email sending         | Queue UI live; deploy send-queued-emails edge fn + pg_cron for actual send
 Terms/Privacy         | Shell pages; lawyer hardening pending
 Regional intelligence | Not started
@@ -132,6 +141,8 @@ Recent commits:
   10ade59 — Phase 5 (follower notify SQL, legal shells, family refs, MP-09)
   deea492 — Ledger update (Phase 5 SQL confirmed)
   284a9bd — Phase 6 (onboarding, taxonomy, email queue UI, print swipe)
+  d74b6f2 — Ledger (Phase 6 SQL confirmed)
+  [pending] — Phase 7 (taxonomy wiring, welcome email SQL)
 
 Untracked (intentional): Master_Incomplete_Items_List.txt
 
@@ -152,12 +163,11 @@ LIVE VERIFICATION CHECKLIST (Phase 6)
 4. Recipe with credit_url → dead-link banner + DB source_link_status (admin/contributor only RPC)
 
 ══════════════════════════════════════════════════════════════════════
-NEXT SUGGESTED BATCH (Phase 7 — not started)
+NEXT SUGGESTED BATCH (Phase 8 — not started)
 ══════════════════════════════════════════════════════════════════════
 • Deploy send-queued-emails edge function + pg_cron (Betty ops)
-• Wire sub_category/division pickers on submit-recipe.html
 • Re-audit recipe page Issue 4 (excluding hero) on live
-• Registration: welcome email on first login after confirm
 • Print Studio booklet generator
+• Bulk-assign sub_category on existing approved recipes (admin)
 
 Contact: miseenplacekitchen.official@gmail.com

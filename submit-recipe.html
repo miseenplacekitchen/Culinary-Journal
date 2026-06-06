@@ -1112,6 +1112,24 @@
           </div>
         </div>
 
+        <div class="sr-field sr-full" id="sr-taxonomy-wrap" style="display:none;margin-top:16px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div>
+              <label class="sr-label">Sub-category <span style="font-weight:400;color:var(--text-mid)">(optional)</span></label>
+              <select class="sr-input" id="sr-subcategory" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high);font-family:'DM Sans',sans-serif;font-size:13px">
+                <option value="">— None —</option>
+              </select>
+            </div>
+            <div>
+              <label class="sr-label">Division <span style="font-weight:400;color:var(--text-mid)">(optional)</span></label>
+              <select class="sr-input" id="sr-division" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high);font-family:'DM Sans',sans-serif;font-size:13px">
+                <option value="">— None —</option>
+              </select>
+            </div>
+          </div>
+          <div class="sr-hint" style="margin-top:8px"><span class="sr-i">i</span> Sub-categories and divisions help members browse within a category. Admin manages these under Recipe Management → Sub-cats &amp; Divisions.</div>
+        </div>
+
         <!-- Recipe characteristics: Spice + Sweet + Difficulty, side-by-side on
              desktop (3 columns), stacked on mobile. Neutral boxes — the COLOUR
              lives on the icons themselves, not the buttons. -->
@@ -1669,6 +1687,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   try { initSectionSorting(); } catch(e) { console.error('sort init', e); }
   try { addMethodSection('PREP WORK'); } catch(e) { console.error(e); }
   try { addMethodSection('DIRECTIONS'); } catch(e) { console.error(e); }
+  try { initCategoryTaxonomy(); } catch(e) { console.error(e); }
   // Resubmit rejected/pending submission — ?id=UUID (takes priority over drafts)
   // Or load a named draft — ?draft=ID — otherwise auto-save
   try {
@@ -3064,6 +3083,64 @@ function showMsg(msg, type) {
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+// ── RECIPE TAXONOMY (sub-category / division) ───────────────────────────────
+var _taxonomyCache = null;
+
+async function fetchTaxonomy() {
+  if (_taxonomyCache) return _taxonomyCache;
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_recipe_taxonomy', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_category: null })
+    });
+    if (res.ok) _taxonomyCache = await res.json() || [];
+  } catch(_) { _taxonomyCache = []; }
+  return _taxonomyCache || [];
+}
+
+async function loadTaxonomyForCategory(category, selSub, selDiv) {
+  const wrap = document.getElementById('sr-taxonomy-wrap');
+  const subEl = document.getElementById('sr-subcategory');
+  const divEl = document.getElementById('sr-division');
+  if (!wrap || !subEl || !divEl) return;
+  if (!category) { wrap.style.display = 'none'; return; }
+  const rows = await fetchTaxonomy();
+  const subs = [];
+  const seen = {};
+  rows.filter(function(r) { return r.subcategory_category === category; }).forEach(function(r) {
+    if (r.subcategory_name && !seen[r.subcategory_name]) {
+      seen[r.subcategory_name] = true;
+      subs.push(r.subcategory_name);
+    }
+  });
+  if (!subs.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  subEl.innerHTML = '<option value="">— None —</option>' + subs.map(function(s) {
+    return '<option value="' + s.replace(/"/g, '&quot;') + '"' + (s === selSub ? ' selected' : '') + '>' + s + '</option>';
+  }).join('');
+  function fillDivisions(subName) {
+    const divs = rows.filter(function(r) {
+      return r.subcategory_category === category && r.subcategory_name === subName && r.division_name;
+    });
+    divEl.innerHTML = '<option value="">— None —</option>' + divs.map(function(r) {
+      const n = r.division_name;
+      const label = (r.division_emoji ? r.division_emoji + ' ' : '') + n;
+      return '<option value="' + n.replace(/"/g, '&quot;') + '"' + (n === selDiv ? ' selected' : '') + '>' + label + '</option>';
+    }).join('');
+  }
+  fillDivisions(selSub || subEl.value);
+  subEl.onchange = function() { fillDivisions(subEl.value); divEl.value = ''; };
+}
+
+function initCategoryTaxonomy() {
+  document.querySelectorAll('input[name="category"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      if (radio.checked) loadTaxonomyForCategory(radio.value, '', '');
+    });
+  });
+}
+
 // ── COLLECT FORM DATA ─────────────────────────────────────────────────────────
 function collectFormData() {
   const getDietaryTags    = () => ['tag-vegan','tag-veg','tag-gf','tag-df','tag-nf','tag-sf','tag-ef','tag-halal','tag-kosher'].filter(id => document.getElementById(id)?.checked).map(id => document.getElementById(id).value);
@@ -3105,6 +3182,8 @@ function collectFormData() {
     recipe_name:          (document.getElementById('recipe-name')?.value       || '').trim(),
     native_title:         (document.getElementById('native-title')?.value      || '').trim(),
     category:             document.querySelector('input[name="category"]:checked')?.value  || '',
+    sub_category:         (document.getElementById('sr-subcategory')?.value || '').trim() || null,
+    division:             (document.getElementById('sr-division')?.value || '').trim() || null,
     spice_level:          document.querySelector('input[name="spice"]:checked')?.value     || '',
     sweet_level:          document.querySelector('input[name="sweet"]:checked')?.value     || '',
     origin_continent:     window.fContinent || '',
@@ -3184,6 +3263,9 @@ function restoreDraft(raw) {
 
   // Radios
   setRadio('category',    d.category);
+  if (d.category) {
+    loadTaxonomyForCategory(d.category, d.sub_category || '', d.division || '');
+  }
   setRadio('spice',       d.spice_level);
   setRadio('sweet',       d.sweet_level);
   setRadio('source-type', d.source_type || 'Original');
