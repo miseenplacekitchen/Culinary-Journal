@@ -36,6 +36,16 @@
     .ps-cards { display:flex; flex-direction:column; gap:20px; align-items:center; }
     .ps-cards.swipe-view { flex-direction:row; align-items:stretch; overflow-x:auto; scroll-snap-type:x mandatory; padding:12px 4px 20px; gap:16px; max-width:100%; -webkit-overflow-scrolling:touch; }
     .ps-cards.swipe-view .ps-card { flex:0 0 min(92vw, 420px); scroll-snap-align:center; }
+    .ps-cards.booklet-view { gap:28px; }
+    .ps-booklet-sheet {
+      width:100%; max-width:920px; display:grid; grid-template-columns:1fr 1fr; gap:16px;
+      padding:14px; background:#f8f6f2; border:1px dashed #c4a068; border-radius:8px; box-sizing:border-box;
+    }
+    .ps-booklet-sheet .ps-card { width:100%!important; max-width:none!important; margin:0!important; }
+    .ps-booklet-blank {
+      min-height:200px; border:1px dashed #ddd; border-radius:4px; display:flex; align-items:center; justify-content:center;
+      font-family:'DM Sans',sans-serif; font-size:11px; color:#aaa; background:#fff;
+    }
 
     /* Recipe cards */
     .ps-card { background:#fff; color:#1a1a1a; border-radius:4px; box-shadow:0 4px 24px rgba(0,0,0,0.2); position:relative; overflow:hidden; page-break-inside:avoid; }
@@ -243,6 +253,12 @@
       .ps-card { box-shadow:none!important; margin:0!important; page-break-after:always!important; border:1px solid #ddd; }
       .ps-card:last-child { page-break-after:auto!important; }
       .page-bg { background:white!important; }
+      .ps-cards.booklet-view .ps-booklet-sheet { page-break-after:always!important; border:none!important; background:white!important; padding:0!important; gap:8mm!important; }
+      .ps-cards.booklet-view .ps-card { page-break-after:auto!important; width:48%!important; }
+      .ps-booklet-blank { display:none!important; }
+    }
+    @media print {
+      body.ps-print-booklet .ps-cards:not(.booklet-view) .ps-card { page-break-after:always!important; }
     }
   
     .ps-mode-btn { padding:7px 16px; border-radius:8px; border:none; background:none; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:all .15s; }
@@ -331,6 +347,7 @@
       <div class="ps-btn-group">
         <button class="ps-opt-btn active" id="ps-view-stack" onclick="setCardView('stack',this)">Stacked</button>
         <button class="ps-opt-btn" id="ps-view-swipe" onclick="setCardView('swipe',this)">Swipe cards</button>
+        <button class="ps-opt-btn" id="ps-view-booklet" onclick="setCardView('booklet',this)">Booklet sheets</button>
       </div>
     </div>
 
@@ -432,6 +449,7 @@ function fmtQty(v){ if(!v)return''; let s=String(v); Object.keys(FRACTIONS).forE
 
 let currentSize = '4x6';
 let currentRecipe = null;
+let currentCardView = 'stack';
 
 let currentLayout = 'classic-card';
 
@@ -452,19 +470,58 @@ function setSize(size, btn) {
 }
 
 function setCardView(mode, btn) {
+  currentCardView = mode;
   var container = document.getElementById('ps-cards');
-  if (container) container.classList.toggle('swipe-view', mode === 'swipe');
+  if (container) {
+    container.classList.toggle('swipe-view', mode === 'swipe');
+    container.classList.toggle('booklet-view', mode === 'booklet');
+  }
   document.getElementById('ps-view-stack').classList.toggle('active', mode === 'stack');
   document.getElementById('ps-view-swipe').classList.toggle('active', mode === 'swipe');
+  var bookletBtn = document.getElementById('ps-view-booklet');
+  if (bookletBtn) bookletBtn.classList.toggle('active', mode === 'booklet');
+  document.body.classList.toggle('ps-print-booklet', mode === 'booklet');
   try { localStorage.setItem('tcj_print_card_view', mode); } catch(_) {}
+  if (currentRecipe) applyBookletLayout();
+}
+
+function applyBookletLayout() {
+  var container = document.getElementById('ps-cards');
+  if (!container || currentCardView !== 'booklet') return;
+  var cards = Array.from(container.querySelectorAll(':scope > .ps-card'));
+  if (!cards.length) return;
+  container.innerHTML = '';
+  for (var i = 0; i < cards.length; i += 2) {
+    var sheet = document.createElement('div');
+    sheet.className = 'ps-booklet-sheet';
+    sheet.appendChild(cards[i]);
+    if (cards[i + 1]) {
+      sheet.appendChild(cards[i + 1]);
+    } else {
+      var blank = document.createElement('div');
+      blank.className = 'ps-booklet-blank';
+      blank.textContent = 'Blank (fold guide)';
+      sheet.appendChild(blank);
+    }
+    container.appendChild(sheet);
+  }
 }
 
 function printCards() {
   if (!currentRecipe) { alert('No recipe loaded. Open a recipe page and click Print.'); return; }
-  // Rebuild cards with current settings before printing
   buildCards();
-  // Give browser time to render then print
-  setTimeout(function() { window.print(); }, 300);
+  setTimeout(function() {
+    if (currentCardView === 'booklet') {
+      var style = document.getElementById('ps-booklet-print-style');
+      if (!style) {
+        style = document.createElement('style');
+        style.id = 'ps-booklet-print-style';
+        style.textContent = '@media print { @page { size: A4 landscape; margin: 10mm; } }';
+        document.head.appendChild(style);
+      }
+    }
+    window.print();
+  }, 300);
 }
 
 // Style-aware time labels — mirrors submit-recipe's COOKING_STYLE_CFG
@@ -788,6 +845,7 @@ function buildCards() {
   }).join('');
 
   renderPrintQRCodes(r, showQr);
+  applyBookletLayout();
 }
 
 function loadRecipe(recipe) {
@@ -812,6 +870,11 @@ function restorePrintPrefs() {
       document.querySelectorAll('.ps-opt-btn[data-layout]').forEach(b => b.classList.remove('active'));
       const layoutBtn = document.querySelector('.ps-opt-btn[data-layout="' + savedLayout + '"]');
       if (layoutBtn) layoutBtn.classList.add('active');
+    }
+    const savedView = localStorage.getItem('tcj_print_card_view');
+    if (savedView && ['stack', 'swipe', 'booklet'].indexOf(savedView) >= 0) {
+      var viewBtn = document.getElementById('ps-view-' + savedView);
+      if (viewBtn) setCardView(savedView, viewBtn);
     }
   } catch(_){}
 }

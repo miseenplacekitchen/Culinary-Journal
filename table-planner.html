@@ -1456,10 +1456,18 @@ function exportGuestsCSV() {
   document.body.appendChild(a); a.click(); a.remove();
 }
 
+function isGuestUuid(id) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(id || ''));
+}
+
 function copyDietaryLink(guestId) {
+  if (!isGuestUuid(guestId)) {
+    showToast('Save the guest first — dietary links need a saved guest profile.', true);
+    return;
+  }
   const g = currentGuests.find(function(x){ return x.id === guestId; });
   const guestName = g ? g.name : 'your guest';
-  const url = location.origin + '/dietary-card.html?token=' + guestId;
+  const url = 'https://www.theculinaryjournal.site/dietary-card.html?token=' + encodeURIComponent(guestId);
   if (navigator.clipboard) {
     navigator.clipboard.writeText(url).then(function() {
       showToast('Dietary card link for ' + guestName + ' copied to clipboard! 📋', false);

@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phase 7 complete — code + SQL)
+Last updated: 9 June 2026 (Phase 8 shipped — awaiting SQL + edge deploy)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -27,6 +27,19 @@ fix-phase4-batch.sql      | Follows, Friends, family refs, baby    | Ran ✅
 fix-phase5-batch.sql      | Follower notify on approve, link check | Ran ✅
 fix-phase6-batch.sql      | Onboarding, taxonomy, email queue RPCs | Ran ✅
 fix-phase7-batch.sql      | Taxonomy browse RPC, welcome email       | Ran ✅
+fix-phase8-batch.sql      | Bulk taxonomy backfill RPCs              | Pending Betty
+schedule-email-cron.sql   | pg_cron for send-queued-emails           | Pending Betty (after edge deploy)
+
+══════════════════════════════════════════════════════════════════════
+PHASE 8 — SHIPPED (CODE); SQL + EDGE DEPLOY PENDING
+══════════════════════════════════════════════════════════════════════
+• fix-phase8-batch.sql — admin_list_recipes_missing_taxonomy, admin_bulk_set_recipe_taxonomy
+• schedule-email-cron.sql — Betty runs after edge function + secrets
+• supabase/functions/send-queued-emails/index.ts — deploy via Supabase CLI
+• dashboard-recipes.js — bulk backfill panel on Taxonomy tab
+• print-studio.html — Booklet sheets preview (2-up A4 landscape print)
+• recipe-page.html — tag row nowrap, print shows all tab panels
+• table-planner.html — dietary link uses canonical URL + UUID guard
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 7 — COMPLETE (CODE + SQL)
@@ -111,11 +124,11 @@ Follow notifications  | SQL on approve (phase 5) — live test recommended
 Allergy engine        | Keyword v1 on meal planner; not site-wide enforced
 Nutrition/substitutes | Display blocks exist; no full substitution engine
 Pantry/grocery depth  | PF-01–09, GL-05/07/11, governed ingredient_id not done
-Print Studio advanced | Swipe view (phase 6); booklet generator, premium themes (D4) still open
+Print Studio advanced | Booklet sheets (phase 8); premium themes (D4) still open
 Library (D3)          | Admin library-mgmt exists; full public content model thin
 Registration onboard  | onboarding.html live — test with new signup account
-Admin taxonomy        | CRUD + submit/browse wired (phase 7); backfill old recipes optional
-Email sending         | Queue UI live; deploy send-queued-emails edge fn + pg_cron for actual send
+Admin taxonomy        | CRUD + bulk backfill UI (phase 8); run fix-phase8-batch.sql
+Email sending         | Edge fn scaffold in repo; Betty deploy + schedule-email-cron.sql
 Terms/Privacy         | Shell pages; lawyer hardening pending
 Regional intelligence | Not started
 Microsoft OAuth       | Not started
@@ -143,31 +156,32 @@ Recent commits:
   284a9bd — Phase 6 (onboarding, taxonomy, email queue UI, print swipe)
   d74b6f2 — Ledger (Phase 6 SQL confirmed)
   513b64d — Phase 7 (taxonomy submit/browse, welcome email SQL)
+  a691194 — Ledger (Phase 7 SQL confirmed)
+  (pending) — Phase 8
 
 Untracked (intentional): Master_Incomplete_Items_List.txt
 
 ══════════════════════════════════════════════════════════════════════
-LIVE VERIFICATION CHECKLIST (Phase 7)
+LIVE VERIFICATION CHECKLIST (Phase 8)
 ══════════════════════════════════════════════════════════════════════
-1. ~~Run fix-phase7-batch.sql~~ ✅ Done
-2. Hard-refresh (Ctrl+Shift+R):
-   • https://www.theculinaryjournal.site/submit-recipe.html — pick category → sub-category/division dropdowns
-   • https://www.theculinaryjournal.site/recipes.html — Community → sub-category chips
-   • Recipe page — category eyebrow shows sub_category · division when set
-   • New signup → complete onboarding → Site Management → Email queue shows welcome (pending)
-3. Phase 5–6 checks still valid:
-   • https://www.theculinaryjournal.site/family-profiles.html — open Add Profile; checkboxes match admin lists
-   • https://www.theculinaryjournal.site/meal-planner.html — Family mode → “View meals for:” chips
-   • https://www.theculinaryjournal.site/event-seating-policy.html (and other new legal URLs)
-3. Follow flow: sign in as tcj.verify → follow a contributor → admin approves their recipe → follower gets notification (after SQL)
-4. Recipe with credit_url → dead-link banner + DB source_link_status (admin/contributor only RPC)
+1. Run fix-phase8-batch.sql in Supabase
+2. Betty ops — edge email worker:
+   • supabase link --project-ref kzywmodvfbyexqgipcjt
+   • supabase secrets set RESEND_API_KEY=re_...
+   • supabase secrets set CRON_SECRET=<random>
+   • supabase functions deploy send-queued-emails
+   • Run schedule-email-cron.sql (replace YOUR_CRON_SECRET)
+3. Hard-refresh:
+   • Admin → Recipe Management → Taxonomy — bulk backfill panel for recipes missing sub/division
+   • https://www.theculinaryjournal.site/print-studio.html?id=5ba4215b-182f-49ff-80a4-21a36b7190b5 — Booklet sheets → Print
+   • Recipe page — tags on one scrollable row; Print shows ingredients + procedure
+   • Table planner — save guest → Copy Dietary Form → link opens dietary-card.html
 
 ══════════════════════════════════════════════════════════════════════
-NEXT SUGGESTED BATCH (Phase 8 — not started)
+NEXT SUGGESTED BATCH (Phase 9 — not started)
 ══════════════════════════════════════════════════════════════════════
-• Deploy send-queued-emails edge function + pg_cron (Betty ops)
-• Re-audit recipe page Issue 4 (excluding hero) on live
-• Print Studio booklet generator
-• Bulk-assign sub_category on existing approved recipes (admin)
+• Live re-audit recipe page Issue 4 (excluding hero)
+• Scheduled dead-link cron
+• Email template polish + live send verification
 
 Contact: miseenplacekitchen.official@gmail.com

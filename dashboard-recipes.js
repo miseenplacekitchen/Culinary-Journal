@@ -931,11 +931,92 @@ async function loadRMTaxonomy(container) {
     'Preserved & Cherished','Feast Days','Little Ones','Nourish & Heal'];
   try {
     var rows = await rpc('get_recipe_taxonomy', { p_category: null }) || [];
+    var missing = [];
+    try { missing = await rpc('admin_list_recipes_missing_taxonomy', { p_limit: 50 }) || []; } catch(_) {}
     container.innerHTML = '';
     function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.textContent = 'Manage sub-categories and divisions for recipe browse and submit. Divisions support emoji, subtitle, description and tags.';
     container.appendChild(note);
+
+    if (missing.length) {
+      var bulk = mk('div', 'margin-bottom:24px;padding:16px;background:rgba(196,151,59,0.08);border:1px solid var(--accent);border-radius:12px');
+      bulk.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:8px', 'Bulk backfill — missing taxonomy'));
+      bulk.appendChild(mk('div', 'font-size:12px;color:var(--text-mid);margin-bottom:12px;line-height:1.5', missing.length + ' approved recipe(s) lack sub-category or division. Select rows, pick taxonomy, then apply.'));
+      var tbl = mk('table', 'width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px');
+      tbl.innerHTML = '<thead><tr style="text-align:left;color:var(--text-mid)"><th style="padding:6px 8px;width:28px"></th><th style="padding:6px 8px">Recipe</th><th style="padding:6px 8px">Category</th><th style="padding:6px 8px">Current</th></tr></thead>';
+      var tbody = mk('tbody');
+      missing.forEach(function(m) {
+        var tr = mk('tr');
+        tr.style.borderTop = '1px solid rgba(255,255,255,0.06)';
+        var td0 = mk('td'); td0.style.padding = '6px 8px';
+        var cb = mk('input'); cb.type = 'checkbox'; cb.className = 'rm-tax-bulk-cb'; cb.value = m.id; cb.dataset.category = m.category || '';
+        td0.appendChild(cb);
+        tr.appendChild(td0);
+        tr.appendChild(mk('td', 'padding:6px 8px;color:var(--text-high)', m.recipe_name || ''));
+        tr.appendChild(mk('td', 'padding:6px 8px;color:var(--text-mid)', m.category || ''));
+        var cur = (m.sub_category || '—') + ' · ' + (m.division || '—');
+        tr.appendChild(mk('td', 'padding:6px 8px;color:var(--text-mid)', cur));
+        tbody.appendChild(tr);
+      });
+      tbl.appendChild(tbody);
+      bulk.appendChild(tbl);
+      var bulkRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;align-items:center');
+      var catSel = mk('select', 'padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-high)');
+      catSel.innerHTML = '<option value="">Category filter…</option>' + CATS.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('');
+      var subSel = mk('select', 'padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-high);min-width:140px');
+      subSel.innerHTML = '<option value="">Sub-category…</option>';
+      var divSel = mk('select', 'padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-high);min-width:140px');
+      divSel.innerHTML = '<option value="">Division…</option>';
+      function fillSubs(cat) {
+        subSel.innerHTML = '<option value="">Sub-category…</option>';
+        divSel.innerHTML = '<option value="">Division…</option>';
+        var subs = {};
+        rows.filter(function(r) { return !cat || r.subcategory_category === cat; }).forEach(function(r) {
+          if (!r.subcategory_id || !r.subcategory_name) return;
+          if (!subs[r.subcategory_name]) subs[r.subcategory_name] = [];
+          if (r.division_name) subs[r.subcategory_name].push(r.division_name);
+        });
+        Object.keys(subs).sort().forEach(function(name) {
+          var o = document.createElement('option');
+          o.value = name; o.textContent = name;
+          subSel.appendChild(o);
+        });
+      }
+      function fillDivs(sub) {
+        divSel.innerHTML = '<option value="">Division…</option>';
+        var cat = catSel.value;
+        rows.filter(function(r) {
+          return r.subcategory_name === sub && (!cat || r.subcategory_category === cat);
+        }).forEach(function(r) {
+          if (!r.division_name) return;
+          var o = document.createElement('option');
+          o.value = r.division_name;
+          o.textContent = (r.division_emoji || '') + ' ' + r.division_name;
+          divSel.appendChild(o);
+        });
+      }
+      catSel.addEventListener('change', function() { fillSubs(catSel.value); });
+      subSel.addEventListener('change', function() { fillDivs(subSel.value); });
+      fillSubs('');
+      var applyBtn = mk('button', 'padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;cursor:pointer', 'Apply to selected');
+      applyBtn.addEventListener('click', function() {
+        var ids = [].map.call(container.querySelectorAll('.rm-tax-bulk-cb:checked'), function(cb) { return cb.value; });
+        if (!ids.length) { alert('Select at least one recipe.'); return; }
+        var sub = subSel.value.trim();
+        var div = divSel.value.trim();
+        if (!sub && !div) { alert('Choose a sub-category and/or division.'); return; }
+        rpc('admin_bulk_set_recipe_taxonomy', { p_recipe_ids: ids, p_sub_category: sub || null, p_division: div || null })
+          .then(function(n) { alert('Updated ' + (n || 0) + ' recipe(s).'); loadRMTaxonomy(container); })
+          .catch(function(e) { alert(e.message); });
+      });
+      bulkRow.appendChild(catSel);
+      bulkRow.appendChild(subSel);
+      bulkRow.appendChild(divSel);
+      bulkRow.appendChild(applyBtn);
+      bulk.appendChild(bulkRow);
+      container.appendChild(bulk);
+    }
 
     CATS.forEach(function(cat) {
       var subs = {};
