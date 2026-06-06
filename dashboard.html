@@ -601,13 +601,31 @@
     <!-- USER MANAGEMENT -->
     <div id="v-user-mgmt" style="display:none">
       <div class="ap-inner-tabs">
-        <button class="ap-inner-tab active" data-tab="members"    onclick="switchUserTab('members')">&#128101; All Members <span class="ap-nav-badge" id="badge-all-users" style="position:static;margin-left:4px"></span></button>
-        <button class="ap-inner-tab"        data-tab="pending"    onclick="switchUserTab('pending')">&#9203; Pending <span class="ap-nav-badge" id="badge-pending-users-2" style="position:static;margin-left:4px">0</span></button>
-        <button class="ap-inner-tab"        data-tab="umsettings" onclick="switchUserTab('umsettings')">&#9881;&#65039; UM Interface</button>
+        <button class="ap-inner-tab active" data-tab="members"      onclick="switchUserTab('members')">&#128101; All Members <span class="ap-nav-badge" id="badge-all-users" style="position:static;margin-left:4px"></span></button>
+        <button class="ap-inner-tab"        data-tab="pending"      onclick="switchUserTab('pending')">&#9203; Pending <span class="ap-nav-badge" id="badge-pending-users-2" style="position:static;margin-left:4px">0</span></button>
+        <button class="ap-inner-tab"        data-tab="deactivated"  onclick="switchUserTab('deactivated')">Deactivated</button>
+        <button class="ap-inner-tab"        data-tab="reports"      onclick="switchUserTab('reports')">Reports</button>
+        <button class="ap-inner-tab"        data-tab="requests"     onclick="switchUserTab('requests')">Recipe Requests</button>
+        <button class="ap-inner-tab"        data-tab="feedback"     onclick="switchUserTab('feedback')">Feedback</button>
+        <button class="ap-inner-tab"        data-tab="chefs"        onclick="switchUserTab('chefs')">Chef Directory</button>
+        <button class="ap-inner-tab"        data-tab="family-refs"  onclick="switchUserTab('family-refs')">Family Lists</button>
+        <button class="ap-inner-tab"        data-tab="invites"      onclick="switchUserTab('invites')">Invites</button>
+        <button class="ap-inner-tab"        data-tab="analytics"    onclick="switchUserTab('analytics')">&#128202; Analytics</button>
+        <button class="ap-inner-tab"        data-tab="audit"        onclick="switchUserTab('audit')">Audit Trail</button>
+        <button class="ap-inner-tab"        data-tab="umsettings"   onclick="switchUserTab('umsettings')">&#9881;&#65039; UM Interface</button>
       </div>
-      <div id="upanel-members"    data-panel="members"    style="padding:0"></div>
-      <div id="upanel-pending"    data-panel="pending"    style="display:none;padding:0"></div>
-      <div id="upanel-umsettings" data-panel="umsettings" style="display:none;padding:0"></div>
+      <div id="upanel-members"      data-panel="members"      style="padding:0"></div>
+      <div id="upanel-pending"      data-panel="pending"      style="display:none;padding:0"></div>
+      <div id="upanel-deactivated"  data-panel="deactivated"  style="display:none;padding:0"></div>
+      <div id="upanel-reports"      data-panel="reports"      style="display:none;padding:0"></div>
+      <div id="upanel-requests"     data-panel="requests"     style="display:none;padding:0"></div>
+      <div id="upanel-feedback"     data-panel="feedback"     style="display:none;padding:0"></div>
+      <div id="upanel-chefs"        data-panel="chefs"        style="display:none;padding:0"></div>
+      <div id="upanel-family-refs"  data-panel="family-refs"  style="display:none;padding:0"></div>
+      <div id="upanel-invites"      data-panel="invites"      style="display:none;padding:0"></div>
+      <div id="upanel-analytics"    data-panel="analytics"    style="display:none;padding:0"></div>
+      <div id="upanel-audit"        data-panel="audit"        style="display:none;padding:0"></div>
+      <div id="upanel-umsettings"   data-panel="umsettings"   style="display:none;padding:0"></div>
     </div>
 
     <!-- INGREDIENTS -->

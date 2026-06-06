@@ -8,8 +8,9 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Premium Members Only — The Culinary Journal</title>
   <script src="theme-init.js"></script>
-<script src="supabase-config.js"></script>
-<script src="page-guard.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="page-guard.js"></script>
+  <script src="checkout-utils.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
@@ -21,7 +22,11 @@
     h1 { font-family: 'Cormorant Garamond', serif; font-size: 2.1rem; font-weight: 700; color: var(--text-high, #fff); margin-bottom: 10px; }
     .subtitle { font-size: 0.95rem; color: var(--text-mid, rgba(255,255,255,0.55)); line-height: 1.65; margin-bottom: 28px; }
     .pricing-row { display: flex; gap: 12px; justify-content: center; margin-bottom: 28px; flex-wrap: wrap; }
-    .price-card { flex: 1; min-width: 140px; background: rgba(255,255,255,0.04); border: 1px solid var(--accent, #C4973B); border-radius: 12px; padding: 18px 16px; }
+    .price-card { flex: 1; min-width: 140px; background: rgba(255,255,255,0.04); border: 1px solid var(--accent, #C4973B); border-radius: 12px; padding: 18px 16px; cursor: default; transition: box-shadow 0.2s; }
+    .price-card.checkout-ready { cursor: pointer; }
+    .price-card.checkout-ready:hover { box-shadow: 0 0 0 2px var(--accent, #C4973B); }
+    .promo-row { margin-bottom: 20px; }
+    .promo-row input { width: 100%; max-width: 280px; padding: 10px 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; background: rgba(255,255,255,0.04); color: var(--text-high, #fff); font-family: 'DM Sans', sans-serif; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
     .price-card .amount { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 700; color: var(--accent, #C4973B); }
     .price-card .period { font-size: 12px; color: var(--text-mid, rgba(255,255,255,0.45)); margin-top: 2px; }
     .price-card .saving { font-size: 10px; font-weight: 600; color: #4caf76; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -47,6 +52,10 @@
     <h1>Upgrade to Access This</h1>
     <p class="subtitle" id="upgrade-subtitle">This feature requires a paid subscription. Choose a plan that fits how you cook.</p>
     <div class="refund-banner" id="refund-banner">All subscription payments are final. We do not offer refunds.</div>
+
+    <div class="promo-row" id="promo-row" style="display:none">
+      <input type="text" id="promo-code" placeholder="Promo code (optional)" maxlength="32" autocomplete="off">
+    </div>
 
     <div class="pricing-row" id="pricing-row">
       <div class="price-card" id="card-daily">
@@ -106,7 +115,19 @@
       document.getElementById('signin-link').href  = 'login.html?next=' + encodeURIComponent(next);
     }
 
-    fetch(SUPA_URL + '/rest/v1/site_settings?select=key,value&key=in.(price_daily,price_weekly,price_premium_monthly,price_yearly,price_premium_annual,currency_symbol,refund_policy,billing_no_refunds_banner)', {
+    var stripeOn = false;
+    var checkoutNext = next || 'index.html';
+
+    function startCheckout(tier) {
+      if (!stripeOn || !window.TCJCheckout) {
+        window.location.href = 'login.html' + (next ? '?next=' + encodeURIComponent(next) : '') + '#upgrade';
+        return;
+      }
+      var promo = (document.getElementById('promo-code') || {}).value || '';
+      TCJCheckout.start(tier, { promo_code: promo.trim() || null, next: checkoutNext });
+    }
+
+    fetch(SUPA_URL + '/rest/v1/site_settings?select=key,value&key=in.(stripe_enabled,price_daily,price_weekly,price_premium_monthly,price_yearly,price_premium_annual,currency_symbol,refund_policy,billing_no_refunds_banner)', {
       headers: { 'apikey': SUPA_KEY, 'Accept': 'application/json' }
     })
     .then(function(r){ return r.ok ? r.json() : null; })
@@ -115,6 +136,7 @@
       var S = {};
       rows.forEach(function(r){ S[r.key] = r.value; });
 
+      stripeOn = S.stripe_enabled === 'true';
       var cur  = S.currency_symbol || '$';
       var daily = parseFloat(S.price_daily || '0.99');
       var week  = parseFloat(S.price_weekly || '2.99');
@@ -135,6 +157,25 @@
       var hid = highlight[reqTier] || 'card-monthly';
       var el = document.getElementById(hid);
       if (el) el.style.boxShadow = '0 0 0 2px var(--accent, #C4973B)';
+
+      var upgradeBtn = document.getElementById('upgrade-btn');
+      if (stripeOn) {
+        document.getElementById('promo-row').style.display = 'block';
+        upgradeBtn.textContent = 'Checkout with Stripe';
+        upgradeBtn.removeAttribute('href');
+        upgradeBtn.style.cursor = 'pointer';
+        upgradeBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          startCheckout(reqTier === 'premium' || reqTier === 'event' ? 'monthly' : reqTier);
+        });
+        [{ id: 'card-daily', tier: 'daily' }, { id: 'card-weekly', tier: 'weekly' }, { id: 'card-monthly', tier: 'monthly' }, { id: 'card-yearly', tier: 'yearly' }].forEach(function(c) {
+          var card = document.getElementById(c.id);
+          if (!card) return;
+          card.classList.add('checkout-ready');
+          card.title = 'Start checkout — ' + c.tier;
+          card.addEventListener('click', function() { startCheckout(c.tier); });
+        });
+      }
     })
     .catch(function(){
       document.getElementById('price-daily').textContent   = '$0.99';

@@ -16,6 +16,8 @@
     .page-bg { min-height:100vh; background:var(--bg); }
     .pt-wrap  { max-width:960px; margin:0 auto; padding:24px 16px 80px; }
     .pt-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
+    .pt-household-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:18px; padding:12px 16px; background:rgba(91,143,212,0.08); border:1px solid rgba(91,143,212,0.25); border-radius:12px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); }
+    .pt-household-bar a { color:var(--accent); text-decoration:none; font-weight:600; }
     .pt-title  { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--text-high); }
     .pt-btn { padding:9px 18px; border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; border:none; }
     .pt-btn-primary { background:var(--accent); color:#fff; }
@@ -99,6 +101,7 @@
 <div class="tab-nav"></div>
 
 <div class="pt-wrap">
+  <div id="pt-household-bar" class="pt-household-bar" style="display:none"></div>
   <div class="pt-header">
     <h1 class="pt-title">🫙 Pantry &amp; Fridge</h1>
     <div style="display:flex;gap:8px">
@@ -241,6 +244,7 @@ function getPantry() {
 
 function savePantry(list) {
   localStorage.setItem('tcj_pantry', JSON.stringify(list));
+  localStorage.setItem('tcj_pantry_ts', String(Date.now()));
   clearTimeout(window._pantrySyncTimer);
   window._pantrySyncTimer = setTimeout(async function() {
     try {
@@ -259,25 +263,47 @@ function savePantry(list) {
   }, 1500);
 }
 
-async function loadPantryFromSupabase() {
+var _ptHouseholdShared = false;
+
+function updatePantryHouseholdBar(data) {
+  var bar = document.getElementById('pt-household-bar');
+  if (!bar) return;
+  if (data && data.shared) {
+    bar.style.display = 'flex';
+    bar.innerHTML = '<span>🏠 <strong>'+esc(data.household_name||'Household')+'</strong> — shared pantry (syncs with your partner)</span><a href="household.html">Manage →</a>';
+    _ptHouseholdShared = true;
+  } else {
+    try {
+      var sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
+      bar.style.display = sess && sess.access_token ? 'flex' : 'none';
+      if (sess && sess.access_token) bar.innerHTML = '<span>Personal pantry</span><a href="household.html">Link partner →</a>';
+    } catch(_) { bar.style.display = 'none'; }
+    _ptHouseholdShared = false;
+  }
+}
+
+async function loadPantryFromSupabase(force) {
   try {
     const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
     if (!sess || !sess.access_token) return;
     const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_my_pantry', {
       method: 'POST',
-      headers: {
-        'apikey': SUPA_KEY,
-        'Authorization': 'Bearer ' + sess.access_token,
-        'Content-Type': 'application/json'
-      },
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + sess.access_token, 'Content-Type': 'application/json' },
       body: '{}'
     });
     if (!res.ok) return;
-    const remote = await res.json();
-    if (Array.isArray(remote) && remote.length) {
-      localStorage.setItem('tcj_pantry', JSON.stringify(remote));
-      renderStats();
-      renderList('');
+    const data = await res.json();
+    updatePantryHouseholdBar(Array.isArray(data) ? null : data);
+    const remote = Array.isArray(data) ? data : (data.items || []);
+    const remoteTime = (data && data.updated_at) ? new Date(data.updated_at).getTime() : 0;
+    const localTime = parseInt(localStorage.getItem('tcj_pantry_ts') || '0', 10);
+    if (force || remoteTime > localTime || (data && data.shared && remoteTime >= localTime)) {
+      if (Array.isArray(remote)) {
+        localStorage.setItem('tcj_pantry', JSON.stringify(remote));
+        if (remoteTime) localStorage.setItem('tcj_pantry_ts', String(remoteTime));
+        renderStats();
+        renderList('');
+      }
     }
   } catch(_) {}
 }
@@ -740,6 +766,7 @@ document.addEventListener('DOMContentLoaded', function() {
   loadIngredientNames();
   loadPantryFromSupabase().then(loadUseItUpSuggestions);
   loadUseItUpSuggestions();
+  setInterval(function(){ if(_ptHouseholdShared) loadPantryFromSupabase(false); }, 20000);
   document.getElementById('pt-modal').addEventListener('click', function(e) {
     if (e.target===this) closeModal();
   });

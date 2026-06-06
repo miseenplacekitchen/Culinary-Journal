@@ -152,6 +152,11 @@ const SEO = {
     description: 'Upgrade to Premium to access this feature on The Culinary Journal.',
     robots: 'noindex, nofollow',
   },
+  'checkout-success.html': {
+    canonical: `${BASE}/checkout-success.html`,
+    description: 'Subscription confirmation for The Culinary Journal.',
+    robots: 'noindex, nofollow',
+  },
   'coming-soon.html': {
     canonical: `${BASE}/coming-soon.html`,
     description: 'This feature is coming soon to The Culinary Journal.',

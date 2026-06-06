@@ -233,9 +233,9 @@ async function loadDashboard() {
       if (ingCount > 0)
         items.push({icon:'&#127807;',color:'#4caf76',text:ingCount+' ingredient submission'+(ingCount===1?'':'s')+' to review',action:"switchView('ingredients');switchIngTab('pending')",label:'Review'});
       if (appealCount > 0)
-        items.push({icon:'&#128231;',color:'#5B8FD4',text:appealCount+' deactivation appeal'+(appealCount===1?'':'s')+' waiting',action:"localStorage.setItem('tcj_active_um_tab','reports');switchView('user-mgmt');switchUserTab('umsettings')",label:'View'});
+        items.push({icon:'&#128231;',color:'#5B8FD4',text:appealCount+' deactivation appeal'+(appealCount===1?'':'s')+' waiting',action:"switchView('user-mgmt');switchUserTab('reports')",label:'View'});
       if (reportCount > 0)
-        items.push({icon:'&#9888;',color:'#dc5050',text:reportCount+' member report'+(reportCount===1?'':'s')+' open',action:"localStorage.setItem('tcj_active_um_tab','reports');switchView('user-mgmt');switchUserTab('umsettings')",label:'View'});
+        items.push({icon:'&#9888;',color:'#dc5050',text:reportCount+' member report'+(reportCount===1?'':'s')+' open',action:"switchView('user-mgmt');switchUserTab('reports')",label:'View'});
       if (pendingUsers > 0)
         items.push({icon:'&#128100;',color:'#d4a017',text:pendingUsers+' new member'+(pendingUsers===1?'':'s')+' awaiting approval',action:"switchView('user-mgmt');switchUserTab('pending')",label:'Review'});
       var rotwSet = !!(document.getElementById('dash-rotw')||{}).querySelector && document.getElementById('dash-rotw').querySelector('button[onclick*="openRecipeModal"]');
@@ -1011,7 +1011,7 @@ async function buildFiOverview(container) {
 async function buildFiPricing(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
   try {
-    var res = await apiFetch(SUPABASE_URL + '/rest/v1/site_settings?select=key,value&key=in.(price_premium_monthly,price_premium_annual,price_event_monthly,price_event_annual,currency_symbol,currency_code)');
+    var res = await apiFetch(SUPABASE_URL + '/rest/v1/site_settings?select=key,value&key=in.(price_premium_monthly,price_premium_annual,price_event_monthly,price_event_annual,price_daily,price_weekly,price_yearly,currency_symbol,currency_code,stripe_enabled,stripe_publishable_key,stripe_price_daily,stripe_price_weekly,stripe_price_monthly,stripe_price_yearly)');
     if (!res||!res.ok) throw new Error(res?res.status:'Session expired');
     var rows = await res.json(); var S={};
     if(Array.isArray(rows)) rows.forEach(function(r){S[r.key]=r.value;});
@@ -1044,8 +1044,21 @@ async function buildFiPricing(container) {
     eg.appendChild(inp('price_event_annual','Annual Price',S.price_event_annual,cur));
     evtCard.appendChild(eg); evtCard.appendChild(saveBtn(['price_event_monthly','price_event_annual'],'Save Event Pricing')); container.appendChild(evtCard);
 
-    var stripeCard = card('Payment Processing','Connect Stripe to handle subscriptions, invoices and renewals automatically.');
-    stripeCard.appendChild(mk('div','padding:16px;background:rgba(91,143,212,0.08);border:1px solid rgba(91,143,212,0.25);border-radius:9px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);line-height:1.6','Stripe integration is on the roadmap. Once connected, subscriptions will be managed automatically. For now, use the Member Tiers tab to manually set a member\'s tier after payment.'));
+    var stripeCard = card('Stripe Checkout','Enable automated checkout. Add STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET as Edge Function secrets, then deploy create-checkout-session and stripe-webhook.');
+    var sg = mk('div','display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px');
+    var enWrap = mk('div','display:flex;align-items:center;gap:10px;margin-bottom:12px');
+    enWrap.appendChild(mk('span','font-size:13px;color:var(--text-high)','Enable Stripe checkout'));
+    var enCb = mk('input','width:16px;height:16px;accent-color:var(--accent)'); enCb.type='checkbox'; enCb.id='fp-stripe_enabled'; enCb.checked=S.stripe_enabled==='true';
+    enCb.addEventListener('change',async function(){var p=this.checked;try{await savePriceSetting('stripe_enabled',String(this.checked));}catch(e){this.checked=!p;alert(e.message);}});
+    enWrap.appendChild(enCb); stripeCard.appendChild(enWrap);
+    sg.appendChild(inp('stripe_publishable_key','Publishable key (pk_...)',S.stripe_publishable_key));
+    sg.appendChild(inp('stripe_price_daily','Daily price',S.stripe_price_daily||S.price_daily,cur));
+    sg.appendChild(inp('stripe_price_weekly','Weekly price',S.stripe_price_weekly||S.price_weekly,cur));
+    sg.appendChild(inp('stripe_price_monthly','Monthly price',S.stripe_price_monthly||S.price_premium_monthly,cur));
+    sg.appendChild(inp('stripe_price_yearly','Yearly price',S.stripe_price_yearly||S.price_yearly,cur));
+    stripeCard.appendChild(sg);
+    stripeCard.appendChild(mk('p','font-size:11px;color:var(--text-mid);line-height:1.55;margin-bottom:10px','Webhook URL: https://kzywmodvfbyexqgipcjt.supabase.co/functions/v1/stripe-webhook — event: checkout.session.completed'));
+    stripeCard.appendChild(saveBtn(['stripe_publishable_key','stripe_price_daily','stripe_price_weekly','stripe_price_monthly','stripe_price_yearly'],'Save Stripe Settings'));
     container.appendChild(stripeCard);
 
     container.dataset.built = '1';

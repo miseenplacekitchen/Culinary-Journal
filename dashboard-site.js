@@ -416,15 +416,20 @@ function buildLibPanel(panel, items) {
     return;
   }
 
+  var ingCol = LIB_CURRENT_TYPE === 'ingredient' ? '<th style="text-align:left;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-muted);padding:8px 12px;border-bottom:1px solid var(--border)">Ing ID</th>' : '';
   html += '<div class="ap-table"><table style="width:100%;border-collapse:collapse">' +
     '<thead><tr>' +
-    ['Image','Name','Status','Visibility','Updated','Actions'].map(function(h){
+    ['Image','Name','Status','Visibility','Updated'].map(function(h){
       return '<th style="text-align:left;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-muted);padding:8px 12px;border-bottom:1px solid var(--border)">' + h + '</th>';
-    }).join('') +
+    }).join('') + ingCol +
+    '<th style="text-align:left;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-muted);padding:8px 12px;border-bottom:1px solid var(--border)">Actions</th>' +
     '</tr></thead><tbody>';
 
   items.forEach(function(p) {
     var statusColor = p.status==='published' ? '#6dc86d' : 'var(--text-muted)';
+    var ingCell = LIB_CURRENT_TYPE === 'ingredient'
+      ? '<td style="padding:8px 12px"><input type="number" id="lib-ing-'+esc(p.id)+'" value="'+(p.governed_ingredient_id||'')+'" placeholder="ID" style="width:72px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-high)"><button data-action="lib-link" data-lid="'+esc(p.id)+'" style="margin-left:4px;font-size:10px;padding:3px 8px;border:1px solid var(--accent);background:none;color:var(--accent);border-radius:5px;cursor:pointer">Link</button></td>'
+      : '';
     html += '<tr style="border-bottom:1px solid rgba(255,255,255,.04)">' +
       '<td style="padding:8px 12px"><div style="width:40px;height:40px;border-radius:6px;background:var(--surface);overflow:hidden">' +
       (p.image_url ? '<img src="' + esc(p.image_url) + '" style="width:100%;height:100%;object-fit:cover">' : info.emoji||'') +
@@ -433,6 +438,7 @@ function buildLibPanel(panel, items) {
       '<td style="padding:8px 12px"><span style="font-size:11px;font-family:DM Sans,sans-serif;color:' + statusColor + ';text-transform:uppercase;letter-spacing:.06em">' + esc(p.status) + '</span></td>' +
       '<td style="padding:8px 12px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-muted)">' + esc(p.visibility||'public') + '</td>' +
       '<td style="padding:8px 12px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-muted)">' + (p.updated_at ? new Date(p.updated_at).toLocaleDateString() : '—') + '</td>' +
+      ingCell +
       '<td style="padding:8px 12px">' +
       '<a href="library-submit.html?type=' + LIB_CURRENT_TYPE + '&id=' + esc(p.id) + '" target="_blank" ' +
       'style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--accent);margin-right:8px">Edit</a>' +
@@ -447,7 +453,6 @@ function buildLibPanel(panel, items) {
   html += '</tbody></table></div>';
   panel.innerHTML = html;
 
-  // Event delegation — no user data in onclick
   panel.addEventListener('click', function(e) {
     var btn = e.target.closest('[data-action]');
     if (!btn) return;
@@ -457,6 +462,14 @@ function buildLibPanel(panel, items) {
     var lname   = btn.dataset.lname;
     if (action === 'lib-toggle' && lid) libTogglePublish(lid, lstatus);
     if (action === 'lib-delete' && lid) libDelete(lid, lname);
+    if (action === 'lib-link' && lid) {
+      var inp = document.getElementById('lib-ing-' + lid);
+      var ingId = inp ? parseInt(inp.value, 10) : 0;
+      if (!ingId) { alert('Enter governed ingredient ID'); return; }
+      rpc('admin_link_library_ingredient', { p_profile_id: lid, p_ingredient_id: ingId })
+        .then(function() { alert('Linked'); loadLibProfiles(LIB_CURRENT_STATUS); })
+        .catch(function(err) { alert(err.message); });
+    }
   }, { once: false });
 }
 

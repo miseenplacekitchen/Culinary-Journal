@@ -3,19 +3,52 @@ var _detailUser = null; // Stores current user detail — action buttons read fr
 // This file is loaded by dashboard.html
 // Requires: supabase-config.js to be loaded first
 
+var _UM_OPS_TABS = ['deactivated','reports','requests','feedback','chefs','family-refs','invites','analytics','audit'];
+
 function switchUserTab(tab) {
   localStorage.setItem('tcj_active_user_tab', tab);
   _currentUserTab = tab;
   document.querySelectorAll('#v-user-mgmt .ap-inner-tab').forEach(function(t){
     t.classList.toggle('active', t.dataset.tab === tab);
   });
-  ['members','pending','umsettings'].forEach(function(p){
+  ['members','pending','umsettings'].concat(_UM_OPS_TABS).forEach(function(p){
     var el = document.getElementById('upanel-' + p);
     if (el) el.style.display = p === tab ? 'block' : 'none';
   });
-  if (tab === 'members')    { buildMembersPanel(document.getElementById('upanel-members')); }
-  if (tab === 'pending')    { buildPendingPanel(document.getElementById('upanel-pending')); }
-  if (tab === 'umsettings') { buildUMInterface(document.getElementById('upanel-umsettings')); }
+  if (tab === 'members')    { buildMembersPanel(document.getElementById('upanel-members')); return; }
+  if (tab === 'pending')    { buildPendingPanel(document.getElementById('upanel-pending')); return; }
+  if (tab === 'umsettings') { loadUMInterfaceSettings(); return; }
+  if (_UM_OPS_TABS.indexOf(tab) !== -1) {
+    var panel = document.getElementById('upanel-' + tab);
+    if (panel) loadUMTab(tab, panel);
+  }
+}
+
+function loadUMInterfaceSettings() {
+  var container = document.getElementById('upanel-umsettings');
+  if (!container) return;
+  container.innerHTML = '';
+  function mk(tag, style, text) { var e = document.createElement(tag); if (style) e.style.cssText = style; if (text !== undefined) e.textContent = text; return e; }
+  function card(title) {
+    var d = mk('div', 'background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');
+    d.appendChild(mk('div', "font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px", title));
+    return d;
+  }
+  container.appendChild(mk('p', "font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6",
+    'Settings only — work queues live in the tabs above (Reports, Feedback, Chef Directory, etc.).'));
+  var smCard = card('Site Management Shortcuts');
+  var grid = mk('div', 'display:flex;flex-wrap:wrap;gap:10px');
+  [{ label: 'Pages & visibility', tab: 'sm-pages' }, { label: 'Feature toggles', tab: 'sm-features' }, { label: 'Billing copy', tab: 'sm-settings' }].forEach(function(link) {
+    var b = mk('button', "padding:8px 16px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer", link.label + ' \u2192');
+    b.addEventListener('click', function() { switchView('site-mgmt'); switchSMTab(link.tab); });
+    grid.appendChild(b);
+  });
+  smCard.appendChild(grid);
+  container.appendChild(smCard);
+  var noteCard = card('Member tiers');
+  noteCard.appendChild(mk('p', 'font-size:12px;color:var(--text-mid);line-height:1.55',
+    'Grant daily / weekly / monthly / yearly tiers from Finance \u2192 Member Tiers. Stripe checkout applies tiers automatically when enabled.'));
+  container.appendChild(noteCard);
 }
 
 // ── MEMBERS PANEL ─────────────────────────────────────────────────

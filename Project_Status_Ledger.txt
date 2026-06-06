@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phase 22 Lane 3 — household + library links)
+Last updated: 9 June 2026 (Phase 23 Lane 3 — shared pantry, Stripe, UM refactor)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -32,9 +32,10 @@ fix-phase10-batch.sql       | Email template polish + link cleanup | Ran ✅
 fix-phases-11-20-batch.sql  | Link re-check, edge invoke, origin   | Ran ✅ + cron_secret ✅
 fix-phase21-batch.sql       | Page min_tier, billing tiers, refund   | Ran ✅
 fix-phase22-batch.sql       | Household grocery + library links      | Ran ✅
+fix-phase23-batch.sql       | Shared pantry, Stripe, promos, lib admin | Pending ⏳
 
 ══════════════════════════════════════════════════════════════════════
-PHASE STATUS (11–22)
+PHASE STATUS (11–23)
 ══════════════════════════════════════════════════════════════════════
 Phase | Label                         | Status
 ------|-------------------------------|----------------------------------
@@ -44,12 +45,13 @@ Phase | Label                         | Status
 14    | Recipe page live sign-off     | DONE ✅ (hero still deferred)
 15    | Nutrition queue               | DONE ✅ — top-level RM tab
 16    | Print queue                   | DONE ✅ — top-level RM tab
-17    | Pantry / grocery depth        | DONE ✅ — GL-11 household sharing in Phase 22
-18    | Library / collections (D3)    | PARTIAL — profiles + recipe links; depth ongoing
+17    | Pantry / grocery depth        | DONE ✅ — household grocery (22) + pantry (23)
+18    | Library / collections (D3)    | PARTIAL — admin ingredient link + recipe 📚; depth ongoing
 19    | Allergy engine site-wide      | PARTIAL — engine + family banner + ing_id shipped
-20    | Monetisation / tiers (G1–G4)  | PARTIAL — manual tiers + login upgrade panel
+20    | Monetisation / tiers (G1–G4)  | PARTIAL — Stripe checkout wired; needs secrets + SQL
 21    | Admin control centre (opt C)  | DONE ✅ — RM refactor + SM pages/tiers (SQL ✅)
 22    | Lane 3 household + library    | DONE ✅ (code + SQL)
+23    | Lane 3 pantry + Stripe + UM   | DONE ✅ code — SQL ⏳ Betty
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 14 — LIVE AUDIT (test recipe, hero excluded from scope)
@@ -79,7 +81,35 @@ grocery.html — Combined tab archive removes merged ingredient names
 meal-planner.html — pantry cloud sync on cook; optional leftovers prompt
 my-dashboard.html — manual grocery line count uses g.items not g.manual
 
-GL-11 household: see Phase 22 below
+GL-11 household grocery: Phase 22. Shared pantry: Phase 23.
+
+══════════════════════════════════════════════════════════════════════
+PHASE 23 — LANE 3 (shared pantry + Stripe + library admin + UM refactor)
+══════════════════════════════════════════════════════════════════════
+fix-phase23-batch.sql:
+  • households.pantry_items — shared pantry (get/save_my_pantry returns object)
+  • create_household / accept_household_invite merge pantry on link
+  • admin_get_library_profiles includes governed_ingredient_id
+  • get_library_profile_by_ingredient_name RPC
+  • promo_codes table + admin_get/upsert/delete + validate_promo_code
+  • stripe_checkout_sessions + apply_stripe_subscription + increment_promo_use
+  • get_public_stripe_config + checkout_success_url setting
+  • site_pages: checkout-success.html
+
+Edge functions (deploy + secrets):
+  • create-checkout-session — JWT auth → Stripe Checkout Session
+  • stripe-webhook — checkout.session.completed → apply_stripe_subscription
+  • Secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+
+UI:
+  • pantry.html — household shared bar + 20s poll; object-shaped RPC response
+  • household.html — shared pantry copy + link to pantry
+  • checkout-utils.js + checkout-success.html
+  • paid-members-only.html + login.html#upgrade — Stripe checkout buttons + promo field
+  • dashboard-site.js — library admin Ing ID column + Link button
+  • dashboard-ingredients.js — promo codes via DB RPCs (not localStorage)
+  • dashboard.html + dashboard-users.js — UM work tabs top-level; UM Interface = settings
+  • dashboard-shared.js — Finance → Stripe enable + price IDs
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 22 — LANE 3 (household + library + stripe scaffold)
@@ -124,16 +154,32 @@ DEFERRED — DO NOT TOUCH UNTIL BETTY ASKS
 ══════════════════════════════════════════════════════════════════════
 • Recipe hero / circular image polish (Issue 4.1)
 • Phase 2 AI, Chrome extension, Android app
-• Stripe / payment provider (admin manual tiers work first)
+• Stripe live keys — code ready; Betty adds secrets + enables stripe_enabled
 
 ══════════════════════════════════════════════════════════════════════
 GIT / DEPLOY
 ══════════════════════════════════════════════════════════════════════
-Branch: main — phase 22 pushed (c677a47), SQL ✅
+Branch: main — phase 23 pushed (pending commit), SQL ⏳ fix-phase23-batch.sql
+
+Betty deploy steps (Phase 23):
+1. Run fix-phase23-batch.sql in Supabase SQL editor
+2. supabase functions deploy create-checkout-session stripe-webhook
+3. Set Edge secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+4. Dashboard → Finance → Pricing → enable Stripe + save price IDs
+5. Stripe Dashboard → webhook → checkout.session.completed → stripe-webhook URL
 
 ══════════════════════════════════════════════════════════════════════
 BETTY — LIVE CHECKS (optional)
 ══════════════════════════════════════════════════════════════════════
+Phase 23 (after SQL + Stripe secrets):
+1. household.html — both members see shared pantry bar on pantry.html
+2. pantry.html — add item on one account → partner sees within ~20s
+3. login.html#upgrade — signed-in user → plan button opens Stripe Checkout
+4. paid-members-only.html — click price card → checkout (when stripe_enabled)
+5. Finance → Promo Codes — create code → use at checkout
+6. Dashboard → Site → Library — link ingredient profile to governed ID
+7. Dashboard → User Management — work tabs at top; UM Interface = settings only
+
 Phase 22 (SQL confirmed ✅):
 1. household.html — create household, invite partner email
 2. Partner signs in → accept invite → both see same grocery

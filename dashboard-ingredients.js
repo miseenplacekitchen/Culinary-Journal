@@ -1358,38 +1358,66 @@ async function buildFiInterface(container) {
       form.appendChild(fi('promo-uses','Max Uses (blank = unlimited)','','number'));
       form.appendChild(fi('promo-expires','Expiry Date','','date'));
       c.appendChild(form);
-      var _promos=[];try{_promos=JSON.parse(localStorage.getItem('tcj_promos')||'[]');}catch(_){}
+      var _promos=[];
       var listDiv=mk('div','margin-top:8px');
+      function promoTierLabel(t){ return t==='event'?'Event':t==='both'?'Any tier':(t||'monthly'); }
       function renderPromos(){
         listDiv.innerHTML='';
         if(!_promos.length){listDiv.appendChild(mk('div','font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)','No promo codes yet.'));return;}
         var tbl=document.createElement('table');tbl.className='ap-table';
-        tbl.innerHTML='<thead><tr style="border-bottom:1px solid var(--border)"><th class="ap-th">Code</th><th class="ap-th">Type</th><th class="ap-th">Value</th><th class="ap-th">Tier</th><th class="ap-th">Max Uses</th><th class="ap-th">Expires</th><th class="ap-th">Delete</th></tr></thead>';
+        tbl.innerHTML='<thead><tr style="border-bottom:1px solid var(--border)"><th class="ap-th">Code</th><th class="ap-th">Type</th><th class="ap-th">Value</th><th class="ap-th">Tier grant</th><th class="ap-th">Uses</th><th class="ap-th">Expires</th><th class="ap-th">Delete</th></tr></thead>';
         var tbody=document.createElement('tbody');
-        _promos.forEach(function(pp,idx){
+        _promos.forEach(function(pp){
           var tr=document.createElement('tr');tr.style.borderBottom='1px solid rgba(255,255,255,0.04)';
+          var dtype=pp.discount_type||pp.type||'percent';
+          var dval=pp.discount_value!=null?pp.discount_value:pp.value;
+          var usesTxt=(pp.uses_count||0)+' / '+(pp.max_uses==null?'∞':pp.max_uses);
+          var exp=pp.expires_at?new Date(pp.expires_at).toLocaleDateString():(pp.expires||'Never');
           tr.innerHTML='<td class="ap-td"><span style="font-family:monospace;font-size:12px;color:var(--accent);font-weight:700">'+esc(pp.code)+'</span></td>'+
-            '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+esc(pp.type.replace('_',' '))+'</td>'+
-            '<td class="ap-td" style="font-size:12px;color:var(--text-high)">'+esc(pp.type==='percent'?pp.value+'%':pp.type==='flat'?cur+pp.value:'Free month')+'</td>'+
-            '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+esc(pp.tier)+'</td>'+
-            '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+esc(pp.uses||'Unlimited')+'</td>'+
-            '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+esc(pp.expires||'Never')+'</td><td class="ap-td"></td>';
+            '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+esc(dtype.replace('_',' '))+'</td>'+
+            '<td class="ap-td" style="font-size:12px;color:var(--text-high)">'+esc(dtype==='percent'?dval+'%':dtype==='flat'?cur+dval:'Free month')+'</td>'+
+            '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+esc(promoTierLabel(pp.tier_grant||pp.tier))+'</td>'+
+            '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+esc(usesTxt)+'</td>'+
+            '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+esc(exp)+'</td><td class="ap-td"></td>';
           var db=mk('button','padding:4px 10px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-size:11px;cursor:pointer','Delete');
-          db.addEventListener('click',(function(i){return function(){_promos.splice(i,1);localStorage.setItem('tcj_promos',JSON.stringify(_promos));renderPromos();};})(idx));
+          db.addEventListener('click',function(){
+            if(!confirm('Delete promo '+pp.code+'?'))return;
+            rpc('admin_delete_promo_code',{p_code:pp.code}).then(function(){loadPromos();}).catch(function(e){alert(e.message||e);});
+          });
           tr.lastElementChild.appendChild(db);tbody.appendChild(tr);
         });
         tbl.appendChild(tbody);listDiv.appendChild(tbl);
       }
-      renderPromos();
+      function loadPromos(){
+        rpc('admin_get_promo_codes',{}).then(function(rows){
+          _promos=Array.isArray(rows)?rows:[];
+          renderPromos();
+        }).catch(function(e){
+          listDiv.innerHTML='<div style="font-size:12px;color:#dc5050">'+esc(e.message||e)+'</div>';
+        });
+      }
+      loadPromos();
       var addBtn=mk('button','padding:10px 24px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer','+ Add Promo Code');
       addBtn.addEventListener('click',function(){
         var code=((document.getElementById('fmi-promo-code')||{}).value||'').trim().toUpperCase();
         if(!code){alert('Code is required.');return;}
-        if(_promos.find(function(x){return x.code===code;})){alert('Code already exists.');return;}
-        _promos.push({code:code,type:(document.getElementById('fmi-promo-type')||{}).value||'percent',value:((document.getElementById('fmi-promo-value')||{}).value||'').trim(),tier:(document.getElementById('fmi-promo-tier')||{}).value||'premium',uses:((document.getElementById('fmi-promo-uses')||{}).value||'').trim()||null,expires:((document.getElementById('fmi-promo-expires')||{}).value||'').trim()||null});
-        localStorage.setItem('tcj_promos',JSON.stringify(_promos));
-        renderPromos();document.getElementById('fmi-promo-code').value='';document.getElementById('fmi-promo-value').value='';
-        auditLog('Finance Management','Promo Code Created',code,null,null,code);
+        var tierSel=(document.getElementById('fmi-promo-tier')||{}).value||'premium';
+        var tierGrant=tierSel==='event'?'event':tierSel==='both'?'monthly':'monthly';
+        var maxUses=((document.getElementById('fmi-promo-uses')||{}).value||'').trim();
+        var expDate=((document.getElementById('fmi-promo-expires')||{}).value||'').trim();
+        var val=parseFloat(((document.getElementById('fmi-promo-value')||{}).value||'0'))||0;
+        rpc('admin_upsert_promo_code',{
+          p_code:code,
+          p_discount_type:(document.getElementById('fmi-promo-type')||{}).value||'percent',
+          p_discount_value:val,
+          p_tier_grant:tierGrant,
+          p_max_uses:maxUses?parseInt(maxUses,10):null,
+          p_expires_at:expDate?new Date(expDate+'T23:59:59').toISOString():null
+        }).then(function(){
+          loadPromos();
+          document.getElementById('fmi-promo-code').value='';document.getElementById('fmi-promo-value').value='';
+          auditLog('Finance Management','Promo Code Created',code,null,null,code);
+        }).catch(function(e){alert(e.message||e);});
       });
       c.appendChild(addBtn);c.appendChild(listDiv);p.appendChild(c);
     })(panels['promo']);

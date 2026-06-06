@@ -50,7 +50,7 @@
 <div class="hh-wrap">
   <div class="hh-header">
     <h1 class="hh-title">🏠 Household</h1>
-    <p class="hh-sub">Link your partner with their own login. You share one grocery list — changes sync for both of you.</p>
+    <p class="hh-sub">Link your partner with their own login. You share one grocery list and one pantry — changes sync for both of you.</p>
   </div>
   <div id="hh-content"><div class="hh-card" style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading…</div></div>
 </div>
@@ -123,7 +123,7 @@ async function loadHousehold(){
       var create = document.createElement('div');
       create.className = 'hh-card';
       create.innerHTML = '<div class="hh-card-title">Start a household</div>'+
-        '<p class="hh-note">Your current grocery list moves with you. Invite your partner by email after creating.</p>';
+        '<p class="hh-note">Your current grocery list and pantry move with you. Invite your partner by email after creating.</p>';
       var nameF = document.createElement('div');
       nameF.className = 'hh-field';
       nameF.innerHTML = '<label class="hh-label">Household name</label>';
@@ -149,7 +149,7 @@ async function loadHousehold(){
 
     var card = document.createElement('div');
     card.className = 'hh-card';
-    card.innerHTML = '<div class="hh-card-title">'+esc(household.name)+' <span class="hh-badge">Shared grocery</span></div>';
+    card.innerHTML = '<div class="hh-card-title">'+esc(household.name)+' <span class="hh-badge">Shared grocery &amp; pantry</span></div>';
     var members = household.members || [];
     members.forEach(function(m){
       var row = document.createElement('div');
@@ -202,12 +202,16 @@ async function loadHousehold(){
 
     var actions = document.createElement('div');
     actions.className = 'hh-card';
-    actions.innerHTML = '<div class="hh-card-title">Grocery list</div>'+
-      '<p class="hh-note">Both members see the same list. Open grocery to shop together.</p>';
+    actions.innerHTML = '<div class="hh-card-title">Shared lists</div>'+
+      '<p class="hh-note">Both members see the same grocery list and pantry. Changes sync within about 20 seconds.</p>';
     var gl = document.createElement('a');
     gl.href = 'grocery.html'; gl.className = 'hh-btn hh-btn-primary'; gl.textContent = 'Open shared grocery →';
     gl.style.display = 'inline-block'; gl.style.textDecoration = 'none'; gl.style.marginTop = '8px';
     actions.appendChild(gl);
+    var pt = document.createElement('a');
+    pt.href = 'pantry.html'; pt.className = 'hh-btn hh-btn-ghost'; pt.textContent = 'Open shared pantry →';
+    pt.style.display = 'inline-block'; pt.style.textDecoration = 'none'; pt.style.marginTop = '8px'; pt.style.marginLeft = '10px';
+    actions.appendChild(pt);
     var leave = document.createElement('button');
     leave.className = 'hh-btn hh-btn-ghost'; leave.style.marginLeft='10px'; leave.textContent='Leave household';
     leave.addEventListener('click', async function(){
