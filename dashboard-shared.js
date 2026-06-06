@@ -524,6 +524,7 @@ function buildUMInterface(container) {
     {key:'notes',        label:'Personal Notes'},
     {key:'feedback',     label:'Feedback'},
     {key:'chefs',        label:'Chef Directory'},
+    {key:'family-refs',  label:'Family Profile Lists'},
     {key:'invites',      label:'Invite System'},
     {key:'analytics',    label:'\uD83D\uDCCA Analytics'},
     {key:'audit',        label:'Audit Trail'}
@@ -563,6 +564,7 @@ function loadUMTab(key, container) {
   else if (key === 'notes')     buildUMStub(container, 'Personal Notes Approval', 'Users can submit their personal recipe notes for public approval. This tab will show the queue once recipe pages are built.');
   else if (key === 'feedback')  loadUMFeedback(container);
   else if (key === 'chefs')     loadUMChefs(container);
+  else if (key === 'family-refs') loadUMFamilyRefs(container);
   else if (key === 'invites')   loadUMInvites(container);
   else if (key === 'analytics') loadUMAnalytics(container);
   else if (key === 'audit')     loadUMAudit(container);

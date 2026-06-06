@@ -336,6 +336,21 @@
         <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
           <input type="checkbox" id="inc-notes" onchange="buildCards()" style="accent-color:var(--accent)"> Cooking Notes
         </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-tips" onchange="buildCards()" style="accent-color:var(--accent)"> Tips card
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-substitutes" onchange="buildCards()" style="accent-color:var(--accent)"> Substitutes card
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-allergy" onchange="buildCards()" style="accent-color:var(--accent)"> Allergy notes card
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-baby" onchange="buildCards()" style="accent-color:var(--accent)"> Baby modification card
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer;margin-top:6px">
+          <input type="checkbox" id="inc-divider" onchange="buildCards()" style="accent-color:var(--accent)"> Collection divider card
+        </label>
         <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid);margin:10px 0 2px">Recipe details</div>
         <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
           <input type="checkbox" id="inc-times" checked onchange="buildCards()" style="accent-color:var(--accent)"> Prep, cook &amp; passive times
@@ -671,6 +686,60 @@ function buildCards() {
       html: psContinuationTitle(r)
         + '<div class="ps-section-head">Cooking Notes</div>'
         + `<div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#444;line-height:1.6">${esc(notesText||'')}</div>`
+    });
+  }
+
+  if (inc('inc-tips')) {
+    var tips = [];
+    if (r.cooking_tips) tips = Array.isArray(r.cooking_tips) ? r.cooking_tips : [r.cooking_tips];
+    if (r.tips) tips = tips.concat(Array.isArray(r.tips) ? r.tips : [r.tips]);
+    if (tips.length) {
+      cardDefs.push({
+        type: 'Tips',
+        html: psContinuationTitle(r) + '<div class="ps-section-head">Tips</div>' +
+          tips.filter(Boolean).map(function(t){ return '<div class="ps-step"><span class="ps-step-num">•</span><span class="ps-step-text">'+esc(t)+'</span></div>'; }).join('')
+      });
+    }
+  }
+
+  if (inc('inc-substitutes') && Array.isArray(r.substitutions) && r.substitutions.length) {
+    cardDefs.push({
+      type: 'Substitutes',
+      html: psContinuationTitle(r) + '<div class="ps-section-head">Substitutes</div>' +
+        r.substitutions.map(function(s){
+          return '<div class="ps-step"><span class="ps-step-text"><strong>'+esc(s.original||s.ingredient||'')+'</strong> → '+esc(s.substitute||'')+
+            (s.ratio ? ' ('+esc(s.ratio)+')' : '') + (s.notes ? ' — '+esc(s.notes) : '') + '</span></div>';
+        }).join('')
+    });
+  }
+
+  if (inc('inc-allergy')) {
+    var allergenText = (r.allergen_notes || r.allergy_notes || '').trim();
+    if (!allergenText && Array.isArray(r.dietary_tags)) allergenText = 'Tags: ' + r.dietary_tags.join(', ');
+    if (allergenText) {
+      cardDefs.push({
+        type: 'Allergy Notes',
+        html: psContinuationTitle(r) + '<div class="ps-section-head">Allergy &amp; Dietary Notes</div>' +
+          '<div style="font-family:DM Sans,sans-serif;font-size:11px;color:#444;line-height:1.6">'+esc(allergenText)+'</div>' +
+          '<div style="font-family:DM Sans,sans-serif;font-size:8px;color:#8a7a5c;margin-top:8px">Always verify with guests directly. Cross-contamination may occur.</div>'
+      });
+    }
+  }
+
+  if (inc('inc-baby') && ((r.category||'').toLowerCase().indexOf('little ones') >= 0 || (r.suitability_tags||[]).join(' ').toLowerCase().indexOf('baby') >= 0)) {
+    cardDefs.push({
+      type: 'Baby Modification',
+      html: psContinuationTitle(r) + '<div class="ps-section-head">Baby / Toddler Notes</div>' +
+        '<div style="font-family:DM Sans,sans-serif;font-size:11px;color:#444;line-height:1.6">Check age-appropriate texture, salt, honey, and allergen introduction. Set aside an unspiced portion before adding heat or strong seasoning.</div>'
+    });
+  }
+
+  if (inc('inc-divider')) {
+    var collName = new URLSearchParams(window.location.search).get('collection') || r.collection_name || 'My Collection';
+    cardDefs.unshift({
+      type: 'Collection Divider',
+      html: '<div style="text-align:center;padding:40px 10px"><div style="font-family:Cormorant Garamond,serif;font-size:2rem;font-weight:700;color:#8b6914;margin-bottom:8px">'+esc(collName)+'</div>' +
+        '<div style="font-family:DM Sans,sans-serif;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#8b6914">The Culinary Journal</div></div>'
     });
   }
 

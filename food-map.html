@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Explore recipes by origin country and region on The Culinary Journal Food Map.">
+  <link rel="canonical" href="https://theculinaryjournal.site/food-map.html">
+  <title>Food by Map — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .fm-wrap { max-width:1100px; margin:0 auto; padding:32px 20px 80px; }
+    .fm-title { font-family:'Cormorant Garamond',serif; font-size:1.9rem; font-weight:700; color:var(--text-high); margin-bottom:6px; }
+    .fm-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-bottom:24px; }
+    .fm-layout { display:grid; grid-template-columns:280px 1fr; gap:20px; }
+    @media(max-width:768px){ .fm-layout { grid-template-columns:1fr; } }
+    .fm-regions { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:14px; max-height:520px; overflow-y:auto; }
+    .fm-region { display:flex; justify-content:space-between; align-items:center; padding:9px 12px; border-radius:8px; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); border:none; background:none; width:100%; text-align:left; }
+    .fm-region:hover, .fm-region.active { background:rgb(from var(--accent) r g b / 0.1); color:var(--accent); }
+    .fm-region-count { font-size:11px; color:var(--text-mid); }
+    .fm-recipes { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+    .fm-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:10px; overflow:hidden; text-decoration:none; display:block; }
+    .fm-card:hover { border-color:var(--accent-border); }
+    .fm-card-img { height:100px; display:flex; align-items:center; justify-content:center; font-size:28px; border-bottom:1px solid var(--border); }
+    .fm-card-img img { width:100%; height:100%; object-fit:cover; }
+    .fm-card-body { padding:10px 12px; }
+    .fm-card-name { font-family:'Cormorant Garamond',serif; font-size:0.95rem; font-weight:600; color:var(--text-high); }
+    .fm-card-meta { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); margin-top:2px; }
+    .fm-empty { text-align:center; padding:40px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
+  </style>
+  <script src="page-guard.js"></script>
+</head>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+<div class="fm-wrap">
+  <h1 class="fm-title">🌍 Food by Map</h1>
+  <p class="fm-sub">Click a region to see approved recipes from that origin. Driven by contributor origin data.</p>
+  <div class="fm-layout">
+    <div class="fm-regions" id="fm-regions">Loading…</div>
+    <div>
+      <div id="fm-region-label" style="font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:12px">Select a country</div>
+      <div class="fm-recipes" id="fm-recipes"><div class="fm-empty">Choose a country from the list.</div></div>
+    </div>
+  </div>
+</div>
+<script src="nav-init.js"></script>
+<script>
+var allRecipes = [], byCountry = {}, activeCountry = '';
+var CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+async function load(){
+  try{
+    var res = await fetch(SUPA_URL+'/rest/v1/rpc/get_approved_recipes',{method:'POST',headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_limit:300})});
+    allRecipes = res.ok ? await res.json() : [];
+  }catch(_){ allRecipes = []; }
+  byCountry = {};
+  allRecipes.forEach(function(r){
+    var c = (r.origin_country||'').trim();
+    if(!c) return;
+    if(!byCountry[c]) byCountry[c]=[];
+    byCountry[c].push(r);
+  });
+  var keys = Object.keys(byCountry).sort();
+  var el = document.getElementById('fm-regions');
+  if(!keys.length){ el.innerHTML='<div class="fm-empty">No origin-tagged recipes yet.</div>'; return; }
+  el.innerHTML = keys.map(function(c){
+    return '<button type="button" class="fm-region" data-c="'+esc(c)+'"><span>'+esc(c)+'</span><span class="fm-region-count">'+byCountry[c].length+'</span></button>';
+  }).join('');
+  el.querySelectorAll('.fm-region').forEach(function(btn){
+    btn.addEventListener('click',function(){ selectCountry(btn.dataset.c, btn); });
+  });
+  selectCountry(keys[0], el.querySelector('.fm-region'));
+}
+function selectCountry(c, btn){
+  activeCountry = c;
+  document.querySelectorAll('.fm-region').forEach(function(b){ b.classList.toggle('active', b.dataset.c===c); });
+  document.getElementById('fm-region-label').textContent = c + ' · ' + (byCountry[c]||[]).length + ' recipe' + ((byCountry[c]||[]).length===1?'':'s');
+  var grid = document.getElementById('fm-recipes');
+  var list = byCountry[c]||[];
+  if(!list.length){ grid.innerHTML='<div class="fm-empty">No recipes for this region.</div>'; return; }
+  grid.innerHTML = list.map(function(r){
+    var em = CAT_EMOJI[r.category]||'🍳';
+    return '<a class="fm-card" href="recipe-page.html?id='+r.id+'">'+
+      '<div class="fm-card-img">'+(r.image_url?'<img src="'+esc(r.image_url)+'" loading="lazy" alt="">':em)+'</div>'+
+      '<div class="fm-card-body"><div class="fm-card-name">'+esc(r.recipe_name)+'</div>'+
+      '<div class="fm-card-meta">'+esc(r.category||'')+'</div></div></a>';
+  }).join('');
+}
+document.addEventListener('DOMContentLoaded', load);
+</script>
+</body>
+</html>

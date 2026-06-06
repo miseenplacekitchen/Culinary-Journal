@@ -282,6 +282,7 @@
   <div id="tab-seating" class="tp-tab-content" style="display:none">
     <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px">Click any empty seat to assign a guest. Click an occupied seat to remove. Seats flagged when allergy profiles may conflict with neighbours.</div>
     <div id="tp-proximity-panel" class="tp-proximity-panel clear" style="display:none"></div>
+    <div id="tp-access-hints" style="display:none;margin-bottom:16px"></div>
     <div class="tp-seating-layout">
       <div class="tp-seating-tables" id="seating-tables"></div>
       <div class="tp-unassigned">
@@ -974,6 +975,30 @@ function previewAssignWarnings(guestId, seatKey) {
     .filter(function (w) { return w.seat === seatKey || w.neighborSeat === seatKey; });
 }
 
+function renderAccessibilitySeatHints() {
+  var panel = document.getElementById('tp-access-hints');
+  if (!panel) return;
+  var hints = [];
+  currentGuests.forEach(function(g) {
+    if (g.rsvp_status === 'declined') return;
+    var diet = (g.dietary_requirements || []).join(' ').toLowerCase();
+    var notes = (g.notes || '').toLowerCase();
+    var hay = diet + ' ' + notes + ' ' + (g.group_name || '').toLowerCase();
+    if (hay.indexOf('baby') >= 0 || hay.indexOf('infant') >= 0 || hay.indexOf('toddler') >= 0 || hay.indexOf('high chair') >= 0) {
+      hints.push({ icon: '👶', guest: g.name, tip: 'Place ' + g.name + ' beside a parent/guardian with clear walkway space for a high chair.' });
+    }
+    if (hay.indexOf('elderly') >= 0 || hay.indexOf('mobility') >= 0 || hay.indexOf('wheelchair') >= 0 || hay.indexOf('walker') >= 0) {
+      hints.push({ icon: '🧓', guest: g.name, tip: 'Seat ' + g.name + ' away from kitchen traffic, with easy reach to table centre and minimal chair movement.' });
+    }
+  });
+  if (!hints.length) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  panel.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:8px">Accessibility seating hints</div>' +
+    hints.map(function(h) {
+      return '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high);padding:8px 10px;margin-bottom:6px;background:var(--text-ghost);border:1px solid var(--border);border-radius:8px">' + h.icon + ' ' + escHtml(h.tip) + '</div>';
+    }).join('');
+}
+
 function renderProximityPanel(warnings) {
   var panel = document.getElementById('tp-proximity-panel');
   if (!panel) return;
@@ -1001,6 +1026,7 @@ function renderSeating() {
 
   var proxWarnings = getProximityWarnings();
   renderProximityPanel(proxWarnings);
+  renderAccessibilitySeatHints();
 
   const attending = currentGuests.filter(function(g){return g.rsvp_status!=='declined';});
   const unseated  = attending.filter(function(g){return !g.seat_assignment;});

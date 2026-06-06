@@ -404,11 +404,17 @@ function openSlotSettings(day, meal, e) {
     if (pick === null) return;
     assignee = pick.trim();
   }
+  var awayRaw = prompt('Anyone away? (comma-separated names, or blank)', (slot.members_away || []).join(', '));
+  if (awayRaw === null) return;
+  var guestsRaw = prompt('Extra guests for this meal? (number, default 0)', slot.guest_count != null ? String(slot.guest_count) : '0');
+  if (guestsRaw === null) return;
   var note = prompt('Meal note (optional)', slot.note || '');
   if (note === null) return;
   var updated = Object.assign({}, slot, {
     servings_override: serves.trim() ? parseFloat(serves) || serves.trim() : null,
     assignee: assignee || null,
+    members_away: awayRaw.trim() ? awayRaw.split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [],
+    guest_count: guestsRaw.trim() ? (parseInt(guestsRaw, 10) || 0) : 0,
     note: note.trim()
   });
   setSlot(day, meal, updated);
@@ -523,10 +529,12 @@ function renderCalendar() {
         var statusLabel = {cooked:'✓ Cooked',skipped:'— Skipped','eating-out':'🍽 Out',leftovers:'🥡 Leftovers'}[st] || '';
         var serveNote = recipe.servings_override ? ' · ' + esc(String(recipe.servings_override)) + ' serves' : '';
         var assigneeNote = recipe.assignee ? '<div class="mp-status-label">👤 ' + esc(recipe.assignee) + '</div>' : '';
+        var awayNote = (recipe.members_away && recipe.members_away.length) ? '<div class="mp-status-label">🚶 Away: ' + esc(recipe.members_away.join(', ')) + '</div>' : '';
+        var guestNote = (recipe.guest_count > 0) ? '<div class="mp-status-label">➕ ' + recipe.guest_count + ' guest' + (recipe.guest_count === 1 ? '' : 's') + '</div>' : '';
         var mealNote = recipe.note ? '<div class="mp-status-label" style="font-style:italic">"' + esc(recipe.note) + '"</div>' : '';
         card.innerHTML = '<div class="mp-recipe-name">' + emoji + ' ' + esc(recipe.name||'') + serveNote + '</div>' +
           '<div class="mp-recipe-cat">' + esc(recipe.category||'') + '</div>' +
-          assigneeNote + mealNote +
+          assigneeNote + awayNote + guestNote + mealNote +
           (statusLabel ? '<div class="mp-status-label">' + statusLabel + '</div>' : '') +
           (conflicts.length ? '<div class="mp-allergy-strip" title="' + esc(conflicts.join(' · ')) + '">' + esc(conflicts[0]) + (conflicts.length > 1 ? ' +' + (conflicts.length - 1) : '') + '</div>' : '') +
           '<div class="mp-status-btns">' +
@@ -935,6 +943,18 @@ function closeGroceryMenu() {
   if (drop) drop.classList.remove('open');
 }
 
+function getEffectiveServes(slot, recipe) {
+  var base = slot.servings_override || slot.servings || recipe.servings || 1;
+  var away = (slot.members_away && slot.members_away.length) ? slot.members_away.length : 0;
+  var guests = parseInt(slot.guest_count, 10) || 0;
+  var recipeDefault = recipe.servings || 1;
+  var adjusted = parseFloat(base);
+  if (isNaN(adjusted)) adjusted = recipeDefault;
+  if (away > 0) adjusted = Math.max(1, adjusted - away);
+  if (guests > 0) adjusted = adjusted + guests;
+  return adjusted;
+}
+
 async function addSlotToGroceryData(data, slot, day, meal, weekKey, stats) {
   if (!slot || !slot.id) return;
   var st = slot.status || 'planned';
@@ -949,7 +969,7 @@ async function addSlotToGroceryData(data, slot, day, meal, weekKey, stats) {
     if (!res.ok) return;
     var recipe = await res.json();
     if (!recipe) return;
-    var serves = slot.servings_override || slot.servings || recipe.servings || 1;
+    var serves = getEffectiveServes(slot, recipe);
     var baseServes = recipe.servings || 1;
     var scale = baseServes ? serves / baseServes : 1;
     var ingredients = [];

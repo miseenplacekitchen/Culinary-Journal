@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Onam Sadya Planner — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
+  <style>
+    .page-bg{min-height:100vh;background:var(--bg);}
+    .op-wrap{max-width:800px;margin:0 auto;padding:32px 20px 80px;}
+    .op-title{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:700;color:var(--text-high);}
+    .op-sub{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin:8px 0 24px;}
+    .op-dish{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:var(--text-ghost);}
+    .op-num{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;color:var(--accent);width:28px;}
+    .op-name{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);flex:1;}
+    .op-check{width:18px;height:18px;accent-color:var(--accent);}
+    .op-actions{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;}
+    .op-btn{padding:10px 18px;border-radius:9px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;background:var(--accent);color:#fff;}
+    .op-btn-ghost{background:none;border:1px solid var(--border);color:var(--text-mid);}
+  </style>
+</head>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+<div class="op-wrap">
+  <h1 class="op-title">🌺 Onam Sadya Planner</h1>
+  <p class="op-sub">Traditional banana-leaf order (top to bottom). Tick dishes as you plan; export to meal planner when ready.</p>
+  <div id="op-list"></div>
+  <div class="op-actions">
+    <button type="button" class="op-btn" onclick="resetSadya()">Reset ticks</button>
+    <button type="button" class="op-btn op-btn-ghost" onclick="location.href='festival-calendar.html'">← Festival calendar</button>
+    <button type="button" class="op-btn op-btn-ghost" onclick="location.href='meal-planner.html'">Open meal planner</button>
+  </div>
+</div>
+<script src="nav-init.js"></script>
+<script>
+var SADYA = ['Upperi / banana chips','Inji curry','Mango pickle','Lime pickle','Pappadam','Banana (ripe)','Salt','Parippu + ghee','Sambar','Rasam','Avial','Thoran','Olan','Kalan','Erissery','Pulisery','Kootu curry','Payasam (first)','Payasam (second)','Rice'];
+var KEY = 'tcj_sadya_ticks';
+function render(){
+  var ticks = JSON.parse(localStorage.getItem(KEY)||'{}');
+  document.getElementById('op-list').innerHTML = SADYA.map(function(name,i){
+    var id = 'd'+i;
+    return '<label class="op-dish"><span class="op-num">'+(i+1)+'</span><span class="op-name">'+name+'</span><input type="checkbox" class="op-check" data-i="'+i+'" '+(ticks[i]?'checked':'')+'></label>';
+  }).join('');
+  document.querySelectorAll('.op-check').forEach(function(cb){
+    cb.addEventListener('change',function(){
+      var t = JSON.parse(localStorage.getItem(KEY)||'{}');
+      t[cb.dataset.i] = cb.checked;
+      localStorage.setItem(KEY, JSON.stringify(t));
+    });
+  });
+}
+function resetSadya(){ localStorage.removeItem(KEY); render(); }
+document.addEventListener('DOMContentLoaded', render);
+</script>
+</body>
+</html>

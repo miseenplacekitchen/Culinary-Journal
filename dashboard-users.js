@@ -552,6 +552,65 @@ async function loadUMChefs(container) {
   }
 }
 
+// Family Profile reference lists (E 1.4 / 1.5)
+
+async function loadUMFamilyRefs(container) {
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
+  var CATS = [
+    {key:'relationship', label:'Relationship'},
+    {key:'age_group', label:'Age Group (Range)'},
+    {key:'dietary_needs', label:'Dietary Needs'},
+    {key:'allergies', label:'Allergies'},
+    {key:'health_conditions', label:'Health Conditions'}
+  ];
+  try {
+    var rows = await rpc('get_family_reference_lists', {p_category: null}) || [];
+    container.innerHTML = '';
+    var note = document.createElement('div');
+    note.style.cssText = 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6';
+    note.textContent = 'Admin-managed picklists for Family Profiles. Changes apply to new edits; existing saved values are kept. Age groups use the seven standard ranges plus 65+.';
+    container.appendChild(note);
+    CATS.forEach(function(cat) {
+      var items = rows.filter(function(r){ return r.category === cat.key; });
+      var box = document.createElement('div');
+      box.style.cssText = 'margin-bottom:20px;padding:16px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px';
+      box.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">'+esc(cat.label)+'</div>';
+      var list = document.createElement('div');
+      list.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px';
+      items.forEach(function(it) {
+        var pill = document.createElement('span');
+        pill.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--border);border-radius:20px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)';
+        pill.textContent = it.value;
+        list.appendChild(pill);
+      });
+      if (!items.length) list.innerHTML = '<span style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)">No items</span>';
+      box.appendChild(list);
+      var addRow = document.createElement('div');
+      addRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap';
+      var inp = document.createElement('input');
+      inp.placeholder = 'Add ' + cat.label.toLowerCase() + '\u2026';
+      inp.style.cssText = 'flex:1;min-width:160px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)';
+      var btn = document.createElement('button');
+      btn.textContent = 'Add';
+      btn.style.cssText = 'padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer';
+      btn.addEventListener('click', async function() {
+        var v = inp.value.trim();
+        if (!v) return;
+        try {
+          await rpc('admin_upsert_family_reference', {p_id: null, p_category: cat.key, p_value: v, p_sort_order: items.length + 1});
+          loadUMFamilyRefs(container);
+        } catch (e) { alert(e.message); }
+      });
+      addRow.appendChild(inp);
+      addRow.appendChild(btn);
+      box.appendChild(addRow);
+      container.appendChild(box);
+    });
+  } catch (e) {
+    container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
+  }
+}
+
 // Invite System
 
 async function buildFiMembers(container) {

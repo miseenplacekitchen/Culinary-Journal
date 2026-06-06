@@ -41,6 +41,8 @@
     .up-error{text-align:center;padding:80px 20px;}
     .up-error-icon{font-size:40px;margin-bottom:12px;}
     .up-error-title{font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--text-high);margin-bottom:6px;}
+    .up-follow-btn{margin-top:12px;padding:8px 18px;border-radius:8px;border:1px solid var(--accent);background:none;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;}
+    .up-follow-btn.following{background:var(--accent);color:#fff;}
   </style>
   <script src="page-guard.js"></script>
 </head>
@@ -68,6 +70,7 @@
         <h1 class="up-username" id="up-username"></h1>
         <div class="up-name" id="up-name"></div>
         <div class="up-meta" id="up-meta"></div>
+        <button type="button" class="up-follow-btn" id="up-follow-btn" style="display:none" onclick="toggleFollow()">Follow</button>
       </div>
     </div>
     <div id="up-recipes-section">
@@ -85,6 +88,7 @@
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 const CAT_EMOJI={'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
+var _profileUsername = '';
 
 async function load(){
   const params=new URLSearchParams(window.location.search);
@@ -113,6 +117,7 @@ function show(state){
 }
 
 function renderProfile(profile,recipes){
+  _profileUsername = profile.username || '';
   const initials=(profile.full_name||profile.username||'?').charAt(0).toUpperCase();
   document.getElementById('up-avatar').textContent=initials;
   document.getElementById('up-username').textContent='@'+profile.username;
@@ -121,6 +126,7 @@ function renderProfile(profile,recipes){
   document.getElementById('up-meta').innerHTML=
     '<span class="up-stat"><strong>'+profile.recipe_count+'</strong> public recipe'+(profile.recipe_count==1?'':'s')+'</span>'+
     (joined?'<span>Joined '+joined+'</span>':'');
+  loadFollowState();
   const label=document.getElementById('up-recipes-label');
   label.textContent=(recipes.length||0)+' Public Recipe'+(recipes.length===1?'':'s');
   const grid=document.getElementById('up-recipes');
@@ -132,6 +138,29 @@ function renderProfile(profile,recipes){
       '<div class="up-recipe-body"><div class="up-recipe-name">'+esc(r.recipe_name||'')+'</div>'+
       '<div class="up-recipe-cat">'+esc(r.category||'')+(r.origin_country?' · '+esc(r.origin_country):'')+'</div></div></a>';
   }).join('');
+}
+
+async function loadFollowState(){
+  var btn=document.getElementById('up-follow-btn');
+  if(!btn||!_profileUsername) return;
+  var sess=null; try{sess=JSON.parse(localStorage.getItem('tcj_session')||'null');}catch(_){}
+  var me=(JSON.parse(localStorage.getItem('tcj_profile')||'{}').username||'').toLowerCase();
+  if(!sess||!sess.access_token||me===_profileUsername.toLowerCase()){ btn.style.display='none'; return; }
+  btn.style.display='inline-block';
+  try{
+    var stats=await rpc('get_contributor_follow_stats',{p_username:_profileUsername});
+    var n=(stats&&stats.followers)||0;
+    var following=!!(stats&&stats.following);
+    btn.classList.toggle('following', following);
+    btn.textContent=(following?'✓ Following':'+ Follow')+(n?(' · '+n+' follower'+(n===1?'':'s')):'');
+  }catch(_){ btn.textContent='+ Follow'; }
+}
+async function toggleFollow(){
+  if(!_profileUsername) return;
+  try{
+    await rpc('toggle_contributor_follow',{p_username:_profileUsername});
+    loadFollowState();
+  }catch(e){ alert(e.message||'Could not update follow'); }
 }
 
 document.addEventListener('DOMContentLoaded',load);

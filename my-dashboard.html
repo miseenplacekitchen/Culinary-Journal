@@ -325,6 +325,35 @@ function renderAnalytics() {
     '</div>'+
     (cats.length ? '<div class="an-sec-title" style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:12px">Your Categories</div>'+catBars+'<br>' : '')+
     (recent.length ? '<div class="an-sec-title" style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:12px">Recently Viewed</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">'+recentCards+'</div>' : '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Visit some recipes and they will appear here as recently viewed.</div>');
+
+  var tried = 0;
+  try { for (var i = 0; i < localStorage.length; i++) { if (localStorage.key(i).indexOf('tcj_tried_') === 0) tried++; } } catch(_) {}
+  var grocery = 0;
+  try {
+    var g = JSON.parse(localStorage.getItem('tcj_grocery') || '{}');
+    (g.recipes || []).forEach(function(r){ grocery += (r.ingredients || []).length; });
+    grocery += (g.manual || []).length;
+  } catch(_) {}
+  var planned = 0, cooked = 0;
+  try {
+    Object.keys(localStorage).filter(function(k){ return k.indexOf('tcj_meal_') === 0; }).forEach(function(k){
+      var plan = JSON.parse(localStorage.getItem(k) || '{}');
+      Object.keys(plan).forEach(function(day){
+        Object.keys(plan[day] || {}).forEach(function(meal){
+          planned++;
+          if ((plan[day][meal].status || 'planned') === 'cooked') cooked++;
+        });
+      });
+    });
+  } catch(_) {}
+
+  panel.innerHTML += '<div class="an-sec-title" style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin:24px 0 12px">Kitchen activity</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">'+
+      '<div class="an-card"><div class="an-card-label">Recipes tried</div><div class="an-card-value">'+tried+'</div></div>'+
+      '<div class="an-card"><div class="an-card-label">Meals planned (saved weeks)</div><div class="an-card-value">'+planned+'</div></div>'+
+      '<div class="an-card"><div class="an-card-label">Marked cooked</div><div class="an-card-value" style="color:#4caf76">'+cooked+'</div></div>'+
+      '<div class="an-card"><div class="an-card-label">Grocery lines</div><div class="an-card-value">'+grocery+'</div></div>'+
+    '</div>';
 }
 
 
@@ -363,6 +392,7 @@ async function saveQuickEdit() {
     <div class="qe-field"><label class="qe-label">Visibility</label>
       <select class="qe-input" id="qe-visibility">
         <option value="public">🌍 Public</option>
+        <option value="Friends">👥 Friends (followers)</option>
         <option value="private">🔒 Private</option>
         <option value="archived">📦 Archived</option>
       </select>

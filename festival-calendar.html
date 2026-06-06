@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Festival and occasion calendar surfacing Onam, Eid, Christmas and feast-day recipes.">
+  <link rel="canonical" href="https://theculinaryjournal.site/festival-calendar.html">
+  <title>Festival Calendar — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .fc-wrap { max-width:1000px; margin:0 auto; padding:32px 20px 80px; }
+    .fc-title { font-family:'Cormorant Garamond',serif; font-size:1.9rem; font-weight:700; color:var(--text-high); }
+    .fc-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin:6px 0 24px; }
+    .fc-fest-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; margin-bottom:28px; }
+    .fc-fest { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:18px; cursor:pointer; transition:all .15s; }
+    .fc-fest:hover, .fc-fest.active { border-color:var(--accent-border); background:rgb(from var(--accent) r g b / 0.06); }
+    .fc-fest-emoji { font-size:28px; margin-bottom:8px; }
+    .fc-fest-name { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:600; color:var(--text-high); }
+    .fc-fest-when { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-top:4px; }
+    .fc-fest-count { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--accent); margin-top:8px; font-weight:600; }
+    .fc-recipes { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+    .fc-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:10px; overflow:hidden; text-decoration:none; }
+    .fc-card-body { padding:10px 12px; }
+    .fc-card-name { font-family:'Cormorant Garamond',serif; font-size:0.95rem; font-weight:600; color:var(--text-high); }
+    .fc-planner-links { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+    .fc-planner-links a { font-family:'DM Sans',sans-serif; font-size:12px; padding:8px 14px; border:1px solid var(--border); border-radius:8px; color:var(--accent); text-decoration:none; }
+  </style>
+  <script src="page-guard.js"></script>
+</head>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+<div class="fc-wrap">
+  <h1 class="fc-title">🎉 Festival Calendar</h1>
+  <p class="fc-sub">Occasion-tagged recipes from the Feast Days category and keyword matches. Dates are indicative — verify lunar/Gregorian calendars locally.</p>
+  <div class="fc-planner-links">
+    <a href="onam-sadya.html">Onam Sadya planner →</a>
+    <a href="eid-feast.html">Eid feast planner →</a>
+    <a href="christmas-roast.html">Christmas roast timing →</a>
+  </div>
+  <div class="fc-fest-grid" id="fc-fests"></div>
+  <div id="fc-label" style="font-family:DM Sans,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:12px"></div>
+  <div class="fc-recipes" id="fc-recipes"></div>
+</div>
+<script src="nav-init.js"></script>
+<script>
+var FESTIVALS = [
+  { id:'onam', emoji:'🌺', name:'Onam / Vishu', when:'Aug–Sep (Malayalam calendar)', tags:['onam','vishu','sadya','kerala','banana leaf'] },
+  { id:'eid', emoji:'🌙', name:'Eid', when:'Islamic lunar calendar', tags:['eid','ramadan','iftar','biryani','feast'] },
+  { id:'christmas', emoji:'🎄', name:'Christmas', when:'25 December', tags:['christmas','roast','pudding','advent','holiday'] },
+  { id:'diwali', emoji:'🪔', name:'Diwali', when:'Oct–Nov', tags:['diwali','deepavali','sweet','mithai'] },
+  { id:'easter', emoji:'🐣', name:'Easter', when:'Mar–Apr', tags:['easter','hot cross','lamb'] }
+];
+var allRecipes = [];
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function matchFest(r, fest){
+  if((r.category||'').toLowerCase().indexOf('feast')>=0) return true;
+  var hay = [r.recipe_name,r.native_title,r.category,(r.dietary_tags||[]).join(' ')].join(' ').toLowerCase();
+  return fest.tags.some(function(t){ return hay.indexOf(t)>=0; });
+}
+async function load(){
+  try{
+    var res = await fetch(SUPA_URL+'/rest/v1/rpc/get_approved_recipes',{method:'POST',headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_limit:300})});
+    allRecipes = res.ok ? await res.json() : [];
+  }catch(_){}
+  var grid = document.getElementById('fc-fests');
+  grid.innerHTML = FESTIVALS.map(function(f){
+    var n = allRecipes.filter(function(r){ return matchFest(r,f); }).length;
+    return '<div class="fc-fest" data-id="'+f.id+'"><div class="fc-fest-emoji">'+f.emoji+'</div><div class="fc-fest-name">'+f.name+'</div><div class="fc-fest-when">'+f.when+'</div><div class="fc-fest-count">'+n+' matching recipe'+(n===1?'':'s')+'</div></div>';
+  }).join('');
+  grid.querySelectorAll('.fc-fest').forEach(function(el){
+    el.addEventListener('click',function(){ showFest(el.dataset.id); });
+  });
+  showFest('onam');
+}
+function showFest(id){
+  var fest = FESTIVALS.find(function(f){ return f.id===id; });
+  if(!fest) return;
+  document.querySelectorAll('.fc-fest').forEach(function(el){ el.classList.toggle('active', el.dataset.id===id); });
+  var list = allRecipes.filter(function(r){ return matchFest(r,fest); });
+  document.getElementById('fc-label').textContent = fest.name + ' recipes';
+  var box = document.getElementById('fc-recipes');
+  if(!list.length){ box.innerHTML='<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:20px">No matching recipes yet — browse Feast Days or submit occasion-tagged recipes.</div>'; return; }
+  box.innerHTML = list.map(function(r){
+    return '<a class="fc-card" href="recipe-page.html?id='+r.id+'"><div class="fc-card-body"><div class="fc-card-name">'+esc(r.recipe_name)+'</div><div style="font-family:DM Sans,sans-serif;font-size:10px;color:var(--text-mid)">'+esc(r.category||'')+'</div></div></a>';
+  }).join('');
+}
+document.addEventListener('DOMContentLoaded', load);
+</script>
+</body>
+</html>

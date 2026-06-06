@@ -89,6 +89,13 @@
     #rp-wrap.rp-font-xl  { --rp-scale: 1.28; }
     #rp-wrap .rp-ing-name, #rp-wrap .rp-proc-step-text, #rp-wrap .rp-proc-single { font-size: calc(14px * var(--rp-scale, 1)); }
     #rp-wrap .rp-ing-qty { font-size: calc(13px * var(--rp-scale, 1)); }
+    #rp-wrap.rp-cook-high { background:#0a0a0a !important; }
+    #rp-wrap.rp-cook-high .rp-title, #rp-wrap.rp-cook-high .rp-ing-name, #rp-wrap.rp-cook-high .rp-proc-step-text,
+    #rp-wrap.rp-cook-high .rp-proc-single, #rp-wrap.rp-cook-high .rp-section-title, #rp-wrap.rp-cook-high .rp-meta-item { color:#fff !important; }
+    #rp-wrap.rp-cook-high .rp-ing-qty, #rp-wrap.rp-cook-high .rp-proc-step-num { color:#f0d080 !important; }
+    #rp-wrap.rp-cook-high .rp-tab-content, #rp-wrap.rp-cook-high #combined-view { border-color:#444 !important; }
+    .rp-cook-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-family:"DM Sans",sans-serif; font-size:11px; color:var(--text-mid); cursor:pointer; }
+    .rp-cook-btn.active { border-color:var(--accent); color:var(--accent); background:rgb(from var(--accent) r g b / 0.12); }
 
     /* ── SPICE DISPLAY ───────────────────────── */
 
@@ -542,6 +549,7 @@
         <button type="button" class="rp-font-btn" data-fs="lg" onclick="setRecipeFontSize('lg',this)">A++</button>
         <button type="button" class="rp-font-btn" data-fs="xl" onclick="setRecipeFontSize('xl',this)">A+++</button>
       </div>
+      <button type="button" class="rp-cook-btn" id="rp-cook-high-btn" title="High-contrast cooking view" onclick="toggleCookHigh()">◐ Cook</button>
       <div class="rp-view-toggle" id="view-toggle">
         <button class="rp-view-btn active" id="btn-tabs" onclick="setView('tabs')">Tabs</button>
         <button class="rp-view-btn" id="btn-combined" onclick="setView('combined')">Combined</button>
@@ -2160,6 +2168,21 @@ function initRecipeFontSize() {
   const saved = lsGet('tcj_recipe_font') || 'md';
   const btn = document.querySelector('.rp-font-btn[data-fs="' + saved + '"]');
   setRecipeFontSize(saved, btn);
+  if (lsGet('tcj_recipe_cook_high') === '1') {
+    var wrap = document.getElementById('rp-wrap');
+    var cookBtn = document.getElementById('rp-cook-high-btn');
+    if (wrap) wrap.classList.add('rp-cook-high');
+    if (cookBtn) cookBtn.classList.add('active');
+  }
+}
+
+function toggleCookHigh() {
+  var wrap = document.getElementById('rp-wrap');
+  var btn = document.getElementById('rp-cook-high-btn');
+  if (!wrap) return;
+  var on = wrap.classList.toggle('rp-cook-high');
+  if (btn) btn.classList.toggle('active', on);
+  try { lsSet('tcj_recipe_cook_high', on ? '1' : '0'); } catch(_) {}
 }
 
 function setView(view, skipSave) {

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Christmas Roast Timing — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <style>
+    .page-bg{min-height:100vh;background:var(--bg);}
+    .cr-wrap{max-width:700px;margin:0 auto;padding:32px 20px 80px;}
+    .cr-title{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:700;color:var(--text-high);}
+    .cr-sub{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin:8px 0 24px;}
+    .cr-field{margin-bottom:14px;}
+    .cr-label{display:block;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;color:var(--text-mid);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.08em;}
+    .cr-input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:var(--input-bg);color:var(--text-high);font-family:'DM Sans',sans-serif;}
+    .cr-btn{padding:12px 20px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;}
+    .cr-timeline{margin-top:24px;border:1px solid var(--border);border-radius:12px;padding:16px;background:var(--text-ghost);}
+    .cr-step{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);padding:8px 0;border-bottom:1px solid var(--border);}
+    .cr-step:last-child{border-bottom:none;}
+    .cr-time{color:var(--accent);font-weight:600;margin-right:8px;}
+  </style>
+</head>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+<div class="cr-wrap">
+  <h1 class="cr-title">🎄 Christmas Roast Timing</h1>
+  <p class="cr-sub">Work backwards from your serve time. Approximate — always verify internal temperature.</p>
+  <div class="cr-field"><label class="cr-label">Serve time</label><input type="time" class="cr-input" id="cr-serve" value="13:00"></div>
+  <div class="cr-field"><label class="cr-label">Roast weight (kg)</label><input type="number" class="cr-input" id="cr-kg" value="2" min="0.5" step="0.1"></div>
+  <div class="cr-field"><label class="cr-label">Rest time (minutes)</label><input type="number" class="cr-input" id="cr-rest" value="30" min="15"></div>
+  <button type="button" class="cr-btn" onclick="calcTimeline()">Calculate timeline</button>
+  <div class="cr-timeline" id="cr-out" style="display:none"></div>
+  <p style="margin-top:20px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)"><a href="festival-calendar.html" style="color:var(--accent)">← Festival calendar</a></p>
+</div>
+<script src="nav-init.js"></script>
+<script>
+function calcTimeline(){
+  var serve=document.getElementById('cr-serve').value||'13:00';
+  var kg=parseFloat(document.getElementById('cr-kg').value)||2;
+  var rest=parseInt(document.getElementById('cr-rest').value,10)||30;
+  var cookMin=Math.round(kg*35+20);
+  var parts=serve.split(':');
+  var serveMins=parseInt(parts[0],10)*60+parseInt(parts[1],10);
+  function fmt(m){ m=((m%1440)+1440)%1440; var h=Math.floor(m/60), mi=m%60; return (h<10?'0':'')+h+':'+(mi<10?'0':'')+mi; }
+  var steps=[
+    {t:serveMins-rest-cookMin-45, label:'Start prep vegetables & stuffing'},
+    {t:serveMins-rest-cookMin-15, label:'Heat oven · bring roast to room temp'},
+    {t:serveMins-rest-cookMin, label:'Roast goes in (~'+cookMin+' min at 180°C / 350°F — check thermometer)'},
+    {t:serveMins-rest, label:'Remove roast · rest covered'},
+    {t:serveMins-15, label:'Roast potatoes & parsnips into oven'},
+    {t:serveMins, label:'Serve'}
+  ];
+  document.getElementById('cr-out').style.display='block';
+  document.getElementById('cr-out').innerHTML=steps.map(function(s){
+    return '<div class="cr-step"><span class="cr-time">'+fmt(s.t)+'</span>'+s.label+'</div>';
+  }).join('');
+}
+</script>
+</body>
+</html>
