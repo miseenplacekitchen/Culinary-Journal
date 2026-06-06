@@ -63,6 +63,8 @@
     .gl-field label { display:block; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-bottom:4px; }
     .gl-field input, .gl-field select { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:8px 12px; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--text-high); }
     .gl-modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:18px; }
+    .gl-add-hint { font-family:'DM Sans',sans-serif; font-size:11px; margin-top:4px; }
+    .gl-unit-tip { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--warn); margin-top:2px; }
 
     /* Combined tab category headers */
     .gl-category-header { padding:10px 18px 6px; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); background:var(--text-ghost); border-bottom:1px solid var(--border); }
@@ -100,6 +102,7 @@
       <button class="gl-btn gl-btn-ghost" onclick="openAddItemModal()">+ Add Item</button>
       <button class="gl-btn gl-btn-ghost" onclick="archiveChecked()">Archive Checked</button>
       <button class="gl-btn gl-btn-ghost" onclick="clearAll()">Clear All</button>
+      <button class="gl-btn gl-btn-ghost" onclick="exportPlainText()">📋 Copy list</button>
       <button class="gl-btn gl-btn-primary" onclick="window.print()">🖨 Print</button>
     </div>
   </div>
@@ -121,7 +124,12 @@
 <div class="gl-modal" id="gl-add-modal">
   <div class="gl-modal-box">
     <div class="gl-modal-title">Add grocery item</div>
-    <div class="gl-field"><label>Name</label><input id="gl-add-name" placeholder="e.g. Olive oil"></div>
+    <input type="hidden" id="gl-ingredient-id">
+    <div class="gl-field"><label>Name</label>
+      <input id="gl-add-name" placeholder="Start typing…" list="gl-ingredients-list" autocomplete="off" oninput="onGlNameInput()">
+      <datalist id="gl-ingredients-list"></datalist>
+      <div id="gl-add-hint" class="gl-add-hint" style="display:none"></div>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="gl-field"><label>Quantity</label><input id="gl-add-qty" placeholder="1"></div>
       <div class="gl-field"><label>Unit</label><input id="gl-add-unit" placeholder="bottle"></div>
@@ -147,6 +155,7 @@
 <script>
 
 let _syncTimer = null;
+let glIngIndex = {};
 
 function getSession(){
   try{ return JSON.parse(localStorage.getItem('tcj_session')||'null'); }catch(_){return null;}
@@ -276,21 +285,87 @@ function openAddItemModal(){
   document.getElementById('gl-add-qty').value = '';
   document.getElementById('gl-add-unit').value = '';
   document.getElementById('gl-add-store').value = '';
+  document.getElementById('gl-ingredient-id').value = '';
+  var hint = document.getElementById('gl-add-hint');
+  if (hint) { hint.style.display = 'none'; hint.textContent = ''; }
   document.getElementById('gl-add-modal').classList.add('open');
+  setTimeout(function() { document.getElementById('gl-add-name').focus(); }, 50);
 }
 function closeAddItemModal(){ document.getElementById('gl-add-modal').classList.remove('open'); }
+
+function onGlNameInput() {
+  var name = (document.getElementById('gl-add-name').value || '').trim();
+  var hint = document.getElementById('gl-add-hint');
+  var match = glIngIndex[name.toLowerCase()];
+  if (!match) {
+    document.getElementById('gl-ingredient-id').value = '';
+    if (name.length >= 2 && hint) {
+      hint.textContent = 'Free text — not in governed database (still OK to add)';
+      hint.style.color = 'var(--text-mid)';
+      hint.style.display = 'block';
+    } else if (hint) hint.style.display = 'none';
+    return;
+  }
+  document.getElementById('gl-ingredient-id').value = match.id;
+  var cat = GroceryUtils.mapDbCategory(match.category);
+  var catSel = document.getElementById('gl-add-category');
+  for (var i = 0; i < catSel.options.length; i++) {
+    if (catSel.options[i].value === cat) { catSel.value = cat; break; }
+  }
+  var unitEl = document.getElementById('gl-add-unit');
+  if (unitEl && !unitEl.value && match.unit) unitEl.value = match.unit;
+  if (hint) {
+    hint.textContent = '✓ Linked to ingredient #' + match.id + (match.category ? ' · ' + match.category : '');
+    hint.style.color = '#4caf76';
+    hint.style.display = 'block';
+  }
+}
+
+async function loadGlIngredients() {
+  try {
+    var res = await fetch(
+      SUPA_URL + '/rest/v1/ingredients?select=' + encodeURIComponent('"ID","Ingredient Name",Category,Unit') +
+      '&order=' + encodeURIComponent('"Ingredient Name"') + '&limit=500',
+      { headers: { apikey: SUPA_KEY } }
+    );
+    var rows = await res.json();
+    var dl = document.getElementById('gl-ingredients-list');
+    glIngIndex = {};
+    if (dl && rows.length) {
+      dl.innerHTML = rows.map(function(r) {
+        var n = r['Ingredient Name'] || '';
+        if (n) glIngIndex[n.toLowerCase()] = { id: r.ID, name: n, category: r.Category || '', unit: r.Unit || '' };
+        return '<option value="' + n.replace(/"/g, '&quot;') + '">';
+      }).join('');
+    }
+  } catch(_) {}
+}
+
 function submitAddItem(){
   var name = document.getElementById('gl-add-name').value.trim();
   if (!name) return;
+  var qty = document.getElementById('gl-add-qty').value.trim();
+  var unit = document.getElementById('gl-add-unit').value.trim();
+  var category = document.getElementById('gl-add-category').value;
+  var store = document.getElementById('gl-add-store').value.trim();
+  var ingId = document.getElementById('gl-ingredient-id').value;
   var list = getList();
-  list.items.push(GroceryUtils.enrichIngredient({
-    name: name,
-    qty: document.getElementById('gl-add-qty').value.trim(),
-    unit: document.getElementById('gl-add-unit').value.trim(),
-    category: document.getElementById('gl-add-category').value,
-    store: document.getElementById('gl-add-store').value.trim(),
-    source: 'manual'
-  }, { source: 'manual' }));
+  var existing = list.items.find(function(i) {
+    return i.name && i.name.toLowerCase().trim() === name.toLowerCase() &&
+      (i.unit || '').toLowerCase() === unit.toLowerCase();
+  });
+  if (existing && qty) {
+    var add = GroceryUtils.parseFraction(qty);
+    var cur = GroceryUtils.parseFraction(existing.qty);
+    existing.qty = String(Math.round((cur + add) * 100) / 100);
+    if (store) existing.store = store;
+  } else {
+    list.items.push(GroceryUtils.enrichIngredient({
+      name: name, qty: qty, unit: unit, category: category, store: store,
+      ingredient_id: ingId ? parseInt(ingId, 10) : null,
+      source: 'manual', source_label: 'Manual'
+    }, { source: 'manual', source_label: 'Manual' }));
+  }
   saveList(list);
   closeAddItemModal();
   render();
@@ -375,6 +450,47 @@ function clearAll(){
   render();
 }
 
+function exportPlainText() {
+  var list = getList();
+  var rawEntries = [];
+  list.recipes.forEach(function(recipe) {
+    (recipe.ingredients || []).forEach(function(ing) {
+      if (shouldHideGroceryItem(ing.name)) return;
+      rawEntries.push({ name: ing.name, qty: ing.qty, unit: ing.unit || '', category: ing.category || 'Other', recipe: recipe.name });
+    });
+  });
+  (list.items || []).forEach(function(ing) {
+    if (shouldHideGroceryItem(ing.name)) return;
+    rawEntries.push({ name: ing.name, qty: ing.qty, unit: ing.unit || '', category: ing.category || 'Other', recipe: 'Manual' });
+  });
+  if (!rawEntries.length) { alert('Nothing to export.'); return; }
+  var combined = GroceryUtils.buildCombinedLines(rawEntries);
+  var byCat = {};
+  combined.forEach(function(item) {
+    var cat = item.category || 'Other';
+    if (!byCat[cat]) byCat[cat] = [];
+    var groups = Object.values(item.unitGroups);
+    var qtyText = groups.map(function(g) {
+      var t = g.total % 1 === 0 ? g.total : parseFloat(g.total.toFixed(2));
+      return fmtQty(String(t)) + (g.unit ? ' ' + g.unit : '');
+    }).join(' + ');
+    byCat[cat].push(item.name + (qtyText ? ' — ' + qtyText : ''));
+  });
+  var lines = ['Grocery List — The Culinary Journal', ''];
+  CATEGORY_ORDER.concat(Object.keys(byCat)).filter(function(c, i, a) { return byCat[c] && a.indexOf(c) === i; }).forEach(function(cat) {
+    lines.push(cat.toUpperCase());
+    byCat[cat].forEach(function(line) { lines.push('  • ' + line); });
+    lines.push('');
+  });
+  var text = lines.join('\n');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() { alert('Shopping list copied to clipboard.'); })
+      .catch(function() { prompt('Copy this list:', text); });
+  } else {
+    prompt('Copy this list:', text);
+  }
+}
+
 function render(){
   const list = getList();
   const tab  = currentTab();
@@ -456,37 +572,41 @@ function renderCombined(list){
     return;
   }
   const checked = getChecked();
-  const combined = {};
-  function addToCombined(ing, sourceName){
-    const key = ing.name.toLowerCase().trim();
-    if(!combined[key]){
-      combined[key]={ name:ing.name, entries:[], category:ing.category||'Other', id:ing.id };
-    }
-    combined[key].entries.push({qty:parseFraction(ing.qty), unit:ing.unit||'', recipe:sourceName, rawQty:ing.qty});
-  }
-  list.recipes.forEach(recipe=>{
-    (recipe.ingredients||[]).forEach(ing=>{ addToCombined(ing, recipe.name); });
-  });
-  (list.items||[]).forEach(ing=>{ addToCombined(ing, 'Manual'); });
-
-  // Group by category
-  const byCategory = {};
-  Object.values(combined).forEach(item=>{
-    const cat = item.category;
-    if(!byCategory[cat]) byCategory[cat]=[];
-    // Try to combine same units
-    const unitGroups = {};
-    item.entries.forEach(e=>{
-      const k=e.unit.toLowerCase();
-      if(!unitGroups[k]) unitGroups[k]={total:0,unit:e.unit,recipes:[]};
-      unitGroups[k].total = Math.round((unitGroups[k].total + e.qty) * 10000) / 10000;
-      unitGroups[k].recipes.push(e.recipe);
+  var rawEntries = [];
+  list.recipes.forEach(function(recipe) {
+    (recipe.ingredients || []).forEach(function(ing) {
+      if (shouldHideGroceryItem(ing.name)) return;
+      rawEntries.push({
+        name: ing.name, qty: ing.qty, unit: ing.unit || '', category: ing.category || 'Other',
+        recipe: recipe.name, source: ing.source, source_label: ing.source_label || recipe.name
+      });
     });
-    const qtyText = Object.values(unitGroups).map(g=>{
-      const t = g.total%1===0?g.total:parseFloat(g.total.toFixed(2));
-      return fmtQty(String(t))+' '+g.unit;
-    }).join(' + ');
-    byCategory[cat].push({name:item.name, qtyText, recipes:[...new Set(item.entries.map(e=>e.recipe))]});
+  });
+  (list.items || []).forEach(function(ing) {
+    if (shouldHideGroceryItem(ing.name)) return;
+    rawEntries.push({
+      name: ing.name, qty: ing.qty, unit: ing.unit || '', category: ing.category || 'Other',
+      recipe: 'Manual', source: 'manual', source_label: 'Manual'
+    });
+  });
+  var combined = GroceryUtils.buildCombinedLines(rawEntries);
+  const byCategory = {};
+  combined.forEach(function(item) {
+    var cat = item.category || 'Other';
+    if (!byCategory[cat]) byCategory[cat] = [];
+    var groups = Object.values(item.unitGroups);
+    var qtyParts = groups.map(function(g) {
+      var t = g.total % 1 === 0 ? g.total : parseFloat(g.total.toFixed(2));
+      return fmtQty(String(t)) + (g.unit ? ' ' + g.unit : '');
+    });
+    var allSources = [];
+    groups.forEach(function(g) { g.sources.forEach(function(s) { if (allSources.indexOf(s) < 0) allSources.push(s); }); });
+    byCategory[cat].push({
+      name: item.name,
+      qtyText: qtyParts.join(' + '),
+      multiUnit: groups.length > 1,
+      sources: allSources
+    });
   });
 
   el.innerHTML = '';
@@ -497,7 +617,6 @@ function renderCombined(list){
     div.className = 'gl-recipe-section';
     div.innerHTML = `<div class="gl-category-header">${esc(cat)}</div>`;
     byCategory[cat].forEach(item=>{
-      if (shouldHideGroceryItem(item.name)) return;
       const checkKey = 'combined:'+item.name.toLowerCase();
       const isChecked = checked.includes(checkKey);
       const pinfo = pantryInfoFor(item.name);
@@ -509,7 +628,8 @@ function renderCombined(list){
         <span class="gl-item-name">${esc(item.name)}${pantryBadgeHtml(item.name)}</span>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
           <span class="gl-item-qty">${esc(item.qtyText)}</span>
-          <span class="gl-item-note">from ${esc(item.recipes.join(', '))}</span>
+          ${item.multiUnit ? '<span class="gl-unit-tip">Different units — not merged</span>' : ''}
+          <span class="gl-item-note">from ${esc(item.sources.join(', '))}</span>
         </div>`;
       div.appendChild(row);
     });
@@ -519,6 +639,7 @@ function renderCombined(list){
 
 document.addEventListener('DOMContentLoaded', function(){
   render();
+  loadGlIngredients();
   syncFromSupabase();
   document.getElementById('view-recipe').addEventListener('click', function(e){
     const cb = e.target.closest('.gl-check[data-key]');

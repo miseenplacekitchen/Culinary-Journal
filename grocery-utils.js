@@ -84,6 +84,61 @@
     localStorage.setItem('tcj_grocery', JSON.stringify(normalizeGroceryList(data)));
   }
 
+  var UNICODE_FRACTIONS = {'½':0.5,'⅓':1/3,'⅔':2/3,'¼':0.25,'¾':0.75,'⅛':0.125,'⅜':0.375,'⅝':0.625,'⅞':0.875};
+
+  function parseFraction(v) {
+    if (v == null || v === '') return 0;
+    v = String(v).trim();
+    if (UNICODE_FRACTIONS[v] !== undefined) return UNICODE_FRACTIONS[v];
+    for (var uf in UNICODE_FRACTIONS) {
+      if (v.endsWith(uf)) return parseFloat(v.slice(0, -uf.length) || 0) + UNICODE_FRACTIONS[uf];
+    }
+    var slash = v.match(/^(\d+)\s+(\d+)\/(\d+)$|^(\d+)\/(\d+)$/);
+    if (slash) {
+      if (slash[1]) return parseInt(slash[1], 10) + parseInt(slash[2], 10) / parseInt(slash[3], 10);
+      return parseInt(slash[4], 10) / parseInt(slash[5], 10);
+    }
+    return parseFloat(v) || 0;
+  }
+
+  var DB_CATEGORY_MAP = {
+    vegetables: 'Produce', fruits: 'Produce', herbs: 'Produce',
+    meat: 'Meat & Seafood', poultry: 'Meat & Seafood', seafood: 'Meat & Seafood',
+    'dairy & eggs': 'Dairy & Eggs', baking: 'Pantry', spices: 'Spices & Herbs',
+    'oils & fats': 'Oils & Sauces', 'condiments & sauces': 'Oils & Sauces',
+    'canned & preserved': 'Canned & Preserved', 'grains, pasta & noodles': 'Pantry',
+    'breads & flatbreads': 'Bakery', legumes: 'Pantry', 'nuts & seeds': 'Pantry'
+  };
+
+  function mapDbCategory(dbCat) {
+    if (!dbCat) return 'Other';
+    var key = String(dbCat).toLowerCase().trim();
+    return DB_CATEGORY_MAP[key] || dbCat;
+  }
+
+  /** GL-05: combine by name; sum qty only when unit matches */
+  function buildCombinedLines(rawEntries) {
+    var byName = {};
+    rawEntries.forEach(function(e) {
+      var key = (e.name || '').toLowerCase().trim();
+      if (!key) return;
+      if (!byName[key]) {
+        byName[key] = { name: e.name, category: e.category || 'Other', unitGroups: {}, sources: [] };
+      }
+      var ukey = (e.unit || '').toLowerCase().trim() || '__none__';
+      if (!byName[key].unitGroups[ukey]) {
+        byName[key].unitGroups[ukey] = { unit: e.unit || '', total: 0, sources: [] };
+      }
+      byName[key].unitGroups[ukey].total = Math.round((byName[key].unitGroups[ukey].total + parseFraction(e.qty)) * 10000) / 10000;
+      var src = e.source_label || e.recipe || e.source || '';
+      if (src && byName[key].unitGroups[ukey].sources.indexOf(src) < 0) {
+        byName[key].unitGroups[ukey].sources.push(src);
+      }
+      if (e.category && e.category !== 'Other') byName[key].category = e.category;
+    });
+    return Object.values(byName);
+  }
+
   global.GroceryUtils = {
     makeItemId: makeItemId,
     enrichIngredient: enrichIngredient,
@@ -92,6 +147,9 @@
     sourceBadge: sourceBadge,
     SOURCE_LABELS: SOURCE_LABELS,
     loadGrocery: loadGrocery,
-    saveGrocery: saveGrocery
+    saveGrocery: saveGrocery,
+    parseFraction: parseFraction,
+    mapDbCategory: mapDbCategory,
+    buildCombinedLines: buildCombinedLines
   };
 })(typeof window !== 'undefined' ? window : globalThis);

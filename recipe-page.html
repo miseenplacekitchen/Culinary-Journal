@@ -1693,7 +1693,14 @@ function addAllToGrocery() {
   let added = 0, skipped = 0;
   (recipe?.ingredients || []).forEach(sec => {
     sec.items.forEach(item => {
-      if (recipeEntry.ingredients.some(i => i.name === item.ingredient)) return;
+      var existing = recipeEntry.ingredients.find(function(i) { return i.name === item.ingredient; });
+      if (existing) {
+        var addQ = GroceryUtils.parseFraction(item.qty);
+        var curQ = GroceryUtils.parseFraction(existing.qty);
+        existing.qty = String(Math.round((curQ + addQ) * 100) / 100);
+        added++;
+        return;
+      }
       if (isInPantry(item.ingredient)) { skipped++; return; }
       recipeEntry.ingredients.push(GroceryUtils.enrichIngredient({
         name: item.ingredient, qty: item.qty, unit: item.unit || '',
