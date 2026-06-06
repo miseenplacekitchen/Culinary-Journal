@@ -441,6 +441,7 @@ function loadRMInterface() {
     {key: 'taxonomy',    label: 'Sub-cats & Divisions'},
     {key: 'collections', label: 'Collections'},
     {key: 'featured',    label: '\u2b50 Featured'},
+    {key: 'sourcelinks', label: 'Source Links'},
     {key: 'nutrition',   label: 'Nutrition'},
     {key: 'printqueue',  label: 'Print Queue'},
     {key: 'audit',       label: 'Audit Trail'}
@@ -479,6 +480,7 @@ function loadRMTab(key, container) {
   else if (key === 'taxonomy')    loadRMTaxonomy(container);
   else if (key === 'collections') loadRMCollections(container);
   else if (key === 'featured')    loadRMFeatured(container);
+  else if (key === 'sourcelinks') loadRMSourceLinks(container);
   else if (key === 'nutrition')   buildUMStub(container, 'Nutrition Queue', 'Recipes missing nutrition data will appear here once Open Food Facts integration is built. Betty can manually trigger nutrition matching per recipe.');
   else if (key === 'printqueue')  buildUMStub(container, 'Print Queue', 'Approved recipes not yet in the Print Studio will appear here.');
   else if (key === 'audit')       loadRMAudit(container);
@@ -639,6 +641,61 @@ async function loadRMFeatured(container) {
     }
     container.appendChild(featCard);
   } catch(e) { container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>'; }
+}
+
+async function loadRMSourceLinks(container) {
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
+  try {
+    var rows = await rpc('admin_get_source_link_status', { p_limit: 80 }) || [];
+    container.innerHTML = '';
+    function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
+    container.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:14px;line-height:1.6',
+      'Approved recipes with a credit URL. Status is updated by the weekly check-dead-links cron job (Sundays 03:00 UTC).'));
+    if (!rows.length) {
+      container.appendChild(mk('div', 'font-size:13px;color:var(--text-mid)', 'No approved recipes with source URLs yet.'));
+      return;
+    }
+    var statusColor = { ok: '#4caf76', dead: '#dc5050', unknown: '#c4973b' };
+    var wrap = mk('div', 'overflow-x:auto');
+    var tbl = mk('table', 'width:100%;border-collapse:collapse;font-size:12px;min-width:720px');
+    tbl.innerHTML = '<thead><tr style="text-align:left;color:var(--text-mid);font-size:10px;text-transform:uppercase;letter-spacing:0.08em"><th style="padding:8px">Recipe</th><th style="padding:8px">URL</th><th style="padding:8px">Status</th><th style="padding:8px">Checked</th></tr></thead>';
+    var tbody = mk('tbody');
+    rows.forEach(function(r) {
+      var tr = mk('tr');
+      tr.style.borderTop = '1px solid rgba(255,255,255,0.06)';
+      var nameTd = mk('td', 'padding:8px;color:var(--text-high);font-weight:500');
+      var link = mk('a', 'color:var(--accent);text-decoration:none');
+      link.href = 'recipe-page.html?id=' + encodeURIComponent(r.id);
+      link.textContent = r.recipe_name || 'Recipe';
+      link.target = '_blank';
+      nameTd.appendChild(link);
+      tr.appendChild(nameTd);
+      var urlTd = mk('td', 'padding:8px;color:var(--text-mid);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap');
+      if (r.credit_url) {
+        var ext = mk('a', 'color:var(--text-mid)');
+        ext.href = r.credit_url;
+        ext.target = '_blank';
+        ext.rel = 'noopener';
+        ext.textContent = r.credit_url;
+        urlTd.appendChild(ext);
+      } else {
+        urlTd.textContent = '\u2014';
+      }
+      tr.appendChild(urlTd);
+      var st = (r.source_link_status || 'pending').toLowerCase();
+      var stTd = mk('td', 'padding:8px;font-weight:600;color:' + (statusColor[st] || 'var(--text-mid)'));
+      stTd.textContent = st === 'ok' ? 'OK' : st.charAt(0).toUpperCase() + st.slice(1);
+      tr.appendChild(stTd);
+      var chk = r.source_link_checked_at ? new Date(r.source_link_checked_at).toLocaleString() : 'Never';
+      tr.appendChild(mk('td', 'padding:8px;color:var(--text-mid)', chk));
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    wrap.appendChild(tbl);
+    container.appendChild(wrap);
+  } catch (e) {
+    container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
+  }
 }
 
 async function loadRMAudit(container) {

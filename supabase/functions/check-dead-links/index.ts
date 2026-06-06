@@ -83,6 +83,8 @@ Deno.serve(async (req) => {
 
     if (error) throw error;
     const recipes = (rows || []).filter((row) => {
+      const url = String(row.credit_url || '').trim();
+      if (!url.startsWith('http')) return false;
       if (!row.source_link_checked_at) return true;
       return new Date(row.source_link_checked_at).getTime() < cutoffMs;
     }).slice(0, BATCH_SIZE);
