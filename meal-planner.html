@@ -67,6 +67,10 @@
     .mp-recipe-cat  { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); }
     .mp-recipe-remove { position:absolute; top:4px; right:4px; background:none; border:none; color:var(--text-mid); cursor:pointer; font-size:14px; padding:0 2px; line-height:1; }
     .mp-recipe-remove:hover { color: var(--danger); }
+    .mp-recipe-card.cooked { border-color:rgb(from #4caf76 r g b / 0.5); background:rgb(from #4caf76 r g b / 0.1); }
+    .mp-cooked-btn { position:absolute; bottom:4px; right:4px; background:none; border:1px solid rgb(from #4caf76 r g b / 0.4); border-radius:4px; color:#4caf76; cursor:pointer; font-size:10px; padding:1px 5px; font-family:'DM Sans',sans-serif; }
+    .mp-cooked-btn:hover { background:rgb(from #4caf76 r g b / 0.15); }
+    .mp-cooked-label { font-family:'DM Sans',sans-serif; font-size:9px; color:#4caf76; margin-top:4px; }
 
     /* Weekly summary */
     .mp-summary { margin-top:20px; background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:18px 20px; }
@@ -197,6 +201,7 @@
   </div>
 </div>
 
+<script src="grocery-utils.js"></script>
 <script src="nav-init.js"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -373,16 +378,22 @@ function renderCalendar() {
 
       if (recipe) {
         const card = document.createElement('div');
-        card.className = 'mp-recipe-card';
+        card.className = 'mp-recipe-card' + (recipe.status === 'cooked' ? ' cooked' : '');
         const emoji = CAT_EMOJI[recipe.category] || '🍽';
         var conflicts = checkRecipeConflicts(recipe);
-      card.innerHTML = '<div class="mp-recipe-name">' + emoji + ' ' + esc(recipe.name||'') + '</div>' +
+        card.innerHTML = '<div class="mp-recipe-name">' + emoji + ' ' + esc(recipe.name||'') + '</div>' +
           '<div class="mp-recipe-cat">' + esc(recipe.category||'') + '</div>' +
+          (recipe.status === 'cooked' ? '<div class="mp-cooked-label">✓ Cooked</div>' : '') +
           (conflicts.length ? '<div class="mp-member-flags">' + conflicts.slice(0,2).map(function(c){return '<span class="mp-member-flag warn">⚠ '+esc(c)+'</span>';}).join('') + '</div>' : '') +
+          (recipe.status !== 'cooked' ? '<button class="mp-cooked-btn" title="Mark as cooked">✓</button>' : '') +
           '<button class="mp-recipe-remove" title="Remove">×</button>';
         card.querySelector('.mp-recipe-remove').addEventListener('click', function(e) {
           e.stopPropagation(); clearSlot(day, meal); renderCalendar();
         });
+        var cookBtn = card.querySelector('.mp-cooked-btn');
+        if (cookBtn) {
+          cookBtn.addEventListener('click', function(e) { markMealCooked(day, meal, e); });
+        }
         card.addEventListener('click', function() { openPicker(day, meal); });
         slot.appendChild(card);
       } else {
@@ -506,7 +517,43 @@ function getPantryItems() {
 }
 function isInPantry(name) {
   var n = name.toLowerCase().trim();
-  return getPantryItems().some(function(p){ return p.name && p.name.toLowerCase().trim()===n && (p.qty||0)>0; });
+  var item = getPantryItems().find(function(p){ return p.name && p.name.toLowerCase().trim() === n; });
+  if (!item) return false;
+  if (item.is_staple) return true;
+  return (item.qty || 0) > 0;
+}
+
+async function markMealCooked(day, meal, e) {
+  if (e) e.stopPropagation();
+  var slot = getSlot(day, meal);
+  if (!slot) return;
+  var dates = getWeekDates(currentWeekOffset);
+  var dayIdx = DAYS.indexOf(day);
+  var cookedDate = dates[dayIdx].toISOString().slice(0, 10);
+  try {
+    var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    if (sess && sess.access_token) {
+      await fetch(SUPA_URL + '/rest/v1/rpc/log_cooking_event', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPA_KEY,
+          'Authorization': 'Bearer ' + sess.access_token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          p_recipe_id: slot.id || null,
+          p_recipe_name: slot.name || '',
+          p_cooked_at: cookedDate,
+          p_notes: 'Meal planner · ' + day + ' ' + meal,
+          p_servings: slot.servings || 1,
+          p_occasion: meal,
+          p_rating: null
+        })
+      });
+    }
+  } catch(_) {}
+  setSlot(day, meal, Object.assign({}, slot, { status: 'cooked', cooked_at: cookedDate }));
+  renderCalendar();
 }
 
 // ── RECIPE PICKER ────────────────────────────────────────────────
@@ -556,43 +603,78 @@ function renderResults(recipes) {
 // ── GROCERY EXPORT ───────────────────────────────────────────────
 async function addToGrocery() {
   const plan = getPlan();
-  const recipeIds = [];
+  const weekKey = getWeekKey(currentWeekOffset);
+  let slotCount = 0;
   DAYS.forEach(function(day) {
     MEALS.forEach(function(meal) {
-      const r = plan[day] && plan[day][meal];
-      if (r && r.id && !recipeIds.includes(r.id)) recipeIds.push(r.id);
+      if (plan[day] && plan[day][meal] && plan[day][meal].id) slotCount++;
     });
   });
-  if (!recipeIds.length) { alert('No recipes planned this week.'); return; }
+  if (!slotCount) { alert('No recipes planned this week.'); return; }
 
-  // Load full recipe data for each unique recipe and add to grocery list
-  const data = JSON.parse(localStorage.getItem('tcj_grocery')||'{"recipes":[]}');
-  let added = 0;
-  for (const id of recipeIds) {
-    if (data.recipes.find(function(r){return r.id===id;})) continue;
-    try {
-      const res = await fetch(SUPA_URL + '/rest/v1/submitted_recipes?id=eq.' + id + '&select=id,recipe_name,servings,ingredients', {headers:{'apikey':SUPA_KEY}});
-      const [recipe] = await res.json();
-      if (!recipe) continue;
-      const ingredients = [];
-      let skipped = 0;
-      (recipe.ingredients||[]).forEach(function(sec) {
-        (sec.items||[]).forEach(function(ing) {
-          if (isInPantry(ing.ingredient)) { skipped++; return; }
-          ingredients.push({name:ing.ingredient, qty:ing.qty, unit:ing.unit||'', section:sec.section||sec.title||''});
+  const data = GroceryUtils.loadGrocery();
+  let added = 0, skipped = 0, skippedDup = 0;
+  const sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+  const headers = { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' };
+  if (sess && sess.access_token) headers.Authorization = 'Bearer ' + sess.access_token;
+
+  for (const day of DAYS) {
+    for (const meal of MEALS) {
+      const slot = plan[day] && plan[day][meal];
+      if (!slot || !slot.id) continue;
+      const entryId = slot.id + '@' + day + '-' + meal;
+      if (data.recipes.find(function(r) { return r.id === entryId; })) { skippedDup++; continue; }
+      try {
+        const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_public_recipe', {
+          method: 'POST', headers: headers,
+          body: JSON.stringify({ p_id: slot.id })
         });
-      });
-      data.recipes.push({id:recipe.id, name:recipe.recipe_name, servings:recipe.servings||1, ingredients, pantry_skipped:skipped});
-      added++;
-    } catch(_) {}
+        if (!res.ok) continue;
+        const recipe = await res.json();
+        if (!recipe) continue;
+        const serves = slot.servings || recipe.servings || 1;
+        const baseServes = recipe.servings || 1;
+        const scale = baseServes ? serves / baseServes : 1;
+        const ingredients = [];
+        const label = day + ' · ' + meal;
+        (recipe.ingredients || []).forEach(function(sec) {
+          const sectionName = sec.section || sec.section_name || sec.title || '';
+          (sec.items || []).forEach(function(ing) {
+            const name = ing.ingredient || ing.name || '';
+            if (!name) return;
+            if (isInPantry(name)) { skipped++; return; }
+            let qty = ing.qty;
+            if (scale !== 1 && qty != null && qty !== '') {
+              const n = parseFloat(String(qty).replace(/[^\d./]/g, ''));
+              if (!isNaN(n)) qty = String(Math.round(n * scale * 100) / 100);
+            }
+            ingredients.push(GroceryUtils.enrichIngredient({
+              name: name, qty: qty, unit: ing.unit || '', section: sectionName,
+              category: ing.category || 'Other',
+              source: 'meal-plan', source_ref: weekKey + ':' + day + ':' + meal,
+              source_label: label
+            }, { source: 'meal-plan', source_ref: entryId, source_label: label }));
+          });
+        });
+        data.recipes.push({
+          id: entryId,
+          name: (recipe.recipe_name || slot.name) + ' (' + day + ' ' + meal + ')',
+          servings: serves,
+          source: 'meal-plan',
+          ingredients: ingredients
+        });
+        added++;
+      } catch(_) {}
+    }
   }
-  localStorage.setItem('tcj_grocery', JSON.stringify(data));
+  GroceryUtils.saveGrocery(data);
   if (added > 0) {
-    const pantrySkipped = data.recipes.reduce(function(t,r){return t+(r.pantry_skipped||0);},0);
-  alert(added + ' recipe(s) added to your grocery list!' + (pantrySkipped?' '+pantrySkipped+' ingredient(s) skipped — already in your pantry 🫙.':''));
+    alert(added + ' meal(s) added to your grocery list!' +
+      (skipped ? ' ' + skipped + ' ingredient(s) skipped (pantry/staples).' : '') +
+      (skippedDup ? ' ' + skippedDup + ' already on list.' : ''));
     window.location.href = 'grocery.html';
   } else {
-    alert('All planned recipes are already in your grocery list.');
+    alert(skippedDup ? 'All planned meals are already on your grocery list.' : 'Could not load recipe data for planned meals.');
   }
 }
 

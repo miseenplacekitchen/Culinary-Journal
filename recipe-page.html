@@ -309,6 +309,7 @@
     .rp-timer-controls button:hover { border-color: var(--accent); color: var(--accent); }
   </style>
   <script src="page-guard.js"></script>
+  <script src="grocery-utils.js"></script>
   <script src="nav-init.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -930,12 +931,8 @@ function lsRemove(key) {
   try { localStorage.removeItem(key); } catch(_) {}
 }
 
-// Load grocery list (new format: {recipes:[...], checked:[]})
-function getGroceryData() {
-  try { return JSON.parse(localStorage.getItem('tcj_grocery') || '{"recipes":[]}'); }
-  catch(_) { return {recipes:[]}; }
-}
-function saveGroceryData(data) { localStorage.setItem('tcj_grocery', JSON.stringify(data)); }
+function getGroceryData() { return GroceryUtils.loadGrocery(); }
+function saveGroceryData(data) { GroceryUtils.saveGrocery(data); }
 // groceryList stays a FLAT ARRAY of this recipe's grocery items (renderIngRow calls .some on it).
 // It is synced once the recipe is known — see syncGroceryListForRecipe() called from renderRecipe.
 function syncGroceryListForRecipe(r) {
@@ -1650,7 +1647,10 @@ function toggleGrocery(btn, ingredient, qty, unit) {
       showToast(info && info.isStaple ? 'This is an always-have staple — no need to shop for it' : 'Already in your pantry 🫙');
       return;
     }
-    recipeEntry.ingredients.push({name: ingredient, qty, unit, section: ''});
+    recipeEntry.ingredients.push(GroceryUtils.enrichIngredient({
+      name: ingredient, qty, unit, section: '',
+      source: 'recipe', source_label: recipeName
+    }, { source: 'recipe', source_ref: recipeId, source_label: recipeName }));
     btn.classList.add('added');
     showToast('Added to grocery list ✓');
   }
@@ -1695,7 +1695,12 @@ function addAllToGrocery() {
     sec.items.forEach(item => {
       if (recipeEntry.ingredients.some(i => i.name === item.ingredient)) return;
       if (isInPantry(item.ingredient)) { skipped++; return; }
-      recipeEntry.ingredients.push({name: item.ingredient, qty: item.qty, unit: item.unit||'', section: sec.section || sec.section_name || ''});
+      recipeEntry.ingredients.push(GroceryUtils.enrichIngredient({
+        name: item.ingredient, qty: item.qty, unit: item.unit || '',
+        section: sec.section || sec.section_name || '',
+        category: item.category || 'Other',
+        source: 'recipe', source_label: recipeName
+      }, { source: 'recipe', source_ref: recipeId, source_label: recipeName }));
       added++;
     });
   });

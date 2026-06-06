@@ -51,6 +51,18 @@
     .gl-item.is-staple { opacity:0.45; }
     .gl-filter-bar { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); }
     .gl-filter-bar label { display:flex; align-items:center; gap:6px; cursor:pointer; }
+    .gl-source-badge { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); margin-left:6px; }
+    .gl-item-qty { cursor:pointer; }
+    .gl-item-qty:hover { text-decoration:underline; }
+    .gl-store-tag { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); margin-left:4px; }
+    .gl-modal { display:none; position:fixed; inset:0; background:var(--scrim); z-index:9999; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+    .gl-modal.open { display:flex; }
+    .gl-modal-box { background:var(--bg); border:1px solid var(--border); border-radius:14px; width:100%; max-width:400px; padding:22px; }
+    .gl-modal-title { font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:600; color:var(--text-high); margin-bottom:16px; }
+    .gl-field { margin-bottom:12px; }
+    .gl-field label { display:block; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-bottom:4px; }
+    .gl-field input, .gl-field select { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:13px; padding:8px 12px; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--text-high); }
+    .gl-modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:18px; }
 
     /* Combined tab category headers */
     .gl-category-header { padding:10px 18px 6px; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); background:var(--text-ghost); border-bottom:1px solid var(--border); }
@@ -85,7 +97,8 @@
   <div class="gl-header">
     <h1 class="gl-title">🛒 Grocery List</h1>
     <div class="gl-actions">
-      <button class="gl-btn gl-btn-ghost" onclick="clearChecked()">Clear Checked</button>
+      <button class="gl-btn gl-btn-ghost" onclick="openAddItemModal()">+ Add Item</button>
+      <button class="gl-btn gl-btn-ghost" onclick="archiveChecked()">Archive Checked</button>
       <button class="gl-btn gl-btn-ghost" onclick="clearAll()">Clear All</button>
       <button class="gl-btn gl-btn-primary" onclick="window.print()">🖨 Print</button>
     </div>
@@ -105,6 +118,31 @@
   <div id="view-combined" style="display:none"></div>
 </div>
 
+<div class="gl-modal" id="gl-add-modal">
+  <div class="gl-modal-box">
+    <div class="gl-modal-title">Add grocery item</div>
+    <div class="gl-field"><label>Name</label><input id="gl-add-name" placeholder="e.g. Olive oil"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="gl-field"><label>Quantity</label><input id="gl-add-qty" placeholder="1"></div>
+      <div class="gl-field"><label>Unit</label><input id="gl-add-unit" placeholder="bottle"></div>
+    </div>
+    <div class="gl-field"><label>Category</label>
+      <select id="gl-add-category">
+        <option>Produce</option><option>Meat & Seafood</option><option>Dairy & Eggs</option>
+        <option>Bakery</option><option>Pantry</option><option>Spices & Herbs</option>
+        <option>Oils & Sauces</option><option>Canned & Preserved</option><option>Frozen</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div class="gl-field"><label>Store (optional)</label><input id="gl-add-store" placeholder="e.g. Coles"></div>
+    <div class="gl-modal-actions">
+      <button class="gl-btn gl-btn-ghost" onclick="closeAddItemModal()">Cancel</button>
+      <button class="gl-btn gl-btn-primary" onclick="submitAddItem()">Add</button>
+    </div>
+  </div>
+</div>
+
+<script src="grocery-utils.js"></script>
 <script src="nav-init.js"></script>
 <script>
 
@@ -137,7 +175,7 @@ async function syncFromSupabase(){
     const localRaw = localStorage.getItem('tcj_grocery_ts');
     const localTime = localRaw ? parseInt(localRaw) : 0;
     if(remoteTime > localTime){
-      localStorage.setItem('tcj_grocery', JSON.stringify(remote));
+      localStorage.setItem('tcj_grocery', JSON.stringify(GroceryUtils.normalizeGroceryList(remote)));
       localStorage.setItem('tcj_grocery_checked', JSON.stringify(remoteChecked));
       localStorage.setItem('tcj_grocery_ts', String(remoteTime));
       render();
@@ -157,9 +195,7 @@ function scheduleSyncToSupabase(){
   }, 1500);
 }
 
-// Grocery list stored in localStorage under 'tcj_grocery'
-// Structure: { recipes: [{id, name, servings, ingredients:[{name,qty,unit,category,section}]}] }
-
+// GL-01: { version:2, recipes:[...], items:[...] } — each ingredient has id, source, category, store
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
@@ -223,10 +259,88 @@ function pantryBadgeHtml(name){
   return '';
 }
 
-function getList(){ try{return JSON.parse(localStorage.getItem('tcj_grocery')||'{"recipes":[],"checked":[]}');}catch(_){return{recipes:[],checked:[]};} }
-function saveList(list){ localStorage.setItem('tcj_grocery',JSON.stringify(list)); scheduleSyncToSupabase(); }
+function getList(){ return GroceryUtils.loadGrocery(); }
+function saveList(list){ GroceryUtils.saveGrocery(list); scheduleSyncToSupabase(); }
 function getChecked(){ try{return JSON.parse(localStorage.getItem('tcj_grocery_checked')||'[]');}catch(_){return[];} }
 function setChecked(arr){ localStorage.setItem('tcj_grocery_checked',JSON.stringify(arr)); scheduleSyncToSupabase(); }
+
+function sourceBadgeHtml(source, label){
+  if (!source || source === 'recipe') return '';
+  var text = GroceryUtils.sourceBadge(source);
+  if (label) text += ' · ' + label;
+  return '<span class="gl-source-badge">' + esc(text) + '</span>';
+}
+
+function openAddItemModal(){
+  document.getElementById('gl-add-name').value = '';
+  document.getElementById('gl-add-qty').value = '';
+  document.getElementById('gl-add-unit').value = '';
+  document.getElementById('gl-add-store').value = '';
+  document.getElementById('gl-add-modal').classList.add('open');
+}
+function closeAddItemModal(){ document.getElementById('gl-add-modal').classList.remove('open'); }
+function submitAddItem(){
+  var name = document.getElementById('gl-add-name').value.trim();
+  if (!name) return;
+  var list = getList();
+  list.items.push(GroceryUtils.enrichIngredient({
+    name: name,
+    qty: document.getElementById('gl-add-qty').value.trim(),
+    unit: document.getElementById('gl-add-unit').value.trim(),
+    category: document.getElementById('gl-add-category').value,
+    store: document.getElementById('gl-add-store').value.trim(),
+    source: 'manual'
+  }, { source: 'manual' }));
+  saveList(list);
+  closeAddItemModal();
+  render();
+}
+
+function editItemQty(itemId, recipeId){
+  var list = getList();
+  var item = null;
+  if (recipeId) {
+    var recipe = list.recipes.find(function(r){ return r.id === recipeId; });
+    if (recipe) item = (recipe.ingredients || []).find(function(i){ return i.id === itemId; });
+  } else {
+    item = list.items.find(function(i){ return i.id === itemId; });
+  }
+  if (!item) return;
+  var newQty = prompt('Quantity for ' + item.name, item.qty || '');
+  if (newQty === null) return;
+  var newUnit = prompt('Unit', item.unit || '');
+  if (newUnit === null) return;
+  item.qty = newQty.trim();
+  item.unit = newUnit.trim();
+  saveList(list);
+  render();
+}
+
+function removeManualItem(itemId){
+  var list = getList();
+  list.items = list.items.filter(function(i){ return i.id !== itemId; });
+  saveList(list);
+  render();
+}
+
+function archiveChecked(){
+  var checked = getChecked();
+  if (!checked.length) { alert('No checked items to archive.'); return; }
+  if (!confirm('Remove ' + checked.length + ' checked item(s) from your list?')) return;
+  var list = getList();
+  list.recipes.forEach(function(recipe){
+    recipe.ingredients = (recipe.ingredients || []).filter(function(ing){
+      return !checked.includes(GroceryUtils.itemCheckKey(ing, recipe.id));
+    });
+  });
+  list.recipes = list.recipes.filter(function(r){ return (r.ingredients || []).length > 0; });
+  list.items = list.items.filter(function(ing){
+    return !checked.includes(GroceryUtils.itemCheckKey(ing));
+  });
+  setChecked([]);
+  saveList(list);
+  render();
+}
 
 function currentTab(){ return document.getElementById('tab-by-recipe').classList.contains('active')?'recipe':'combined'; }
 
@@ -254,14 +368,9 @@ function removeRecipe(recipeId){
   render();
 }
 
-function clearChecked(){
-  setChecked([]);
-  render();
-}
-
 function clearAll(){
   if(!confirm('Clear the entire grocery list?')) return;
-  saveList({recipes:[],checked:[]});
+  saveList({recipes:[],items:[],version:2});
   setChecked([]);
   render();
 }
@@ -273,10 +382,27 @@ function render(){
   else renderCombined(list);
 }
 
+function renderItemRow(ing, recipeId, checked, manualRemove){
+  if (shouldHideGroceryItem(ing.name)) return '';
+  var key = GroceryUtils.itemCheckKey(ing, recipeId);
+  var legacyKey = recipeId ? recipeId + ':' + ing.name : '';
+  var isChecked = checked.includes(key) || (legacyKey && checked.includes(legacyKey));
+  var pinfo = pantryInfoFor(ing.name);
+  var extraCls = (pinfo && pinfo.isStaple ? ' is-staple' : '') + (pinfo && pinfo.inPantry ? ' in-pantry' : '');
+  var storeTag = ing.store ? '<span class="gl-store-tag">@ ' + esc(ing.store) + '</span>' : '';
+  var removeBtn = manualRemove ? '<button class="gl-remove-recipe" data-remove-manual="' + esc(ing.id) + '">×</button>' : '';
+  return '<div class="gl-item' + (isChecked ? ' checked' : '') + extraCls + '">' +
+    '<input type="checkbox" class="gl-check" ' + (isChecked ? 'checked' : '') + ' data-key="' + esc(key) + '">' +
+    '<span class="gl-item-name">' + esc(ing.name) + sourceBadgeHtml(ing.source, ing.source_label) + pantryBadgeHtml(ing.name) + storeTag + '</span>' +
+    '<span class="gl-item-qty" data-edit-id="' + esc(ing.id) + '" data-recipe-id="' + esc(recipeId || '') + '" title="Click to edit">' +
+      esc(fmtQty(ing.qty)) + ' ' + esc(ing.unit || '') + '</span>' + removeBtn + '</div>';
+}
+
 function renderByRecipe(list){
   const el = document.getElementById('view-recipe');
-  if(!list.recipes.length){
-    el.innerHTML = `<div class="gl-empty"><div class="gl-empty-icon">🛒</div><div class="gl-empty-title">Your list is empty</div><div class="gl-empty-sub">Add ingredients from a recipe page using the 🛒 button.</div></div>`;
+  const hasItems = list.recipes.length || (list.items && list.items.length);
+  if(!hasItems){
+    el.innerHTML = `<div class="gl-empty"><div class="gl-empty-icon">🛒</div><div class="gl-empty-title">Your list is empty</div><div class="gl-empty-sub">Add ingredients from a recipe page, meal planner, or use + Add Item.</div></div>`;
     return;
   }
   const checked = getChecked();
@@ -294,16 +420,7 @@ function renderByRecipe(list){
     Object.keys(groupedBySection).forEach(section=>{
       if(Object.keys(groupedBySection).length>1) itemsHtml+=`<div class="gl-category-header">${esc(section)}</div>`;
       groupedBySection[section].forEach(ing=>{
-        if (shouldHideGroceryItem(ing.name)) return;
-        const key = recipe.id+':'+ing.name;
-        const isChecked = checked.includes(key);
-        const pinfo = pantryInfoFor(ing.name);
-        const extraCls = (pinfo?.isStaple ? ' is-staple' : '') + (pinfo?.inPantry ? ' in-pantry' : '');
-        itemsHtml+=`<div class="gl-item${isChecked?' checked':''}${extraCls}">
-          <input type="checkbox" class="gl-check" ${isChecked?'checked':''} data-key="${esc(key)}">
-          <span class="gl-item-name">${esc(ing.name)}${pantryBadgeHtml(ing.name)}</span>
-          <span class="gl-item-qty">${esc(fmtQty(ing.qty))} ${esc(ing.unit||'')}</span>
-        </div>`;
+        itemsHtml += renderItemRow(ing, recipe.id, checked);
       });
     });
     div.innerHTML = `
@@ -317,28 +434,40 @@ function renderByRecipe(list){
       ${itemsHtml}`;
     el.appendChild(div);
   });
+  if (list.items && list.items.length) {
+    const manual = document.createElement('div');
+    manual.className = 'gl-recipe-section';
+    let rows = '<div class="gl-category-header">Manual items</div>';
+    list.items.forEach(function(ing){
+      rows += renderItemRow(ing, '', checked, true);
+    });
+    manual.innerHTML = '<div class="gl-recipe-header"><div><div class="gl-recipe-name">Added manually</div></div></div>' + rows;
+    el.appendChild(manual);
+  }
 }
 
 const CATEGORY_ORDER = ['Produce','Meat & Seafood','Dairy & Eggs','Bakery','Pantry','Spices & Herbs','Oils & Sauces','Canned & Preserved','Frozen','Other'];
 
 function renderCombined(list){
   const el = document.getElementById('view-combined');
-  if(!list.recipes.length){
-    el.innerHTML = `<div class="gl-empty"><div class="gl-empty-icon">🛒</div><div class="gl-empty-title">Your list is empty</div><div class="gl-empty-sub">Add ingredients from a recipe page.</div></div>`;
+  const hasItems = list.recipes.length || (list.items && list.items.length);
+  if(!hasItems){
+    el.innerHTML = `<div class="gl-empty"><div class="gl-empty-icon">🛒</div><div class="gl-empty-title">Your list is empty</div><div class="gl-empty-sub">Add ingredients from a recipe page or meal planner.</div></div>`;
     return;
   }
   const checked = getChecked();
-  // Combine ingredients by name (case-insensitive)
   const combined = {};
+  function addToCombined(ing, sourceName){
+    const key = ing.name.toLowerCase().trim();
+    if(!combined[key]){
+      combined[key]={ name:ing.name, entries:[], category:ing.category||'Other', id:ing.id };
+    }
+    combined[key].entries.push({qty:parseFraction(ing.qty), unit:ing.unit||'', recipe:sourceName, rawQty:ing.qty});
+  }
   list.recipes.forEach(recipe=>{
-    (recipe.ingredients||[]).forEach(ing=>{
-      const key = ing.name.toLowerCase().trim();
-      if(!combined[key]){
-        combined[key]={ name:ing.name, entries:[], category:ing.category||'Other' };
-      }
-      combined[key].entries.push({qty:parseFraction(ing.qty), unit:ing.unit||'', recipe:recipe.name, rawQty:ing.qty});
-    });
+    (recipe.ingredients||[]).forEach(ing=>{ addToCombined(ing, recipe.name); });
   });
+  (list.items||[]).forEach(ing=>{ addToCombined(ing, 'Manual'); });
 
   // Group by category
   const byCategory = {};
@@ -391,16 +520,22 @@ function renderCombined(list){
 document.addEventListener('DOMContentLoaded', function(){
   render();
   syncFromSupabase();
-  // Event delegation — safer than inline onclick
   document.getElementById('view-recipe').addEventListener('click', function(e){
-    const cb = e.target.closest('[data-key]');
-    if(cb) toggleItem(cb.dataset.key);
+    const cb = e.target.closest('.gl-check[data-key]');
+    if(cb) { toggleItem(cb.dataset.key); return; }
+    const qty = e.target.closest('[data-edit-id]');
+    if(qty && qty.dataset.editId) { editItemQty(qty.dataset.editId, qty.dataset.recipeId || null); return; }
     const rb = e.target.closest('[data-remove-id]');
-    if(rb){ e.stopPropagation(); removeRecipe(rb.dataset.removeId); }
+    if(rb){ e.stopPropagation(); removeRecipe(rb.dataset.removeId); return; }
+    const rm = e.target.closest('[data-remove-manual]');
+    if(rm){ removeManualItem(rm.dataset.removeManual); }
   });
   document.getElementById('view-combined').addEventListener('click', function(e){
     const cb = e.target.closest('[data-key]');
     if(cb) toggleItem(cb.dataset.key);
+  });
+  document.getElementById('gl-add-modal').addEventListener('click', function(e){
+    if (e.target === e.currentTarget) closeAddItemModal();
   });
 });
 

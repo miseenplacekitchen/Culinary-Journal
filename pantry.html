@@ -191,6 +191,7 @@
   </div>
 </div>
 
+<script src="grocery-utils.js"></script>
 <script src="nav-init.js"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -453,12 +454,17 @@ function markItemRestocked(id) {
 function addItemToGrocery(id) {
   const item = getPantry().find(function(i) { return i.id === id; });
   if (!item || item.is_staple) return;
-  const data = JSON.parse(localStorage.getItem('tcj_grocery') || '{"recipes":[]}');
+  const data = GroceryUtils.loadGrocery();
   let entry = data.recipes.find(function(r) { return r.id === 'pantry-restock'; });
-  if (!entry) { entry = { id:'pantry-restock', name:'Pantry Restock', servings:1, ingredients:[] }; data.recipes.push(entry); }
+  if (!entry) { entry = { id:'pantry-restock', name:'Pantry Restock', servings:1, ingredients:[], source:'pantry-low' }; data.recipes.push(entry); }
   if (!entry.ingredients.find(function(i) { return i.name === item.name; })) {
-    entry.ingredients.push({ name:item.name, qty:item.min_qty || 1, unit:item.unit || '', section:'Restock', category:item.category || 'Pantry' });
-    localStorage.setItem('tcj_grocery', JSON.stringify(data));
+    entry.ingredients.push(GroceryUtils.enrichIngredient({
+      name: item.name, qty: item.min_qty || 1, unit: item.unit || '',
+      section: 'Restock', category: item.category || 'Pantry',
+      ingredient_id: item.ingredient_id || null,
+      source: 'pantry-low', source_label: 'Restock'
+    }, { source: 'pantry-low', source_ref: 'pantry-restock' }));
+    GroceryUtils.saveGrocery(data);
   }
   window.location.href = 'grocery.html';
 }
@@ -466,17 +472,21 @@ function addItemToGrocery(id) {
 function addToGroceryLow() {
   const items = getPantry().filter(function(i) { return !i.is_staple && getStatus(i) !== 'ok'; });
   if (!items.length) { alert('All non-staple items are well stocked!'); return; }
-  const data = JSON.parse(localStorage.getItem('tcj_grocery')||'{"recipes":[]}');
+  const data = GroceryUtils.loadGrocery();
   let entry = data.recipes.find(function(r){ return r.id==='pantry-restock'; });
-  if (!entry) { entry = {id:'pantry-restock',name:'Pantry Restock',servings:1,ingredients:[]}; data.recipes.push(entry); }
+  if (!entry) { entry = {id:'pantry-restock',name:'Pantry Restock',servings:1,ingredients:[],source:'pantry-low'}; data.recipes.push(entry); }
   let added = 0;
   items.forEach(function(item) {
     if (!entry.ingredients.find(function(i){return i.name===item.name;})) {
-      entry.ingredients.push({name:item.name, qty:item.min_qty||1, unit:item.unit||'', section:'Restock'});
+      entry.ingredients.push(GroceryUtils.enrichIngredient({
+        name: item.name, qty: item.min_qty || 1, unit: item.unit || '',
+        section: 'Restock', category: item.category || 'Pantry',
+        source: 'pantry-low', source_label: 'Low stock'
+      }, { source: 'pantry-low', source_ref: 'pantry-restock' }));
       added++;
     }
   });
-  localStorage.setItem('tcj_grocery', JSON.stringify(data));
+  GroceryUtils.saveGrocery(data);
   alert(added + ' item(s) added to grocery list. Going to Grocery List...');
   window.location.href = 'grocery.html';
 }
