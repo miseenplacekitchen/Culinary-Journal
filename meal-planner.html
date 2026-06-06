@@ -1151,7 +1151,6 @@ function buildMonthView() {
   if (monthYear === undefined) { monthYear = n.getFullYear(); monthMon = n.getMonth(); }
   syncMonthJump();
   var DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var DAY_NAMES = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
   var labelEl = document.getElementById('mth-label');
   if (labelEl) labelEl.textContent = new Date(monthYear, monthMon, 1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
 
