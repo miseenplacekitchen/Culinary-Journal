@@ -1,6 +1,9 @@
 # Database SQL — File Index (Manifest)
 
-_Companion to `README.md`. Lists every SQL file in `database/sql/`, its status, purpose, and the functions it defines. Generated from the current snapshot; the `02-functions.sql` row reflects the **cleaned** copy._
+_Companion to `README.md` and `MAP.md`. Lists every SQL file in `database/sql/`, its status, purpose, and the functions it defines._
+
+**Deploy:** run `database/full-setup.sql` once (built from `manifest.json` via `python database/build-setup.py`).  
+**Archived files** live in `database/sql/archive/` — do not run them.
 
 ## Status legend
 
