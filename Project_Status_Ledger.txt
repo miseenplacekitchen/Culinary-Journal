@@ -31,7 +31,7 @@ schedule-dead-link-cron.sql | Weekly check-dead-links (job 3)      | Ran ✅
 fix-phase10-batch.sql       | Email template polish + link cleanup | Ran ✅
 fix-phases-11-20-batch.sql  | Link re-check, edge invoke, origin   | Ran ✅ + cron_secret ✅
 fix-phase21-batch.sql       | Page min_tier, billing tiers, refund   | Ran ✅
-fix-phase22-batch.sql       | Household grocery + library links      | Betty to run ⏳
+fix-phase22-batch.sql       | Household grocery + library links      | Ran ✅
 
 ══════════════════════════════════════════════════════════════════════
 PHASE STATUS (11–22)
@@ -49,7 +49,7 @@ Phase | Label                         | Status
 19    | Allergy engine site-wide      | PARTIAL — engine + family banner + ing_id shipped
 20    | Monetisation / tiers (G1–G4)  | PARTIAL — manual tiers + login upgrade panel
 21    | Admin control centre (opt C)  | DONE ✅ — RM refactor + SM pages/tiers (SQL ✅)
-22    | Lane 3 household + library    | DONE ✅ code — SQL pending
+22    | Lane 3 household + library    | DONE ✅ (code + SQL)
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 14 — LIVE AUDIT (test recipe, hero excluded from scope)
@@ -129,14 +129,12 @@ DEFERRED — DO NOT TOUCH UNTIL BETTY ASKS
 ══════════════════════════════════════════════════════════════════════
 GIT / DEPLOY
 ══════════════════════════════════════════════════════════════════════
-Branch: main — phase 22 pending push
+Branch: main — phase 22 pushed (c677a47), SQL ✅
 
 ══════════════════════════════════════════════════════════════════════
-BETTY — RUN SQL THEN CHECK
+BETTY — LIVE CHECKS (optional)
 ══════════════════════════════════════════════════════════════════════
-SQL: fix-phase22-batch.sql
-
-Phase 22 checks:
+Phase 22 (SQL confirmed ✅):
 1. household.html — create household, invite partner email
 2. Partner signs in → accept invite → both see same grocery
 3. grocery.html — blue shared bar + list syncs within ~20s
