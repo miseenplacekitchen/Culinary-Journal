@@ -855,8 +855,7 @@
           localStorage.setItem('tcj_theme', profile.theme_preference);
         }
       }
-      // Issue A-1: all users land on My Diary after login (D1: change to dashboard.html for admins if preferred)
-      window.location.href = 'diary.html';
+      window.location.href = (profile && profile.is_admin) ? 'dashboard.html' : 'diary.html';
       return;
     });
   }).catch(function() {
