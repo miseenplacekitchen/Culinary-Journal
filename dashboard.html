@@ -10,8 +10,6 @@
 <title>Admin Panel — The Culinary Journal</title>
 <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
-<script src="page-guard.js"></script>
-<script src="nav-init.js"></script>
   
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
@@ -20,10 +18,31 @@
   <style>
 *, *::before, *::after { box-sizing: border-box; }
 
+    /* ── ADMIN BASE ── */
+    body.ap-admin { background: var(--bg); color: var(--text-high); }
+    body.ap-side-open { overflow: hidden; }
+
     /* ── LAYOUT ── */
-    .ap-wrap  { display: flex; min-height: 100vh; }
-    .ap-side  { width: 240px; flex-shrink: 0; background: var(--bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-    .ap-main  { flex: 1; padding: 36px 36px 80px; min-width: 0; }
+    .ap-wrap  { display: flex; min-height: 100vh; background: var(--bg); }
+    .ap-side  { width: 248px; flex-shrink: 0; background: var(--bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; z-index: 200; }
+    .ap-main-col { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--bg); }
+    .ap-main  { flex: 1; padding: 28px 36px 80px; min-width: 0; }
+
+    /* Mobile top bar */
+    .ap-mobile-bar {
+      display: none; align-items: center; gap: 12px;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      background: var(--bg); position: sticky; top: 0; z-index: 150;
+    }
+    .ap-menu-btn {
+      background: var(--text-ghost); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text-high); font-size: 18px; line-height: 1; padding: 6px 10px; cursor: pointer;
+    }
+    .ap-mobile-title { font-family: "Cormorant Garamond", serif; font-size: 1.1rem; font-weight: 600; color: var(--text-high); }
+    .ap-side-backdrop {
+      display: none; position: fixed; inset: 0; background: var(--scrim); z-index: 190;
+    }
+    .ap-side-backdrop.open { display: block; }
 
     /* ── SIDEBAR ── */
     .ap-logo  { padding: 24px 20px 20px; border-bottom: 1px solid var(--border); }
@@ -65,8 +84,48 @@
     .ap-page-sub   { font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-mid); margin: 0 0 32px; }
 
     /* ── STAT CARDS ── */
-    .ap-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 36px; }
-    .ap-stat  { background: var(--text-ghost); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .ap-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .ap-stat  { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; transition: border-color 0.15s; }
+    .ap-stat:hover { border-color: var(--accent-border); }
+
+    /* ── DASHBOARD CARDS & ACTIONS ── */
+    .ap-quick-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+    .ap-quick-btn {
+      padding: 9px 18px; border-radius: 8px; font-family: "DM Sans", sans-serif;
+      font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+      background: var(--card-bg); border: 1px solid var(--border); color: var(--text-mid);
+    }
+    .ap-quick-btn:hover { border-color: var(--accent-border); color: var(--text-high); }
+    .ap-quick-btn.warn { background: var(--warn-bg); border-color: rgb(from var(--warn) r g b / 0.35); color: var(--warn); }
+    .ap-quick-btn.accent { background: rgb(from var(--accent) r g b / 0.1); border-color: var(--accent-border); color: var(--accent); }
+    .ap-dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .ap-dash-grid:last-child { margin-bottom: 0; }
+    .ap-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .ap-card.accent-blue { background: rgb(from #5B8FD4 r g b / 0.06); border-color: rgb(from #5B8FD4 r g b / 0.25); }
+    .ap-card-head {
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .ap-card.accent-blue .ap-card-head { border-bottom-color: rgb(from #5B8FD4 r g b / 0.2); }
+    .ap-card-title { font-family: "Cormorant Garamond", serif; font-size: 1rem; font-weight: 700; color: var(--text-high); }
+    .ap-card-title.blue { color: #5B8FD4; }
+    .ap-card-link {
+      font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--accent);
+      background: none; border: none; cursor: pointer; white-space: nowrap;
+    }
+    .ap-card-link.blue { color: #5B8FD4; }
+    .ap-card-body { padding: 8px 0; }
+    .ap-card-body.pad { padding: 16px 18px; }
+    .ap-card-empty { padding: 12px 18px; font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-mid); }
+    .ap-loading {
+      padding: 32px 20px; text-align: center;
+      font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-mid);
+    }
+    .ap-th {
+      font-family: "DM Sans", sans-serif; font-size: 10px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-mid);
+      padding: 10px 14px; text-align: left; white-space: nowrap;
+    }
     .ap-stat-num   { font-family: "Cormorant Garamond", serif; font-size: 2.2rem; font-weight: 600; color: var(--text-high); line-height: 1; }
     .ap-stat-label { font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--text-mid); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
     .ap-stat.pending .ap-stat-num { color: var(--warn); }
@@ -116,12 +175,15 @@
     .ap-modal-close { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 18px; cursor: pointer; color: var(--text-mid); flex-shrink: 0; }
     .ap-modal-close:hover { border-color: var(--accent); color: var(--accent); }
     .ap-modal-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       margin: 0;
-      background: var(--bg, #0f1011);
-      color: var(--text-high, #ffffff);
-      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text-high);
+      max-height: 65vh;
+      overflow: hidden;
     }
-    .ap-modal-col { padding: 24px 28px; }
+    .ap-modal-col { padding: 24px 28px; overflow-y: auto; max-height: 65vh; }
     .ap-modal-col:first-child { border-right: 1px solid var(--border); }
     .ap-modal-photo { width: 100%; height: 200px; border-radius: 10px; object-fit: cover; background: var(--border); margin-bottom: 20px; background-size: cover; background-position: center; }
     .ap-modal-photo-empty { width: 100%; height: 160px; border-radius: 10px; background: var(--text-ghost); display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 20px; }
@@ -265,12 +327,13 @@
 
     /* ── INGREDIENT MANAGEMENT ────────────────── */
 
-    .ap-inner-tabs { display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto; }
+    .ap-inner-tabs { display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto;scrollbar-width:none; }
     .ap-inner-tabs::-webkit-scrollbar { display:none; }
-    .ap-inner-tab  { padding:10px 20px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all .15s;margin-bottom:-1px; }
+    .ap-inner-tab  { padding:10px 20px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all .15s;margin-bottom:-1px;flex-shrink:0; }
     .ap-inner-tab:hover  { color:var(--text-high); }
     .ap-inner-tab.active { color:var(--accent);border-bottom-color:var(--accent);font-weight:600; }
     .ap-inner-panel      { display:none; }
+    .ap-inner-panel.active { display:block; }
 
 .ing-toolbar { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; align-items:center; }
     .ing-add-btn { display:inline-flex; align-items:center; gap:6px; font-family:DM Sans,sans-serif; font-size:13px; font-weight:500; color:#fff; background:var(--accent); border:none; border-radius:8px; padding:9px 18px; cursor:pointer; white-space:nowrap; }
@@ -306,49 +369,35 @@
     .ap-denied-title { font-family: "Cormorant Garamond", serif; font-size: 1.8rem; color: var(--text-high); margin: 0 0 8px; }
     .ap-denied-sub   { font-family: "DM Sans", sans-serif; font-size: 14px; color: var(--text-mid); margin: 0 0 24px; }
 
-    /* ── RESPONSIVE ── */
-    @media (max-width: 900px) {
-      .ap-side { display: none; }
-      .ap-stats { grid-template-columns: repeat(2, 1fr); }
-      .ap-modal-body { grid-template-columns: 1fr; }
-      .ap-modal-col:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+    /* ── ACCESS DENIED OVERLAY ── */
+    .ap-screen-denied {
+      display: none; position: fixed; inset: 0; background: var(--bg);
+      align-items: center; justify-content: center; flex-direction: column; gap: 16px; z-index: 9999;
     }
-    @media (max-width: 600px) {
+    .ap-screen-denied.open { display: flex; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1100px) {
+      .ap-dash-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 900px) {
+      .ap-mobile-bar { display: flex; }
+      .ap-side {
+        display: none; position: fixed; left: 0; top: 0; bottom: 0;
+        width: min(280px, 88vw); height: 100vh; box-shadow: 8px 0 32px rgba(0,0,0,0.35);
+      }
+      .ap-side.open { display: flex; }
       .ap-main { padding: 20px 16px 60px; }
       .ap-stats { grid-template-columns: repeat(2, 1fr); }
+      .ap-modal-body { grid-template-columns: 1fr; max-height: none; }
+      .ap-modal-col { max-height: none; }
+      .ap-modal-col:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+      .ing-modal-body { grid-template-columns: 1fr; }
     }
-
-    /* Inner tab bar inside main content sections */
-    .ap-inner-tabs {
-      display: flex;
-      gap: 0;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 20px;
-      overflow-x: auto;
+    @media (max-width: 600px) {
+      .ap-stats { grid-template-columns: 1fr 1fr; }
+      .ap-page-title { font-size: 1.5rem; }
     }
-    .ap-inner-tabs::-webkit-scrollbar { display: none; }
-    .ap-inner-tab {
-      padding: 10px 20px;
-      font-family: "DM Sans", sans-serif;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-mid);
-      background: none;
-      border: none;
-      border-bottom: 2px solid transparent;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all .15s;
-      margin-bottom: -1px;
-    }
-    .ap-inner-tab:hover { color: var(--text-high); }
-    .ap-inner-tab.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
-      font-weight: 600;
-    }
-    .ap-inner-panel { display: none; }
-    .ap-inner-panel.active { display: block; }
 
   /* ── Custom tooltip ── */
   .tcj-tip {
@@ -369,14 +418,15 @@
   .col-resizer:hover, .col-resizer.resizing { background:var(--accent); opacity:0.5; }
 </style>
 </head>
-<body>
+<body class="ap-admin">
 
-
-<div id="screen-denied" style="display:none;position:fixed;inset:0;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:9999">
+<div id="screen-denied" class="ap-screen-denied">
   <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;color:var(--text-high)">Access Restricted</div>
   <div style="font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-mid)">This panel is restricted to administrators.</div>
   <a href="login.html" style="font-family:'DM Sans',sans-serif;font-size:14px;color:var(--accent)">Sign In</a>
 </div>
+
+<div id="ap-side-backdrop" class="ap-side-backdrop" onclick="closeApSide()"></div>
 
 <div id="screen-main" class="ap-wrap" style="display:none">
   <aside class="ap-side">
@@ -398,7 +448,7 @@
       <button class="ap-nav-item" id="nav-finance" onclick="switchView('finance')">&#128176; Finance Management</button>
       <button class="ap-nav-item" id="nav-library-mgmt" onclick="switchView('library-mgmt')">📚 Library Management</button>
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
-        <a href="/" class="ap-nav-item" style="text-decoration:none;font-size:12px">View Site</a>
+        <a href="index.html" class="ap-nav-item" style="text-decoration:none;font-size:12px">View Site</a>
         <a href="index.html" class="ap-nav-item" style="text-decoration:none;font-size:12px">Homepage</a>
       </div>
     </nav>
@@ -408,6 +458,11 @@
     </div>
   </aside>
 
+  <div class="ap-main-col">
+  <div class="ap-mobile-bar" id="ap-mobile-bar">
+    <button type="button" class="ap-menu-btn" onclick="toggleApSide()" aria-label="Open menu">&#9776;</button>
+    <span class="ap-mobile-title">Admin Panel</span>
+  </div>
   <main class="ap-main">
     <div class="ap-page-title" id="page-title">Dashboard</div>
     <div class="ap-page-sub"   id="page-sub">Overview of site activity.</div>
@@ -417,11 +472,11 @@
     <div id="v-dashboard">
 
       <!-- QUICK ACTIONS -->
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px">
-        <button onclick="switchView('recipe-mgmt');switchRecipeTab('pending')" style="padding:9px 18px;background:rgb(from var(--warn) r g b / 0.12);border:1px solid rgb(from var(--warn) r g b / 0.35);border-radius:8px;color:var(--warn);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">&#9203; Review Pending Recipes</button>
-        <button onclick="switchView('finance');switchFinanceTab('fi-members')" style="padding:9px 18px;background:rgba(196,151,59,0.1);border:1px solid rgba(196,151,59,0.3);border-radius:8px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">&#128176; Manage Member Tiers</button>
-        <button onclick="switchView('site-mgmt')" style="padding:9px 18px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">&#9881;&#65039; Site Management</button>
-        <button onclick="switchView('user-mgmt')" style="padding:9px 18px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">&#128101; User Management</button>
+      <div class="ap-quick-actions">
+        <button type="button" class="ap-quick-btn warn" onclick="switchView('recipe-mgmt');switchRecipeTab('pending')">&#9203; Review Pending Recipes</button>
+        <button type="button" class="ap-quick-btn accent" onclick="switchView('finance');switchFinanceTab('fi-members')">&#128176; Manage Member Tiers</button>
+        <button type="button" class="ap-quick-btn" onclick="switchView('site-mgmt')">&#9881;&#65039; Site Management</button>
+        <button type="button" class="ap-quick-btn" onclick="switchView('user-mgmt')">&#128101; User Management</button>
       </div>
 
       <!-- STATS ROW 1 — Recipes & Members -->
@@ -443,37 +498,37 @@
       </div>
 
       <!-- MAIN GRID -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-          <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-            <span style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high)">Recent Submissions</span>
-            <button onclick="switchView('recipe-mgmt')" style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer">View all &#8594;</button>
+      <div class="ap-dash-grid">
+        <div class="ap-card">
+          <div class="ap-card-head">
+            <span class="ap-card-title">Recent Submissions</span>
+            <button type="button" class="ap-card-link" onclick="switchView('recipe-mgmt')">View all &#8594;</button>
           </div>
-          <div id="dash-recent-recipes" style="padding:8px 0"><div style="padding:12px 18px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid)">Loading&#8230;</div></div>
+          <div id="dash-recent-recipes" class="ap-card-body"><div class="ap-card-empty">Loading&#8230;</div></div>
         </div>
-        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-          <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-            <span style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high)">Recent Members</span>
-            <button onclick="switchView('user-mgmt')" style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer">View all &#8594;</button>
+        <div class="ap-card">
+          <div class="ap-card-head">
+            <span class="ap-card-title">Recent Members</span>
+            <button type="button" class="ap-card-link" onclick="switchView('user-mgmt')">View all &#8594;</button>
           </div>
-          <div id="dash-recent-users" style="padding:8px 0"><div style="padding:12px 18px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid)">Loading&#8230;</div></div>
+          <div id="dash-recent-users" class="ap-card-body"><div class="ap-card-empty">Loading&#8230;</div></div>
         </div>
       </div>
 
       <!-- SECOND ROW — ROTW + Needs Attention -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-        <div style="background:rgba(91,143,212,0.06);border:1px solid rgba(91,143,212,0.25);border-radius:12px;overflow:hidden">
-          <div style="padding:14px 18px;border-bottom:1px solid rgba(91,143,212,0.2);display:flex;align-items:center;justify-content:space-between">
-            <span style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:#5B8FD4">&#127942; Recipe of the Week</span>
-            <button onclick="switchView('recipe-mgmt');switchRecipeTab('rmsettings')" style="font-family:'DM Sans',sans-serif;font-size:11px;color:#5B8FD4;background:none;border:none;cursor:pointer">Manage &#8594;</button>
+      <div class="ap-dash-grid">
+        <div class="ap-card accent-blue">
+          <div class="ap-card-head">
+            <span class="ap-card-title blue">&#127942; Recipe of the Week</span>
+            <button type="button" class="ap-card-link blue" onclick="switchView('recipe-mgmt');switchRecipeTab('rmsettings')">Manage &#8594;</button>
           </div>
-          <div id="dash-rotw" style="padding:16px 18px"><div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid)">Loading&#8230;</div></div>
+          <div id="dash-rotw" class="ap-card-body pad"><div class="ap-card-empty" style="padding:0">Loading&#8230;</div></div>
         </div>
-        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;overflow:hidden">
-          <div style="padding:14px 18px;border-bottom:1px solid var(--border)">
-            <span style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high)">&#9888;&#65039; Needs Attention</span>
+        <div class="ap-card">
+          <div class="ap-card-head">
+            <span class="ap-card-title">&#9888;&#65039; Needs Attention</span>
           </div>
-          <div id="dash-attention" style="padding:8px 0"><div style="padding:12px 18px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid)">Loading&#8230;</div></div>
+          <div id="dash-attention" class="ap-card-body"><div class="ap-card-empty">Loading&#8230;</div></div>
         </div>
       </div>
     </div>
@@ -513,13 +568,13 @@
           <div class="ap-stat pending"><div class="ap-stat-num" id="ra-pending">&#8212;</div><div class="ap-stat-label">Pending</div></div>
           <div class="ap-stat"><div class="ap-stat-num" id="ra-categories">&#8212;</div><div class="ap-stat-label">Categories</div></div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-          <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px 20px">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px">By Status</div>
+        <div class="ap-dash-grid">
+          <div class="ap-card" style="padding:18px 20px">
+            <div class="ap-card-title" style="margin-bottom:14px">By Status</div>
             <div id="ra-status-chart"></div>
           </div>
-          <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px 20px">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px">Top Categories</div>
+          <div class="ap-card" style="padding:18px 20px">
+            <div class="ap-card-title" style="margin-bottom:14px">Top Categories</div>
             <div id="ra-category-chart"></div>
           </div>
         </div>
@@ -539,10 +594,8 @@
     </div>
 
     <!-- INGREDIENTS -->
-    <!-- INGREDIENTS -->
     <div id="v-ingredients" style="display:none">
-
-<div class="ap-inner-tabs">
+      <div class="ap-inner-tabs">
         <button class="ap-inner-tab active" id="itab-all"      onclick="switchIngTab('all')">All Ingredients</button>
         <button class="ap-inner-tab"        id="itab-pending"  onclick="switchIngTab('pending')">
           Pending Review <span class="ap-nav-badge" id="itab-badge-pending" style="position:static;margin-left:4px">0</span>
@@ -606,8 +659,6 @@
         </table>
       </div>
       <div id="ing-pagination" style="display:none"></div>
-    </div>
-
       </div>
 
       <!-- PENDING REVIEW panel -->
@@ -669,30 +720,25 @@
         </div>
         
         
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-          <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px 20px">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px">By Category</div>
+        <div class="ap-dash-grid">
+          <div class="ap-card" style="padding:18px 20px">
+            <div class="ap-card-title" style="margin-bottom:14px">By Category</div>
             <div id="ia-category-chart"></div>
           </div>
-          <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px 20px">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px">Dietary Breakdown</div>
+          <div class="ap-card" style="padding:18px 20px">
+            <div class="ap-card-title" style="margin-bottom:14px">Dietary Breakdown</div>
             <div id="ia-dietary-chart"></div>
           </div>
         </div>
       </div>
 
-<div id="ipanel-imsettings" style="display:none">
-          <div id="im-interface-content">
-            <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);padding:20px 0">Loading&#8230;</div>
-          </div>
+      <div id="ipanel-imsettings" style="display:none">
+        <div id="im-interface-content">
+          <div class="ap-loading" style="padding:20px 0">Loading&#8230;</div>
         </div>
+      </div>
 
-    <!-- USERS VIEW -->
-  
-
-
-        <!-- ANALYTICS -->
-    
+    </div><!-- /v-ingredients -->
 
     <div id="col-vis-panel" class="col-vis-panel"></div>
 
@@ -771,6 +817,7 @@
         </div>
       </div>
     </main>
+  </div>
 </div>
 
 <div class="ap-modal-overlay" id="ap-modal">
@@ -786,7 +833,7 @@
 
     <div class="ap-modal-body">
       <!-- Left col: photo + info -->
-      <div class="ap-modal-col" style="overflow-y:auto;max-height:60vh">
+      <div class="ap-modal-col">
         <div id="m-photo"></div>
 
         <div class="ap-section-label">Details</div>
@@ -800,7 +847,7 @@
       </div>
 
       <!-- Right col: procedure + notes -->
-      <div class="ap-modal-col" style="overflow-y:auto;max-height:60vh">
+      <div class="ap-modal-col">
         <div class="ap-section-label">Procedure</div>
         <div id="m-procedure"></div>
 

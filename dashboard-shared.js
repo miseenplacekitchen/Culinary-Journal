@@ -245,7 +245,8 @@ async function init() {
       return;
     }
     if (!isAdmin) {
-      document.getElementById('screen-denied').style.display = 'flex';
+      var denied = document.getElementById('screen-denied');
+      if (denied) denied.classList.add('open');
       return;
     }
     setEl('admin-name', adminName);
@@ -285,7 +286,25 @@ function signOut() {
 
 const ALL_VIEWS = ['dashboard','recipe-mgmt','user-mgmt','ingredients','site-mgmt','finance','library-mgmt'];
 
+function toggleApSide() {
+  var side = document.querySelector('.ap-side');
+  var bd = document.getElementById('ap-side-backdrop');
+  if (!side) return;
+  var open = side.classList.toggle('open');
+  if (bd) bd.classList.toggle('open', open);
+  document.body.classList.toggle('ap-side-open', open);
+}
+
+function closeApSide() {
+  var side = document.querySelector('.ap-side');
+  var bd = document.getElementById('ap-side-backdrop');
+  if (side) side.classList.remove('open');
+  if (bd) bd.classList.remove('open');
+  document.body.classList.remove('ap-side-open');
+}
+
 function switchView(view, ingTab) {
+  closeApSide();
   localStorage.setItem('tcj_active_view', view);
   document.querySelectorAll('.ap-nav-item').forEach(function(el) { el.classList.remove('active'); });
   const nb = document.getElementById('nav-' + view);
@@ -295,6 +314,8 @@ function switchView(view, ingTab) {
   const subs   = { 'dashboard':'Overview of site activity.', 'recipe-mgmt':'Review, approve and manage all submitted recipes.', 'user-mgmt':'Manage member registrations and accounts.', 'ingredients':'Browse, add and edit the ingredient database.', 'site-mgmt':'Control pages, features, announcements, themes, email templates and site settings.', 'finance':'Manage membership tiers, subscriptions, pricing and revenue.', 'library-mgmt':'Manage ingredient, spice, tool, cut and preservation profiles.' };
   setEl('page-title', titles[view] || view);
   setEl('page-sub',   subs[view]   || '');
+  var mobileTitle = document.querySelector('.ap-mobile-title');
+  if (mobileTitle) mobileTitle.textContent = titles[view] || 'Admin Panel';
   if (view === 'dashboard')   loadDashboard();
   if (view === 'recipe-mgmt') {
     var _srt = localStorage.getItem('tcj_active_recipe_tab') || 'all';
@@ -2233,9 +2254,9 @@ function switchIngTab(tab) {
   document.querySelectorAll('.ap-inner-tab[id^="itab-"]').forEach(function(t) {
     t.classList.toggle('active', t.id === 'itab-' + tab);
   });
-  ['all','pending','imsettings'].forEach(function(p) {
-    var el = document.getElementById('ipanel-' + p);
-    if (el) el.style.display = p === tab ? 'block' : 'none';
+  document.querySelectorAll('[id^="ipanel-"]').forEach(function(el) {
+    var p = el.id.replace('ipanel-', '');
+    el.style.display = p === tab ? 'block' : 'none';
   });
   if (tab === 'all')       loadIngredients(1);
   if (tab === 'pending')   loadIngPending();
