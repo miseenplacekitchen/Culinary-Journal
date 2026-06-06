@@ -332,7 +332,7 @@ function renderAnalytics() {
   try {
     var g = JSON.parse(localStorage.getItem('tcj_grocery') || '{}');
     (g.recipes || []).forEach(function(r){ grocery += (r.ingredients || []).length; });
-    grocery += (g.manual || []).length;
+    grocery += (g.items || []).length;
   } catch(_) {}
   var planned = 0, cooked = 0;
   try {

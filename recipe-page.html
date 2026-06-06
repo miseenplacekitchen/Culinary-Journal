@@ -1708,6 +1708,14 @@ function scaleIngredients(newServes) {
   });
 }
 
+function scaledGroceryQty(baseQty) {
+  const base = GroceryUtils.parseFraction(baseQty);
+  if (!base || !baseServes) return baseQty;
+  const ratio = currentServes / baseServes;
+  if (Math.abs(ratio - 1) < 0.001) return String(baseQty);
+  return String(Math.round(base * ratio * 100) / 100);
+}
+
 function formatQty(n) {
   if (Number.isInteger(n)) return n.toString();
   const fractions = [[0.25,'¼'],[0.33,'⅓'],[0.5,'½'],[0.67,'⅔'],[0.75,'¾']];
@@ -1781,7 +1789,7 @@ function renderIngRow(item, section, idx) {
             ${allSubs.length ? `<div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-top:6px;margin-bottom:2px">Substitutes</div>${subsHtml}` : ''}
           </div>
         </button>` : '<span></span>'}
-      <button class="rp-ing-cart-btn ${inGrocery ? 'added' : ''}" onclick="toggleGrocery(this, '${item.ingredient}', '${item.qty}', '${item.unit || ''}')" title="${inGrocery ? 'In grocery list' : 'Add to grocery list'}">
+      <button class="rp-ing-cart-btn ${inGrocery ? 'added' : ''}" data-ingredient="${escapeHtml(item.ingredient)}" data-qty="${escapeHtml(String(item.qty))}" data-unit="${escapeHtml(item.unit || '')}" onclick="toggleGroceryBtn(this)" title="${inGrocery ? 'In grocery list' : 'Add to grocery list'}">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
       </button>
     </div>`;
@@ -1800,6 +1808,10 @@ function toggleInfo(btn) {
   setTimeout(() => document.addEventListener('click', close), 0);
 }
 
+function toggleGroceryBtn(btn) {
+  toggleGrocery(btn, btn.dataset.ingredient || '', btn.dataset.qty || '', btn.dataset.unit || '');
+}
+
 function toggleGrocery(btn, ingredient, qty, unit) {
   const data = getGroceryData();
   const recipeName = recipe?.recipe_name || 'Unknown Recipe';
@@ -1809,6 +1821,8 @@ function toggleGrocery(btn, ingredient, qty, unit) {
     recipeEntry = {id: recipeId, name: recipeName, servings: currentServes || 1, ingredients: []};
     data.recipes.push(recipeEntry);
   }
+  recipeEntry.servings = currentServes || 1;
+  const scaledQty = scaledGroceryQty(qty);
   const idx = recipeEntry.ingredients.findIndex(i => i.name === ingredient);
   if (idx > -1) {
     recipeEntry.ingredients.splice(idx, 1);
@@ -1822,7 +1836,7 @@ function toggleGrocery(btn, ingredient, qty, unit) {
       return;
     }
     recipeEntry.ingredients.push(GroceryUtils.enrichIngredient({
-      name: ingredient, qty, unit, section: '',
+      name: ingredient, qty: scaledQty, unit, section: '',
       source: 'recipe', source_label: recipeName
     }, { source: 'recipe', source_ref: recipeId, source_label: recipeName }));
     btn.classList.add('added');
@@ -1864,12 +1878,14 @@ function addAllToGrocery() {
     recipeEntry = {id: recipeId, name: recipeName, servings: currentServes || 1, ingredients: []};
     data.recipes.push(recipeEntry);
   }
+  recipeEntry.servings = currentServes || 1;
   let added = 0, skipped = 0;
   (recipe?.ingredients || []).forEach(sec => {
     sec.items.forEach(item => {
+      var scaledQty = scaledGroceryQty(item.qty);
       var existing = recipeEntry.ingredients.find(function(i) { return i.name === item.ingredient; });
       if (existing) {
-        var addQ = GroceryUtils.parseFraction(item.qty);
+        var addQ = GroceryUtils.parseFraction(scaledQty);
         var curQ = GroceryUtils.parseFraction(existing.qty);
         existing.qty = String(Math.round((curQ + addQ) * 100) / 100);
         added++;
@@ -1877,7 +1893,7 @@ function addAllToGrocery() {
       }
       if (isInPantry(item.ingredient)) { skipped++; return; }
       recipeEntry.ingredients.push(GroceryUtils.enrichIngredient({
-        name: item.ingredient, qty: item.qty, unit: item.unit || '',
+        name: item.ingredient, qty: scaledQty, unit: item.unit || '',
         section: sec.section || sec.section_name || '',
         category: item.category || 'Other',
         source: 'recipe', source_label: recipeName

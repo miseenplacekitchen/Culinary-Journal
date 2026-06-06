@@ -840,12 +840,13 @@ async function promptPantryUseUp(slot) {
     var names = matched.map(function(p) { return p.name; }).join(', ');
     if (!confirm('Use up pantry items for this meal?\n\n' + names)) return;
     matched.forEach(function(p) { p.qty = Math.max(0, (parseFloat(p.qty) || 0) - 1); });
-    localStorage.setItem('tcj_pantry', JSON.stringify(pantry));
+    savePantryLocal(pantry);
   } catch(_) {}
 }
 
-async function promptLeftoversToFridge(day, meal, slot) {
-  if (!confirm('Save leftovers from "' + (slot.name || 'this meal') + '" to your fridge?\n\nDefault expiry: 3 days.')) return;
+async function promptLeftoversToFridge(day, meal, slot, options) {
+  options = options || {};
+  if (!options.skipConfirm && !confirm('Save leftovers from "' + (slot.name || 'this meal') + '" to your fridge?\n\nDefault expiry: 3 days.')) return;
   var pantry = getPantryItems();
   var exp = new Date();
   exp.setDate(exp.getDate() + 3);
@@ -860,7 +861,19 @@ async function promptLeftoversToFridge(day, meal, slot) {
     is_staple: false,
     updated: new Date().toISOString()
   });
-  localStorage.setItem('tcj_pantry', JSON.stringify(pantry));
+  savePantryLocal(pantry);
+}
+
+function savePantryLocal(list) {
+  localStorage.setItem('tcj_pantry', JSON.stringify(list));
+  clearTimeout(window._mpPantrySyncTimer);
+  window._mpPantrySyncTimer = setTimeout(async function() {
+    try {
+      var sess = typeof getSession === 'function' ? getSession() : null;
+      if (!sess || !sess.access_token) return;
+      await rpc('save_my_pantry', { p_items: list });
+    } catch (_) {}
+  }, 1500);
 }
 
 async function markMealCooked(day, meal, e) {
@@ -894,7 +907,9 @@ async function markMealCooked(day, meal, e) {
   } catch(_) {}
   setSlot(day, meal, Object.assign({}, slot, { status: 'cooked', cooked_at: cookedDate }));
   await promptPantryUseUp(slot);
-  await promptLeftoversToFridge(day, meal, slot);
+  if (confirm('Any leftovers to save to the fridge?')) {
+    await promptLeftoversToFridge(day, meal, slot, { skipConfirm: true });
+  }
   renderCalendar();
 }
 

@@ -80,8 +80,45 @@
     }
   }
 
+  var _grocerySyncTimer = null;
+
+  function getGroceryChecked() {
+    try { return JSON.parse(localStorage.getItem('tcj_grocery_checked') || '[]'); }
+    catch (_) { return []; }
+  }
+
+  /** Debounced Supabase sync — works from recipe page, meal planner, pantry, grocery */
+  function scheduleGroceryCloudSync() {
+    var g = typeof global !== 'undefined' ? global : (typeof window !== 'undefined' ? window : null);
+    if (!g || typeof g.getSession !== 'function') return;
+    clearTimeout(_grocerySyncTimer);
+    _grocerySyncTimer = setTimeout(async function() {
+      try {
+        var sess = g.getSession();
+        if (!sess || !sess.access_token) return;
+        var url = g.SUPA_URL || g.SUPABASE_URL;
+        var key = g.SUPA_KEY || g.SUPABASE_KEY;
+        if (!url || !key) return;
+        var list = loadGrocery();
+        var checked = getGroceryChecked();
+        var res = await fetch(url + '/rest/v1/rpc/save_my_grocery_list', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': key,
+            'Authorization': 'Bearer ' + sess.access_token
+          },
+          body: JSON.stringify({ p_list_data: list, p_checked: checked })
+        });
+        if (res.ok) localStorage.setItem('tcj_grocery_ts', String(Date.now()));
+      } catch (_) {}
+    }, 1500);
+  }
+
   function saveGrocery(data) {
     localStorage.setItem('tcj_grocery', JSON.stringify(normalizeGroceryList(data)));
+    localStorage.setItem('tcj_grocery_ts', String(Date.now()));
+    scheduleGroceryCloudSync();
   }
 
   var UNICODE_FRACTIONS = {'½':0.5,'⅓':1/3,'⅔':2/3,'¼':0.25,'¾':0.75,'⅛':0.125,'⅜':0.375,'⅝':0.625,'⅞':0.875};
@@ -148,6 +185,8 @@
     SOURCE_LABELS: SOURCE_LABELS,
     loadGrocery: loadGrocery,
     saveGrocery: saveGrocery,
+    getGroceryChecked: getGroceryChecked,
+    scheduleGroceryCloudSync: scheduleGroceryCloudSync,
     parseFraction: parseFraction,
     mapDbCategory: mapDbCategory,
     buildCombinedLines: buildCombinedLines

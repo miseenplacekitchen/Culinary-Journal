@@ -233,15 +233,7 @@ async function syncFromSupabase(){
 }
 
 function scheduleSyncToSupabase(){
-  clearTimeout(_syncTimer);
-  _syncTimer = setTimeout(async function(){
-    try{
-      const list    = getList();
-      const checked = getChecked();
-      await callRPC('save_my_grocery_list',{p_list_data:list, p_checked:checked});
-      localStorage.setItem('tcj_grocery_ts', String(Date.now()));
-    } catch(_) {}
-  }, 1500);
+  GroceryUtils.scheduleGroceryCloudSync();
 }
 
 // GL-01: { version:2, recipes:[...], items:[...] } — each ingredient has id, source, category, store
@@ -516,15 +508,23 @@ function archiveChecked(){
   var checked = getChecked();
   if (!checked.length) { alert('No checked items to archive.'); return; }
   if (!confirm('Remove ' + checked.length + ' checked item(s) from your list?')) return;
+  var combinedNames = {};
+  checked.forEach(function(k){
+    if (k.indexOf('combined:') === 0) combinedNames[k.slice(9).toLowerCase().trim()] = true;
+  });
   var list = getList();
   list.recipes.forEach(function(recipe){
     recipe.ingredients = (recipe.ingredients || []).filter(function(ing){
-      return !checked.includes(GroceryUtils.itemCheckKey(ing, recipe.id));
+      if (checked.includes(GroceryUtils.itemCheckKey(ing, recipe.id))) return false;
+      if (combinedNames[(ing.name || '').toLowerCase().trim()]) return false;
+      return true;
     });
   });
   list.recipes = list.recipes.filter(function(r){ return (r.ingredients || []).length > 0; });
   list.items = list.items.filter(function(ing){
-    return !checked.includes(GroceryUtils.itemCheckKey(ing));
+    if (checked.includes(GroceryUtils.itemCheckKey(ing))) return false;
+    if (combinedNames[(ing.name || '').toLowerCase().trim()]) return false;
+    return true;
   });
   setChecked([]);
   saveList(list);
@@ -876,7 +876,7 @@ function renderCombined(list){
     div.className = 'gl-recipe-section';
     div.innerHTML = `<div class="gl-category-header">${esc(cat)}</div>`;
     byCategory[cat].forEach(item=>{
-      const checkKey = 'combined:'+item.name.toLowerCase();
+      const checkKey = 'combined:'+item.name.toLowerCase().trim();
       const isChecked = checked.includes(checkKey);
       const pinfo = pantryInfoFor(item.name);
       const extraCls = (pinfo?.isStaple ? ' is-staple' : '') + (pinfo?.inPantry ? ' in-pantry' : '');
