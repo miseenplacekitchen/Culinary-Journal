@@ -111,10 +111,119 @@ window.AllergyEngine = (function () {
     return warnings.slice(0, 6).join('\n') + (warnings.length > 6 ? '\n…and ' + (warnings.length - 6) + ' more' : '');
   }
 
+  /** Browse cards — uses dietary tags + recipe name when full ingredients unavailable */
+  function checkRecipeLight(recipe, profiles) {
+    if (!profiles || !profiles.length) return [];
+    return allergyWarnings(recipe, profiles);
+  }
+
+  function parseGuestAllergies(dietaryRequirements) {
+    var out = [];
+    (dietaryRequirements || []).forEach(function (v) {
+      var m = String(v).match(/^(allergy-severe|allergy|intolerance):(.+)$/i);
+      if (m) {
+        out.push({ item: m[2].trim(), severe: m[1].toLowerCase() === 'allergy-severe', raw: v });
+      }
+    });
+    return out;
+  }
+
+  function guestTextBlob(guest) {
+    return [
+      guest.name || '',
+      guest.notes || '',
+      (guest.dietary_requirements || []).join(' ')
+    ].join(' ').toLowerCase();
+  }
+
+  function allergenHitsBlob(allergenItem, blob) {
+    var canon = canonAllergen(allergenItem);
+    if (KEYWORDS[canon]) {
+      if (KEYWORDS[canon].some(function (kw) { return blob.indexOf(kw) >= 0; })) return true;
+    }
+    return blob.indexOf(String(allergenItem).toLowerCase()) >= 0;
+  }
+
+  function getAdjacentSeatNums(table, seatNum) {
+    var n = parseInt(seatNum, 10);
+    var max = table.seats || 0;
+    if (!max || !n) return [];
+    var adj = [];
+    if (n > 1) adj.push(n - 1);
+    if (n < max) adj.push(n + 1);
+    if (max > 2) {
+      if (n === 1) adj.push(max);
+      if (n === max) adj.push(1);
+    }
+    return adj.filter(function (v, i, a) { return a.indexOf(v) === i; });
+  }
+
+  function findGuestAtSeat(guests, tableId, seatNum) {
+    var key = tableId + ':' + seatNum;
+    return guests.find(function (g) { return g.seat_assignment === key; }) || null;
+  }
+
+  /** Table planner — proximity warnings between seated guests (v1) */
+  function seatingProximityWarnings(guests, tables) {
+    var warnings = [];
+    var seen = {};
+    (tables || []).forEach(function (table) {
+      for (var s = 1; s <= (table.seats || 0); s++) {
+        var guest = findGuestAtSeat(guests, table.id, s);
+        if (!guest) continue;
+        var allergies = parseGuestAllergies(guest.dietary_requirements);
+        if (!allergies.length) continue;
+        var adjNums = getAdjacentSeatNums(table, s);
+        var occupiedAdj = adjNums.filter(function (an) { return findGuestAtSeat(guests, table.id, an); });
+        allergies.forEach(function (al) {
+          occupiedAdj.forEach(function (an) {
+            var neighbor = findGuestAtSeat(guests, table.id, an);
+            if (!neighbor) return;
+            var blob = guestTextBlob(neighbor);
+            if (allergenHitsBlob(al.item, blob)) {
+              var id = table.id + ':' + s + '|' + table.id + ':' + an + '|' + al.item;
+              if (seen[id]) return;
+              seen[id] = true;
+              warnings.push({
+                severity: al.severe ? 'high' : 'medium',
+                seat: table.id + ':' + s,
+                neighborSeat: table.id + ':' + an,
+                message: (guest.name || 'Guest') + ' (' + al.item + (al.severe ? ' — severe' : '') + ') is next to ' +
+                  (neighbor.name || 'another guest') + ', whose details mention ' + al.item + '. Consider reseating or a buffer seat.'
+              });
+            }
+          });
+          if (al.severe && occupiedAdj.length >= (adjNums.length || 2)) {
+            var bufId = 'buffer|' + table.id + ':' + s;
+            if (!seen[bufId]) {
+              seen[bufId] = true;
+              warnings.push({
+                severity: 'medium',
+                seat: table.id + ':' + s,
+                message: (guest.name || 'Guest') + ' has a severe ' + al.item + ' allergy with guests on both sides — leave a buffer seat if possible.'
+              });
+            }
+          }
+        });
+      }
+    });
+    return warnings;
+  }
+
+  function warningsForSeat(seatKey, allWarnings) {
+    return (allWarnings || []).filter(function (w) {
+      return w.seat === seatKey || w.neighborSeat === seatKey;
+    });
+  }
+
   return {
     detectInRecipe: detectInRecipe,
     allergyWarnings: allergyWarnings,
     checkRecipe: checkRecipe,
-    formatConfirmList: formatConfirmList
+    checkRecipeLight: checkRecipeLight,
+    formatConfirmList: formatConfirmList,
+    parseGuestAllergies: parseGuestAllergies,
+    seatingProximityWarnings: seatingProximityWarnings,
+    warningsForSeat: warningsForSeat
   };
 })();

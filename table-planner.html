@@ -127,6 +127,17 @@
     .tp-unassigned-item { padding:7px 10px; border-radius:7px; background:var(--bg); border:1px solid var(--border); font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-high); cursor:pointer; }
     .tp-unassigned-item:hover { border-color:var(--accent); }
     .tp-unassigned-item.selecting { background:rgb(from var(--accent) r g b / 0.1); border-color:var(--accent); }
+    .tp-proximity-panel { margin-bottom:16px; padding:12px 14px; background:var(--warn-bg); border:1px solid rgb(from var(--warn) r g b / 0.35); border-radius:10px; }
+    .tp-proximity-panel.clear { background:var(--success-bg); border-color:rgb(from var(--success) r g b / 0.35); }
+    .tp-proximity-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--warn); margin-bottom:8px; }
+    .tp-proximity-panel.clear .tp-proximity-title { color:var(--success); }
+    .tp-proximity-item { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-high); line-height:1.45; margin-bottom:6px; padding-left:14px; position:relative; }
+    .tp-proximity-item::before { content:'⚠'; position:absolute; left:0; color:var(--warn); }
+    .tp-proximity-item.high::before { color:var(--danger); }
+    .tp-seat-row.tp-seat-warn { border-color:rgb(from var(--warn) r g b / 0.55); background:rgb(from var(--warn) r g b / 0.08); }
+    .tp-seat-row.tp-seat-warn-high { border-color:rgb(from var(--danger) r g b / 0.55); background:var(--danger-bg); }
+    .tp-seat-warn-icon { font-size:11px; margin-left:4px; flex-shrink:0; }
+    .tp-seat-modal-warn { display:none; margin-top:10px; padding:10px 12px; background:var(--danger-bg); border:1px solid rgb(from var(--danger) r g b / 0.3); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--danger); line-height:1.45; white-space:pre-line; }
 
     /* ── PRINT ──────────────────────────────────────── */
     .tp-print-wrap { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
@@ -269,7 +280,8 @@
 
   <!-- SEATING TAB -->
   <div id="tab-seating" class="tp-tab-content" style="display:none">
-    <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px">Click any empty seat to assign a guest. Click an occupied seat to remove.</div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px">Click any empty seat to assign a guest. Click an occupied seat to remove. Seats flagged when allergy profiles may conflict with neighbours.</div>
+    <div id="tp-proximity-panel" class="tp-proximity-panel clear" style="display:none"></div>
     <div class="tp-seating-layout">
       <div class="tp-seating-tables" id="seating-tables"></div>
       <div class="tp-unassigned">
@@ -439,8 +451,9 @@
     <input type="hidden" id="sm-seat-num">
     <div class="tp-field">
       <label class="tp-label">Choose Guest</label>
-      <select class="tp-input tp-select" id="sm-guest-select"></select>
+      <select class="tp-input tp-select" id="sm-guest-select" onchange="updateSeatModalWarnings()"></select>
     </div>
+    <div class="tp-seat-modal-warn" id="sm-proximity-warn"></div>
     <div class="tp-modal-foot">
       <button class="tp-btn tp-btn-primary" style="flex:1" onclick="confirmSeatAssign()">Assign</button>
       <button class="tp-btn tp-btn-ghost" onclick="closeModal('seat-modal')">Cancel</button>
@@ -448,6 +461,7 @@
   </div>
 </div>
 
+<script src="allergy-engine.js"></script>
 <script src="nav-init.js"></script>
 <script>
 const DIETS = ['Vegan','Vegetarian','Gluten Free','Dairy Free','Nut Free','Halal','Kosher','Shellfish Free','Egg Free','Soy Free'];
@@ -945,11 +959,48 @@ function importGuestsCSV() {
 }
 
 // ── SEATING ──────────────────────────────────────────────────────
+function getProximityWarnings() {
+  if (typeof AllergyEngine === 'undefined') return [];
+  return AllergyEngine.seatingProximityWarnings(currentGuests, currentLayout.tables || []);
+}
+
+function previewAssignWarnings(guestId, seatKey) {
+  if (!guestId || !seatKey || typeof AllergyEngine === 'undefined') return [];
+  var guests = currentGuests.map(function (g) {
+    if (g.id === guestId) return Object.assign({}, g, { seat_assignment: seatKey });
+    return g;
+  });
+  return AllergyEngine.seatingProximityWarnings(guests, currentLayout.tables || [])
+    .filter(function (w) { return w.seat === seatKey || w.neighborSeat === seatKey; });
+}
+
+function renderProximityPanel(warnings) {
+  var panel = document.getElementById('tp-proximity-panel');
+  if (!panel) return;
+  if (!warnings.length) {
+    panel.style.display = 'block';
+    panel.className = 'tp-proximity-panel clear';
+    panel.innerHTML = '<div class="tp-proximity-title">✓ No proximity allergy conflicts detected</div>' +
+      '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)">Based on seated guests\' allergy tags and neighbour notes. Always confirm with guests directly.</div>';
+    return;
+  }
+  panel.style.display = 'block';
+  panel.className = 'tp-proximity-panel';
+  panel.innerHTML = '<div class="tp-proximity-title">⚠ ' + warnings.length + ' proximity warning' + (warnings.length === 1 ? '' : 's') + '</div>' +
+    warnings.slice(0, 8).map(function (w) {
+      return '<div class="tp-proximity-item' + (w.severity === 'high' ? ' high' : '') + '">' + escHtml(w.message) + '</div>';
+    }).join('') +
+    (warnings.length > 8 ? '<div style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid);margin-top:4px">…and ' + (warnings.length - 8) + ' more</div>' : '');
+}
+
 function renderSeating() {
   const tablesEl = document.getElementById('seating-tables');
   const unassignedEl = document.getElementById('unassigned-list');
   const countEl = document.getElementById('unassigned-count');
   if (!tablesEl || !unassignedEl) return;
+
+  var proxWarnings = getProximityWarnings();
+  renderProximityPanel(proxWarnings);
 
   const attending = currentGuests.filter(function(g){return g.rsvp_status!=='declined';});
   const unseated  = attending.filter(function(g){return !g.seat_assignment;});
@@ -991,14 +1042,21 @@ function renderSeating() {
     for (let s = 1; s <= table.seats; s++) {
       const seatKey = table.id + ':' + s;
       const guest = currentGuests.find(function(g){return g.seat_assignment===seatKey;});
+      const seatWarns = typeof AllergyEngine !== 'undefined'
+        ? AllergyEngine.warningsForSeat(seatKey, proxWarnings) : [];
+      const hasHigh = seatWarns.some(function(w){ return w.severity === 'high'; });
       const row = document.createElement('div');
-      row.className = 'tp-seat-row' + (guest ? ' occupied' : '');
+      row.className = 'tp-seat-row' + (guest ? ' occupied' : '') +
+        (seatWarns.length ? (hasHigh ? ' tp-seat-warn-high' : ' tp-seat-warn') : '');
+      if (seatWarns.length) row.title = seatWarns.map(function(w){ return w.message; }).join('\n');
       const icons = guest ? (guest.dietary_requirements||[]).map(function(d){return DIET_ICONS[d]||'';}).join('') : '';
       row.innerHTML =
         '<span class="tp-seat-num">' + s + '</span>' +
         (guest
-          ? '<span class="tp-seat-guest">' + escHtml(guest.name) + '</span><span class="tp-seat-diet">' + icons + '</span>'
-          : '<span class="tp-seat-empty">+ Assign guest</span>');
+          ? '<span class="tp-seat-guest">' + escHtml(guest.name) + '</span><span class="tp-seat-diet">' + icons +
+            (seatWarns.length ? '<span class="tp-seat-warn-icon" title="Proximity allergy warning">⚠</span>' : '') + '</span>'
+          : '<span class="tp-seat-empty">+ Assign guest</span>' +
+            (seatWarns.length ? '<span class="tp-seat-warn-icon">⚠</span>' : ''));
       row.addEventListener('click', function() {
         if (guest) { unassignGuest(guest, table, s); }
         else { openSeatModal(table, s); }
@@ -1020,7 +1078,28 @@ function openSeatModal(table, seatNum) {
         return '<option value="' + g.id + '">' + escHtml(g.name) + (icons?' '+icons:'') + '</option>';
       }).join('')
     : '<option value="">No unassigned guests</option>';
+  updateSeatModalWarnings();
   openModal('seat-modal');
+}
+
+function updateSeatModalWarnings() {
+  var warnEl = document.getElementById('sm-proximity-warn');
+  if (!warnEl) return;
+  var tableId = document.getElementById('sm-table-id').value;
+  var seatNum = document.getElementById('sm-seat-num').value;
+  var guestId = document.getElementById('sm-guest-select').value;
+  if (!guestId || !tableId || !seatNum) {
+    warnEl.style.display = 'none';
+    return;
+  }
+  var seatKey = tableId + ':' + seatNum;
+  var warns = previewAssignWarnings(guestId, seatKey);
+  if (!warns.length) {
+    warnEl.style.display = 'none';
+    return;
+  }
+  warnEl.style.display = 'block';
+  warnEl.textContent = warns.map(function (w) { return w.message; }).join('\n');
 }
 
 async function confirmSeatAssign() {
@@ -1028,6 +1107,15 @@ async function confirmSeatAssign() {
   const seatNum = document.getElementById('sm-seat-num').value;
   const guestId = document.getElementById('sm-guest-select').value;
   if (!guestId) { closeModal('seat-modal'); return; }
+  const seatKey = tableId + ':' + seatNum;
+  const assignWarns = previewAssignWarnings(guestId, seatKey);
+  if (assignWarns.length) {
+    var msg = 'Proximity allergy warning:\n\n' +
+      assignWarns.slice(0, 5).map(function (w) { return '• ' + w.message; }).join('\n') +
+      (assignWarns.length > 5 ? '\n…and ' + (assignWarns.length - 5) + ' more' : '') +
+      '\n\nAssign anyway?';
+    if (!confirm(msg)) return;
+  }
   try {
     const seat = tableId + ':' + seatNum;
     await rpc('assign_seat',{p_guest_id:guestId, p_seat:seat});
@@ -1412,12 +1500,15 @@ function renderDishPlacement() {
   const rules = DISH_RULES[currentDiningStyle] || DISH_RULES.casual;
   const styleLabel = {casual:'Casual',formal:'Formal / Fine Dining',buffet:'Buffet',outdoor:'Outdoor'}[currentDiningStyle]||'Casual';
 
-  // Guest allergy warnings if any
-  const allergyWarnings = [];
-  currentGuests.forEach(function(g) {
-    const allergens = (g.dietary_requirements||[]).filter(function(d){return d.toLowerCase().includes('allergy');});
-    if (allergens.length) allergyWarnings.push({name:g.name, allergens, seat:g.seat_assignment});
+  var allergyWarnings = [];
+  currentGuests.forEach(function (g) {
+    var parsed = typeof AllergyEngine !== 'undefined'
+      ? AllergyEngine.parseGuestAllergies(g.dietary_requirements)
+      : (g.dietary_requirements || []).filter(function (d) { return String(d).toLowerCase().indexOf('allergy') >= 0; })
+          .map(function (d) { return { item: d, severe: false }; });
+    if (parsed.length) allergyWarnings.push({ name: g.name, allergens: parsed, seat: g.seat_assignment });
   });
+  var proxWarnings = getProximityWarnings();
 
   el.innerHTML =
     '<div style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:14px">'+styleLabel+' Placement Rules</div>'+
@@ -1431,9 +1522,21 @@ function renderDishPlacement() {
       '<div style="margin-top:20px;font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--danger);margin-bottom:10px">⚠ Guest Allergy Warnings</div>'+
       allergyWarnings.map(function(w){
         var seat = w.seat ? ' ('+getSeatLabel(w.seat)+')' : ' (unseated)';
+        var labels = w.allergens.map(function(a){
+          var item = a.item || a;
+          return item + (a.severe ? ' (severe)' : '');
+        }).join(', ');
         return '<div style="background:rgb(from var(--danger) r g b / 0.07);border:1px solid rgb(from var(--danger) r g b / 0.2);border-radius:9px;padding:10px 14px;margin-bottom:8px;font-family:DM Sans,sans-serif;font-size:13px">'+
-          '<strong style="color:var(--text-high)">'+w.name+'</strong>'+seat+' — '+w.allergens.map(function(a){return a.replace(' allergy','');}).join(', ')+'</div>';
+          '<strong style="color:var(--text-high)">'+escHtml(w.name)+'</strong>'+escHtml(seat)+' — '+escHtml(labels)+'</div>';
       }).join('') : ''
+    ) +
+    (proxWarnings.length ?
+      '<div style="margin-top:20px;font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--warn);margin-bottom:10px">⚠ Seating Proximity Warnings</div>'+
+      proxWarnings.slice(0, 6).map(function(w){
+        return '<div style="background:var(--warn-bg);border:1px solid rgb(from var(--warn) r g b / 0.25);border-radius:9px;padding:10px 14px;margin-bottom:8px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)">'+escHtml(w.message)+'</div>';
+      }).join('') +
+      (proxWarnings.length > 6 ? '<div style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid)">…and '+(proxWarnings.length-6)+' more in Seating tab</div>' : '')
+      : ''
     );
 }
 

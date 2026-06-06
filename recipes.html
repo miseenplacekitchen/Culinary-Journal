@@ -78,6 +78,9 @@
     .cr-meta  { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); margin-bottom:2px; }
     .cr-chef  { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); }
     .cr-empty { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); text-align:center; padding:30px; }
+    .cr-family-banner { margin-bottom:14px; padding:12px 14px; background:rgb(from var(--accent) r g b / 0.08); border:1px solid rgb(from var(--accent) r g b / 0.25); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); line-height:1.5; }
+    .cr-warn-badge { display:inline-block; margin-top:6px; padding:3px 8px; border-radius:6px; background:var(--danger-bg); border:1px solid rgb(from var(--danger) r g b / 0.25); font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; color:var(--danger); }
+    .cr-card.has-warn { border-color:rgb(from var(--danger) r g b / 0.35); }
 </style>
   <script src="page-guard.js"></script>
 </head>
@@ -194,6 +197,7 @@
         <div class="cr-filters" id="cr-chef-filters"></div>
       </div>
     </div>
+    <div id="cr-family-banner" class="cr-family-banner" style="display:none"></div>
     <div class="cr-grid" id="cr-grid">
       <div class="cr-grid" id="community-grid"><div class="cr-empty">Loading community recipes...</div></div>
     </div>
@@ -564,9 +568,12 @@ async function loadDishRecipes(dishName, categoryName) {
     var CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
     cardsEl.innerHTML = '';
     toShow.forEach(function(r) {
+      var warns = browseAllergyWarnings(r);
       var card = document.createElement('a');
       card.href = 'recipe-page.html?id=' + r.id;
-      card.style.cssText = 'display:block;text-decoration:none;background:var(--text-ghost);border:1px solid var(--border);border-radius:11px;overflow:hidden;transition:border-color .15s';
+      card.style.cssText = 'display:block;text-decoration:none;background:var(--text-ghost);border:1px solid ' +
+        (warns.length ? 'rgb(from var(--danger) r g b / 0.35)' : 'var(--border)') + ';border-radius:11px;overflow:hidden;transition:border-color .15s';
+      if (warns.length) card.title = warns.join('\n');
       card.addEventListener('mouseover', function(){ this.style.borderColor='var(--accent)'; });
       card.addEventListener('mouseout',  function(){ this.style.borderColor='var(--border)'; });
       if (r.image_url) {
@@ -590,6 +597,13 @@ async function loadDishRecipes(dishName, categoryName) {
       meta.style.cssText = 'font-family:DM Sans,sans-serif;font-size:10px;color:var(--text-mid)';
       meta.textContent = (r.origin_country ? r.origin_country + ' · ' : '') + (r.spice_level||'');
       info.appendChild(name); info.appendChild(meta);
+      if (warns.length) {
+        var badge = document.createElement('div');
+        badge.className = 'cr-warn-badge';
+        badge.style.marginTop = '6px';
+        badge.textContent = '⚠ ' + (warns[0].replace(/^⚠\s*/, '').slice(0, 42)) + (warns.length > 1 ? ' +' + (warns.length - 1) : '');
+        info.appendChild(badge);
+      }
       card.appendChild(info);
       cardsEl.appendChild(card);
     });
@@ -693,12 +707,14 @@ function hide(id) { document.getElementById(id).style.display='none'; }
 // ══════════════════════════════════════════════════════════
 loadCategories();
 </script>
+<script src="allergy-engine.js"></script>
 <script src="nav-init.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════
 //  COMMUNITY RECIPES
 // ══════════════════════════════════════════════════════════
 var allCommunityRecipes = [];
+var browseFamilyProfiles = [];
 var activeDietFilter = '';
 var activeChefFilter = '';
 var activeSpiceFilter = '';
@@ -706,11 +722,54 @@ var SUPA_URL_CR = window.SUPA_URL;
 var SUPA_KEY_CR = window.SUPA_KEY;
 var CR_CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
 
+async function loadBrowseFamilyProfiles() {
+  browseFamilyProfiles = [];
+  var banner = document.getElementById('cr-family-banner');
+  try {
+    var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    if (!sess || !sess.access_token) {
+      if (banner) banner.style.display = 'none';
+      return;
+    }
+    var res = await fetch(SUPA_URL_CR + '/rest/v1/rpc/get_my_family_profiles', {
+      method: 'POST',
+      headers: { apikey: SUPA_KEY_CR, Authorization: 'Bearer ' + sess.access_token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    if (res.ok) browseFamilyProfiles = await res.json() || [];
+  } catch(_) {}
+  if (banner) {
+    if (browseFamilyProfiles.length) {
+      var names = browseFamilyProfiles.map(function (p) { return p.name; }).join(', ');
+      banner.style.display = 'block';
+      banner.innerHTML = '👪 <strong>Family allergy check active</strong> — cards flagged for ' + names +
+        '. Based on profile allergies, dietary needs, and recipe name/tags (open recipe for full ingredient check). ' +
+        '<a href="family-profiles.html" style="color:var(--accent)">Edit profiles →</a>';
+    } else {
+      banner.style.display = 'block';
+      banner.innerHTML = '👪 Add <a href="family-profiles.html" style="color:var(--accent)">Family Profiles</a> to see allergy-aware flags on community recipes.';
+    }
+  }
+}
+
+function browseAllergyWarnings(recipe) {
+  if (!browseFamilyProfiles.length || typeof AllergyEngine === 'undefined') return [];
+  var stub = {
+    recipe_name: recipe.recipe_name || recipe.name,
+    name: recipe.recipe_name || recipe.name,
+    dietary_tags: recipe.dietary_tags || [],
+    spice_level: recipe.spice_level,
+    ingredients: []
+  };
+  return AllergyEngine.checkRecipeLight(stub, browseFamilyProfiles);
+}
+
 async function loadCommunityRecipes() {
   var grid = document.getElementById('community-grid');
   if (!grid) return;
   grid.innerHTML = '<div class="cr-empty">Loading community recipes...</div>';
   try {
+    await loadBrowseFamilyProfiles();
     var res = await fetch(SUPA_URL_CR + '/rest/v1/rpc/get_approved_recipes', {
       method:'POST', headers:{'apikey':SUPA_KEY_CR,'Content-Type':'application/json'},
       body:JSON.stringify({p_limit:40})
@@ -807,9 +866,11 @@ function renderCommunityRecipes() {
     var safeImg = (r.image_url && /^https?:\/\//.test(r.image_url)) ? r.image_url : null;
 
     // Card link
+    var warns = browseAllergyWarnings(r);
     var card = document.createElement('a');
-    card.className = 'cr-card';
+    card.className = 'cr-card' + (warns.length ? ' has-warn' : '');
     card.href = 'recipe-page.html?id=' + encodeURIComponent(r.id || '');
+    if (warns.length) card.title = warns.join('\n');
 
     // Image or emoji
     var imgWrap = document.createElement('div');
@@ -851,6 +912,13 @@ function renderCommunityRecipes() {
       chefLink.textContent = displayName;
       chefEl.appendChild(chefLink);
       body.appendChild(chefEl);
+    }
+
+    if (warns.length) {
+      var badge = document.createElement('div');
+      badge.className = 'cr-warn-badge';
+      badge.textContent = '⚠ ' + (warns[0].replace(/^⚠\s*/, '').slice(0, 42)) + (warns.length > 1 ? ' +' + (warns.length - 1) : '');
+      body.appendChild(badge);
     }
 
     card.appendChild(body);
