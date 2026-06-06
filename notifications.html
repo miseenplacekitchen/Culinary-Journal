@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Your notifications from The Culinary Journal — recipe approvals, rejections, and updates.">
+  <link rel="canonical" href="https://theculinaryjournal.site/notifications.html">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Notifications — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="nav-init.js" defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    .nt-wrap { max-width: 720px; margin: 0 auto; padding: 48px 20px 80px; }
+    .nt-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }
+    .nt-title { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 600; color: var(--text-high); margin: 0; }
+    .nt-btn { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border); background: none; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text-mid); cursor: pointer; }
+    .nt-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .nt-list { display: flex; flex-direction: column; gap: 8px; }
+    .nt-item { display: flex; gap: 12px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 11px; background: var(--text-ghost); text-decoration: none; color: inherit; transition: border-color 0.15s; }
+    .nt-item:hover { border-color: var(--accent); }
+    .nt-item.unread { border-left: 3px solid var(--accent); background: rgb(from var(--accent) r g b / 0.04); }
+    .nt-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: 6px; flex-shrink: 0; }
+    .nt-dot.read { background: transparent; }
+    .nt-msg { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text-high); line-height: 1.5; }
+    .nt-meta { font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--text-mid); margin-top: 4px; }
+    .nt-empty { text-align: center; padding: 60px 20px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text-mid); }
+    .nt-guard { text-align: center; padding: 80px 20px; }
+  </style>
+</head>
+<body class="cj-body">
+<div class="nt-wrap">
+  <div id="nt-guard" class="nt-guard" style="display:none">
+    <p style="font-family:'DM Sans',sans-serif;color:var(--text-mid)">Please <a href="login.html" style="color:var(--accent)">sign in</a> to view your notifications.</p>
+  </div>
+  <div id="nt-main" style="display:none">
+    <div class="nt-header">
+      <h1 class="nt-title">Notifications</h1>
+      <button class="nt-btn" type="button" onclick="markAllRead()">Mark all read</button>
+    </div>
+    <div class="nt-list" id="nt-list"></div>
+  </div>
+</div>
+<script>
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function relTime(iso) {
+  var diff = Date.now() - new Date(iso).getTime();
+  if (diff < 3600000) return Math.round(diff/60000) + 'm ago';
+  if (diff < 86400000) return Math.round(diff/3600000) + 'h ago';
+  return Math.round(diff/86400000) + 'd ago';
+}
+function typeIcon(t) {
+  return t === 'recipe_approved' ? '✅' : t === 'recipe_rejected' ? '❌' : '🔔';
+}
+async function rpc(fn, params) {
+  var session = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+  if (!session || !session.access_token) return null;
+  var res = await fetch(SUPA_URL + '/rest/v1/rpc/' + fn, {
+    method: 'POST',
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(params || {})
+  });
+  return res.ok ? res.json() : null;
+}
+function renderList(notifs) {
+  var el = document.getElementById('nt-list');
+  if (!notifs || !notifs.length) {
+    el.innerHTML = '<div class="nt-empty">No notifications yet. When a recipe is approved or needs updates, you will see it here.</div>';
+    return;
+  }
+  el.innerHTML = notifs.map(function(n) {
+    var href = n.recipe_id ? 'recipe-page.html?id=' + encodeURIComponent(n.recipe_id) : '#';
+    var label = (n.message || n.recipe_name || 'Notification');
+    return '<a class="nt-item' + (n.read ? '' : ' unread') + '" href="' + href + '" data-id="' + esc(n.id) + '">' +
+      '<div class="nt-dot' + (n.read ? ' read' : '') + '"></div>' +
+      '<div><div class="nt-msg">' + typeIcon(n.type) + ' ' + esc(label) + '</div>' +
+      '<div class="nt-meta">' + esc(relTime(n.created_at)) + '</div></div></a>';
+  }).join('');
+  el.querySelectorAll('.nt-item[data-id]').forEach(function(a) {
+    a.addEventListener('click', async function(e) {
+      var id = a.getAttribute('data-id');
+      if (id) try { await rpc('mark_notification_read', { p_id: id }); } catch(_) {}
+    });
+  });
+}
+async function markAllRead() {
+  await rpc('mark_all_notifications_read', {});
+  if (typeof loadNotifCount === 'function') loadNotifCount();
+  loadPage();
+}
+async function loadPage() {
+  var session = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+  if (!session || !session.access_token) {
+    document.getElementById('nt-guard').style.display = 'block';
+    return;
+  }
+  document.getElementById('nt-main').style.display = 'block';
+  document.getElementById('nt-list').innerHTML = '<div class="nt-empty">Loading…</div>';
+  var notifs = await rpc('get_my_notifications', {});
+  renderList(notifs || []);
+}
+document.addEventListener('DOMContentLoaded', loadPage);
+</script>
+</body>
+</html>

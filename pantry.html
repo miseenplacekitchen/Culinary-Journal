@@ -101,6 +101,7 @@
     <button class="pt-filter" onclick="setFilter('ok',this)">✓ Good</button>
     <button class="pt-filter" onclick="setFilter('low',this)">⚠ Low</button>
     <button class="pt-filter" onclick="setFilter('out',this)">✗ Out</button>
+    <button class="pt-filter" onclick="setFilter('expiring',this)">⏰ Expiring</button>
   </div>
 
   <div class="pt-list" id="pt-list"></div>
@@ -111,10 +112,12 @@
   <div class="pt-modal-box">
     <div class="pt-modal-title" id="pt-modal-title">Add Pantry Item</div>
     <input type="hidden" id="pt-edit-id">
+    <input type="hidden" id="pt-ingredient-id">
     <div class="pt-field">
       <div class="pt-label">Item Name</div>
-      <input class="pt-input" id="pt-name" placeholder="e.g. Plain Flour" list="pt-ingredients-list" autocomplete="off">
+      <input class="pt-input" id="pt-name" placeholder="e.g. Plain Flour" list="pt-ingredients-list" autocomplete="off" oninput="onPantryNameInput()">
       <datalist id="pt-ingredients-list"></datalist>
+      <div id="pt-ing-hint" style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);margin-top:4px;display:none"></div>
     </div>
     <div class="pt-row">
       <div class="pt-field" style="flex:1">
@@ -167,6 +170,7 @@
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 let activeFilter = 'all';
+let pantryIngIndex = {};
 
 function getPantry() {
   try { return JSON.parse(localStorage.getItem('tcj_pantry') || '[]'); }
@@ -257,7 +261,10 @@ function renderList(search) {
   const filtered = items.filter(function(item) {
     if (q && !item.name.toLowerCase().includes(q)) return false;
     const status = getStatus(item);
-    if (activeFilter !== 'all' && status !== activeFilter) return false;
+    if (activeFilter === 'expiring') {
+      const exp = getExpiryStatus(item);
+      if (!exp || (exp.status !== 'expiring' && exp.status !== 'expired')) return false;
+    } else if (activeFilter !== 'all' && status !== activeFilter) return false;
     return true;
   });
   const el = document.getElementById('pt-list');
@@ -273,9 +280,14 @@ function renderList(search) {
     const status = getStatus(item);
     const row = document.createElement('div');
     row.className = 'pt-item ' + status;
+    const expInfo = getExpiryStatus(item);
+    const expBadge = expInfo && expInfo.status !== 'ok'
+      ? '<div style="font-family:\'DM Sans\',sans-serif;font-size:10px;margin-top:3px;color:' +
+        (expInfo.status === 'expired' ? 'var(--danger)' : 'var(--warn)') + '">' + esc(expInfo.label) + '</div>' : '';
     row.innerHTML =
       '<div style="flex:1"><div class="pt-item-name">' + esc(item.name||'') + '</div>' +
-      (item.category ? '<div class="pt-item-cat">' + esc(item.category||'') + '</div>' : '') + '</div>' +
+      (item.category ? '<div class="pt-item-cat">' + esc(item.category||'') + '</div>' : '') +
+      expBadge + '</div>' +
       '<div class="pt-item-qty">' +
         '<button class="pt-qty-btn" data-item-id="' + esc(String(item.id)) + '" data-delta="-1">−</button>' +
         '<div class="pt-qty-val">' + (item.qty||0) + ' <span style="font-size:10px;color:var(--text-mid)">' + esc(item.unit||'') + '</span></div>' +
@@ -309,6 +321,8 @@ function openAddModal() {
   document.getElementById('pt-edit-id').value = '';
   ['pt-name','pt-qty','pt-unit','pt-min','pt-expiry'].forEach(function(id) { document.getElementById(id).value = ''; });
   document.getElementById('pt-category').value = '';
+  document.getElementById('pt-ingredient-id').value = '';
+  var hint = document.getElementById('pt-ing-hint'); if (hint) hint.style.display = 'none';
   document.getElementById('pt-modal').classList.add('open');
   setTimeout(function() { document.getElementById('pt-name').focus(); }, 50);
 }
@@ -322,8 +336,10 @@ function editItem(id) {
   document.getElementById('pt-qty').value  = item.qty||'';
   document.getElementById('pt-unit').value = item.unit||'';
   document.getElementById('pt-category').value = item.category||'';
+  document.getElementById('pt-ingredient-id').value = item.ingredient_id || '';
   document.getElementById('pt-min').value  = item.min_qty||'';
   document.getElementById('pt-expiry').value = item.expiry_date||'';
+  onPantryNameInput();
   document.getElementById('pt-modal').classList.add('open');
 }
 
@@ -334,9 +350,11 @@ function saveItem() {
   if (!name) { alert('Please enter an item name.'); return; }
   const list = getPantry();
   const editId = document.getElementById('pt-edit-id').value;
+  const ingId = document.getElementById('pt-ingredient-id').value;
   const item = {
     id: editId || 'pt_' + Date.now(),
     name,
+    ingredient_id: ingId ? parseInt(ingId, 10) : null,
     qty: parseFloat(document.getElementById('pt-qty').value)||0,
     unit: document.getElementById('pt-unit').value.trim(),
     category: document.getElementById('pt-category').value,
@@ -371,14 +389,54 @@ function addToGroceryLow() {
   window.location.href = 'grocery.html';
 }
 
-// Load ingredient names for autocomplete
+function mapPantryCategory(dbCat) {
+  if (!dbCat) return '';
+  var sel = document.getElementById('pt-category');
+  if (!sel) return dbCat;
+  for (var i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value && sel.options[i].value.toLowerCase() === String(dbCat).toLowerCase()) return sel.options[i].value;
+  }
+  return dbCat;
+}
+
+function onPantryNameInput() {
+  var name = (document.getElementById('pt-name').value || '').trim();
+  var hint = document.getElementById('pt-ing-hint');
+  var match = pantryIngIndex[name.toLowerCase()];
+  if (!match) {
+    document.getElementById('pt-ingredient-id').value = '';
+    if (hint) hint.style.display = 'none';
+    return;
+  }
+  document.getElementById('pt-ingredient-id').value = match.id;
+  var cat = mapPantryCategory(match.category);
+  if (cat) document.getElementById('pt-category').value = cat;
+  var unitEl = document.getElementById('pt-unit');
+  if (unitEl && !unitEl.value && match.unit) unitEl.value = match.unit;
+  if (hint) {
+    hint.textContent = '✓ Linked to governed ingredient #' + match.id + (match.category ? ' · ' + match.category : '');
+    hint.style.display = 'block';
+    hint.style.color = '#4caf76';
+  }
+}
+
+// Load governed ingredients for autocomplete (PF-01)
 async function loadIngredientNames() {
   try {
-    const res = await fetch(SUPA_URL + '/rest/v1/ingredients?select=' + encodeURIComponent('"Ingredient Name"') + '&limit=200&order=' + encodeURIComponent('"Ingredient Name"'), {headers:{'apikey':SUPA_KEY}});
+    const res = await fetch(
+      SUPA_URL + '/rest/v1/ingredients?select=' + encodeURIComponent('"ID","Ingredient Name",Category,Unit') +
+      '&order=' + encodeURIComponent('"Ingredient Name"') + '&limit=500',
+      { headers: { 'apikey': SUPA_KEY } }
+    );
     const rows = await res.json();
     const dl = document.getElementById('pt-ingredients-list');
+    pantryIngIndex = {};
     if (dl && rows.length) {
-      dl.innerHTML = rows.map(function(r) { return '<option value="' + (r['Ingredient Name']||'').replace(/"/g,'&quot;') + '">'; }).join('');
+      dl.innerHTML = rows.map(function(r) {
+        var n = r['Ingredient Name'] || '';
+        if (n) pantryIngIndex[n.toLowerCase()] = { id: r.ID, name: n, category: r.Category || '', unit: r.Unit || '' };
+        return '<option value="' + n.replace(/"/g,'&quot;') + '">';
+      }).join('');
     }
   } catch(_) {}
 }

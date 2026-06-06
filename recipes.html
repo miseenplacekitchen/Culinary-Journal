@@ -179,6 +179,15 @@
         <button class="cr-filter" onclick="filterCommunity('Dairy Free',this)">🥛 Dairy Free</button>
         <button class="cr-filter" onclick="filterCommunity('Under 30 Mins',this)">⚡ Quick</button>
       </div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid);margin:10px 0 6px">Spice Level</div>
+      <div class="cr-filters" id="cr-spice-filters">
+        <button class="cr-filter active" data-spice="" onclick="filterSpice('',this)">All</button>
+        <button class="cr-filter" data-spice="Mild" onclick="filterSpice('Mild',this)">🌶 Mild</button>
+        <button class="cr-filter" data-spice="Medium" onclick="filterSpice('Medium',this)">🌶🌶 Medium</button>
+        <button class="cr-filter" data-spice="Hot" onclick="filterSpice('Hot',this)">🌶🌶🌶 Hot</button>
+        <button class="cr-filter" data-spice="Very Hot" onclick="filterSpice('Very Hot',this)">🌶🌶🌶🌶 Very Hot</button>
+        <button class="cr-filter" data-spice="Extremely Hot" onclick="filterSpice('Extremely Hot',this)">🌶🌶🌶🌶🌶 Extreme</button>
+      </div>
       <!-- Chef filter — populated once recipes load -->
       <div id="cr-chef-row" style="display:none;margin-top:8px;display:none">
         <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px">Filter by Chef</div>
@@ -692,6 +701,7 @@ loadCategories();
 var allCommunityRecipes = [];
 var activeDietFilter = '';
 var activeChefFilter = '';
+var activeSpiceFilter = '';
 var SUPA_URL_CR = window.SUPA_URL;
 var SUPA_KEY_CR = window.SUPA_KEY;
 var CR_CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
@@ -758,6 +768,13 @@ function filterCommunity(tag, btn) {
   renderCommunityRecipes();
 }
 
+function filterSpice(level, btn) {
+  activeSpiceFilter = level;
+  document.querySelectorAll('#cr-spice-filters .cr-filter').forEach(function(b){b.classList.remove('active');});
+  if (btn) btn.classList.add('active');
+  renderCommunityRecipes();
+}
+
 function filterByChef(name, btn) {
   activeChefFilter = name;
   document.querySelectorAll('#cr-chef-filters .cr-filter').forEach(function(b){b.classList.remove('active');});
@@ -770,6 +787,7 @@ function renderCommunityRecipes() {
   if (!grid) return;
   var filtered = allCommunityRecipes.filter(function(r) {
     if (activeDietFilter && !(r.dietary_tags||[]).includes(activeDietFilter)) return false;
+    if (activeSpiceFilter && (r.spice_level || '') !== activeSpiceFilter) return false;
     if (activeChefFilter) {
       var chefName = r.credit_name || (r.username ? '@'+r.username : '');
       if (chefName !== activeChefFilter) return false;
@@ -817,7 +835,7 @@ function renderCommunityRecipes() {
 
     var metaEl = document.createElement('div');
     metaEl.className = 'cr-meta';
-    metaEl.textContent = (r.category || '') + (r.origin_country ? ' · ' + r.origin_country : '');
+    metaEl.textContent = (r.category || '') + (r.origin_country ? ' · ' + r.origin_country : '') + (r.spice_level && r.spice_level !== 'Not Applicable' ? ' · ' + r.spice_level : '');
     body.appendChild(metaEl);
 
     // Chef line

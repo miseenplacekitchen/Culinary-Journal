@@ -197,7 +197,8 @@ function buildSectionNav() {
     book:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
     signout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
     dashboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>',
-    drafts: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>'
+    drafts: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>',
+    bell:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>'
   };
 
   // ── One-time stylesheet injection (keeps the nav self-contained) ─
@@ -349,6 +350,7 @@ function buildSectionNav() {
             item('submit-recipe.html', IC.submit, 'Submit a Recipe') +
             (isAdmin ? item('library-submit.html', IC.drafts, '📚 Submit Library Profile') : '') +
             '<div class="cj-menu-sep"></div>' +
+            item('notifications.html', IC.bell, 'Notifications') +
             item('profile.html',       IC.profile, 'My Profile') +
             '<div class="cj-menu-sep"></div>' +
             '<button class="cj-menu-item cj-menu-danger" id="cj-signout" type="button" role="menuitem">' + IC.signout + '<span>Sign Out</span></button>' +
@@ -543,7 +545,14 @@ function renderNotifPanel(notifs) {
   _notifPanel.innerHTML = '';
   _notifPanel.appendChild(head);
   if (!notifs.length) {
-    _notifPanel.innerHTML += '<div class="nav-notif-empty">No notifications yet</div>';
+    var empty = document.createElement('div');
+    empty.className = 'nav-notif-empty';
+    empty.textContent = 'No notifications yet';
+    _notifPanel.appendChild(empty);
+    var foot0 = document.createElement('div');
+    foot0.style.cssText = 'padding:8px 14px 12px;border-top:1px solid var(--border);text-align:center';
+    foot0.innerHTML = '<a href="notifications.html" style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--accent);text-decoration:none;font-weight:600">View all notifications →</a>';
+    _notifPanel.appendChild(foot0);
     return;
   }
   notifs.forEach(function(n) {
@@ -579,6 +588,10 @@ function renderNotifPanel(notifs) {
     });
     _notifPanel.appendChild(item);
   });
+  var foot = document.createElement('div');
+  foot.style.cssText = 'padding:8px 14px 12px;border-top:1px solid var(--border);text-align:center';
+  foot.innerHTML = '<a href="notifications.html" style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--accent);text-decoration:none;font-weight:600">View all notifications →</a>';
+  _notifPanel.appendChild(foot);
   loadNotifCount();
 }
 

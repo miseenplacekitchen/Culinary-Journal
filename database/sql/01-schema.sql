@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS public.submitted_recipes (
   origin_continent    text,
   origin_country      text,
   origin_state        text,
+  origin_locality     text,
   prep_time_minutes   integer     DEFAULT 0,
   cook_time_minutes   integer     DEFAULT 0,
   servings            integer     DEFAULT 1,

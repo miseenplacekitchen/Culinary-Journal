@@ -46,6 +46,15 @@
     .rp-meta-item { display: flex; align-items: center; gap: 7px; font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-muted); }
     .rp-meta-item svg { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; }
     .rp-meta-divider { width: 1px; height: 16px; background: var(--border); }
+    .rp-font-ctrl { display:flex; align-items:center; gap:4px; margin-left:12px; }
+    .rp-font-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:4px 8px; font-family:"DM Sans",sans-serif; font-size:11px; color:var(--text-mid); cursor:pointer; }
+    .rp-font-btn.active { border-color:var(--accent); color:var(--accent); background:rgb(from var(--accent) r g b / 0.08); }
+    #rp-wrap.rp-font-sm  { --rp-scale: 0.92; }
+    #rp-wrap.rp-font-md  { --rp-scale: 1; }
+    #rp-wrap.rp-font-lg  { --rp-scale: 1.12; }
+    #rp-wrap.rp-font-xl  { --rp-scale: 1.28; }
+    #rp-wrap .rp-ing-name, #rp-wrap .rp-proc-step-text, #rp-wrap .rp-proc-single { font-size: calc(14px * var(--rp-scale, 1)); }
+    #rp-wrap .rp-ing-qty { font-size: calc(13px * var(--rp-scale, 1)); }
 
     /* ── SPICE DISPLAY ───────────────────────── */
 
@@ -459,9 +468,17 @@
       <button class="rp-tab-btn" data-tab="nutrition" onclick="switchTab('nutrition')">Nutrition</button>
       <button class="rp-tab-btn" data-tab="notes" onclick="switchTab('notes')">Notes</button>
     </div>
-    <div class="rp-view-toggle" id="view-toggle">
-      <button class="rp-view-btn active" id="btn-tabs" onclick="setView('tabs')">Tabs</button>
-      <button class="rp-view-btn" id="btn-combined" onclick="setView('combined')">Combined</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="rp-font-ctrl" title="Text size for this recipe">
+        <button type="button" class="rp-font-btn" data-fs="sm" onclick="setRecipeFontSize('sm',this)">A</button>
+        <button type="button" class="rp-font-btn active" data-fs="md" onclick="setRecipeFontSize('md',this)">A+</button>
+        <button type="button" class="rp-font-btn" data-fs="lg" onclick="setRecipeFontSize('lg',this)">A++</button>
+        <button type="button" class="rp-font-btn" data-fs="xl" onclick="setRecipeFontSize('xl',this)">A+++</button>
+      </div>
+      <div class="rp-view-toggle" id="view-toggle">
+        <button class="rp-view-btn active" id="btn-tabs" onclick="setView('tabs')">Tabs</button>
+        <button class="rp-view-btn" id="btn-combined" onclick="setView('combined')">Combined</button>
+      </div>
     </div>
   </div>
 
@@ -953,6 +970,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   try { setupSwipe(); } catch(_) {}
+  try { initRecipeFontSize(); } catch(_) {}
 });
 
 function updateNav() {
@@ -1205,9 +1223,12 @@ function renderRecipe(r) {
     heroPh.querySelector('.rp-hero-placeholder-text').textContent = 'No image for this recipe yet';
   }
 
-  // Origin
+  // Origin — "From [Locality], [State], [Country]" when locality present (4.3)
   if (r.origin_country) {
-    const origin = [r.origin_state, r.origin_country].filter(Boolean).join(', ');
+    const parts = [r.origin_locality, r.origin_state, r.origin_country].filter(Boolean);
+    const origin = r.origin_locality
+      ? 'From ' + parts.join(', ')
+      : [r.origin_state, r.origin_country].filter(Boolean).join(', ');
     document.getElementById('meta-origin-text').textContent = origin;
     document.getElementById('meta-origin').style.display = 'flex';
     document.getElementById('div-1').style.display = 'block';
@@ -1982,6 +2003,21 @@ function switchTab(tabName) {
 }
 
 // ── VIEW TOGGLE ───────────────────────────────────────
+function setRecipeFontSize(size, btn) {
+  const wrap = document.getElementById('rp-wrap') || document.body;
+  wrap.classList.remove('rp-font-sm','rp-font-md','rp-font-lg','rp-font-xl');
+  wrap.classList.add('rp-font-' + (size || 'md'));
+  document.querySelectorAll('.rp-font-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  try { lsSet('tcj_recipe_font', size || 'md'); } catch(_) {}
+}
+
+function initRecipeFontSize() {
+  const saved = lsGet('tcj_recipe_font') || 'md';
+  const btn = document.querySelector('.rp-font-btn[data-fs="' + saved + '"]');
+  setRecipeFontSize(saved, btn);
+}
+
 function setView(view) {
   currentView = view;
   document.getElementById('btn-tabs').classList.toggle('active', view === 'tabs');

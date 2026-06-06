@@ -1005,6 +1005,11 @@
             </div>
             <button type="button" class="xf-clear-btn" id="xf-clear" onclick="clearFilters()">✕ Clear</button>
           </div>
+          <div class="sr-field" style="margin-top:12px;margin-bottom:0">
+            <label class="sr-label">Locality <span class="opt">optional</span></label>
+            <div class="sr-hint" style="margin:-4px 0 8px"><span class="sr-i">i</span> Village, suburb, or local area — shown as &ldquo;From [Locality], [Region], [Country]&rdquo; on the recipe page.</div>
+            <input class="sr-input" type="text" id="origin-locality" maxlength="120" placeholder="e.g. Fort Kochi, Lygon Street, Tuscany countryside">
+          </div>
           <div class="state-nudge-hint" id="state-nudge-hint">
             &#9888;&#65039; A state or regional category has not yet been selected for <b id="nudge-country-name">this country</b>.
             Please select the appropriate state or region to continue, as recipes without a specified region may not appear
@@ -3103,6 +3108,7 @@ function collectFormData() {
     origin_continent:     window.fContinent || '',
     origin_country:       window.fCountry   || '',
     origin_state:         window.fState     || '',
+    origin_locality:      (document.getElementById('origin-locality')?.value || '').trim(),
     introduction:         (document.getElementById('introduction')?.value      || '').trim(),
     image_url:            window.uploadedImageUrl || '',
     prep_time_minutes:    document.getElementById('prep-time')?.value.trim()   || '',
@@ -3172,6 +3178,7 @@ function restoreDraft(raw) {
   setVal('credit-name',     d.credit_name);
   setVal('credit-handle',   d.credit_handle);
   setVal('credit-url',      d.credit_url);
+  setVal('origin-locality', d.origin_locality);
 
   // Radios
   setRadio('category',    d.category);
