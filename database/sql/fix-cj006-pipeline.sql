@@ -20,8 +20,8 @@ ALTER TABLE public.submitted_recipes
 DROP POLICY IF EXISTS "Users can update own submissions" ON public.submitted_recipes;
 CREATE POLICY "Users can update own submissions"
   ON public.submitted_recipes FOR UPDATE TO authenticated
-  USING (auth.uid() = user_id AND status IN ('pending', 'rejected'))
-  WITH CHECK (auth.uid() = user_id AND status = 'pending');
+  USING (auth.uid() = user_id::uuid AND status IN ('pending', 'rejected'))
+  WITH CHECK (auth.uid() = user_id::uuid AND status = 'pending');
 
 DROP FUNCTION IF EXISTS public.get_public_recipe(uuid);
 

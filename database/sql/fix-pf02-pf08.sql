@@ -1,7 +1,36 @@
 -- PF-02: Pantry unknown ingredient/unit submission loop
 -- PF-08: Recipe suggestions from pantry names (v1 name matching)
 
--- Extend pending_ingredients for pantry submissions
+-- Ensure table exists (live DB may predate admin_rpcs.sql)
+CREATE TABLE IF NOT EXISTS public.pending_ingredients (
+  id              bigserial PRIMARY KEY,
+  ingredient_name text NOT NULL,
+  submitted_by    uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  recipe_id       uuid,
+  status          text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','added','dismissed')),
+  created_at      timestamptz NOT NULL DEFAULT NOW()
+);
+
+-- Live fix: submitted_by was sometimes created as text — policies need uuid
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+     WHERE table_schema = 'public'
+       AND table_name = 'pending_ingredients'
+       AND column_name = 'submitted_by'
+       AND udt_name = 'text'
+  ) THEN
+    UPDATE public.pending_ingredients
+       SET submitted_by = NULL
+     WHERE submitted_by IS NOT NULL
+       AND trim(submitted_by) !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+    ALTER TABLE public.pending_ingredients
+      ALTER COLUMN submitted_by TYPE uuid
+      USING NULLIF(trim(submitted_by::text), '')::uuid;
+  END IF;
+END $$;
+
 ALTER TABLE public.pending_ingredients
   ADD COLUMN IF NOT EXISTS unit_name text,
   ADD COLUMN IF NOT EXISTS submission_type text NOT NULL DEFAULT 'ingredient',
@@ -12,7 +41,7 @@ ALTER TABLE public.pending_ingredients
 DROP POLICY IF EXISTS "users submit pending ingredients" ON public.pending_ingredients;
 CREATE POLICY "users submit pending ingredients" ON public.pending_ingredients
   FOR INSERT TO authenticated
-  WITH CHECK (submitted_by = auth.uid());
+  WITH CHECK (submitted_by::uuid = auth.uid());
 
 DROP FUNCTION IF EXISTS public.submit_pending_ingredient(text, text, text, text, text);
 CREATE OR REPLACE FUNCTION public.submit_pending_ingredient(
@@ -34,7 +63,7 @@ BEGIN
   IF p_type NOT IN ('ingredient', 'unit') THEN RAISE EXCEPTION 'invalid_type'; END IF;
   IF EXISTS (
     SELECT 1 FROM public.pending_ingredients
-     WHERE submitted_by = auth.uid()
+     WHERE submitted_by::uuid = auth.uid()
        AND status = 'pending'
        AND lower(ingredient_name) = lower(v_name)
        AND COALESCE(submission_type, 'ingredient') = p_type
@@ -70,7 +99,7 @@ BEGIN
              pi.notes,
              prof.username AS submitted_by_username
         FROM public.pending_ingredients pi
-        LEFT JOIN public.profiles prof ON prof.id = pi.submitted_by
+        LEFT JOIN public.profiles prof ON prof.id = pi.submitted_by::uuid
        WHERE pi.status = 'pending'
     ) p),
     '[]'::jsonb

@@ -467,7 +467,7 @@ CREATE POLICY "admin manages pending ingredients" ON pending_ingredients FOR ALL
   USING (is_admin()) WITH CHECK (is_admin());
 DROP POLICY IF EXISTS "users submit pending ingredients" ON pending_ingredients;
 CREATE POLICY "users submit pending ingredients" ON pending_ingredients FOR INSERT TO authenticated
-  WITH CHECK (submitted_by = auth.uid());
+  WITH CHECK (submitted_by::uuid = auth.uid());
 
 DROP FUNCTION IF EXISTS public.submit_pending_ingredient(text, text, text, text, text);
 CREATE FUNCTION public.submit_pending_ingredient(
@@ -481,7 +481,7 @@ BEGIN
   v_name := trim(COALESCE(p_name, ''));
   IF v_name = '' THEN RAISE EXCEPTION 'name_required'; END IF;
   IF p_type NOT IN ('ingredient', 'unit') THEN RAISE EXCEPTION 'invalid_type'; END IF;
-  IF EXISTS (SELECT 1 FROM pending_ingredients WHERE submitted_by = auth.uid() AND status = 'pending'
+  IF EXISTS (SELECT 1 FROM pending_ingredients WHERE submitted_by::uuid = auth.uid() AND status = 'pending'
     AND lower(ingredient_name) = lower(v_name) AND COALESCE(submission_type, 'ingredient') = p_type) THEN
     RAISE EXCEPTION 'already_pending';
   END IF;
@@ -604,7 +604,7 @@ BEGIN
            COALESCE(pi.submission_type, 'ingredient') AS submission_type,
            pi.unit_name, pi.category, pi.notes,
            prof.username AS submitted_by_username
-    FROM pending_ingredients pi LEFT JOIN profiles prof ON prof.id = pi.submitted_by
+    FROM pending_ingredients pi LEFT JOIN profiles prof ON prof.id = pi.submitted_by::uuid
     WHERE pi.status = 'pending'
   ) p), '[]'::jsonb);
 END; $$;
