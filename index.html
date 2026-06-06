@@ -20,6 +20,33 @@
   <meta name="twitter:title" content="The Culinary Journal — Your Complete Culinary Life">
   <meta name="twitter:description" content="Browse recipes, plan meals, host events, print cookbooks, and keep your culinary diary.">
   <meta name="twitter:image" content="https://theculinaryjournal.site/og-image.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://theculinaryjournal.site/#organization",
+        "name": "The Culinary Journal",
+        "url": "https://theculinaryjournal.site/",
+        "logo": "https://theculinaryjournal.site/favicon.svg",
+        "description": "Your complete culinary life in one place — recipes, meal planning, pantry, grocery lists, print studio, and culinary diary."
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://theculinaryjournal.site/#website",
+        "url": "https://theculinaryjournal.site/",
+        "name": "The Culinary Journal",
+        "publisher": { "@id": "https://theculinaryjournal.site/#organization" },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://theculinaryjournal.site/recipes.html?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  }
+  </script>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="manifest" href="site.webmanifest">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">

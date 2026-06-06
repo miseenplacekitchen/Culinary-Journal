@@ -75,9 +75,30 @@
     .gl-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--text-high); margin-bottom:6px; }
     .gl-empty-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-bottom:20px; }
 
+    /* Shop mode (GL-06) */
+    .gl-shop-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px; padding:14px 16px; background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; }
+    .gl-shop-progress { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); font-weight:600; }
+    .gl-shop-progress span { color:var(--accent); }
+    .gl-shop-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .gl-shop-btn { padding:10px 16px; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; cursor:pointer; border:none; }
+    .gl-shop-btn-undo { background:none; border:1px solid var(--border); color:var(--text-mid); }
+    .gl-shop-btn-complete { background:#4caf76; color:#fff; }
+    .gl-shop-item { display:flex; align-items:center; gap:14px; padding:16px 18px; border-bottom:1px solid rgba(from var(--border) r g b / 0.4); cursor:pointer; min-height:52px; }
+    .gl-shop-item:active { background:var(--text-ghost); }
+    .gl-shop-check { width:32px; height:32px; border-radius:50%; border:2px solid var(--accent); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:16px; color:var(--accent); }
+    .gl-shop-item.in-trolley .gl-shop-check { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .gl-trolley-toggle { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); cursor:pointer; padding:8px 18px; background:var(--text-ghost); border:none; width:100%; text-align:left; }
+    .gl-trolley-body { display:none; }
+    .gl-trolley-body.open { display:block; }
+    .gl-store-bar { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; align-items:center; }
+    .gl-store-chip { padding:6px 12px; border-radius:20px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); cursor:pointer; }
+    .gl-store-chip.active { background:rgb(from var(--accent) r g b / 0.15); border-color:var(--accent); color:var(--accent); font-weight:600; }
+    .gl-store-chip-manage { border-style:dashed; }
+
     /* Print */
     @media print {
-      nav, .gl-actions, .gl-tabs, .gl-remove-recipe, .gl-check { display:none!important; }
+      body::before { content:'The Culinary Journal'; display:block; text-align:center; font-family:'Cormorant Garamond',serif; font-size:14px; color:#8b6914; padding:12px 0 8px; border-bottom:1px solid #e8e0d0; margin-bottom:12px; }
+      nav, .gl-actions, .gl-tabs, .gl-filter-bar, .gl-shop-bar, .gl-store-bar, .gl-remove-recipe, .gl-check, .gl-trolley-toggle { display:none!important; }
       .page-bg { background:white!important; }
       .gl-item-name, .gl-item-qty, .gl-recipe-name { color:#000!important; }
       .gl-item.checked { display:none; }
@@ -110,6 +131,7 @@
   <div class="gl-tabs">
     <button class="gl-tab active" id="tab-by-recipe" onclick="switchTab('recipe',this)">By Recipe</button>
     <button class="gl-tab" id="tab-combined" onclick="switchTab('combined',this)">Combined Shopping List</button>
+    <button class="gl-tab" id="tab-shop" onclick="switchTab('shop',this)">🛍 Shop Mode</button>
   </div>
 
   <div class="gl-filter-bar">
@@ -119,6 +141,20 @@
 
   <div id="view-recipe"></div>
   <div id="view-combined" style="display:none"></div>
+  <div id="view-shop" style="display:none"></div>
+</div>
+
+<div class="gl-modal" id="gl-store-modal">
+  <div class="gl-modal-box" style="max-width:440px">
+    <div class="gl-modal-title">Store aisle order</div>
+    <p style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin:0 0 12px">Drag categories into your store's walking order. Saved per store profile.</p>
+    <div class="gl-field"><label>Store name</label><input id="gl-store-name" placeholder="e.g. Coles Main St"></div>
+    <div id="gl-aisle-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px"></div>
+    <div class="gl-modal-actions">
+      <button class="gl-btn gl-btn-ghost" onclick="closeStoreModal()">Cancel</button>
+      <button class="gl-btn gl-btn-primary" onclick="saveStoreProfile()">Save</button>
+    </div>
+  </div>
 </div>
 
 <div class="gl-modal" id="gl-add-modal">
@@ -273,6 +309,61 @@ function saveList(list){ GroceryUtils.saveGrocery(list); scheduleSyncToSupabase(
 function getChecked(){ try{return JSON.parse(localStorage.getItem('tcj_grocery_checked')||'[]');}catch(_){return[];} }
 function setChecked(arr){ localStorage.setItem('tcj_grocery_checked',JSON.stringify(arr)); scheduleSyncToSupabase(); }
 
+let glUndoStack = [];
+let glStoreFilter = 'all';
+let glTrolleyOpen = false;
+
+function getLastStore(){ try{return localStorage.getItem('tcj_grocery_last_store')||'';}catch(_){return'';} }
+function setLastStore(s){ try{if(s)localStorage.setItem('tcj_grocery_last_store',s);}catch(_){} }
+
+function getStoreProfiles(){
+  try {
+    var p = JSON.parse(localStorage.getItem('tcj_store_profiles')||'[]');
+    return Array.isArray(p) ? p : [];
+  } catch(_) { return []; }
+}
+function saveStoreProfiles(profiles){ localStorage.setItem('tcj_store_profiles', JSON.stringify(profiles)); }
+
+function getAisleOrder(storeName){
+  var profiles = getStoreProfiles();
+  var prof = profiles.find(function(p){ return p.name === storeName; });
+  if (prof && prof.aisles && prof.aisles.length) return prof.aisles;
+  return CATEGORY_ORDER.slice();
+}
+
+function listStores(){
+  var stores = new Set();
+  getList().items.forEach(function(i){ if(i.store) stores.add(i.store); });
+  getList().recipes.forEach(function(r){
+    (r.ingredients||[]).forEach(function(i){ if(i.store) stores.add(i.store); });
+  });
+  getStoreProfiles().forEach(function(p){ if(p.name) stores.add(p.name); });
+  return Array.from(stores).sort();
+}
+
+function pushUndo(key){
+  glUndoStack.push(key);
+  if (glUndoStack.length > 8) glUndoStack.shift();
+}
+
+function undoLastCheck(){
+  if (!glUndoStack.length) { alert('Nothing to undo.'); return; }
+  var key = glUndoStack.pop();
+  var checked = getChecked();
+  var idx = checked.indexOf(key);
+  if (idx > -1) { checked.splice(idx, 1); setChecked(checked); }
+  render();
+}
+
+function completeTrip(){
+  var checked = getChecked();
+  if (!checked.length) { alert('Check off items as you shop, then complete your trip.'); return; }
+  if (!confirm('Complete trip? ' + checked.length + ' checked item(s) will be archived.')) return;
+  archiveChecked();
+  glUndoStack = [];
+  glTrolleyOpen = false;
+}
+
 function sourceBadgeHtml(source, label){
   if (!source || source === 'recipe') return '';
   var text = GroceryUtils.sourceBadge(source);
@@ -284,7 +375,7 @@ function openAddItemModal(){
   document.getElementById('gl-add-name').value = '';
   document.getElementById('gl-add-qty').value = '';
   document.getElementById('gl-add-unit').value = '';
-  document.getElementById('gl-add-store').value = '';
+  document.getElementById('gl-add-store').value = getLastStore();
   document.getElementById('gl-ingredient-id').value = '';
   var hint = document.getElementById('gl-add-hint');
   if (hint) { hint.style.display = 'none'; hint.textContent = ''; }
@@ -366,8 +457,27 @@ function submitAddItem(){
       source: 'manual', source_label: 'Manual'
     }, { source: 'manual', source_label: 'Manual' }));
   }
+  if (store) setLastStore(store);
   saveList(list);
   closeAddItemModal();
+  render();
+}
+
+function editItemStore(itemId, recipeId){
+  var list = getList();
+  var item = null;
+  if (recipeId) {
+    var recipe = list.recipes.find(function(r){ return r.id === recipeId; });
+    if (recipe) item = (recipe.ingredients || []).find(function(i){ return i.id === itemId; });
+  } else {
+    item = list.items.find(function(i){ return i.id === itemId; });
+  }
+  if (!item) return;
+  var store = prompt('Store for ' + item.name + ' (leave blank for any store)', item.store || getLastStore() || '');
+  if (store === null) return;
+  item.store = store.trim();
+  if (item.store) setLastStore(item.store);
+  saveList(list);
   render();
 }
 
@@ -417,21 +527,78 @@ function archiveChecked(){
   render();
 }
 
-function currentTab(){ return document.getElementById('tab-by-recipe').classList.contains('active')?'recipe':'combined'; }
+function currentTab(){
+  if (document.getElementById('tab-shop').classList.contains('active')) return 'shop';
+  if (document.getElementById('tab-combined').classList.contains('active')) return 'combined';
+  return 'recipe';
+}
 
 function switchTab(tab, btn){
   document.querySelectorAll('.gl-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('view-recipe').style.display = tab==='recipe'?'block':'none';
   document.getElementById('view-combined').style.display = tab==='combined'?'block':'none';
+  document.getElementById('view-shop').style.display = tab==='shop'?'block':'none';
+  document.querySelector('.gl-filter-bar').style.display = tab==='shop'?'none':'flex';
   render();
 }
 
-function toggleItem(key){
+function toggleItem(key, fromShop){
   const checked = getChecked();
   const idx = checked.indexOf(key);
-  if(idx>-1) checked.splice(idx,1); else checked.push(key);
+  if(idx>-1) checked.splice(idx,1);
+  else { checked.push(key); if (fromShop) pushUndo(key); }
   setChecked(checked);
+  render();
+}
+
+function setStoreFilter(store, btn){
+  glStoreFilter = store;
+  document.querySelectorAll('.gl-store-chip').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  render();
+}
+
+function openStoreModal(){
+  var name = glStoreFilter !== 'all' ? glStoreFilter : (getLastStore() || '');
+  document.getElementById('gl-store-name').value = name;
+  renderAisleEditor(getAisleOrder(name));
+  document.getElementById('gl-store-modal').classList.add('open');
+}
+function closeStoreModal(){ document.getElementById('gl-store-modal').classList.remove('open'); }
+
+function renderAisleEditor(order){
+  var el = document.getElementById('gl-aisle-list');
+  el.innerHTML = order.map(function(cat, i){
+    return '<div class="gl-aisle-row" draggable="true" data-idx="'+i+'" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--text-ghost);border:1px solid var(--border);border-radius:8px;cursor:grab;font-family:DM Sans,sans-serif;font-size:12px">' +
+      '<span style="color:var(--text-mid)">☰</span><span style="flex:1">'+esc(cat)+'</span></div>';
+  }).join('');
+  var dragIdx = null;
+  el.querySelectorAll('.gl-aisle-row').forEach(function(row){
+    row.addEventListener('dragstart', function(){ dragIdx = parseInt(row.dataset.idx,10); });
+    row.addEventListener('dragover', function(e){ e.preventDefault(); });
+    row.addEventListener('drop', function(e){
+      e.preventDefault();
+      var toIdx = parseInt(row.dataset.idx,10);
+      if (dragIdx === null || dragIdx === toIdx) return;
+      var order = getAisleOrder(document.getElementById('gl-store-name').value.trim());
+      var moved = order.splice(dragIdx, 1)[0];
+      order.splice(toIdx, 0, moved);
+      renderAisleEditor(order);
+    });
+  });
+}
+
+function saveStoreProfile(){
+  var name = document.getElementById('gl-store-name').value.trim();
+  if (!name) { alert('Enter a store name.'); return; }
+  var rows = document.querySelectorAll('#gl-aisle-list .gl-aisle-row');
+  var aisles = Array.from(rows).map(function(r){ return r.querySelector('span:last-child').textContent; });
+  var profiles = getStoreProfiles().filter(function(p){ return p.name !== name; });
+  profiles.push({ name: name, aisles: aisles });
+  saveStoreProfiles(profiles);
+  setLastStore(name);
+  closeStoreModal();
   render();
 }
 
@@ -491,11 +658,99 @@ function exportPlainText() {
   }
 }
 
+function collectShopEntries(list){
+  var entries = [];
+  list.recipes.forEach(function(recipe){
+    (recipe.ingredients||[]).forEach(function(ing){
+      if (shouldHideGroceryItem(ing.name)) return;
+      entries.push({
+        key: GroceryUtils.itemCheckKey(ing, recipe.id),
+        name: ing.name, qty: ing.qty, unit: ing.unit || '', category: ing.category || 'Other',
+        store: ing.store || '', recipe: recipe.name
+      });
+    });
+  });
+  (list.items||[]).forEach(function(ing){
+    if (shouldHideGroceryItem(ing.name)) return;
+    entries.push({
+      key: GroceryUtils.itemCheckKey(ing),
+      name: ing.name, qty: ing.qty, unit: ing.unit || '', category: ing.category || 'Other',
+      store: ing.store || '', recipe: 'Manual'
+    });
+  });
+  if (glStoreFilter !== 'all') {
+    entries = entries.filter(function(e){
+      return !e.store || e.store.toLowerCase() === glStoreFilter.toLowerCase();
+    });
+  }
+  return entries;
+}
+
 function render(){
   const list = getList();
   const tab  = currentTab();
   if(tab==='recipe') renderByRecipe(list);
-  else renderCombined(list);
+  else if(tab==='combined') renderCombined(list);
+  else renderShop(list);
+}
+
+function renderShop(list){
+  var el = document.getElementById('view-shop');
+  var entries = collectShopEntries(list);
+  if (!entries.length) {
+    el.innerHTML = '<div class="gl-empty"><div class="gl-empty-icon">🛍</div><div class="gl-empty-title">Nothing to shop for</div><div class="gl-empty-sub">Add items or switch store filter to All.</div></div>';
+    return;
+  }
+  var checked = getChecked();
+  var unchecked = entries.filter(function(e){ return !checked.includes(e.key); });
+  var inTrolley = entries.filter(function(e){ return checked.includes(e.key); });
+  var done = inTrolley.length;
+  var total = entries.length;
+  var storeName = glStoreFilter !== 'all' ? glStoreFilter : (getLastStore() || 'Default');
+  var aisleOrder = getAisleOrder(glStoreFilter !== 'all' ? glStoreFilter : storeName);
+  function sortByAisle(arr){
+    return arr.slice().sort(function(a,b){
+      var ai = aisleOrder.indexOf(a.category); if (ai < 0) ai = 999;
+      var bi = aisleOrder.indexOf(b.category); if (bi < 0) bi = 999;
+      if (ai !== bi) return ai - bi;
+      return a.name.localeCompare(b.name);
+    });
+  }
+  unchecked = sortByAisle(unchecked);
+  var stores = listStores();
+  var storeBar = '<div class="gl-store-bar"><button class="gl-store-chip'+(glStoreFilter==='all'?' active':'')+'" data-store="all">All stores</button>';
+  stores.forEach(function(s){
+    storeBar += '<button class="gl-store-chip'+(glStoreFilter===s?' active':'')+'" data-store="'+esc(s)+'">'+esc(s)+'</button>';
+  });
+  storeBar += '<button class="gl-store-chip gl-store-chip-manage" type="button" id="gl-aisle-manage">⚙ Aisle order</button></div>';
+  var bar = '<div class="gl-shop-bar"><div class="gl-shop-progress"><span>'+done+'</span> / '+total+' in trolley</div>' +
+    '<div class="gl-shop-actions">' +
+    '<button class="gl-shop-btn gl-shop-btn-undo" onclick="undoLastCheck()">↩ Undo</button>' +
+    '<button class="gl-shop-btn gl-shop-btn-complete" onclick="completeTrip()">✓ Complete trip</button></div></div>';
+  var html = storeBar + bar;
+  var lastCat = '';
+  unchecked.forEach(function(e){
+    if (e.category !== lastCat) {
+      html += '<div class="gl-category-header">'+esc(e.category)+'</div>';
+      lastCat = e.category;
+    }
+    html += '<div class="gl-shop-item" data-shop-key="'+esc(e.key)+'">' +
+      '<div class="gl-shop-check"></div>' +
+      '<div style="flex:1"><div class="gl-item-name">'+esc(e.name)+'</div>' +
+      '<div style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid)">'+esc(fmtQty(e.qty))+' '+esc(e.unit)+(e.store?' · @ '+esc(e.store):'')+'</div></div></div>';
+  });
+  if (inTrolley.length) {
+    html += '<button class="gl-trolley-toggle" onclick="glTrolleyOpen=!glTrolleyOpen;render()">🛒 In trolley ('+inTrolley.length+') '+(glTrolleyOpen?'▲':'▼')+'</button>';
+    html += '<div class="gl-trolley-body'+(glTrolleyOpen?' open':'')+'">';
+    inTrolley.forEach(function(e){
+      html += '<div class="gl-shop-item in-trolley" data-shop-key="'+esc(e.key)+'">' +
+        '<div class="gl-shop-check">✓</div>' +
+        '<div style="flex:1;text-decoration:line-through;opacity:0.7"><div class="gl-item-name">'+esc(e.name)+'</div>' +
+        '<div style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid)">'+esc(fmtQty(e.qty))+' '+esc(e.unit)+'</div></div></div>';
+    });
+    html += '</div>';
+  }
+  el.innerHTML = html;
 }
 
 function renderItemRow(ing, recipeId, checked, manualRemove){
@@ -505,7 +760,7 @@ function renderItemRow(ing, recipeId, checked, manualRemove){
   var isChecked = checked.includes(key) || (legacyKey && checked.includes(legacyKey));
   var pinfo = pantryInfoFor(ing.name);
   var extraCls = (pinfo && pinfo.isStaple ? ' is-staple' : '') + (pinfo && pinfo.inPantry ? ' in-pantry' : '');
-  var storeTag = ing.store ? '<span class="gl-store-tag">@ ' + esc(ing.store) + '</span>' : '';
+  var storeTag = ing.store ? '<span class="gl-store-tag" data-store-id="' + esc(ing.id) + '" data-store-recipe="' + esc(recipeId || '') + '" title="Click to change store">@ ' + esc(ing.store) + '</span>' : '<span class="gl-store-tag" data-store-id="' + esc(ing.id) + '" data-store-recipe="' + esc(recipeId || '') + '" title="Assign store" style="opacity:0.5">+ store</span>';
   var removeBtn = manualRemove ? '<button class="gl-remove-recipe" data-remove-manual="' + esc(ing.id) + '">×</button>' : '';
   return '<div class="gl-item' + (isChecked ? ' checked' : '') + extraCls + '">' +
     '<input type="checkbox" class="gl-check" ' + (isChecked ? 'checked' : '') + ' data-key="' + esc(key) + '">' +
@@ -644,6 +899,8 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('view-recipe').addEventListener('click', function(e){
     const cb = e.target.closest('.gl-check[data-key]');
     if(cb) { toggleItem(cb.dataset.key); return; }
+    const st = e.target.closest('[data-store-id]');
+    if(st && st.dataset.storeId) { editItemStore(st.dataset.storeId, st.dataset.storeRecipe || null); return; }
     const qty = e.target.closest('[data-edit-id]');
     if(qty && qty.dataset.editId) { editItemQty(qty.dataset.editId, qty.dataset.recipeId || null); return; }
     const rb = e.target.closest('[data-remove-id]');
@@ -654,6 +911,16 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('view-combined').addEventListener('click', function(e){
     const cb = e.target.closest('[data-key]');
     if(cb) toggleItem(cb.dataset.key);
+  });
+  document.getElementById('view-shop').addEventListener('click', function(e){
+    var chip = e.target.closest('.gl-store-chip[data-store]');
+    if (chip) { setStoreFilter(chip.dataset.store, chip); return; }
+    if (e.target.closest('#gl-aisle-manage')) { openStoreModal(); return; }
+    var row = e.target.closest('[data-shop-key]');
+    if (row) toggleItem(row.dataset.shopKey, true);
+  });
+  document.getElementById('gl-store-modal').addEventListener('click', function(e){
+    if (e.target === e.currentTarget) closeStoreModal();
   });
   document.getElementById('gl-add-modal').addEventListener('click', function(e){
     if (e.target === e.currentTarget) closeAddItemModal();

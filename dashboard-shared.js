@@ -199,28 +199,69 @@ async function loadDashboard() {
     }
   } catch(e) { console.warn('dash rotw', e); }
 
-  // ── Needs Attention ──────────────────────────────────────
+  // ── Admin Inbox ─────────────────────────────────────────
   try {
     var attEl = document.getElementById('dash-attention');
     if (attEl) {
+      function asList(v) {
+        if (Array.isArray(v)) return v;
+        if (v && typeof v === 'object') return Object.values(v);
+        return [];
+      }
       var pending = parseInt((document.getElementById('dash-pending')||{}).textContent)||0;
+      var inbox = await Promise.all([
+        rpc('admin_get_appeals', {}).catch(function(){ return []; }),
+        rpc('admin_get_reports', {p_status:'pending', p_limit:200, p_offset:0}).catch(function(){ return []; }),
+        rpc('admin_get_pending_notes', {}).catch(function(){ return []; }),
+        rpc('admin_get_pending_ingredients', {}).catch(function(){ return []; }),
+        rpc('admin_count_pending_users', {}).catch(function(){ return 0; }),
+        rpc('admin_get_audit_log', {p_limit:5, p_offset:0}).catch(function(){ return []; })
+      ]);
+      var appealCount = asList(inbox[0]).filter(function(a){ return a.status === 'pending'; }).length;
+      var reportCount = asList(inbox[1]).length;
+      var noteCount = asList(inbox[2]).length;
+      var ingCount = asList(inbox[3]).length;
+      var pendingUsers = parseInt(inbox[4]) || 0;
+      var auditRows = asList(inbox[5]);
+      setEl('rtab-badge-notes', noteCount);
+      setEl('badge-pending-users', pendingUsers);
       var items = [];
       if (pending > 0)
-        items.push({icon:'&#9203;',color:'#d4a017',text:pending+' recipe'+(pending===1?' needs':' need')+' review',action:"switchView('recipe-mgmt');switchRecipeTab('pending')",label:'Review Now'});
+        items.push({icon:'&#9203;',color:'#d4a017',text:pending+' recipe'+(pending===1?'':'s')+' pending review',action:"switchView('recipe-mgmt');switchRecipeTab('pending')",label:'Review'});
+      if (noteCount > 0)
+        items.push({icon:'&#128221;',color:'#d4a017',text:noteCount+' cooking tip'+(noteCount===1?'':'s')+' awaiting approval',action:"switchView('recipe-mgmt');switchRecipeTab('notes')",label:'Review'});
+      if (ingCount > 0)
+        items.push({icon:'&#127807;',color:'#4caf76',text:ingCount+' ingredient submission'+(ingCount===1?'':'s')+' to review',action:"switchView('ingredients');switchIngTab('pending')",label:'Review'});
+      if (appealCount > 0)
+        items.push({icon:'&#128231;',color:'#5B8FD4',text:appealCount+' deactivation appeal'+(appealCount===1?'':'s')+' waiting',action:"localStorage.setItem('tcj_active_um_tab','reports');switchView('user-mgmt');switchUserTab('umsettings')",label:'View'});
+      if (reportCount > 0)
+        items.push({icon:'&#9888;',color:'#dc5050',text:reportCount+' member report'+(reportCount===1?'':'s')+' open',action:"localStorage.setItem('tcj_active_um_tab','reports');switchView('user-mgmt');switchUserTab('umsettings')",label:'View'});
+      if (pendingUsers > 0)
+        items.push({icon:'&#128100;',color:'#d4a017',text:pendingUsers+' new member'+(pendingUsers===1?'':'s')+' awaiting approval',action:"switchView('user-mgmt');switchUserTab('pending')",label:'Review'});
       var rotwSet = !!(document.getElementById('dash-rotw')||{}).querySelector && document.getElementById('dash-rotw').querySelector('button[onclick*="openRecipeModal"]');
       if (!rotwSet)
         items.push({icon:'&#127942;',color:'#5B8FD4',text:'Recipe of the Week is not set',action:"switchView('recipe-mgmt');switchRecipeTab('rmsettings')",label:'Set Now'});
       if (!items.length)
-        items.push({icon:'&#10003;',color:'#4caf76',text:'Everything looks good — no pending actions.',action:null,label:null});
-      attEl.innerHTML = items.map(function(item){
+        items.push({icon:'&#10003;',color:'#4caf76',text:'Inbox clear — no pending actions.',action:null,label:null});
+      var html = items.map(function(item){
         return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,0.04)">' +
           '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:14px">'+item.icon+'</span>' +
           '<span style="font-family:DM Sans,sans-serif;font-size:13px;color:'+item.color+'">'+item.text+'</span></div>'+
           (item.action?'<button onclick="'+item.action+'" style="padding:4px 12px;background:none;border:1px solid '+item.color+';border-radius:6px;color:'+item.color+';font-family:DM Sans,sans-serif;font-size:11px;cursor:pointer;flex-shrink:0">'+item.label+'</button>':'')+
           '</div>';
       }).join('');
+      if (auditRows.length) {
+        html += '<div style="padding:10px 18px 4px;font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid)">Recent activity</div>';
+        html += auditRows.slice(0,4).map(function(row){
+          var when = row.created_at ? new Date(row.created_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+          return '<div style="padding:6px 18px 6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid);border-bottom:1px solid rgba(255,255,255,0.03)">' +
+            esc(row.action || row.event_type || 'Action') + (row.target ? ' · ' + esc(row.target) : '') +
+            '<span style="float:right;opacity:0.7">'+esc(when)+'</span></div>';
+        }).join('');
+      }
+      attEl.innerHTML = html;
     }
-  } catch(e) { console.warn('dash attention', e); }
+  } catch(e) { console.warn('dash inbox', e); }
 }
 
 async function init() {

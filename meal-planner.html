@@ -80,8 +80,13 @@
     .mp-status-btn:hover { border-color:var(--accent); color:var(--accent); }
     .mp-today { margin-bottom:18px; padding:14px 16px; background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; }
     .mp-today-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mid); margin-bottom:10px; }
-    .mp-today-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 0; border-bottom:1px solid rgba(from var(--border) r g b / 0.35); font-family:'DM Sans',sans-serif; font-size:12px; }
+    .mp-today-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 0; border-bottom:1px solid rgba(from var(--border) r g b / 0.35); font-family:'DM Sans',sans-serif; font-size:12px; }
     .mp-today-row:last-child { border-bottom:none; }
+    .mp-today-row.dinner-focus { background:rgb(from var(--accent) r g b / 0.08); margin:0 -8px; padding:10px 8px; border-radius:8px; border-bottom:none; }
+    .mp-today-actions { display:flex; gap:4px; flex-wrap:wrap; }
+    .mp-today-preview { margin-top:12px; padding-top:10px; border-top:1px dashed rgba(from var(--border) r g b / 0.5); font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
+    .mp-slot-gear { position:absolute; bottom:4px; left:4px; background:none; border:none; color:var(--text-mid); cursor:pointer; font-size:11px; padding:0 2px; }
+    .mp-slot-gear:hover { color:var(--accent); }
 
     /* Weekly summary */
     .mp-summary { margin-top:20px; background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:18px 20px; }
@@ -299,11 +304,50 @@ function getSlot(day, meal) {
   return plan[day] ? plan[day][meal] : null;
 }
 
+function normalizeSlot(raw, meal) {
+  if (!raw) return null;
+  var rid = raw.recipe_id || raw.id;
+  return Object.assign({}, raw, {
+    recipe_id: rid,
+    id: rid,
+    meal_type: raw.meal_type || meal,
+    status: raw.status || 'planned',
+    assignee: raw.assignee || null,
+    servings_override: raw.servings_override != null ? raw.servings_override : (raw.servings != null ? raw.servings : null),
+    note: raw.note || '',
+    source_meal_id: raw.source_meal_id || null
+  });
+}
+
 function setSlot(day, meal, recipe) {
   const plan = getPlan();
   if (!plan[day]) plan[day] = {};
-  plan[day][meal] = recipe;
+  plan[day][meal] = normalizeSlot(recipe, meal);
   savePlan(plan);
+}
+
+function openSlotSettings(day, meal, e) {
+  if (e) e.stopPropagation();
+  var slot = getSlot(day, meal);
+  if (!slot) return;
+  var serves = prompt('Servings for this meal (override recipe default)', slot.servings_override != null ? String(slot.servings_override) : '');
+  if (serves === null) return;
+  var assignee = slot.assignee || '';
+  if (familyProfiles.length) {
+    var names = familyProfiles.map(function(p){ return p.name; }).join(', ');
+    var pick = prompt('Who is this meal for? (family member name, or leave blank)\n\nProfiles: ' + names, assignee);
+    if (pick === null) return;
+    assignee = pick.trim();
+  }
+  var note = prompt('Meal note (optional)', slot.note || '');
+  if (note === null) return;
+  var updated = Object.assign({}, slot, {
+    servings_override: serves.trim() ? parseFloat(serves) || serves.trim() : null,
+    assignee: assignee || null,
+    note: note.trim()
+  });
+  setSlot(day, meal, updated);
+  renderCalendar();
 }
 
 function clearSlot(day, meal) {
@@ -396,8 +440,12 @@ function renderCalendar() {
         const emoji = CAT_EMOJI[recipe.category] || '🍽';
         var conflicts = checkRecipeConflicts(recipe);
         var statusLabel = {cooked:'✓ Cooked',skipped:'— Skipped','eating-out':'🍽 Out',leftovers:'🥡 Leftovers'}[st] || '';
-        card.innerHTML = '<div class="mp-recipe-name">' + emoji + ' ' + esc(recipe.name||'') + '</div>' +
+        var serveNote = recipe.servings_override ? ' · ' + esc(String(recipe.servings_override)) + ' serves' : '';
+        var assigneeNote = recipe.assignee ? '<div class="mp-status-label">👤 ' + esc(recipe.assignee) + '</div>' : '';
+        var mealNote = recipe.note ? '<div class="mp-status-label" style="font-style:italic">"' + esc(recipe.note) + '"</div>' : '';
+        card.innerHTML = '<div class="mp-recipe-name">' + emoji + ' ' + esc(recipe.name||'') + serveNote + '</div>' +
           '<div class="mp-recipe-cat">' + esc(recipe.category||'') + '</div>' +
+          assigneeNote + mealNote +
           (statusLabel ? '<div class="mp-status-label">' + statusLabel + '</div>' : '') +
           (conflicts.length ? '<div class="mp-member-flags">' + conflicts.slice(0,2).map(function(c){return '<span class="mp-member-flag warn">⚠ '+esc(c)+'</span>';}).join('') + '</div>' : '') +
           '<div class="mp-status-btns">' +
@@ -406,7 +454,10 @@ function renderCalendar() {
             (st !== 'eating-out' ? '<button class="mp-status-btn" data-st="eating-out">Out</button>' : '') +
             (st !== 'leftovers' ? '<button class="mp-status-btn" data-st="leftovers">Left</button>' : '') +
           '</div>' +
+          '<button class="mp-slot-gear" title="Servings, assignee, note">⚙</button>' +
           '<button class="mp-recipe-remove" title="Remove">×</button>';
+        var gearBtn = card.querySelector('.mp-slot-gear');
+        if (gearBtn) gearBtn.addEventListener('click', function(ev) { openSlotSettings(day, meal, ev); });
         card.querySelector('.mp-recipe-remove').addEventListener('click', function(e) {
           e.stopPropagation(); clearSlot(day, meal); renderCalendar();
         });
@@ -456,13 +507,44 @@ function renderTodayPanel() {
   });
   if (!rows.length) { el.style.display = 'none'; return; }
   var dateLabel = dates[todayIdx].toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' });
+  var dinner = rows.find(function(r){ return r.meal === 'Dinner'; });
   el.style.display = 'block';
-  el.innerHTML = '<div class="mp-today-title">Today · ' + esc(dateLabel) + '</div>' +
-    rows.map(function(r) {
-      var st = {cooked:'✓ Cooked',skipped:'Skipped','eating-out':'Eating out',leftovers:'Leftovers'}[r.slot.status] || 'Planned';
-      return '<div class="mp-today-row"><span><strong>' + esc(r.meal) + '</strong> · ' + esc(r.slot.name || '') +
-        ' <span style="color:var(--text-mid);font-size:11px">(' + esc(st) + ')</span></span></div>';
-    }).join('');
+  var html = '<div class="mp-today-title">Today · ' + esc(dateLabel) + '</div>';
+  if (dinner) {
+    var dst = dinner.slot.status || 'planned';
+    html += '<div class="mp-today-row dinner-focus"><div><strong>🍽 Tonight</strong> · ' + esc(dinner.slot.name || '') +
+      ' <span style="color:var(--text-mid);font-size:11px">(' + esc({cooked:'Cooked',skipped:'Skipped','eating-out':'Out',leftovers:'Leftovers'}[dst] || 'Planned') + ')</span></div>' +
+      '<div class="mp-today-actions" data-today-day="' + esc(day) + '" data-today-meal="Dinner">' +
+      (dst !== 'cooked' ? '<button class="mp-status-btn" data-st="cooked">✓ Cooked</button>' : '') +
+      (dst !== 'skipped' ? '<button class="mp-status-btn" data-st="skipped">Skip</button>' : '') +
+      (dst !== 'eating-out' ? '<button class="mp-status-btn" data-st="eating-out">Out</button>' : '') +
+      '</div></div>';
+  }
+  rows.filter(function(r){ return r.meal !== 'Dinner'; }).forEach(function(r) {
+    var st = {cooked:'✓ Cooked',skipped:'Skipped','eating-out':'Out',leftovers:'Leftovers'}[r.slot.status] || 'Planned';
+    html += '<div class="mp-today-row"><span><strong>' + esc(r.meal) + '</strong> · ' + esc(r.slot.name || '') +
+      ' <span style="color:var(--text-mid);font-size:11px">(' + esc(st) + ')</span></span>' +
+      '<div class="mp-today-actions" data-today-day="' + esc(day) + '" data-today-meal="' + esc(r.meal) + '">' +
+      ((r.slot.status||'planned') !== 'cooked' ? '<button class="mp-status-btn" data-st="cooked">✓</button>' : '') +
+      '</div></div>';
+  });
+  var tomorrowIdx = todayIdx + 1;
+  if (tomorrowIdx < 7) {
+    var tDay = DAYS[tomorrowIdx];
+    var tPlan = plan[tDay] || {};
+    var tDinner = tPlan.Dinner;
+    if (tDinner) {
+      html += '<div class="mp-today-preview"><strong>Tomorrow</strong> · Dinner: ' + esc(tDinner.name || '') + '</div>';
+    }
+  }
+  el.innerHTML = html;
+  el.querySelectorAll('.mp-today-actions .mp-status-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var wrap = btn.closest('.mp-today-actions');
+      setMealStatus(wrap.dataset.todayDay, wrap.dataset.todayMeal, btn.dataset.st, e);
+    });
+  });
 }
 
 function renderSummary() {
@@ -581,6 +663,7 @@ function setMealStatus(day, meal, status, e) {
   if (!slot) return;
   if (status === 'cooked') { markMealCooked(day, meal, e); return; }
   setSlot(day, meal, Object.assign({}, slot, { status: status }));
+  if (status === 'leftovers') promptLeftoversToFridge(day, meal, slot);
   renderCalendar();
 }
 
@@ -655,7 +738,7 @@ async function markMealCooked(day, meal, e) {
           p_recipe_name: slot.name || '',
           p_cooked_at: cookedDate,
           p_notes: 'Meal planner · ' + day + ' ' + meal,
-          p_servings: slot.servings || 1,
+          p_servings: slot.servings_override || slot.servings || 1,
           p_occasion: meal,
           p_rating: null
         })
@@ -704,7 +787,10 @@ function renderResults(recipes) {
     item.innerHTML = '<div class="mp-result-emoji">' + emoji + '</div><div><div class="mp-result-name">' + esc(r.name||'') + '</div><div class="mp-result-cat">' + esc(r.category||'') + (r.origin_country?' · '+esc(r.origin_country):'') + '</div></div>';
     item.addEventListener('click', function() {
       if (!pickerTarget) return;
-      setSlot(pickerTarget.day, pickerTarget.meal, {id: r.id, name: r.name, category: r.category, image_url: r.image_url});
+      setSlot(pickerTarget.day, pickerTarget.meal, {
+        id: r.id, recipe_id: r.id, name: r.name, category: r.category, image_url: r.image_url,
+        meal_type: pickerTarget.meal, status: 'planned'
+      });
       closePicker();
       renderCalendar();
     });
@@ -734,6 +820,8 @@ async function addToGrocery() {
     for (const meal of MEALS) {
       const slot = plan[day] && plan[day][meal];
       if (!slot || !slot.id) continue;
+      var st = slot.status || 'planned';
+      if (st === 'skipped' || st === 'eating-out' || st === 'cooked') continue;
       const entryId = slot.id + '@' + day + '-' + meal;
       if (data.recipes.find(function(r) { return r.id === entryId; })) { skippedDup++; continue; }
       try {
@@ -744,7 +832,7 @@ async function addToGrocery() {
         if (!res.ok) continue;
         const recipe = await res.json();
         if (!recipe) continue;
-        const serves = slot.servings || recipe.servings || 1;
+        const serves = slot.servings_override || slot.servings || recipe.servings || 1;
         const baseServes = recipe.servings || 1;
         const scale = baseServes ? serves / baseServes : 1;
         const ingredients = [];
