@@ -372,6 +372,309 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.admin_bulk_upsert_ingredients(jsonb) TO authenticated;
 
+-- ── CJ-006 recipe pipeline ──
+ALTER TABLE public.submitted_recipes ADD COLUMN IF NOT EXISTS cooking_style text;
+
+ALTER TABLE public.submitted_recipes
+  ADD COLUMN IF NOT EXISTS additional_time_minutes integer,
+  ADD COLUMN IF NOT EXISTS servings_unit            text DEFAULT 'people',
+  ADD COLUMN IF NOT EXISTS shelf_life_value         text,
+  ADD COLUMN IF NOT EXISTS shelf_life_unit          text DEFAULT 'months',
+  ADD COLUMN IF NOT EXISTS shelf_life_storage       text,
+  ADD COLUMN IF NOT EXISTS after_open_value         text,
+  ADD COLUMN IF NOT EXISTS after_open_unit          text DEFAULT 'weeks',
+  ADD COLUMN IF NOT EXISTS unknown_ingredients      text[];
+
+DROP POLICY IF EXISTS "Users can update own submissions" ON public.submitted_recipes;
+CREATE POLICY "Users can update own submissions"
+  ON public.submitted_recipes FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id AND status IN ('pending', 'rejected'))
+  WITH CHECK (auth.uid() = user_id AND status = 'pending');
+
+DROP FUNCTION IF EXISTS public.get_public_recipe(uuid);
+
+CREATE OR REPLACE FUNCTION public.get_public_recipe(p_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_row   public.submitted_recipes%ROWTYPE;
+  v_user  text;
+  v_uid   uuid;
+BEGIN
+  IF p_id IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT * INTO v_row
+    FROM public.submitted_recipes
+   WHERE id = p_id;
+
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT username INTO v_user
+    FROM public.profiles
+   WHERE id = v_row.user_id;
+
+  v_uid := auth.uid();
+
+  IF is_admin()
+     OR (v_uid IS NOT NULL AND v_row.user_id = v_uid)
+     OR (v_row.status = 'approved' AND v_row.visibility = 'Public')
+  THEN
+    RETURN to_jsonb(v_row) || jsonb_build_object('username', v_user);
+  END IF;
+
+  RETURN NULL;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_public_recipe(uuid) TO anon, authenticated;
+
+
+SELECT 'fix-cj006-pipeline.sql complete' AS status;
+
+-- ── Phase 2 batch ──
+ALTER TABLE public.submitted_recipes ADD COLUMN IF NOT EXISTS origin_locality text;
+
+CREATE OR REPLACE FUNCTION public.admin_review_recipe(
+  p_id uuid, p_status text, p_notes text DEFAULT ''
+)
+RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_user_id   uuid;
+  v_name      text;
+  v_msg       text;
+BEGIN
+  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
+  IF p_status NOT IN ('approved','rejected','pending') THEN
+    RAISE EXCEPTION 'Invalid status: %', p_status;
+  END IF;
+
+  SELECT user_id, recipe_name INTO v_user_id, v_name
+    FROM public.submitted_recipes WHERE id = p_id;
+
+  UPDATE public.submitted_recipes
+     SET status = p_status, reviewer_notes = p_notes, reviewed_at = now()
+   WHERE id = p_id;
+
+  IF v_user_id IS NOT NULL AND p_status IN ('approved', 'rejected') THEN
+    v_msg := CASE p_status
+      WHEN 'approved' THEN 'Your recipe "' || COALESCE(v_name, 'submission') || '" was approved and is now live!'
+      ELSE 'Your recipe "' || COALESCE(v_name, 'submission') || '" needs updates.'
+           || CASE WHEN COALESCE(p_notes, '') <> '' THEN ' ' || p_notes ELSE '' END
+    END;
+    INSERT INTO public.notifications (user_id, type, recipe_id, recipe_name, message)
+    VALUES (
+      v_user_id,
+      CASE WHEN p_status = 'approved' THEN 'recipe_approved' ELSE 'recipe_rejected' END,
+      p_id,
+      v_name,
+      v_msg
+    );
+  END IF;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_review_recipe(uuid, text, text) TO authenticated;
+
+
+SELECT 'fix-phase2-batch.sql complete' AS status;
+
+-- ── PF-02 / PF-08 pantry ──
+ALTER TABLE public.pending_ingredients
+  ADD COLUMN IF NOT EXISTS unit_name text,
+  ADD COLUMN IF NOT EXISTS submission_type text NOT NULL DEFAULT 'ingredient',
+  ADD COLUMN IF NOT EXISTS category text,
+  ADD COLUMN IF NOT EXISTS notes text;
+
+DROP POLICY IF EXISTS "users submit pending ingredients" ON public.pending_ingredients;
+CREATE POLICY "users submit pending ingredients" ON public.pending_ingredients
+  FOR INSERT TO authenticated
+  WITH CHECK (submitted_by = auth.uid());
+
+DROP FUNCTION IF EXISTS public.submit_pending_ingredient(text, text, text, text, text);
+CREATE OR REPLACE FUNCTION public.submit_pending_ingredient(
+  p_name     text,
+  p_type     text DEFAULT 'ingredient',
+  p_category text DEFAULT NULL,
+  p_unit     text DEFAULT NULL,
+  p_notes    text DEFAULT NULL
+)
+RETURNS bigint
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_id   bigint;
+  v_name text;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  v_name := trim(COALESCE(p_name, ''));
+  IF v_name = '' THEN RAISE EXCEPTION 'name_required'; END IF;
+  IF p_type NOT IN ('ingredient', 'unit') THEN RAISE EXCEPTION 'invalid_type'; END IF;
+  IF EXISTS (
+    SELECT 1 FROM public.pending_ingredients
+     WHERE submitted_by = auth.uid()
+       AND status = 'pending'
+       AND lower(ingredient_name) = lower(v_name)
+       AND COALESCE(submission_type, 'ingredient') = p_type
+  ) THEN
+    RAISE EXCEPTION 'already_pending';
+  END IF;
+  INSERT INTO public.pending_ingredients (
+    ingredient_name, submitted_by, submission_type, category, unit_name, notes, status
+  ) VALUES (
+    v_name, auth.uid(), p_type, p_category, p_unit, p_notes, 'pending'
+  )
+  RETURNING id INTO v_id;
+  RETURN v_id;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.submit_pending_ingredient(text, text, text, text, text) TO authenticated;
+
+DROP FUNCTION IF EXISTS public.admin_get_pending_ingredients();
+CREATE OR REPLACE FUNCTION public.admin_get_pending_ingredients()
+RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
+  RETURN COALESCE(
+    (SELECT jsonb_agg(p ORDER BY p.created_at ASC) FROM (
+      SELECT pi.id,
+             pi.ingredient_name,
+             pi.status,
+             pi.created_at,
+             COALESCE(pi.submission_type, 'ingredient') AS submission_type,
+             pi.unit_name,
+             pi.category,
+             pi.notes,
+             prof.username AS submitted_by_username
+        FROM public.pending_ingredients pi
+        LEFT JOIN public.profiles prof ON prof.id = pi.submitted_by
+       WHERE pi.status = 'pending'
+    ) p),
+    '[]'::jsonb
+  );
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.admin_get_pending_ingredients() TO authenticated;
+
+DROP FUNCTION IF EXISTS public.admin_resolve_pending_ingredient(int, text);
+CREATE OR REPLACE FUNCTION public.admin_resolve_pending_ingredient(p_id int, p_action text)
+RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_row public.pending_ingredients%ROWTYPE;
+  v_msg text;
+BEGIN
+  IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
+  IF p_action NOT IN ('added', 'dismissed') THEN RAISE EXCEPTION 'invalid_action'; END IF;
+  SELECT * INTO v_row FROM public.pending_ingredients WHERE id = p_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'not_found'; END IF;
+  UPDATE public.pending_ingredients SET status = p_action WHERE id = p_id;
+  IF v_row.submitted_by IS NOT NULL THEN
+    v_msg := CASE
+      WHEN p_action = 'added' THEN
+        'Your ' || COALESCE(v_row.submission_type, 'ingredient') || ' submission "' ||
+        v_row.ingredient_name || '" was added to the database.'
+      ELSE
+        'Your submission "' || v_row.ingredient_name || '" was reviewed. Contact us if you have questions.'
+    END;
+    INSERT INTO public.notifications (user_id, type, message)
+    VALUES (
+      v_row.submitted_by,
+      CASE WHEN p_action = 'added' THEN 'ingredient_approved' ELSE 'ingredient_dismissed' END,
+      v_msg
+    );
+  END IF;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.admin_resolve_pending_ingredient(int, text) TO authenticated;
+
+DROP FUNCTION IF EXISTS public.search_recipes_by_pantry_names(text[], int);
+CREATE OR REPLACE FUNCTION public.search_recipes_by_pantry_names(
+  p_names text[],
+  p_limit int DEFAULT 24
+)
+RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF p_names IS NULL OR array_length(p_names, 1) IS NULL THEN
+    RETURN '[]'::jsonb;
+  END IF;
+  RETURN COALESCE(
+    (SELECT jsonb_agg(row_to_json(t)::jsonb) FROM (
+      SELECT
+        sr.id,
+        sr.recipe_name,
+        sr.category,
+        sr.image_url,
+        (
+          SELECT jsonb_agg(DISTINCT pn)
+          FROM unnest(p_names) AS pn
+          WHERE EXISTS (
+            SELECT 1
+              FROM jsonb_array_elements(COALESCE(sr.ingredients, '[]'::jsonb)) AS sec,
+                   jsonb_array_elements(COALESCE(sec->'items', '[]'::jsonb)) AS item
+             WHERE lower(trim(COALESCE(item->>'ingredient', item->>'name', ''))) <> ''
+               AND (
+                 lower(trim(COALESCE(item->>'ingredient', item->>'name', '')))
+                   LIKE '%' || lower(trim(pn)) || '%'
+                 OR lower(trim(pn))
+                   LIKE '%' || lower(trim(COALESCE(item->>'ingredient', item->>'name', ''))) || '%'
+               )
+          )
+        ) AS matched_items,
+        (
+          SELECT COUNT(DISTINCT pn)::int
+          FROM unnest(p_names) AS pn
+          WHERE EXISTS (
+            SELECT 1
+              FROM jsonb_array_elements(COALESCE(sr.ingredients, '[]'::jsonb)) AS sec,
+                   jsonb_array_elements(COALESCE(sec->'items', '[]'::jsonb)) AS item
+             WHERE lower(trim(COALESCE(item->>'ingredient', item->>'name', ''))) <> ''
+               AND (
+                 lower(trim(COALESCE(item->>'ingredient', item->>'name', '')))
+                   LIKE '%' || lower(trim(pn)) || '%'
+                 OR lower(trim(pn))
+                   LIKE '%' || lower(trim(COALESCE(item->>'ingredient', item->>'name', ''))) || '%'
+               )
+          )
+        ) AS match_count
+      FROM public.submitted_recipes sr
+      WHERE sr.status = 'approved'
+        AND sr.visibility = 'Public'
+        AND sr.ingredients IS NOT NULL
+        AND EXISTS (
+          SELECT 1
+            FROM unnest(p_names) AS pn
+           WHERE EXISTS (
+             SELECT 1
+               FROM jsonb_array_elements(COALESCE(sr.ingredients, '[]'::jsonb)) AS sec,
+                    jsonb_array_elements(COALESCE(sec->'items', '[]'::jsonb)) AS item
+              WHERE lower(trim(COALESCE(item->>'ingredient', item->>'name', ''))) <> ''
+                AND (
+                  lower(trim(COALESCE(item->>'ingredient', item->>'name', '')))
+                    LIKE '%' || lower(trim(pn)) || '%'
+                  OR lower(trim(pn))
+                    LIKE '%' || lower(trim(COALESCE(item->>'ingredient', item->>'name', ''))) || '%'
+                )
+           )
+        )
+      ORDER BY match_count DESC, sr.recipe_name
+      LIMIT GREATEST(1, LEAST(COALESCE(p_limit, 24), 50))
+    ) t),
+    '[]'::jsonb
+  );
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.search_recipes_by_pantry_names(text[], int) TO anon, authenticated;
+
+SELECT 'fix-pf02-pf08.sql complete' AS status;
+
 -- ── Admin stats, review & bulk field ──
 CREATE OR REPLACE FUNCTION public.admin_get_stats()
 RETURNS json
@@ -556,60 +859,6 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.delete_cooking_event(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.delete_cooking_event(uuid) TO authenticated;
-
--- ── CJ-006 recipe pipeline ──
-ALTER TABLE public.submitted_recipes ADD COLUMN IF NOT EXISTS cooking_style text;
-
-ALTER TABLE public.submitted_recipes
-  ADD COLUMN IF NOT EXISTS additional_time_minutes integer,
-  ADD COLUMN IF NOT EXISTS servings_unit            text DEFAULT 'people',
-  ADD COLUMN IF NOT EXISTS shelf_life_value         text,
-  ADD COLUMN IF NOT EXISTS shelf_life_unit          text DEFAULT 'months',
-  ADD COLUMN IF NOT EXISTS shelf_life_storage       text,
-  ADD COLUMN IF NOT EXISTS after_open_value         text,
-  ADD COLUMN IF NOT EXISTS after_open_unit          text DEFAULT 'weeks',
-  ADD COLUMN IF NOT EXISTS unknown_ingredients      text[];
-
-DROP POLICY IF EXISTS "Users can update own submissions" ON public.submitted_recipes;
-CREATE POLICY "Users can update own submissions"
-  ON public.submitted_recipes FOR UPDATE TO authenticated
-  USING (auth.uid() = user_id AND status IN ('pending', 'rejected'))
-  WITH CHECK (auth.uid() = user_id AND status = 'pending');
-
-DROP FUNCTION IF EXISTS public.get_public_recipe(uuid);
-
-CREATE OR REPLACE FUNCTION public.get_public_recipe(p_id uuid)
-RETURNS jsonb
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-DECLARE
-  v_row   public.submitted_recipes%ROWTYPE;
-  v_user  text;
-  v_uid   uuid;
-BEGIN
-  IF p_id IS NULL THEN RETURN NULL; END IF;
-  SELECT * INTO v_row
-    FROM public.submitted_recipes
-   WHERE id = p_id;
-  IF NOT FOUND THEN RETURN NULL; END IF;
-  SELECT username INTO v_user
-    FROM public.profiles
-   WHERE id = v_row.user_id;
-  v_uid := auth.uid();
-  IF is_admin()
-     OR (v_uid IS NOT NULL AND v_row.user_id = v_uid)
-     OR (v_row.status = 'approved' AND v_row.visibility = 'Public')
-  THEN
-    RETURN to_jsonb(v_row) || jsonb_build_object('username', v_user);
-  END IF;
-  RETURN NULL;
-END;
-$$;
-
-GRANT EXECUTE ON FUNCTION public.get_public_recipe(uuid) TO anon, authenticated;
-
--- ── Phase 2 batch ──
-ALTER TABLE public.submitted_recipes ADD COLUMN IF NOT EXISTS origin_locality text;
 
 -- ── Reload PostgREST schema cache ──────────────────────────────────
 SELECT pg_notify('pgrst', 'reload schema');

@@ -115,7 +115,19 @@ async function loadDashboard() {
           setEl('dash-mrr', (S.currency_symbol||'$')+mrr.toFixed(2));
         }).catch(function(){});
     }
-  } catch(e) { console.warn('dash stats', e); }
+  } catch(e) {
+    console.warn('dash stats', e);
+    var errEl = document.getElementById('dash-stats-error');
+    if (!errEl) {
+      errEl = document.createElement('div');
+      errEl.id = 'dash-stats-error';
+      errEl.style.cssText = 'margin:0 0 16px;padding:12px 16px;background:var(--danger-bg);border:1px solid rgb(from var(--danger) r g b / 0.35);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--danger)';
+      var dash = document.getElementById('v-dashboard');
+      if (dash && dash.firstChild) dash.insertBefore(errEl, dash.firstChild);
+      else if (dash) dash.appendChild(errEl);
+    }
+    errEl.textContent = 'Dashboard stats could not load — ' + (e.message || 'check admin RPCs in Supabase').replace(/^\d+:\s*/, '');
+  }
 
   // ── Recent Submissions ───────────────────────────────────
   try {
@@ -2290,10 +2302,14 @@ async function loadIngPending() {
     }
     tbody.innerHTML = rows.map(function(r) {
       const flagged = r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
+      const typeLabel = r.submission_type === 'unit' ? 'Unit' : 'Ingredient';
+      const nameCell = r.submission_type === 'unit'
+        ? escT(r.ingredient_name) + ' <span style="font-size:10px;color:var(--text-mid)">(unit)</span>'
+        : escT(r.ingredient_name);
       return '<tr>' +
-        '<td class="ap-td"><span style="color:#d4a017;margin-right:6px">⚠</span>' + escT(r.ingredient_name) + '</td>' +
-        '<td class="ap-td" style="font-size:12px">' + escT(r.from_recipe||'—') + '</td>' +
-        '<td class="ap-td" style="font-size:12px">@' + escT(r.submitted_by||'—') + '</td>' +
+        '<td class="ap-td"><span style="color:#d4a017;margin-right:6px">⚠</span>' + nameCell + '</td>' +
+        '<td class="ap-td" style="font-size:12px">' + escT(typeLabel) + (r.category ? ' · ' + escT(r.category) : '') + '</td>' +
+        '<td class="ap-td" style="font-size:12px">@' + escT(r.submitted_by_username || '—') + '</td>' +
         '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">' + flagged + '</td>' +
         '<td class="ap-td"><div style="display:flex;gap:6px">' +
         '<button data-id="' + r.id + '" onclick="approveIngredient(this.dataset.id,this)" style="padding:5px 12px;background:#2e7d4f;border:none;border-radius:7px;color:#fff;font-size:12px;cursor:pointer">Add</button>' +

@@ -74,6 +74,15 @@
     .pt-input:focus { border-color:var(--accent); }
     .pt-row { display:flex; gap:10px; }
     .pt-modal-foot { display:flex; gap:10px; margin-top:18px; }
+    .pt-unknown-link { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--accent); cursor:pointer; text-decoration:underline; background:none; border:none; padding:0; }
+    .pt-useitup { margin-bottom:24px; background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:18px 20px; }
+    .pt-useitup-title { font-family:'Cormorant Garamond',serif; font-size:1.15rem; font-weight:600; color:var(--text-high); margin-bottom:6px; }
+    .pt-useitup-sub { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); margin-bottom:14px; line-height:1.5; }
+    .pt-useitup-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
+    .pt-useitup-card { display:block; padding:12px 14px; border:1px solid var(--border); border-radius:10px; text-decoration:none; color:inherit; transition:border-color .15s; }
+    .pt-useitup-card:hover { border-color:var(--accent); }
+    .pt-useitup-name { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; color:var(--text-high); }
+    .pt-useitup-meta { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-top:4px; }
   </style>
 </head>
 <body class="page-bg cj-body">
@@ -97,6 +106,12 @@
   </div>
 
   <div class="pt-stats" id="pt-stats"></div>
+
+  <div class="pt-useitup" id="pt-useitup" style="display:none">
+    <div class="pt-useitup-title">🍳 Use it up</div>
+    <div class="pt-useitup-sub">Recipes matched by ingredient <em>name</em> in your pantry — not exact quantities. Great for expiring or low-stock items.</div>
+    <div class="pt-useitup-grid" id="pt-useitup-grid"></div>
+  </div>
 
   <div class="pt-loc-filters" id="pt-location-filters">
     <button class="pt-filter active" onclick="setLocationFilter('all',this)">Everywhere</button>
@@ -129,6 +144,12 @@
       <input class="pt-input" id="pt-name" placeholder="e.g. Plain Flour" list="pt-ingredients-list" autocomplete="off" oninput="onPantryNameInput()">
       <datalist id="pt-ingredients-list"></datalist>
       <div id="pt-ing-hint" style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);margin-top:4px;display:none"></div>
+      <div id="pt-unknown-actions" style="display:none;margin-top:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)">
+        Can't find it? <button type="button" class="pt-unknown-link" onclick="submitUnknownIngredient()">Submit ingredient for review</button>
+      </div>
+      <div id="pt-unit-unknown" style="display:none;margin-top:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid)">
+        New unit? <button type="button" class="pt-unknown-link" onclick="submitUnknownUnit()">Submit unit for review</button>
+      </div>
     </div>
     <div class="pt-row">
       <div class="pt-field" style="flex:1">
@@ -137,7 +158,7 @@
       </div>
       <div class="pt-field" style="flex:1">
         <div class="pt-label">Unit</div>
-        <input class="pt-input" id="pt-unit" placeholder="e.g. cups, kg, L" list="pt-units-list">
+        <input class="pt-input" id="pt-unit" placeholder="e.g. cups, kg, L" list="pt-units-list" oninput="onPantryUnitInput()">
         <datalist id="pt-units-list">
           <option value="g"><option value="kg"><option value="ml"><option value="L">
           <option value="cup"><option value="tbsp"><option value="tsp">
@@ -199,6 +220,7 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 let activeFilter = 'all';
 let activeLocationFilter = 'all';
 let pantryIngIndex = {};
+const PT_STANDARD_UNITS = ['g','kg','ml','l','cup','cups','tbsp','tsp','piece','pieces','can','cans','bottle','bottles','bunch','clove','sprig','pinch','slice','packet','whole','oz','lb'];
 
 const PT_LOC_LABEL = { pantry:'🫙 Pantry', fridge:'🧊 Fridge', freezer:'❄️ Freezer' };
 
@@ -380,6 +402,8 @@ function openAddModal() {
   document.getElementById('pt-location').value = 'pantry';
   document.getElementById('pt-staple').checked = false;
   var hint = document.getElementById('pt-ing-hint'); if (hint) hint.style.display = 'none';
+  var ua = document.getElementById('pt-unknown-actions'); if (ua) ua.style.display = 'none';
+  var uu = document.getElementById('pt-unit-unknown'); if (uu) uu.style.display = 'none';
   document.getElementById('pt-modal').classList.add('open');
   setTimeout(function() { document.getElementById('pt-name').focus(); }, 50);
 }
@@ -430,6 +454,7 @@ function saveItem() {
   savePantry(list);
   closeModal();
   renderList(document.getElementById('pt-search').value);
+  loadUseItUpSuggestions();
 }
 
 function markItemLow(id) {
@@ -504,12 +529,25 @@ function mapPantryCategory(dbCat) {
 function onPantryNameInput() {
   var name = (document.getElementById('pt-name').value || '').trim();
   var hint = document.getElementById('pt-ing-hint');
+  var unknownActions = document.getElementById('pt-unknown-actions');
   var match = pantryIngIndex[name.toLowerCase()];
   if (!match) {
     document.getElementById('pt-ingredient-id').value = '';
-    if (hint) hint.style.display = 'none';
+    if (name.length >= 2) {
+      if (hint) {
+        hint.textContent = '⚠ Not in governed database — you can still save locally, or submit for admin review.';
+        hint.style.display = 'block';
+        hint.style.color = 'var(--warn)';
+      }
+      if (unknownActions) unknownActions.style.display = 'block';
+    } else {
+      if (hint) hint.style.display = 'none';
+      if (unknownActions) unknownActions.style.display = 'none';
+    }
+    onPantryUnitInput();
     return;
   }
+  if (unknownActions) unknownActions.style.display = 'none';
   document.getElementById('pt-ingredient-id').value = match.id;
   var cat = mapPantryCategory(match.category);
   if (cat) document.getElementById('pt-category').value = cat;
@@ -519,6 +557,123 @@ function onPantryNameInput() {
     hint.textContent = '✓ Linked to governed ingredient #' + match.id + (match.category ? ' · ' + match.category : '');
     hint.style.display = 'block';
     hint.style.color = '#4caf76';
+  }
+  onPantryUnitInput();
+}
+
+function onPantryUnitInput() {
+  var unit = (document.getElementById('pt-unit').value || '').trim().toLowerCase();
+  var el = document.getElementById('pt-unit-unknown');
+  if (!el) return;
+  if (!unit || PT_STANDARD_UNITS.indexOf(unit) >= 0) {
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = 'block';
+}
+
+async function callPantryRPC(fn, params) {
+  var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+  if (!sess || !sess.access_token) {
+    alert('Please sign in to submit for review.');
+    window.location.href = 'login.html';
+    return null;
+  }
+  var res = await fetch(SUPA_URL + '/rest/v1/rpc/' + fn, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + sess.access_token,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(params || {})
+  });
+  if (!res.ok) {
+    var err = await res.text();
+    if (err.indexOf('already_pending') >= 0) throw new Error('Already submitted — awaiting admin review.');
+    throw new Error(err || res.statusText);
+  }
+  var text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function submitUnknownIngredient() {
+  var name = (document.getElementById('pt-name').value || '').trim();
+  if (!name) { alert('Enter an ingredient name first.'); return; }
+  var notes = prompt('Optional note for the admin (e.g. brand, variety):', '') || '';
+  try {
+    await callPantryRPC('submit_pending_ingredient', {
+      p_name: name,
+      p_type: 'ingredient',
+      p_category: document.getElementById('pt-category').value || null,
+      p_unit: document.getElementById('pt-unit').value.trim() || null,
+      p_notes: notes || null
+    });
+    alert('Submitted for review. You will be notified when it is added to the database.');
+    document.getElementById('pt-unknown-actions').style.display = 'none';
+  } catch (e) {
+    alert(e.message || 'Submission failed.');
+  }
+}
+
+async function submitUnknownUnit() {
+  var unit = (document.getElementById('pt-unit').value || '').trim();
+  if (!unit) { alert('Enter a unit first.'); return; }
+  try {
+    await callPantryRPC('submit_pending_ingredient', {
+      p_name: unit,
+      p_type: 'unit',
+      p_category: null,
+      p_unit: unit,
+      p_notes: 'Submitted from pantry add-item form'
+    });
+    alert('Unit submitted for review.');
+    document.getElementById('pt-unit-unknown').style.display = 'none';
+  } catch (e) {
+    alert(e.message || 'Submission failed.');
+  }
+}
+
+function pantryNamesForUseItUp() {
+  return getPantry().map(normalizePantryItem).filter(function(item) {
+    if (item.is_staple) return false;
+    if (!item.name || (item.qty || 0) <= 0) return false;
+    var st = getStatus(item);
+    var exp = getExpiryStatus(item);
+    return st === 'low' || st === 'out' || (exp && (exp.status === 'expiring' || exp.status === 'expired'));
+  }).map(function(i) { return i.name; }).slice(0, 12);
+}
+
+async function loadUseItUpSuggestions() {
+  var panel = document.getElementById('pt-useitup');
+  var grid = document.getElementById('pt-useitup-grid');
+  if (!panel || !grid) return;
+  var names = pantryNamesForUseItUp();
+  if (!names.length) {
+    panel.style.display = 'none';
+    return;
+  }
+  try {
+    var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    var headers = { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' };
+    if (sess && sess.access_token) headers.Authorization = 'Bearer ' + sess.access_token;
+    var res = await fetch(SUPA_URL + '/rest/v1/rpc/search_recipes_by_pantry_names', {
+      method: 'POST', headers: headers,
+      body: JSON.stringify({ p_names: names, p_limit: 12 })
+    });
+    if (!res.ok) { panel.style.display = 'none'; return; }
+    var recipes = await res.json();
+    if (!recipes || !recipes.length) { panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+    grid.innerHTML = recipes.map(function(r) {
+      var matched = Array.isArray(r.matched_items) ? r.matched_items.join(', ') : '';
+      return '<a class="pt-useitup-card" href="recipe-page.html?id=' + encodeURIComponent(r.id) + '">' +
+        '<div class="pt-useitup-name">' + esc(r.recipe_name || 'Recipe') + '</div>' +
+        '<div class="pt-useitup-meta">' + esc(r.category || '') +
+        (matched ? ' · uses ' + esc(matched) : '') + '</div></a>';
+    }).join('');
+  } catch (_) {
+    panel.style.display = 'none';
   }
 }
 
@@ -560,7 +715,8 @@ document.addEventListener('DOMContentLoaded', function() {
   renderStats();
   renderList('');
   loadIngredientNames();
-  loadPantryFromSupabase();
+  loadPantryFromSupabase().then(loadUseItUpSuggestions);
+  loadUseItUpSuggestions();
   document.getElementById('pt-modal').addEventListener('click', function(e) {
     if (e.target===this) closeModal();
   });

@@ -444,19 +444,52 @@ CREATE POLICY "admin manages brands" ON brand_mappings FOR ALL TO authenticated
 DROP POLICY IF EXISTS "public reads brands" ON brand_mappings;
 CREATE POLICY "public reads brands" ON brand_mappings FOR SELECT USING (active=true);
 
--- Pending ingredients (flagged from recipe submissions)
+-- Pending ingredients (flagged from recipe submissions + pantry PF-02)
 CREATE TABLE IF NOT EXISTS pending_ingredients (
   id              bigserial PRIMARY KEY,
   ingredient_name text NOT NULL,
   submitted_by    uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   recipe_id       uuid,
   status          text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','added','dismissed')),
+  unit_name       text,
+  submission_type text NOT NULL DEFAULT 'ingredient',
+  category        text,
+  notes           text,
   created_at      timestamptz NOT NULL DEFAULT NOW()
 );
+ALTER TABLE pending_ingredients ADD COLUMN IF NOT EXISTS unit_name text;
+ALTER TABLE pending_ingredients ADD COLUMN IF NOT EXISTS submission_type text NOT NULL DEFAULT 'ingredient';
+ALTER TABLE pending_ingredients ADD COLUMN IF NOT EXISTS category text;
+ALTER TABLE pending_ingredients ADD COLUMN IF NOT EXISTS notes text;
 ALTER TABLE pending_ingredients ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "admin manages pending ingredients" ON pending_ingredients;
 CREATE POLICY "admin manages pending ingredients" ON pending_ingredients FOR ALL TO authenticated
   USING (is_admin()) WITH CHECK (is_admin());
+DROP POLICY IF EXISTS "users submit pending ingredients" ON pending_ingredients;
+CREATE POLICY "users submit pending ingredients" ON pending_ingredients FOR INSERT TO authenticated
+  WITH CHECK (submitted_by = auth.uid());
+
+DROP FUNCTION IF EXISTS public.submit_pending_ingredient(text, text, text, text, text);
+CREATE FUNCTION public.submit_pending_ingredient(
+  p_name text, p_type text DEFAULT 'ingredient',
+  p_category text DEFAULT NULL, p_unit text DEFAULT NULL, p_notes text DEFAULT NULL
+)
+RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_id bigint; v_name text;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  v_name := trim(COALESCE(p_name, ''));
+  IF v_name = '' THEN RAISE EXCEPTION 'name_required'; END IF;
+  IF p_type NOT IN ('ingredient', 'unit') THEN RAISE EXCEPTION 'invalid_type'; END IF;
+  IF EXISTS (SELECT 1 FROM pending_ingredients WHERE submitted_by = auth.uid() AND status = 'pending'
+    AND lower(ingredient_name) = lower(v_name) AND COALESCE(submission_type, 'ingredient') = p_type) THEN
+    RAISE EXCEPTION 'already_pending';
+  END IF;
+  INSERT INTO pending_ingredients (ingredient_name, submitted_by, submission_type, category, unit_name, notes, status)
+  VALUES (v_name, auth.uid(), p_type, p_category, p_unit, p_notes, 'pending') RETURNING id INTO v_id;
+  RETURN v_id;
+END; $$;
+GRANT EXECUTE ON FUNCTION public.submit_pending_ingredient(text, text, text, text, text) TO authenticated;
 
 DROP FUNCTION IF EXISTS admin_upsert_ingredient(int, text, text, text, text, text, float8, text, text, text, text, text, text, text, jsonb);
 CREATE FUNCTION admin_upsert_ingredient(
@@ -566,20 +599,34 @@ CREATE FUNCTION admin_get_pending_ingredients()
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
-  RETURN (SELECT jsonb_agg(p ORDER BY p.created_at ASC) FROM (
+  RETURN COALESCE((SELECT jsonb_agg(p ORDER BY p.created_at ASC) FROM (
     SELECT pi.id, pi.ingredient_name, pi.status, pi.created_at,
+           COALESCE(pi.submission_type, 'ingredient') AS submission_type,
+           pi.unit_name, pi.category, pi.notes,
            prof.username AS submitted_by_username
     FROM pending_ingredients pi LEFT JOIN profiles prof ON prof.id = pi.submitted_by
     WHERE pi.status = 'pending'
-  ) p);
+  ) p), '[]'::jsonb);
 END; $$;
 
 DROP FUNCTION IF EXISTS admin_resolve_pending_ingredient(int, text);
 CREATE FUNCTION admin_resolve_pending_ingredient(p_id int, p_action text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_row pending_ingredients%ROWTYPE; v_msg text;
 BEGIN
   IF auth.uid() IS NULL OR NOT is_admin() THEN RAISE EXCEPTION 'Permission denied'; END IF;
+  IF p_action NOT IN ('added', 'dismissed') THEN RAISE EXCEPTION 'invalid_action'; END IF;
+  SELECT * INTO v_row FROM pending_ingredients WHERE id = p_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'not_found'; END IF;
   UPDATE pending_ingredients SET status = p_action WHERE id = p_id;
+  IF v_row.submitted_by IS NOT NULL THEN
+    v_msg := CASE WHEN p_action = 'added' THEN
+      'Your ' || COALESCE(v_row.submission_type, 'ingredient') || ' submission "' || v_row.ingredient_name || '" was added to the database.'
+      ELSE 'Your submission "' || v_row.ingredient_name || '" was reviewed.'
+    END;
+    INSERT INTO notifications (user_id, type, message)
+    VALUES (v_row.submitted_by, CASE WHEN p_action = 'added' THEN 'ingredient_approved' ELSE 'ingredient_dismissed' END, v_msg);
+  END IF;
 END; $$;
 
 DROP FUNCTION IF EXISTS admin_clear_ingredient_category(text);
