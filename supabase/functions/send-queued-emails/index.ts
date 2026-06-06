@@ -17,12 +17,12 @@ function formatError(e: unknown): string {
 }
 
 Deno.serve(async (req) => {
-  const CRON_SECRET = Deno.env.get('CRON_SECRET');
+  const CRON_SECRET = (Deno.env.get('CRON_SECRET') ?? '').trim();
   if (!CRON_SECRET) {
     return new Response('CRON_SECRET not configured', { status: 500 });
   }
   const authHeader = req.headers.get('Authorization') || '';
-  const provided   = authHeader.replace('Bearer ', '').trim();
+  const provided   = authHeader.replace(/^Bearer\s+/i, '').trim();
   const encoder    = new TextEncoder();
   const a = encoder.encode(provided);
   const b = encoder.encode(CRON_SECRET);

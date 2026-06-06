@@ -3,9 +3,10 @@
 -- Prerequisites:
 --   1. fix-phase9-batch.sql ran
 --   2. Deploy edge function: check-dead-links (dashboard or CLI)
---   3. CRON_SECRET already set for send-queued-emails — reuse same value
---   4. Replace YOUR_CRON_SECRET below
---   5. JWT verification OFF on check-dead-links (same as send-queued-emails)
+--   3. CRON_SECRET already set for send-queued-emails — reuse the EXACT same value
+--   4. Replace YOUR_CRON_SECRET below (must match email cron job #2 Bearer token)
+--   5. JWT verification OFF on check-dead-links (Settings → Verify JWT → OFF)
+--   6. Redeploy check-dead-links after pasting code from supabase/functions/check-dead-links/index.ts
 -- Schedule: 03:00 UTC every Sunday
 -- ══════════════════════════════════════════════════════════════════════
 

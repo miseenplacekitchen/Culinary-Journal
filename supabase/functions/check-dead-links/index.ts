@@ -40,12 +40,12 @@ async function probeUrl(url: string): Promise<'ok' | 'dead' | 'unknown'> {
 }
 
 Deno.serve(async (req) => {
-  const CRON_SECRET = Deno.env.get('CRON_SECRET');
+  const CRON_SECRET = (Deno.env.get('CRON_SECRET') ?? '').trim();
   if (!CRON_SECRET) {
     return new Response('CRON_SECRET not configured', { status: 500 });
   }
   const authHeader = req.headers.get('Authorization') || '';
-  const provided   = authHeader.replace('Bearer ', '').trim();
+  const provided   = authHeader.replace(/^Bearer\s+/i, '').trim();
   const encoder    = new TextEncoder();
   const a = encoder.encode(provided);
   const b = encoder.encode(CRON_SECRET);
@@ -54,7 +54,10 @@ Deno.serve(async (req) => {
     mismatch |= (a[i] ?? 0) ^ (b[i] ?? 0);
   }
   if (mismatch !== 0) {
-    return new Response('Unauthorized', { status: 401 });
+    return new Response(JSON.stringify({
+      error: 'Unauthorized',
+      hint: 'Bearer token must exactly match CRON_SECRET in Edge Function Secrets (same value as send-queued-emails).'
+    }), { status: 401, headers: { 'Content-Type': 'application/json' } });
   }
 
   try {
