@@ -975,11 +975,27 @@ CREATE POLICY "Users see own notifications"
   ON public.notifications FOR ALL TO authenticated
   USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
+DO $$ DECLARE r record;
+BEGIN
+  FOR r IN SELECT p.oid::regprocedure AS sig FROM pg_proc p
+           JOIN pg_namespace n ON n.oid = p.pronamespace
+           WHERE n.nspname = 'public'
+             AND p.proname IN (
+               'get_notification_count',
+               'get_my_notifications',
+               'mark_notification_read',
+               'mark_all_notifications_read',
+               'get_guest_card',
+               'submit_guest_dietary'
+             )
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
+END $$;
+
 CREATE OR REPLACE FUNCTION public.get_notification_count()
-RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+RETURNS bigint LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   IF auth.uid() IS NULL THEN RETURN 0; END IF;
-  RETURN (SELECT COUNT(*)::integer FROM public.notifications
+  RETURN (SELECT COUNT(*) FROM public.notifications
           WHERE user_id = auth.uid() AND read = false);
 END; $$;
 GRANT EXECUTE ON FUNCTION public.get_notification_count() TO authenticated;
@@ -1051,7 +1067,6 @@ CREATE POLICY "users manage own event guests" ON public.event_guests FOR ALL TO 
   USING (EXISTS (SELECT 1 FROM public.events e WHERE e.id = event_id AND e.user_id = auth.uid()))
   WITH CHECK (EXISTS (SELECT 1 FROM public.events e WHERE e.id = event_id AND e.user_id = auth.uid()));
 
-DROP FUNCTION IF EXISTS public.get_guest_card(uuid);
 CREATE OR REPLACE FUNCTION public.get_guest_card(p_token uuid)
 RETURNS TABLE (
   guest_name text, event_name text, event_date date, event_type text,
@@ -1069,8 +1084,6 @@ BEGIN
 END; $$;
 GRANT EXECUTE ON FUNCTION public.get_guest_card(uuid) TO anon, authenticated;
 
-DROP FUNCTION IF EXISTS public.submit_guest_dietary(uuid, jsonb);
-DROP FUNCTION IF EXISTS public.submit_guest_dietary(uuid, text);
 CREATE OR REPLACE FUNCTION public.submit_guest_dietary(p_token uuid, p_dietary jsonb)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
