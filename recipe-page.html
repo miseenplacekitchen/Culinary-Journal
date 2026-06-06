@@ -281,7 +281,7 @@
     /* ── TAGS ROW ────────────────────────────── */
     .rp-tags { display: flex; flex-wrap: nowrap; gap: 6px; margin-bottom: 20px; overflow-x: auto; scrollbar-width: thin; }
     .rp-tag { font-family: "DM Sans", sans-serif; font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); color: var(--text-muted); }
-    .rp-tag.original { background: rgb(from var(--accent) r g b / 0.15); color: var(--accent); border-color: rgb(from var(--accent) r g b / 0.3); }
+    .rp-tag.original { background: rgb(from var(--accent) r g b / 0.15); color: var(--accent); border-color: rgb(from var(--accent) r g b / 0.3); white-space: nowrap; flex-shrink: 0; }
     .rp-tag.external { background: rgba(85,150,220,0.1); color: #5596dc; border-color: rgba(85,150,220,0.3); }
     .rp-tag.dietary { border-color: rgba(85,204,119,0.3); color: #55cc77; background: rgba(85,204,119,0.05); }
     .rp-tag.occasion { border-color: rgb(from var(--accent) r g b / 0.3); color: var(--accent); background: rgb(from var(--accent) r g b / 0.05); }
@@ -310,6 +310,7 @@
   </style>
   <script src="page-guard.js"></script>
   <script src="grocery-utils.js"></script>
+  <script src="recipe-procedure.js?v=20260609"></script>
   <script src="nav-init.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -1298,6 +1299,7 @@ function renderRecipe(r) {
   try { detectAllergens(r); } catch(_) {}
   try { if (r.credit_url) checkSourceUrl(r.credit_url); } catch(_) {}
   try { initTriedIt(); } catch(_) {}
+  try { showCookHistoryBridge(); } catch(_) {}
 }
 
 function formatTime(mins) {
@@ -1726,35 +1728,25 @@ function addAllToGrocery() {
 function renderProcedure(method, containerId = 'procedure-content') {
   const container = document.getElementById(containerId);
   if (!container) return;
-  container.innerHTML = (method || []).map(block => {
-    const steps = block.steps || [];
-    // Two supported shapes per step:
-    //  (a) plain string  — what the submit form saves
-    //  (b) object {title, text, multiple, items} — the richer demo shape
-    const allStrings = steps.length > 0 && steps.every(s => typeof s === 'string');
-
-    let inner;
-    if (allStrings) {
-      // A flat section of step strings → one numbered list
-      inner = `<ol class="rp-proc-steps">${steps.map(s =>
-        `<li class="rp-proc-step"><span class="rp-proc-step-num">→</span><span class="rp-proc-step-text">${fmtStep(s)}</span></li>`
-      ).join('')}</ol>`;
-    } else {
-      inner = steps.map(step => {
-        if (typeof step === 'string') {
-          return `<div class="rp-proc-section"><span class="rp-proc-single">${fmtStep(step)}</span></div>`;
-        }
-        const titleHtml = step.title ? `<div class="rp-proc-section-title">${escapeHtml(step.title)}:</div>` : '';
-        const body = (step.multiple && Array.isArray(step.items))
-          ? `<ol class="rp-proc-steps">${step.items.map(s => `<li class="rp-proc-step"><span class="rp-proc-step-num">→</span><span class="rp-proc-step-text">${escapeHtml(s)}</span></li>`).join('')}</ol>`
-          : `<span class="rp-proc-single">${escapeHtml(step.text || '')}</span>`;
-        return `<div class="rp-proc-section">${titleHtml}${body}</div>`;
-      }).join('');
-    }
-
+  const blocks = (typeof RecipeProcedure !== 'undefined')
+    ? RecipeProcedure.parseBlocks(method)
+    : (method || []);
+  if (!blocks.length) {
+    container.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:14px;color:var(--text-mid);padding:12px 0">No procedure listed for this recipe yet.</p>';
+    return;
+  }
+  container.innerHTML = blocks.map(function (block) {
+    const lines = (typeof RecipeProcedure !== 'undefined')
+      ? RecipeProcedure.stepLines(block.steps)
+      : (block.steps || []).map(function (s) { return typeof s === 'string' ? s : ''; });
+    const inner = lines.length
+      ? `<ol class="rp-proc-steps">${lines.map(function (line) {
+          return `<li class="rp-proc-step"><span class="rp-proc-step-num">→</span><span class="rp-proc-step-text">${fmtStep(line)}</span></li>`;
+        }).join('')}</ol>`
+      : '<p style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">No steps in this section.</p>';
     return `
     <div class="rp-proc-block">
-      <div class="rp-proc-block-title">${escapeHtml(block.section || block.section_name || '')}</div>
+      <div class="rp-proc-block-title">${escapeHtml(block.section || '')}</div>
       ${inner}
     </div>`;
   }).join('');
@@ -2147,19 +2139,27 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove('show'), 2800);
 }
 
-// ── BRIDGE: SHOW COOK HISTORY FOR THIS RECIPE ──────────────────
-(function addCookBridge() {
+// ── BRIDGE: SHOW COOK HISTORY FOR THIS RECIPE (4.4) ─────────────
+function showCookHistoryBridge() {
   if (!recipe || !recipe.id) return;
-  var s; try { s = JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch(_) {}
+  var s; try { s = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(_) {}
   if (!s || !s.access_token) return;
-      fetch(SUPA_URL+'/rest/v1/cooking_events?recipe_id=eq.'+recipe.id+'&select=id,cooked_at,rating&order=cooked_at.desc', {
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+s.access_token}
-  }).then(function(r){ return r.ok ? r.json() : []; }).then(function(events) {
+
+  fetch(SUPABASE_URL + '/rest/v1/cooking_events?recipe_id=eq.' + recipe.id + '&select=id,cooked_at,rating&order=cooked_at.desc', {
+    headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + s.access_token }
+  }).then(function (r) { return r.ok ? r.json() : []; }).then(function (events) {
     if (!events || !events.length) return;
+    if (document.getElementById('rp-cook-bridge')) return;
     var count = events.length;
-        var msgs = ['You cooked this once.', 'You\'ve cooked this '+count+' times.', 'You\'ve cooked this '+count+' times — becoming a regular.', 'You\'ve cooked this '+count+' times. A family favourite.'];
+    var msgs = [
+      'You cooked this once.',
+      'You\'ve cooked this ' + count + ' times.',
+      'You\'ve cooked this ' + count + ' times — becoming a regular.',
+      'You\'ve cooked this ' + count + ' times. A family favourite.'
+    ];
     var msg = count === 1 ? msgs[0] : count < 5 ? msgs[1] : count < 10 ? msgs[2] : msgs[3];
     var banner = document.createElement('div');
+    banner.id = 'rp-cook-bridge';
     banner.style.cssText = 'max-width:900px;margin:10px auto 0;padding:0 20px';
     var inner = document.createElement('div');
     inner.style.cssText = 'background:rgba(196,151,59,.08);border:1px solid rgba(196,151,59,.3);border-radius:10px;padding:10px 16px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);display:flex;align-items:center;justify-content:space-between;gap:12px';
@@ -2169,32 +2169,15 @@ function showToast(msg) {
     link.href = 'culinary-life.html';
     link.style.cssText = 'color:var(--accent);text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap';
     link.textContent = 'View culinary life →';
-    inner.appendChild(left); inner.appendChild(link);
+    inner.appendChild(left);
+    inner.appendChild(link);
     banner.appendChild(inner);
-    // Insert after the back-to-recipes link
     var backLink = document.querySelector('a[href="recipes.html"]');
     if (backLink && backLink.parentNode) {
       backLink.parentNode.insertAdjacentElement('afterend', banner);
     }
-    // Log this as a view (not a cook)
-  }).catch(function(){});
-  // Add "Log a Cook" button to the recipe page
-  setTimeout(function() {
-    var actionsEl = document.querySelector('.rp-actions') || document.querySelector('.rp-header');
-    if (!actionsEl) return;
-    var logBtn = document.createElement('button');
-    logBtn.style.cssText = 'padding:8px 16px;background:none;border:1px solid var(--accent-border);border-radius:9px;font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;transition:all .15s;margin-left:8px';
-    logBtn.textContent = '🍳 Log a Cook';
-    logBtn.addEventListener('click', function() {
-      // Navigate to culinary life with recipe pre-filled
-      localStorage.setItem('tcj_log_prefill', JSON.stringify({name:recipe.recipe_name||'', id:recipe.id}));
-      window.location.href = 'culinary-life.html';
-    });
-    logBtn.addEventListener('mouseover', function(){ this.style.background='rgba(196,151,59,.1)'; });
-    logBtn.addEventListener('mouseout',  function(){ this.style.background='none'; });
-    actionsEl.appendChild(logBtn);
-  }, 600);
-})();
+  }).catch(function () {});
+}
 
 // ── Step Timer ────────────────────────────────────────────────────────
 let _timerInterval = null, _timerRemaining = 0, _timerLabel = '';

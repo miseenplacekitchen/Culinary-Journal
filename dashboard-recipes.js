@@ -195,22 +195,29 @@ async function openRecipeModal(id) {
       panel.appendChild(ingBlock);
     }
 
-    // Method
+    // Method — section blocks with steps (not raw JSON per section)
     if (r.method) {
       var methBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border)');
       methBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:10px",'Procedure'));
-      var methScroll = mk('div','max-height:200px;overflow-y:auto');
+      var methScroll = mk('div','max-height:240px;overflow-y:auto');
       try {
-        var steps = typeof r.method === 'string' ? JSON.parse(r.method) : r.method;
-        if (Array.isArray(steps)) {
-          steps.forEach(function(step, i) {
-            var text = typeof step === 'string' ? step
-              : (step.title && step.text ? step.title + ': ' + step.text : (step.step || step.text || JSON.stringify(step)));
-            var line = mk('div',"font-size:12px;color:var(--text-mid);margin-bottom:6px;line-height:1.6");
-            line.innerHTML = '<span style="color:var(--accent);font-weight:600">' + (i+1) + '.</span> ' + esc(text);
-            methScroll.appendChild(line);
+        var blocks = (typeof RecipeProcedure !== 'undefined') ? RecipeProcedure.parseBlocks(r.method) : [];
+        var stepNum = 0;
+        if (blocks.length) {
+          blocks.forEach(function (block) {
+            if (block.section) {
+              methScroll.appendChild(mk('div',"font-size:12px;font-weight:600;color:var(--text-high);margin:10px 0 6px", block.section));
+            }
+            var lines = (typeof RecipeProcedure !== 'undefined') ? RecipeProcedure.stepLines(block.steps) : [];
+            lines.forEach(function (text) {
+              stepNum++;
+              var line = mk('div',"font-size:12px;color:var(--text-mid);margin-bottom:6px;line-height:1.6");
+              line.innerHTML = '<span style="color:var(--accent);font-weight:600">' + stepNum + '.</span> ' + esc(text);
+              methScroll.appendChild(line);
+            });
           });
         }
+        if (!stepNum) methScroll.appendChild(mk('div',"font-size:12px;color:var(--text-mid)",'No procedure steps listed'));
       } catch(_) { methScroll.appendChild(mk('div',"font-size:12px;color:var(--text-mid)",'Method present')); }
       methBlock.appendChild(methScroll);
       panel.appendChild(methBlock);
@@ -276,8 +283,18 @@ async function openRecipeModal(id) {
     catSel.id = 'rm-edit-cat';
     catSel.style.cssText = 'width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)';
     var blankOpt = document.createElement('option'); blankOpt.value = ''; blankOpt.textContent = '— Select —'; catSel.appendChild(blankOpt);
-    getCats().forEach(function(c) { var o = document.createElement('option'); o.value = c; o.textContent = c; o.selected = (r.category === c); catSel.appendChild(o); });
+    getCats().forEach(function(c) { var o = document.createElement('option'); o.value = c; o.textContent = c; catSel.appendChild(o); });
     catWrap.appendChild(catSel);
+    if (r.category) {
+      catSel.value = String(r.category).trim();
+      if (!catSel.value && getCats().indexOf(r.category) < 0) {
+        var extra = document.createElement('option');
+        extra.value = r.category;
+        extra.textContent = r.category;
+        extra.selected = true;
+        catSel.appendChild(extra);
+      }
+    }
     // Spice select
     var spiceWrap = mk('div','');
     spiceWrap.appendChild(mk('label',"display:block;font-size:10px;color:var(--text-mid);margin-bottom:3px",'Spice Level'));

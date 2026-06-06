@@ -873,9 +873,13 @@
   try {
     var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
     if (sess && sess.access_token) {
+      var prof = null;
+      try { prof = JSON.parse(localStorage.getItem('tcj_profile') || 'null'); } catch(_) {}
+      var dest = (prof && prof.is_admin) ? 'dashboard.html' : 'diary.html';
+      var label = (prof && prof.is_admin) ? 'Open admin panel' : 'Open your journal';
       document.querySelectorAll('a.home-cta-primary[href="login.html"]').forEach(function(a){
-        a.href = 'diary.html';
-        a.textContent = 'Open your journal';
+        a.href = dest;
+        a.textContent = label;
       });
     }
   } catch(e) {}

@@ -636,8 +636,7 @@ async function doLogin() {
       if (returnTo && /^[a-z0-9_\-]+\.html$/i.test(returnTo)) {
         window.location.href = returnTo;
       } else {
-        // Issue A-1: all users land on My Diary after login (D1: revert admins to 'dashboard.html' here if preferred)
-        window.location.href = 'diary.html';
+        window.location.href = isAdmin ? 'dashboard.html' : 'diary.html';
       }
     }, 1000);
 
