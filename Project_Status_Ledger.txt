@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phase 5 batch)
+Last updated: 9 June 2026 (Phase 5 complete — code + SQL)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -24,13 +24,10 @@ fix-all-live.sql          | Admin spine, RPCs, diary, CJ-006     | Ran earlier
 fix-tier2-surfaces.sql    | Notifications, dietary-card RPCs       | Ran ✅
 fix-phase3-batch.sql      | Chef of Month, ROTW, email on review   | Ran ✅
 fix-phase4-batch.sql      | Follows, Friends, family refs, baby    | Ran ✅
-fix-phase5-batch.sql      | Follower notify on approve, link check | **RUN NEXT**
-
-After fix-phase5-batch.sql: Supabase → SQL Editor → paste file → Run.
-Expect: `fix-phase5-batch.sql complete`
+fix-phase5-batch.sql      | Follower notify on approve, link check | Ran ✅
 
 ══════════════════════════════════════════════════════════════════════
-PHASE 5 (THIS BATCH) — SHIPPED IN CODE
+PHASE 5 — COMPLETE (CODE + SQL)
 ══════════════════════════════════════════════════════════════════════
 • fix-phase5-batch.sql — follower in-app notifications when followed user’s recipe approved; record_source_link_check RPC; source_link_status columns
 • Legal shells: event-seating-policy, data-breach, credit-preservation, subscription-terms
@@ -90,7 +87,7 @@ PARTIAL — NEEDS DEPTH OR LIVE VERIFY
 CJ-006 / admin panel  | Spine exists; Betty to confirm all tabs on live
 Recipe page defects   | Many fixed; hero deferred; full Issue 4 set not re-audited
 Dead-link checking    | Client check + DB persist (phase 5); no scheduled cron
-Follow notifications  | SQL on approve (phase 5); needs fix-phase5-batch.sql + live test
+Follow notifications  | SQL on approve (phase 5) — live test recommended
 Email sending         | Queue only — no Resend/SendGrid worker
 Allergy engine        | Keyword v1 on meal planner; not site-wide enforced
 Nutrition/substitutes | Display blocks exist; no full substitution engine
@@ -121,14 +118,14 @@ Branch: main (protected — push requires approval)
 Recent commits:
   fcd9d7d — Phase 3 (Chef of Month, legal shells, meal planner sync, email queue)
   57ca559 — Phase 4 (follows, Friends, cultural pages, cook mode, MP-14, print cards)
-  [pending] — Phase 5 (this batch)
+  10ade59 — Phase 5 (follower notify SQL, legal shells, family refs, MP-09)
 
 Untracked (intentional): Master_Incomplete_Items_List.txt
 
 ══════════════════════════════════════════════════════════════════════
-LIVE VERIFICATION CHECKLIST (after Phase 5 deploy + SQL)
+LIVE VERIFICATION CHECKLIST (Phase 5)
 ══════════════════════════════════════════════════════════════════════
-1. Run fix-phase5-batch.sql in Supabase → confirm complete message
+1. ~~Run fix-phase5-batch.sql~~ ✅ Done
 2. Hard-refresh (Ctrl+Shift+R):
    • https://www.theculinaryjournal.site/family-profiles.html — open Add Profile; checkboxes match admin lists
    • https://www.theculinaryjournal.site/meal-planner.html — Family mode → “View meals for:” chips
