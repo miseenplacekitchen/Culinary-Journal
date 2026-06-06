@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phase 6 batch)
+Last updated: 9 June 2026 (Phase 6 complete — code + SQL)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -25,10 +25,10 @@ fix-tier2-surfaces.sql    | Notifications, dietary-card RPCs       | Ran ✅
 fix-phase3-batch.sql      | Chef of Month, ROTW, email on review   | Ran ✅
 fix-phase4-batch.sql      | Follows, Friends, family refs, baby    | Ran ✅
 fix-phase5-batch.sql      | Follower notify on approve, link check | Ran ✅
-fix-phase6-batch.sql      | Onboarding, taxonomy, email queue RPCs | **RUN NEXT**
+fix-phase6-batch.sql      | Onboarding, taxonomy, email queue RPCs | Ran ✅
 
 ══════════════════════════════════════════════════════════════════════
-PHASE 6 (THIS BATCH) — SHIPPED IN CODE
+PHASE 6 — COMPLETE (CODE + SQL)
 ══════════════════════════════════════════════════════════════════════
 • fix-phase6-batch.sql — onboarding_completed, complete_my_onboarding, recipe taxonomy tables/RPCs, email queue admin RPCs, handle_new_user update
 • onboarding.html — 3-step dietary/allergy/health wizard for new signups
@@ -104,9 +104,9 @@ Nutrition/substitutes | Display blocks exist; no full substitution engine
 Pantry/grocery depth  | PF-01–09, GL-05/07/11, governed ingredient_id not done
 Print Studio advanced | Swipe view (phase 6); booklet generator, premium themes (D4) still open
 Library (D3)          | Admin library-mgmt exists; full public content model thin
-Registration onboard  | onboarding.html wizard (phase 6); needs fix-phase6 SQL + new signup test
-Admin taxonomy        | CRUD tab (phase 6); submit-recipe/browse wiring still partial
-Email sending         | Edge function send-queued-emails.js exists; deploy + cron; admin queue UI (phase 6)
+Registration onboard  | onboarding.html live — test with new signup account
+Admin taxonomy        | CRUD tab live; submit-recipe/browse wiring still partial
+Email sending         | Queue UI live; deploy send-queued-emails edge fn + pg_cron for actual send
 Terms/Privacy         | Shell pages; lawyer hardening pending
 Regional intelligence | Not started
 Microsoft OAuth       | Not started
@@ -131,15 +131,20 @@ Recent commits:
   57ca559 — Phase 4 (follows, Friends, cultural pages, cook mode, MP-14, print cards)
   10ade59 — Phase 5 (follower notify SQL, legal shells, family refs, MP-09)
   deea492 — Ledger update (Phase 5 SQL confirmed)
-  [pending] — Phase 6 (onboarding, taxonomy, email queue UI)
+  284a9bd — Phase 6 (onboarding, taxonomy, email queue UI, print swipe)
 
 Untracked (intentional): Master_Incomplete_Items_List.txt
 
 ══════════════════════════════════════════════════════════════════════
-LIVE VERIFICATION CHECKLIST (Phase 5)
+LIVE VERIFICATION CHECKLIST (Phase 6)
 ══════════════════════════════════════════════════════════════════════
-1. ~~Run fix-phase5-batch.sql~~ ✅ Done
+1. ~~Run fix-phase6-batch.sql~~ ✅ Done
 2. Hard-refresh (Ctrl+Shift+R):
+   • Admin → Recipe Management → Interface → Sub-cats & Divisions
+   • Admin → Site Management → Email (queue panel + retry)
+   • https://www.theculinaryjournal.site/print-studio.html → Swipe cards
+   • New test signup → onboarding.html after first login
+3. Phase 5 checks still valid:
    • https://www.theculinaryjournal.site/family-profiles.html — open Add Profile; checkboxes match admin lists
    • https://www.theculinaryjournal.site/meal-planner.html — Family mode → “View meals for:” chips
    • https://www.theculinaryjournal.site/event-seating-policy.html (and other new legal URLs)
