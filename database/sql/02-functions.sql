@@ -837,12 +837,12 @@ GRANT EXECUTE ON FUNCTION public.set_page_visibility(text,text,text) TO authenti
 
 -- ── is_username_taken — used by signup form ────────────────────────────
 DROP FUNCTION IF EXISTS public.is_username_taken(text);
-CREATE FUNCTION public.is_username_taken(p_username text)
+CREATE FUNCTION public.is_username_taken(uname text)
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE LOWER(username) = LOWER(p_username)
+    WHERE LOWER(username) = LOWER(TRIM(uname))
   );
 END; $$;
 REVOKE ALL ON FUNCTION public.is_username_taken(text) FROM PUBLIC;

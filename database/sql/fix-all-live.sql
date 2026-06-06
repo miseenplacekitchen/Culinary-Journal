@@ -942,6 +942,22 @@ $$;
 REVOKE ALL ON FUNCTION public.delete_cooking_event(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.delete_cooking_event(uuid) TO authenticated;
 
+-- ── Signup: is_username_taken (login.html sends uname) ─────────────
+DROP FUNCTION IF EXISTS public.is_username_taken(text);
+CREATE OR REPLACE FUNCTION public.is_username_taken(uname text)
+RETURNS boolean
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE LOWER(username) = LOWER(TRIM(uname))
+  );
+END;
+$$;
+REVOKE ALL ON FUNCTION public.is_username_taken(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_username_taken(text) TO anon, authenticated;
+
 -- ── Reload PostgREST schema cache ──────────────────────────────────
 SELECT pg_notify('pgrst', 'reload schema');
 
