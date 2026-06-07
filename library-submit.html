@@ -79,6 +79,20 @@ body { background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--text-
       </div>
       <input class="ls-input" id="f-img-url" type="text" placeholder="Or paste image URL" style="margin-top:8px">
     </div>
+    <div class="ls-row" style="margin-top:20px">
+      <label class="ls-label">Mise circle <small style="color:var(--text-muted)">(round prep-board photo for Library &amp; print)</small></label>
+      <div class="ls-img-box" onclick="document.getElementById('f-mise-file').click()" style="max-width:200px">
+        <div id="f-mise-preview"></div>
+        <div class="ls-img-text">Upload circular mise photo</div>
+        <input type="file" id="f-mise-file" accept="image/*" class="ls-hidden" onchange="previewMiseImage(this)">
+      </div>
+      <input class="ls-input" id="f-mise-url" type="text" placeholder="Or paste mise image URL" style="margin-top:8px">
+      <select class="ls-select" id="f-image-status" style="margin-top:8px;max-width:220px">
+        <option value="missing">No mise image</option>
+        <option value="draft">Draft — not shown publicly</option>
+        <option value="approved">Approved — visible in Library &amp; print</option>
+      </select>
+    </div>
   </div>
 
   <!-- Type-specific fields rendered dynamically -->
@@ -136,6 +150,7 @@ window._lsIsAdmin = false;
         'Members: submit a draft for admin review. Published profiles appear in the Library after approval.';
       var st = document.getElementById('f-status'); if (st) { st.value = 'draft'; st.closest('.ls-row').style.display = 'none'; }
       var vis = document.getElementById('f-visibility'); if (vis) vis.closest('.ls-row').style.display = 'none';
+      var imgSt = document.getElementById('f-image-status'); if (imgSt) imgSt.style.display = 'none';
       document.getElementById('ls-submit-btn').textContent = 'Submit for Review';
     }
   } catch(e) { console.warn('library submit access', e); }
@@ -276,6 +291,57 @@ function renderTypeFields() {
   wrap.appendChild(section);
 }
 
+async function uploadLibraryImage(file, pathPrefix, previewId, urlFieldId) {
+  var preview = document.getElementById(previewId);
+  var urlField = document.getElementById(urlFieldId);
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = document.createElement('img');
+    img.src = e.target.result;
+    img.style.cssText = 'max-height:140px;border-radius:50%;width:120px;height:120px;object-fit:cover';
+    preview.replaceChildren(img);
+  };
+  reader.readAsDataURL(file);
+  try {
+    var ext = file.name.split('.').pop().toLowerCase() || 'jpg';
+    var path = pathPrefix + '/' + currentType + '/' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.' + ext;
+    var res = await fetch(window.SUPA_URL + '/storage/v1/object/library-images/' + path, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + sess.access_token,
+        'Content-Type': file.type || 'image/jpeg',
+        'x-upsert': 'true'
+      },
+      body: file
+    });
+    if (res.ok) {
+      var publicUrl = window.SUPA_URL + '/storage/v1/object/public/library-images/' + path;
+      if (urlField) urlField.value = publicUrl;
+      var img2 = document.createElement('img');
+      img2.src = publicUrl;
+      img2.style.cssText = 'max-height:140px;border-radius:50%;width:120px;height:120px;object-fit:cover';
+      preview.replaceChildren(img2);
+      var st = document.getElementById('f-image-status');
+      if (st && st.value === 'missing') st.value = 'draft';
+    } else {
+      var err2 = document.createElement('div');
+      err2.style.cssText = 'font-size:11px;color:var(--danger);margin-top:4px';
+      err2.textContent = 'Upload failed — paste a URL below instead';
+      preview.after(err2);
+    }
+  } catch (e) {
+    var err3 = document.createElement('div');
+    err3.style.cssText = 'font-size:11px;color:var(--danger);margin-top:4px';
+    err3.textContent = 'Upload failed — paste a URL below instead';
+    preview.after(err3);
+  }
+}
+
+async function previewMiseImage(input) {
+  if (!input.files || !input.files[0]) return;
+  await uploadLibraryImage(input.files[0], 'library/mise', 'f-mise-preview', 'f-mise-url');
+}
+
 async function previewImage(input) {
   if (!input.files || !input.files[0]) return;
   var file = input.files[0];
@@ -349,6 +415,8 @@ async function submitProfile() {
     also_known_as:    val('f-aka') || null,
     local_names:      JSON.stringify(localNames),
     image_url:        imgUrl,
+    mise_image_url:   val('f-mise-url') || null,
+    image_status:     val('f-image-status') || 'missing',
     chefs_notes:      val('f-chefs') || null,
     recommended_brand: val('f-brand') || null,
     did_you_know:     val('f-dyk') || null,
@@ -387,6 +455,7 @@ async function submitProfile() {
   try {
     if (!window._lsIsAdmin) {
       payload.status = 'draft';
+      payload.image_status = payload.mise_image_url ? 'draft' : 'missing';
       const res = await fetch(SUPA_URL + '/rest/v1/rpc/submit_library_profile_submission', {
         method: 'POST',
         headers: {
@@ -452,9 +521,17 @@ async function loadExisting(id) {
     setVal('f-name', p.name); setVal('f-aka', p.also_known_as);
     setVal('f-local', Array.isArray(p.local_names) ? p.local_names.join(', ') : '');
     setVal('f-img-url', p.image_url);
+    setVal('f-mise-url', p.mise_image_url);
+    setVal('f-image-status', p.image_status || (p.mise_image_url ? 'draft' : 'missing'));
     setVal('f-chefs', p.chefs_notes); setVal('f-brand', p.recommended_brand);
     setVal('f-dyk', p.did_you_know); setVal('f-status', p.status); setVal('f-visibility', p.visibility);
     if (p.image_url) { var ei = document.createElement('img'); ei.src = p.image_url; ei.style.maxHeight = '100px'; document.getElementById('f-img-preview').replaceChildren(ei); }
+    if (p.mise_image_url) {
+      var mi = document.createElement('img');
+      mi.src = p.mise_image_url;
+      mi.style.cssText = 'width:120px;height:120px;border-radius:50%;object-fit:cover';
+      document.getElementById('f-mise-preview').replaceChildren(mi);
+    }
     document.title = 'Edit Profile — The Culinary Journal';
     var chromeTitle = document.getElementById('lib-chrome-title');
     if (chromeTitle && window.LibraryChrome) chromeTitle.innerHTML = LibraryChrome.titleHtml('Edit Profile');

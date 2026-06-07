@@ -400,6 +400,7 @@ async function buildSMSettings(container) {
 
 var LIB_CURRENT_TYPE = 'ingredient';
 var LIB_CURRENT_STATUS = null;
+var LIB_IMAGE_STATUS = null;
 
 var LIB_TYPE_MAP = {
   'lm-ingredients':  { type:'ingredient',   label:'Ingredients',   emoji:'🌿' },
@@ -488,27 +489,47 @@ async function reviewLibSubmission(id, action) {
   } catch (e) { alert('Error: ' + (e.message || e)); }
 }
 
-async function loadLibProfiles(status) {
-  LIB_CURRENT_STATUS = status || null;
+async function loadLibProfiles(status, imageStatus) {
+  if (status !== undefined) LIB_CURRENT_STATUS = status || null;
+  if (imageStatus !== undefined) LIB_IMAGE_STATUS = imageStatus || null;
   var panel = document.getElementById('lm-panel');
   if (!panel) return;
   panel.innerHTML = '<div class="ap-loading">Loading…</div>';
   try {
+    var stats = await rpc('admin_get_library_image_stats', { p_type: LIB_CURRENT_TYPE }).catch(function () { return null; });
     var data = await rpc('admin_get_library_profiles', {
-      p_type: LIB_CURRENT_TYPE, p_status: LIB_CURRENT_STATUS, p_limit: 50, p_offset: 0
+      p_type: LIB_CURRENT_TYPE,
+      p_status: LIB_CURRENT_STATUS,
+      p_limit: 50,
+      p_offset: 0,
+      p_image_status: LIB_IMAGE_STATUS
     });
-    buildLibPanel(panel, Array.isArray(data) ? data : []);
+    buildLibPanel(panel, Array.isArray(data) ? data : [], stats);
   } catch(e) {
     panel.innerHTML = '<div class="ap-empty">Error loading profiles: ' + (e.message||e) + '</div>';
   }
 }
 
-function buildLibPanel(panel, items) {
+function buildLibPanel(panel, items, stats) {
   var info = Object.values(LIB_TYPE_MAP).find(function(t){ return t.type === LIB_CURRENT_TYPE; }) || {};
-  var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
-    '<div style="display:flex;gap:8px">' +
+  var statsHtml = '';
+  if (stats && stats.total) {
+    statsHtml = '<div style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid);margin-bottom:12px;display:flex;gap:12px;flex-wrap:wrap">' +
+      '<span>Mise coverage: <strong style="color:var(--text-high)">' + (stats.approved || 0) + '</strong> / ' + stats.total + ' approved</span>' +
+      '<span style="color:var(--text-muted)">' + (stats.missing || 0) + ' missing · ' + (stats.draft || 0) + ' draft</span></div>';
+  }
+  var imgFilterBtns = ['All','missing','draft','approved'].map(function(s) {
+    var active = (s === 'All' && !LIB_IMAGE_STATUS) || s === LIB_IMAGE_STATUS;
+    return '<button onclick="loadLibProfiles(undefined,' + (s === 'All' ? 'null' : "'" + s + "'") + ')" ' +
+      'style="font-family:DM Sans,sans-serif;font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:' +
+      (active ? 'rgba(196,151,59,0.15)' : 'none') + ';color:' + (active ? 'var(--accent)' : 'var(--text-mid)') + ';cursor:pointer">' +
+      (s === 'All' ? 'All images' : s) + '</button>';
+  }).join('');
+  var html = statsHtml +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
     ['All','draft','published'].map(function(s){
-      return '<button onclick="loadLibProfiles(' + (s==='All'?'null':"'"+s+"'")+  ')" ' +
+      return '<button onclick="loadLibProfiles(' + (s==='All'?'null':"'"+s+"'")+ ', undefined)" ' +
         'style="font-family:DM Sans,sans-serif;font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:' +
         ((s==='All'&&!LIB_CURRENT_STATUS)||(s===LIB_CURRENT_STATUS)?'var(--accent)':'none') +
         ';color:' + ((s==='All'&&!LIB_CURRENT_STATUS)||(s===LIB_CURRENT_STATUS)?'#0C0702':'var(--text-mid)') +
@@ -517,7 +538,8 @@ function buildLibPanel(panel, items) {
     '</div>' +
     '<a href="library-submit.html?type=' + LIB_CURRENT_TYPE + '" target="_blank" ' +
     'style="font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;padding:8px 16px;border-radius:8px;background:var(--accent);color:#0C0702;text-decoration:none">+ New Profile</a>' +
-    '</div>';
+    '</div>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">' + imgFilterBtns + '</div>';
 
   if (!items.length) {
     html += '<div class="ap-empty">No ' + (info.label||'profiles') + ' found.</div>';
@@ -528,7 +550,7 @@ function buildLibPanel(panel, items) {
   var ingCol = LIB_CURRENT_TYPE === 'ingredient' ? '<th style="text-align:left;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-muted);padding:8px 12px;border-bottom:1px solid var(--border)">Ing ID</th>' : '';
   html += '<div class="ap-table"><table style="width:100%;border-collapse:collapse">' +
     '<thead><tr>' +
-    ['Image','Name','Status','Visibility','Updated'].map(function(h){
+    ['Mise','Hero','Name','Mise status','Status','Visibility','Updated'].map(function(h){
       return '<th style="text-align:left;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-muted);padding:8px 12px;border-bottom:1px solid var(--border)">' + h + '</th>';
     }).join('') + ingCol +
     '<th style="text-align:left;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-muted);padding:8px 12px;border-bottom:1px solid var(--border)">Actions</th>' +
@@ -536,14 +558,25 @@ function buildLibPanel(panel, items) {
 
   items.forEach(function(p) {
     var statusColor = p.status==='published' ? '#6dc86d' : 'var(--text-muted)';
+    var imgSt = p.image_status || (p.mise_image_url ? 'draft' : 'missing');
+    var imgStColor = imgSt === 'approved' ? '#6dc86d' : (imgSt === 'draft' ? '#c4973b' : 'var(--text-muted)');
+    var miseThumb = p.mise_image_url
+      ? '<img src="' + esc(p.mise_image_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'
+      : '<span style="font-size:18px">' + (info.emoji || '·') + '</span>';
+    var heroThumb = p.image_url
+      ? '<img src="' + esc(p.image_url) + '" style="width:100%;height:100%;object-fit:cover">'
+      : '<span style="font-size:14px;opacity:0.5">' + (info.emoji || '') + '</span>';
+    var approveBtn = (imgSt === 'draft' && p.mise_image_url)
+      ? '<button data-action="lib-mise-approve" data-lid="' + esc(p.id) + '" style="font-size:10px;padding:3px 8px;border:1px solid #6dc86d;background:none;color:#6dc86d;border-radius:5px;cursor:pointer;margin-left:4px">Approve</button>'
+      : '';
     var ingCell = LIB_CURRENT_TYPE === 'ingredient'
       ? '<td style="padding:8px 12px"><input type="number" id="lib-ing-'+esc(p.id)+'" value="'+(p.governed_ingredient_id||'')+'" placeholder="ID" style="width:72px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-high)"><button data-action="lib-link" data-lid="'+esc(p.id)+'" style="margin-left:4px;font-size:10px;padding:3px 8px;border:1px solid var(--accent);background:none;color:var(--accent);border-radius:5px;cursor:pointer">Link</button></td>'
       : '';
     html += '<tr style="border-bottom:1px solid rgba(255,255,255,.04)">' +
-      '<td style="padding:8px 12px"><div style="width:40px;height:40px;border-radius:6px;background:var(--surface);overflow:hidden">' +
-      (p.image_url ? '<img src="' + esc(p.image_url) + '" style="width:100%;height:100%;object-fit:cover">' : info.emoji||'') +
-      '</div></td>' +
+      '<td style="padding:8px 12px"><div style="width:44px;height:44px;border-radius:50%;background:var(--surface);overflow:hidden;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)">' + miseThumb + '</div></td>' +
+      '<td style="padding:8px 12px"><div style="width:40px;height:40px;border-radius:6px;background:var(--surface);overflow:hidden;display:flex;align-items:center;justify-content:center">' + heroThumb + '</div></td>' +
       '<td style="padding:8px 12px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high)">' + esc(p.name) + '</td>' +
+      '<td style="padding:8px 12px"><span style="font-size:10px;font-family:DM Sans,sans-serif;color:' + imgStColor + ';text-transform:uppercase;letter-spacing:.06em">' + esc(imgSt) + '</span>' + approveBtn + '</td>' +
       '<td style="padding:8px 12px"><span style="font-size:11px;font-family:DM Sans,sans-serif;color:' + statusColor + ';text-transform:uppercase;letter-spacing:.06em">' + esc(p.status) + '</span></td>' +
       '<td style="padding:8px 12px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-muted)">' + esc(p.visibility||'public') + '</td>' +
       '<td style="padding:8px 12px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-muted)">' + (p.updated_at ? new Date(p.updated_at).toLocaleDateString() : '—') + '</td>' +
@@ -577,6 +610,11 @@ function buildLibPanel(panel, items) {
       if (!ingId) { alert('Enter governed ingredient ID'); return; }
       rpc('admin_link_library_ingredient', { p_profile_id: lid, p_ingredient_id: ingId })
         .then(function() { alert('Linked'); loadLibProfiles(LIB_CURRENT_STATUS); })
+        .catch(function(err) { alert(err.message); });
+    }
+    if (action === 'lib-mise-approve' && lid) {
+      rpc('admin_set_library_image_status', { p_type: LIB_CURRENT_TYPE, p_id: lid, p_status: 'approved' })
+        .then(function() { loadLibProfiles(LIB_CURRENT_STATUS); })
         .catch(function(err) { alert(err.message); });
     }
   }, { once: false });

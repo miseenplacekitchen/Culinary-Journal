@@ -85,6 +85,17 @@
     .ps-ing-list { display:grid; grid-template-columns:1fr 1fr; gap:2px 16px; }
     .ps-ing-item { font-family:'DM Sans',sans-serif; font-size:10px; color:#333; display:flex; gap:6px; align-items:baseline; padding:1px 0; }
     .ps-ing-qty  { color:#8b6914; font-weight:600; white-space:nowrap; flex-shrink:0; min-width:40px; }
+    .ps-mise-board { padding: 8px 4px; user-select: none; }
+    .ps-mise-board-title { font-family:'Cormorant Garamond',serif; font-size:1.35rem; font-weight:700; text-align:center; margin-bottom:2px; color:#1a1a1a; }
+    .ps-mise-board-sub { font-family:'DM Sans',sans-serif; font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:#8b6914; text-align:center; margin-bottom:14px; }
+    .ps-mise-grid { display:grid; grid-template-columns:1fr; gap:10px; }
+    .ps-mise-row { display:grid; grid-template-columns:72px 1fr auto; gap:12px; align-items:center; }
+    .ps-mise-photo { width:64px; height:64px; border-radius:50%; overflow:hidden; border:1.5px solid #e8e0d0; background:#faf7f0; display:flex; align-items:center; justify-content:center; position:relative; }
+    .ps-mise-photo::after { content:''; position:absolute; inset:0; border-radius:50%; z-index:1; }
+    .ps-mise-photo img { width:100%; height:100%; object-fit:cover; pointer-events:none; -webkit-user-drag:none; }
+    .ps-mise-placeholder span { font-size:24px; line-height:1; }
+    .ps-mise-name { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:500; color:#333; }
+    .ps-mise-qty { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; color:#8b6914; white-space:nowrap; }
     .ps-step     { font-family:'DM Sans',sans-serif; font-size:10px; color:#333; margin-bottom:4px; line-height:1.5; display:flex; gap:8px; }
     .ps-step-num { color:#8b6914; font-weight:700; flex-shrink:0; }
     .ps-step-text { flex:1; }
@@ -419,6 +430,9 @@
           <input type="checkbox" id="inc-overview" checked onchange="buildCards()" style="accent-color:var(--accent)"> Overview &amp; Ingredients
         </label>
         <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
+          <input type="checkbox" id="inc-mise-board" onchange="buildCards()" style="accent-color:var(--accent)"> Mise Board <span style="color:var(--text-mid);font-size:11px">(ingredient circles)</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
           <input type="checkbox" id="inc-method" checked onchange="buildCards()" style="accent-color:var(--accent)"> Procedure
         </label>
         <label style="display:flex;align-items:center;gap:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);cursor:pointer">
@@ -530,6 +544,7 @@ const PS_PREMIUM_LAYOUTS = { botanical:1, candlelit:1, wedding:1, 'dark-moody':1
 let PS_PREMIUM_FREE = true;
 let PS_USER_TIER = 'free';
 let psCustomBg = '';
+let psMiseLinks = {};
 
 async function psLoadPremiumGate() {
   try {
@@ -761,6 +776,61 @@ function psIngredientPairs(recipe) {
   return pairs;
 }
 
+async function psPrefetchMiseLinks(recipes) {
+  const ids = [];
+  (recipes || []).forEach(function (r) {
+    (r.ingredients || []).forEach(function (sec) {
+      (sec.items || []).forEach(function (item) {
+        if (item.ingredient_id) ids.push(item.ingredient_id);
+      });
+    });
+  });
+  const unique = Array.from(new Set(ids));
+  if (!unique.length) { psMiseLinks = {}; return; }
+  try {
+    const sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    const headers = { apikey: window.SUPA_KEY, 'Content-Type': 'application/json' };
+    if (sess && sess.access_token) headers.Authorization = 'Bearer ' + sess.access_token;
+    const res = await fetch(window.SUPA_URL + '/rest/v1/rpc/get_library_links_for_ingredients', {
+      method: 'POST', headers,
+      body: JSON.stringify({ p_ids: unique })
+    });
+    const data = await res.json();
+    psMiseLinks = (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
+  } catch (_) {
+    psMiseLinks = {};
+  }
+}
+
+function psMiseCircleHtml(url) {
+  if (url) {
+    return '<div class="ps-mise-photo"><img src="' + esc(url) + '" alt="" draggable="false" oncontextmenu="return false"></div>';
+  }
+  return '<div class="ps-mise-photo ps-mise-placeholder"><span>🌿</span></div>';
+}
+
+function psBuildMiseBoardHtml(r) {
+  const pairs = psIngredientPairs(r);
+  if (!pairs.length) return '';
+  let rows = '';
+  pairs.forEach(function (p) {
+    const item = p.item;
+    const id = item.ingredient_id;
+    const link = id ? psMiseLinks[String(id)] : null;
+    const url = (link && link.image_status === 'approved' && link.mise_image_url) ? link.mise_image_url : '';
+    const name = (link && link.name) || item.ingredient || '';
+    const qty = [fmtQty(item.qty), item.unit || ''].filter(Boolean).join(' ');
+    rows += '<div class="ps-mise-row">' +
+      psMiseCircleHtml(url) +
+      '<div class="ps-mise-name">' + esc(name) + '</div>' +
+      '<div class="ps-mise-qty">' + esc(qty) + '</div></div>';
+  });
+  return '<div class="ps-mise-board">' +
+    '<div class="ps-mise-board-title">' + esc(r.recipe_name || '') + '</div>' +
+    '<div class="ps-mise-board-sub">Mise en place</div>' +
+    '<div class="ps-mise-grid">' + rows + '</div></div>';
+}
+
 function psRenderIngredientPairs(pairs) {
   if (!pairs.length) return '';
   let html = '';
@@ -919,6 +989,11 @@ function psCollectCardDefsForRecipe(r, inc, opts) {
     return cardDefs;
   }
 
+  if (inc('inc-mise-board')) {
+    const miseHtml = psBuildMiseBoardHtml(r);
+    if (miseHtml) cardDefs.push({ type: 'Mise Board', html: miseHtml });
+  }
+
   if (inc('inc-overview')) {
     const meta = psBuildMeta(r, inc, cfg);
     const extraRows = psBuildExtraRows(r, inc);
@@ -1032,11 +1107,12 @@ function psCollectCardDefsForRecipe(r, inc, opts) {
   return cardDefs;
 }
 
-function buildCards() {
+async function buildCards() {
   const recipes = currentRecipes.length ? currentRecipes : (currentRecipe ? [currentRecipe] : []);
   if (!recipes.length) return;
   const container = document.getElementById('ps-cards');
   const inc = id => { const el = document.getElementById(id); return el ? el.checked : false; };
+  if (inc('inc-mise-board')) await psPrefetchMiseLinks(recipes);
   const showQr = inc('inc-qr');
   const menuOnly = inc('inc-overview') && !inc('inc-method') && !inc('inc-tips') && !inc('inc-substitutes');
   const collectionName = new URLSearchParams(window.location.search).get('collection') || '';
@@ -1144,14 +1220,14 @@ function loadRecipe(recipe) {
   currentRecipe = recipe;
   currentRecipes = recipe ? [recipe] : [];
   updateRecipeLabel();
-  buildCards();
+  buildCards().catch(function () {});
 }
 
 function loadRecipeBatch(recipes) {
   currentRecipes = (recipes || []).filter(Boolean);
   currentRecipe = currentRecipes[0] || null;
   updateRecipeLabel();
-  buildCards();
+  buildCards().catch(function () {});
 }
 
 function updateRecipeLabel() {

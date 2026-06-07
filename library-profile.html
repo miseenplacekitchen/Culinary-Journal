@@ -13,6 +13,7 @@
 <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
 <script src="library-chrome.js"></script>
+<script src="library-mise.js"></script>
 <script src="nav-init.js"></script>
 <style>
 .lp-page { min-height:100vh; background:var(--bg); }
@@ -313,6 +314,8 @@ async function init() {
 
     const recipesHtml = await loadLinkedRecipes(p.name);
 
+    const miseCircle = LibraryMise.circleFrame(p, meta.emoji, 'lib-mise-lg');
+
     document.getElementById('lp-content').innerHTML = `
       <div class="lp-hero">
         <div class="lp-hero-img">${heroImg}</div>
@@ -325,11 +328,13 @@ async function init() {
           ${localNames ? `<div class="lp-tags">${localNames}</div>` : ''}
         </div>
       </div>
+      <div class="lib-profile-mise-wrap">${miseCircle}</div>
       <div class="lp-body">
         ${buildSections(p)}
         ${recipesHtml}
       </div>
     `;
+    LibraryMise.bindProtection(document.getElementById('lp-content'));
   } catch(e) {
     showError('Could not load this profile.');
   }
