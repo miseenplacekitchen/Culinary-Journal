@@ -13,7 +13,8 @@ DEFERRED = explicitly postponed (user decision or blocked on D/G decisions)
 OPEN     = not started or only stubbed
 BLOCKED  = needs Betty decision before any build
 
-Master_Incomplete_Items_List.txt (6 June) is STALE — do not commit.
+Master_Incomplete_Items_List.txt = master item-level backlog (June 6 audit + reconciliation notes).
+Reconcile against this file when closing items; ledger tracks phases and SQL.
 
 ══════════════════════════════════════════════════════════════════════
 SQL SCRIPTS — RUN ORDER
