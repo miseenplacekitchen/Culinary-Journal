@@ -7,6 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); }
     .legal-wrap { max-width:760px; margin:0 auto; padding:48px 24px 100px; }
@@ -25,10 +26,12 @@
     <p>These terms apply when you subscribe to a paid tier of The Culinary Journal (Premium, Event, or future plans).</p>
     <h2>Plans &amp; billing</h2>
     <ul>
-      <li>Pricing and features are shown at checkout and may change with notice for new subscriptions.</li>
+      <li>Most of The Culinary Journal is free. Paid extras (themes, optional plans) are optional.</li>
+      <li>Pricing and features are shown at checkout and may change with notice for new purchases.</li>
       <li>Subscriptions renew automatically unless cancelled before the renewal date.</li>
-      <li>Refunds follow applicable consumer law and our support policy.</li>
     </ul>
+    <h2>Refunds</h2>
+    <p id="refund-policy-text">Loading refund policy…</p>
     <h2>Premium features</h2>
     <p>Paid tiers may unlock additional tools (e.g. Print Studio themes, event seating, extended storage). Feature availability is described on the pricing page at time of purchase.</p>
     <h2>Cancellation</h2>
@@ -41,5 +44,24 @@
   </div>
 </div>
 <script src="nav-init.js"></script>
+<script>
+(function() {
+  var el = document.getElementById('refund-policy-text');
+  if (!el || typeof SUPA_URL === 'undefined') {
+    if (el) el.textContent = 'Completed purchases are final. Contact miseenplacekitchen.official@gmail.com within 7 days for billing errors or technical access issues.';
+    return;
+  }
+  fetch(SUPA_URL + '/rest/v1/rpc/get_public_billing_policy', {
+    method: 'POST',
+    headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json' },
+    body: '{}'
+  }).then(function(r) { return r.ok ? r.json() : {}; }).then(function(data) {
+    var text = (data && data.refund_policy) ? data.refund_policy : '';
+    el.textContent = text || 'Completed purchases are final. Contact miseenplacekitchen.official@gmail.com within 7 days for billing errors or technical access issues.';
+  }).catch(function() {
+    el.textContent = 'Completed purchases are final. Contact miseenplacekitchen.official@gmail.com within 7 days for billing errors or technical access issues.';
+  });
+})();
+</script>
 </body>
 </html>

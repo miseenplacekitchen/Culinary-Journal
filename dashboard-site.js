@@ -2,6 +2,10 @@
 // This file is loaded by dashboard.html
 // Requires: supabase-config.js to be loaded first
 
+var TCJ_REFUND_BANNER = 'No refunds on completed purchases. Core features stay free. Billing error or access fault? Email us within 7 days.';
+var TCJ_REFUND_POLICY = 'Most of The Culinary Journal is free to use with a free account. If you choose a paid extra (such as a theme, optional plan, or subscription), that purchase is final once completed — we do not offer change-of-mind refunds.\n\nExceptions: If a payment was charged in error, duplicated, or you could not access what you paid for due to a technical fault on our side, contact us within 7 days at miseenplacekitchen.official@gmail.com and we will review it fairly.\n\nSubscriptions: You may cancel anytime; access continues until the end of the paid period. Cancelling does not refund the current period.\n\nBy completing a purchase you agree to this policy. See subscription-terms.html for full subscription terms.';
+var TCJ_BILLING_EMAIL_KEYS = { purchase_confirmation: 1, subscription_confirmation: 1 };
+
 function switchSMTab(tab) {
   try {
     localStorage.setItem('tcj_active_sm_tab', tab);
@@ -257,28 +261,32 @@ async function buildSMEmail(container) {
     container.innerHTML='';
     container.appendChild(queueBox);
     var tplNote = document.createElement('p');
-    tplNote.style.cssText = 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px';
-    tplNote.textContent = 'Use {{name}}, {{recipe_name}}, {{reset_link}} as placeholders.';
+    tplNote.style.cssText = 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.55';
+    tplNote.innerHTML = 'Placeholders: <code>{{name}}</code>, <code>{{recipe_name}}</code>, <code>{{product_name}}</code>, <code>{{tier_label}}</code>, <code>{{amount_line}}</code>. Billing templates include refund wording — keep them aligned with <strong>Settings → Billing &amp; Refund Policy</strong>.';
     container.appendChild(tplNote);
-    templates.forEach(function(t){
+
+    function appendEmailTemplateBlock(t) {
       var sec=document.createElement('div');sec.style.cssText='background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:14px';
-      var prevSec = sec; prevSec._tkey = t.key; prevSec._tbody = t.body||''; // Build email template inputs via DOM — no user data in innerHTML
       var secTitle = document.createElement('div');
       secTitle.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px';
       secTitle.textContent = t.name || t.key || '';
       sec.appendChild(secTitle);
-
+      if (TCJ_BILLING_EMAIL_KEYS[t.key]) {
+        var billHint = document.createElement('p');
+        billHint.style.cssText = 'font-size:11px;color:var(--text-mid);margin:-6px 0 10px;line-height:1.5';
+        billHint.textContent = 'Sent after a purchase or tier upgrade. Refund section should match Site Management → Settings.';
+        sec.appendChild(billHint);
+      }
       var subWrap = document.createElement('div'); subWrap.style.marginBottom = '8px';
       var subLbl = document.createElement('label'); subLbl.style.cssText = 'display:block;font-size:10px;color:var(--text-mid);margin-bottom:3px'; subLbl.textContent = 'Subject';
       var subInp = document.createElement('input'); subInp.id = 'em-s-'+t.key; subInp.value = t.subject||'';
       subInp.style.cssText = 'width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--text-high)';
       subWrap.appendChild(subLbl); subWrap.appendChild(subInp); sec.appendChild(subWrap);
-
       var bodyWrap = document.createElement('div'); bodyWrap.style.marginBottom = '10px';
       var bodyLbl = document.createElement('label'); bodyLbl.style.cssText = 'display:block;font-size:10px;color:var(--text-mid);margin-bottom:3px'; bodyLbl.textContent = 'Body';
-      var ta = document.createElement('textarea'); ta.id = 'em-b-'+t.key; ta.rows = 4;
+      var ta = document.createElement('textarea'); ta.id = 'em-b-'+t.key; ta.rows = TCJ_BILLING_EMAIL_KEYS[t.key] ? 8 : 4;
       ta.style.cssText = 'width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--text-high);resize:vertical';
-      ta.value = prevSec._tbody || '';
+      ta.value = t.body || '';
       bodyWrap.appendChild(bodyLbl); bodyWrap.appendChild(ta); sec.appendChild(bodyWrap);
       var btn=document.createElement('button');btn.className='ing-add-btn';btn.textContent='Save';
       btn.addEventListener('click',(function(key,b){return async function(){b.disabled=true;b.textContent='Saving\u2026';
@@ -287,8 +295,25 @@ async function buildSMEmail(container) {
         b.textContent='\u2713 Saved';setTimeout(function(){var c=document.getElementById('upanel-sm-email');if(c){c.dataset.built='';buildSMEmail(c);}},1500);}
         catch(e){b.textContent='Save';b.disabled=false;alert('Save failed: '+e.message);}
       }})(t.key,btn));
-      sec.appendChild(btn);container.appendChild(sec);
-    });
+      sec.appendChild(btn); container.appendChild(sec);
+    }
+
+    var billingTpl = templates.filter(function(t){ return TCJ_BILLING_EMAIL_KEYS[t.key]; });
+    var otherTpl   = templates.filter(function(t){ return !TCJ_BILLING_EMAIL_KEYS[t.key]; });
+    if (billingTpl.length) {
+      var billHdr = document.createElement('div');
+      billHdr.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:1.15rem;font-weight:700;color:var(--accent);margin:8px 0 12px';
+      billHdr.textContent = 'Billing & purchases';
+      container.appendChild(billHdr);
+      billingTpl.forEach(appendEmailTemplateBlock);
+    }
+    if (otherTpl.length) {
+      var otherHdr = document.createElement('div');
+      otherHdr.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:1.15rem;font-weight:700;color:var(--text-high);margin:18px 0 12px';
+      otherHdr.textContent = 'Recipes, accounts & notifications';
+      container.appendChild(otherHdr);
+      otherTpl.forEach(appendEmailTemplateBlock);
+    }
     container.dataset.built='1';
   } catch(e){container.dataset.built='';container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>';}
 }
@@ -327,13 +352,27 @@ async function buildSMSettings(container) {
     seo.appendChild(saveBtn(['seo_site_title','seo_site_description','seo_og_image'],'Save SEO'));
     container.appendChild(seo);
     var bill = card('Billing & Refund Policy');
-    bill.appendChild(mk('p','font-size:11px;color:var(--text-mid);margin-bottom:12px;line-height:1.55','Shown on paid-members-only.html. All sales final — make this unmistakable.'));
+    bill.appendChild(mk('p','font-size:11px;color:var(--text-mid);margin-bottom:12px;line-height:1.55','Shown on the upgrade page and subscription-terms.html. Most of the site stays free — this covers optional paid extras (themes, plans). Fair but clear: no change-of-mind refunds; technical billing errors reviewed within 7 days.'));
     var rpWrap = mk('div','margin-bottom:12px');
     rpWrap.appendChild(mk('label','display:block;font-size:10px;text-transform:uppercase;color:var(--text-mid);margin-bottom:4px','Refund Policy (full text)'));
     var rpTa = mk('textarea','width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--text-high);resize:vertical');
-    rpTa.id = 'ss-refund_policy'; rpTa.rows = 3; rpTa.value = S.refund_policy || '';
+    rpTa.id = 'ss-refund_policy'; rpTa.rows = 8; rpTa.value = S.refund_policy || '';
     rpWrap.appendChild(rpTa); bill.appendChild(rpWrap);
     bill.appendChild(inp('billing_no_refunds_banner','Short banner (upgrade page)',S.billing_no_refunds_banner));
+    var draftBtn = document.createElement('button');
+    draftBtn.className = 'ing-add-btn';
+    draftBtn.style.cssText = 'margin-right:8px;margin-top:4px;background:transparent;border:1px solid var(--accent);color:var(--accent)';
+    draftBtn.textContent = 'Insert recommended wording';
+    draftBtn.addEventListener('click', function() {
+      if (rpTa.value && !confirm('Replace current refund policy text with the recommended draft?')) return;
+      rpTa.value = TCJ_REFUND_POLICY;
+      var ban = document.getElementById('ss-billing_no_refunds_banner');
+      if (ban) ban.value = TCJ_REFUND_BANNER;
+    });
+    bill.appendChild(draftBtn);
+    var emailLink = mk('p','font-size:11px;color:var(--text-mid);margin-top:10px;line-height:1.55');
+    emailLink.innerHTML = 'Purchase confirmation emails live under <strong>Email Templates</strong> (Billing &amp; purchases). Keep wording in sync when you edit this section.';
+    bill.appendChild(emailLink);
     var billSave = saveBtn(['billing_no_refunds_banner'],'Save Billing Copy');
     billSave.addEventListener('click', async function() {
       billSave.disabled = true; billSave.textContent = 'Saving\u2026';

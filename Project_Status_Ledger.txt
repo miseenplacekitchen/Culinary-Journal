@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phase 23 Lane 3 — shared pantry, Stripe, UM refactor)
+Last updated: 9 June 2026 (Phase 24 — refund copy + purchase emails)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -32,10 +32,11 @@ fix-phase10-batch.sql       | Email template polish + link cleanup | Ran ✅
 fix-phases-11-20-batch.sql  | Link re-check, edge invoke, origin   | Ran ✅ + cron_secret ✅
 fix-phase21-batch.sql       | Page min_tier, billing tiers, refund   | Ran ✅
 fix-phase22-batch.sql       | Household grocery + library links      | Ran ✅
-fix-phase23-batch.sql       | Shared pantry, Stripe, promos, lib admin | Pending ⏳
+fix-phase23-batch.sql       | Shared pantry, Stripe, promos, lib admin | Ran ✅
+fix-phase24-refund-copy.sql | Refund wording + purchase email templates  | Ran ✅
 
 ══════════════════════════════════════════════════════════════════════
-PHASE STATUS (11–23)
+PHASE STATUS (11–24)
 ══════════════════════════════════════════════════════════════════════
 Phase | Label                         | Status
 ------|-------------------------------|----------------------------------
@@ -48,10 +49,11 @@ Phase | Label                         | Status
 17    | Pantry / grocery depth        | DONE ✅ — household grocery (22) + pantry (23)
 18    | Library / collections (D3)    | PARTIAL — admin ingredient link + recipe 📚; depth ongoing
 19    | Allergy engine site-wide      | PARTIAL — engine + family banner + ing_id shipped
-20    | Monetisation / tiers (G1–G4)  | PARTIAL — Stripe checkout wired; needs secrets + SQL
+20    | Monetisation / tiers (G1–G4)  | PARTIAL — manual tiers work; Stripe optional
 21    | Admin control centre (opt C)  | DONE ✅ — RM refactor + SM pages/tiers (SQL ✅)
 22    | Lane 3 household + library    | DONE ✅ (code + SQL)
-23    | Lane 3 pantry + Stripe + UM   | DONE ✅ code — SQL ⏳ Betty
+23    | Lane 3 pantry + Stripe + UM   | DONE ✅ (code + SQL) — Stripe skipped
+24    | Refund copy + billing emails  | DONE ✅ (code + SQL)
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 14 — LIVE AUDIT (test recipe, hero excluded from scope)
@@ -82,6 +84,18 @@ meal-planner.html — pantry cloud sync on cook; optional leftovers prompt
 my-dashboard.html — manual grocery line count uses g.items not g.manual
 
 GL-11 household grocery: Phase 22. Shared pantry: Phase 23.
+
+══════════════════════════════════════════════════════════════════════
+PHASE 24 — REFUND COPY + BILLING EMAILS
+══════════════════════════════════════════════════════════════════════
+fix-phase24-refund-copy.sql:
+  • refund_policy + billing_no_refunds_banner (considerate draft — mostly free, 7-day billing-error review)
+  • email_templates: purchase_confirmation, subscription_confirmation
+  • get_public_billing_policy() — anon read for subscription-terms.html
+
+UI:
+  • dashboard-site.js — Settings: Insert recommended wording; Email Templates: Billing & purchases section
+  • subscription-terms.html — live refund policy from database
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 23 — LANE 3 (shared pantry + Stripe + library admin + UM refactor)
@@ -154,31 +168,34 @@ DEFERRED — DO NOT TOUCH UNTIL BETTY ASKS
 ══════════════════════════════════════════════════════════════════════
 • Recipe hero / circular image polish (Issue 4.1)
 • Phase 2 AI, Chrome extension, Android app
-• Stripe live keys — code ready; Betty adds secrets + enables stripe_enabled
+• PayPal + card checkout — when Betty ready (Stripe skipped)
 
 ══════════════════════════════════════════════════════════════════════
 GIT / DEPLOY
 ══════════════════════════════════════════════════════════════════════
-Branch: main — phase 23 pushed (pending commit), SQL ⏳ fix-phase23-batch.sql
+Branch: main — phase 24 pushed (pending commit), SQL ✅
 
-Betty deploy steps (Phase 23):
-1. Run fix-phase23-batch.sql in Supabase SQL editor
-2. supabase functions deploy create-checkout-session stripe-webhook
-3. Set Edge secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
-4. Dashboard → Finance → Pricing → enable Stripe + save price IDs
-5. Stripe Dashboard → webhook → checkout.session.completed → stripe-webhook URL
+Payments: PayPal + card checkout deferred. Manual tier upgrades + Finance → Manual Payment (PayPal) unchanged.
 
 ══════════════════════════════════════════════════════════════════════
 BETTY — LIVE CHECKS (optional)
 ══════════════════════════════════════════════════════════════════════
-Phase 23 (after SQL + Stripe secrets):
+Phase 24 (SQL confirmed ✅):
+1. Site Management → Settings → Billing — recommended wording visible; Save works
+2. Site Management → Email Templates → Billing & purchases section (2 templates)
+3. subscription-terms.html — Refunds section matches Settings text
+4. paid-members-only.html — short refund banner matches Settings
+
+Phase 23 (SQL confirmed ✅ — test these now):
 1. household.html — both members see shared pantry bar on pantry.html
 2. pantry.html — add item on one account → partner sees within ~20s
-3. login.html#upgrade — signed-in user → plan button opens Stripe Checkout
-4. paid-members-only.html — click price card → checkout (when stripe_enabled)
-5. Finance → Promo Codes — create code → use at checkout
-6. Dashboard → Site → Library — link ingredient profile to governed ID
-7. Dashboard → User Management — work tabs at top; UM Interface = settings only
+3. Dashboard → Finance → Promo Codes — create a code (saves to database)
+4. Dashboard → Site → Library — link ingredient profile to governed ID
+5. Dashboard → User Management — work tabs at top; UM Interface = settings only
+
+Phase 23 Stripe (only after Stripe setup below):
+6. login.html#upgrade — signed-in user → plan button opens Stripe Checkout
+7. paid-members-only.html — click price card → checkout
 
 Phase 22 (SQL confirmed ✅):
 1. household.html — create household, invite partner email
@@ -197,5 +214,35 @@ Phase 19 checks (still valid):
 1. Family Profiles → recipe page dietary banner
 2. Grocery add from recipe links ingredient_id
 3. Manual add unknown ingredient → PF-02 submit
+
+══════════════════════════════════════════════════════════════════════
+STRIPE SETUP — PLAIN ENGLISH (optional; skip until you want card payments)
+══════════════════════════════════════════════════════════════════════
+What it is: Lets members pay on the site with a card and get upgraded
+automatically. Without it, nothing breaks — you keep manual upgrades.
+
+What you do NOT need to do today: All four Stripe steps below.
+
+When you ARE ready (you need a Stripe account at stripe.com first):
+
+Step 1 — Deploy edge functions (upload two small server programs)
+  Where: Supabase Dashboard → Edge Functions
+  What: Deploy create-checkout-session and stripe-webhook
+  (Agent can do this for you if you prefer not to use terminal.)
+
+Step 2 — Set secrets (store Stripe keys safely in Supabase, not in files)
+  Where: Supabase Dashboard → Edge Functions → Secrets
+  Add: STRIPE_SECRET_KEY = your Stripe secret key (sk_live_... or sk_test_...)
+  Add: STRIPE_WEBHOOK_SECRET = from Step 4 below
+
+Step 3 — Turn on Stripe in your admin panel
+  Where: theculinaryjournal.site → Dashboard → Finance → Pricing
+  Check "Enable Stripe", fill in publishable key (pk_...) and prices, Save.
+
+Step 4 — Tell Stripe where to send payment confirmations
+  Where: stripe.com Dashboard → Developers → Webhooks → Add endpoint
+  URL: https://kzywmodvfbyexqgipcjt.supabase.co/functions/v1/stripe-webhook
+  Event: checkout.session.completed
+  Copy the "Signing secret" → paste into Step 2 as STRIPE_WEBHOOK_SECRET
 
 Contact: miseenplacekitchen.official@gmail.com
