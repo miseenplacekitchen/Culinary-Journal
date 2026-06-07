@@ -51,6 +51,7 @@ A · DONE — shipped (Phases 1–26 SQL + Phase 27/28 code). Strike after live 
   • Phase 29/31 SQL ✅ Betty confirmed — all 5 ingredient links including potato→Sebago (248)
   • Phase 30 meal planner: hierarchy filters, family groups, copy week, cloud pantry, diary dots
   • Phase 32 ✅: library approve→publish · household meal sync · meal_plan_slots · hide-unsafe · DB substitutes · Desiree/Kipfler profiles
+  • Phase 33 ✅: regional hints · sync conflicts · most-saved · collection print · event scaling/meal sync · wedding presets · JSON-LD · print gating toggle
   • GL-07 aisle layout · GL-08 multi-store · GL-09 copy/print export (grocery.html)
   • Self-service deactivation · onboarding allergy/health · MP-05 Today panel
   • Baby food stage on family profiles (UI + SQL in fix-phase4)
@@ -86,7 +87,7 @@ D · OPEN — still to build or deepen (work through these)
   • Pipeline hardening if Lane 2 spot-check fails
 
   Grocery / pantry
-  • ~~Regional ingredient intelligence · shared-edit conflict handling~~ ✅ Phase 33 code — run fix-phase33-batch.sql
+  • ~~Regional ingredient intelligence · shared-edit conflict handling~~ ✅ Phase 33 (SQL ✅ Betty)
 
   Print Studio (remaining after Phase 31)
   • ~~D4 theme tiers in UM (premium gating)~~ ✅ Phase 33 — site_features print_premium_layouts toggle
