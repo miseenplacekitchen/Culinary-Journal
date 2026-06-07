@@ -36,12 +36,49 @@
     return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   }
 
+  function mondayOfDate(date) {
+    var d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    var day = d.getDay();
+    var mon = new Date(d);
+    mon.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+    return mon;
+  }
+
+  function mealPlanWeekKey(date) {
+    return 'tcj_meal_' + mondayOfDate(date).toISOString().slice(0, 10);
+  }
+
+  function dayKeyForDateStr(dateStr) {
+    var jsDay = new Date(dateStr + 'T00:00:00').getDay();
+    return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][jsDay];
+  }
+
+  function mealsOnDate(dateStr) {
+    try {
+      var plan = JSON.parse(localStorage.getItem(mealPlanWeekKey(new Date(dateStr + 'T00:00:00'))) || '{}');
+      var day = dayKeyForDateStr(dateStr);
+      var names = [];
+      ['Breakfast', 'Lunch', 'Dinner', 'Snack'].forEach(function (meal) {
+        var slot = plan[day] && plan[day][meal];
+        if (slot && slot.name) names.push({ meal: meal, name: slot.name, status: slot.status || 'planned' });
+      });
+      return names;
+    } catch (_) {
+      return [];
+    }
+  }
+
   global.CalendarUtils = {
     DAYS: DAYS,
     mondayOfWeek: mondayOfWeek,
     weekDates: weekDates,
     weekKey: weekKey,
     formatShort: formatShort,
-    isSameDay: isSameDay
+    isSameDay: isSameDay,
+    mondayOfDate: mondayOfDate,
+    mealPlanWeekKey: mealPlanWeekKey,
+    dayKeyForDateStr: dayKeyForDateStr,
+    mealsOnDate: mealsOnDate
   };
 })(typeof window !== 'undefined' ? window : globalThis);

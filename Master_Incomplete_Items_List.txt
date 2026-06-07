@@ -49,6 +49,7 @@ A · DONE — shipped (Phases 1–26 SQL + Phase 27/28 code). Strike after live 
   • Phase 29: table planner computed placement · JSON-LD (recipes/chefs/recipe-page)
   • Phase 29: library member submit workflow (SQL + library-submit.html) · admin inbox
   • Phase 29 SQL ready: fix-phase29-library-content.sql (5 ingredients) + submissions SQL
+  • Phase 30 meal planner: hierarchy filters, family groups, copy week, cloud pantry, diary dots
   • GL-07 aisle layout · GL-08 multi-store · GL-09 copy/print export (grocery.html)
   • Self-service deactivation · onboarding allergy/health · MP-05 Today panel
   • Baby food stage on family profiles (UI + SQL in fix-phase4)
@@ -83,10 +84,10 @@ D · OPEN — still to build or deepen (work through these)
   • Hero 4.1 live verify (CSS shipped — Betty visual check)
   • Pipeline hardening if Lane 2 spot-check fails
 
-  Meal planner
-  • MP-01–03 hierarchy model · MP-02 family groups · MP-04 diary/planner shared calendar wire-up
-  • MP-09 per-group views depth · MP-10–14 cooked/grocery loops polish
-  • MP-12 pantry subtraction — verify on live grocery export from planner
+  Meal planner (remaining after Phase 30)
+  • MP-04 household shared meal plan sync (personal cloud only today)
+  • MP-10–14 edge cases: bulk skip week, auto-grocery on cook, structured meal rows in DB
+  • MP-12 live verify: grocery export skips pantry items after cloud prefetch
 
   Grocery / pantry
   • Regional ingredient intelligence · shared-edit conflict handling

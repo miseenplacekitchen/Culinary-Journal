@@ -64,11 +64,20 @@ Phase | Label                         | Status
 27    | Event grocery + chef filters  | DONE ✅ (no SQL) — premature list closure reverted
 28    | Reopen backlog + MP-06 + pantry | DONE ✅ (no SQL)
 29    | Cross-cutting backlog batch     | CODE ✅ — SQL pending Betty
+30    | Meal planner depth (MP)         | DONE ✅ (no SQL)
 
 fix-phase29-library-content.sql      | 5 more ingredient profiles           | Pending Betty
 fix-phase29-library-submissions.sql | Member library submit + admin RPCs  | Pending Betty
 
 Phase 28: master list reopened · grocery archive→pantry · MP-06 drag
+
+Phase 30 meal planner:
+  • MP-01 hierarchy: sub-category + division filters in recipe picker
+  • MP-02/09 family groups: Adults / Kids / Guests + per-member view
+  • MP-03 slot model: sub_category, division, planned_at on assign
+  • MP-04 calendar-utils: diary shows blue dot on days with planned meals
+  • MP-06 drag (Phase 28) · MP-07 slot modal · copy last week · cooked summary stat
+  • MP-12: prefetch cloud pantry before grocery export
 
 Phase 29 shipped (code):
   • Meal planner: slot modal, category filters, substitute hints in assign confirm

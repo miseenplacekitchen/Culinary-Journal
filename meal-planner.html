@@ -198,8 +198,10 @@
         <select id="mth-jump-year" onchange="jumpMonthYear()" style="padding:6px 8px;font-size:12px"></select>
       </div>
       <div class="mp-actions">
+        <button class="mp-btn mp-btn-ghost" onclick="copyLastWeek()" title="Copy previous week's meals">📋 Copy last week</button>
         <button class="mp-btn mp-btn-ghost" onclick="printWeek()" title="Print this week's meal plan">🖨 Print Week</button>
         <button class="mp-btn mp-btn-ghost" onclick="clearWeek()">Clear Week</button>
+        <a href="diary.html" class="mp-btn mp-btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">📔 Diary</a>
         <div class="mp-grocery-menu">
           <button class="mp-btn mp-btn-primary" onclick="toggleGroceryMenu(event)">🛒 Grocery ▾</button>
           <div class="mp-grocery-drop" id="mp-grocery-drop">
@@ -223,7 +225,8 @@
     <span id="mp-conflict-summary" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)"></span>
   </div>
   <div id="mp-family-flags" style="display:none;background:var(--text-ghost);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-family:'DM Sans',sans-serif;font-size:12px"></div>
-  <div id="mp-member-filter" class="mp-filter-bar" style="display:none;margin-bottom:16px;padding:12px 14px;background:var(--text-ghost);border:1px solid var(--border);border-radius:10px;align-items:center">
+  <div id="mp-group-filter" class="mp-filter-bar" style="display:none;margin-bottom:8px;padding:10px 14px;background:var(--text-ghost);border:1px solid var(--border);border-radius:10px;align-items:center;flex-wrap:wrap"></div>
+  <div id="mp-member-filter" class="mp-filter-bar" style="display:none;margin-bottom:16px;padding:12px 14px;background:var(--text-ghost);border:1px solid var(--border);border-radius:10px;align-items:center;flex-wrap:wrap">
     <span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);margin-right:8px">View meals for:</span>
   </div>
 
@@ -252,6 +255,7 @@
       <input type="text" id="mp-search" placeholder="Search recipes..." oninput="applyRecipeFilters()" autocomplete="off">
     </div>
     <div class="mp-filter-bar" id="mp-cat-filters" style="margin-bottom:8px"></div>
+    <div class="mp-filter-bar" id="mp-hierarchy-filters" style="margin-bottom:8px;flex-wrap:wrap"></div>
     <div class="mp-filter-bar" id="mp-prep-filters">
       <span style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;color:var(--text-mid);align-self:center">Prep:</span>
       <button type="button" class="mp-filter-chip active" data-prep="all" onclick="setPrepFilter('all',this)">All</button>
@@ -273,7 +277,7 @@
     </div>
     <div style="padding:0 4px 8px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)" id="mp-slot-modal-sub"></div>
     <div class="mp-field" style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-mid)">Servings override</label><input type="text" id="mp-slot-serves" class="mp-style" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high)"></div>
-    <div class="mp-field" style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-mid)">Assignee (family member)</label><input type="text" id="mp-slot-assignee" class="mp-style" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high)"></div>
+    <div class="mp-field" style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-mid)">Assignee (family member)</label><select id="mp-slot-assignee" class="mp-style" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high)"><option value="">— Anyone / whole household —</option></select></div>
     <div class="mp-field" style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-mid)">Away (comma-separated)</label><input type="text" id="mp-slot-away" class="mp-style" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high)"></div>
     <div class="mp-field" style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-mid)">Extra guests</label><input type="number" id="mp-slot-guests" min="0" class="mp-style" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high)"></div>
     <div class="mp-field" style="margin-bottom:14px"><label style="font-size:11px;color:var(--text-mid)">Note</label><input type="text" id="mp-slot-note" class="mp-style" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high)"></div>
@@ -283,6 +287,7 @@
 
 <script src="calendar-utils.js"></script>
 <script src="grocery-utils.js"></script>
+<script src="pantry-utils.js"></script>
 <script src="allergy-engine.js"></script>
 <script src="nav-init.js"></script>
 <script>
@@ -297,6 +302,15 @@ let pickerTarget = null; // {day, meal}
 let allRecipes = [];
 let prepFilterMax = null;
 let catFilter = '';
+let subFilter = '';
+let divFilter = '';
+let groupFilter = '';
+
+var MP_FAMILY_GROUPS = {
+  adults: { label: 'Adults', rels: ['self', 'partner', 'elderly'] },
+  kids: { label: 'Kids', rels: ['child', 'toddler', 'baby'] },
+  guests: { label: 'Guests', rels: ['regular_guest', 'other'] }
+};
 
 function buildCategoryFilters() {
   var bar = document.getElementById('mp-cat-filters');
@@ -316,6 +330,80 @@ function setCatFilter(cat, btn) {
   document.querySelectorAll('#mp-cat-filters .mp-filter-chip').forEach(function (b) { b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
   applyRecipeFilters();
+}
+
+function buildHierarchyFilters() {
+  var bar = document.getElementById('mp-hierarchy-filters');
+  if (!bar) return;
+  var subs = {}, divs = {};
+  allRecipes.forEach(function (r) {
+    if (r.sub_category) subs[r.sub_category] = 1;
+    if (r.division) divs[r.division] = 1;
+  });
+  var subKeys = Object.keys(subs).sort();
+  var divKeys = Object.keys(divs).sort();
+  if (!subKeys.length && !divKeys.length) { bar.innerHTML = ''; return; }
+  var html = '';
+  if (subKeys.length) {
+    html += '<span style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:600;color:var(--text-mid);align-self:center">Sub:</span>';
+    html += '<button type="button" class="mp-filter-chip' + (subFilter ? '' : ' active') + '" onclick="setSubFilter(\'\')">All</button>';
+    subKeys.forEach(function (s) {
+      html += '<button type="button" class="mp-filter-chip' + (subFilter === s ? ' active' : '') + '" onclick="setSubFilter(\'' + esc(s).replace(/'/g, "\\'") + '\')">' + esc(s) + '</button>';
+    });
+  }
+  if (divKeys.length) {
+    html += '<span style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:600;color:var(--text-mid);align-self:center;margin-left:8px">Div:</span>';
+    html += '<button type="button" class="mp-filter-chip' + (divFilter ? '' : ' active') + '" onclick="setDivFilter(\'\')">All</button>';
+    divKeys.forEach(function (d) {
+      html += '<button type="button" class="mp-filter-chip' + (divFilter === d ? ' active' : '') + '" onclick="setDivFilter(\'' + esc(d).replace(/'/g, "\\'") + '\')">' + esc(d) + '</button>';
+    });
+  }
+  bar.innerHTML = html;
+}
+
+function setSubFilter(sub) {
+  subFilter = sub || '';
+  buildHierarchyFilters();
+  applyRecipeFilters();
+}
+
+function setDivFilter(div) {
+  divFilter = div || '';
+  buildHierarchyFilters();
+  applyRecipeFilters();
+}
+
+function profilesInGroup(group) {
+  if (!group || !MP_FAMILY_GROUPS[group]) return familyProfiles;
+  var rels = MP_FAMILY_GROUPS[group].rels;
+  return familyProfiles.filter(function (p) { return rels.indexOf(p.relationship || 'other') >= 0; });
+}
+
+function setGroupFilter(group, chip) {
+  groupFilter = group || '';
+  memberFilterId = null;
+  document.querySelectorAll('#mp-group-filter .mp-filter-chip').forEach(function (b) {
+    b.classList.toggle('active', chip ? b === chip : !b.dataset.group);
+  });
+  renderMemberFilterBar();
+  renderCalendar();
+}
+
+function renderGroupFilterBar() {
+  var bar = document.getElementById('mp-group-filter');
+  if (!bar) return;
+  if (!familyProfiles.length || currentMode === 'individual') {
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = 'flex';
+  var html = '<span style="font-family:DM Sans,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);margin-right:8px">Household group:</span>';
+  html += '<button type="button" class="mp-filter-chip' + (groupFilter ? '' : ' active') + '" data-group="" onclick="setGroupFilter(null,this)">All</button>';
+  Object.keys(MP_FAMILY_GROUPS).forEach(function (key) {
+    var g = MP_FAMILY_GROUPS[key];
+    html += '<button type="button" class="mp-filter-chip' + (groupFilter === key ? ' active' : '') + '" data-group="' + key + '" onclick="setGroupFilter(\'' + key + '\',this)">' + g.label + '</button>';
+  });
+  bar.innerHTML = html;
 }
 
 function recipeTotalMinutes(r) {
@@ -448,7 +536,15 @@ function openSlotSettings(day, meal, e) {
     ? 'Profiles: ' + familyProfiles.map(function (p) { return p.name; }).join(', ')
     : 'Optional details for this planned meal';
   document.getElementById('mp-slot-serves').value = slot.servings_override != null ? String(slot.servings_override) : '';
-  document.getElementById('mp-slot-assignee').value = slot.assignee || '';
+  var assignSel = document.getElementById('mp-slot-assignee');
+  assignSel.innerHTML = '<option value="">— Anyone / whole household —</option>';
+  familyProfiles.forEach(function (p) {
+    var o = document.createElement('option');
+    o.value = p.name || '';
+    o.textContent = p.name || 'Member';
+    assignSel.appendChild(o);
+  });
+  assignSel.value = slot.assignee || '';
   document.getElementById('mp-slot-away').value = (slot.members_away || []).join(', ');
   document.getElementById('mp-slot-guests').value = slot.guest_count != null ? String(slot.guest_count) : '0';
   document.getElementById('mp-slot-note').value = slot.note || '';
@@ -546,6 +642,14 @@ function syncMonthJump() {
   m.value = monthMon; y.value = monthYear;
 }
 
+function copyLastWeek() {
+  var prev = getPlanByKey(getWeekKey(currentWeekOffset - 1));
+  if (!Object.keys(prev).length) { alert('No meals in the previous week to copy.'); return; }
+  if (!confirm('Copy all meals from last week into this week?\n\nExisting slots this week will be replaced.')) return;
+  savePlan(JSON.parse(JSON.stringify(prev)));
+  renderCalendar();
+}
+
 async function clearWeek() {
   if (!confirm('Clear ALL meal prep entries for this entire week?\n\nThis cannot be undone. Press OK to confirm, or Cancel to keep your entries.')) return;
   var key = getWeekKey(currentWeekOffset);
@@ -610,6 +714,17 @@ function renderCalendar() {
       bindSlotDrop(slot, day, meal);
 
       if (recipe) {
+        if (groupFilter && !slotVisibleInGroupView(recipe)) {
+          const hidden = document.createElement('div');
+          hidden.className = 'mp-slot-empty';
+          hidden.style.opacity = '0.35';
+          hidden.style.cursor = 'default';
+          hidden.title = 'Not for ' + (MP_FAMILY_GROUPS[groupFilter] ? MP_FAMILY_GROUPS[groupFilter].label : 'this group');
+          hidden.innerHTML = '<span class="mp-slot-add" style="font-size:11px;color:var(--text-mid)">—</span>';
+          slot.appendChild(hidden);
+          grid.appendChild(slot);
+          return;
+        }
         var filterProfile = getMemberFilterProfile();
         if (filterProfile && !slotAppliesToMember(recipe, filterProfile)) {
           const hidden = document.createElement('div');
@@ -750,12 +865,17 @@ function renderTodayPanel() {
 
 function renderSummary() {
   const plan = getPlan();
-  let total = 0, uniqueRecipes = {}, days = 0;
+  let total = 0, cooked = 0, uniqueRecipes = {}, days = 0;
   DAYS.forEach(function(day) {
     let hasMeal = false;
     MEALS.forEach(function(meal) {
       const r = plan[day] && plan[day][meal];
-      if (r) { total++; uniqueRecipes[r.id||r.name] = true; hasMeal = true; }
+      if (r) {
+        total++;
+        if (r.status === 'cooked') cooked++;
+        uniqueRecipes[r.id||r.name] = true;
+        hasMeal = true;
+      }
     });
     if (hasMeal) days++;
   });
@@ -764,6 +884,7 @@ function renderSummary() {
     '<div class="mp-summary-title">This Week at a Glance</div>' +
     '<div class="mp-summary-grid">' +
     '<div class="mp-summary-stat"><div class="mp-summary-num">' + total + '</div><div class="mp-summary-label">Meals Planned</div></div>' +
+    '<div class="mp-summary-stat"><div class="mp-summary-num">' + cooked + '</div><div class="mp-summary-label">Cooked</div></div>' +
     '<div class="mp-summary-stat"><div class="mp-summary-num">' + unique + '</div><div class="mp-summary-label">Unique Recipes</div></div>' +
     '<div class="mp-summary-stat"><div class="mp-summary-num">' + days + '</div><div class="mp-summary-label">Days Covered</div></div>' +
     '</div>';
@@ -783,10 +904,14 @@ function setMode(mode, btn) {
   if (mode === 'family' || mode === 'couple' || mode === 'group') {
     renderFamilyFlags();
     familyPanel.style.display = 'block';
+    renderGroupFilterBar();
     renderMemberFilterBar();
   } else {
     familyPanel.style.display = 'none';
     memberFilterId = null;
+    groupFilter = '';
+    var gf = document.getElementById('mp-group-filter');
+    if (gf) gf.style.display = 'none';
     var mf = document.getElementById('mp-member-filter');
     if (mf) mf.style.display = 'none';
   }
@@ -801,11 +926,21 @@ function getMemberFilterProfile() {
 
 function slotAppliesToMember(slot, profile) {
   if (!profile || !slot) return true;
+  if (groupFilter && !profilesInGroup(groupFilter).some(function (p) { return p.id === profile.id; })) return false;
   var name = (profile.name || '').toLowerCase();
   if (!name) return true;
   if (slot.assignee && slot.assignee.toLowerCase() !== name) return false;
   if (slot.members_away && slot.members_away.some(function(a) { return a.toLowerCase() === name; })) return false;
   return true;
+}
+
+function slotVisibleInGroupView(slot) {
+  if (!groupFilter || !slot) return true;
+  var groupProfiles = profilesInGroup(groupFilter);
+  if (!slot.assignee) return true;
+  return groupProfiles.some(function (p) {
+    return (p.name || '').toLowerCase() === String(slot.assignee).toLowerCase();
+  });
 }
 
 function setMemberFilter(id, chip) {
@@ -824,8 +959,9 @@ function renderMemberFilterBar() {
     return;
   }
   bar.style.display = 'flex';
-  var chips = '<button type="button" class="mp-filter-chip' + (memberFilterId ? '' : ' active') + '" data-member="" onclick="setMemberFilter(null,this)">All household</button>';
-  familyProfiles.forEach(function(p) {
+  var visible = groupFilter ? profilesInGroup(groupFilter) : familyProfiles;
+  var chips = '<button type="button" class="mp-filter-chip' + (memberFilterId ? '' : ' active') + '" data-member="" onclick="setMemberFilter(null,this)">All in group</button>';
+  visible.forEach(function(p) {
     chips += '<button type="button" class="mp-filter-chip' + (memberFilterId === p.id ? ' active' : '') + '" data-member="' + esc(p.id) + '" onclick="setMemberFilter(\'' + p.id + '\',this)">' + esc(p.name || 'Member') + '</button>';
   });
   bar.innerHTML = '<span style="font-family:\'DM Sans\',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);margin-right:8px">View meals for:</span>' + chips;
@@ -841,6 +977,7 @@ async function loadFamilyProfiles() {
     });
     if (res.ok) familyProfiles = await res.json() || [];
     if (memberFilterId && !familyProfiles.some(function(p) { return p.id === memberFilterId; })) memberFilterId = null;
+    renderGroupFilterBar();
     renderMemberFilterBar();
     updateConflictSummary();
   } catch(_) {}
@@ -961,15 +1098,26 @@ async function promptLeftoversToFridge(day, meal, slot, options) {
 }
 
 function savePantryLocal(list) {
-  localStorage.setItem('tcj_pantry', JSON.stringify(list));
-  clearTimeout(window._mpPantrySyncTimer);
-  window._mpPantrySyncTimer = setTimeout(async function() {
-    try {
-      var sess = typeof getSession === 'function' ? getSession() : null;
-      if (!sess || !sess.access_token) return;
-      await rpc('save_my_pantry', { p_items: list });
-    } catch (_) {}
-  }, 1500);
+  if (typeof PantryUtils !== 'undefined') PantryUtils.savePantry(list);
+  else localStorage.setItem('tcj_pantry', JSON.stringify(list));
+}
+
+async function prefetchPantryFromCloud() {
+  try {
+    var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    if (!sess || !sess.access_token) return;
+    var res = await fetch(SUPA_URL + '/rest/v1/rpc/get_my_pantry', {
+      method: 'POST',
+      headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + sess.access_token, 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    if (!res.ok) return;
+    var data = await res.json();
+    var items = Array.isArray(data) ? data : (data.items || []);
+    if (!Array.isArray(items)) return;
+    localStorage.setItem('tcj_pantry', JSON.stringify(items));
+    if (data.updated_at) localStorage.setItem('tcj_pantry_ts', String(new Date(data.updated_at).getTime()));
+  } catch (_) {}
 }
 
 async function markMealCooked(day, meal, e) {
@@ -1039,6 +1187,8 @@ function applyRecipeFilters() {
   var q = (document.getElementById('mp-search').value || '').trim().toLowerCase();
   var filtered = allRecipes.filter(function (r) {
     if (catFilter && r.category !== catFilter) return false;
+    if (subFilter && (r.sub_category || '') !== subFilter) return false;
+    if (divFilter && (r.division || '') !== divFilter) return false;
     if (q && r.name.toLowerCase().indexOf(q) < 0 && (r.category || '').toLowerCase().indexOf(q) < 0) return false;
     if (prepFilterMax != null) {
       var total = recipeTotalMinutes(r);
@@ -1094,10 +1244,14 @@ async function assignRecipeFromPicker(r) {
     }
   }
   setSlot(pickerTarget.day, pickerTarget.meal, {
-    id: r.id, recipe_id: r.id, name: recipe.name, category: r.category, image_url: r.image_url,
+    id: r.id, recipe_id: r.id, name: recipe.name, category: r.category,
+    sub_category: r.sub_category || recipe.sub_category || null,
+    division: r.division || recipe.division || null,
+    image_url: r.image_url,
     dietary_tags: recipe.dietary_tags || r.dietary_tags,
     spice_level: recipe.spice_level || r.spice_level,
-    meal_type: pickerTarget.meal, status: 'planned'
+    meal_type: pickerTarget.meal, status: 'planned',
+    planned_at: new Date().toISOString()
   });
   closePicker();
   renderCalendar();
@@ -1178,6 +1332,7 @@ async function addSlotToGroceryData(data, slot, day, meal, weekKey, stats) {
 
 async function exportMealsToGrocery(slots, emptyMsg) {
   if (!slots.length) { alert(emptyMsg || 'No recipes planned for that range.'); return; }
+  await prefetchPantryFromCloud();
   var data = GroceryUtils.loadGrocery();
   var stats = { added: 0, skipped: 0, skippedDup: 0, headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json' } };
   var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
@@ -1292,6 +1447,7 @@ async function loadRecipes() {
     }
   } catch(_) {}
   buildCategoryFilters();
+  buildHierarchyFilters();
   renderResults(allRecipes);
 }
 
@@ -1301,6 +1457,7 @@ document.addEventListener('DOMContentLoaded', function() {
   loadRecipes();
   loadFamilyProfiles();
   loadPlanFromSupabase();
+  prefetchPantryFromCloud();
   document.getElementById('mp-modal').addEventListener('click', function(e) {
     if (e.target === this) closePicker();
   });

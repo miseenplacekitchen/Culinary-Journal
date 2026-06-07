@@ -48,6 +48,8 @@
     .dj-cal-cell.other-month { color:var(--text-ghost); cursor:default; }
     .dj-cal-cell.other-month:hover { background:none; }
     .dj-cal-cell.has-entry::after { content:''; position:absolute; bottom:3px; left:50%; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; background:var(--accent); }
+    .dj-cal-cell.has-meals::before { content:''; position:absolute; top:3px; right:3px; width:5px; height:5px; border-radius:50%; background:#5b8fd4; }
+    .dj-cal-cell.has-entry.has-meals::after { bottom:2px; }
     .dj-cal-cell.selected { background:var(--accent); color:#fff; font-weight:600; }
     .dj-cal-cell.selected::after { background:#fff; }
     .dj-cal-cell.today:not(.selected) { border:1.5px solid var(--accent); }
@@ -144,7 +146,10 @@
       <h1 class="dj-heading">My <span>Diary</span></h1>
       <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin-top:2px">A private space to think, reflect and remember</div>
     </div>
-    <button class="dj-new-btn" onclick="openNewEntry()">+ New Entry</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a href="meal-planner.html" style="padding:10px 18px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);text-decoration:none">🗓 Meal Planner</a>
+      <button class="dj-new-btn" onclick="openNewEntry()">+ New Entry</button>
+    </div>
   </div>
 
   <!-- Stats -->
@@ -271,6 +276,7 @@
   </div>
 </div>
 
+<script src="calendar-utils.js"></script>
 <script src="nav-init.js"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -367,10 +373,12 @@ function buildCalendar(){
   for(let d=1;d<=days;d++){
     const ds = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const hasEntry = allEntries.some(e=>e.entry_date===ds);
+    const hasMeals = typeof CalendarUtils !== 'undefined' && CalendarUtils.mealsOnDate(ds).length > 0;
     const isToday  = ds===today;
     const isSel    = ds===selectedDate;
+    const mealTip = hasMeals ? ' title="Meals planned — see Meal Planner"' : '';
     cells.insertAdjacentHTML('beforeend',
-      `<div class="dj-cal-cell${hasEntry?' has-entry':''}${isToday?' today':''}${isSel?' selected':''}" onclick="selectDay('${ds}')">${d}</div>`
+      `<div class="dj-cal-cell${hasEntry?' has-entry':''}${hasMeals?' has-meals':''}${isToday?' today':''}${isSel?' selected':''}"${mealTip} onclick="selectDay('${ds}')">${d}</div>`
     );
   }
   // Pad end
