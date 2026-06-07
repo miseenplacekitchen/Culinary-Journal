@@ -368,6 +368,7 @@
   <script src="page-guard.js"></script>
   <script src="grocery-utils.js"></script>
   <script src="allergy-engine.js"></script>
+  <script src="seo-schema.js"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
   <script src="nav-init.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -1374,6 +1375,7 @@ function renderRecipe(r) {
   syncGroceryListForRecipe(r);
   document.title = r.recipe_name + ' — The Culinary Journal';
   updateRecipeMeta(r);
+  if (typeof SeoSchema !== 'undefined') SeoSchema.recipe(r);
 
   // Title + category eyebrow
   document.getElementById('rp-title').textContent = r.recipe_name;

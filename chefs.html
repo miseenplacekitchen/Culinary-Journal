@@ -84,6 +84,7 @@
         <select class="ch-search" id="ch-sort" onchange="filterChefs()" style="width:auto">
           <option value="recipes">Most recipes</option>
           <option value="name">Name A–Z</option>
+          <option value="saved">Most categories</option>
         </select>
         <select class="ch-search" id="ch-country" onchange="filterChefs()" style="width:auto">
           <option value="">All countries</option>
@@ -93,6 +94,9 @@
           <option value="cj">CJ Original only</option>
           <option value="profile">Has member profile</option>
           <option value="url">Has external link</option>
+        </select>
+        <select class="ch-search" id="ch-specialty" onchange="filterChefs()" style="width:auto">
+          <option value="">All specialties</option>
         </select>
       </div>
     </div>
@@ -120,6 +124,7 @@
   </div>
 </div>
 
+<script src="seo-schema.js"></script>
 <script src="nav-init.js"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -159,10 +164,21 @@ async function load() {
 
   allChefs = Object.values(chefMap).map(function(c) {
     c.is_cj_original = c.recipes.some(function(r) { return r.source_type === 'Original'; });
+    c.specialties = Array.from(c.categories);
     return c;
   }).sort(function(a,b){return b.recipes.length - a.recipes.length;});
   var countries = {};
-  allChefs.forEach(function(c) { c.countries.forEach(function(co) { countries[co] = 1; }); });
+  var specialties = {};
+  allChefs.forEach(function(c) {
+    c.countries.forEach(function(co) { countries[co] = 1; });
+    (c.specialties || []).forEach(function(sp) { specialties[sp] = 1; });
+  });
+  var specSel = document.getElementById('ch-specialty');
+  if (specSel) {
+    Object.keys(specialties).sort().forEach(function(sp) {
+      var o = document.createElement('option'); o.value = sp; o.textContent = sp; specSel.appendChild(o);
+    });
+  }
   var countrySel = document.getElementById('ch-country');
   if (countrySel) {
     Object.keys(countries).sort().forEach(function(co) {
@@ -170,6 +186,11 @@ async function load() {
     });
   }
   renderChefGrid(allChefs);
+  if (typeof SeoSchema !== 'undefined') {
+    SeoSchema.itemList('Chef Directory', allChefs.map(function (c) {
+      return { name: c.name, url: 'https://www.theculinaryjournal.site/chefs.html' };
+    }));
+  }
 }
 
 function filterChefs() {
@@ -177,15 +198,18 @@ function filterChefs() {
   var sort = (document.getElementById('ch-sort') || {}).value || 'recipes';
   var country = (document.getElementById('ch-country') || {}).value || '';
   var type = (document.getElementById('ch-type') || {}).value || '';
+  var specialty = (document.getElementById('ch-specialty') || {}).value || '';
   var lower = q.toLowerCase();
   var filtered = allChefs.filter(function(c) {
     if (country && !c.countries.has(country)) return false;
+    if (specialty && !(c.specialties || []).includes(specialty)) return false;
     if (type === 'cj' && !c.is_cj_original) return false;
     if (type === 'profile' && !(c.handle || '').replace(/^@/,'').trim()) return false;
     if (type === 'url' && !(c.url || '').trim()) return false;
     return !q || c.name.toLowerCase().includes(lower) || (c.handle||'').toLowerCase().includes(lower);
   });
   if (sort === 'name') filtered.sort(function(a,b) { return a.name.localeCompare(b.name); });
+  else if (sort === 'saved') filtered.sort(function(a,b) { return (b.specialties||[]).length - (a.specialties||[]).length || b.recipes.length - a.recipes.length; });
   else filtered.sort(function(a,b) { return b.recipes.length - a.recipes.length; });
   renderChefGrid(filtered);
 }

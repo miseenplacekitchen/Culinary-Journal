@@ -214,6 +214,7 @@ async function loadDashboard() {
         rpc('admin_get_reports', {p_status:'pending', p_limit:200, p_offset:0}).catch(function(){ return []; }),
         rpc('admin_get_pending_notes', {}).catch(function(){ return []; }),
         rpc('admin_get_pending_ingredients', {}).catch(function(){ return []; }),
+        rpc('admin_get_library_submissions', {p_status:'pending', p_limit:50}).catch(function(){ return []; }),
         rpc('admin_count_pending_users', {}).catch(function(){ return 0; }),
         rpc('admin_get_audit_log', {p_limit:5, p_offset:0}).catch(function(){ return []; })
       ]);
@@ -221,8 +222,9 @@ async function loadDashboard() {
       var reportCount = asList(inbox[1]).length;
       var noteCount = asList(inbox[2]).length;
       var ingCount = asList(inbox[3]).length;
-      var pendingUsers = parseInt(inbox[4]) || 0;
-      var auditRows = asList(inbox[5]);
+      var libSubCount = asList(inbox[4]).length;
+      var pendingUsers = parseInt(inbox[5]) || 0;
+      var auditRows = asList(inbox[6]);
       setEl('rtab-badge-notes', noteCount);
       setEl('badge-pending-users', pendingUsers);
       var items = [];
@@ -232,6 +234,8 @@ async function loadDashboard() {
         items.push({icon:'&#128221;',color:'#d4a017',text:noteCount+' cooking tip'+(noteCount===1?'':'s')+' awaiting approval',action:"switchView('recipe-mgmt');switchRecipeTab('notes')",label:'Review'});
       if (ingCount > 0)
         items.push({icon:'&#127807;',color:'#4caf76',text:ingCount+' ingredient submission'+(ingCount===1?'':'s')+' to review',action:"switchView('ingredients');switchIngTab('pending')",label:'Review'});
+      if (libSubCount > 0)
+        items.push({icon:'&#128218;',color:'#5B8FD4',text:libSubCount+' library profile submission'+(libSubCount===1?'':'s')+' to review',action:"switchView('library-mgmt')",label:'Review'});
       if (appealCount > 0)
         items.push({icon:'&#128231;',color:'#5B8FD4',text:appealCount+' deactivation appeal'+(appealCount===1?'':'s')+' waiting',action:"switchView('user-mgmt');switchUserTab('reports')",label:'View'});
       if (reportCount > 0)

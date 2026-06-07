@@ -114,8 +114,40 @@ window.AllergyEngine = (function () {
     return allergyWarnings(recipe, profiles);
   }
 
-  function formatConfirmList(warnings) {
-    return warnings.slice(0, 6).join('\n') + (warnings.length > 6 ? '\n…and ' + (warnings.length - 6) + ' more' : '');
+  var SUBSTITUTE_HINTS = {
+    'Dairy': ['oat milk', 'coconut cream', 'plant-based butter'],
+    'Gluten': ['rice flour', 'cornstarch', 'gluten-free pasta'],
+    'Egg': ['flax egg (1 tbsp ground flax + 3 tbsp water)', 'applesauce in baking'],
+    'Soy': ['coconut aminos', 'tamari (if gluten ok)'],
+    'Fish': ['firm tofu', 'hearts of palm'],
+    'Shellfish': ['king oyster mushrooms', 'hearts of palm'],
+    'Peanut': ['sunflower seed butter', 'tahini (if sesame ok)'],
+    'Tree Nuts': ['seeds', 'oat crumble topping'],
+    'Sesame': ['sunflower seeds', 'pumpkin seeds']
+  };
+
+  function suggestSubstitutes(recipe, profiles) {
+    var detected = detectInRecipe(recipe);
+    var profileAllergens = new Set();
+    (profiles || []).forEach(function (p) {
+      (p.allergies || []).forEach(function (a) {
+        profileAllergens.add(canonAllergen(a));
+      });
+    });
+    var hits = detected.filter(function (a) { return profileAllergens.has(a); });
+    var tips = [];
+    hits.forEach(function (a) {
+      var subs = SUBSTITUTE_HINTS[a];
+      if (subs && subs.length) tips.push(a + ' → try ' + subs.slice(0, 2).join(' or '));
+    });
+    return tips;
+  }
+
+  function formatConfirmList(warnings, recipe, profiles) {
+    var text = warnings.slice(0, 6).join('\n') + (warnings.length > 6 ? '\n…and ' + (warnings.length - 6) + ' more' : '');
+    var subs = (recipe && profiles) ? suggestSubstitutes(recipe, profiles) : [];
+    if (subs.length) text += '\n\nSafe substitute ideas:\n' + subs.slice(0, 4).join('\n');
+    return text;
   }
 
   /** Browse cards — uses dietary tags + recipe name when full ingredients unavailable */
@@ -229,6 +261,7 @@ window.AllergyEngine = (function () {
     checkRecipe: checkRecipe,
     checkRecipeLight: checkRecipeLight,
     formatConfirmList: formatConfirmList,
+    suggestSubstitutes: suggestSubstitutes,
     parseGuestAllergies: parseGuestAllergies,
     seatingProximityWarnings: seatingProximityWarnings,
     warningsForSeat: warningsForSeat

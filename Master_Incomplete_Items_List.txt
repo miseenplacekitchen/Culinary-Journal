@@ -44,6 +44,11 @@ A · DONE — shipped (Phases 1–26 SQL + Phase 27/28 code). Strike after live 
   • fix-phase21 through fix-phase26 SQL (Betty confirmed)
   • Phase 27: event→grocery buttons · chef directory type filters
   • Phase 28: grocery archive → auto-stock pantry · MP-06 drag reschedule meals
+  • Phase 29: slot settings modal · category picker filters · allergy substitute hints
+  • Phase 29: PF-01 governed pantry lock · print quick presets · chef specialty filter
+  • Phase 29: table planner computed placement · JSON-LD (recipes/chefs/recipe-page)
+  • Phase 29: library member submit workflow (SQL + library-submit.html) · admin inbox
+  • Phase 29 SQL ready: fix-phase29-library-content.sql (5 ingredients) + submissions SQL
   • GL-07 aisle layout · GL-08 multi-store · GL-09 copy/print export (grocery.html)
   • Self-service deactivation · onboarding allergy/health · MP-05 Today panel
   • Baby food stage on family profiles (UI + SQL in fix-phase4)
@@ -72,57 +77,44 @@ C · DECIDE — Betty decision before build
 
 D · OPEN — still to build or deepen (work through these)
   Library
-  • More profiles beyond 20 starters · member submission approval workflow
+  • Run fix-phase29 SQL · write/link more profiles · admin approve submissions into profiles
 
   Recipe
-  • Hero 4.1 polish on live (CSS exists — verify curved ring + image)
-  • Recipe pipeline hardening if live spot-check fails
+  • Hero 4.1 live verify (CSS shipped — Betty visual check)
+  • Pipeline hardening if Lane 2 spot-check fails
 
-  Meal planner (MP roadmap — partial)
-  • MP-01 hierarchy admin depth · MP-02 family groups · MP-03 planned-meal model
-  • MP-04 shared calendar · MP-07–09 planning popup + per-group views
-  • MP-10–14 cooked loop depth, skip/leftovers, grocery auto-gen from planner, allergy at assign
-  • MP-12 pantry subtraction when planning grocery
+  Meal planner
+  • MP-01–03 hierarchy model · MP-02 family groups · MP-04 diary/planner shared calendar wire-up
+  • MP-09 per-group views depth · MP-10–14 cooked/grocery loops polish
+  • MP-12 pantry subtraction — verify on live grocery export from planner
 
   Grocery / pantry
-  • Full governed-ingredient autocomplete on pantry add (PF-01 partial)
-  • Regional ingredient intelligence layer
-  • Shared-edit conflict handling across sessions
+  • Regional ingredient intelligence · shared-edit conflict handling
 
   Print Studio
-  • Smarter card auto-split · card type polish (Method/Tips/Allergy/Baby)
-  • Theme tiers + UM theme management (D4) · digital swipe cooking cards
-  • Recipe book / gift card / menu generators · Print & Post fulfilment
+  • Theme tiers (D4) · Print & Post fulfilment backend · smarter auto-split edge cases
 
   Social / chefs
-  • Chef filters by specialty · most-saved ranking · social typing depth
-  • Wedding / large-event contributor showcases
+  • Most-saved ranking (needs engagement data) · wedding/large-event showcases
 
   Allergy / health
-  • Site-wide enforcement on Browse + planner + table planner
-  • Safe substitutes wired to engine · table proximity warnings
+  • Hard “hide unsafe” policy option · substitutes from DB table (not just hints)
 
   Table planner & events
-  • Smart placement from rules (not static DISH_RULES)
-  • Multi-table / wedding venue · buffet option
-  • Event planner depth (guest scaling, table sync) beyond checklists
+  • Multi-table wedding venue polish · event→meal-planner sync · guest scaling on all event pages
 
   Cultural / SEO
-  • Food map regional data · festival entries expansion
-  • JSON-LD on more page types
+  • Food map regional data depth · festival entries · JSON-LD on library/event pages
 
   Admin
-  • Sub-category & Division CRUD polish
-  • Dashboard notifications inbox (aggregated admin home)
-  • Collections curation · duplicate detection · ROTW auto-expiry
-  • Full analytics dashboards (user + owner)
-  • 47-theme visual sweep
+  • Division CRUD polish · duplicate recipe detection · ROTW auto-expiry job
+  • Full owner analytics dashboards · 47-theme visual sweep
 
   Legal
-  • Lawyer review of all policy drafts (pages exist)
+  • Lawyer review of policy drafts
 
-  Monetisation (when C decided)
-  • Free-plan limits · automated checkout · theme marketplace
+  Monetisation (section C)
+  • PayPal/checkout · free-plan limits · theme marketplace
 
 E · DEFERRED — only AI (do not build until Betty asks)
   • Phase 2 AI (photo/handwriting import, table photo, voice, auto-tagging, translation)

@@ -62,12 +62,20 @@ Phase | Label                         | Status
 25    | Library starter profiles      | DONE ✅ (code + SQL)
 26    | Library depth + site pages    | DONE ✅ (code + SQL)
 27    | Event grocery + chef filters  | DONE ✅ (no SQL) — premature list closure reverted
-28    | Reopen backlog + MP-06 + pantry | IN PROGRESS (no SQL)
+28    | Reopen backlog + MP-06 + pantry | DONE ✅ (no SQL)
+29    | Cross-cutting backlog batch     | CODE ✅ — SQL pending Betty
 
-Phase 28 shipped so far:
-  • Master list REOPENED — Betty_New / Future_Roadmap files removed
-  • Grocery archive → PantryUtils.stockFromGroceryArchive (pantry-utils.js)
-  • Meal planner MP-06: drag meal cards between day/slot
+fix-phase29-library-content.sql      | 5 more ingredient profiles           | Pending Betty
+fix-phase29-library-submissions.sql | Member library submit + admin RPCs  | Pending Betty
+
+Phase 28: master list reopened · grocery archive→pantry · MP-06 drag
+
+Phase 29 shipped (code):
+  • Meal planner: slot modal, category filters, substitute hints in assign confirm
+  • Pantry PF-01: lock category/unit when governed ID linked
+  • AllergyEngine.suggestSubstitutes · print presets · chef specialty filter
+  • Table planner computePlacementHints · JSON-LD seo-schema.js
+  • Library member submit + admin inbox · nav link · calendar-utils.js (MP-04 base)
 
 Phase 27 (kept):
   • Event planners → grocery · chef directory type filters

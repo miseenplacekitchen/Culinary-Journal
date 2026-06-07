@@ -581,6 +581,10 @@ function onPantryNameInput() {
   var match = pantryIngIndex[name.toLowerCase()];
   if (!match) {
     document.getElementById('pt-ingredient-id').value = '';
+    var catEl = document.getElementById('pt-category');
+    var unitEl = document.getElementById('pt-unit');
+    if (catEl) catEl.disabled = false;
+    if (unitEl) unitEl.readOnly = false;
     if (name.length >= 2) {
       if (hint) {
         hint.textContent = '⚠ Not in governed database — you can still save locally, or submit for admin review.';
@@ -598,9 +602,13 @@ function onPantryNameInput() {
   if (unknownActions) unknownActions.style.display = 'none';
   document.getElementById('pt-ingredient-id').value = match.id;
   var cat = mapPantryCategory(match.category);
-  if (cat) document.getElementById('pt-category').value = cat;
+  var catEl = document.getElementById('pt-category');
+  if (cat && catEl) { catEl.value = cat; catEl.disabled = true; }
   var unitEl = document.getElementById('pt-unit');
-  if (unitEl && !unitEl.value && match.unit) unitEl.value = match.unit;
+  if (unitEl) {
+    if (!unitEl.value && match.unit) unitEl.value = match.unit;
+    unitEl.readOnly = true;
+  }
   if (hint) {
     hint.textContent = '✓ Linked to governed ingredient #' + match.id + (match.category ? ' · ' + match.category : '');
     hint.style.display = 'block';

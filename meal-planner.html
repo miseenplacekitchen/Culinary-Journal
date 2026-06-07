@@ -251,6 +251,7 @@
     <div class="mp-modal-search">
       <input type="text" id="mp-search" placeholder="Search recipes..." oninput="applyRecipeFilters()" autocomplete="off">
     </div>
+    <div class="mp-filter-bar" id="mp-cat-filters" style="margin-bottom:8px"></div>
     <div class="mp-filter-bar" id="mp-prep-filters">
       <span style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;color:var(--text-mid);align-self:center">Prep:</span>
       <button type="button" class="mp-filter-chip active" data-prep="all" onclick="setPrepFilter('all',this)">All</button>
@@ -264,6 +265,23 @@
   </div>
 </div>
 
+<div class="mp-modal" id="mp-slot-modal" style="display:none">
+  <div class="mp-modal-box" style="max-width:420px">
+    <div class="mp-modal-head">
+      <div class="mp-modal-title" id="mp-slot-modal-title">Meal details</div>
+      <button class="mp-modal-close" onclick="closeSlotModal()">&#215;</button>
+    </div>
+    <div style="padding:0 4px 8px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)" id="mp-slot-modal-sub"></div>
+    <div class="mp-field" style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-mid)">Servings override</label><input type="text" id="mp-slot-serves" class="mp-style" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high)"></div>
+    <div class="mp-field" style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-mid)">Assignee (family member)</label><input type="text" id="mp-slot-assignee" class="mp-style" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high)"></div>
+    <div class="mp-field" style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-mid)">Away (comma-separated)</label><input type="text" id="mp-slot-away" class="mp-style" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high)"></div>
+    <div class="mp-field" style="margin-bottom:10px"><label style="font-size:11px;color:var(--text-mid)">Extra guests</label><input type="number" id="mp-slot-guests" min="0" class="mp-style" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high)"></div>
+    <div class="mp-field" style="margin-bottom:14px"><label style="font-size:11px;color:var(--text-mid)">Note</label><input type="text" id="mp-slot-note" class="mp-style" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high)"></div>
+    <button class="mp-btn mp-btn-primary" onclick="saveSlotModal()" style="width:100%">Save</button>
+  </div>
+</div>
+
+<script src="calendar-utils.js"></script>
 <script src="grocery-utils.js"></script>
 <script src="allergy-engine.js"></script>
 <script src="nav-init.js"></script>
@@ -278,6 +296,27 @@ let currentWeekOffset = 0;
 let pickerTarget = null; // {day, meal}
 let allRecipes = [];
 let prepFilterMax = null;
+let catFilter = '';
+
+function buildCategoryFilters() {
+  var bar = document.getElementById('mp-cat-filters');
+  if (!bar) return;
+  var cats = {};
+  allRecipes.forEach(function (r) { if (r.category) cats[r.category] = 1; });
+  var keys = Object.keys(cats).sort();
+  bar.innerHTML = '<span style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:600;color:var(--text-mid);align-self:center">Category:</span>' +
+    '<button type="button" class="mp-filter-chip active" data-cat="" onclick="setCatFilter(\'\',this)">All</button>' +
+    keys.map(function (c) {
+      return '<button type="button" class="mp-filter-chip" data-cat="' + esc(c) + '" onclick="setCatFilter(\'' + esc(c).replace(/'/g, "\\'") + '\',this)">' + esc(c) + '</button>';
+    }).join('');
+}
+
+function setCatFilter(cat, btn) {
+  catFilter = cat || '';
+  document.querySelectorAll('#mp-cat-filters .mp-filter-chip').forEach(function (b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  applyRecipeFilters();
+}
 
 function recipeTotalMinutes(r) {
   var prep = parseInt(r.prep_time_minutes, 10) || 0;
@@ -397,33 +436,45 @@ function setSlot(day, meal, recipe) {
   savePlan(plan);
 }
 
+var _slotModalTarget = null;
+
 function openSlotSettings(day, meal, e) {
   if (e) e.stopPropagation();
   var slot = getSlot(day, meal);
   if (!slot) return;
-  var serves = prompt('Servings for this meal (override recipe default)', slot.servings_override != null ? String(slot.servings_override) : '');
-  if (serves === null) return;
-  var assignee = slot.assignee || '';
-  if (familyProfiles.length) {
-    var names = familyProfiles.map(function(p){ return p.name; }).join(', ');
-    var pick = prompt('Who is this meal for? (family member name, or leave blank)\n\nProfiles: ' + names, assignee);
-    if (pick === null) return;
-    assignee = pick.trim();
-  }
-  var awayRaw = prompt('Anyone away? (comma-separated names, or blank)', (slot.members_away || []).join(', '));
-  if (awayRaw === null) return;
-  var guestsRaw = prompt('Extra guests for this meal? (number, default 0)', slot.guest_count != null ? String(slot.guest_count) : '0');
-  if (guestsRaw === null) return;
-  var note = prompt('Meal note (optional)', slot.note || '');
-  if (note === null) return;
+  _slotModalTarget = { day: day, meal: meal };
+  document.getElementById('mp-slot-modal-title').textContent = (slot.name || 'Meal') + ' · ' + day + ' ' + meal;
+  document.getElementById('mp-slot-modal-sub').textContent = familyProfiles.length
+    ? 'Profiles: ' + familyProfiles.map(function (p) { return p.name; }).join(', ')
+    : 'Optional details for this planned meal';
+  document.getElementById('mp-slot-serves').value = slot.servings_override != null ? String(slot.servings_override) : '';
+  document.getElementById('mp-slot-assignee').value = slot.assignee || '';
+  document.getElementById('mp-slot-away').value = (slot.members_away || []).join(', ');
+  document.getElementById('mp-slot-guests').value = slot.guest_count != null ? String(slot.guest_count) : '0';
+  document.getElementById('mp-slot-note').value = slot.note || '';
+  document.getElementById('mp-slot-modal').classList.add('open');
+}
+
+function closeSlotModal() {
+  document.getElementById('mp-slot-modal').classList.remove('open');
+  _slotModalTarget = null;
+}
+
+function saveSlotModal() {
+  if (!_slotModalTarget) return;
+  var slot = getSlot(_slotModalTarget.day, _slotModalTarget.meal);
+  if (!slot) return;
+  var serves = document.getElementById('mp-slot-serves').value.trim();
   var updated = Object.assign({}, slot, {
-    servings_override: serves.trim() ? parseFloat(serves) || serves.trim() : null,
-    assignee: assignee || null,
-    members_away: awayRaw.trim() ? awayRaw.split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [],
-    guest_count: guestsRaw.trim() ? (parseInt(guestsRaw, 10) || 0) : 0,
-    note: note.trim()
+    servings_override: serves ? (parseFloat(serves) || serves) : null,
+    assignee: document.getElementById('mp-slot-assignee').value.trim() || null,
+    members_away: document.getElementById('mp-slot-away').value.trim()
+      ? document.getElementById('mp-slot-away').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [],
+    guest_count: parseInt(document.getElementById('mp-slot-guests').value, 10) || 0,
+    note: document.getElementById('mp-slot-note').value.trim()
   });
-  setSlot(day, meal, updated);
+  setSlot(_slotModalTarget.day, _slotModalTarget.meal, updated);
+  closeSlotModal();
   renderCalendar();
 }
 
@@ -987,6 +1038,7 @@ function setPrepFilter(max, btn) {
 function applyRecipeFilters() {
   var q = (document.getElementById('mp-search').value || '').trim().toLowerCase();
   var filtered = allRecipes.filter(function (r) {
+    if (catFilter && r.category !== catFilter) return false;
     if (q && r.name.toLowerCase().indexOf(q) < 0 && (r.category || '').toLowerCase().indexOf(q) < 0) return false;
     if (prepFilterMax != null) {
       var total = recipeTotalMinutes(r);
@@ -1038,7 +1090,7 @@ async function assignRecipeFromPicker(r) {
     } catch(_) {}
     var warnings = checkRecipeConflicts(recipe);
     if (warnings.length && typeof AllergyEngine !== 'undefined') {
-      if (!confirm('Allergy / dietary warning\n\n' + AllergyEngine.formatConfirmList(warnings) + '\n\nAssign this meal anyway?')) return;
+      if (!confirm('Allergy / dietary warning\n\n' + AllergyEngine.formatConfirmList(warnings, recipe, familyProfiles) + '\n\nAssign this meal anyway?')) return;
     }
   }
   setSlot(pickerTarget.day, pickerTarget.meal, {
@@ -1239,6 +1291,7 @@ async function loadRecipes() {
       });
     }
   } catch(_) {}
+  buildCategoryFilters();
   renderResults(allRecipes);
 }
 
@@ -1251,6 +1304,8 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('mp-modal').addEventListener('click', function(e) {
     if (e.target === this) closePicker();
   });
+  var slotModal = document.getElementById('mp-slot-modal');
+  if (slotModal) slotModal.addEventListener('click', function (e) { if (e.target === slotModal) closeSlotModal(); });
   document.addEventListener('click', function (e) {
     if (!e.target.closest('.mp-grocery-menu')) closeGroceryMenu();
   });

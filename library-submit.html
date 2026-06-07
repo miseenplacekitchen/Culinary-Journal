@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Submit a library profile for ingredients, spices, tools, or techniques to The Culinary Journal.">
   <link rel="canonical" href="https://theculinaryjournal.site/library-submit.html">
-  <meta name="robots" content="noindex, nofollow">
 <title>Library — Submit Profile — The Culinary Journal</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -122,21 +121,27 @@ let currentType = 'ingredient';
 const params = new URLSearchParams(window.location.search);
 // type/id init moved to bottom — after TYPE_FIELDS declaration
 
-// Auth guard — verify admin server-side, not just from localStorage
 const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
 if (!sess || !sess.access_token) {
   window.location.href = 'login.html'; throw new Error('not logged in');
 }
-(async function verifyAdmin() {
+window._lsIsAdmin = false;
+(async function verifyAccess() {
   try {
     const res = await fetch(window.SUPA_URL + '/rest/v1/rpc/is_admin', {
       method: 'POST',
       headers: { 'apikey': window.SUPA_KEY, 'Authorization': 'Bearer ' + sess.access_token, 'Content-Type': 'application/json' },
       body: '{}'
     });
-    const isAdmin = await res.json();
-    if (!isAdmin) { alert('Admin access required.'); window.location.href = 'index.html'; }
-  } catch(e) { alert('Could not verify access.'); window.location.href = 'index.html'; }
+    window._lsIsAdmin = !!(await res.json());
+    if (!window._lsIsAdmin) {
+      document.querySelector('.ls-subtitle').textContent =
+        'Members: submit a draft for admin review. Published profiles appear in the Library after approval.';
+      var st = document.getElementById('f-status'); if (st) { st.value = 'draft'; st.closest('.ls-row').style.display = 'none'; }
+      var vis = document.getElementById('f-visibility'); if (vis) vis.closest('.ls-row').style.display = 'none';
+      document.getElementById('ls-submit-btn').textContent = 'Submit for Review';
+    }
+  } catch(e) { console.warn('library submit access', e); }
 })();
 
 const TYPE_FIELDS = {
@@ -383,6 +388,28 @@ async function submitProfile() {
   });
 
   try {
+    if (!window._lsIsAdmin) {
+      payload.status = 'draft';
+      const res = await fetch(SUPA_URL + '/rest/v1/rpc/submit_library_profile_submission', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPA_KEY,
+          'Authorization': 'Bearer ' + sess.access_token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_profile_type: currentType, p_slug: slug, p_payload: payload })
+      });
+      if (res.ok) {
+        showMsg('Submitted for admin review. Thank you!', 'success');
+        btn.textContent = '✓ Submitted';
+        setTimeout(function () { window.location.href = 'library-directory.html?type=' + currentType; }, 2000);
+        return;
+      }
+      const err = await res.json().catch(function () { return {}; });
+      showMsg('Error: ' + (err.message || res.status) + ' — run fix-phase29-library-submissions.sql if RPC missing.', 'error');
+      btn.disabled = false; btn.textContent = 'Submit for Review';
+      return;
+    }
     const table = currentType + '_profiles';
     const editId = params.get('id');
     const method = editId ? 'PATCH' : 'POST';

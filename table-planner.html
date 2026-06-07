@@ -1528,10 +1528,35 @@ const DISH_RULES = {
   ]
 };
 
+function computePlacementHints() {
+  var tables = (currentEvent && currentEvent.layout && currentEvent.layout.tables) || [];
+  var seated = currentGuests.filter(function (g) { return g.seat_assignment; }).length;
+  var totalSeats = tables.reduce(function (s, t) { return s + (t.seats || 0); }, 0);
+  var guests = seated || currentGuests.length;
+  var hints = [];
+  if (currentDiningStyle === 'buffet') {
+    hints.push({ emoji: '🔥', label: 'Hot mains', rule: 'Plan ' + Math.max(1, Math.ceil(guests / 12)) + ' hot station(s) for ~' + guests + ' guests' });
+    hints.push({ emoji: '🥗', label: 'Cold dishes', rule: 'Front of line — salads and breads before hot pans' });
+    hints.push({ emoji: '🏷', label: 'Allergen labels', rule: 'Label every dish; you have ' + currentGuests.filter(function (g) {
+      return (g.dietary_requirements || []).some(function (d) { return String(d).toLowerCase().indexOf('allergy') >= 0; });
+    }).length + ' guest(s) with allergy flags' });
+  } else if (currentDiningStyle === 'formal') {
+    hints.push({ emoji: '🍽', label: 'Cover count', rule: guests + ' covers across ' + tables.length + ' table(s), ' + totalSeats + ' seats configured' });
+    hints.push({ emoji: '🥂', label: 'Glassware', rule: 'Water + wine per cover; bread plate top-left' });
+  } else if (currentDiningStyle === 'outdoor') {
+    hints.push({ emoji: '🔥', label: 'Grill queue', rule: 'Serve grilled items direct from station — not left on shared table for ' + guests + ' guests' });
+    hints.push({ emoji: '🧊', label: 'Cold chain', rule: 'Keep dairy salads on ice if outside > 20 min' });
+  } else {
+    hints.push({ emoji: '🍲', label: 'Shared dishes', rule: 'Centre each table of ' + Math.max(1, Math.ceil(guests / Math.max(tables.length, 1))) + ' guests avg' });
+    hints.push({ emoji: '🧂', label: 'Condiments', rule: 'One salt/pepper set per 4 guests (' + Math.ceil(guests / 4) + ' sets)' });
+  }
+  return hints.length ? hints : (DISH_RULES[currentDiningStyle] || DISH_RULES.casual);
+}
+
 function renderDishPlacement() {
   const el = document.getElementById('dish-placement-content');
   if (!el) return;
-  const rules = DISH_RULES[currentDiningStyle] || DISH_RULES.casual;
+  const rules = computePlacementHints();
   const styleLabel = {casual:'Casual',formal:'Formal / Fine Dining',buffet:'Buffet',outdoor:'Outdoor'}[currentDiningStyle]||'Casual';
 
   var allergyWarnings = [];

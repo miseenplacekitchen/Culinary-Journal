@@ -39,13 +39,14 @@ var CJ_SECTIONS = [
   },
   {
     id:'library', label:'The Library', emoji:'📚', primaryPage:'library-directory.html',
-    pages:['library-directory.html','library-profile.html','preservation.html','conversions.html','baby.html'],
+    pages:['library-directory.html','library-profile.html','library-submit.html','preservation.html','conversions.html','baby.html'],
     links:[
       {href:'library-directory.html?type=ingredient', emoji:'🌿', label:'Ingredients'},
       {href:'library-directory.html?type=spice',      emoji:'🌶', label:'Spice Directory'},
       {href:'library-directory.html?type=tool',       emoji:'🔪', label:'Tools & Appliances'},
       {href:'library-directory.html?type=cut',        emoji:'🥩', label:'Cuts & Prep'},
       {href:'library-directory.html?type=preservation',emoji:'🫙', label:'Preservation Academy'},
+      {href:'library-submit.html',                    emoji:'📝', label:'Submit a Profile', signedInOnly:true},
       {href:'conversions.html',                       emoji:'⚖️', label:'Conversions & Weights'},
       {href:'baby.html',                              emoji:'👶', label:'Baby & Toddler'},
     ]

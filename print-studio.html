@@ -343,6 +343,16 @@
     </div>
 
     <div class="ps-section">
+      <div class="ps-section-title">Quick Presets</div>
+      <div class="ps-btn-group">
+        <button class="ps-opt-btn" type="button" onclick="applyPrintPreset('cookbook')">📖 Recipe book</button>
+        <button class="ps-opt-btn" type="button" onclick="applyPrintPreset('gift')">🎁 Gift set</button>
+        <button class="ps-opt-btn" type="button" onclick="applyPrintPreset('menu')">📋 Dinner menu</button>
+        <button class="ps-opt-btn" type="button" onclick="applyPrintPreset('allergy')">⚠ Allergy cards</button>
+      </div>
+    </div>
+
+    <div class="ps-section">
       <div class="ps-section-title">Preview Mode</div>
       <div class="ps-btn-group">
         <button class="ps-opt-btn active" id="ps-view-stack" onclick="setCardView('stack',this)">Stacked</button>
@@ -466,6 +476,29 @@ function setSize(size, btn) {
   document.querySelectorAll('.ps-opt-btn[data-size]').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   try { localStorage.setItem('tcj_print_card_size', size); } catch(_){}
+  buildCards();
+}
+
+function applyPrintPreset(which) {
+  var presets = {
+    cookbook: { size: 'a5', layout: 'cookbook', view: 'booklet', checks: { 'inc-overview': true, 'inc-method': true, 'inc-tips': true, 'inc-substitutes': true, 'inc-allergy': false, 'inc-baby': false, 'inc-nutrition': false, 'inc-qr': true } },
+    gift: { size: '4x6', layout: 'wedding', view: 'stack', checks: { 'inc-overview': true, 'inc-method': true, 'inc-tips': false, 'inc-allergy': false, 'inc-baby': false, 'inc-nutrition': false, 'inc-qr': true } },
+    menu: { size: 'a4', layout: 'minimal', view: 'stack', checks: { 'inc-overview': true, 'inc-method': false, 'inc-tips': false, 'inc-substitutes': false, 'inc-allergy': true, 'inc-baby': false, 'inc-nutrition': false, 'inc-qr': false } },
+    allergy: { size: '3x5', layout: 'minimal', view: 'stack', checks: { 'inc-overview': false, 'inc-method': false, 'inc-tips': false, 'inc-substitutes': false, 'inc-allergy': true, 'inc-baby': false, 'inc-nutrition': false, 'inc-qr': true } }
+  };
+  var p = presets[which];
+  if (!p) return;
+  var sizeBtn = document.querySelector('.ps-opt-btn[data-size="' + p.size + '"]');
+  if (sizeBtn) setSize(p.size, sizeBtn);
+  var layBtn = document.querySelector('.ps-opt-btn[data-layout="' + p.layout + '"]');
+  if (layBtn) setLayout(p.layout, layBtn);
+  if (p.view === 'booklet') setCardView('booklet', document.getElementById('ps-view-booklet'));
+  else if (p.view === 'swipe') setCardView('swipe', document.getElementById('ps-view-swipe'));
+  else setCardView('stack', document.getElementById('ps-view-stack'));
+  Object.keys(p.checks).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.checked = !!p.checks[id];
+  });
   buildCards();
 }
 

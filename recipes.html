@@ -725,6 +725,7 @@ function hide(id) { document.getElementById(id).style.display='none'; }
 loadCategories();
 </script>
 <script src="allergy-engine.js"></script>
+<script src="seo-schema.js"></script>
 <script src="nav-init.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════
@@ -1057,6 +1058,11 @@ function renderCommunityRecipes() {
     card.appendChild(body);
     grid.appendChild(card);
   });
+  if (typeof SeoSchema !== 'undefined') {
+    SeoSchema.itemList('Community Recipes', filtered.slice(0, 50).map(function (r) {
+      return { name: r.recipe_name || r.name, url: 'https://www.theculinaryjournal.site/recipe-page.html?id=' + (r.id || '') };
+    }));
+  }
 }
 
 // Load community recipes on page load
