@@ -98,11 +98,10 @@ Shipped:
 
 Phase 25 ✅ (Betty ran SQL): 8 ingredients linked to governed IDs.
 
-Phase 26 — run on Supabase:
-  1. fix-phase26-library-content.sql — spice/tool/cut/preservation starters
-  2. fix-phase26-site-pages.sql — register food-map, festivals, event + legal pages
-  3. Site Management → Pages: set Food Map + Festival Calendar to Public when ready
-  4. Library directory: filter by type — confirm new profiles appear
+Phase 26 ✅ (Betty ran SQL):
+  • 12 spice/tool/cut/preservation profiles published
+  • food-map.html + festival-calendar.html public in site_pages
+  • Live check: library-directory.html?type=spice (etc.) · food-map.html · festival-calendar.html
 
 Starter profiles:
   Ingredients (25): garlic, onion, butter, olive oil, rice, tomato, chicken breast, salt

@@ -37,8 +37,8 @@ fix-phase23-batch.sql       | Shared pantry, Stripe, promos, lib admin | Ran ✅
 fix-phase24-refund-copy.sql | Refund wording + purchase email templates  | Ran ✅
 fix-phase25-library-starter.sql | 8 starter ingredient profiles + links | Ran ✅
 fix-phase25-library-links-patch.sql | Broader name match for 4 profiles | Ran ✅
-fix-phase26-library-content.sql   | Spice/tool/cut/preservation starters | Pending Betty
-fix-phase26-site-pages.sql        | Cultural, event, legal page registry | Pending Betty
+fix-phase26-library-content.sql   | Spice/tool/cut/preservation starters | Ran ✅
+fix-phase26-site-pages.sql        | Cultural, event, legal page registry | Ran ✅
 
 ══════════════════════════════════════════════════════════════════════
 PHASE STATUS (11–26)
@@ -60,13 +60,15 @@ Phase | Label                         | Status
 23    | Lane 3 pantry + Stripe + UM   | DONE ✅ (code + SQL) — Stripe skipped
 24    | Refund copy + billing emails  | DONE ✅ (code + SQL)
 25    | Library starter profiles      | DONE ✅ (code + SQL)
-26    | Library depth + site pages    | CODE ✅ — SQL pending · nav links shipped
+26    | Library depth + site pages    | DONE ✅ (code + SQL)
 
-Phase 26 code shipped:
-  • fix-phase26-library-content.sql — 12 non-ingredient library profiles
-  • fix-phase26-site-pages.sql — food-map, festivals, events, legal pages
+Phase 26 verified (Betty SQL output):
+  • 12 library profiles published: cumin, turmeric, black-pepper; cast-iron-skillet,
+    chefs-knife, digital-kitchen-scale; chicken-thigh, salmon-fillet, beef-mince;
+    quick-pickling, freezing-leftovers, water-bath-canning
+  • site_pages public: food-map.html, festival-calendar.html, user.html,
+    cookies.html, accessibility.html (+ other legal/event pages registered)
   • nav-init.js — Food by Map + Festival Calendar in Recipe Book dropdown
-  • Master list reconciliation — false [MISSING] items moved to A/B
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 14 — LIVE AUDIT (test recipe, hero excluded from scope)

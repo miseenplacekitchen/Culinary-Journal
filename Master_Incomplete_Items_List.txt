@@ -26,7 +26,7 @@ A · DONE — shipped (Phases 1–25 + SQL). Live-verify then strike from backlo
   • PF-02 submit unknown ingredient (grocery manual add)
   • Allergy engine v1 + family dietary banner on recipe page
   • Library: directory + profiles + 8 starter ingredients linked · recipe 📚 links
-  • Library Phase 26 SQL ready: 3 spice + 3 tool + 3 cut + 3 preservation starters
+  • Library Phase 26: 3 spice + 3 tool + 3 cut + 3 preservation starters (SQL ✅)
   • Friends-only visibility on submit · origin locality field · Submit in nav dropdown
   • Recipe font size + high-contrast cook view (recipe-page)
   • Follow contributor · Chef of the Month widget · user.html contributor profiles
@@ -34,13 +34,13 @@ A · DONE — shipped (Phases 1–25 + SQL). Live-verify then strike from backlo
   • Legal page scaffolds (cookies, DMCA, accessibility, UGC, etc.) — lawyer review still open
   • Print Studio: card split (Card N of M) + QR on prints
   • Nav: Food by Map + Festival Calendar links (Phase 26)
-  • site_pages SQL for cultural/event/legal pages (Phase 26)
+  • site_pages cultural/event/legal pages registered — food-map + festivals public (Phase 26 ✅)
   • Nutrition queue + Print queue (RM tabs)
   • Email queue + send-queued-emails edge function + billing email templates
   • Notifications page (notifications.html + get_my_notifications)
   • Promo codes DB · page-guard tiers · paid-members-only + subscription-terms
   • Source link admin · admin edit origin locality · dead-link admin controls
-  • fix-phase21 through fix-phase25 SQL (Betty confirmed)
+  • fix-phase21 through fix-phase26 SQL (Betty confirmed)
 
 B · VERIFY ONLY — likely works; run Lane 2 live tests, then move to A.
   • Full recipe pipeline with a fresh submit (not just test recipe UUID)
