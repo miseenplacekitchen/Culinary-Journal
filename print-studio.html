@@ -92,6 +92,32 @@
     .ps-empty-icon { font-size:48px; margin-bottom:12px; }
     .ps-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--text-high); margin-bottom:8px; }
 
+    .ps-mode-bar { max-width:1200px; margin:0 auto; padding:12px 20px 0; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .ps-soon-tag { font-size:9px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; padding:2px 6px; border-radius:10px; background:var(--success-bg); color:#4caf76; margin-left:4px; }
+    .ps-premium-tag { font-size:9px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase; color:#b8956a; margin-left:6px; opacity:0.85; }
+    .ps-swipe-bar { display:none; align-items:center; justify-content:center; gap:12px; margin-bottom:12px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); }
+    .ps-swipe-bar.visible { display:flex; }
+    .ps-swipe-btn { padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:var(--text-ghost); color:var(--text-high); cursor:pointer; font-family:'DM Sans',sans-serif; font-size:12px; }
+    .ps-swipe-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .ps-swipe-btn:disabled { opacity:0.4; cursor:default; }
+    .ps-kitchen-toggle { padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); cursor:pointer; }
+    .ps-kitchen-toggle.active { border-color:var(--accent); color:var(--accent); background:rgb(from var(--accent) r g b / 0.1); }
+    body.ps-kitchen-mode .ps-preview { background:#1a1814; border-radius:12px; padding:16px; }
+    body.ps-kitchen-mode .ps-preview-title { color:#f5f0e6; }
+    body.ps-kitchen-mode .ps-card-count { color:#c4b89a; }
+    body.ps-kitchen-mode .ps-card { font-size:115%; box-shadow:0 6px 28px rgba(0,0,0,0.45); }
+    body.ps-kitchen-mode .ps-card-title { font-size:1.55rem!important; }
+    body.ps-kitchen-mode .ps-step { font-size:12px!important; }
+    body.ps-kitchen-mode .ps-ing-item { font-size:11px!important; }
+    .ps-cards.swipe-view .ps-card.ps-card-zoomed { flex:0 0 min(96vw, 520px); transform:scale(1.02); z-index:2; }
+    .ps-card-type.kind-method { color:#5c4a2a; }
+    .ps-card-type.kind-allergy { color:#a04020; }
+    .ps-card-type.kind-baby { color:#6a5080; }
+    .ps-card-type.kind-tips { color:#3a6a40; }
+    .ps-card-type.kind-overview { color:#8b6914; }
+    .ps-util-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+    .ps-util-btn { flex:1; min-width:120px; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); cursor:pointer; }
+    .ps-util-btn:hover { border-color:var(--accent); color:var(--accent); }
 
     /* ── LAYOUT STYLES ───────────── */
 
@@ -307,6 +333,12 @@
 </nav>
 <div class="tab-nav"></div>
 
+<div class="ps-mode-bar">
+  <button class="ps-mode-btn active" type="button" onclick="setPrintMode('design',this)">🎨 Design Studio</button>
+  <button class="ps-mode-btn" type="button" onclick="setPrintMode('order',this)">📬 Print &amp; Post <span class="ps-soon-tag">Preview</span></button>
+</div>
+
+<div class="ps-layout">
 <div class="ps-wrap">
   <!-- Sidebar -->
   <div class="ps-sidebar">
@@ -329,16 +361,16 @@
         <button class="ps-opt-btn" data-layout="cookbook" onclick="setLayout('cookbook',this)">Classic Cookbook</button>
         <button class="ps-opt-btn" data-layout="rustic" onclick="setLayout('rustic',this)">Rustic Newspaper</button>
         <button class="ps-opt-btn" data-layout="minimal" onclick="setLayout('minimal',this)">Modern Minimal</button>
-        <button class="ps-opt-btn" data-layout="botanical" onclick="setLayout('botanical',this)">Botanical</button>
-        <button class="ps-opt-btn" data-layout="candlelit" onclick="setLayout('candlelit',this)">Warm Candlelit</button>
-        <button class="ps-opt-btn" data-layout="wedding" onclick="setLayout('wedding',this)">Elegant Wedding</button>
+        <button class="ps-opt-btn" data-layout="botanical" data-premium="1" onclick="setLayout('botanical',this)">Botanical <span class="ps-premium-tag">Premium</span></button>
+        <button class="ps-opt-btn" data-layout="candlelit" data-premium="1" onclick="setLayout('candlelit',this)">Warm Candlelit <span class="ps-premium-tag">Premium</span></button>
+        <button class="ps-opt-btn" data-layout="wedding" data-premium="1" onclick="setLayout('wedding',this)">Elegant Wedding <span class="ps-premium-tag">Premium</span></button>
         <button class="ps-opt-btn" data-layout="colourful" onclick="setLayout('colourful',this)">Colourful &amp; Fun</button>
         <button class="ps-opt-btn" data-layout="pastel" onclick="setLayout('pastel',this)">Soft Pastel</button>
         <button class="ps-opt-btn" data-layout="fitness" onclick="setLayout('fitness',this)">Fitness Focused</button>
-        <button class="ps-opt-btn" data-layout="dark-moody" onclick="setLayout('dark-moody',this)">Dark &amp; Moody</button>
+        <button class="ps-opt-btn" data-layout="dark-moody" data-premium="1" onclick="setLayout('dark-moody',this)">Dark &amp; Moody <span class="ps-premium-tag">Premium</span></button>
         <button class="ps-opt-btn" data-layout="bright" onclick="setLayout('bright',this)">Bright &amp; Fresh</button>
-        <button class="ps-opt-btn" data-layout="vintage" onclick="setLayout('vintage',this)">Vintage Recipe Card</button>
-        <button class="ps-opt-btn" data-layout="parchment" onclick="setLayout('parchment',this)">Aged Parchment</button>
+        <button class="ps-opt-btn" data-layout="vintage" data-premium="1" onclick="setLayout('vintage',this)">Vintage Recipe Card <span class="ps-premium-tag">Premium</span></button>
+        <button class="ps-opt-btn" data-layout="parchment" data-premium="1" onclick="setLayout('parchment',this)">Aged Parchment <span class="ps-premium-tag">Premium</span></button>
       </div>
     </div>
 
@@ -349,6 +381,13 @@
         <button class="ps-opt-btn" type="button" onclick="applyPrintPreset('gift')">🎁 Gift set</button>
         <button class="ps-opt-btn" type="button" onclick="applyPrintPreset('menu')">📋 Dinner menu</button>
         <button class="ps-opt-btn" type="button" onclick="applyPrintPreset('allergy')">⚠ Allergy cards</button>
+        <button class="ps-opt-btn" type="button" onclick="applyPrintPreset('cook')">👨‍🍳 While cooking</button>
+        <button class="ps-opt-btn" type="button" onclick="applyPrintPreset('shop')">🛒 Shopping list</button>
+      </div>
+      <div class="ps-util-row">
+        <button class="ps-util-btn" type="button" onclick="copyPrintText()">Copy plain text</button>
+        <button class="ps-util-btn" type="button" onclick="savePrintProfile()">Save my setup</button>
+        <button class="ps-util-btn" type="button" onclick="restorePrintProfile()">Restore saved</button>
       </div>
     </div>
 
@@ -429,16 +468,23 @@
     </div>
 
     <button class="ps-print-btn" onclick="printCards()">🖨 Print Cards</button>
+    <p id="ps-premium-note" style="display:none;font-family:'DM Sans',sans-serif;font-size:10px;color:var(--text-mid);margin-top:8px;line-height:1.4">Premium theme selected — included free during soft launch.</p>
   </div>
 
   <!-- Preview -->
   <div class="ps-preview">
     <div class="ps-preview-header">
       <div class="ps-preview-title">Preview</div>
-      <div style="display:flex;align-items:center;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <button class="ps-kitchen-toggle" id="ps-kitchen-btn" type="button" onclick="toggleKitchenMode()">🌙 Kitchen mode</button>
         <div class="ps-card-count" id="ps-card-count"></div>
         <button id="pdf-btn" onclick="downloadPDF()" style="padding:7px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;display:none">⬇ Download PDF</button>
       </div>
+    </div>
+    <div class="ps-swipe-bar" id="ps-swipe-bar">
+      <button class="ps-swipe-btn" type="button" id="ps-swipe-prev" onclick="swipeToCard(psSwipeIndex - 1)">← Prev</button>
+      <span id="ps-swipe-pos">1 / 1</span>
+      <button class="ps-swipe-btn" type="button" id="ps-swipe-next" onclick="swipeToCard(psSwipeIndex + 1)">Next →</button>
     </div>
     <div class="ps-cards" id="ps-cards">
       <div class="ps-empty">
@@ -449,8 +495,10 @@
     </div>
   </div>
 </div>
+</div>
 
 <script src="nav-init.js"></script>
+<script src="allergy-engine.js"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
@@ -459,15 +507,23 @@ function fmtQty(v){ if(!v)return''; let s=String(v); Object.keys(FRACTIONS).forE
 
 let currentSize = '4x6';
 let currentRecipe = null;
+let currentRecipes = [];
 let currentCardView = 'stack';
+let psFamilyProfiles = [];
+let psSwipeIndex = 0;
+let psLastCardDefs = [];
 
 let currentLayout = 'classic-card';
+const PS_PREMIUM_LAYOUTS = { botanical:1, candlelit:1, wedding:1, 'dark-moody':1, vintage:1, parchment:1 };
+const PS_SOFT_LAUNCH_FREE = true;
 
 function setLayout(layout, btn) {
   currentLayout = layout;
   document.querySelectorAll('.ps-opt-btn[data-layout]').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   try { localStorage.setItem('tcj_print_layout', layout); } catch(_){}
+  var note = document.getElementById('ps-premium-note');
+  if (note) note.style.display = PS_PREMIUM_LAYOUTS[layout] ? 'block' : 'none';
   buildCards();
 }
 
@@ -481,10 +537,12 @@ function setSize(size, btn) {
 
 function applyPrintPreset(which) {
   var presets = {
-    cookbook: { size: 'a5', layout: 'cookbook', view: 'booklet', checks: { 'inc-overview': true, 'inc-method': true, 'inc-tips': true, 'inc-substitutes': true, 'inc-allergy': false, 'inc-baby': false, 'inc-nutrition': false, 'inc-qr': true } },
-    gift: { size: '4x6', layout: 'wedding', view: 'stack', checks: { 'inc-overview': true, 'inc-method': true, 'inc-tips': false, 'inc-allergy': false, 'inc-baby': false, 'inc-nutrition': false, 'inc-qr': true } },
-    menu: { size: 'a4', layout: 'minimal', view: 'stack', checks: { 'inc-overview': true, 'inc-method': false, 'inc-tips': false, 'inc-substitutes': false, 'inc-allergy': true, 'inc-baby': false, 'inc-nutrition': false, 'inc-qr': false } },
-    allergy: { size: '3x5', layout: 'minimal', view: 'stack', checks: { 'inc-overview': false, 'inc-method': false, 'inc-tips': false, 'inc-substitutes': false, 'inc-allergy': true, 'inc-baby': false, 'inc-nutrition': false, 'inc-qr': true } }
+    cookbook: { size: 'a5', layout: 'cookbook', view: 'booklet', kitchen: false, checks: { 'inc-overview': true, 'inc-method': true, 'inc-tips': true, 'inc-substitutes': true, 'inc-allergy': false, 'inc-baby': false, 'inc-nutrition': false, 'inc-divider': true, 'inc-qr': true } },
+    gift: { size: '4x6', layout: 'wedding', view: 'stack', kitchen: false, checks: { 'inc-overview': true, 'inc-method': true, 'inc-tips': false, 'inc-allergy': false, 'inc-baby': false, 'inc-nutrition': false, 'inc-divider': false, 'inc-qr': true } },
+    menu: { size: 'a4', layout: 'minimal', view: 'stack', kitchen: false, checks: { 'inc-overview': true, 'inc-method': false, 'inc-tips': false, 'inc-substitutes': false, 'inc-allergy': true, 'inc-baby': false, 'inc-nutrition': false, 'inc-divider': false, 'inc-qr': false } },
+    allergy: { size: '3x5', layout: 'minimal', view: 'stack', kitchen: false, checks: { 'inc-overview': false, 'inc-method': false, 'inc-tips': false, 'inc-substitutes': false, 'inc-allergy': true, 'inc-baby': false, 'inc-nutrition': false, 'inc-divider': false, 'inc-qr': true } },
+    cook: { size: '4x6', layout: 'classic-card', view: 'swipe', kitchen: true, checks: { 'inc-overview': true, 'inc-method': true, 'inc-tips': false, 'inc-substitutes': false, 'inc-allergy': false, 'inc-baby': false, 'inc-nutrition': false, 'inc-divider': false, 'inc-qr': true } },
+    shop: { size: '3x5', layout: 'minimal', view: 'stack', kitchen: false, checks: { 'inc-overview': true, 'inc-method': false, 'inc-tips': false, 'inc-substitutes': false, 'inc-allergy': false, 'inc-baby': false, 'inc-nutrition': false, 'inc-divider': false, 'inc-qr': false, 'inc-times': false, 'inc-serves': true, 'inc-spice': false, 'inc-origin': false } }
   };
   var p = presets[which];
   if (!p) return;
@@ -499,6 +557,11 @@ function applyPrintPreset(which) {
     var el = document.getElementById(id);
     if (el) el.checked = !!p.checks[id];
   });
+  if (p.kitchen) {
+    document.body.classList.add('ps-kitchen-mode');
+    var kb = document.getElementById('ps-kitchen-btn');
+    if (kb) kb.classList.add('active');
+  }
   buildCards();
 }
 
@@ -515,7 +578,8 @@ function setCardView(mode, btn) {
   if (bookletBtn) bookletBtn.classList.toggle('active', mode === 'booklet');
   document.body.classList.toggle('ps-print-booklet', mode === 'booklet');
   try { localStorage.setItem('tcj_print_card_view', mode); } catch(_) {}
-  if (currentRecipe) applyBookletLayout();
+  updateSwipeBar();
+  if (currentRecipe || currentRecipes.length) applyBookletLayout();
 }
 
 function applyBookletLayout() {
@@ -541,7 +605,7 @@ function applyBookletLayout() {
 }
 
 function printCards() {
-  if (!currentRecipe) { alert('No recipe loaded. Open a recipe page and click Print.'); return; }
+  if (!currentRecipe && !currentRecipes.length) { alert('No recipe loaded. Open a recipe page and click Print.'); return; }
   buildCards();
   setTimeout(function() {
     if (currentCardView === 'booklet') {
@@ -577,18 +641,71 @@ function psDur(v,u){const n=parseFloat(v);if(isNaN(n))return v;if(u==='min')retu
 const PS_BRAND = '<div class="ps-brand"><span class="ps-brand-mark">🍽</span><span>The Culinary Journal</span></div>';
 
 const PS_CAPACITY = {
-  '4x6': { ingredients: 12, firstIngredients: 8, steps: 6 },
-  '3x5': { ingredients: 8, firstIngredients: 6, steps: 4 },
-  'a5':  { ingredients: 24, firstIngredients: 18, steps: 10 },
-  'a4':  { ingredients: 36, firstIngredients: 28, steps: 14 }
+  '4x6': { ingredients: 12, firstIngredients: 8, steps: 6, stepChars: 900, listItems: 5 },
+  '3x5': { ingredients: 8, firstIngredients: 6, steps: 4, stepChars: 600, listItems: 4 },
+  'a5':  { ingredients: 24, firstIngredients: 18, steps: 10, stepChars: 1600, listItems: 8 },
+  'a4':  { ingredients: 36, firstIngredients: 28, steps: 14, stepChars: 2200, listItems: 10 }
 };
 
 function psCapacity() { return PS_CAPACITY[currentSize] || PS_CAPACITY['4x6']; }
+
+function psEffectiveCapacity(r, inc) {
+  const base = psCapacity();
+  const cfg = PS_STYLE[r.cooking_style || ''] || PS_STYLE[''];
+  let firstIng = base.firstIngredients;
+  let ing = base.ingredients;
+  let steps = base.steps;
+  let stepChars = base.stepChars;
+  const metaLen = psBuildMeta(r, inc, cfg).length;
+  if (metaLen > 5) { firstIng = Math.max(4, firstIng - 2); }
+  else if (metaLen > 3) { firstIng = Math.max(4, firstIng - 1); }
+  if (inc('inc-dietary') || inc('inc-keeping') || inc('inc-nutrition')) firstIng = Math.max(4, firstIng - 1);
+  if (currentLayout === 'cookbook' || currentLayout === 'rustic' || currentLayout === 'wedding') {
+    firstIng = Math.max(4, firstIng - 2);
+    ing = Math.max(6, ing - 2);
+    steps = Math.max(3, steps - 1);
+    stepChars = Math.max(400, stepChars - 200);
+  }
+  if (document.body.classList.contains('ps-kitchen-mode')) {
+    steps = Math.max(3, steps - 1);
+    stepChars = Math.max(350, stepChars - 150);
+  }
+  return { firstIngredients: firstIng, ingredients: ing, steps: steps, stepChars: stepChars, listItems: base.listItems };
+}
 
 function psChunk(arr, size) {
   const out = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out.length ? out : [[]];
+}
+
+function psChunkStepsWeighted(steps, maxCount, maxChars) {
+  const chunks = [];
+  let current = [];
+  let charSum = 0;
+  steps.forEach(function(step) {
+    const len = String(step || '').length;
+    const overflow = current.length >= maxCount || (charSum + len > maxChars && current.length > 0);
+    if (overflow) {
+      chunks.push(current);
+      current = [];
+      charSum = 0;
+    }
+    current.push(step);
+    charSum += len;
+  });
+  if (current.length) chunks.push(current);
+  return chunks.length ? chunks : [[]];
+}
+
+function psCardKind(typeLabel) {
+  const t = String(typeLabel || '').toLowerCase();
+  if (t.indexOf('allergy') >= 0) return 'kind-allergy';
+  if (t.indexOf('baby') >= 0) return 'kind-baby';
+  if (t.indexOf('tip') >= 0) return 'kind-tips';
+  if (t.indexOf('overview') >= 0 || t.indexOf('ingredient') >= 0 || t.indexOf('menu') >= 0) return 'kind-overview';
+  if (t.indexOf('procedure') >= 0 || t.indexOf('continued') >= 0 || t.indexOf('method') >= 0) return 'kind-method';
+  return '';
 }
 
 function psIngredientPairs(recipe) {
@@ -708,15 +825,55 @@ function renderPrintQRCodes(recipe, showQr) {
   });
 }
 
-function buildCards() {
-  if (!currentRecipe) return;
-  const container = document.getElementById('ps-cards');
-  const inc = id => { const el = document.getElementById(id); return el ? el.checked : false; };
-  const r = currentRecipe;
+function psBuildAllergyCardHtml(r) {
+  var parts = [];
+  var allergenText = (r.allergen_notes || r.allergy_notes || '').trim();
+  if (allergenText) parts.push(esc(allergenText));
+  if (typeof AllergyEngine !== 'undefined') {
+    var detected = AllergyEngine.detectInRecipe(r);
+    if (detected.length) parts.push('<strong>Detected allergens:</strong> ' + esc(detected.join(', ')));
+    if (psFamilyProfiles.length) {
+      var warnings = AllergyEngine.checkRecipe(r, psFamilyProfiles, 'family');
+      if (warnings.length) {
+        parts.push('<div style="margin-top:6px">' + warnings.slice(0, 8).map(function(w){ return esc(w); }).join('<br>') + '</div>');
+      }
+      var subs = AllergyEngine.suggestSubstitutes(r, psFamilyProfiles);
+      if (subs.length) parts.push('<div style="margin-top:6px"><strong>Substitute ideas:</strong><br>' + subs.slice(0, 4).map(function(s){ return esc(s); }).join('<br>') + '</div>');
+    }
+  } else if (Array.isArray(r.dietary_tags) && r.dietary_tags.length) {
+    parts.push('Tags: ' + esc(r.dietary_tags.join(', ')));
+  }
+  if (!parts.length) return '';
+  return psContinuationTitle(r) + '<div class="ps-section-head">Allergy &amp; Dietary Notes</div>' +
+    '<div style="font-family:DM Sans,sans-serif;font-size:11px;color:#444;line-height:1.6">' + parts.join('<br><br>') + '</div>' +
+    '<div style="font-family:DM Sans,sans-serif;font-size:8px;color:#8a7a5c;margin-top:8px">Always verify with guests directly. Cross-contamination may occur.</div>';
+}
+
+function psCollectCardDefsForRecipe(r, inc, opts) {
   const cfg = PS_STYLE[r.cooking_style || ''] || PS_STYLE[''];
-  const cap = psCapacity();
-  const showQr = inc('inc-qr');
+  const cap = psEffectiveCapacity(r, inc);
   const cardDefs = [];
+  const menuOnly = !!opts.menuOnly;
+
+  if (inc('inc-divider') && opts.addDivider) {
+    var collName = opts.collectionName || r.collection_name || r.recipe_name || 'My Collection';
+    cardDefs.push({
+      type: 'Collection Divider',
+      html: '<div style="text-align:center;padding:40px 10px"><div style="font-family:Cormorant Garamond,serif;font-size:2rem;font-weight:700;color:#8b6914;margin-bottom:8px">'+esc(collName)+'</div>' +
+        '<div style="font-family:DM Sans,sans-serif;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#8b6914">The Culinary Journal</div></div>'
+    });
+  }
+
+  if (menuOnly) {
+    const meta = psBuildMeta(r, inc, cfg);
+    cardDefs.push({
+      type: 'Menu Item',
+      html: '<div class="ps-card-title" style="font-size:1.5rem">'+esc(r.recipe_name||'')+'</div>' +
+        (r.native_title ? '<div class="ps-card-subtitle">'+esc(r.native_title)+'</div>' : '') +
+        (meta.length ? '<div class="ps-card-meta">'+meta.map(m=>'<span>'+esc(m)+'</span>').join('')+'</div>' : '')
+    });
+    return cardDefs;
+  }
 
   if (inc('inc-overview')) {
     const meta = psBuildMeta(r, inc, cfg);
@@ -725,20 +882,15 @@ function buildCards() {
     const pairs = psIngredientPairs(r);
 
     if (!pairs.length) {
-      cardDefs.push({
-        type: 'Overview',
-        html: psOverviewHeader(r, meta, extraRows) + safetyHtml
-      });
+      cardDefs.push({ type: 'Overview', html: psOverviewHeader(r, meta, extraRows) + safetyHtml });
     } else {
       const firstChunk = pairs.slice(0, cap.firstIngredients);
       const rest = pairs.slice(cap.firstIngredients);
       const restChunks = psChunk(rest, cap.ingredients);
-
       cardDefs.push({
         type: 'Overview & Ingredients',
         html: psOverviewHeader(r, meta, extraRows) + psRenderIngredientPairs(firstChunk) + (restChunks.length ? '' : safetyHtml)
       });
-
       restChunks.forEach((chunk, ci) => {
         const isLastIng = ci === restChunks.length - 1;
         cardDefs.push({
@@ -756,19 +908,14 @@ function buildCards() {
         typeof step === 'string' ? step : (step.text || step.title || '')
       ).filter(Boolean);
       if (!stepTexts.length) return;
-
-      const stepChunks = psChunk(stepTexts, cap.steps);
+      const stepChunks = psChunkStepsWeighted(stepTexts, cap.steps, cap.stepChars);
       let stepOffset = 0;
       stepChunks.forEach((chunk, ci) => {
         const continued = ci > 0;
-        const typeLabel = stepChunks.length > 1
-          ? blockTitle + (continued ? ' (continued)' : '')
-          : blockTitle;
+        const typeLabel = stepChunks.length > 1 ? blockTitle + (continued ? ' (continued)' : '') : blockTitle;
         cardDefs.push({
           type: typeLabel,
-          html: psContinuationTitle(r)
-            + `<div class="ps-section-head">${esc(blockTitle)}${continued ? ' — continued' : ''}</div>`
-            + psRenderSteps(chunk, stepOffset + 1)
+          html: psContinuationTitle(r) + `<div class="ps-section-head">${esc(blockTitle)}${continued ? ' — continued' : ''}</div>` + psRenderSteps(chunk, stepOffset + 1)
         });
         stepOffset += chunk.length;
       });
@@ -781,19 +928,20 @@ function buildCards() {
       .filter(x => x[1] && !String(x[1]).startsWith('undefined'));
     cardDefs.push({
       type: 'Nutrition',
-      html: psContinuationTitle(r)
-        + '<div class="ps-section-head">Nutrition — Per Serving (approximate)</div>'
-        + `<div class="ps-ing-list">${rows.map(x=>`<div class="ps-ing-item"><span class="ps-ing-qty">${esc(String(x[1]))}</span><span>${esc(x[0])}</span></div>`).join('')}</div>`
+      html: psContinuationTitle(r) + '<div class="ps-section-head">Nutrition — Per Serving (approximate)</div>' +
+        `<div class="ps-ing-list">${rows.map(x=>`<div class="ps-ing-item"><span class="ps-ing-qty">${esc(String(x[1]))}</span><span>${esc(x[0])}</span></div>`).join('')}</div>`
     });
   }
 
   if (inc('inc-notes') && esc(r.cooking_notes||'')) {
-    const notesText = Array.isArray(r.cooking_notes) ? r.cooking_notes.join('\n• ') : r.cooking_notes;
-    cardDefs.push({
-      type: 'Cooking Notes',
-      html: psContinuationTitle(r)
-        + '<div class="ps-section-head">Cooking Notes</div>'
-        + `<div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#444;line-height:1.6">${esc(notesText||'')}</div>`
+    const notesRaw = Array.isArray(r.cooking_notes) ? r.cooking_notes.filter(Boolean) : [String(r.cooking_notes)];
+    const noteChunks = psChunk(notesRaw, cap.listItems);
+    noteChunks.forEach(function(chunk, ci) {
+      cardDefs.push({
+        type: noteChunks.length > 1 ? 'Cooking Notes (continued)' : 'Cooking Notes',
+        html: psContinuationTitle(r) + '<div class="ps-section-head">Cooking Notes</div>' +
+          chunk.map(function(t){ return '<div class="ps-step"><span class="ps-step-num">•</span><span class="ps-step-text">'+esc(t)+'</span></div>'; }).join('')
+      });
     });
   }
 
@@ -801,37 +949,32 @@ function buildCards() {
     var tips = [];
     if (r.cooking_tips) tips = Array.isArray(r.cooking_tips) ? r.cooking_tips : [r.cooking_tips];
     if (r.tips) tips = tips.concat(Array.isArray(r.tips) ? r.tips : [r.tips]);
-    if (tips.length) {
+    tips = tips.filter(Boolean);
+    psChunk(tips, cap.listItems).forEach(function(chunk, ci) {
       cardDefs.push({
-        type: 'Tips',
+        type: tips.length > cap.listItems && ci > 0 ? 'Tips (continued)' : 'Tips',
         html: psContinuationTitle(r) + '<div class="ps-section-head">Tips</div>' +
-          tips.filter(Boolean).map(function(t){ return '<div class="ps-step"><span class="ps-step-num">•</span><span class="ps-step-text">'+esc(t)+'</span></div>'; }).join('')
+          chunk.map(function(t){ return '<div class="ps-step"><span class="ps-step-num">•</span><span class="ps-step-text">'+esc(t)+'</span></div>'; }).join('')
       });
-    }
+    });
   }
 
   if (inc('inc-substitutes') && Array.isArray(r.substitutions) && r.substitutions.length) {
-    cardDefs.push({
-      type: 'Substitutes',
-      html: psContinuationTitle(r) + '<div class="ps-section-head">Substitutes</div>' +
-        r.substitutions.map(function(s){
-          return '<div class="ps-step"><span class="ps-step-text"><strong>'+esc(s.original||s.ingredient||'')+'</strong> → '+esc(s.substitute||'')+
-            (s.ratio ? ' ('+esc(s.ratio)+')' : '') + (s.notes ? ' — '+esc(s.notes) : '') + '</span></div>';
-        }).join('')
+    psChunk(r.substitutions, cap.listItems).forEach(function(chunk, ci) {
+      cardDefs.push({
+        type: ci > 0 ? 'Substitutes (continued)' : 'Substitutes',
+        html: psContinuationTitle(r) + '<div class="ps-section-head">Substitutes</div>' +
+          chunk.map(function(s){
+            return '<div class="ps-step"><span class="ps-step-text"><strong>'+esc(s.original||s.ingredient||'')+'</strong> → '+esc(s.substitute||'')+
+              (s.ratio ? ' ('+esc(s.ratio)+')' : '') + (s.notes ? ' — '+esc(s.notes) : '') + '</span></div>';
+          }).join('')
+      });
     });
   }
 
   if (inc('inc-allergy')) {
-    var allergenText = (r.allergen_notes || r.allergy_notes || '').trim();
-    if (!allergenText && Array.isArray(r.dietary_tags)) allergenText = 'Tags: ' + r.dietary_tags.join(', ');
-    if (allergenText) {
-      cardDefs.push({
-        type: 'Allergy Notes',
-        html: psContinuationTitle(r) + '<div class="ps-section-head">Allergy &amp; Dietary Notes</div>' +
-          '<div style="font-family:DM Sans,sans-serif;font-size:11px;color:#444;line-height:1.6">'+esc(allergenText)+'</div>' +
-          '<div style="font-family:DM Sans,sans-serif;font-size:8px;color:#8a7a5c;margin-top:8px">Always verify with guests directly. Cross-contamination may occur.</div>'
-      });
-    }
+    var allergyHtml = psBuildAllergyCardHtml(r);
+    if (allergyHtml) cardDefs.push({ type: 'Allergy Notes', html: allergyHtml });
   }
 
   if (inc('inc-baby') && ((r.category||'').toLowerCase().indexOf('little ones') >= 0 || (r.suitability_tags||[]).join(' ').toLowerCase().indexOf('baby') >= 0)) {
@@ -842,33 +985,64 @@ function buildCards() {
     });
   }
 
-  if (inc('inc-divider')) {
-    var collName = new URLSearchParams(window.location.search).get('collection') || r.collection_name || 'My Collection';
-    cardDefs.unshift({
-      type: 'Collection Divider',
-      html: '<div style="text-align:center;padding:40px 10px"><div style="font-family:Cormorant Garamond,serif;font-size:2rem;font-weight:700;color:#8b6914;margin-bottom:8px">'+esc(collName)+'</div>' +
-        '<div style="font-family:DM Sans,sans-serif;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#8b6914">The Culinary Journal</div></div>'
+  return cardDefs;
+}
+
+function buildCards() {
+  const recipes = currentRecipes.length ? currentRecipes : (currentRecipe ? [currentRecipe] : []);
+  if (!recipes.length) return;
+  const container = document.getElementById('ps-cards');
+  const inc = id => { const el = document.getElementById(id); return el ? el.checked : false; };
+  const showQr = inc('inc-qr');
+  const menuOnly = inc('inc-overview') && !inc('inc-method') && !inc('inc-tips') && !inc('inc-substitutes');
+  const collectionName = new URLSearchParams(window.location.search).get('collection') || '';
+  const cardDefs = [];
+
+  if (recipes.length > 1 && menuOnly) {
+    cardDefs.push({
+      type: 'Menu Cover',
+      html: '<div style="text-align:center;padding:36px 12px"><div style="font-family:Cormorant Garamond,serif;font-size:2.2rem;font-weight:700;color:#1a1a1a;margin-bottom:10px">'+esc(collectionName || 'Tonight\'s Menu')+'</div>' +
+        '<div style="font-family:DM Sans,sans-serif;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#8b6914">'+recipes.length+' courses · The Culinary Journal</div></div>'
     });
   }
 
+  recipes.forEach(function(r, ri) {
+    const addDivider = inc('inc-divider') && (recipes.length === 1 || ri === 0);
+    const defs = psCollectCardDefsForRecipe(r, inc, {
+      addDivider: addDivider,
+      collectionName: collectionName || r.recipe_name,
+      menuOnly: menuOnly && recipes.length > 1
+    });
+    if (ri > 0 && !menuOnly) {
+      cardDefs.push({
+        type: 'Recipe Divider',
+        html: '<div style="text-align:center;padding:28px 8px;border-top:1px dashed #e8e0d0"><div style="font-family:Cormorant Garamond,serif;font-size:1.4rem;font-weight:700;color:#8b6914">'+esc(r.recipe_name||'Next recipe')+'</div></div>'
+      });
+    }
+    cardDefs.push.apply(cardDefs, defs);
+  });
+
+  psLastCardDefs = cardDefs;
   const pdfBtn = document.getElementById('pdf-btn');
   if (!cardDefs.length) {
     container.innerHTML = '<div class="ps-empty"><div class="ps-empty-icon">⚠️</div><div class="ps-empty-title">Nothing selected to print</div></div>';
     if (pdfBtn) pdfBtn.style.display = 'none';
     document.getElementById('ps-card-count').textContent = '';
+    updateSwipeBar();
     return;
   }
 
   const total = cardDefs.length;
-  document.getElementById('ps-card-count').textContent = total + ' card' + (total > 1 ? 's' : '');
+  document.getElementById('ps-card-count').textContent = total + ' card' + (total > 1 ? 's' : '') + (recipes.length > 1 ? ' · ' + recipes.length + ' recipes' : '');
   if (pdfBtn) pdfBtn.style.display = '';
 
   container.innerHTML = cardDefs.map((def, i) => {
     const numSuffix = i < total - 1 ? ' — continue' : '';
     const qrHtml = showQr ? '<div class="ps-qr"></div>' : '';
     const qrClass = showQr ? ' has-qr' : '';
-    const typeHtml = def.type ? `<div class="ps-card-type">${esc(def.type)}</div>` : '';
-    return `<div class="ps-card size-${currentSize} layout-${currentLayout}${qrClass}">
+    const kind = psCardKind(def.type);
+    const typeHtml = def.type ? `<div class="ps-card-type ${kind}">${esc(def.type)}</div>` : '';
+    return `<div class="ps-card size-${currentSize} layout-${currentLayout}${qrClass}" data-card-index="${i}" tabindex="0">
       ${PS_BRAND}
       ${typeHtml}
       ${def.html}
@@ -877,15 +1051,161 @@ function buildCards() {
     </div>`;
   }).join('');
 
-  renderPrintQRCodes(r, showQr);
+  renderPrintQRCodes(recipes[0], showQr);
   applyBookletLayout();
+  bindSwipeCardZoom();
+  psSwipeIndex = 0;
+  updateSwipeBar();
 }
 
 function loadRecipe(recipe) {
   currentRecipe = recipe;
-  document.getElementById('ps-recipe-name').innerHTML =
-    '<strong style="font-family:\'DM Sans\',sans-serif;font-size:13px;color:var(--text-high)">' + esc(recipe.recipe_name||'Recipe') + '</strong>';
+  currentRecipes = recipe ? [recipe] : [];
+  updateRecipeLabel();
   buildCards();
+}
+
+function loadRecipeBatch(recipes) {
+  currentRecipes = (recipes || []).filter(Boolean);
+  currentRecipe = currentRecipes[0] || null;
+  updateRecipeLabel();
+  buildCards();
+}
+
+function updateRecipeLabel() {
+  var el = document.getElementById('ps-recipe-name');
+  if (!el) return;
+  if (!currentRecipes.length) {
+    el.textContent = 'No recipe selected';
+    return;
+  }
+  if (currentRecipes.length === 1) {
+    el.innerHTML = '<strong style="font-family:\'DM Sans\',sans-serif;font-size:13px;color:var(--text-high)">' + esc(currentRecipes[0].recipe_name||'Recipe') + '</strong>';
+  } else {
+    el.innerHTML = '<strong style="font-family:\'DM Sans\',sans-serif;font-size:13px;color:var(--text-high)">' + currentRecipes.length + ' recipes</strong>' +
+      '<div style="font-size:11px;color:var(--text-mid);margin-top:4px">' + currentRecipes.slice(0, 4).map(function(r){ return esc(r.recipe_name||''); }).join(' · ') +
+      (currentRecipes.length > 4 ? ' …' : '') + '</div>';
+  }
+}
+
+function toggleKitchenMode() {
+  document.body.classList.toggle('ps-kitchen-mode');
+  var btn = document.getElementById('ps-kitchen-btn');
+  if (btn) btn.classList.toggle('active', document.body.classList.contains('ps-kitchen-mode'));
+  try { localStorage.setItem('tcj_print_kitchen', document.body.classList.contains('ps-kitchen-mode') ? '1' : '0'); } catch(_){}
+  buildCards();
+}
+
+function updateSwipeBar() {
+  var bar = document.getElementById('ps-swipe-bar');
+  var cards = document.querySelectorAll('#ps-cards .ps-card');
+  var total = cards.length;
+  var show = currentCardView === 'swipe' && total > 1;
+  if (bar) bar.classList.toggle('visible', show);
+  var pos = document.getElementById('ps-swipe-pos');
+  if (pos) pos.textContent = (total ? (psSwipeIndex + 1) : 0) + ' / ' + total;
+  var prev = document.getElementById('ps-swipe-prev');
+  var next = document.getElementById('ps-swipe-next');
+  if (prev) prev.disabled = psSwipeIndex <= 0;
+  if (next) next.disabled = psSwipeIndex >= total - 1;
+}
+
+function swipeToCard(index) {
+  var cards = document.querySelectorAll('#ps-cards .ps-card');
+  if (!cards.length) return;
+  psSwipeIndex = Math.max(0, Math.min(index, cards.length - 1));
+  cards[psSwipeIndex].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  updateSwipeBar();
+}
+
+function bindSwipeCardZoom() {
+  document.querySelectorAll('#ps-cards .ps-card').forEach(function(card) {
+    card.onclick = function() {
+      if (currentCardView !== 'swipe') return;
+      card.classList.toggle('ps-card-zoomed');
+    };
+  });
+}
+
+function copyPrintText() {
+  if (!psLastCardDefs.length) { alert('Build cards first.'); return; }
+  var lines = psLastCardDefs.map(function(def, i) {
+    return '--- Card ' + (i + 1) + ': ' + (def.type || 'Card') + ' ---\n' + def.html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  });
+  var text = lines.join('\n\n');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){ alert('Copied ' + psLastCardDefs.length + ' cards to clipboard.'); }).catch(function(){ prompt('Copy:', text); });
+  } else {
+    prompt('Copy:', text);
+  }
+}
+
+function savePrintProfile() {
+  var checks = {};
+  document.querySelectorAll('[id^="inc-"]').forEach(function(el) {
+    if (el.type === 'checkbox') checks[el.id] = el.checked;
+  });
+  var profile = { size: currentSize, layout: currentLayout, view: currentCardView, checks: checks };
+  try {
+    localStorage.setItem('tcj_print_profile', JSON.stringify(profile));
+    alert('Print setup saved on this device.');
+  } catch(e) { alert('Could not save: ' + e.message); }
+}
+
+function restorePrintProfile() {
+  try {
+    var raw = localStorage.getItem('tcj_print_profile');
+    if (!raw) { alert('No saved setup found.'); return; }
+    var profile = JSON.parse(raw);
+    if (profile.size) {
+      var sizeBtn = document.querySelector('.ps-opt-btn[data-size="' + profile.size + '"]');
+      if (sizeBtn) setSize(profile.size, sizeBtn);
+    }
+    if (profile.layout) {
+      var layBtn = document.querySelector('.ps-opt-btn[data-layout="' + profile.layout + '"]');
+      if (layBtn) setLayout(profile.layout, layBtn);
+    }
+    if (profile.view) {
+      var viewBtn = document.getElementById('ps-view-' + profile.view);
+      if (viewBtn) setCardView(profile.view, viewBtn);
+    }
+    if (profile.checks) {
+      Object.keys(profile.checks).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.checked = !!profile.checks[id];
+      });
+    }
+    buildCards();
+    alert('Restored your saved print setup.');
+  } catch(e) { alert('Could not restore: ' + e.message); }
+}
+
+async function psLoadFamilyProfiles() {
+  try {
+    var stored = localStorage.getItem('tcj_session');
+    if (!stored) return;
+    var session = JSON.parse(stored);
+    if (!session || !session.access_token) return;
+    var res = await fetch(window.SUPA_URL + '/rest/v1/rpc/get_my_family_profiles', {
+      method: 'POST',
+      headers: { apikey: window.SUPA_KEY, Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    if (!res.ok) return;
+    var data = await res.json();
+    if (Array.isArray(data)) psFamilyProfiles = data;
+  } catch(_){}
+}
+
+async function psFetchRecipesByIds(ids) {
+  if (!ids.length) return [];
+  var KEY = window.SUPA_KEY;
+  var res = await fetch(window.SUPA_URL + '/rest/v1/submitted_recipes?id=in.(' + ids.join(',') + ')&select=*', { headers: { apikey: KEY } });
+  if (!res.ok) return [];
+  var rows = await res.json();
+  var byId = {};
+  rows.forEach(function(r){ byId[r.id] = r; });
+  return ids.map(function(id){ return byId[id]; }).filter(Boolean);
 }
 
 function restorePrintPrefs() {
@@ -903,11 +1223,18 @@ function restorePrintPrefs() {
       document.querySelectorAll('.ps-opt-btn[data-layout]').forEach(b => b.classList.remove('active'));
       const layoutBtn = document.querySelector('.ps-opt-btn[data-layout="' + savedLayout + '"]');
       if (layoutBtn) layoutBtn.classList.add('active');
+      var note = document.getElementById('ps-premium-note');
+      if (note) note.style.display = PS_PREMIUM_LAYOUTS[savedLayout] ? 'block' : 'none';
     }
     const savedView = localStorage.getItem('tcj_print_card_view');
     if (savedView && ['stack', 'swipe', 'booklet'].indexOf(savedView) >= 0) {
       var viewBtn = document.getElementById('ps-view-' + savedView);
       if (viewBtn) setCardView(savedView, viewBtn);
+    }
+    if (localStorage.getItem('tcj_print_kitchen') === '1') {
+      document.body.classList.add('ps-kitchen-mode');
+      var kb = document.getElementById('ps-kitchen-btn');
+      if (kb) kb.classList.add('active');
     }
   } catch(_){}
 }
@@ -915,13 +1242,28 @@ function restorePrintPrefs() {
 // Load recipe from URL params or sessionStorage
 document.addEventListener('DOMContentLoaded', function() {
   restorePrintPrefs();
-  const id = new URLSearchParams(window.location.search).get('id');
-  // Try sessionStorage first (set by recipe page)
-  const stored = sessionStorage.getItem('tcj_print_recipe');
+  psLoadFamilyProfiles().then(function() {
+    if (currentRecipe || currentRecipes.length) buildCards();
+  });
+  var params = new URLSearchParams(window.location.search);
+  var batch = params.get('ids') || params.get('batch');
+  var id = params.get('id');
+  var storedBatch = sessionStorage.getItem('tcj_print_batch');
+  if (storedBatch) {
+    try {
+      var parsed = JSON.parse(storedBatch);
+      if (Array.isArray(parsed) && parsed.length) { loadRecipeBatch(parsed); return; }
+    } catch(_){}
+  }
+  var stored = sessionStorage.getItem('tcj_print_recipe');
   if (stored) {
     try { loadRecipe(JSON.parse(stored)); return; } catch(_){}
   }
-  // Try fetching by id
+  if (batch) {
+    var ids = batch.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    psFetchRecipesByIds(ids).then(function(rows) { if (rows.length) loadRecipeBatch(rows); });
+    return;
+  }
   if (id) {
     var KEY = window.SUPA_KEY;
     fetch(window.SUPA_URL + '/rest/v1/submitted_recipes?id=eq.'+id+'&select=*',
@@ -929,6 +1271,11 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(r=>r.json()).then(data=>{ if(data[0]) loadRecipe(data[0]); })
       .catch(()=>{});
   }
+  document.addEventListener('keydown', function(e) {
+    if (currentCardView !== 'swipe') return;
+    if (e.key === 'ArrowRight') swipeToCard(psSwipeIndex + 1);
+    if (e.key === 'ArrowLeft') swipeToCard(psSwipeIndex - 1);
+  });
 });
 
 function downloadPDF() {
@@ -998,16 +1345,45 @@ function selectQual(el) {
   updatePrice();
 }
 
-function submitOrder() {
+async function submitOrder() {
   var first = (document.getElementById('po-first')||{}).value||'';
   var last  = (document.getElementById('po-last')||{}).value||'';
   var addr1 = (document.getElementById('po-addr1')||{}).value||'';
+  var addr2 = (document.getElementById('po-addr2')||{}).value||'';
   var city  = (document.getElementById('po-city')||{}).value||'';
   var post  = (document.getElementById('po-postcode')||{}).value||'';
+  var country = (document.getElementById('po-country')||{}).value||'';
   if (!first || !addr1 || !city || !post) {
     alert('Please fill in your name and delivery address.'); return;
   }
-  // Show confirmation
+  var payload = {
+    recipe_id: currentRecipe && currentRecipe.id,
+    recipe_name: currentRecipe && currentRecipe.recipe_name,
+    card_count: poQty,
+    card_quality: poQual,
+    card_size: currentSize,
+    layout_style: currentLayout,
+    delivery: { first: first, last: last, addr1: addr1, addr2: addr2, city: city, postcode: post, country: country },
+    preview_meta: { card_count_label: document.getElementById('ps-card-count') ? document.getElementById('ps-card-count').textContent : '', recipes: currentRecipes.length || 1 }
+  };
+  try {
+    var queue = JSON.parse(localStorage.getItem('tcj_print_order_queue') || '[]');
+    queue.push({ ts: Date.now(), payload: payload });
+    localStorage.setItem('tcj_print_order_queue', JSON.stringify(queue.slice(-30)));
+  } catch(_){}
+  try {
+    var stored = localStorage.getItem('tcj_session');
+    if (stored) {
+      var session = JSON.parse(stored);
+      if (session && session.access_token) {
+        await fetch(window.SUPA_URL + '/rest/v1/rpc/submit_print_order_request', {
+          method: 'POST',
+          headers: { apikey: window.SUPA_KEY, Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_payload: payload })
+        });
+      }
+    }
+  } catch(_){}
   var form = document.getElementById('po-form-wrap');
   var conf = document.getElementById('po-confirm');
   if (form) form.style.display = 'none';
@@ -1027,7 +1403,7 @@ function resetOrder() {
   <div class="po-wrap">
 
     <div class="po-section">
-      <div class="po-coming-badge">📬 New Feature — Launching Soon</div>
+      <div class="po-coming-badge">📬 Preview — order intent saved · payment &amp; dispatch when fulfilment launches</div>
       <div class="po-section-title">How it works</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)">
         <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:20px;flex-shrink:0">1️⃣</span><div><div style="color:var(--text-high);font-weight:600;margin-bottom:2px">Choose your recipe</div>Select a recipe from your journal to print</div></div>

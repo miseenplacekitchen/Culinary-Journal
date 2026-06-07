@@ -48,7 +48,7 @@ A · DONE — shipped (Phases 1–26 SQL + Phase 27/28 code). Strike after live 
   • Phase 29: PF-01 governed pantry lock · print quick presets · chef specialty filter
   • Phase 29: table planner computed placement · JSON-LD (recipes/chefs/recipe-page)
   • Phase 29: library member submit workflow (SQL + library-submit.html) · admin inbox
-  • Phase 29 SQL ready: fix-phase29-library-content.sql (5 ingredients) + submissions SQL
+  • Phase 29/31 SQL ✅ Betty confirmed — all 5 ingredient links including potato→Sebago (248)
   • Phase 30 meal planner: hierarchy filters, family groups, copy week, cloud pantry, diary dots
   • GL-07 aisle layout · GL-08 multi-store · GL-09 copy/print export (grocery.html)
   • Self-service deactivation · onboarding allergy/health · MP-05 Today panel
@@ -78,7 +78,7 @@ C · DECIDE — Betty decision before build
 
 D · OPEN — still to build or deepen (work through these)
   Library
-  • Run fix-phase29 SQL · write/link more profiles · admin approve submissions into profiles
+  • Write/link more library profiles · admin approve member submissions into published profiles
 
   Recipe
   • Hero 4.1 live verify (CSS shipped — Betty visual check)
@@ -92,8 +92,9 @@ D · OPEN — still to build or deepen (work through these)
   Grocery / pantry
   • Regional ingredient intelligence · shared-edit conflict handling
 
-  Print Studio
-  • Theme tiers (D4) · Print & Post fulfilment backend · smarter auto-split edge cases
+  Print Studio (remaining after Phase 31)
+  • D4 theme tiers in UM (premium gating) · Print & Post payment + dispatch fulfilment
+  • Bulk collection print from Recipe Book · upload-your-own background
 
   Social / chefs
   • Most-saved ranking (needs engagement data) · wedding/large-event showcases
@@ -363,23 +364,23 @@ The full incomplete list, area by area
 
 16 · Print Studio / recipe sheet generator
 
-[MISSING] Smart auto-splitting — Zero hits for card-splitting logic ("Card 1 of 3 → continue"). The roadmap's defining Print Studio promise.
+[DONE Phase 31] Smart auto-splitting — layout/meta-aware capacity, weighted step chunks, continued cards.
 
-[MISSING] QR code on printed cards — Zero hits in print-studio.html (the recipe-page QR modal does not satisfy this).
+[DONE Phase 29/31] QR code on printed cards — print-studio.html renders QR per card when enabled.
 
-[MISSING] Card types — Overview / Method / Tips / Substitutes / Allergy-notes / Baby-modification card generation.
+[DONE Phase 31] Card types — Overview / Method / Tips / Substitutes / Allergy / Baby with labelled card headers.
 
 [PARTIAL] Layout styles, backgrounds, fonts — Some styles present; verify against the 13 styles, 10 backgrounds and 6 font combinations. Upload-your-own background: missing.
 
 [MISSING] Digital recipe box & divider cards — Collections-to-printed-dividers; bulk print entire collection at the saved card size.
 
-[MISSING] Default card size memory — Set once, remembered forever — no persistence found.
+[DONE] Default card size memory — localStorage tcj_print_card_size / layout / view.
 
-[MISSING] While-cooking digital card view — Swipe between cards, tap-zoom, dark kitchen mode, large text. (Recipe-page tab swiping exists; the card view does not.)
+[DONE Phase 31] While-cooking digital card view — Swipe nav, keyboard arrows, tap-zoom, kitchen mode.
 
-[MISSING] Section C upgrade set — Theme management consolidated under the UM Interface with free/premium tiers (decision D4); brand lock — logo + "The Culinary Journal" top-left of every card in brand font/colours, immune to theme styling; expanded selectable metadata (spice, times, shelf life, storage, origin, nutrition, dietary, difficulty); per-section include/exclude with dynamic reflow and no reserved space for disabled sections; more professionally designed themes.
+[PARTIAL] Section C upgrade set — Brand lock + metadata toggles shipped; D4 UM theme tiers + upload-your-own background still open.
 
-[MISSING] Additional generators — Recipe book/booklet generator with cover and contents; gift recipe cards; menu cards; shopping-list print; meal-plan print.
+[PARTIAL Phase 31] Additional generators — Cookbook/menu/gift/shop/cook presets; multi-recipe menu via ?ids=; meal-plan print still open.
 
 17 · Allergy & health warning system (site-wide)
 

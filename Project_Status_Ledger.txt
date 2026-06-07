@@ -63,11 +63,22 @@ Phase | Label                         | Status
 26    | Library depth + site pages    | DONE ✅ (code + SQL)
 27    | Event grocery + chef filters  | DONE ✅ (no SQL) — premature list closure reverted
 28    | Reopen backlog + MP-06 + pantry | DONE ✅ (no SQL)
-29    | Cross-cutting backlog batch     | CODE ✅ — SQL pending Betty
+29    | Cross-cutting backlog batch     | DONE ✅ (SQL ✅ Betty)
 30    | Meal planner depth (MP)         | DONE ✅ (no SQL)
+31    | Print Studio depth              | DONE ✅ (SQL ✅ Betty)
 
-fix-phase29-library-content.sql      | 5 more ingredient profiles           | Pending Betty
-fix-phase29-library-submissions.sql | Member library submit + admin RPCs  | Pending Betty
+fix-phase29-library-content.sql      | 5 ingredient profiles (ginger…flour) | DONE ✅ Betty — potato→Sebago (248)
+fix-phase29-library-submissions.sql | Member library submit + admin RPCs  | DONE ✅ Betty
+fix-phase31-print-orders.sql        | Print & Post order intent queue      | DONE ✅ Betty
+
+Phase 31 Print Studio:
+  • Smarter auto-split: layout/meta-aware capacity + weighted step chunks
+  • While-cooking preset: swipe + kitchen mode (large text, dark preview)
+  • Shopping list + cookbook/menu presets deepened · multi-recipe ?ids= batch
+  • Allergy cards: AllergyEngine detect + family profile warnings/substitutes
+  • Premium theme labels (soft-launch free) · save/restore print profile
+  • Swipe nav (←/→ keys) · copy plain text · Print & Post mode tab restored
+  • Order intent: local queue + submit_print_order_request RPC (preview only)
 
 Phase 28: master list reopened · grocery archive→pantry · MP-06 drag
 
