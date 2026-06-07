@@ -34,6 +34,8 @@ fix-phase21-batch.sql       | Page min_tier, billing tiers, refund   | Ran ✅
 fix-phase22-batch.sql       | Household grocery + library links      | Ran ✅
 fix-phase23-batch.sql       | Shared pantry, Stripe, promos, lib admin | Ran ✅
 fix-phase24-refund-copy.sql | Refund wording + purchase email templates  | Ran ✅
+fix-phase25-library-starter.sql | 8 starter ingredient profiles + links | Ran ✅
+fix-phase25-library-links-patch.sql | Broader name match for 4 profiles | Ran ✅
 
 ══════════════════════════════════════════════════════════════════════
 PHASE STATUS (11–24)
@@ -54,6 +56,7 @@ Phase | Label                         | Status
 22    | Lane 3 household + library    | DONE ✅ (code + SQL)
 23    | Lane 3 pantry + Stripe + UM   | DONE ✅ (code + SQL) — Stripe skipped
 24    | Refund copy + billing emails  | DONE ✅ (code + SQL)
+25    | Library starter profiles      | DONE ✅ (code + SQL)
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 14 — LIVE AUDIT (test recipe, hero excluded from scope)
@@ -84,6 +87,23 @@ meal-planner.html — pantry cloud sync on cook; optional leftovers prompt
 my-dashboard.html — manual grocery line count uses g.items not g.manual
 
 GL-11 household grocery: Phase 22. Shared pantry: Phase 23.
+
+══════════════════════════════════════════════════════════════════════
+LANE 2 — CORE JOURNEY VERIFY (see Product_Direction_Draft.txt)
+══════════════════════════════════════════════════════════════════════
+Journey A: submit → approve → public recipe page
+Journey B: recipe → grocery → pantry (recipe-page pantry cloud prefetch shipped)
+Journey C: household shared grocery + pantry (~20s sync)
+Betty ticks checklist in Product_Direction_Draft.txt when live-tested.
+
+══════════════════════════════════════════════════════════════════════
+PHASE 25 — LIBRARY STARTER PROFILES
+══════════════════════════════════════════════════════════════════════
+fix-phase25-library-starter.sql:
+  • 8 published ingredient profiles (garlic, onion, butter, olive oil, rice, tomato, chicken breast, salt)
+  • Auto-link governed_ingredient_id by name match
+
+After SQL: library-directory.html?type=ingredient · recipe 📚 on linked ingredients
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 24 — REFUND COPY + BILLING EMAILS

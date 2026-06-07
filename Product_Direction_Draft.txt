@@ -1,51 +1,120 @@
 THE CULINARY JOURNAL — PRODUCT DIRECTION (Betty, June 2026)
 Status: ACTIVE — supersedes stale Master_Incomplete_Items_List.txt for planning
+Last updated: 9 June 2026 (post Phase 24; Lanes 1–3 shipped)
 
 ══════════════════════════════════════════════════════════════════════
 NORTH STAR
 ══════════════════════════════════════════════════════════════════════
 A gentle, ingredient-wise kitchen companion for everyone. Betty soft-launches
 alone until satisfied; full public rollout when ready. Household sharing (partner
-login, shared grocery) is planned. Library teaches how ingredients work in your
-favour — depth without overwhelm.
+login, shared grocery + pantry) is live. Library teaches how ingredients work in
+your favour — depth without overwhelm.
 
 ══════════════════════════════════════════════════════════════════════
-BETTY'S DECISIONS (9 June 2026)
+BETTY'S DECISIONS (updated 9 June 2026)
 ══════════════════════════════════════════════════════════════════════
 1. Audience: Everyone — soft launch solo until happy
-2. Household: Yes — separate logins, shared lists (Phase 22+)
+2. Household: Yes — separate logins, shared grocery + pantry ✅ (Phases 22–23)
 3. Library: Full vision — curated core + approved contributions; ingredient-first
-4. Money: Admin-controlled tiers; daily/weekly/yearly; NO REFUNDS — clear in UI
-5. Control: Admin Interface tabs (IM pattern) + Site Management page visibility
-6. Admin pain: RM/UM "Interface" tabs were misnamed — Phase 21 fixes RM
+4. Money: Mostly free for now; themes-only paid extras under consideration
+   — Refund copy: clear, fair (no change-of-mind; 7-day billing-error review) ✅ Phase 24
+   — PayPal + card checkout: deferred (Stripe skipped)
+   — Manual tier upgrades + Finance → Manual Payment (PayPal) work today
+5. Control: Admin work tabs + Interface settings ✅ RM (21) + UM (23)
+6. Site Management: page visibility, min tier, refund/billing copy ✅
 
 ══════════════════════════════════════════════════════════════════════
 DEFAULTS (until Betty changes them)
 ══════════════════════════════════════════════════════════════════════
 • Soft launch: most pages Hidden; open one-by-one from Site Management → Pages
-• G1 hierarchy: Light — bulk taxonomy OK; strict enforcement later
-• G3 pantry: Presence + low-stock (not strict numeric)
-• G4 household: Defer implementation; design acknowledged
-• Payments API (Stripe): Defer until admin manual tiers feel right
-• Deferred: hero 4.1, AI, Chrome, Android
+• G1 tier hierarchy: Light — bulk taxonomy OK; strict enforcement later
+• G3 pantry: Presence + low-stock (not strict numeric) ✅
+• G4 household: Live ✅ grocery + pantry sync (~20s poll)
+• Payments: PayPal + card when ready; manual upgrades until then
+• Deferred: hero 4.1, Phase 2 AI, Chrome, Android
 
 ══════════════════════════════════════════════════════════════════════
-ADMIN MODEL (target state)
+ADMIN MODEL (current state)
 ══════════════════════════════════════════════════════════════════════
-Each panel:
-  WORK TABS     — queues and operations (Pending Review, Taxonomy, etc.)
-  INTERFACE TAB — dropdowns, labels, reference data only (Ingredients = model)
+Recipe Management:
+  WORK TABS — Taxonomy, Source Links, Nutrition, Print Queue, Pending, etc.
+  RM INTERFACE — rejection reasons + Site Management shortcuts only
+
+User Management:
+  WORK TABS — Members, Pending, Reports, Feedback, Chefs, Family Lists, etc.
+  UM INTERFACE — settings + SM shortcuts only
 
 Site Management:
   Pages     — public / registered / paid / hidden + min tier + coming soon
   Features  — enable/disable site capabilities
-  Settings  — refund policy, billing copy
+  Email     — templates incl. Billing & purchases (purchase + subscription)
+  Settings  — refund policy, billing banner, maintenance, SEO
+
+Library Management:
+  Ingredient profiles — publish + link governed Ing ID → recipe 📚 links
 
 ══════════════════════════════════════════════════════════════════════
-LANES (work order)
+LANES — STATUS
 ══════════════════════════════════════════════════════════════════════
-Lane 1 — Control Centre     Phase 21 ✅ complete
-Lane 2 — Core journeys      Ongoing verify
-Lane 3 — Household + Stripe + library depth   Phase 22 ✅ complete (SQL ✅)
+Lane 1 — Control Centre (Phase 21)     ✅ COMPLETE
+Lane 3 — Household + library spine   ✅ COMPLETE (Phases 22–24)
+Lane 2 — Core journeys                 🔄 VERIFY (checklist below)
+Lane 4 — Library content depth         🔄 ONGOING (starter pack Phase 25)
+Lane 5 — PayPal checkout               ⏸ DEFERRED (Betty decision)
+
+══════════════════════════════════════════════════════════════════════
+LANE 2 — CORE JOURNEY VERIFICATION (Betty / agent)
+══════════════════════════════════════════════════════════════════════
+Test account: tcj.verify@outlook.com · Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
+
+Journey A — Recipe pipeline
+  [ ] Submit recipe (submit-recipe.html) → status pending
+  [ ] my-dashboard.html shows Under Review
+  [ ] Admin dashboard → Pending → preview → Approve
+  [ ] Logged out: recipe-page.html?id=… loads
+  [ ] recipes.html lists recipe · notification to submitter
+
+Journey B — Cook → shop (recipe → grocery → pantry)
+  [ ] recipe-page: add ingredient to grocery (serving scale)
+  [ ] grocery.html: By Recipe + Combined tabs show items
+  [ ] Cloud sync: sign out/in — list persists
+  [ ] pantry.html: add item · recipe page skips “in pantry” items (cloud prefetch ✅)
+  [ ] Note: archive grocery trip does NOT auto-stock pantry — manual pantry update
+
+Journey C — Household (two accounts)
+  [ ] household.html: create → invite partner → accept
+  [ ] grocery.html: shared bar · edits sync ~20s
+  [ ] pantry.html: shared bar · edits sync ~20s
+
+Code fix shipped: recipe-page now prefetches get_my_pantry when signed in.
+
+══════════════════════════════════════════════════════════════════════
+LANE 4 — LIBRARY CONTENT (ongoing)
+══════════════════════════════════════════════════════════════════════
+Shipped:
+  • library-directory + library-profile pages
+  • Recipe 📚 links when profile published + governed_ingredient_id set
+  • Admin: Ing ID column + Link button
+
+Next:
+  1. Run fix-phase25-library-starter.sql — 8 starter ingredient profiles
+  2. Check governed_ingredient_id linked (SQL output shows IDs or NULL)
+  3. Manually link any NULLs in Dashboard → Library → Ing ID
+  4. Add more profiles over time (spice, tool, cut, preservation)
+  5. Approve member submissions via library-submit flow when ready
+
+Starter profiles (Phase 25): garlic, onion, butter, olive oil, rice,
+tomato, chicken breast, salt
+
+══════════════════════════════════════════════════════════════════════
+WHAT'S LEFT (summary)
+══════════════════════════════════════════════════════════════════════
+VERIFY   Lane 2 checklist above (no new code required unless bugs found)
+ONGOING  Library content (Lane 4) — writing + linking profiles
+PARTIAL  Allergy engine site-wide depth
+DECIDE   Monetisation: themes-only vs subscriptions
+DEFERRED PayPal checkout, hero 4.1, AI, Chrome, Android
+
+Do NOT use Master_Incomplete_Items_List.txt — stale 6 June audit.
 
 Contact: miseenplacekitchen.official@gmail.com
