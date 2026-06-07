@@ -52,6 +52,7 @@ A · DONE — shipped (Phases 1–26 SQL + Phase 27/28 code). Strike after live 
   • Phase 30 meal planner: hierarchy filters, family groups, copy week, cloud pantry, diary dots
   • Phase 32 ✅: library approve→publish · household meal sync · meal_plan_slots · hide-unsafe · DB substitutes · Desiree/Kipfler profiles
   • Phase 33 ✅: regional hints · sync conflicts · most-saved · collection print · event scaling/meal sync · wedding presets · JSON-LD · print gating toggle
+  • Phase 34 ✅: admin duplicates · ROTW expiry · owner analytics · division CRUD polish · theme-sweep · library profiles batch · Lane 2 hardening
   • GL-07 aisle layout · GL-08 multi-store · GL-09 copy/print export (grocery.html)
   • Self-service deactivation · onboarding allergy/health · MP-05 Today panel
   • Baby food stage on family profiles (UI + SQL in fix-phase4)
@@ -80,11 +81,11 @@ C · DECIDE — Betty decision before build
 
 D · OPEN — still to build or deepen (work through these)
   Library (remaining)
-  • Write/link more library profiles beyond starters
+  • Write/link more library profiles beyond starters (Phase 34 added 7 — ongoing content)
 
   Recipe
   • Hero 4.1 live verify (CSS shipped — Betty visual check)
-  • Pipeline hardening if Lane 2 spot-check fails
+  • ~~Pipeline hardening if Lane 2 spot-check fails~~ ✅ Phase 34 review RPC + submit redirect + grocery flush
 
   Grocery / pantry
   • ~~Regional ingredient intelligence · shared-edit conflict handling~~ ✅ Phase 33 (SQL ✅ Betty)
@@ -104,8 +105,8 @@ D · OPEN — still to build or deepen (work through these)
   • ~~Food map regional data depth · festival entries · JSON-LD on library/event pages~~ ✅ Phase 33
 
   Admin
-  • Division CRUD polish · duplicate recipe detection · ROTW auto-expiry job
-  • Full owner analytics dashboards · 47-theme visual sweep
+  • ~~Division CRUD polish · duplicate recipe detection · ROTW auto-expiry job~~ ✅ Phase 34 (run schedule-rotw-expiry-cron.sql)
+  • ~~Full owner analytics dashboards · 47-theme visual sweep~~ ✅ Phase 34 — theme-sweep.html + admin_get_owner_analytics
 
   Legal
   • Lawyer review of policy drafts

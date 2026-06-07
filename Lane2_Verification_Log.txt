@@ -1,5 +1,5 @@
 Lane 2 — Core Journey Verification Log
-Phase 27 code audit · 9 June 2026
+Phase 34 hardening · 9 June 2026 (updated)
 Test account: tcj.verify@outlook.com · Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
 
 Method: repository code audit + prior Phase 14 live audit. Betty spot-check optional.
@@ -13,6 +13,7 @@ Journey A — Recipe pipeline
 [x] recipe-page.html loads approved recipes by id
 [x] recipes.html lists via get_approved_recipes
 [x] notifications.html + get_my_notifications for submitter alerts
+[x] Phase 34: submit redirects to my-dashboard.html#pending after success
 [ ] Betty spot-check: fresh submit end-to-end on live site
 
 ══════════════════════════════════════════════════════════════════════
@@ -24,6 +25,7 @@ Journey B — Cook → shop
 [x] Cloud sync save_my_grocery_list + polling
 [x] pantry.html + recipe-page prefetchPantryFromCloud (Phase 25)
 [x] Archive trip does NOT auto-stock pantry — documented behaviour
+[x] Phase 34: grocery flushGroceryCloudSync on tab close / visibility hidden
 [ ] Betty spot-check: sign out/in persistence on live
 
 ══════════════════════════════════════════════════════════════════════

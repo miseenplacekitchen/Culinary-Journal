@@ -997,7 +997,11 @@ document.addEventListener('DOMContentLoaded', function(){
   syncFromSupabase(true);
   setInterval(function(){ if(_glHouseholdShared) syncFromSupabase(false); }, 20000);
   document.addEventListener('visibilitychange', function(){
+    if (document.hidden && window.GroceryUtils && GroceryUtils.flushGroceryCloudSync) GroceryUtils.flushGroceryCloudSync();
     if(!document.hidden && _glHouseholdShared) syncFromSupabase(false);
+  });
+  window.addEventListener('pagehide', function(){
+    if (window.GroceryUtils && GroceryUtils.flushGroceryCloudSync) GroceryUtils.flushGroceryCloudSync();
   });
   document.getElementById('view-recipe').addEventListener('click', function(e){
     const cb = e.target.closest('.gl-check[data-key]');

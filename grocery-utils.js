@@ -230,6 +230,31 @@
     return Object.values(byName);
   }
 
+  /** Immediate cloud sync (Lane 2 — sign-out / tab close persistence) */
+  function flushGroceryCloudSync() {
+    clearTimeout(_grocerySyncTimer);
+    _grocerySyncTimer = null;
+    var g = typeof global !== 'undefined' ? global : (typeof window !== 'undefined' ? window : null);
+    if (!g || typeof g.getSession !== 'function') return Promise.resolve();
+    return (async function() {
+      try {
+        var sess = g.getSession();
+        if (!sess || !sess.access_token) return;
+        var url = g.SUPA_URL || g.SUPABASE_URL;
+        var key = g.SUPA_KEY || g.SUPABASE_KEY;
+        if (!url || !key) return;
+        var list = loadGrocery();
+        var checked = getGroceryChecked();
+        var serverTs = g.SharedSyncUtils ? g.SharedSyncUtils.getServerTs('tcj_grocery_server_ts') : null;
+        await fetch(url + '/rest/v1/rpc/save_my_grocery_list', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': key, 'Authorization': 'Bearer ' + sess.access_token },
+          body: JSON.stringify({ p_list_data: list, p_checked: checked, p_client_updated_at: serverTs })
+        });
+      } catch (_) {}
+    })();
+  }
+
   global.GroceryUtils = {
     makeItemId: makeItemId,
     enrichIngredient: enrichIngredient,
@@ -242,6 +267,7 @@
     addManualItems: addManualItems,
     getGroceryChecked: getGroceryChecked,
     scheduleGroceryCloudSync: scheduleGroceryCloudSync,
+    flushGroceryCloudSync: flushGroceryCloudSync,
     parseFraction: parseFraction,
     mapDbCategory: mapDbCategory,
     buildCombinedLines: buildCombinedLines

@@ -512,10 +512,38 @@ function loadRMTab(key, container) {
   else if (key === 'audit')       loadRMAudit(container);
 }
 
+async function renderOwnerAnalyticsExtras(host, data) {
+  if (!host || !data) return;
+  function mk(tag, style, text) { var e = document.createElement(tag); if (style) e.style.cssText = style; if (text !== undefined) e.textContent = text; return e; }
+  var m = data.members || {};
+  var e = data.engagement || {};
+  var lib = data.library || {};
+  var pipe = data.pipeline || {};
+  var row = mk('div', 'display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px');
+  [{ n: m.households || 0, l: 'Households' }, { n: e.total_saves || 0, l: 'Recipe saves' }, { n: lib.ingredient || 0, l: 'Library ingredients' }, { n: pipe.pending_library_submissions || 0, l: 'Library inbox' }].forEach(function(c) {
+    var card = mk('div', 'background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px');
+    card.appendChild(mk('div', "font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;color:var(--accent)", String(c.n)));
+    card.appendChild(mk('div', "font-family:'DM Sans',sans-serif;font-size:10px;color:var(--text-mid);text-transform:uppercase;letter-spacing:0.08em", c.l));
+    row.appendChild(card);
+  });
+  host.appendChild(row);
+  var top = e.top_saved || [];
+  if (top.length) {
+    var tc = mk('div', 'background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px');
+    tc.appendChild(mk('div', "font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:10px", 'Most saved recipes'));
+    top.forEach(function(r) {
+      tc.appendChild(mk('div', "font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);padding:3px 0", (r.recipe_name || 'Recipe') + ' — ' + (r.save_count || 0) + ' saves'));
+    });
+    host.appendChild(tc);
+  }
+}
+
 async function loadRMAnalytics(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
   try {
-    var stats   = await rpc('admin_get_stats', {}) || {};
+    var ownerRaw = await rpc('admin_get_owner_analytics', {}).catch(function() { return null; });
+    var owner = ownerRaw && typeof ownerRaw === 'object' ? ownerRaw : null;
+    var stats   = (owner && owner.recipes) ? owner.recipes : (await rpc('admin_get_stats', {}) || {});
     var allRecs = await rpc('admin_get_recipes', {p_status:null,p_search:null,p_category:null,p_limit:500,p_offset:0}) || [];
     if (!Array.isArray(allRecs)) allRecs = [];
     var total = parseInt(stats.total) || 0;
@@ -576,6 +604,14 @@ async function loadRMAnalytics(container) {
     }
     row2.appendChild(fc); row2.appendChild(rc);
     container.appendChild(row2);
+    if (owner) {
+      var miss = owner.recipes && owner.recipes.missing_taxonomy;
+      if (miss > 0) {
+        container.appendChild(mk('div', 'margin-bottom:14px;padding:10px 14px;background:rgba(196,151,59,0.1);border:1px solid var(--accent);border-radius:10px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)',
+          miss + ' approved recipe(s) missing taxonomy — open Taxonomy tab to backfill.'));
+      }
+      await renderOwnerAnalyticsExtras(container, owner);
+    }
   } catch(e) { container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>'; }
 }
 
@@ -842,12 +878,51 @@ async function loadRMSourceLinks(container) {
   }
 }
 
+async function loadRMDuplicates(host) {
+  try {
+    var dupes = await rpc('admin_find_duplicate_recipes', { p_limit: 30 }) || [];
+    if (!Array.isArray(dupes)) dupes = [];
+    function mk(tag, style, text) { var e = document.createElement(tag); if (style) e.style.cssText = style; if (text !== undefined) e.textContent = text; return e; }
+    var box = mk('div', 'margin-bottom:24px;padding:16px;background:rgba(220,80,80,0.06);border:1px solid rgba(220,80,80,0.25);border-radius:12px');
+    box.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#dc5050;margin-bottom:8px', 'Possible duplicate recipes'));
+    if (!dupes.length) {
+      box.appendChild(mk('div', 'font-size:12px;color:var(--text-mid)', 'No duplicate name groups found.'));
+      host.appendChild(box);
+      return;
+    }
+    box.appendChild(mk('div', 'font-size:12px;color:var(--text-mid);margin-bottom:12px', dupes.length + ' group' + (dupes.length === 1 ? '' : 's') + ' — review before approving similar submissions.'));
+    dupes.forEach(function(g) {
+      var card = mk('div', 'margin-bottom:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px');
+      card.appendChild(mk('div', 'font-size:12px;font-weight:600;color:var(--text-high);margin-bottom:6px', (g.recipe_names && g.recipe_names[0]) || g.group_key || 'Group'));
+      (g.recipe_ids || []).forEach(function(id, i) {
+        var row = mk('div', 'display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:var(--text-mid);padding:3px 0');
+        var nm = (g.recipe_names || [])[i] || 'Recipe';
+        var st = (g.statuses || [])[i] || '';
+        var cr = (g.credit_names || [])[i] || '';
+        row.appendChild(mk('span', '', nm + (cr ? ' · ' + cr : '') + (st ? ' [' + st + ']' : '')));
+        var open = mk('button', 'padding:3px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:none;color:var(--accent);cursor:pointer', 'Review');
+        open.addEventListener('click', function() { openRecipeModal(id); });
+        row.appendChild(open);
+        card.appendChild(row);
+      });
+      box.appendChild(card);
+    });
+    host.appendChild(box);
+  } catch (e) {
+    var err = document.createElement('div');
+    err.style.cssText = 'font-size:12px;color:var(--text-mid);margin-bottom:16px';
+    err.textContent = 'Duplicate scan unavailable — run fix-phase34-batch.sql';
+    host.appendChild(err);
+  }
+}
+
 async function loadRMAudit(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
   try {
+    container.innerHTML = '';
+    await loadRMDuplicates(container);
     var rows = await rpc('admin_get_audit_log', {p_limit:200,p_offset:0}) || [];
     var rmRows = rows.filter(function(r){ return (r.tab||'').includes('Recipe Management'); });
-    container.innerHTML = '';
     function mk(tag, style, text) { var e = document.createElement(tag); if (style) e.style.cssText = style; if (text !== undefined) e.textContent = text; return e; }
     if (!rmRows.length) { container.appendChild(mk('div',"font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid)",'No recipe management actions logged yet.')); return; }
     var wrap  = mk('div','overflow-x:auto');
@@ -972,7 +1047,13 @@ function showImportPreview(title, summary, onMerge, onReplace){
 
 async function loadRecipeAnalytics() {
   try {
-    const stats = await rpc('admin_get_stats', {});
+    var owner = await rpc('admin_get_owner_analytics', {}).catch(function() { return null; });
+    var ownerHost = document.getElementById('ra-owner-extras');
+    if (ownerHost) {
+      ownerHost.innerHTML = '';
+      if (owner) renderOwnerAnalyticsExtras(ownerHost, owner);
+    }
+    const stats = (owner && owner.recipes) ? owner.recipes : await rpc('admin_get_stats', {});
     if (stats) {
       const total    = (stats.total    || stats.total_recipes || 0);
       const pending  = (stats.pending  || stats.pending_recipes || 0);
@@ -1259,8 +1340,32 @@ async function loadRMTaxonomy(container) {
           var scRow = mk('div', 'margin-bottom:12px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px');
           scRow.appendChild(mk('div', 'font-size:13px;font-weight:600;color:var(--text-high);margin-bottom:6px', sc.name));
           (sc.divisions || []).forEach(function(d) {
-            var dRow = mk('div', 'font-size:12px;color:var(--text-mid);padding:4px 0;border-top:1px solid rgba(255,255,255,0.04)');
-            dRow.textContent = (d.division_emoji || '') + ' ' + (d.division_name || '') + (d.division_subtitle ? ' — ' + d.division_subtitle : '');
+            var dRow = mk('div', 'display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--text-mid);padding:6px 0;border-top:1px solid rgba(255,255,255,0.04)');
+            var dLabel = mk('span', '', (d.division_emoji || '') + ' ' + (d.division_name || '') + (d.division_subtitle ? ' — ' + d.division_subtitle : ''));
+            dRow.appendChild(dLabel);
+            var dActs = mk('span', 'display:flex;gap:4px;flex-shrink:0');
+            var editD = mk('button', 'padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:none;color:var(--text-mid);cursor:pointer', 'Edit');
+            editD.addEventListener('click', function() {
+              var name = prompt('Division name:', d.division_name || '');
+              if (!name || !name.trim()) return;
+              var emoji = prompt('Emoji:', d.division_emoji || '🍽') || '🍽';
+              var subtitle = prompt('Subtitle:', d.division_subtitle || '') || '';
+              rpc('admin_upsert_recipe_division', {
+                p_id: d.division_id, p_category: cat, p_subcategory: sc.name, p_name: name.trim(),
+                p_emoji: emoji, p_subtitle: subtitle, p_description: d.division_description || null,
+                p_tags: d.division_tags || [], p_sort_order: d.division_sort_order || 0
+              }).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
+            });
+            var delD = mk('button', 'padding:2px 8px;font-size:10px;border:1px solid #dc5050;border-radius:5px;background:none;color:#dc5050;cursor:pointer', 'Remove');
+            delD.addEventListener('click', function() {
+              if (!confirm('Deactivate division "' + (d.division_name || '') + '"?')) return;
+              rpc('admin_delete_recipe_division', { p_id: d.division_id })
+                .then(function() { loadRMTaxonomy(container); })
+                .catch(function(e) { alert(e.message); });
+            });
+            dActs.appendChild(editD);
+            dActs.appendChild(delD);
+            dRow.appendChild(dActs);
             scRow.appendChild(dRow);
           });
           var addDiv = mk('button', 'margin-top:6px;padding:4px 10px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-mid);cursor:pointer');

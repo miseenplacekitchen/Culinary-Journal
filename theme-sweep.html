@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Theme Sweep — Admin</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <style>
+    .ts-wrap { max-width:1100px; margin:0 auto; padding:28px 20px 60px; }
+    .ts-title { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--text-high); }
+    .ts-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin:8px 0 20px; line-height:1.5; }
+    .ts-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; }
+    .ts-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:14px; }
+    .ts-card.pass { border-color:rgba(76,175,118,0.5); }
+    .ts-card.fail { border-color:rgba(220,80,80,0.5); }
+    .ts-name { font-family:'DM Sans',sans-serif; font-size:13px;font-weight:600;color:var(--text-high); }
+    .ts-key { font-family:'DM Sans',sans-serif; font-size:10px;color:var(--text-mid); margin:2px 0 8px; }
+    .ts-swatches { display:flex; gap:4px; margin-bottom:10px; }
+    .ts-swatch { width:22px; height:22px; border-radius:5px; border:1px solid rgba(0,0,0,0.15); }
+    .ts-actions { display:flex; gap:6px; flex-wrap:wrap; }
+    .ts-btn { padding:5px 10px; border-radius:7px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); cursor:pointer; }
+    .ts-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .ts-btn-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .ts-progress { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--accent); font-weight:600; margin-bottom:16px; }
+  </style>
+</head>
+<body class="page-bg cj-body">
+<div class="ts-wrap">
+  <h1 class="ts-title">Theme Sweep — 47 live themes</h1>
+  <p class="ts-sub">Preview each theme on key pages. Mark Pass or Issue — progress saves in your browser. Use while signed in so theme-init applies correctly.</p>
+  <div class="ts-progress" id="ts-progress">Loading…</div>
+  <div class="ts-grid" id="ts-grid"></div>
+</div>
+<script>
+var GROUPS = {
+  dark: ['midnight-slate','midnight-black','dark-forest','dark-bordeaux','dark-navy','dark-chocolate','dark-obsidian'],
+  light: ['cream-gold','pure-white','soft-linen','sage-cream','blush-rose','silver-morning','lemon-fresh'],
+  seasonal: ['spring-blossom','summer-citrus','autumn-harvest','winter-frost'],
+  festive: ['christmas','diwali','ramadan','new-year','onam','easter'],
+  special: ['wedding-white','birthday-cake','baby-shower','fine-dining','old-cookbook','world-kitchen'],
+  inspired: ['silk-whisper','midnight-garden','crystal-pearl','secret-garden','bridal-blush','pure-petals','violet-storm','golden-hour','forest-rain','enchanted-winter','emerald-night','still-waters','heavens-gate','ocean-breeze','wildfire','full-bloom','lunar-gold']
+};
+var LABELS = {
+  'midnight-slate':'Midnight Slate','midnight-black':'Midnight Black','dark-forest':'Dark Forest','dark-bordeaux':'Dark Bordeaux','dark-navy':'Dark Navy','dark-chocolate':'Dark Chocolate','dark-obsidian':'Dark Obsidian',
+  'cream-gold':'Cream & Gold','pure-white':'Pure White','soft-linen':'Soft Linen','sage-cream':'Sage & Cream','blush-rose':'Blush & Rose','silver-morning':'Silver Morning','lemon-fresh':'Lemon Fresh',
+  'spring-blossom':'Spring Blossom','summer-citrus':'Summer Citrus','autumn-harvest':'Autumn Harvest','winter-frost':'Winter Frost',
+  'christmas':'Christmas','diwali':'Diwali','ramadan':'Ramadan','new-year':'New Year','onam':'Onam','easter':'Easter',
+  'wedding-white':'Wedding White','birthday-cake':'Birthday Cake','baby-shower':'Baby Shower','fine-dining':'Fine Dining','old-cookbook':'Old Cookbook','world-kitchen':'World Kitchen',
+  'silk-whisper':'Silk & Whisper','midnight-garden':'Midnight Garden','crystal-pearl':'Crystal & Pearl','secret-garden':'Secret Garden','bridal-blush':'Bridal Blush','pure-petals':'Pure Petals','violet-storm':'Violet Storm','golden-hour':'Golden Hour','forest-rain':'Forest Rain','enchanted-winter':'Enchanted Winter','emerald-night':'Emerald Night','still-waters':'Still Waters','heavens-gate':'Heavens Gate','ocean-breeze':'Ocean Breeze','wildfire':'Wildfire','full-bloom':'Full Bloom','lunar-gold':'Lunar Gold'
+};
+var SWATCH = {
+  'midnight-slate':['#0a0a0a','#C4973B','#fff'],'cream-gold':['#fdf6e3','#b8860b','#281e12'],'pure-white':['#fff','#9b7028','#141414']
+};
+var KEY = 'tcj_theme_sweep';
+function loadState(){ try{return JSON.parse(localStorage.getItem(KEY)||'{}');}catch(_){return{};} }
+function saveState(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
+function allKeys(){ var a=[]; Object.keys(GROUPS).forEach(function(g){ a=a.concat(GROUPS[g]); }); return a; }
+function previewPages(key){
+  ['recipes.html','grocery.html','recipe-page.html?id=5ba4215b-182f-49ff-80a4-21a36b7190b5'].forEach(function(p){
+    window.open(p, '_blank');
+  });
+  localStorage.setItem('tcj_theme', key);
+}
+function render(){
+  var state = loadState();
+  var keys = allKeys();
+  var done = keys.filter(function(k){ return state[k]==='pass'||state[k]==='fail'; }).length;
+  document.getElementById('ts-progress').textContent = done + ' / ' + keys.length + ' reviewed (' + keys.filter(function(k){return state[k]==='pass';}).length + ' pass, ' + keys.filter(function(k){return state[k]==='fail';}).length + ' issues)';
+  var grid = document.getElementById('ts-grid');
+  grid.innerHTML = keys.map(function(key){
+    var st = state[key] || '';
+    var sw = SWATCH[key] || ['var(--bg)','var(--accent)','var(--text-high)'];
+    return '<div class="ts-card '+(st==='pass'?'pass':st==='fail'?'fail':'')+'" data-key="'+key+'">'+
+      '<div class="ts-name">'+(LABELS[key]||key)+'</div><div class="ts-key">'+key+'</div>'+
+      '<div class="ts-swatches">'+sw.map(function(c){return '<span class="ts-swatch" style="background:'+c+'"></span>';}).join('')+'</div>'+
+      '<div class="ts-actions">'+
+      '<button type="button" class="ts-btn ts-btn-primary" data-act="preview" data-key="'+key+'">Preview pages</button>'+
+      '<button type="button" class="ts-btn" data-act="pass" data-key="'+key+'">Pass</button>'+
+      '<button type="button" class="ts-btn" data-act="fail" data-key="'+key+'">Issue</button>'+
+      '</div></div>';
+  }).join('');
+  grid.querySelectorAll('[data-act]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var k = btn.dataset.key;
+      var act = btn.dataset.act;
+      if (act === 'preview') { localStorage.setItem('tcj_theme', k); previewPages(k); return; }
+      var s = loadState();
+      s[k] = act === 'pass' ? 'pass' : 'fail';
+      saveState(s);
+      render();
+    });
+  });
+}
+document.addEventListener('DOMContentLoaded', render);
+</script>
+</body>
+</html>

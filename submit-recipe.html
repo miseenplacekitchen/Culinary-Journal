@@ -3698,9 +3698,9 @@ async function submitRecipe() {
         window._activeDraftId = null;
         _draftDbId = null;
       }
-      showMsg('✓ Recipe submitted! You will be notified when it is reviewed and published. 🔔', 'success');
+      showMsg('✓ Recipe submitted! Track status under Review on My Dashboard. 🔔', 'success');
       btn.textContent = '✓ Submitted';
-      setTimeout(() => { window.location.href = 'recipes.html'; }, 3000);
+      setTimeout(function() { window.location.href = 'my-dashboard.html#pending'; }, 2200);
     } else {
       const errText = await res.text().catch(() => '');
       let errMsg = 'Submission failed';
