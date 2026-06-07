@@ -14,24 +14,53 @@
   <script src="library-chrome.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); }
-    .cv-wrap  { max-width:900px; margin:0 auto; padding:8px 0 0; }
+    .cv-wrap  { max-width:960px; margin:0 auto; padding:8px 0 0; }
+
+    /* Region bar */
+    .cv-region-bar { background:var(--text-ghost); border:1px solid var(--border); border-radius:14px; padding:16px 20px; margin-bottom:20px; }
+    .cv-region-label { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text-mid); margin-bottom:10px; }
+    .cv-region-btns { display:flex; flex-wrap:wrap; gap:8px; }
+    .cv-region-btn { padding:9px 16px; border:1px solid var(--border); border-radius:10px; background:none; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-mid); cursor:pointer; transition:all .15s; }
+    .cv-region-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .cv-region-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+    .cv-region-note { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-top:10px; line-height:1.5; }
+
     .cv-grid  { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-    @media(max-width:640px){ .cv-grid { grid-template-columns:1fr; } }
+    @media(max-width:700px){ .cv-grid { grid-template-columns:1fr; } }
     .cv-card  { background:var(--text-ghost); border:1px solid var(--border); border-radius:14px; padding:22px 24px; }
-    .cv-card-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); margin-bottom:16px; }
-    .cv-row   { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
-    .cv-input { flex:1; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:500; padding:10px 12px; border:1px solid var(--border); border-radius:9px; background: var(--input-bg); color:var(--text-high); outline:none; min-width:0; }
+    .cv-card-title { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); margin-bottom:4px; }
+    .cv-card-sub { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); margin-bottom:16px; line-height:1.45; }
+    .cv-sep   { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin:14px 0 10px; letter-spacing:0.06em; padding-bottom:8px; border-bottom:1px solid var(--border); }
+
+    /* Bidirectional pair (Google Translate style) */
+    .cv-pair { display:flex; flex-direction:column; gap:0; }
+    .cv-pair-row { display:flex; align-items:center; gap:8px; }
+    .cv-pair-row + .cv-pair-row { margin-top:8px; }
+    .cv-input { flex:1; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:500; padding:10px 12px; border:1px solid var(--border); border-radius:9px; background:var(--input-bg); color:var(--text-high); outline:none; min-width:0; }
     .cv-input:focus { border-color:var(--accent); }
-    .cv-unit  { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); width:44px; flex-shrink:0; }
-    .cv-eq    { font-family:'DM Sans',sans-serif; font-size:16px; color:var(--text-mid); flex-shrink:0; }
-    .cv-sep   { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); text-align:center; margin:14px 0 6px; letter-spacing:0.08em; padding-bottom:8px; border-bottom:1px solid var(--border); }
-    .cv-result { font-family:'Cormorant Garamond',serif; font-size:1.1rem; color:var(--accent); font-weight:600; }
+    .cv-input.cv-muted { color:var(--text-mid); }
+    .cv-select { flex:1.5; font-family:'DM Sans',sans-serif; font-size:12px; padding:10px 10px; border:1px solid var(--border); border-radius:9px; background:var(--input-bg); color:var(--text-high); outline:none; min-width:0; cursor:pointer; }
+    .cv-select:focus { border-color:var(--accent); }
+    .cv-pair-divider { display:flex; align-items:center; justify-content:center; padding:6px 0; color:var(--text-mid); font-size:14px; opacity:.6; }
+
+    /* Reference tables */
+    .cv-ref { grid-column:1/-1; }
+    .cv-ref details { border:1px solid var(--border); border-radius:12px; margin-bottom:10px; background:var(--text-ghost); overflow:hidden; }
+    .cv-ref summary { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; color:var(--text-high); padding:14px 18px; cursor:pointer; list-style:none; display:flex; align-items:center; justify-content:space-between; }
+    .cv-ref summary::-webkit-details-marker { display:none; }
+    .cv-ref summary::after { content:'+'; color:var(--accent); font-size:16px; }
+    .cv-ref details[open] summary::after { content:'−'; }
+    .cv-ref-body { padding:0 18px 16px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); line-height:1.55; }
+    .cv-ref-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px 16px; }
+    .cv-ref-grid.cols3 { grid-template-columns:1fr 1fr 1fr; }
+    .cv-ref-hd { font-weight:600; color:var(--text-high); border-bottom:1px solid var(--border); padding-bottom:4px; margin-bottom:4px; }
+    .cv-ref-val { color:var(--accent); font-weight:600; }
 
     /* Serving scaler */
     .cv-scaler { grid-column:1/-1; }
     .cv-scaler-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
     .cv-scaler-label { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); min-width:80px; }
-    .cv-scaler-input { width:70px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:500; padding:9px 12px; border:1px solid var(--border); border-radius:9px; background: var(--input-bg); color:var(--text-high); outline:none; text-align:center; }
+    .cv-scaler-input { width:70px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:500; padding:9px 12px; border:1px solid var(--border); border-radius:9px; background:var(--input-bg); color:var(--text-high); outline:none; text-align:center; }
     .cv-scaler-input:focus { border-color:var(--accent); }
     .cv-ingredient-rows { display:flex; flex-direction:column; gap:8px; }
     .cv-ing-row { display:grid; grid-template-columns:1fr 80px 80px; gap:8px; align-items:center; }
@@ -44,10 +73,13 @@
     .cv-add-ing:hover { background:rgb(from var(--accent) r g b / 0.06); }
     .cv-col-header { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mid); padding:0 11px; }
 
-    /* Temperature special */
+    /* Temperature */
     .cv-temp-wrap { display:flex; flex-direction:column; gap:6px; }
     .cv-temp-row  { display:flex; align-items:center; gap:8px; }
-    .cv-temp-label { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); width:50px; flex-shrink:0; }
+    .cv-temp-label { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); width:56px; flex-shrink:0; }
+
+    /* Pan table */
+    .cv-pan-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px 16px; font-family:'DM Sans',sans-serif; font-size:12px; }
   </style>
   <script src="page-guard.js"></script>
 </head>
@@ -64,95 +96,110 @@
 <div id="lib-chrome"></div>
 <div class="lib-content">
 <div class="cv-wrap">
+
+  <!-- Region selector -->
+  <div class="cv-region-bar">
+    <div class="cv-region-label">Recipe standard — cups, spoons &amp; labels match this region</div>
+    <div class="cv-region-btns" id="cv-region-btns" role="group" aria-label="Measurement region"></div>
+    <div class="cv-region-note" id="cv-region-note"></div>
+  </div>
+
   <div class="cv-grid">
 
-    <!-- Volume and Capacity (CJ-020) -->
+    <!-- Volume and Capacity -->
     <div class="cv-card">
-      <div class="cv-card-title">Volume and Capacity</div>
-
-      <div class="cv-sep">Convert any volume to any other</div>
-      <div class="cv-row">
-        <input class="cv-input" id="uv-val" type="number" min="0" step="any" placeholder="0" oninput="convertUV()">
-        <select class="cv-input" id="uv-from" onchange="convertUV()" style="flex:1.4"></select>
-      </div>
-      <div class="cv-row" style="margin-top:8px">
-        <input class="cv-input cv-result" id="uv-out" type="text" readonly placeholder="0">
-        <select class="cv-input" id="uv-to" onchange="convertUV()" style="flex:1.4"></select>
-      </div>
-      <button class="cv-input" style="margin-top:8px;cursor:pointer;font-size:12px;width:100%" onclick="swapUV()">⇄ Swap units</button>
-      <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);margin-top:12px;line-height:1.5" id="uv-note">
-        Note: cups, tablespoons and fluid ounces differ by country — an Australian tablespoon is 20&nbsp;ml, a US tablespoon is 14.79&nbsp;ml. Pick the regional unit that matches your recipe.
+      <div class="cv-card-title">Volume &amp; Capacity</div>
+      <div class="cv-card-sub" id="vol-sub">Liquids, cups, spoons — type in either field and the other updates instantly.</div>
+      <div class="cv-pair" id="vol-pair">
+        <div class="cv-pair-row">
+          <input class="cv-input" id="vol-a" type="number" min="0" step="any" placeholder="0" autocomplete="off">
+          <select class="cv-select" id="vol-a-unit"></select>
+        </div>
+        <div class="cv-pair-divider" aria-hidden="true">↕</div>
+        <div class="cv-pair-row">
+          <input class="cv-input" id="vol-b" type="number" min="0" step="any" placeholder="0" autocomplete="off">
+          <select class="cv-select" id="vol-b-unit"></select>
+        </div>
       </div>
     </div>
 
-    <!-- Weights and Mass (CJ-020) -->
+    <!-- Weights and Mass -->
     <div class="cv-card">
-      <div class="cv-card-title">Weights and Mass</div>
-
-      <div class="cv-sep">Convert any weight to any other</div>
-      <div class="cv-row">
-        <input class="cv-input" id="uw-val" type="number" min="0" step="any" placeholder="0" oninput="convertUW()">
-        <select class="cv-input" id="uw-from" onchange="convertUW()" style="flex:1.4"></select>
+      <div class="cv-card-title">Weights &amp; Mass</div>
+      <div class="cv-card-sub">Grams, ounces, pounds — both fields stay live.</div>
+      <div class="cv-pair" id="wt-pair">
+        <div class="cv-pair-row">
+          <input class="cv-input" id="wt-a" type="number" min="0" step="any" placeholder="0" autocomplete="off">
+          <select class="cv-select" id="wt-a-unit"></select>
+        </div>
+        <div class="cv-pair-divider" aria-hidden="true">↕</div>
+        <div class="cv-pair-row">
+          <input class="cv-input" id="wt-b" type="number" min="0" step="any" placeholder="0" autocomplete="off">
+          <select class="cv-select" id="wt-b-unit"></select>
+        </div>
       </div>
-      <div class="cv-row" style="margin-top:8px">
-        <input class="cv-input cv-result" id="uw-out" type="text" readonly placeholder="0">
-        <select class="cv-input" id="uw-to" onchange="convertUW()" style="flex:1.4"></select>
-      </div>
-      <button class="cv-input" style="margin-top:8px;cursor:pointer;font-size:12px;width:100%" onclick="swapUW()">⇄ Swap units</button>
-
-      <div class="cv-sep">Common Baking Conversions (approximate — dry ingredients vary)</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:'DM Sans',sans-serif;font-size:12px">
-        <div style="color:var(--text-mid)">1 cup plain flour</div><div style="color:var(--accent);font-weight:600">120g</div>
-        <div style="color:var(--text-mid)">1 cup caster sugar</div><div style="color:var(--accent);font-weight:600">200g</div>
-        <div style="color:var(--text-mid)">1 cup butter</div><div style="color:var(--accent);font-weight:600">225g</div>
-        <div style="color:var(--text-mid)">1 cup rice (dry)</div><div style="color:var(--accent);font-weight:600">185g</div>
-        <div style="color:var(--text-mid)">1 tbsp butter</div><div style="color:var(--accent);font-weight:600">14g</div>
-        <div style="color:var(--text-mid)">1 tbsp oil</div><div style="color:var(--accent);font-weight:600">14g</div>
-      </div>
+      <div class="cv-sep">Common baking weights <span style="font-weight:400">(approximate — dry ingredients vary)</span></div>
+      <div class="cv-pan-grid" id="baking-weights"></div>
     </div>
 
     <!-- Temperature -->
     <div class="cv-card">
       <div class="cv-card-title">Temperature</div>
+      <div class="cv-card-sub">Oven, fridge, candy — edit any field; the rest follow.</div>
       <div class="cv-temp-wrap">
-        <div class="cv-temp-row"><div class="cv-temp-label">°C</div><input class="cv-input" id="t-c" type="number" placeholder="180" oninput="convertTemp('c')"></div>
-        <div class="cv-temp-row"><div class="cv-temp-label">°F</div><input class="cv-input" id="t-f" type="number" placeholder="350" oninput="convertTemp('f')"></div>
-        <div class="cv-temp-row"><div class="cv-temp-label">Gas Mark</div><input class="cv-input" id="t-gas" type="number" placeholder="4" step="0.5" oninput="convertTemp('gas')"></div>
-        <div class="cv-temp-row"><div class="cv-temp-label">Fan °C</div><input class="cv-input cv-result" id="t-fan" type="number" placeholder="160" readonly style="opacity:0.7;cursor:default"></div>
+        <div class="cv-temp-row"><div class="cv-temp-label">°C</div><input class="cv-input" id="t-c" type="number" step="any" placeholder="180" autocomplete="off"></div>
+        <div class="cv-temp-row"><div class="cv-temp-label">°F</div><input class="cv-input" id="t-f" type="number" step="any" placeholder="350" autocomplete="off"></div>
+        <div class="cv-temp-row"><div class="cv-temp-label">Gas</div><input class="cv-input" id="t-gas" type="number" step="0.5" placeholder="4" autocomplete="off"></div>
+        <div class="cv-temp-row"><div class="cv-temp-label">Fan °C</div><input class="cv-input" id="t-fan" type="number" step="any" placeholder="160" autocomplete="off"></div>
       </div>
-      <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">Fan/convection ovens are typically 20°C lower than conventional.</div>
-
-      <div class="cv-sep" style="margin-top:16px">Common Temperatures</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-family:'DM Sans',sans-serif;font-size:11px">
-        <div style="color:var(--text-mid)">Slow oven</div><div style="color:var(--accent)">150°C</div><div style="color:var(--text-mid)">Gas 2</div>
-        <div style="color:var(--text-mid)">Moderate</div><div style="color:var(--accent)">180°C</div><div style="color:var(--text-mid)">Gas 4</div>
-        <div style="color:var(--text-mid)">Hot</div><div style="color:var(--accent)">200°C</div><div style="color:var(--text-mid)">Gas 6</div>
-        <div style="color:var(--text-mid)">Very hot</div><div style="color:var(--accent)">220°C</div><div style="color:var(--text-mid)">Gas 7</div>
-        <div style="color:var(--text-mid)">Deep fry</div><div style="color:var(--accent)">175°C</div><div style="color:var(--text-mid)">—</div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">Fan/convection is typically 20°C lower than conventional. Gas mark uses UK scale.</div>
+      <div class="cv-sep">Oven settings</div>
+      <div class="cv-pan-grid cols3" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="cv-ref-hd">Setting</div><div class="cv-ref-hd">°C</div><div class="cv-ref-hd">Gas</div>
+        <div>Slow</div><div class="cv-ref-val">150</div><div>2</div>
+        <div>Moderate</div><div class="cv-ref-val">180</div><div>4</div>
+        <div>Hot</div><div class="cv-ref-val">200</div><div>6</div>
+        <div>Very hot</div><div class="cv-ref-val">220</div><div>7</div>
+        <div>Deep fry</div><div class="cv-ref-val">175</div><div>—</div>
       </div>
     </div>
 
-    <!-- Pan Sizes -->
+    <!-- Length & Pan Sizes -->
     <div class="cv-card">
-      <div class="cv-card-title">Pan & Tin Sizes</div>
-      <div style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:10px">Common pan equivalents</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-family:'DM Sans',sans-serif;font-size:12px">
-        <div style="font-weight:600;color:var(--text-high);border-bottom:1px solid var(--border);padding-bottom:4px">Inches</div>
-        <div style="font-weight:600;color:var(--text-high);border-bottom:1px solid var(--border);padding-bottom:4px">Centimetres</div>
-        <div style="color:var(--text-mid)">6 inch round</div><div style="color:var(--accent)">15 cm</div>
-        <div style="color:var(--text-mid)">8 inch round</div><div style="color:var(--accent)">20 cm</div>
-        <div style="color:var(--text-mid)">9 inch round</div><div style="color:var(--accent)">23 cm</div>
-        <div style="color:var(--text-mid)">10 inch round</div><div style="color:var(--accent)">25 cm</div>
-        <div style="color:var(--text-mid)">8 × 8 square</div><div style="color:var(--accent)">20 × 20 cm</div>
-        <div style="color:var(--text-mid)">9 × 13 rect</div><div style="color:var(--accent)">23 × 33 cm</div>
-        <div style="color:var(--text-mid)">Loaf tin 9×5</div><div style="color:var(--accent)">23 × 13 cm</div>
-        <div style="color:var(--text-mid)">Muffin tin</div><div style="color:var(--accent)">12 holes, 7 cm each</div>
+      <div class="cv-card-title">Length &amp; Pan Sizes</div>
+      <div class="cv-card-sub">Convert inches ↔ cm for tins, trays, and sheet pans.</div>
+      <div class="cv-pair" id="len-pair">
+        <div class="cv-pair-row">
+          <input class="cv-input" id="len-a" type="number" min="0" step="any" placeholder="0" autocomplete="off">
+          <select class="cv-select" id="len-a-unit"></select>
+        </div>
+        <div class="cv-pair-divider" aria-hidden="true">↕</div>
+        <div class="cv-pair-row">
+          <input class="cv-input" id="len-b" type="number" min="0" step="any" placeholder="0" autocomplete="off">
+          <select class="cv-select" id="len-b-unit"></select>
+        </div>
+      </div>
+      <div class="cv-sep">Common pan equivalents</div>
+      <div class="cv-pan-grid">
+        <div class="cv-ref-hd">Pan (inches)</div><div class="cv-ref-hd">Centimetres</div>
+        <div>6″ round</div><div class="cv-ref-val">15 cm</div>
+        <div>8″ round</div><div class="cv-ref-val">20 cm</div>
+        <div>9″ round</div><div class="cv-ref-val">23 cm</div>
+        <div>10″ round</div><div class="cv-ref-val">25 cm</div>
+        <div>8 × 8″ square</div><div class="cv-ref-val">20 × 20 cm</div>
+        <div>9 × 13″ rect</div><div class="cv-ref-val">23 × 33 cm</div>
+        <div>Loaf 9 × 5″</div><div class="cv-ref-val">23 × 13 cm</div>
+        <div>Bundt 10″</div><div class="cv-ref-val">25 cm</div>
+        <div>Muffin (std)</div><div class="cv-ref-val">7 cm each</div>
+        <div>Sheet (half)</div><div class="cv-ref-val">33 × 23 cm</div>
+        <div>Sheet (full)</div><div class="cv-ref-val">46 × 33 cm</div>
       </div>
     </div>
 
-    <!-- Serving scaler — full width -->
+    <!-- Serving scaler -->
     <div class="cv-card cv-scaler">
       <div class="cv-card-title">Serving Size Scaler</div>
+      <div class="cv-card-sub">Scale a recipe up or down — enter original and target serves.</div>
       <div class="cv-scaler-row">
         <div class="cv-scaler-label">Original serves</div>
         <input class="cv-scaler-input" id="sc-from" type="number" min="1" value="4" oninput="scaleAll()">
@@ -168,6 +215,85 @@
       <button class="cv-add-ing" onclick="addScalerRow()">+ Add ingredient</button>
     </div>
 
+    <!-- Reference tables -->
+    <div class="cv-card cv-ref">
+      <div class="cv-card-title">Measurement Reference</div>
+      <div class="cv-card-sub">Planner-style equivalents from standard culinary references. Expand any section.</div>
+
+      <details>
+        <summary>US household volume equivalents</summary>
+        <div class="cv-ref-body">
+          <div class="cv-ref-grid">
+            <div class="cv-ref-hd">US measure</div><div class="cv-ref-hd">Metric</div>
+            <div>1 teaspoon</div><div class="cv-ref-val">4.9 ml</div>
+            <div>1 tablespoon</div><div class="cv-ref-val">14.8 ml</div>
+            <div>1 cup (8 fl oz)</div><div class="cv-ref-val">236.6 ml</div>
+            <div>1 pint</div><div class="cv-ref-val">473.2 ml</div>
+            <div>1 quart</div><div class="cv-ref-val">946.4 ml</div>
+            <div>1 gallon</div><div class="cv-ref-val">3.785 L</div>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Australian &amp; metric kitchen measures</summary>
+        <div class="cv-ref-body">
+          <div class="cv-ref-grid">
+            <div class="cv-ref-hd">Measure</div><div class="cv-ref-hd">Volume</div>
+            <div>1 metric teaspoon</div><div class="cv-ref-val">5 ml</div>
+            <div>1 Australian tablespoon</div><div class="cv-ref-val">20 ml</div>
+            <div>1 metric/UK tablespoon</div><div class="cv-ref-val">15 ml</div>
+            <div>1 Australian cup</div><div class="cv-ref-val">250 ml</div>
+            <div>1 US cup</div><div class="cv-ref-val">236.59 ml</div>
+            <div>1 imperial pint</div><div class="cv-ref-val">568 ml</div>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Weight equivalents (avoirdupois)</summary>
+        <div class="cv-ref-body">
+          <div class="cv-ref-grid">
+            <div class="cv-ref-hd">Unit</div><div class="cv-ref-hd">Grams</div>
+            <div>1 ounce</div><div class="cv-ref-val">28.35 g</div>
+            <div>1 pound</div><div class="cv-ref-val">453.6 g</div>
+            <div>1 kilogram</div><div class="cv-ref-val">1,000 g</div>
+            <div>1 stone</div><div class="cv-ref-val">6.35 kg</div>
+            <div>1 US short ton</div><div class="cv-ref-val">907 kg</div>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Length &amp; pan conversions</summary>
+        <div class="cv-ref-body">
+          <div class="cv-ref-grid">
+            <div class="cv-ref-hd">Imperial</div><div class="cv-ref-hd">Metric</div>
+            <div>1 inch</div><div class="cv-ref-val">2.54 cm</div>
+            <div>1 foot</div><div class="cv-ref-val">30.48 cm</div>
+            <div>1 yard</div><div class="cv-ref-val">91.4 cm</div>
+            <div>1 mile</div><div class="cv-ref-val">1.61 km</div>
+            <div>1 metre</div><div class="cv-ref-val">39.37 in</div>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Temperature quick chart</summary>
+        <div class="cv-ref-body">
+          <div class="cv-ref-grid cols3">
+            <div class="cv-ref-hd">°F</div><div class="cv-ref-hd">°C</div><div class="cv-ref-hd">Use</div>
+            <div>32</div><div class="cv-ref-val">0</div><div>Freezing</div>
+            <div>68</div><div class="cv-ref-val">20</div><div>Room</div>
+            <div>100</div><div class="cv-ref-val">38</div><div>Body temp</div>
+            <div>140</div><div class="cv-ref-val">60</div><div>Hold hot food</div>
+            <div>165</div><div class="cv-ref-val">74</div><div>Poultry safe</div>
+            <div>212</div><div class="cv-ref-val">100</div><div>Boiling water</div>
+          </div>
+        </div>
+      </details>
+    </div>
+
   </div>
 </div>
 </div>
@@ -178,92 +304,274 @@ LibraryChrome.render({ root: 'lib-chrome', active: 'conversions' });
 document.title = 'Conversions & Weights — The Culinary Journal';
 </script>
 <script>
-// ── VOLUME ───────────────────────────────────────────────────────
-const VOL = {cups:240, tbsp:15, tsp:5, l:1000, floz:29.5735};
-// ── CJ-020: UNIVERSAL CONVERTERS ─────────────────────────────────
-// Factors are exact legal definitions (base: millilitres / grams).
+// ── Unit definitions (base: ml / g / mm) ─────────────────────────
 const VOL_UNITS = [
-  ['ml',        'Millilitres (ml)',              1],
-  ['l',         'Litres (L)',                    1000],
-  ['tsp-m',     'Teaspoon — metric (5 ml)',      5],
-  ['tbsp-au',   'Tablespoon — Australia (20 ml)',20],
-  ['tbsp-m',    'Tablespoon — metric/UK (15 ml)',15],
-  ['tbsp-us',   'Tablespoon — US (14.79 ml)',    14.7867648],
-  ['cup-au',    'Cup — Australia/metric (250 ml)',250],
-  ['cup-us',    'Cup — US (236.59 ml)',          236.588237],
+  ['ml',         'Millilitres (ml)',                 1],
+  ['l',          'Litres (L)',                       1000],
+  ['tsp-m',      'Teaspoon — metric (5 ml)',         5],
+  ['tsp-us',     'Teaspoon — US (4.93 ml)',          4.92892159],
+  ['tbsp-au',    'Tablespoon — Australia (20 ml)',   20],
+  ['tbsp-m',     'Tablespoon — metric/UK (15 ml)',   15],
+  ['tbsp-us',    'Tablespoon — US (14.79 ml)',       14.7867648],
+  ['cup-au',     'Cup — Australia/metric (250 ml)',  250],
+  ['cup-us',     'Cup — US (236.59 ml)',             236.588237],
   ['cup-uslegal','Cup — US nutrition label (240 ml)',240],
-  ['floz-us',   'Fluid ounce — US',              29.5735296],
-  ['floz-imp',  'Fluid ounce — imperial (UK)',   28.4130625],
-  ['pint-us',   'Pint — US',                     473.176473],
-  ['pint-imp',  'Pint — imperial (UK/AU)',       568.26125],
-  ['quart-us',  'Quart — US',                    946.352946],
-  ['quart-imp', 'Quart — imperial',              1136.5225],
-  ['gal-us',    'Gallon — US',                   3785.411784],
-  ['gal-imp',   'Gallon — imperial',             4546.09]
+  ['floz-us',    'Fluid ounce — US',                 29.5735296],
+  ['floz-imp',   'Fluid ounce — imperial (UK)',      28.4130625],
+  ['pint-us',    'Pint — US liquid',                 473.176473],
+  ['pint-imp',   'Pint — imperial (UK/AU)',          568.26125],
+  ['quart-us',   'Quart — US',                       946.352946],
+  ['quart-imp',  'Quart — imperial',                 1136.5225],
+  ['gal-us',     'Gallon — US',                      3785.411784],
+  ['gal-imp',    'Gallon — imperial',                4546.09]
 ];
 const WT_UNITS = [
-  ['mg',    'Milligrams (mg)',      0.001],
-  ['g',     'Grams (g)',            1],
-  ['kg',    'Kilograms (kg)',       1000],
-  ['oz',    'Ounces (oz)',          28.349523125],
-  ['lb',    'Pounds (lb)',          453.59237],
-  ['stone', 'Stone (st)',           6350.29318]
+  ['mg',    'Milligrams (mg)',  0.001],
+  ['g',     'Grams (g)',        1],
+  ['kg',    'Kilograms (kg)',   1000],
+  ['oz',    'Ounces (oz)',      28.349523125],
+  ['lb',    'Pounds (lb)',      453.59237],
+  ['stone', 'Stone (st)',       6350.29318]
+];
+const LEN_UNITS = [
+  ['mm', 'Millimetres (mm)', 1],
+  ['cm', 'Centimetres (cm)', 10],
+  ['m',  'Metres (m)',       1000],
+  ['in', 'Inches (in)',      25.4],
+  ['ft', 'Feet (ft)',        304.8],
+  ['yd', 'Yards (yd)',       914.4]
 ];
 
-function populateUnitSelects(units, fromId, toId, defFrom, defTo) {
-  [fromId, toId].forEach(function(id){
-    const sel = document.getElementById(id);
-    if (!sel || sel.options.length) return;
-    units.forEach(function(u){
-      const o = document.createElement('option');
-      o.value = u[0]; o.textContent = u[1];
-      sel.appendChild(o);
-    });
+const REGIONS = {
+  au: {
+    label: 'Australia',
+    flag: '🇦🇺',
+    note: 'Australian recipes use a 250 ml cup and 20 ml tablespoon. Metric weights are standard.',
+    volPrimary: ['cup-au','tbsp-au','tsp-m','ml','l','floz-imp','pint-imp'],
+    wtPrimary:  ['g','kg','oz','lb'],
+    lenPrimary: ['cm','mm','in','ft'],
+    volDefault: ['cup-au','ml'],
+    wtDefault:  ['g','oz'],
+    lenDefault: ['cm','in'],
+    baking: [
+      ['1 cup plain flour', '150g'], ['1 cup caster sugar', '220g'], ['1 cup brown sugar', '220g'],
+      ['1 cup butter', '250g'], ['1 cup milk', '250ml'], ['1 tbsp butter', '20g']
+    ]
+  },
+  us: {
+    label: 'United States',
+    flag: '🇺🇸',
+    note: 'US recipes use a 236.59 ml cup and 14.79 ml tablespoon. Stick butter is 113 g (½ cup).',
+    volPrimary: ['cup-us','tbsp-us','tsp-us','floz-us','ml','pint-us','quart-us','gal-us'],
+    wtPrimary:  ['oz','lb','g','kg'],
+    lenPrimary: ['in','ft','cm','mm'],
+    volDefault: ['cup-us','ml'],
+    wtDefault:  ['oz','g'],
+    lenDefault: ['in','cm'],
+    baking: [
+      ['1 cup all-purpose flour', '120g'], ['1 cup granulated sugar', '200g'],
+      ['1 cup butter (2 sticks)', '227g'], ['1 cup milk', '240ml'], ['1 tbsp butter', '14g']
+    ]
+  },
+  uk: {
+    label: 'United Kingdom',
+    flag: '🇬🇧',
+    note: 'UK recipes often use imperial fluid ounces and pints alongside metric. Gas mark is standard for ovens.',
+    volPrimary: ['tbsp-m','floz-imp','pint-imp','ml','l','cup-au','tsp-m'],
+    wtPrimary:  ['g','oz','lb','kg'],
+    lenPrimary: ['cm','in','mm','ft'],
+    volDefault: ['floz-imp','ml'],
+    wtDefault:  ['g','oz'],
+    lenDefault: ['cm','in'],
+    baking: [
+      ['1 cup plain flour', '150g'], ['1 cup caster sugar', '200g'],
+      ['1 cup butter', '225g'], ['1 tbsp butter', '15g'], ['1 imperial pint milk', '568ml']
+    ]
+  },
+  metric: {
+    label: 'Metric (SI)',
+    flag: '🌐',
+    note: 'Pure metric — millilitres, grams, centimetres. No regional cup confusion.',
+    volPrimary: ['ml','l','tsp-m','tbsp-m','cup-au'],
+    wtPrimary:  ['g','kg','mg'],
+    lenPrimary: ['mm','cm','m'],
+    volDefault: ['ml','l'],
+    wtDefault:  ['g','kg'],
+    lenDefault: ['cm','m'],
+    baking: [
+      ['100 g plain flour', '≈ ⅔ metric cup'], ['200 g sugar', '1 metric cup'],
+      ['250 g butter', '1 metric cup'], ['15 ml', '1 metric tbsp']
+    ]
+  }
+};
+
+let currentRegion = 'au';
+const converters = {};
+
+// ── Helpers ──────────────────────────────────────────────────────
+function round(n) {
+  if (n === '' || n === null || isNaN(n)) return '';
+  n = Number(n);
+  if (Math.abs(n) < 0.0001) return '0';
+  if (Math.abs(n) < 0.01) return parseFloat(n.toFixed(4)).toString();
+  if (Math.abs(n) < 1)    return parseFloat(n.toFixed(3)).toString();
+  if (Math.abs(n) < 100)  return parseFloat(n.toFixed(2)).toString();
+  return parseFloat(n.toFixed(1)).toString();
+}
+
+function unitFactor(units, key) {
+  const u = units.find(function(x){ return x[0] === key; });
+  return u ? u[2] : 1;
+}
+
+function populateSelect(sel, units, primaryKeys) {
+  sel.innerHTML = '';
+  const primary = [], other = [];
+  units.forEach(function(u) {
+    (primaryKeys.indexOf(u[0]) >= 0 ? primary : other).push(u);
   });
-  const f = document.getElementById(fromId), t = document.getElementById(toId);
-  if (f) f.value = defFrom;
-  if (t) t.value = defTo;
+  function addGroup(label, list) {
+    if (!list.length) return;
+    const og = document.createElement('optgroup');
+    og.label = label;
+    list.forEach(function(u) {
+      const o = document.createElement('option');
+      o.value = u[0];
+      o.textContent = u[1];
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  }
+  addGroup('Your region', primary);
+  addGroup('All units', other);
 }
 
-function universalConvert(units, valId, fromId, toId, outId) {
-  const val = parseFloat(document.getElementById(valId).value);
-  const out = document.getElementById(outId);
-  if (isNaN(val)) { out.value = ''; return; }
-  const from = units.find(u => u[0] === document.getElementById(fromId).value);
-  const to   = units.find(u => u[0] === document.getElementById(toId).value);
-  if (!from || !to) { out.value = ''; return; }
-  const result = val * from[2] / to[2];
-  out.value = round(result);
+// ── Bidirectional converter (Google Translate style) ─────────────
+function makeBidirectional(units, inputA, selectA, inputB, selectB) {
+  let lastEdited = 'a';
+  let busy = false;
+
+  function convert(from) {
+    if (busy) return;
+    busy = true;
+    const fa = unitFactor(units, selectA.value);
+    const fb = unitFactor(units, selectB.value);
+    if (from === 'a') {
+      lastEdited = 'a';
+      const v = parseFloat(inputA.value);
+      if (inputA.value === '' || isNaN(v)) inputB.value = '';
+      else inputB.value = round(v * fa / fb);
+    } else {
+      lastEdited = 'b';
+      const v = parseFloat(inputB.value);
+      if (inputB.value === '' || isNaN(v)) inputA.value = '';
+      else inputA.value = round(v * fb / fa);
+    }
+    busy = false;
+  }
+
+  function onUnitChange() {
+    if (lastEdited === 'b' && inputB.value !== '') convert('b');
+    else if (inputA.value !== '') convert('a');
+  }
+
+  inputA.addEventListener('input', function(){ convert('a'); });
+  inputB.addEventListener('input', function(){ convert('b'); });
+  selectA.addEventListener('change', onUnitChange);
+  selectB.addEventListener('change', onUnitChange);
+
+  return {
+    setDefaults: function(aKey, bKey) {
+      selectA.value = aKey;
+      selectB.value = bKey;
+      inputA.value = '';
+      inputB.value = '';
+    },
+    convert: function(){ convert('a'); }
+  };
 }
 
-function convertUV() { universalConvert(VOL_UNITS, 'uv-val', 'uv-from', 'uv-to', 'uv-out'); }
-function convertUW() { universalConvert(WT_UNITS,  'uw-val', 'uw-from', 'uw-to', 'uw-out'); }
-function swapSel(fromId, toId, fn) {
-  const f = document.getElementById(fromId), t = document.getElementById(toId);
-  const tmp = f.value; f.value = t.value; t.value = tmp; fn();
+// ── Region switching ─────────────────────────────────────────────
+function applyRegion(region) {
+  currentRegion = region;
+  const r = REGIONS[region];
+  if (!r) return;
+
+  try { localStorage.setItem('tcj_conv_region', region); } catch (_) {}
+
+  document.querySelectorAll('.cv-region-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.region === region);
+  });
+  document.getElementById('cv-region-note').textContent = r.note;
+
+  populateSelect(document.getElementById('vol-a-unit'), VOL_UNITS, r.volPrimary);
+  populateSelect(document.getElementById('vol-b-unit'), VOL_UNITS, r.volPrimary);
+  populateSelect(document.getElementById('wt-a-unit'),  WT_UNITS,  r.wtPrimary);
+  populateSelect(document.getElementById('wt-b-unit'),  WT_UNITS,  r.wtPrimary);
+  populateSelect(document.getElementById('len-a-unit'), LEN_UNITS, r.lenPrimary);
+  populateSelect(document.getElementById('len-b-unit'), LEN_UNITS, r.lenPrimary);
+
+  converters.vol.setDefaults(r.volDefault[0], r.volDefault[1]);
+  converters.wt.setDefaults(r.wtDefault[0],  r.wtDefault[1]);
+  converters.len.setDefaults(r.lenDefault[0], r.lenDefault[1]);
+
+  const bw = document.getElementById('baking-weights');
+  bw.innerHTML = r.baking.map(function(row) {
+    return '<div>' + row[0] + '</div><div class="cv-ref-val">' + row[1] + '</div>';
+  }).join('');
 }
-function swapUV() { swapSel('uv-from','uv-to',convertUV); }
-function swapUW() { swapSel('uw-from','uw-to',convertUW); }
 
-populateUnitSelects(VOL_UNITS, 'uv-from', 'uv-to', 'cup-au', 'ml');
-populateUnitSelects(WT_UNITS,  'uw-from', 'uw-to', 'g', 'oz');
-
-// ── TEMPERATURE ──────────────────────────────────────────────────
-function convertTemp(from) {
-  let c = 0;
-  if (from==='c')   c = parseFloat(document.getElementById('t-c').value)||0;
-  if (from==='f')   c = ((parseFloat(document.getElementById('t-f').value)||0) - 32) * 5/9;
-  if (from==='gas') c = (parseFloat(document.getElementById('t-gas').value)||0) * 25 + 125;
-  const f   = c * 9/5 + 32;
-  const gas = Math.max(0.25, (c - 125) / 25);
-  const fan = c - 20;
-  if (from!=='c')   document.getElementById('t-c').value   = round(c);
-  if (from!=='f')   document.getElementById('t-f').value   = round(f);
-  if (from!=='gas') document.getElementById('t-gas').value = round(gas);
-  document.getElementById('t-fan').value = round(fan);
+function buildRegionBar() {
+  const wrap = document.getElementById('cv-region-btns');
+  Object.keys(REGIONS).forEach(function(key) {
+    const r = REGIONS[key];
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cv-region-btn';
+    btn.dataset.region = key;
+    btn.textContent = r.flag + ' ' + r.label;
+    btn.addEventListener('click', function(){ applyRegion(key); });
+    wrap.appendChild(btn);
+  });
 }
 
-// ── SERVING SCALER ───────────────────────────────────────────────
+// ── Temperature (all fields live) ────────────────────────────────
+(function initTemp() {
+  let busy = false;
+  let last = 'c';
+
+  function sync(from) {
+    if (busy) return;
+    busy = true;
+    last = from;
+    let c = 0;
+    if (from === 'c')   c = parseFloat(document.getElementById('t-c').value);
+    else if (from === 'f')   c = ((parseFloat(document.getElementById('t-f').value) || 0) - 32) * 5 / 9;
+    else if (from === 'gas') c = (parseFloat(document.getElementById('t-gas').value) || 0) * 25 + 125;
+    else if (from === 'fan') c = (parseFloat(document.getElementById('t-fan').value) || 0) + 20;
+
+    if (isNaN(c) && from !== 'c') { busy = false; return; }
+    if (isNaN(c)) c = 0;
+
+    const f   = c * 9 / 5 + 32;
+    const gas = Math.max(0.25, (c - 125) / 25);
+    const fan = c - 20;
+
+    if (from !== 'c')   document.getElementById('t-c').value   = round(c);
+    if (from !== 'f')   document.getElementById('t-f').value   = round(f);
+    if (from !== 'gas') document.getElementById('t-gas').value = round(gas);
+    if (from !== 'fan') document.getElementById('t-fan').value = round(fan);
+    busy = false;
+  }
+
+  ['t-c','t-f','t-gas','t-fan'].forEach(function(id) {
+    const el = document.getElementById(id);
+    const key = id.replace('t-','');
+    el.addEventListener('input', function(){ sync(key); });
+  });
+})();
+
+// ── Serving scaler ───────────────────────────────────────────────
 function addScalerRow(name, qty) {
   const rows = document.getElementById('sc-rows');
   const row = document.createElement('div');
@@ -277,9 +585,9 @@ function addScalerRow(name, qty) {
 }
 
 function scaleAll() {
-  const from = parseFloat(document.getElementById('sc-from').value)||1;
-  const to   = parseFloat(document.getElementById('sc-to').value)||1;
-  const ratio = to/from;
+  const from = parseFloat(document.getElementById('sc-from').value) || 1;
+  const to   = parseFloat(document.getElementById('sc-to').value) || 1;
+  const ratio = to / from;
   document.querySelectorAll('.cv-ing-row').forEach(function(row) {
     const qty = parseFloat(row.querySelector('.cv-ing-qty').value);
     const res = row.querySelector('.cv-ing-result');
@@ -296,23 +604,38 @@ function formatScaled(n) {
   const fractions = [[0.125,'⅛'],[0.25,'¼'],[0.333,'⅓'],[0.5,'½'],[0.667,'⅔'],[0.75,'¾']];
   const whole = Math.floor(n);
   const frac = n - whole;
-  for (const [val,sym] of fractions) {
-    if (Math.abs(frac-val) < 0.04) return (whole>0 ? whole+' ':'')+sym;
+  for (const pair of fractions) {
+    if (Math.abs(frac - pair[0]) < 0.04) return (whole > 0 ? whole + ' ' : '') + pair[1];
   }
   if (n < 0.1) return n.toFixed(2);
-  if (n < 10)  return n.toFixed(1).replace(/\.0$/,'');
+  if (n < 10)  return n.toFixed(1).replace(/\.0$/, '');
   return Math.round(n).toString();
 }
 
-function round(n) {
-  if (Math.abs(n) < 0.001) return 0;
-  if (Math.abs(n) < 1)    return parseFloat(n.toFixed(3));
-  if (Math.abs(n) < 100)  return parseFloat(n.toFixed(2));
-  return parseFloat(n.toFixed(1));
-}
-
-// Pre-populate scaler with a few example rows
+// ── Init ─────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
+  converters.vol = makeBidirectional(
+    VOL_UNITS,
+    document.getElementById('vol-a'), document.getElementById('vol-a-unit'),
+    document.getElementById('vol-b'), document.getElementById('vol-b-unit')
+  );
+  converters.wt = makeBidirectional(
+    WT_UNITS,
+    document.getElementById('wt-a'), document.getElementById('wt-a-unit'),
+    document.getElementById('wt-b'), document.getElementById('wt-b-unit')
+  );
+  converters.len = makeBidirectional(
+    LEN_UNITS,
+    document.getElementById('len-a'), document.getElementById('len-a-unit'),
+    document.getElementById('len-b'), document.getElementById('len-b-unit')
+  );
+
+  buildRegionBar();
+  let saved = 'au';
+  try { saved = localStorage.getItem('tcj_conv_region') || 'au'; } catch (_) {}
+  if (!REGIONS[saved]) saved = 'au';
+  applyRegion(saved);
+
   addScalerRow('Plain Flour', 2);
   addScalerRow('Eggs', 3);
   addScalerRow('Butter', 125);
