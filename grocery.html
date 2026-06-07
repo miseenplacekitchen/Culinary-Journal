@@ -196,6 +196,7 @@
 </div>
 
 <script src="grocery-utils.js"></script>
+<script src="pantry-utils.js"></script>
 <script src="nav-init.js"></script>
 <script>
 
@@ -565,13 +566,28 @@ function removeManualItem(itemId){
 function archiveChecked(){
   var checked = getChecked();
   if (!checked.length) { alert('No checked items to archive.'); return; }
-  if (!confirm('Remove ' + checked.length + ' checked item(s) from your list?')) return;
+  var stockPantry = confirm('Remove ' + checked.length + ' checked item(s) from your list?\n\nOK = also add them to your pantry (bump qty if already there).\nCancel = keep on list.');
+  if (!stockPantry) return;
   var combinedNames = {};
   checked.forEach(function(k){
     if (k.indexOf('combined:') === 0) combinedNames[k.slice(9).toLowerCase().trim()] = true;
   });
   var list = getList();
+  var toStock = [];
+  function capture(ing) {
+    if (!ing || !ing.name) return;
+    toStock.push({
+      name: ing.name,
+      unit: ing.unit || '',
+      category: ing.category || '',
+      ingredient_id: ing.ingredient_id || null
+    });
+  }
   list.recipes.forEach(function(recipe){
+    (recipe.ingredients || []).forEach(function(ing){
+      if (checked.includes(GroceryUtils.itemCheckKey(ing, recipe.id))) capture(ing);
+      else if (combinedNames[(ing.name || '').toLowerCase().trim()]) capture(ing);
+    });
     recipe.ingredients = (recipe.ingredients || []).filter(function(ing){
       if (checked.includes(GroceryUtils.itemCheckKey(ing, recipe.id))) return false;
       if (combinedNames[(ing.name || '').toLowerCase().trim()]) return false;
@@ -579,14 +595,21 @@ function archiveChecked(){
     });
   });
   list.recipes = list.recipes.filter(function(r){ return (r.ingredients || []).length > 0; });
+  list.items.forEach(function(ing){
+    if (checked.includes(GroceryUtils.itemCheckKey(ing))) capture(ing);
+    else if (combinedNames[(ing.name || '').toLowerCase().trim()]) capture(ing);
+  });
   list.items = list.items.filter(function(ing){
     if (checked.includes(GroceryUtils.itemCheckKey(ing))) return false;
     if (combinedNames[(ing.name || '').toLowerCase().trim()]) return false;
     return true;
   });
+  var stocked = 0;
+  if (typeof PantryUtils !== 'undefined') stocked = PantryUtils.stockFromGroceryArchive(toStock);
   setChecked([]);
   saveList(list);
   render();
+  if (stocked) alert('Archived. ' + stocked + ' new pantry item' + (stocked === 1 ? '' : 's') + ' added (existing items had qty bumped).');
 }
 
 function currentTab(){

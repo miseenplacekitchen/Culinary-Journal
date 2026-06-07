@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phase 27 — backlog closure)
+Last updated: 9 June 2026 (Phase 28 — backlog reopened, continue clearing)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -13,8 +13,8 @@ DEFERRED = explicitly postponed (user decision or blocked on D/G decisions)
 OPEN     = not started or only stubbed
 BLOCKED  = needs Betty decision before any build
 
-Master_Incomplete_Items_List.txt = CLOSED archive (Phase 27).
-New items → Betty_New_Issues_List.txt · Future work → Future_Roadmap_Carryforward.txt
+Master_Incomplete_Items_List.txt = ACTIVE master backlog (sections A–E).
+Work through section D until cleared; AI only in section E.
 
 ══════════════════════════════════════════════════════════════════════
 SQL SCRIPTS — RUN ORDER
@@ -61,13 +61,17 @@ Phase | Label                         | Status
 24    | Refund copy + billing emails  | DONE ✅ (code + SQL)
 25    | Library starter profiles      | DONE ✅ (code + SQL)
 26    | Library depth + site pages    | DONE ✅ (code + SQL)
-27    | Backlog closure + polish      | DONE ✅ (no SQL)
+27    | Event grocery + chef filters  | DONE ✅ (no SQL) — premature list closure reverted
+28    | Reopen backlog + MP-06 + pantry | IN PROGRESS (no SQL)
 
-Phase 27 shipped:
-  • Master_Incomplete_Items_List.txt CLOSED — Betty_New_Issues_List.txt is active
-  • Future_Roadmap_Carryforward.txt + Lane2_Verification_Log.txt
-  • Event planners → grocery (onam, eid, christmas) via GroceryUtils.addManualItems
-  • Chef directory type filters (CJ Original / profile / external link)
+Phase 28 shipped so far:
+  • Master list REOPENED — Betty_New / Future_Roadmap files removed
+  • Grocery archive → PantryUtils.stockFromGroceryArchive (pantry-utils.js)
+  • Meal planner MP-06: drag meal cards between day/slot
+
+Phase 27 (kept):
+  • Event planners → grocery · chef directory type filters
+  • Lane2_Verification_Log.txt
 
 Phase 26 verified (Betty SQL output):
   • 12 library profiles published: cumin, turmeric, black-pepper; cast-iron-skillet,

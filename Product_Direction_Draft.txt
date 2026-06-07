@@ -1,6 +1,6 @@
 THE CULINARY JOURNAL — PRODUCT DIRECTION (Betty, June 2026)
-Status: ACTIVE — product north star (use with Betty_New_Issues_List.txt + this ledger)
-Last updated: 9 June 2026 (Phase 27 — master backlog CLOSED)
+Status: ACTIVE — product north star (use with Master_Incomplete_Items_List.txt + this ledger)
+Last updated: 9 June 2026 (Phase 28 — master backlog reopened, work continues)
 
 ══════════════════════════════════════════════════════════════════════
 NORTH STAR
@@ -58,16 +58,15 @@ LANES — STATUS
 ══════════════════════════════════════════════════════════════════════
 Lane 1 — Control Centre (Phase 21)     ✅ COMPLETE
 Lane 3 — Household + library spine   ✅ COMPLETE (Phases 22–24)
-Lane 2 — Core journeys                 ✅ CODE-VERIFIED (Lane2_Verification_Log.txt)
-Lane 4 — Library content depth         ✅ STARTERS DONE (20 profiles) — ongoing writing
+Lane 2 — Core journeys                 🔄 VERIFY + fix (Lane2_Verification_Log.txt)
+Lane 4 — Library content depth         🔄 ONGOING (20 starters done; more to write)
 Lane 5 — PayPal checkout               ⏸ DEFERRED (Betty decision)
 
 ══════════════════════════════════════════════════════════════════════
-LANE 2 — CORE JOURNEYS (code-verified Phase 27)
+LANE 2 — CORE JOURNEY VERIFICATION (in progress)
 ══════════════════════════════════════════════════════════════════════
-Full audit: Lane2_Verification_Log.txt
+Code audit: Lane2_Verification_Log.txt · Failures → Master list section B/D
 
-Optional Betty spot-checks (failures → Betty_New_Issues_List.txt [BUG]):
   [ ] Fresh submit → approve → public on live
   [ ] Grocery/pantry sign-out persistence
   [ ] Two-account household sync
@@ -95,12 +94,12 @@ Starter profiles:
   Preservation (26): quick pickling, freezing leftovers, water bath canning
 
 ══════════════════════════════════════════════════════════════════════
-TRACKING (summary)
+WHAT'S LEFT (summary)
 ══════════════════════════════════════════════════════════════════════
-NEW LIST Betty_New_Issues_List.txt — add concerns as you find them
-FUTURE   Future_Roadmap_Carryforward.txt — multi-phase ideas
-ARCHIVE  Master_Incomplete_Items_List.txt — CLOSED Phase 27
-DECIDE   Monetisation, PayPal, hero 4.1 — in Future_Roadmap when ready
-DEFERRED AI, Chrome, Android — Betty must ask
+ACTIVE   Master_Incomplete_Items_List.txt sections B–D (clear all except AI)
+VERIFY   Lane 2 live spot-checks
+ONGOING  Library content · meal planner · print · admin depth
+DECIDE   Monetisation, PayPal, D1–D4, G1–G2
+DEFERRED AI only (section E)
 
 Contact: miseenplacekitchen.official@gmail.com

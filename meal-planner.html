@@ -40,6 +40,9 @@
     .mp-row-label { display:flex; align-items:center; justify-content:center; padding:8px 6px; background:var(--text-ghost); border-right:1px solid var(--border); border-bottom:1px solid rgba(from var(--border) r g b / 0.4); font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-mid); writing-mode:horizontal-tb; text-align:center; min-height:90px; }
     .mp-row-label:last-child { border-bottom:none; }
     .mp-slot { border-right:1px solid rgba(from var(--border) r g b / 0.4); border-bottom:1px solid rgba(from var(--border) r g b / 0.4); min-height:90px; padding:6px; position:relative; }
+    .mp-slot.drag-over { background:rgb(from var(--accent) r g b / 0.08); outline:2px dashed var(--accent); outline-offset:-2px; }
+    .mp-recipe-card[draggable="true"] { cursor:grab; }
+    .mp-recipe-card[draggable="true"]:active { cursor:grabbing; }
     .mp-slot:last-child { border-right:none; }
 
     /* When row is last */
@@ -430,6 +433,37 @@ function clearSlot(day, meal) {
   savePlan(plan);
 }
 
+var _mpDragSource = null;
+
+function moveSlot(fromDay, fromMeal, toDay, toMeal) {
+  var recipe = getSlot(fromDay, fromMeal);
+  if (!recipe) return;
+  if (fromDay === toDay && fromMeal === toMeal) return;
+  var target = getSlot(toDay, toMeal);
+  if (target && !confirm('Replace “' + (target.name || 'meal') + '” with “' + (recipe.name || 'meal') + '”?')) return;
+  clearSlot(fromDay, fromMeal);
+  setSlot(toDay, toMeal, recipe);
+  renderCalendar();
+}
+
+function bindSlotDrop(slot, day, meal) {
+  slot.dataset.mpDay = day;
+  slot.dataset.mpMeal = meal;
+  slot.addEventListener('dragover', function (e) {
+    if (!_mpDragSource) return;
+    e.preventDefault();
+    slot.classList.add('drag-over');
+  });
+  slot.addEventListener('dragleave', function () { slot.classList.remove('drag-over'); });
+  slot.addEventListener('drop', function (e) {
+    e.preventDefault();
+    slot.classList.remove('drag-over');
+    if (!_mpDragSource) return;
+    moveSlot(_mpDragSource.day, _mpDragSource.meal, day, meal);
+    _mpDragSource = null;
+  });
+}
+
 function prevWeek() { currentWeekOffset--; renderCalendar(); }
 function nextWeek() { currentWeekOffset++; renderCalendar(); }
 function goThisWeek() { currentWeekOffset = 0; renderCalendar(); }
@@ -522,6 +556,7 @@ function renderCalendar() {
       const recipe = getSlot(day, meal);
       const slot = document.createElement('div');
       slot.className = 'mp-slot';
+      bindSlotDrop(slot, day, meal);
 
       if (recipe) {
         var filterProfile = getMemberFilterProfile();
@@ -570,6 +605,16 @@ function renderCalendar() {
             e.stopPropagation();
             setMealStatus(day, meal, btn.dataset.st, e);
           });
+        });
+        card.draggable = true;
+        card.addEventListener('dragstart', function (e) {
+          _mpDragSource = { day: day, meal: meal };
+          e.dataTransfer.setData('text/plain', day + '|' + meal);
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        card.addEventListener('dragend', function () {
+          _mpDragSource = null;
+          document.querySelectorAll('.mp-slot.drag-over').forEach(function (el) { el.classList.remove('drag-over'); });
         });
         card.addEventListener('click', function(e) {
           if (e.target.closest('.mp-status-btn') || e.target.closest('.mp-recipe-remove')) return;

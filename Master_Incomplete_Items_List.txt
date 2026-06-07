@@ -1,23 +1,21 @@
 The Culinary Journal — Master Incomplete Items List
 
-══════════════════════════════════════════════════════════════════════
-STATUS: CLOSED — 9 June 2026 (Phase 27 backlog closure)
-══════════════════════════════════════════════════════════════════════
-This document is ARCHIVED. Do not add new items here.
+For the developer · Compiled 6 June 2026 · Active reconciliation: 9 June 2026
+Sources: Full Roadmap, List of Issues (5 June), Roadmap Gap Analysis, code audit.
 
-  NEW concerns  → Betty_New_Issues_List.txt
-  Future phases → Future_Roadmap_Carryforward.txt
-  Lane 2 audit  → Lane2_Verification_Log.txt
-  SQL / phases  → Project_Status_Ledger.txt
-  North star    → Product_Direction_Draft.txt
-
-Compiled 6 June 2026 · Final close 9 June 2026 (Phases 1–27)
+TRACKING MODEL (Betty, 9 June 2026)
+  • This file = master backlog — work through until cleared (except AI in section E).
+  • Project_Status_Ledger.txt = phase completion + SQL run order.
+  • Product_Direction_Draft.txt = north star + lane priorities.
+  • Lane2_Verification_Log.txt = code audit for core journeys (spot-check failures go here as OPEN).
+  Close an item only when shipped + Betty confirms live (or code-only where no SQL).
 
 ══════════════════════════════════════════════════════════════════════
-FINAL SNAPSHOT AT CLOSE (Phase 27)
+RECONCILIATION — QUICK TRUTH (9 June 2026, reopened after Phase 27 mistake)
+Use sections A–E below. Legacy audit body still has stale [MISSING] labels — trust A–E first.
 ══════════════════════════════════════════════════════════════════════
 
-A · DONE — shipped (Phases 1–27 + SQL through 26). Code-audit verified.
+A · DONE — shipped (Phases 1–26 SQL + Phase 27/28 code). Strike after live verify.
   • Admin dashboard + recipe approve/reject RPCs (was “Phase 1.1 gate”)
   • Recipe pipeline CJ-006 (submit → pending → approve → public) — code + SQL
   • Scheduled dead-link checker (cron + edge function)
@@ -44,31 +42,89 @@ A · DONE — shipped (Phases 1–27 + SQL through 26). Code-audit verified.
   • Promo codes DB · page-guard tiers · paid-members-only + subscription-terms
   • Source link admin · admin edit origin locality · dead-link admin controls
   • fix-phase21 through fix-phase26 SQL (Betty confirmed)
-  • Phase 27: backlog closed · Lane2_Verification_Log · event→grocery buttons
+  • Phase 27: event→grocery buttons · chef directory type filters
+  • Phase 28: grocery archive → auto-stock pantry · MP-06 drag reschedule meals
   • GL-07 aisle layout · GL-08 multi-store · GL-09 copy/print export (grocery.html)
   • Self-service deactivation · onboarding allergy/health · MP-05 Today panel
-  • Chef directory filters (CJ Original / profile / external link)
+  • Baby food stage on family profiles (UI + SQL in fix-phase4)
 
-B · BETTY SPOT-CHECK ONLY (optional — add failures to Betty_New_Issues_List.txt)
-  • Fresh recipe submit → approve → public on live site
-  • Sign out/in grocery + pantry persistence
-  • Two-account household sync on live
-  • Email delivery (Resend + cron) · OG/PWA on live URL · Supabase backup
+B · VERIFY — code exists; Betty live test then move to A
+  • Lane 2 full journeys (see Lane2_Verification_Log.txt)
+  • Fresh recipe submit → approve → public (not only test UUID)
+  • Grocery/pantry sign-out persistence · two-account household sync
+  • CJ-006 attribution · Tried It → diary · dietary card on recipe page
+  • Recipe page 4.2–4.9 · print parity · personal notes approval loop
+  • Email delivery (Resend + cron) · OG/PWA on live URL
+  • Taxonomy division CRUD · Family Lists admin tab
+  • Contributor follow · Chef of Month on homepage
+  • Supabase backup (5-minute ops check)
 
-C · MOVED TO Future_Roadmap_Carryforward.txt — decisions (blocks build)
+C · DECIDE — Betty decision before build
   • Monetisation: mostly free vs themes-only paid vs full tiers
   • PayPal + card checkout (Stripe skipped)
   • D1 post-login landing for admins
   • D2 baby content: curated-only vs user-submitted
   • D3 library submission workflow depth
   • D4 print theme tiers (free vs premium)
-  • G1 recipe hierarchy strict enforcement (Sub Category + Division admin CRUD)
+  • G1 recipe hierarchy strict enforcement
   • G2 family section groups in meal planner
-  • G3 quantity model (presence vs strict numeric) — light default in product doc
+  • G3 quantity model (presence vs strict numeric)
 
-D · MOVED TO Future_Roadmap_Carryforward.txt — product depth (not blocking new list)
+D · OPEN — still to build or deepen (work through these)
+  Library
+  • More profiles beyond 20 starters · member submission approval workflow
 
-E · DEFERRED — do not build until Betty asks (unchanged)
+  Recipe
+  • Hero 4.1 polish on live (CSS exists — verify curved ring + image)
+  • Recipe pipeline hardening if live spot-check fails
+
+  Meal planner (MP roadmap — partial)
+  • MP-01 hierarchy admin depth · MP-02 family groups · MP-03 planned-meal model
+  • MP-04 shared calendar · MP-07–09 planning popup + per-group views
+  • MP-10–14 cooked loop depth, skip/leftovers, grocery auto-gen from planner, allergy at assign
+  • MP-12 pantry subtraction when planning grocery
+
+  Grocery / pantry
+  • Full governed-ingredient autocomplete on pantry add (PF-01 partial)
+  • Regional ingredient intelligence layer
+  • Shared-edit conflict handling across sessions
+
+  Print Studio
+  • Smarter card auto-split · card type polish (Method/Tips/Allergy/Baby)
+  • Theme tiers + UM theme management (D4) · digital swipe cooking cards
+  • Recipe book / gift card / menu generators · Print & Post fulfilment
+
+  Social / chefs
+  • Chef filters by specialty · most-saved ranking · social typing depth
+  • Wedding / large-event contributor showcases
+
+  Allergy / health
+  • Site-wide enforcement on Browse + planner + table planner
+  • Safe substitutes wired to engine · table proximity warnings
+
+  Table planner & events
+  • Smart placement from rules (not static DISH_RULES)
+  • Multi-table / wedding venue · buffet option
+  • Event planner depth (guest scaling, table sync) beyond checklists
+
+  Cultural / SEO
+  • Food map regional data · festival entries expansion
+  • JSON-LD on more page types
+
+  Admin
+  • Sub-category & Division CRUD polish
+  • Dashboard notifications inbox (aggregated admin home)
+  • Collections curation · duplicate detection · ROTW auto-expiry
+  • Full analytics dashboards (user + owner)
+  • 47-theme visual sweep
+
+  Legal
+  • Lawyer review of all policy drafts (pages exist)
+
+  Monetisation (when C decided)
+  • Free-plan limits · automated checkout · theme marketplace
+
+E · DEFERRED — only AI (do not build until Betty asks)
   • Phase 2 AI (photo/handwriting import, table photo, voice, auto-tagging, translation)
   • Chrome extension · Android app · barcode scanning · Microsoft OAuth
   • Photo upload → table detection
