@@ -1,0 +1,68 @@
+The Culinary Journal — Future Roadmap Carryforward
+Extracted when Master Incomplete List closed (9 June 2026, Phase 27)
+Not blocking Betty's new issues list — pull items in when ready.
+
+══════════════════════════════════════════════════════════════════════
+DECISIONS NEEDED BEFORE BUILD
+══════════════════════════════════════════════════════════════════════
+  • Monetisation: mostly free vs themes-only paid vs full tiers
+  • PayPal + card checkout (Stripe skipped)
+  • D1 post-login landing for admins
+  • D2 baby content: curated-only vs user-submitted
+  • D3 library member submission workflow depth
+  • D4 print theme tiers (free vs premium)
+  • G1 strict recipe hierarchy enforcement
+  • G2 family section groups in meal planner
+
+══════════════════════════════════════════════════════════════════════
+PRODUCT DEPTH — multi-day / phased
+══════════════════════════════════════════════════════════════════════
+Recipe
+  • Hero circular image + curved text (Issue 4.1) — deferred
+  • Recipe pipeline hardening + automated E2E tests
+
+Meal planner (MP roadmap)
+  • MP-01–03 hierarchy, family groups, planned-meal model
+  • MP-04 shared calendar · MP-06 drag reschedule
+  • MP-07–14 planning popup, cooked loop, grocery auto-gen, allergy at assign
+
+Grocery / pantry
+  • Archive grocery trip → auto-stock pantry
+  • Full governed-ingredient autocomplete on pantry add
+  • Regional ingredient intelligence layer
+  • Real-time shared-edit conflict handling
+
+Print Studio
+  • Smarter card auto-split · swipe cooking cards
+  • Recipe book / gift card / menu generators
+  • Print & Post fulfilment + payments (when Betty decides)
+
+Social / cultural
+  • Chef directory advanced filters + social graph
+  • Food map regional data richness · festival expansion
+  • Event planner depth (guest-aware scaling, table sync)
+  • JSON-LD on more page types
+
+Allergy / table / events
+  • Site-wide enforcement on Browse + planner + table
+  • Safe substitutes · table proximity warnings
+  • Smart placement rules · multi-table wedding · buffet mode
+
+Admin
+  • Aggregated notifications inbox on admin home
+  • Collections curation · duplicate detection · ROTW auto-expiry
+  • Full owner analytics dashboards
+  • 47-theme visual sweep
+
+Legal
+  • Lawyer review of all policy drafts
+
+Library
+  • Ongoing profile writing beyond 20 starters
+  • Member submission approval workflow
+
+══════════════════════════════════════════════════════════════════════
+EXPLICITLY DEFERRED (Betty must ask)
+══════════════════════════════════════════════════════════════════════
+  • Phase 2 AI · Chrome extension · Android app
+  • Barcode scanning · Microsoft OAuth · photo table detection

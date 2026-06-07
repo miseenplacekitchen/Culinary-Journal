@@ -26,8 +26,12 @@
   <div class="ef-section"><div class="ef-sec-title">Mains</div><div id="ef-mains"></div><button type="button" onclick="addRow('mains')" style="font-family:DM Sans,sans-serif;font-size:12px;background:none;border:1px dashed var(--border);padding:6px 12px;border-radius:8px;color:var(--accent);cursor:pointer">+ Add dish</button></div>
   <div class="ef-section"><div class="ef-sec-title">Sides &amp; breads</div><div id="ef-sides"></div><button type="button" onclick="addRow('sides')" style="font-family:DM Sans,sans-serif;font-size:12px;background:none;border:1px dashed var(--border);padding:6px 12px;border-radius:8px;color:var(--accent);cursor:pointer">+ Add dish</button></div>
   <div class="ef-section"><div class="ef-sec-title">Sweets</div><div id="ef-sweets"></div><button type="button" onclick="addRow('sweets')" style="font-family:DM Sans,sans-serif;font-size:12px;background:none;border:1px dashed var(--border);padding:6px 12px;border-radius:8px;color:var(--accent);cursor:pointer">+ Add dish</button></div>
-  <p style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)"><a href="festival-calendar.html" style="color:var(--accent)">← Festival calendar</a> · <a href="table-planner.html" style="color:var(--accent)">Table planner</a></p>
+  <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+    <button type="button" onclick="pushEidToGrocery()" style="padding:10px 18px;border-radius:9px;border:none;font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;background:var(--accent);color:#fff">🛒 Add dishes to grocery</button>
+  </div>
+  <p style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-top:16px"><a href="festival-calendar.html" style="color:var(--accent)">← Festival calendar</a> · <a href="table-planner.html" style="color:var(--accent)">Table planner</a></p>
 </div>
+<script src="grocery-utils.js"></script>
 <script src="nav-init.js"></script>
 <script>
 var KEY='tcj_eid_feast';
@@ -44,6 +48,14 @@ function render(){
 }
 function onEdit(inp){ var d=load(); d[inp.dataset.sec][inp.dataset.i]=inp.value; save(d); }
 function addRow(sec){ var d=load(); d[sec].push(''); save(d); render(); }
+function pushEidToGrocery(){
+  var d=load(), names=[];
+  ['mains','sides','sweets'].forEach(function(sec){ (d[sec]||[]).forEach(function(v){ if(String(v).trim()) names.push(String(v).trim()); }); });
+  if (!names.length){ alert('Add at least one dish name.'); return; }
+  var n = GroceryUtils.addManualItems(names, { source:'manual', source_label:'Eid Feast', source_ref:'eid-feast' });
+  alert(n ? ('Added '+n+' item'+(n===1?'':'s')+' to grocery.') : 'Those items are already on your grocery list.');
+  location.href = 'grocery.html';
+}
 document.addEventListener('DOMContentLoaded', render);
 </script>
 </body>

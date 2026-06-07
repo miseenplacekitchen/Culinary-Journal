@@ -32,8 +32,10 @@
   <div class="cr-field"><label class="cr-label">Rest time (minutes)</label><input type="number" class="cr-input" id="cr-rest" value="30" min="15"></div>
   <button type="button" class="cr-btn" onclick="calcTimeline()">Calculate timeline</button>
   <div class="cr-timeline" id="cr-out" style="display:none"></div>
+  <button type="button" class="cr-btn" style="margin-top:16px;background:none;border:1px solid var(--border);color:var(--text-mid)" onclick="pushRoastSidesToGrocery()">🛒 Add roast sides to grocery</button>
   <p style="margin-top:20px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)"><a href="festival-calendar.html" style="color:var(--accent)">← Festival calendar</a></p>
 </div>
+<script src="grocery-utils.js"></script>
 <script src="nav-init.js"></script>
 <script>
 function calcTimeline(){
@@ -56,6 +58,12 @@ function calcTimeline(){
   document.getElementById('cr-out').innerHTML=steps.map(function(s){
     return '<div class="cr-step"><span class="cr-time">'+fmt(s.t)+'</span>'+s.label+'</div>';
   }).join('');
+}
+function pushRoastSidesToGrocery(){
+  var sides=['Roast potatoes','Parsnips','Brussels sprouts','Gravy ingredients','Yorkshire puddings','Cranberry sauce'];
+  var n = GroceryUtils.addManualItems(sides, { source:'manual', source_label:'Christmas Roast', source_ref:'christmas-roast' });
+  alert(n ? ('Added '+n+' side item'+(n===1?'':'s')+' to grocery.') : 'Those items are already on your grocery list.');
+  location.href = 'grocery.html';
 }
 </script>
 </body>

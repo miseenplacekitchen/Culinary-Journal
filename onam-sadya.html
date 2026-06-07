@@ -29,11 +29,13 @@
   <p class="op-sub">Traditional banana-leaf order (top to bottom). Tick dishes as you plan; export to meal planner when ready.</p>
   <div id="op-list"></div>
   <div class="op-actions">
-    <button type="button" class="op-btn" onclick="resetSadya()">Reset ticks</button>
+    <button type="button" class="op-btn" onclick="pushSadyaToGrocery()">🛒 Add ticked dishes to grocery</button>
+    <button type="button" class="op-btn op-btn-ghost" onclick="resetSadya()">Reset ticks</button>
     <button type="button" class="op-btn op-btn-ghost" onclick="location.href='festival-calendar.html'">← Festival calendar</button>
     <button type="button" class="op-btn op-btn-ghost" onclick="location.href='meal-planner.html'">Open meal planner</button>
   </div>
 </div>
+<script src="grocery-utils.js"></script>
 <script src="nav-init.js"></script>
 <script>
 var SADYA = ['Upperi / banana chips','Inji curry','Mango pickle','Lime pickle','Pappadam','Banana (ripe)','Salt','Parippu + ghee','Sambar','Rasam','Avial','Thoran','Olan','Kalan','Erissery','Pulisery','Kootu curry','Payasam (first)','Payasam (second)','Rice'];
@@ -53,6 +55,14 @@ function render(){
   });
 }
 function resetSadya(){ localStorage.removeItem(KEY); render(); }
+function pushSadyaToGrocery(){
+  var ticks = JSON.parse(localStorage.getItem(KEY)||'{}');
+  var names = SADYA.filter(function(_,i){ return ticks[i]; });
+  if (!names.length){ alert('Tick at least one dish first.'); return; }
+  var n = GroceryUtils.addManualItems(names, { source:'manual', source_label:'Onam Sadya', source_ref:'onam-sadya' });
+  alert(n ? ('Added '+n+' item'+(n===1?'':'s')+' to grocery.') : 'Those items are already on your grocery list.');
+  location.href = 'grocery.html';
+}
 document.addEventListener('DOMContentLoaded', render);
 </script>
 </body>

@@ -88,6 +88,12 @@
         <select class="ch-search" id="ch-country" onchange="filterChefs()" style="width:auto">
           <option value="">All countries</option>
         </select>
+        <select class="ch-search" id="ch-type" onchange="filterChefs()" style="width:auto">
+          <option value="">All chefs</option>
+          <option value="cj">CJ Original only</option>
+          <option value="profile">Has member profile</option>
+          <option value="url">Has external link</option>
+        </select>
       </div>
     </div>
     <div class="ch-count-bar" id="ch-count-bar"></div>
@@ -170,9 +176,13 @@ function filterChefs() {
   var q = (document.getElementById('ch-search') || {}).value || '';
   var sort = (document.getElementById('ch-sort') || {}).value || 'recipes';
   var country = (document.getElementById('ch-country') || {}).value || '';
+  var type = (document.getElementById('ch-type') || {}).value || '';
   var lower = q.toLowerCase();
   var filtered = allChefs.filter(function(c) {
     if (country && !c.countries.has(country)) return false;
+    if (type === 'cj' && !c.is_cj_original) return false;
+    if (type === 'profile' && !(c.handle || '').replace(/^@/,'').trim()) return false;
+    if (type === 'url' && !(c.url || '').trim()) return false;
     return !q || c.name.toLowerCase().includes(lower) || (c.handle||'').toLowerCase().includes(lower);
   });
   if (sort === 'name') filtered.sort(function(a,b) { return a.name.localeCompare(b.name); });

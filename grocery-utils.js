@@ -121,6 +121,28 @@
     scheduleGroceryCloudSync();
   }
 
+  /** Add manual lines (event planners, meal planner) — skips duplicate names */
+  function addManualItems(names, meta) {
+    meta = meta || {};
+    var list = loadGrocery();
+    var added = 0;
+    (names || []).forEach(function (name) {
+      name = String(name || '').trim();
+      if (!name) return;
+      var key = name.toLowerCase();
+      var dup = list.items.some(function (i) { return (i.name || '').toLowerCase().trim() === key; });
+      if (dup) return;
+      list.items.push(enrichIngredient({ name: name, qty: '', unit: '' }, {
+        source: meta.source || 'manual',
+        source_ref: meta.source_ref || '',
+        source_label: meta.source_label || 'Manual add'
+      }));
+      added++;
+    });
+    if (added) saveGrocery(list);
+    return added;
+  }
+
   var UNICODE_FRACTIONS = {'½':0.5,'⅓':1/3,'⅔':2/3,'¼':0.25,'¾':0.75,'⅛':0.125,'⅜':0.375,'⅝':0.625,'⅞':0.875};
 
   function parseFraction(v) {
@@ -185,6 +207,7 @@
     SOURCE_LABELS: SOURCE_LABELS,
     loadGrocery: loadGrocery,
     saveGrocery: saveGrocery,
+    addManualItems: addManualItems,
     getGroceryChecked: getGroceryChecked,
     scheduleGroceryCloudSync: scheduleGroceryCloudSync,
     parseFraction: parseFraction,

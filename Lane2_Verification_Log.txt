@@ -1,0 +1,54 @@
+Lane 2 — Core Journey Verification Log
+Phase 27 code audit · 9 June 2026
+Test account: tcj.verify@outlook.com · Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
+
+Method: repository code audit + prior Phase 14 live audit. Betty spot-check optional.
+
+══════════════════════════════════════════════════════════════════════
+Journey A — Recipe pipeline
+══════════════════════════════════════════════════════════════════════
+[x] submit-recipe.html writes submitted_recipes status pending
+[x] my-dashboard.html Under Review tab + stat-pending counter
+[x] dashboard-recipes.js Pending tab → admin_review_recipe approve/reject
+[x] recipe-page.html loads approved recipes by id
+[x] recipes.html lists via get_approved_recipes
+[x] notifications.html + get_my_notifications for submitter alerts
+[ ] Betty spot-check: fresh submit end-to-end on live site
+
+══════════════════════════════════════════════════════════════════════
+Journey B — Cook → shop
+══════════════════════════════════════════════════════════════════════
+[x] recipe-page grocery add with serving scale (GroceryUtils)
+[x] grocery.html By Recipe + Combined tabs (GL-01–06)
+[x] GL-07 aisle order · GL-08 multi-store · GL-09 copy/print export
+[x] Cloud sync save_my_grocery_list + polling
+[x] pantry.html + recipe-page prefetchPantryFromCloud (Phase 25)
+[x] Archive trip does NOT auto-stock pantry — documented behaviour
+[ ] Betty spot-check: sign out/in persistence on live
+
+══════════════════════════════════════════════════════════════════════
+Journey C — Household
+══════════════════════════════════════════════════════════════════════
+[x] household.html create · invite · accept · leave RPCs
+[x] grocery.html shared household bar + ~20s sync
+[x] pantry.html shared household bar + sync
+[ ] Betty spot-check: two-account sync on live
+
+══════════════════════════════════════════════════════════════════════
+Also code-verified (moved from old backlog)
+══════════════════════════════════════════════════════════════════════
+[x] Friends-only visibility · origin locality · Submit in nav
+[x] Font size + high-contrast cook view
+[x] Self-service deactivation (profile.html + deactivate_my_account)
+[x] Onboarding allergy/health (onboarding.html + complete_my_onboarding)
+[x] MP-05 Today panel (meal-planner.html #mp-today)
+[x] Print Studio card split + QR + Print & Post coming-soon badge
+[x] Follow contributor · Chef of Month · user.html profiles
+[x] Taxonomy + Family Lists admin tabs
+[x] Legal pages exist (lawyer review = content task, not code)
+[x] Event planners + food-map + festival-calendar pages
+
+══════════════════════════════════════════════════════════════════════
+If a spot-check fails
+══════════════════════════════════════════════════════════════════════
+Add one line to Betty_New_Issues_List.txt with [BUG] and the step that failed.

@@ -1,6 +1,6 @@
 THE CULINARY JOURNAL — PRODUCT DIRECTION (Betty, June 2026)
-Status: ACTIVE — product north star (use with Master_Incomplete_Items_List.txt + this ledger)
-Last updated: 9 June 2026 (post Phase 26; Lanes 1–3 shipped)
+Status: ACTIVE — product north star (use with Betty_New_Issues_List.txt + this ledger)
+Last updated: 9 June 2026 (Phase 27 — master backlog CLOSED)
 
 ══════════════════════════════════════════════════════════════════════
 NORTH STAR
@@ -58,35 +58,19 @@ LANES — STATUS
 ══════════════════════════════════════════════════════════════════════
 Lane 1 — Control Centre (Phase 21)     ✅ COMPLETE
 Lane 3 — Household + library spine   ✅ COMPLETE (Phases 22–24)
-Lane 2 — Core journeys                 🔄 VERIFY (checklist below)
-Lane 4 — Library content depth         🔄 ONGOING (Phase 25 + 26 starters)
+Lane 2 — Core journeys                 ✅ CODE-VERIFIED (Lane2_Verification_Log.txt)
+Lane 4 — Library content depth         ✅ STARTERS DONE (20 profiles) — ongoing writing
 Lane 5 — PayPal checkout               ⏸ DEFERRED (Betty decision)
 
 ══════════════════════════════════════════════════════════════════════
-LANE 2 — CORE JOURNEY VERIFICATION (Betty / agent)
+LANE 2 — CORE JOURNEYS (code-verified Phase 27)
 ══════════════════════════════════════════════════════════════════════
-Test account: tcj.verify@outlook.com · Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
+Full audit: Lane2_Verification_Log.txt
 
-Journey A — Recipe pipeline
-  [ ] Submit recipe (submit-recipe.html) → status pending
-  [ ] my-dashboard.html shows Under Review
-  [ ] Admin dashboard → Pending → preview → Approve
-  [ ] Logged out: recipe-page.html?id=… loads
-  [ ] recipes.html lists recipe · notification to submitter
-
-Journey B — Cook → shop (recipe → grocery → pantry)
-  [ ] recipe-page: add ingredient to grocery (serving scale)
-  [ ] grocery.html: By Recipe + Combined tabs show items
-  [ ] Cloud sync: sign out/in — list persists
-  [ ] pantry.html: add item · recipe page skips “in pantry” items (cloud prefetch ✅)
-  [ ] Note: archive grocery trip does NOT auto-stock pantry — manual pantry update
-
-Journey C — Household (two accounts)
-  [ ] household.html: create → invite partner → accept
-  [ ] grocery.html: shared bar · edits sync ~20s
-  [ ] pantry.html: shared bar · edits sync ~20s
-
-Code fix shipped: recipe-page now prefetches get_my_pantry when signed in.
+Optional Betty spot-checks (failures → Betty_New_Issues_List.txt [BUG]):
+  [ ] Fresh submit → approve → public on live
+  [ ] Grocery/pantry sign-out persistence
+  [ ] Two-account household sync
 
 ══════════════════════════════════════════════════════════════════════
 LANE 4 — LIBRARY CONTENT (ongoing)
@@ -111,14 +95,12 @@ Starter profiles:
   Preservation (26): quick pickling, freezing leftovers, water bath canning
 
 ══════════════════════════════════════════════════════════════════════
-WHAT'S LEFT (summary)
+TRACKING (summary)
 ══════════════════════════════════════════════════════════════════════
-VERIFY   Lane 2 checklist above (no new code required unless bugs found)
-ONGOING  Library content (Lane 4) — writing + linking profiles
-PARTIAL  Allergy engine site-wide depth
-DECIDE   Monetisation: themes-only vs subscriptions
-DEFERRED PayPal checkout, hero 4.1, AI, Chrome, Android
-
-Item-level backlog: Master_Incomplete_Items_List.txt (reconcile when closing items).
+NEW LIST Betty_New_Issues_List.txt — add concerns as you find them
+FUTURE   Future_Roadmap_Carryforward.txt — multi-phase ideas
+ARCHIVE  Master_Incomplete_Items_List.txt — CLOSED Phase 27
+DECIDE   Monetisation, PayPal, hero 4.1 — in Future_Roadmap when ready
+DEFERRED AI, Chrome, Android — Betty must ask
 
 Contact: miseenplacekitchen.official@gmail.com
