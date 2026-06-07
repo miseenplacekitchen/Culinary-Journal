@@ -239,6 +239,13 @@
       </div>
     </div>
 
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <span style="font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-mid)">Wedding presets:</span>
+      <button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="applyWeddingVenuePreset('intimate')">Intimate (32)</button>
+      <button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="applyWeddingVenuePreset('medium')">Medium (72)</button>
+      <button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="applyWeddingVenuePreset('grand')">Grand (120+)</button>
+      <a href="recipes.html?tag=Wedding" style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--accent);text-decoration:none;margin-left:4px">Wedding recipes →</a>
+    </div>
     <div class="tp-canvas-toolbar">
       <button class="tp-btn tp-btn-primary tp-btn-sm" onclick="openAddTableModal()">+ Add Table</button>
       <button class="tp-btn tp-btn-ghost tp-btn-sm" onclick="autoArrange()">↻ Auto Arrange</button>
@@ -778,6 +785,67 @@ function renameTable() {
   createTableEl(table);
   selectTable(tableId);
   closeModal('rename-modal');
+}
+
+function applyWeddingVenuePreset(preset) {
+  if (!currentEvent) { alert('Create or select an event first.'); return; }
+  if (!confirm('Replace the current table layout with the ' + preset + ' wedding preset?')) return;
+  var formalBtn = document.querySelector('[data-style="formal"]');
+  if (formalBtn) setDiningStyle('formal', formalBtn);
+  document.querySelectorAll('.tp-table-el').forEach(function(el) { el.remove(); });
+  currentLayout.tables = [];
+  var layouts = {
+    intimate: [
+      { name: 'Head table', shape: 'rect', seats: 8, x: 260, y: 30 },
+      { name: 'Table 1', shape: 'round', seats: 8, x: 60, y: 160 },
+      { name: 'Table 2', shape: 'round', seats: 8, x: 220, y: 200 },
+      { name: 'Table 3', shape: 'round', seats: 8, x: 380, y: 160 },
+      { name: 'Buffet', type: 'buffet', shape: 'rect', seats: 0, size: 'medium', x: 520, y: 80 }
+    ],
+    medium: [
+      { name: 'Head table', shape: 'rect', seats: 10, x: 280, y: 24 },
+      { name: 'Table 1', shape: 'round', seats: 8, x: 40, y: 140 },
+      { name: 'Table 2', shape: 'round', seats: 8, x: 160, y: 200 },
+      { name: 'Table 3', shape: 'round', seats: 8, x: 300, y: 240 },
+      { name: 'Table 4', shape: 'round', seats: 8, x: 440, y: 200 },
+      { name: 'Table 5', shape: 'round', seats: 8, x: 560, y: 140 },
+      { name: 'Table 6', shape: 'round', seats: 8, x: 100, y: 320 },
+      { name: 'Table 7', shape: 'round', seats: 8, x: 260, y: 360 },
+      { name: 'Table 8', shape: 'round', seats: 8, x: 420, y: 320 },
+      { name: 'Buffet', type: 'buffet', shape: 'rect', seats: 0, size: 'large', x: 600, y: 300 }
+    ],
+    grand: [
+      { name: 'Head table', shape: 'rect', seats: 12, x: 300, y: 20 },
+      { name: 'Table 1', shape: 'round', seats: 10, x: 30, y: 120 },
+      { name: 'Table 2', shape: 'round', seats: 10, x: 150, y: 180 },
+      { name: 'Table 3', shape: 'round', seats: 10, x: 270, y: 220 },
+      { name: 'Table 4', shape: 'round', seats: 10, x: 390, y: 180 },
+      { name: 'Table 5', shape: 'round', seats: 10, x: 510, y: 120 },
+      { name: 'Table 6', shape: 'round', seats: 10, x: 630, y: 180 },
+      { name: 'Table 7', shape: 'round', seats: 10, x: 60, y: 320 },
+      { name: 'Table 8', shape: 'round', seats: 10, x: 180, y: 380 },
+      { name: 'Table 9', shape: 'round', seats: 10, x: 300, y: 420 },
+      { name: 'Table 10', shape: 'round', seats: 10, x: 420, y: 380 },
+      { name: 'Table 11', shape: 'round', seats: 10, x: 540, y: 320 },
+      { name: 'Buffet main', type: 'buffet', shape: 'rect', seats: 0, size: 'xlarge', x: 660, y: 340 },
+      { name: 'Dessert', type: 'buffet', shape: 'rect', seats: 0, size: 'small', x: 660, y: 80 }
+    ]
+  };
+  (layouts[preset] || []).forEach(function(spec) {
+    var t = {
+      id: 't' + Date.now() + Math.random().toString(36).slice(2, 5),
+      name: spec.name,
+      shape: spec.shape || 'round',
+      seats: spec.seats != null ? spec.seats : 8,
+      type: spec.type || 'guest',
+      size: spec.size || null,
+      x: spec.x,
+      y: spec.y
+    };
+    currentLayout.tables.push(t);
+    createTableEl(t);
+  });
+  saveLayout();
 }
 
 function autoArrange() {

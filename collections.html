@@ -101,7 +101,8 @@
       <div>
         <div class="cl-detail-name" id="cd-name"></div>
         <div class="cl-detail-desc" id="cd-desc"></div>
-        <div style="display:flex;gap:8px;margin-top:10px">
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button class="cl-btn cl-btn-primary cl-btn-sm" onclick="printCollection()">🖨 Print collection</button>
           <button class="cl-btn cl-btn-ghost cl-btn-sm" onclick="openCollectionModal(currentCollection)">Edit</button>
           <button class="cl-btn cl-btn-sm cl-btn-danger" onclick="deleteCurrentCollection()">Delete Collection</button>
         </div>
@@ -251,6 +252,18 @@ async function removeFromColl(collectionId,recipeId){
   catch(e){alert('Error: '+e.message);}
 }
 
+function printCollection(){
+  if(!currentCollection)return;
+  var cards=document.querySelectorAll('#cd-recipes .cl-recipe-card a[href*="recipe-page"]');
+  var ids=[];
+  cards.forEach(function(a){
+    var m=(a.getAttribute('href')||'').match(/id=([^&]+)/);
+    if(m)ids.push(m[1]);
+  });
+  if(!ids.length){alert('No recipes in this collection to print.');return;}
+  var q='ids='+ids.join(',')+'&collection='+encodeURIComponent(currentCollection.name||'My Collection');
+  location.href='print-studio.html?'+q;
+}
 function backToList(){document.getElementById('cl-detail').style.display='none';document.getElementById('cl-list').style.display='block';currentCollection=null;load();}
 
 async function deleteCollection(id,name){

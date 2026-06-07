@@ -30,6 +30,7 @@
     .fc-planner-links a { font-family:'DM Sans',sans-serif; font-size:12px; padding:8px 14px; border:1px solid var(--border); border-radius:8px; color:var(--accent); text-decoration:none; }
   </style>
   <script src="page-guard.js"></script>
+  <script src="seo-schema.js"></script>
 </head>
 <body class="page-bg cj-body">
 <div data-nav-host></div>
@@ -48,11 +49,14 @@
 <script src="nav-init.js"></script>
 <script>
 var FESTIVALS = [
-  { id:'onam', emoji:'🌺', name:'Onam / Vishu', when:'Aug–Sep (Malayalam calendar)', tags:['onam','vishu','sadya','kerala','banana leaf'] },
-  { id:'eid', emoji:'🌙', name:'Eid', when:'Islamic lunar calendar', tags:['eid','ramadan','iftar','biryani','feast'] },
-  { id:'christmas', emoji:'🎄', name:'Christmas', when:'25 December', tags:['christmas','roast','pudding','advent','holiday'] },
+  { id:'onam', emoji:'🌺', name:'Onam / Vishu', when:'Aug–Sep (Malayalam calendar)', tags:['onam','vishu','sadya','kerala','banana leaf'], planner:'onam-sadya.html' },
+  { id:'eid', emoji:'🌙', name:'Eid', when:'Islamic lunar calendar', tags:['eid','ramadan','iftar','biryani','feast'], planner:'eid-feast.html' },
+  { id:'christmas', emoji:'🎄', name:'Christmas', when:'25 December', tags:['christmas','roast','pudding','advent','holiday'], planner:'christmas-roast.html' },
   { id:'diwali', emoji:'🪔', name:'Diwali', when:'Oct–Nov', tags:['diwali','deepavali','sweet','mithai'] },
-  { id:'easter', emoji:'🐣', name:'Easter', when:'Mar–Apr', tags:['easter','hot cross','lamb'] }
+  { id:'easter', emoji:'🐣', name:'Easter', when:'Mar–Apr', tags:['easter','hot cross','lamb'] },
+  { id:'wedding', emoji:'💒', name:'Wedding & celebrations', when:'Year-round', tags:['wedding','celebration','feast','party'] },
+  { id:'thanksgiving', emoji:'🦃', name:'Thanksgiving', when:'Nov (US)', tags:['thanksgiving','turkey','stuffing','harvest'] },
+  { id:'lunar', emoji:'🧧', name:'Lunar New Year', when:'Jan–Feb', tags:['lunar','new year','dumpling','spring festival'] }
 ];
 var allRecipes = [];
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -74,6 +78,12 @@ async function load(){
   grid.querySelectorAll('.fc-fest').forEach(function(el){
     el.addEventListener('click',function(){ showFest(el.dataset.id); });
   });
+  if (typeof SeoSchema !== 'undefined') {
+    SeoSchema.itemList('Festival Calendar', FESTIVALS.map(function(f) {
+      return { name: f.name, url: 'https://www.theculinaryjournal.site/festival-calendar.html' };
+    }));
+    SeoSchema.webPage('Festival Calendar', 'Occasion and feast-day recipes with event planners.', 'https://www.theculinaryjournal.site/festival-calendar.html');
+  }
   showFest('onam');
 }
 function showFest(id){
@@ -81,7 +91,10 @@ function showFest(id){
   if(!fest) return;
   document.querySelectorAll('.fc-fest').forEach(function(el){ el.classList.toggle('active', el.dataset.id===id); });
   var list = allRecipes.filter(function(r){ return matchFest(r,fest); });
-  document.getElementById('fc-label').textContent = fest.name + ' recipes';
+  var label = fest.name + ' recipes';
+  if (fest.planner) label += ' · <a href="'+fest.planner+'" style="color:var(--accent);font-size:11px;text-decoration:none">Open planner →</a>';
+  if (id === 'wedding') label += ' · <a href="table-planner.html" style="color:var(--accent);font-size:11px;text-decoration:none">Table planner →</a>';
+  document.getElementById('fc-label').innerHTML = label;
   var box = document.getElementById('fc-recipes');
   if(!list.length){ box.innerHTML='<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:20px">No matching recipes yet — browse Feast Days or submit occasion-tagged recipes.</div>'; return; }
   box.innerHTML = list.map(function(r){

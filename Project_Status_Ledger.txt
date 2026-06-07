@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phase 28 — backlog reopened, continue clearing)
+Last updated: 9 June 2026 (Phase 33 — section D code batch)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -67,12 +67,14 @@ Phase | Label                         | Status
 30    | Meal planner depth (MP)         | DONE ✅ (no SQL)
 31    | Print Studio depth              | DONE ✅ (SQL ✅ Betty)
 32    | Library + meal planner + allergy | DONE ✅ (SQL ✅ Betty)
+33    | Section D code batch (grocery/print/events/SEO) | DONE ✅ code — SQL pending Betty
 
 fix-phase29-library-content.sql      | 5 ingredient profiles (ginger…flour) | DONE ✅ Betty — potato→Sebago (248)
 fix-phase29-library-submissions.sql | Member library submit + admin RPCs  | DONE ✅ Betty
 fix-phase31-print-orders.sql        | Print & Post order intent queue      | DONE ✅ Betty
 fix-phase32-batch.sql               | Household meals, slots, allergy, lib approve | DONE ✅ Betty
 fix-phase32-library-profiles.sql    | Desiree + Kipfler potato profiles    | DONE ✅ Betty (249, 250)
+fix-phase33-batch.sql               | Saves ranking, sync conflicts, regional hints, print gating | PENDING — Betty run next
 
 Phase 32:
   • Library: admin Submissions tab — approve publishes profile live

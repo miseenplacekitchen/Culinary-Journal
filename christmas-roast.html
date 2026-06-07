@@ -7,6 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+  <script src="seo-schema.js"></script>
   <style>
     .page-bg{min-height:100vh;background:var(--bg);}
     .cr-wrap{max-width:700px;margin:0 auto;padding:32px 20px 80px;}
@@ -27,17 +28,30 @@
 <div class="cr-wrap">
   <h1 class="cr-title">🎄 Christmas Roast Timing</h1>
   <p class="cr-sub">Work backwards from your serve time. Approximate — always verify internal temperature.</p>
+  <div class="cr-field"><label class="cr-label">Guests</label><input type="number" class="cr-input" id="cr-guests" value="8" min="2" max="50" oninput="saveCrGuests()"></div>
   <div class="cr-field"><label class="cr-label">Serve time</label><input type="time" class="cr-input" id="cr-serve" value="13:00"></div>
   <div class="cr-field"><label class="cr-label">Roast weight (kg)</label><input type="number" class="cr-input" id="cr-kg" value="2" min="0.5" step="0.1"></div>
   <div class="cr-field"><label class="cr-label">Rest time (minutes)</label><input type="number" class="cr-input" id="cr-rest" value="30" min="15"></div>
   <button type="button" class="cr-btn" onclick="calcTimeline()">Calculate timeline</button>
   <div class="cr-timeline" id="cr-out" style="display:none"></div>
   <button type="button" class="cr-btn" style="margin-top:16px;background:none;border:1px solid var(--border);color:var(--text-mid)" onclick="pushRoastSidesToGrocery()">🛒 Add roast sides to grocery</button>
+  <button type="button" class="cr-btn" style="margin-top:10px;background:none;border:1px solid var(--border);color:var(--text-mid)" onclick="pushRoastToMealPlan()">📅 Add sides to meal planner</button>
   <p style="margin-top:20px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)"><a href="festival-calendar.html" style="color:var(--accent)">← Festival calendar</a></p>
 </div>
 <script src="grocery-utils.js"></script>
+<script src="event-planner-utils.js"></script>
 <script src="nav-init.js"></script>
 <script>
+var CR_GKEY='tcj_cr_guests';
+function getCrGuests(){ return parseInt(document.getElementById('cr-guests').value,10)||8; }
+function saveCrGuests(){ localStorage.setItem(CR_GKEY, String(getCrGuests())); }
+function scaledSides(){
+  var base=['Roast potatoes','Parsnips','Brussels sprouts','Gravy ingredients','Yorkshire puddings','Cranberry sauce'];
+  var g=getCrGuests();
+  var kg=parseFloat(document.getElementById('cr-kg').value)||2;
+  var roastNote='Roast '+kg+'kg ('+g+' guests)';
+  return [roastNote].concat(EventPlannerUtils.scaledNames(base, 4, g));
+}
 function calcTimeline(){
   var serve=document.getElementById('cr-serve').value||'13:00';
   var kg=parseFloat(document.getElementById('cr-kg').value)||2;
@@ -60,11 +74,23 @@ function calcTimeline(){
   }).join('');
 }
 function pushRoastSidesToGrocery(){
-  var sides=['Roast potatoes','Parsnips','Brussels sprouts','Gravy ingredients','Yorkshire puddings','Cranberry sauce'];
+  var sides=scaledSides();
   var n = GroceryUtils.addManualItems(sides, { source:'manual', source_label:'Christmas Roast', source_ref:'christmas-roast' });
-  alert(n ? ('Added '+n+' side item'+(n===1?'':'s')+' to grocery.') : 'Those items are already on your grocery list.');
+  alert(n ? ('Added '+n+' item'+(n===1?'':'s')+' to grocery.') : 'Those items are already on your grocery list.');
   location.href = 'grocery.html';
 }
+async function pushRoastToMealPlan(){
+  var names=scaledSides();
+  var n=await EventPlannerUtils.pushDishesToMealPlan(names,{guests:getCrGuests(),baseGuests:4,eventLabel:'Christmas Roast',startDay:'Sun'});
+  alert('Added '+n+' item'+(n===1?'':'s')+' to meal planner.');
+  location.href='meal-planner.html';
+}
+document.addEventListener('DOMContentLoaded',function(){
+  var g=localStorage.getItem(CR_GKEY); if(g) document.getElementById('cr-guests').value=g;
+  if(typeof SeoSchema!=='undefined'){
+    SeoSchema.event('Christmas Roast Timing','Work backwards from serve time for roast dinner.','2025-12-25','https://www.theculinaryjournal.site/christmas-roast.html');
+  }
+});
 </script>
 </body>
 </html>

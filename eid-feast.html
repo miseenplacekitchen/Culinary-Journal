@@ -7,11 +7,15 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+  <script src="seo-schema.js"></script>
   <style>
     .page-bg{min-height:100vh;background:var(--bg);}
     .ef-wrap{max-width:800px;margin:0 auto;padding:32px 20px 80px;}
     .ef-title{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:700;color:var(--text-high);}
     .ef-sub{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin:8px 0 20px;}
+    .ef-guests{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .ef-guests label{font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)}
+    .ef-guests input{width:80px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high);font-family:'DM Sans',sans-serif}
     .ef-section{background:var(--text-ghost);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;}
     .ef-sec-title{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;}
     .ef-item{display:flex;gap:10px;align-items:center;margin-bottom:8px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);}
@@ -22,22 +26,36 @@
 <div data-nav-host></div>
 <div class="ef-wrap">
   <h1 class="ef-title">🌙 Eid Feast Planner</h1>
-  <p class="ef-sub">Plan mains, sides, and sweets for your gathering. Saved in your browser.</p>
+  <p class="ef-sub">Plan mains, sides, and sweets for your gathering. Scale for guests; export to grocery or meal planner.</p>
+  <div class="ef-guests">
+    <label>Guests <input type="number" id="ef-guests" min="2" max="200" value="12" oninput="saveGuestCount()"></label>
+  </div>
   <div class="ef-section"><div class="ef-sec-title">Mains</div><div id="ef-mains"></div><button type="button" onclick="addRow('mains')" style="font-family:DM Sans,sans-serif;font-size:12px;background:none;border:1px dashed var(--border);padding:6px 12px;border-radius:8px;color:var(--accent);cursor:pointer">+ Add dish</button></div>
   <div class="ef-section"><div class="ef-sec-title">Sides &amp; breads</div><div id="ef-sides"></div><button type="button" onclick="addRow('sides')" style="font-family:DM Sans,sans-serif;font-size:12px;background:none;border:1px dashed var(--border);padding:6px 12px;border-radius:8px;color:var(--accent);cursor:pointer">+ Add dish</button></div>
   <div class="ef-section"><div class="ef-sec-title">Sweets</div><div id="ef-sweets"></div><button type="button" onclick="addRow('sweets')" style="font-family:DM Sans,sans-serif;font-size:12px;background:none;border:1px dashed var(--border);padding:6px 12px;border-radius:8px;color:var(--accent);cursor:pointer">+ Add dish</button></div>
   <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
     <button type="button" onclick="pushEidToGrocery()" style="padding:10px 18px;border-radius:9px;border:none;font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;background:var(--accent);color:#fff">🛒 Add dishes to grocery</button>
+    <button type="button" onclick="pushEidToMealPlan()" style="padding:10px 18px;border-radius:9px;border:1px solid var(--border);font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;background:none;color:var(--text-mid)">📅 Add to meal planner</button>
   </div>
   <p style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-top:16px"><a href="festival-calendar.html" style="color:var(--accent)">← Festival calendar</a> · <a href="table-planner.html" style="color:var(--accent)">Table planner</a></p>
 </div>
 <script src="grocery-utils.js"></script>
+<script src="event-planner-utils.js"></script>
 <script src="nav-init.js"></script>
 <script>
 var KEY='tcj_eid_feast';
+var GKEY='tcj_eid_guests';
+function getGuests(){ return parseInt(document.getElementById('ef-guests').value,10)||12; }
+function saveGuestCount(){ localStorage.setItem(GKEY, String(getGuests())); }
 function load(){ try{return JSON.parse(localStorage.getItem(KEY)||'{"mains":["Biryani"],"sides":["Raita","Naan"],"sweets":["Sheer khurma"]}');}catch(_){return{mains:[''],sides:[''],sweets:['']};}}
 function save(d){ localStorage.setItem(KEY, JSON.stringify(d)); }
+function allDishNames(){
+  var d=load(), names=[];
+  ['mains','sides','sweets'].forEach(function(sec){ (d[sec]||[]).forEach(function(v){ if(String(v).trim()) names.push(String(v).trim()); }); });
+  return names;
+}
 function render(){
+  var g=localStorage.getItem(GKEY); if(g) document.getElementById('ef-guests').value=g;
   var d=load();
   ['mains','sides','sweets'].forEach(function(sec){
     var el=document.getElementById('ef-'+sec);
@@ -49,14 +67,25 @@ function render(){
 function onEdit(inp){ var d=load(); d[inp.dataset.sec][inp.dataset.i]=inp.value; save(d); }
 function addRow(sec){ var d=load(); d[sec].push(''); save(d); render(); }
 function pushEidToGrocery(){
-  var d=load(), names=[];
-  ['mains','sides','sweets'].forEach(function(sec){ (d[sec]||[]).forEach(function(v){ if(String(v).trim()) names.push(String(v).trim()); }); });
+  var names = EventPlannerUtils.scaledNames(allDishNames(), 6, getGuests());
   if (!names.length){ alert('Add at least one dish name.'); return; }
   var n = GroceryUtils.addManualItems(names, { source:'manual', source_label:'Eid Feast', source_ref:'eid-feast' });
   alert(n ? ('Added '+n+' item'+(n===1?'':'s')+' to grocery.') : 'Those items are already on your grocery list.');
   location.href = 'grocery.html';
 }
-document.addEventListener('DOMContentLoaded', render);
+async function pushEidToMealPlan(){
+  var names = allDishNames();
+  if (!names.length){ alert('Add at least one dish name.'); return; }
+  var n = await EventPlannerUtils.pushDishesToMealPlan(names, { guests: getGuests(), baseGuests: 6, eventLabel: 'Eid Feast', startDay: 'Sun' });
+  alert('Added '+n+' dish'+(n===1?'':'es')+' to meal planner.');
+  location.href = 'meal-planner.html';
+}
+document.addEventListener('DOMContentLoaded', function(){
+  render();
+  if (typeof SeoSchema !== 'undefined') {
+    SeoSchema.event('Eid Feast Planner', 'Plan mains, sides and sweets for Eid with guest scaling.', undefined, 'https://www.theculinaryjournal.site/eid-feast.html');
+  }
+});
 </script>
 </body>
 </html>

@@ -86,20 +86,21 @@ D · OPEN — still to build or deepen (work through these)
   • Pipeline hardening if Lane 2 spot-check fails
 
   Grocery / pantry
-  • Regional ingredient intelligence · shared-edit conflict handling
+  • ~~Regional ingredient intelligence · shared-edit conflict handling~~ ✅ Phase 33 code — run fix-phase33-batch.sql
 
   Print Studio (remaining after Phase 31)
-  • D4 theme tiers in UM (premium gating) · Print & Post payment + dispatch fulfilment
-  • Bulk collection print from Recipe Book · upload-your-own background
+  • ~~D4 theme tiers in UM (premium gating)~~ ✅ Phase 33 — site_features print_premium_layouts toggle
+  • Print & Post payment + dispatch fulfilment (preview only — needs payment partner)
+  • ~~Bulk collection print from Recipe Book · upload-your-own background~~ ✅ Phase 33
 
   Social / chefs
-  • Most-saved ranking (needs engagement data) · wedding/large-event showcases
+  • ~~Most-saved ranking (needs engagement data)~~ ✅ Phase 33 SQL + chefs widget — wedding showcase via table-planner + festival
 
   Table planner & events
-  • Multi-table wedding venue polish · event→meal-planner sync · guest scaling on all event pages
+  • ~~Multi-table wedding venue polish · event→meal-planner sync · guest scaling on all event pages~~ ✅ Phase 33
 
   Cultural / SEO
-  • Food map regional data depth · festival entries · JSON-LD on library/event pages
+  • ~~Food map regional data depth · festival entries · JSON-LD on library/event pages~~ ✅ Phase 33
 
   Admin
   • Division CRUD polish · duplicate recipe detection · ROTW auto-expiry job

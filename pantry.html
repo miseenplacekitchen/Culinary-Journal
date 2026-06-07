@@ -102,6 +102,7 @@
 
 <div class="pt-wrap">
   <div id="pt-household-bar" class="pt-household-bar" style="display:none"></div>
+  <div id="pt-regional-bar" style="display:none;margin-bottom:14px"></div>
   <div class="pt-header">
     <h1 class="pt-title">🫙 Pantry &amp; Fridge</h1>
     <div style="display:flex;gap:8px">
@@ -219,7 +220,9 @@
   </div>
 </div>
 
+<script src="shared-sync-utils.js"></script>
 <script src="grocery-utils.js"></script>
+<script src="regional-hints.js"></script>
 <script src="nav-init.js"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -250,15 +253,34 @@ function savePantry(list) {
     try {
       const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
       if (!sess || !sess.access_token) return;
-      await fetch(SUPA_URL + '/rest/v1/rpc/save_my_pantry', {
+      var serverTs = window.SharedSyncUtils ? SharedSyncUtils.getServerTs('tcj_pantry_server_ts') : null;
+      var res = await fetch(SUPA_URL + '/rest/v1/rpc/save_my_pantry', {
         method: 'POST',
         headers: {
           'apikey': SUPA_KEY,
           'Authorization': 'Bearer ' + sess.access_token,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ p_items: list })
+        body: JSON.stringify({ p_items: list, p_client_updated_at: serverTs })
       });
+      var bodyText = await res.text();
+      var parsed = window.SharedSyncUtils ? SharedSyncUtils.parseSaveResult(res, bodyText) : { ok: res.ok };
+      if (parsed.conflict && window.SharedSyncUtils) {
+        var choice = await SharedSyncUtils.showConflict({ householdName: parsed.data && parsed.data.household_name });
+        if (choice === 'theirs' && parsed.data && Array.isArray(parsed.data.items)) {
+          localStorage.setItem('tcj_pantry', JSON.stringify(parsed.data.items));
+          if (parsed.data.updated_at) SharedSyncUtils.storeServerTs('tcj_pantry_server_ts', parsed.data.updated_at);
+          renderStats(); renderList('');
+        } else if (choice === 'mine') {
+          await fetch(SUPA_URL + '/rest/v1/rpc/save_my_pantry', {
+            method: 'POST',
+            headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + sess.access_token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ p_items: list, p_client_updated_at: null })
+          });
+        }
+      } else if (parsed.ok && parsed.updated_at && window.SharedSyncUtils) {
+        SharedSyncUtils.storeServerTs('tcj_pantry_server_ts', parsed.updated_at);
+      }
     } catch(_) {}
   }, 1500);
 }
@@ -301,10 +323,12 @@ async function loadPantryFromSupabase(force) {
       if (Array.isArray(remote)) {
         localStorage.setItem('tcj_pantry', JSON.stringify(remote));
         if (remoteTime) localStorage.setItem('tcj_pantry_ts', String(remoteTime));
+        if (data && data.updated_at && window.SharedSyncUtils) SharedSyncUtils.storeServerTs('tcj_pantry_server_ts', data.updated_at);
         renderStats();
         renderList('');
       }
     }
+    if (window.RegionalHints) RegionalHints.refreshBanner('pt-regional-bar', getPantry());
   } catch(_) {}
 }
 

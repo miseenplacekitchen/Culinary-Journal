@@ -101,6 +101,8 @@
         if (!url || !key) return;
         var list = loadGrocery();
         var checked = getGroceryChecked();
+        var serverTs = null;
+        if (g.SharedSyncUtils) serverTs = g.SharedSyncUtils.getServerTs('tcj_grocery_server_ts');
         var res = await fetch(url + '/rest/v1/rpc/save_my_grocery_list', {
           method: 'POST',
           headers: {
@@ -108,9 +110,39 @@
             'apikey': key,
             'Authorization': 'Bearer ' + sess.access_token
           },
-          body: JSON.stringify({ p_list_data: list, p_checked: checked })
+          body: JSON.stringify({
+            p_list_data: list,
+            p_checked: checked,
+            p_client_updated_at: serverTs
+          })
         });
-        if (res.ok) localStorage.setItem('tcj_grocery_ts', String(Date.now()));
+        var bodyText = await res.text();
+        var parsed = g.SharedSyncUtils ? g.SharedSyncUtils.parseSaveResult(res, bodyText) : { ok: res.ok };
+        if (parsed.conflict && g.SharedSyncUtils) {
+          var choice = await g.SharedSyncUtils.showConflict({
+            householdName: parsed.data && parsed.data.household_name
+          });
+          if (choice === 'theirs' && parsed.data) {
+            var remote = g.normalizeGroceryList(parsed.data.list_data || {});
+            localStorage.setItem('tcj_grocery', JSON.stringify(remote));
+            localStorage.setItem('tcj_grocery_checked', JSON.stringify(parsed.data.checked || []));
+            if (parsed.data.updated_at) g.SharedSyncUtils.storeServerTs('tcj_grocery_server_ts', parsed.data.updated_at);
+            if (typeof g.onGroceryConflictResolved === 'function') g.onGroceryConflictResolved('theirs');
+          } else if (choice === 'mine') {
+            await fetch(url + '/rest/v1/rpc/save_my_grocery_list', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': key,
+                'Authorization': 'Bearer ' + sess.access_token
+              },
+              body: JSON.stringify({ p_list_data: list, p_checked: checked, p_client_updated_at: null })
+            });
+          }
+        } else if (parsed.ok) {
+          localStorage.setItem('tcj_grocery_ts', String(Date.now()));
+          if (parsed.updated_at && g.SharedSyncUtils) g.SharedSyncUtils.storeServerTs('tcj_grocery_server_ts', parsed.updated_at);
+        }
       } catch (_) {}
     }, 1500);
   }

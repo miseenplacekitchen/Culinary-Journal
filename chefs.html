@@ -84,7 +84,7 @@
         <select class="ch-search" id="ch-sort" onchange="filterChefs()" style="width:auto">
           <option value="recipes">Most recipes</option>
           <option value="name">Name A–Z</option>
-          <option value="saved">Most categories</option>
+          <option value="saved">Most saved recipes</option>
         </select>
         <select class="ch-search" id="ch-country" onchange="filterChefs()" style="width:auto">
           <option value="">All countries</option>
@@ -100,6 +100,7 @@
         </select>
       </div>
     </div>
+    <div id="ch-most-saved" style="margin-bottom:24px"></div>
     <div class="ch-count-bar" id="ch-count-bar"></div>
     <div class="ch-grid" id="ch-grid">
       <div class="ch-empty"><div class="ch-empty-icon">👨‍🍳</div><div class="ch-empty-title">Loading chefs...</div></div>
@@ -131,9 +132,38 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 
 const CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
 
-let allChefs = [], allRecipes = [];
+let allChefs = [], allRecipes = [], mostSavedRecipes = [], saveCountByRecipe = {};
+
+async function loadMostSaved() {
+  try {
+    var res = await fetch(SUPA_URL + '/rest/v1/rpc/get_most_saved_recipes', {
+      method: 'POST',
+      headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_limit: 8 })
+    });
+    mostSavedRecipes = res.ok ? await res.json() : [];
+    if (!Array.isArray(mostSavedRecipes)) mostSavedRecipes = [];
+    saveCountByRecipe = {};
+    mostSavedRecipes.forEach(function(r) { if (r.id) saveCountByRecipe[r.id] = r.save_count || 0; });
+    var host = document.getElementById('ch-most-saved');
+    if (!host) return;
+    if (!mostSavedRecipes.length) {
+      host.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);padding:14px 16px;border:1px dashed var(--border);border-radius:12px">Most-saved ranking fills in as members save recipes to collections.</div>';
+      return;
+    }
+    host.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">⭐ Most saved recipes</div>' +
+      '<div class="ch-recipes-grid">' + mostSavedRecipes.map(function(r) {
+        var em = CAT_EMOJI[r.category] || '🍳';
+        return '<a class="ch-recipe-card" href="recipe-page.html?id=' + r.id + '">' +
+          '<div class="ch-recipe-img">' + (r.image_url ? '<img src="' + esc(r.image_url) + '" loading="lazy" alt="">' : em) + '</div>' +
+          '<div class="ch-recipe-body"><div class="ch-recipe-name">' + esc(r.recipe_name) + '</div>' +
+          '<div class="ch-recipe-cat">' + (r.save_count || 0) + ' save' + ((r.save_count || 0) === 1 ? '' : 's') + '</div></div></a>';
+      }).join('') + '</div>';
+  } catch (_) {}
+}
 
 async function load() {
+  await loadMostSaved();
   try {
     const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_approved_recipes', {
       method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
@@ -209,7 +239,12 @@ function filterChefs() {
     return !q || c.name.toLowerCase().includes(lower) || (c.handle||'').toLowerCase().includes(lower);
   });
   if (sort === 'name') filtered.sort(function(a,b) { return a.name.localeCompare(b.name); });
-  else if (sort === 'saved') filtered.sort(function(a,b) { return (b.specialties||[]).length - (a.specialties||[]).length || b.recipes.length - a.recipes.length; });
+  else if (sort === 'saved') filtered.sort(function(a,b) {
+    function chefSaves(c) {
+      return (c.recipes || []).reduce(function(n, r) { return n + (saveCountByRecipe[r.id] || 0); }, 0);
+    }
+    return chefSaves(b) - chefSaves(a) || b.recipes.length - a.recipes.length;
+  });
   else filtered.sort(function(a,b) { return b.recipes.length - a.recipes.length; });
   renderChefGrid(filtered);
 }

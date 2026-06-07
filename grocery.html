@@ -125,6 +125,7 @@
 
 <div class="gl-wrap">
   <div id="gl-household-bar" class="gl-household-bar" style="display:none"></div>
+  <div id="gl-regional-bar" style="display:none;margin-bottom:14px"></div>
   <div class="gl-header">
     <h1 class="gl-title">🛒 Grocery List</h1>
     <div class="gl-actions">
@@ -195,7 +196,9 @@
   </div>
 </div>
 
+<script src="shared-sync-utils.js"></script>
 <script src="grocery-utils.js"></script>
+<script src="regional-hints.js"></script>
 <script src="pantry-utils.js"></script>
 <script src="nav-init.js"></script>
 <script>
@@ -252,10 +255,20 @@ async function syncFromSupabase(force){
       localStorage.setItem('tcj_grocery', JSON.stringify(GroceryUtils.normalizeGroceryList(remote)));
       localStorage.setItem('tcj_grocery_checked', JSON.stringify(remoteChecked));
       localStorage.setItem('tcj_grocery_ts', String(remoteTime));
+      if(data.updated_at && window.SharedSyncUtils) SharedSyncUtils.storeServerTs('tcj_grocery_server_ts', data.updated_at);
       render();
     }
+    refreshRegionalBanner();
   } catch(_) {}
 }
+
+function refreshRegionalBanner(){
+  if(!window.RegionalHints) return;
+  var list = GroceryUtils.loadGrocery();
+  var items = (list.recipes||[]).concat(list.items||[]);
+  RegionalHints.refreshBanner('gl-regional-bar', items);
+}
+window.onGroceryConflictResolved = function(){ render(); refreshRegionalBanner(); };
 
 function scheduleSyncToSupabase(){
   GroceryUtils.scheduleGroceryCloudSync();
@@ -979,6 +992,7 @@ function renderCombined(list){
 
 document.addEventListener('DOMContentLoaded', function(){
   render();
+  refreshRegionalBanner();
   loadGlIngredients();
   syncFromSupabase(true);
   setInterval(function(){ if(_glHouseholdShared) syncFromSupabase(false); }, 20000);

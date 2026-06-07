@@ -49,6 +49,9 @@
 
     /* Recipe cards */
     .ps-card { background:#fff; color:#1a1a1a; border-radius:4px; box-shadow:0 4px 24px rgba(0,0,0,0.2); position:relative; overflow:hidden; page-break-inside:avoid; }
+    .ps-card.ps-has-custom-bg { background-blend-mode: multiply; }
+    .ps-card.ps-has-custom-bg::before { content:''; position:absolute; inset:0; background:inherit; opacity:0.12; pointer-events:none; z-index:0; }
+    .ps-card.ps-has-custom-bg > * { position:relative; z-index:1; }
     .ps-card.size-4x6  { width:384px; min-height:256px; padding:20px 22px; }
     .ps-card.size-3x5  { width:360px; min-height:216px; padding:16px 18px; }
     .ps-card.size-a5   { width:420px; min-height:594px; padding:28px 32px; }
@@ -392,6 +395,15 @@
     </div>
 
     <div class="ps-section">
+      <div class="ps-section-title">Custom Background</div>
+      <p style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);margin:0 0 10px;line-height:1.45">Upload a light watermark or pattern (stored in your browser only).</p>
+      <input type="file" id="ps-custom-bg-file" accept="image/*" style="font-family:'DM Sans',sans-serif;font-size:11px;width:100%">
+      <div class="ps-util-row" style="margin-top:8px">
+        <button class="ps-util-btn" type="button" onclick="clearPsCustomBg()">Remove background</button>
+      </div>
+    </div>
+
+    <div class="ps-section">
       <div class="ps-section-title">Preview Mode</div>
       <div class="ps-btn-group">
         <button class="ps-opt-btn active" id="ps-view-stack" onclick="setCardView('stack',this)">Stacked</button>
@@ -515,9 +527,41 @@ let psLastCardDefs = [];
 
 let currentLayout = 'classic-card';
 const PS_PREMIUM_LAYOUTS = { botanical:1, candlelit:1, wedding:1, 'dark-moody':1, vintage:1, parchment:1 };
-const PS_SOFT_LAUNCH_FREE = true;
+let PS_PREMIUM_FREE = true;
+let PS_USER_TIER = 'free';
+let psCustomBg = '';
+
+async function psLoadPremiumGate() {
+  try {
+    var res = await fetch(window.SUPA_URL + '/rest/v1/site_features?key=eq.print_premium_layouts&select=enabled', { headers: { apikey: window.SUPA_KEY } });
+    if (res.ok) {
+      var rows = await res.json();
+      if (rows && rows[0]) PS_PREMIUM_FREE = !!rows[0].enabled;
+    }
+    var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    if (sess && sess.access_token) {
+      var pr = await fetch(window.SUPA_URL + '/rest/v1/profiles?select=subscription_tier', {
+        headers: { apikey: window.SUPA_KEY, Authorization: 'Bearer ' + sess.access_token }
+      });
+      if (pr.ok) {
+        var prof = await pr.json();
+        if (prof && prof[0]) PS_USER_TIER = prof[0].subscription_tier || 'free';
+      }
+    }
+    var note = document.getElementById('ps-premium-note');
+    if (note) {
+      note.textContent = PS_PREMIUM_FREE
+        ? 'Premium theme selected — included free during soft launch (toggle in Site Management → Features).'
+        : 'Premium layouts require a paid plan when gating is enabled in Site Management.';
+    }
+  } catch (_) {}
+}
 
 function setLayout(layout, btn) {
+  if (PS_PREMIUM_LAYOUTS[layout] && !PS_PREMIUM_FREE && PS_USER_TIER === 'free') {
+    window.location.href = 'paid-members-only.html?next=' + encodeURIComponent(location.pathname + location.search) + '&tier=monthly';
+    return;
+  }
   currentLayout = layout;
   document.querySelectorAll('.ps-opt-btn[data-layout]').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
@@ -1056,6 +1100,44 @@ function buildCards() {
   bindSwipeCardZoom();
   psSwipeIndex = 0;
   updateSwipeBar();
+  applyPsCustomBg();
+}
+
+function applyPsCustomBg() {
+  var bg = psCustomBg || localStorage.getItem('tcj_print_custom_bg') || '';
+  document.querySelectorAll('#ps-cards .ps-card').forEach(function(card) {
+    if (bg) {
+      card.classList.add('ps-has-custom-bg');
+      card.style.backgroundImage = 'linear-gradient(rgba(255,255,255,0.88), rgba(255,255,255,0.88)), url(' + bg + ')';
+      card.style.backgroundSize = 'cover';
+      card.style.backgroundPosition = 'center';
+    } else {
+      card.classList.remove('ps-has-custom-bg');
+      card.style.backgroundImage = '';
+      card.style.backgroundSize = '';
+    }
+  });
+}
+
+function onPsCustomBgFile(input) {
+  var file = input && input.files && input.files[0];
+  if (!file) return;
+  if (file.size > 800000) { alert('Please use an image under 800 KB.'); input.value = ''; return; }
+  var reader = new FileReader();
+  reader.onload = function() {
+    psCustomBg = reader.result;
+    try { localStorage.setItem('tcj_print_custom_bg', psCustomBg); } catch (_) { alert('Image too large for browser storage — try a smaller file.'); return; }
+    applyPsCustomBg();
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearPsCustomBg() {
+  psCustomBg = '';
+  try { localStorage.removeItem('tcj_print_custom_bg'); } catch (_) {}
+  var fi = document.getElementById('ps-custom-bg-file');
+  if (fi) fi.value = '';
+  applyPsCustomBg();
 }
 
 function loadRecipe(recipe) {
@@ -1242,6 +1324,10 @@ function restorePrintPrefs() {
 // Load recipe from URL params or sessionStorage
 document.addEventListener('DOMContentLoaded', function() {
   restorePrintPrefs();
+  psCustomBg = localStorage.getItem('tcj_print_custom_bg') || '';
+  var bgFile = document.getElementById('ps-custom-bg-file');
+  if (bgFile) bgFile.addEventListener('change', function() { onPsCustomBgFile(bgFile); });
+  psLoadPremiumGate();
   psLoadFamilyProfiles().then(function() {
     if (currentRecipe || currentRecipes.length) buildCards();
   });

@@ -49,10 +49,39 @@
     });
   }
 
+  function eventSchema(name, description, startDate, url) {
+    inject({
+      '@context': 'https://schema.org',
+      '@type': 'Event',
+      name: name,
+      description: description || '',
+      startDate: startDate || undefined,
+      eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+      eventStatus: 'https://schema.org/EventScheduled',
+      url: url || (global.location && global.location.href),
+      organizer: { '@type': 'Organization', name: 'The Culinary Journal' }
+    });
+  }
+
+  function libraryItemSchema(item) {
+    if (!item) return;
+    inject({
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: item.name || item.title,
+      description: item.summary || item.description || '',
+      image: item.image_url || undefined,
+      url: item.url || undefined,
+      about: item.category || item.type || 'Ingredient'
+    });
+  }
+
   global.SeoSchema = {
     inject: inject,
     recipe: recipeSchema,
     itemList: itemListSchema,
-    webPage: webPageSchema
+    webPage: webPageSchema,
+    event: eventSchema,
+    libraryItem: libraryItemSchema
   };
 })(typeof window !== 'undefined' ? window : globalThis);

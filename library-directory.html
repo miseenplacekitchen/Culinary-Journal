@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="style.css">
 <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
+<script src="seo-schema.js"></script>
 <script src="nav-init.js"></script>
 <style>
 .lib-page { min-height:100vh; background:var(--bg); }
@@ -138,7 +139,18 @@ async function loadProfiles(search) {
       body: JSON.stringify({ p_type: currentType, p_search: search || null, p_limit: 48, p_offset: 0 })
     });
     const items = await res.json();
-    renderGrid(Array.isArray(items) ? items : []);
+    var list = Array.isArray(items) ? items : [];
+    renderGrid(list);
+    if (typeof SeoSchema !== 'undefined') {
+      var t = TYPES[currentType];
+      SeoSchema.webPage(t.label + ' — The Library', t.desc, 'https://www.theculinaryjournal.site/library-directory.html?type=' + currentType);
+      SeoSchema.itemList(t.label, list.map(function(item) {
+        return {
+          name: item.name,
+          url: 'https://www.theculinaryjournal.site/library-profile.html?type=' + currentType + '&slug=' + (item.slug || '')
+        };
+      }));
+    }
   } catch(e) {
     grid.innerHTML = '<div class="lib-empty">Could not load profiles — please try again.</div>';
   }

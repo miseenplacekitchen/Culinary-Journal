@@ -13,6 +13,10 @@
     .op-wrap{max-width:800px;margin:0 auto;padding:32px 20px 80px;}
     .op-title{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:700;color:var(--text-high);}
     .op-sub{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin:8px 0 24px;}
+    .op-guests{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+    .op-guests label{font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)}
+    .op-guests input{width:80px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high);font-family:'DM Sans',sans-serif}
+    .op-scale-note{font-family:'DM Sans',sans-serif;font-size:11px;color:var(--accent);margin-bottom:16px}
     .op-dish{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:var(--text-ghost);}
     .op-num{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;color:var(--accent);width:28px;}
     .op-name{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-high);flex:1;}
@@ -21,26 +25,43 @@
     .op-btn{padding:10px 18px;border-radius:9px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;background:var(--accent);color:#fff;}
     .op-btn-ghost{background:none;border:1px solid var(--border);color:var(--text-mid);}
   </style>
+  <script src="seo-schema.js"></script>
 </head>
 <body class="page-bg cj-body">
 <div data-nav-host></div>
 <div class="op-wrap">
   <h1 class="op-title">🌺 Onam Sadya Planner</h1>
-  <p class="op-sub">Traditional banana-leaf order (top to bottom). Tick dishes as you plan; export to meal planner when ready.</p>
+  <p class="op-sub">Traditional banana-leaf order (top to bottom). Tick dishes as you plan; scale for guests and export to grocery or meal planner.</p>
+  <div class="op-guests">
+    <label>Guests <input type="number" id="op-guests" min="2" max="200" value="8" oninput="updateScaleNote()"></label>
+    <span class="op-scale-note" id="op-scale-note"></span>
+  </div>
   <div id="op-list"></div>
   <div class="op-actions">
     <button type="button" class="op-btn" onclick="pushSadyaToGrocery()">🛒 Add ticked dishes to grocery</button>
+    <button type="button" class="op-btn" onclick="pushSadyaToMealPlan()">📅 Add to meal planner</button>
     <button type="button" class="op-btn op-btn-ghost" onclick="resetSadya()">Reset ticks</button>
     <button type="button" class="op-btn op-btn-ghost" onclick="location.href='festival-calendar.html'">← Festival calendar</button>
     <button type="button" class="op-btn op-btn-ghost" onclick="location.href='meal-planner.html'">Open meal planner</button>
   </div>
 </div>
 <script src="grocery-utils.js"></script>
+<script src="event-planner-utils.js"></script>
 <script src="nav-init.js"></script>
 <script>
 var SADYA = ['Upperi / banana chips','Inji curry','Mango pickle','Lime pickle','Pappadam','Banana (ripe)','Salt','Parippu + ghee','Sambar','Rasam','Avial','Thoran','Olan','Kalan','Erissery','Pulisery','Kootu curry','Payasam (first)','Payasam (second)','Rice'];
 var KEY = 'tcj_sadya_ticks';
+var GKEY = 'tcj_sadya_guests';
+function getGuests(){ return parseInt(document.getElementById('op-guests').value,10)||8; }
+function updateScaleNote(){
+  var g=getGuests();
+  document.getElementById('op-scale-note').textContent = g===4 ? '' : ('Quantities scaled for '+g+' guests (base 4).');
+  localStorage.setItem(GKEY, String(g));
+}
 function render(){
+  var saved=localStorage.getItem(GKEY);
+  if(saved) document.getElementById('op-guests').value=saved;
+  updateScaleNote();
   var ticks = JSON.parse(localStorage.getItem(KEY)||'{}');
   document.getElementById('op-list').innerHTML = SADYA.map(function(name,i){
     var id = 'd'+i;
@@ -54,16 +75,31 @@ function render(){
     });
   });
 }
+function tickedNames(){
+  var ticks = JSON.parse(localStorage.getItem(KEY)||'{}');
+  return SADYA.filter(function(_,i){ return ticks[i]; });
+}
 function resetSadya(){ localStorage.removeItem(KEY); render(); }
 function pushSadyaToGrocery(){
-  var ticks = JSON.parse(localStorage.getItem(KEY)||'{}');
-  var names = SADYA.filter(function(_,i){ return ticks[i]; });
+  var names = EventPlannerUtils.scaledNames(tickedNames(), 4, getGuests());
   if (!names.length){ alert('Tick at least one dish first.'); return; }
   var n = GroceryUtils.addManualItems(names, { source:'manual', source_label:'Onam Sadya', source_ref:'onam-sadya' });
   alert(n ? ('Added '+n+' item'+(n===1?'':'s')+' to grocery.') : 'Those items are already on your grocery list.');
   location.href = 'grocery.html';
 }
-document.addEventListener('DOMContentLoaded', render);
+async function pushSadyaToMealPlan(){
+  var names = tickedNames();
+  if (!names.length){ alert('Tick at least one dish first.'); return; }
+  var n = await EventPlannerUtils.pushDishesToMealPlan(names, { guests: getGuests(), baseGuests: 4, eventLabel: 'Onam Sadya', startDay: 'Sat' });
+  alert('Added '+n+' dish'+(n===1?'':'es')+' to this week\'s meal planner.');
+  location.href = 'meal-planner.html';
+}
+document.addEventListener('DOMContentLoaded', function(){
+  render();
+  if (typeof SeoSchema !== 'undefined') {
+    SeoSchema.event('Onam Sadya Planner', 'Plan a traditional Kerala banana-leaf feast with grocery and meal-planner export.', undefined, 'https://www.theculinaryjournal.site/onam-sadya.html');
+  }
+});
 </script>
 </body>
 </html>

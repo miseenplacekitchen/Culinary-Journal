@@ -290,6 +290,7 @@
   </div>
 </div>
 
+<script src="shared-sync-utils.js"></script>
 <script src="calendar-utils.js"></script>
 <script src="grocery-utils.js"></script>
 <script src="pantry-utils.js"></script>
@@ -488,15 +489,34 @@ function savePlan(plan) {
     try {
       const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
       if (!sess || !sess.access_token) return;
-      await fetch(SUPA_URL + '/rest/v1/rpc/save_my_meal_plan', {
+      var serverTs = window.SharedSyncUtils ? SharedSyncUtils.getServerTs('tcj_meal_server_ts_' + key) : null;
+      var res = await fetch(SUPA_URL + '/rest/v1/rpc/save_my_meal_plan', {
         method: 'POST',
         headers: {
           'apikey': SUPA_KEY,
           'Authorization': 'Bearer ' + sess.access_token,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ p_week_key: key, p_plan_data: plan })
+        body: JSON.stringify({ p_week_key: key, p_plan_data: plan, p_client_updated_at: serverTs })
       });
+      var bodyText = await res.text();
+      var parsed = window.SharedSyncUtils ? SharedSyncUtils.parseSaveResult(res, bodyText) : { ok: res.ok };
+      if (parsed.conflict && window.SharedSyncUtils) {
+        var choice = await SharedSyncUtils.showConflict({ householdName: parsed.data && parsed.data.household_name });
+        if (choice === 'theirs' && parsed.data) {
+          localStorage.setItem(key, JSON.stringify(parsed.data.plan_data || {}));
+          if (parsed.data.updated_at) SharedSyncUtils.storeServerTs('tcj_meal_server_ts_' + key, parsed.data.updated_at);
+          renderCalendar();
+        } else if (choice === 'mine') {
+          await fetch(SUPA_URL + '/rest/v1/rpc/save_my_meal_plan', {
+            method: 'POST',
+            headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + sess.access_token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ p_week_key: key, p_plan_data: plan, p_client_updated_at: null })
+          });
+        }
+      } else if (parsed.ok && parsed.updated_at && window.SharedSyncUtils) {
+        SharedSyncUtils.storeServerTs('tcj_meal_server_ts_' + key, parsed.updated_at);
+      }
     } catch(_) {}
   }, 1200);
 }
@@ -526,6 +546,7 @@ async function syncMealPlanFromCloud(force) {
     if (force || remoteTime > localTs || (_mpHouseholdShared && remoteTime >= localTs)) {
       localStorage.setItem(key, JSON.stringify(plan || {}));
       if (remoteTime) localStorage.setItem('tcj_meal_ts_' + key, String(remoteTime));
+      if (remote.updated_at && window.SharedSyncUtils) SharedSyncUtils.storeServerTs('tcj_meal_server_ts_' + key, remote.updated_at);
       renderCalendar();
     }
   } catch(_) {}
