@@ -9,10 +9,12 @@
 var CJ_SECTIONS = [
   {
     id:'recipebook', label:'The Recipe Book', emoji:'📖', primaryPage:'recipes.html',
-    pages:['recipes.html','chefs.html','search.html','submit-recipe.html','draft-recipes.html'],
+    pages:['recipes.html','chefs.html','search.html','submit-recipe.html','draft-recipes.html','food-map.html','festival-calendar.html'],
     links:[
       {href:'recipes.html',      emoji:'🍽', label:'Browse Recipes'},
       {href:'chefs.html',        emoji:'👨‍🍳', label:'Chef Directory'},
+      {href:'food-map.html',     emoji:'🌍', label:'Food by Map'},
+      {href:'festival-calendar.html', emoji:'🎉', label:'Festival Calendar'},
       {href:'submit-recipe.html',emoji:'📝', label:'Submit a Recipe'},
     ]
   },

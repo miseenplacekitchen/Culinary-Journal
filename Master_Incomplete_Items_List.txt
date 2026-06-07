@@ -1,6 +1,6 @@
 The Culinary Journal — Master Incomplete Items List
 
-For the developer · Compiled 6 June 2026 · Last reconciliation note: 9 June 2026
+For the developer · Compiled 6 June 2026 · Last reconciliation note: 9 June 2026 (Phase 26)
 Sources: Full Roadmap, List of Issues (5 June), Roadmap Gap Analysis (5 June), Developer Strategy Document (5 June), and a code-level audit of the repository.
 
 TRACKING MODEL (Betty, 9 June 2026)
@@ -9,14 +9,137 @@ TRACKING MODEL (Betty, 9 June 2026)
   • Product_Direction_Draft.txt = product north star and lane priorities.
   When an item closes: tick here, update ledger if it was phase-scoped, verify live.
 
-RECONCILED SINCE 6 JUNE (many items below are now DONE — still listed until live-verified)
-  Phases 21–25 shipped: admin RM/UM refactor, household grocery+pantry, library starter
-  profiles (8 linked), refund copy, promo DB, shared pantry, page min_tier, dead-link cron,
-  email queue, PF-02 pantry submit, allergy engine v1, library 📚 links on recipes.
-  Stripe skipped; PayPal deferred. See Project_Status_Ledger.txt for phase detail.
-  Re-audit sections marked [MISSING] for admin panel / CJ-006 before trusting those labels.
+══════════════════════════════════════════════════════════════════════
+RECONCILIATION — QUICK TRUTH (9 June 2026)
+Use THIS section for what is still genuinely open. Legacy audit below is archive only.
+══════════════════════════════════════════════════════════════════════
 
-How to read this document
+A · DONE — shipped (Phases 1–25 + SQL). Live-verify then strike from backlog.
+  • Admin dashboard + recipe approve/reject RPCs (was “Phase 1.1 gate”)
+  • Recipe pipeline CJ-006 (submit → pending → approve → public) — code + SQL
+  • Scheduled dead-link checker (cron + edge function)
+  • RM work tabs + RM Interface settings · UM work tabs + UM Interface (21/23)
+  • Site Management: pages/min_tier, features, email templates, billing/refund copy
+  • Household: partner invite, shared grocery (22), shared pantry (23)
+  • Grocery cloud sync · By Recipe / Combined tabs · recipe-page grocery add
+  • Pantry: locations, staples, expiry alert, running-low, use-it-up suggestions, cloud sync
+  • PF-02 submit unknown ingredient (grocery manual add)
+  • Allergy engine v1 + family dietary banner on recipe page
+  • Library: directory + profiles + 8 starter ingredients linked · recipe 📚 links
+  • Library Phase 26 SQL ready: 3 spice + 3 tool + 3 cut + 3 preservation starters
+  • Friends-only visibility on submit · origin locality field · Submit in nav dropdown
+  • Recipe font size + high-contrast cook view (recipe-page)
+  • Follow contributor · Chef of the Month widget · user.html contributor profiles
+  • food-map.html · festival-calendar.html · onam/eid/christmas event planner pages
+  • Legal page scaffolds (cookies, DMCA, accessibility, UGC, etc.) — lawyer review still open
+  • Print Studio: card split (Card N of M) + QR on prints
+  • Nav: Food by Map + Festival Calendar links (Phase 26)
+  • site_pages SQL for cultural/event/legal pages (Phase 26)
+  • Nutrition queue + Print queue (RM tabs)
+  • Email queue + send-queued-emails edge function + billing email templates
+  • Notifications page (notifications.html + get_my_notifications)
+  • Promo codes DB · page-guard tiers · paid-members-only + subscription-terms
+  • Source link admin · admin edit origin locality · dead-link admin controls
+  • fix-phase21 through fix-phase25 SQL (Betty confirmed)
+
+B · VERIFY ONLY — likely works; run Lane 2 live tests, then move to A.
+  • Full recipe pipeline with a fresh submit (not just test recipe UUID)
+  • CJ-006 attribution, Tried It → diary, dietary card link on recipe page
+  • Recipe page defect set (4.2–4.9): spice display, combined view, print parity
+  • Meal planner month view / navigation · MP-05 Today panel (#mp-today)
+  • Print Studio card split + QR on live print
+  • food-map + festival-calendar + event planners visible when SM pages opened
+  • Contributor follow + Chef of the Month on homepage
+  • Taxonomy tab sub-category/division admin (partial CRUD)
+  • Family reference lists admin (dashboard-users Family Lists tab)
+  • GL-03/GL-04 grocery from recipe with serving scale
+  • Personal notes approval loop end-to-end
+  • Email actually delivers (Resend + cron)
+  • My Dashboard shows pending submissions not only drafts
+  • Table planner Phase C (RSVP etc.) · place-card allergy line
+  • OG image / PWA manifest on live URL
+  • Supabase backup exists (5-minute ops check)
+
+C · GENUINELY OPEN — your decisions (blocks build)
+  • Monetisation: mostly free vs themes-only paid vs full tiers
+  • PayPal + card checkout (Stripe skipped)
+  • D1 post-login landing for admins
+  • D2 baby content: curated-only vs user-submitted
+  • D3 library submission workflow depth
+  • D4 print theme tiers (free vs premium)
+  • G1 recipe hierarchy strict enforcement (Sub Category + Division admin CRUD)
+  • G2 family section groups in meal planner
+  • G3 quantity model (presence vs strict numeric) — light default in product doc
+
+D · GENUINELY OPEN — product & features (still to build or deepen)
+  Priority — soft launch / daily use
+  • Lane 2 live verification checklist (Product_Direction_Draft.txt) — top priority
+  • Library content depth beyond Phase 26 starters (more profiles + member submissions)
+  • Recipe hero circular image + curved text (Issue 4.1) — deferred
+  • Self-service account deactivation
+  • Onboarding: health profile + allergy setup at registration (partial stubs)
+  • Baby age & food stage on family profiles
+
+  Meal planner (most MP roadmap still open)
+  • MP-01 hierarchy admin depth · MP-02 family groups · MP-03 planned-meal model upgrade
+  • MP-04 shared calendar · MP-06 drag reschedule
+  • MP-07–09 planning popup + per-group views
+  • MP-10–14 cooked loop, skip/leftovers, grocery auto-gen from planner, allergy at assign
+  • MP-12 pantry subtraction when planning grocery (partial hooks only)
+
+  Grocery / pantry gaps vs full spec
+  • GL-07 store aisle layout · GL-08 multi-store · GL-09 print/text export
+  • Grocery archive → auto-stock pantry (today: manual pantry update after shop)
+  • Full governed-ingredient autocomplete on pantry add (PF-01 partial)
+  • Regional ingredient intelligence (entire layer)
+
+  Print Studio depth
+  • Smarter card auto-split logic · card types (Method/Tips/Allergy/Baby) polish
+  • Theme tiers + UM theme management (D4) · digital swipe cooking cards
+  • Recipe book / gift card / menu generators
+
+  Social / chefs depth
+  • Chef directory filters (specialty, most-saved, social typing)
+  • Wedding / large-event contributor showcases
+
+  Allergy / health (beyond v1)
+  • Site-wide enforcement on Browse + planner + table planner
+  • Safe substitutes wired to allergy engine · table proximity warnings
+
+  Table planner & events depth
+  • Smart placement from rules (not static DISH_RULES text)
+  • Multi-table / wedding venue · buffet table option
+  • Event planners content depth (Onam/Eid/Christmas timing calculators)
+
+  Cultural / SEO depth
+  • Food map regional data richness · festival entries expansion
+  • JSON-LD on more page types (homepage has brand markup)
+
+  Admin depth still open
+  • Sub-category & Division admin CRUD polish (Taxonomy tab partial)
+  • Dashboard notifications inbox (aggregated admin home)
+  • Collections curation tab · duplicate detection · recipe-of-the-week auto-expiry
+  • Full analytics dashboards (user + owner)
+  • 47-theme visual sweep (light themes readability)
+
+  Legal (Phase 6 — parallel)
+  • Lawyer review of all policy drafts (pages exist; copy not counsel-reviewed)
+
+  Monetisation scaffolding (when you decide)
+  • Free-plan limits (10 recipes, etc.) · automated checkout
+  • Theme marketplace / paid themes
+
+E · DEFERRED — do not build until Betty asks
+  • Phase 2 AI (photo/handwriting import, table photo, voice, auto-tagging, translation)
+  • Chrome extension · Android app · barcode scanning · Microsoft OAuth
+  • Photo upload → table detection
+
+══════════════════════════════════════════════════════════════════════
+LEGACY AUDIT BELOW (6 June 2026) — archive reference only
+Labels [MISSING] here are often wrong after Phases 21–25. Use section A–E above.
+══════════════════════════════════════════════════════════════════════
+
+How to read this document (legacy)
 
 Every item below is something the roadmap or the issues list promises that the current repository does not deliver, or delivers only partially. Each item carries a status verified against the actual code on 6 June 2026:
 

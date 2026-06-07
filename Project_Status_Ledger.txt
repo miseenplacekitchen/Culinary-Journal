@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phase 24 — refund copy + purchase emails)
+Last updated: 9 June 2026 (Phase 26 — library depth + site pages + nav)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -13,8 +13,8 @@ DEFERRED = explicitly postponed (user decision or blocked on D/G decisions)
 OPEN     = not started or only stubbed
 BLOCKED  = needs Betty decision before any build
 
-Master_Incomplete_Items_List.txt = master item-level backlog (June 6 audit + reconciliation notes).
-Reconcile against this file when closing items; ledger tracks phases and SQL.
+Master_Incomplete_Items_List.txt = master backlog. Use section A–E (RECONCILIATION)
+for what is genuinely open; legacy audit below that is archive only.
 
 ══════════════════════════════════════════════════════════════════════
 SQL SCRIPTS — RUN ORDER
@@ -37,9 +37,11 @@ fix-phase23-batch.sql       | Shared pantry, Stripe, promos, lib admin | Ran ✅
 fix-phase24-refund-copy.sql | Refund wording + purchase email templates  | Ran ✅
 fix-phase25-library-starter.sql | 8 starter ingredient profiles + links | Ran ✅
 fix-phase25-library-links-patch.sql | Broader name match for 4 profiles | Ran ✅
+fix-phase26-library-content.sql   | Spice/tool/cut/preservation starters | Pending Betty
+fix-phase26-site-pages.sql        | Cultural, event, legal page registry | Pending Betty
 
 ══════════════════════════════════════════════════════════════════════
-PHASE STATUS (11–24)
+PHASE STATUS (11–26)
 ══════════════════════════════════════════════════════════════════════
 Phase | Label                         | Status
 ------|-------------------------------|----------------------------------
@@ -58,6 +60,13 @@ Phase | Label                         | Status
 23    | Lane 3 pantry + Stripe + UM   | DONE ✅ (code + SQL) — Stripe skipped
 24    | Refund copy + billing emails  | DONE ✅ (code + SQL)
 25    | Library starter profiles      | DONE ✅ (code + SQL)
+26    | Library depth + site pages    | CODE ✅ — SQL pending · nav links shipped
+
+Phase 26 code shipped:
+  • fix-phase26-library-content.sql — 12 non-ingredient library profiles
+  • fix-phase26-site-pages.sql — food-map, festivals, events, legal pages
+  • nav-init.js — Food by Map + Festival Calendar in Recipe Book dropdown
+  • Master list reconciliation — false [MISSING] items moved to A/B
 
 ══════════════════════════════════════════════════════════════════════
 PHASE 14 — LIVE AUDIT (test recipe, hero excluded from scope)

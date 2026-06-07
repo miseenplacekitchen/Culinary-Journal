@@ -1,6 +1,6 @@
 THE CULINARY JOURNAL — PRODUCT DIRECTION (Betty, June 2026)
 Status: ACTIVE — product north star (use with Master_Incomplete_Items_List.txt + this ledger)
-Last updated: 9 June 2026 (post Phase 24; Lanes 1–3 shipped)
+Last updated: 9 June 2026 (post Phase 26; Lanes 1–3 shipped)
 
 ══════════════════════════════════════════════════════════════════════
 NORTH STAR
@@ -59,7 +59,7 @@ LANES — STATUS
 Lane 1 — Control Centre (Phase 21)     ✅ COMPLETE
 Lane 3 — Household + library spine   ✅ COMPLETE (Phases 22–24)
 Lane 2 — Core journeys                 🔄 VERIFY (checklist below)
-Lane 4 — Library content depth         🔄 ONGOING (starter pack Phase 25)
+Lane 4 — Library content depth         🔄 ONGOING (Phase 25 + 26 starters)
 Lane 5 — PayPal checkout               ⏸ DEFERRED (Betty decision)
 
 ══════════════════════════════════════════════════════════════════════
@@ -96,15 +96,20 @@ Shipped:
   • Recipe 📚 links when profile published + governed_ingredient_id set
   • Admin: Ing ID column + Link button
 
-Next:
-  1. Run fix-phase25-library-starter.sql — 8 starter ingredient profiles
-  2. Check governed_ingredient_id linked (SQL output shows IDs or NULL)
-  3. Manually link any NULLs in Dashboard → Library → Ing ID
-  4. Add more profiles over time (spice, tool, cut, preservation)
-  5. Approve member submissions via library-submit flow when ready
+Phase 25 ✅ (Betty ran SQL): 8 ingredients linked to governed IDs.
 
-Starter profiles (Phase 25): garlic, onion, butter, olive oil, rice,
-tomato, chicken breast, salt
+Phase 26 — run on Supabase:
+  1. fix-phase26-library-content.sql — spice/tool/cut/preservation starters
+  2. fix-phase26-site-pages.sql — register food-map, festivals, event + legal pages
+  3. Site Management → Pages: set Food Map + Festival Calendar to Public when ready
+  4. Library directory: filter by type — confirm new profiles appear
+
+Starter profiles:
+  Ingredients (25): garlic, onion, butter, olive oil, rice, tomato, chicken breast, salt
+  Spice (26): cumin, turmeric, black pepper
+  Tool (26): cast iron skillet, chef's knife, digital scale
+  Cut (26): chicken thigh, salmon fillet, beef mince
+  Preservation (26): quick pickling, freezing leftovers, water bath canning
 
 ══════════════════════════════════════════════════════════════════════
 WHAT'S LEFT (summary)
