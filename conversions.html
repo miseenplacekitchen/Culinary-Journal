@@ -11,11 +11,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+  <script src="library-chrome.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); }
-    .cv-wrap  { max-width:900px; margin:0 auto; padding:32px 20px 80px; }
-    .cv-title { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--text-high); margin-bottom:8px; }
-    .cv-sub   { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-bottom:32px; }
+    .cv-wrap  { max-width:900px; margin:0 auto; padding:8px 0 0; }
     .cv-grid  { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
     @media(max-width:640px){ .cv-grid { grid-template-columns:1fr; } }
     .cv-card  { background:var(--text-ghost); border:1px solid var(--border); border-radius:14px; padding:22px 24px; }
@@ -62,11 +61,9 @@
   <div class="nav-btns" id="nav-btns"></div>
 </nav>
 <div class="tab-nav"></div>
-
+<div id="lib-chrome"></div>
+<div class="lib-content">
 <div class="cv-wrap">
-  <h1 class="cv-title">⚖️ Conversion Tools</h1>
-  <div class="cv-sub">All calculations are instant and mathematical — no rounding surprises.</div>
-
   <div class="cv-grid">
 
     <!-- Volume and Capacity (CJ-020) -->
@@ -173,8 +170,13 @@
 
   </div>
 </div>
+</div>
 
 <script src="nav-init.js"></script>
+<script>
+LibraryChrome.render({ root: 'lib-chrome', active: 'conversions' });
+document.title = 'Conversions & Weights — The Culinary Journal';
+</script>
 <script>
 // ── VOLUME ───────────────────────────────────────────────────────
 const VOL = {cups:240, tbsp:15, tsp:5, l:1000, floz:29.5735};

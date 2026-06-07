@@ -52,13 +52,14 @@ A · DONE — shipped (Phases 1–26 SQL + Phase 27/28 code). Strike after live 
   • Phase 30 meal planner: hierarchy filters, family groups, copy week, cloud pantry, diary dots
   • Phase 32 ✅: library approve→publish · household meal sync · meal_plan_slots · hide-unsafe · DB substitutes · Desiree/Kipfler profiles
   • Phase 33 ✅: regional hints · sync conflicts · most-saved · collection print · event scaling/meal sync · wedding presets · JSON-LD · print gating toggle
-  • Phase 34 ✅: admin duplicates · ROTW expiry · owner analytics · division CRUD polish · theme-sweep · library profiles batch · Lane 2 hardening
+  • Phase 34 ✅ (SQL ✅ Betty): admin duplicates · ROTW expiry · owner analytics · division CRUD polish · theme-sweep · 7 library profiles · Lane 2 hardening · ROTW cron job 4
+  • Phase 35 ✅ (SQL ✅ Betty): milk, capsicum, cinnamon, paprika, wok, lamb shoulder, smoking · lane2-spot-check.html
   • GL-07 aisle layout · GL-08 multi-store · GL-09 copy/print export (grocery.html)
   • Self-service deactivation · onboarding allergy/health · MP-05 Today panel
   • Baby food stage on family profiles (UI + SQL in fix-phase4)
 
 B · VERIFY — code exists; Betty live test then move to A
-  • Lane 2 full journeys (see Lane2_Verification_Log.txt)
+  • Lane 2 full journeys — use lane2-spot-check.html (admin dashboard quick link)
   • Fresh recipe submit → approve → public (not only test UUID)
   • Grocery/pantry sign-out persistence · two-account household sync
   • CJ-006 attribution · Tried It → diary · dietary card on recipe page
@@ -80,38 +81,22 @@ C · DECIDE — Betty decision before build
   • G3 quantity model (presence vs strict numeric)
 
 D · OPEN — still to build or deepen (work through these)
-  Library (remaining)
-  • Write/link more library profiles beyond starters (Phase 34 added 7 — ongoing content)
+  Section D code batch closed at Phase 34 (admin · grocery conflicts · print gating · events · SEO).
+  Remaining OPEN items:
+
+  Library (ongoing content)
+  • Write/link more library profiles (Phase 35 added 7 — ongoing content)
 
   Recipe
-  • Hero 4.1 live verify (CSS shipped — Betty visual check)
-  • ~~Pipeline hardening if Lane 2 spot-check fails~~ ✅ Phase 34 review RPC + submit redirect + grocery flush
+  • Hero 4.1 live verify (CSS shipped — Betty visual check on live recipe page)
 
-  Grocery / pantry
-  • ~~Regional ingredient intelligence · shared-edit conflict handling~~ ✅ Phase 33 (SQL ✅ Betty)
-
-  Print Studio (remaining after Phase 31)
-  • ~~D4 theme tiers in UM (premium gating)~~ ✅ Phase 33 — site_features print_premium_layouts toggle
+  Print Studio
   • Print & Post payment + dispatch fulfilment (preview only — needs payment partner)
-  • ~~Bulk collection print from Recipe Book · upload-your-own background~~ ✅ Phase 33
-
-  Social / chefs
-  • ~~Most-saved ranking (needs engagement data)~~ ✅ Phase 33 SQL + chefs widget — wedding showcase via table-planner + festival
-
-  Table planner & events
-  • ~~Multi-table wedding venue polish · event→meal-planner sync · guest scaling on all event pages~~ ✅ Phase 33
-
-  Cultural / SEO
-  • ~~Food map regional data depth · festival entries · JSON-LD on library/event pages~~ ✅ Phase 33
-
-  Admin
-  • ~~Division CRUD polish · duplicate recipe detection · ROTW auto-expiry job~~ ✅ Phase 34 (run schedule-rotw-expiry-cron.sql)
-  • ~~Full owner analytics dashboards · 47-theme visual sweep~~ ✅ Phase 34 — theme-sweep.html + admin_get_owner_analytics
 
   Legal
   • Lawyer review of policy drafts
 
-  Monetisation (section C)
+  Monetisation (section C — blocked on decisions)
   • PayPal/checkout · free-plan limits · theme marketplace
 
 E · DEFERRED — only AI (do not build until Betty asks)

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lane 2 Spot-Check — Admin</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
+  <style>
+    .l2-wrap { max-width: 820px; margin: 0 auto; padding: 28px 20px 60px; }
+    .l2-title { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 700; color: var(--text-high); }
+    .l2-sub { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-mid); margin: 8px 0 24px; line-height: 1.55; }
+    .l2-journey { background: var(--text-ghost); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+    .l2-journey h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--text-high); margin: 0 0 10px; }
+    .l2-step { display: flex; align-items: flex-start; gap: 10px; margin: 8px 0; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-mid); line-height: 1.45; }
+    .l2-step input { margin-top: 3px; accent-color: var(--accent); }
+    .l2-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .l2-link { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--accent); text-decoration: none; }
+    .l2-link:hover { border-color: var(--accent); }
+    .l2-progress { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 20px; }
+    .l2-note { font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text-mid); margin-top: 20px; padding: 12px; border-radius: 8px; border: 1px dashed var(--border); }
+  </style>
+</head>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+<div class="l2-wrap">
+  <h1 class="l2-title">Lane 2 — Live Spot-Check</h1>
+  <p class="l2-sub">Three core journeys on the <strong>live site</strong>. Tick each step as you test. Progress saves in your browser. Test account: <code>tcj.verify@outlook.com</code></p>
+  <div class="l2-progress" id="l2-progress">0 / 0 complete</div>
+
+  <div class="l2-journey" data-journey="A">
+    <h2>Journey A — Submit → approve → public</h2>
+    <label class="l2-step"><input type="checkbox" data-id="a1"> Submit a new recipe on live (any simple test title)</label>
+    <label class="l2-step"><input type="checkbox" data-id="a2"> Success lands on My Dashboard → Under Review / Pending</label>
+    <label class="l2-step"><input type="checkbox" data-id="a3"> Admin approves it in Recipe Management → Pending tab</label>
+    <label class="l2-step"><input type="checkbox" data-id="a4"> Recipe appears on Recipes list and opens on recipe page</label>
+    <div class="l2-links">
+      <a class="l2-link" href="submit-recipe.html" target="_blank">Submit recipe</a>
+      <a class="l2-link" href="my-dashboard.html#pending" target="_blank">My Dashboard</a>
+      <a class="l2-link" href="dashboard.html" target="_blank">Admin dashboard</a>
+      <a class="l2-link" href="recipes.html" target="_blank">Recipes list</a>
+    </div>
+  </div>
+
+  <div class="l2-journey" data-journey="B">
+    <h2>Journey B — Grocery sign-out persistence</h2>
+    <label class="l2-step"><input type="checkbox" data-id="b1"> Sign in · add 2–3 grocery items (manual or from a recipe)</label>
+    <label class="l2-step"><input type="checkbox" data-id="b2"> Switch tab away or close tab (flush sync runs)</label>
+    <label class="l2-step"><input type="checkbox" data-id="b3"> Sign out · sign back in — items still on grocery list</label>
+    <div class="l2-links">
+      <a class="l2-link" href="grocery.html" target="_blank">Grocery list</a>
+      <a class="l2-link" href="login.html" target="_blank">Sign in / out</a>
+    </div>
+  </div>
+
+  <div class="l2-journey" data-journey="C">
+    <h2>Journey C — Household two-account sync</h2>
+    <label class="l2-step"><input type="checkbox" data-id="c1"> Account A creates or opens household · invites B</label>
+    <label class="l2-step"><input type="checkbox" data-id="c2"> Account B accepts · both see shared grocery bar</label>
+    <label class="l2-step"><input type="checkbox" data-id="c3"> A adds item · B sees it within ~30 seconds (or refresh)</label>
+    <div class="l2-links">
+      <a class="l2-link" href="household.html" target="_blank">Household</a>
+      <a class="l2-link" href="grocery.html" target="_blank">Shared grocery</a>
+    </div>
+  </div>
+
+  <p class="l2-note">If any step fails, note which step and tell your developer — it goes to <code>Lane2_Verification_Log.txt</code> as a bug. When all boxes are ticked, Lane 2 spot-check is complete.</p>
+</div>
+<script>
+var KEY = 'tcj_lane2_spotcheck';
+function loadState() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (_) { return {}; } }
+function saveState(s) { localStorage.setItem(KEY, JSON.stringify(s)); }
+function render() {
+  var state = loadState();
+  var boxes = document.querySelectorAll('input[type=checkbox][data-id]');
+  var done = 0;
+  boxes.forEach(function (cb) {
+    cb.checked = !!state[cb.dataset.id];
+    if (cb.checked) done++;
+    cb.onchange = function () {
+      state[cb.dataset.id] = cb.checked;
+      saveState(state);
+      render();
+    };
+  });
+  document.getElementById('l2-progress').textContent = done + ' / ' + boxes.length + ' steps complete';
+}
+render();
+</script>
+<script src="nav-init.js"></script>
+</body>
+</html>

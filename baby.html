@@ -12,12 +12,10 @@
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
+  <script src="library-chrome.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); }
-    .bt-wrap  { max-width:960px; margin:0 auto; padding:32px 20px 80px; }
-    .bt-header { margin-bottom:32px; }
-    .bt-title  { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:700; color:var(--text-high); margin-bottom:6px; }
-    .bt-sub    { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); max-width:560px; line-height:1.6; }
+    .bt-wrap  { max-width:960px; margin:0 auto; padding:0; }
 
     /* Stage tabs */
     .bt-stages { display:flex; gap:0; border-bottom:2px solid var(--border); margin-bottom:28px; overflow-x:auto; }
@@ -78,12 +76,9 @@
   <div class="nav-btns" id="nav-btns"></div>
 </nav>
 <div class="tab-nav"></div>
+<div id="lib-chrome"></div>
+<div class="lib-content">
 <div class="bt-wrap">
-  <div class="bt-header">
-    <h1 class="bt-title">👶 Baby &amp; Toddler</h1>
-    <div class="bt-sub">Age-appropriate recipes and food guidance. Allergen warnings are shown automatically. Always consult your paediatrician before introducing new foods.</div>
-  </div>
-
   <!-- UNIVERSAL DANGER INGREDIENTS -->
   <div class="bt-danger">
     <div class="bt-danger-title">Never give to babies under 12 months</div>
@@ -257,8 +252,13 @@
     </div>
   </div>
 </div>
+</div>
 
 <script src="nav-init.js"></script>
+<script>
+LibraryChrome.render({ root: 'lib-chrome', active: 'baby' });
+document.title = 'Baby & Toddler — The Culinary Journal';
+</script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 

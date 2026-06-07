@@ -124,6 +124,64 @@
     .dj-view-title { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:700; color:var(--text-high); margin-bottom:4px; }
     .dj-view-date { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--accent); margin-bottom:16px; }
     .dj-view-divider { height:1px; background:var(--border); margin:16px 0; }
+
+    /* ── View toggle ── */
+    .dj-view-toggle { display:flex; gap:4px; background:var(--text-ghost); border:1px solid var(--border); border-radius:10px; padding:4px; }
+    .dj-view-btn { padding:8px 16px; border:none; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; color:var(--text-mid); background:none; cursor:pointer; transition:all .15s; }
+    .dj-view-btn.active { background:var(--accent); color:#fff; font-weight:600; }
+
+    /* ── Month planner spread (planner-style) ── */
+    .dj-month-view { display:none; }
+    .dj-month-view.active { display:block; }
+    .dj-list-view.hidden { display:none; }
+
+    .dj-mp-header { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:20px; padding:20px 22px; background:var(--text-ghost); border:1px solid var(--border); border-radius:14px; }
+    .dj-mp-head-left { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+    .dj-mp-year { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:.12em; color:var(--text-mid); writing-mode:vertical-rl; transform:rotate(180deg); align-self:stretch; display:flex; align-items:center; }
+    .dj-mp-month-num { font-family:'Cormorant Garamond',serif; font-size:3.2rem; font-weight:700; color:var(--text-high); line-height:1; }
+    .dj-mp-month-name { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:600; color:var(--accent); font-style:italic; }
+    .dj-mp-minis { display:flex; gap:14px; flex:1; justify-content:center; flex-wrap:wrap; }
+    .dj-mp-mini { text-align:center; min-width:88px; }
+    .dj-mp-mini-label { font-family:'DM Sans',sans-serif; font-size:9px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--text-mid); margin-bottom:6px; }
+    .dj-mp-mini-label.current { color:var(--accent); }
+    .dj-mp-mini-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; font-family:'DM Sans',sans-serif; font-size:7px; color:var(--text-mid); }
+    .dj-mp-mini-cell { padding:2px 0; text-align:center; border-radius:2px; }
+    .dj-mp-mini-cell.in-month { color:var(--text-high); }
+    .dj-mp-mini-cell.today { background:var(--accent); color:#fff; font-weight:700; }
+    .dj-mp-mini-cell.has-entry { font-weight:700; color:var(--accent); }
+    .dj-mp-nav { display:flex; gap:8px; align-items:center; }
+    .dj-mp-nav button { padding:8px 14px; border:1px solid var(--border); border-radius:8px; background:none; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); cursor:pointer; }
+    .dj-mp-nav button:hover { border-color:var(--accent); color:var(--accent); }
+
+    .dj-mp-month-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+    .dj-mp-tab { padding:6px 12px; border-radius:8px; border:1px solid var(--border); font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; letter-spacing:.06em; color:var(--text-mid); background:none; cursor:pointer; transition:all .15s; }
+    .dj-mp-tab:hover { border-color:var(--accent); color:var(--accent); }
+    .dj-mp-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+    .dj-mp-grid-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:14px; background:var(--text-ghost); }
+    .dj-mp-grid { display:grid; min-width:720px; }
+    .dj-mp-corner { background:var(--bg); border-bottom:1px solid var(--border); border-right:1px solid var(--border); min-height:36px; }
+    .dj-mp-week-hd { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; color:var(--text-mid); text-align:center; padding:10px 6px; border-bottom:1px solid var(--border); border-right:1px solid var(--border); background:var(--bg); }
+    .dj-mp-dow { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:.08em; color:var(--text-mid); writing-mode:vertical-rl; transform:rotate(180deg); display:flex; align-items:center; justify-content:center; padding:8px 4px; border-right:1px solid var(--border); border-bottom:1px solid var(--border); background:var(--bg); }
+    .dj-mp-cell { min-height:92px; padding:8px 10px; border-right:1px solid var(--border); border-bottom:1px solid var(--border); cursor:pointer; transition:background .15s; position:relative; vertical-align:top; }
+    .dj-mp-cell:hover { background:rgb(from var(--accent) r g b / .06); }
+    .dj-mp-cell.other-month { opacity:.35; cursor:default; }
+    .dj-mp-cell.other-month:hover { background:transparent; }
+    .dj-mp-cell.selected { background:rgb(from var(--accent) r g b / .12); box-shadow:inset 0 0 0 1.5px var(--accent); }
+    .dj-mp-cell.today .dj-mp-date { color:var(--accent); font-weight:700; }
+    .dj-mp-date { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; color:var(--text-mid); margin-bottom:6px; }
+    .dj-mp-snippet { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-high); line-height:1.45; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+    .dj-mp-snippet-title { font-family:'Cormorant Garamond',serif; font-size:12px; font-weight:600; color:var(--text-high); margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .dj-mp-mood { font-size:14px; line-height:1; margin-bottom:4px; }
+    .dj-mp-more { font-family:'DM Sans',sans-serif; font-size:9px; color:var(--accent); margin-top:4px; font-weight:600; }
+    .dj-mp-add { position:absolute; bottom:6px; right:8px; width:22px; height:22px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text-mid); font-size:14px; line-height:1; cursor:pointer; opacity:0; transition:opacity .15s; }
+    .dj-mp-cell:hover .dj-mp-add { opacity:1; }
+    .dj-mp-add:hover { border-color:var(--accent); color:var(--accent); }
+
+    @media(max-width:900px){
+      .dj-mp-month-num { font-size:2.4rem; }
+      .dj-mp-minis { justify-content:flex-start; }
+    }
   </style>
   <script src="page-guard.js"></script>
 </head>
@@ -146,7 +204,11 @@
       <h1 class="dj-heading">My <span>Diary</span></h1>
       <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);margin-top:2px">A private space to think, reflect and remember</div>
     </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <div class="dj-view-toggle" role="tablist" aria-label="Diary view">
+        <button type="button" class="dj-view-btn active" id="dj-btn-list" role="tab" aria-selected="true" onclick="setDiaryView('list')">📋 List</button>
+        <button type="button" class="dj-view-btn" id="dj-btn-month" role="tab" aria-selected="false" onclick="setDiaryView('month')">📅 Month spread</button>
+      </div>
       <a href="meal-planner.html" style="padding:10px 18px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid);text-decoration:none">🗓 Meal Planner</a>
       <button class="dj-new-btn" onclick="openNewEntry()">+ New Entry</button>
     </div>
@@ -159,7 +221,27 @@
     <div class="dj-stat"><div class="dj-stat-num" id="stat-streak">—</div><div class="dj-stat-lbl">Day Streak</div></div>
   </div>
 
-  <div class="dj-layout">
+  <div class="dj-month-view" id="dj-month-view" role="tabpanel" aria-label="Month spread diary">
+    <div class="dj-mp-header">
+      <div class="dj-mp-head-left">
+        <div class="dj-mp-year" id="dj-mp-year"></div>
+        <div class="dj-mp-month-num" id="dj-mp-month-num"></div>
+        <div class="dj-mp-month-name" id="dj-mp-month-name"></div>
+      </div>
+      <div class="dj-mp-minis" id="dj-mp-minis"></div>
+      <div class="dj-mp-nav">
+        <button type="button" onclick="changeMonth(-1)">← Prev</button>
+        <button type="button" onclick="goToday()">Today</button>
+        <button type="button" onclick="changeMonth(1)">Next →</button>
+      </div>
+    </div>
+    <div class="dj-mp-month-tabs" id="dj-mp-month-tabs"></div>
+    <div class="dj-mp-grid-wrap">
+      <div class="dj-mp-grid" id="dj-mp-grid"></div>
+    </div>
+  </div>
+
+  <div class="dj-layout dj-list-view" id="dj-list-view">
 
     <!-- Left: Calendar + Filters -->
     <div>
@@ -287,6 +369,10 @@ const TYPE_EMOJIS  = {general:'📝',recipe:'🍳',event:'🎉',reflection:'💭
 const TYPE_COLOURS = {general:'rgba(126,145,163,.2)',recipe:'rgba(196,151,59,.15)',event:'rgba(76,175,118,.15)',reflection:'rgba(124,99,172,.15)',goals:'rgba(244,144,54,.15)',gratitude:'rgba(232,99,142,.15)'};
 
 let currentYear, currentMonth, allEntries = [], filteredEntries = [], activeType = '', selectedDate = null, viewingEntry = null;
+let diaryView = 'list';
+const MP_ROW_DOW = [0, 6, 5, 4, 3, 2, 1];
+const MP_ROW_LABELS = ['SUN', 'SAT', 'FRI', 'THU', 'WED', 'TUE', 'MON'];
+const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // ── Helpers ─────────────────────────────────────────────────────
 function getSession(){ try{return JSON.parse(localStorage.getItem('tcj_session')||'null');}catch(_){return null;} }
@@ -391,6 +477,7 @@ function buildCalendar(){
 function selectDay(ds){
   selectedDate = ds;
   buildCalendar();
+  buildMonthPlanner();
   applyFilters();
 }
 function changeMonth(dir){
@@ -399,6 +486,7 @@ function changeMonth(dir){
   if(currentMonth > 11){ currentMonth=0;  currentYear++; }
   selectedDate = null;
   loadEntries();
+  if (diaryView === 'month') buildMonthPlanner();
 }
 function goToday(){
   const n = new Date();
@@ -408,11 +496,184 @@ function goToday(){
   loadEntries();
 }
 
+// ── Month spread planner ─────────────────────────────────────────
+function isoWeekNumber(d) {
+  var date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  var dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  var yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
+function entriesForDate(ds) {
+  return allEntries.filter(function (e) { return e.entry_date === ds; });
+}
+
+function entriesByDateMap() {
+  var map = {};
+  allEntries.forEach(function (e) {
+    if (!map[e.entry_date]) map[e.entry_date] = [];
+    map[e.entry_date].push(e);
+  });
+  return map;
+}
+
+function setDiaryView(mode) {
+  diaryView = mode === 'month' ? 'month' : 'list';
+  try { localStorage.setItem('tcj_diary_view', diaryView); } catch (_) {}
+  document.getElementById('dj-list-view').classList.toggle('hidden', diaryView === 'month');
+  document.getElementById('dj-month-view').classList.toggle('active', diaryView === 'month');
+  document.getElementById('dj-btn-list').classList.toggle('active', diaryView === 'list');
+  document.getElementById('dj-btn-month').classList.toggle('active', diaryView === 'month');
+  document.getElementById('dj-btn-list').setAttribute('aria-selected', diaryView === 'list');
+  document.getElementById('dj-btn-month').setAttribute('aria-selected', diaryView === 'month');
+  if (diaryView === 'month') buildMonthPlanner();
+}
+
+function buildMiniCalendar(year, month, label, isCurrent) {
+  var first = new Date(year, month, 1);
+  var days = new Date(year, month + 1, 0).getDate();
+  var startPad = first.getDay();
+  var today = todayStr();
+  var map = entriesByDateMap();
+  var cells = '';
+  var i;
+  for (i = 0; i < startPad; i++) cells += '<div class="dj-mp-mini-cell"></div>';
+  for (i = 1; i <= days; i++) {
+    var ds = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(i).padStart(2, '0');
+    var cls = 'dj-mp-mini-cell in-month';
+    if (ds === today) cls += ' today';
+    if (map[ds] && map[ds].length) cls += ' has-entry';
+    cells += '<div class="' + cls + '">' + i + '</div>';
+  }
+  return '<div class="dj-mp-mini"><div class="dj-mp-mini-label' + (isCurrent ? ' current' : '') + '">' + esc(label) + '</div><div class="dj-mp-mini-grid">' + cells + '</div></div>';
+}
+
+function buildMonthTabs() {
+  var wrap = document.getElementById('dj-mp-month-tabs');
+  if (!wrap) return;
+  wrap.innerHTML = MONTH_SHORT.map(function (name, idx) {
+    var cls = idx === currentMonth ? 'dj-mp-tab active' : 'dj-mp-tab';
+    return '<button type="button" class="' + cls + '" onclick="jumpToMonth(' + currentYear + ',' + idx + ')">' + name + '</button>';
+  }).join('');
+}
+
+function jumpToMonth(year, month) {
+  currentYear = year;
+  currentMonth = month;
+  selectedDate = null;
+  loadEntries();
+}
+
+function monthPlannerWeeks(year, month) {
+  var weeks = [];
+  var first = new Date(year, month, 1);
+  var last = new Date(year, month + 1, 0);
+  var cursor = new Date(first);
+  cursor.setDate(cursor.getDate() - cursor.getDay());
+  while (cursor <= last || cursor.getMonth() === month) {
+    weeks.push(new Date(cursor));
+    cursor.setDate(cursor.getDate() + 7);
+    if (weeks.length > 6) break;
+  }
+  return weeks;
+}
+
+function buildMonthPlanner() {
+  if (diaryView !== 'month') return;
+  var map = entriesByDateMap();
+  var today = todayStr();
+  var dt = new Date(currentYear, currentMonth, 1);
+
+  document.getElementById('dj-mp-year').textContent = String(currentYear);
+  document.getElementById('dj-mp-month-num').textContent = String(currentMonth + 1);
+  document.getElementById('dj-mp-month-name').textContent = dt.toLocaleDateString('en-GB', { month: 'long' });
+
+  var prevM = currentMonth === 0 ? 11 : currentMonth - 1;
+  var prevY = currentMonth === 0 ? currentYear - 1 : currentYear;
+  var nextM = currentMonth === 11 ? 0 : currentMonth + 1;
+  var nextY = currentMonth === 11 ? currentYear + 1 : currentYear;
+  document.getElementById('dj-mp-minis').innerHTML =
+    buildMiniCalendar(prevY, prevM, MONTH_SHORT[prevM], false) +
+    buildMiniCalendar(currentYear, currentMonth, dt.toLocaleDateString('en-GB', { month: 'long' }), true) +
+    buildMiniCalendar(nextY, nextM, MONTH_SHORT[nextM], false);
+
+  buildMonthTabs();
+
+  var weeks = monthPlannerWeeks(currentYear, currentMonth);
+  var grid = document.getElementById('dj-mp-grid');
+  grid.style.gridTemplateColumns = '44px repeat(' + weeks.length + ', minmax(100px, 1fr))';
+  grid.style.gridTemplateRows = 'auto repeat(7, minmax(92px, auto))';
+
+  var html = '<div class="dj-mp-corner"></div>';
+  weeks.forEach(function (weekStart) {
+    var wn = isoWeekNumber(new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 3));
+    html += '<div class="dj-mp-week-hd">' + wn + ' week</div>';
+  });
+
+  MP_ROW_LABELS.forEach(function (label, rowIdx) {
+    html += '<div class="dj-mp-dow">' + label + '</div>';
+    weeks.forEach(function (weekStart) {
+      var cellDate = new Date(weekStart);
+      cellDate.setDate(weekStart.getDate() + MP_ROW_DOW[rowIdx]);
+      var y = cellDate.getFullYear();
+      var m = cellDate.getMonth();
+      var d = cellDate.getDate();
+      var ds = y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+      var inMonth = m === currentMonth && y === currentYear;
+      var entries = map[ds] || [];
+      var primary = entries[0];
+      var cls = 'dj-mp-cell';
+      if (!inMonth) cls += ' other-month';
+      if (ds === today) cls += ' today';
+      if (ds === selectedDate) cls += ' selected';
+
+      var inner = '<div class="dj-mp-date">' + d + '</div>';
+      if (primary) {
+        if (primary.mood) inner += '<div class="dj-mp-mood">' + esc(primary.mood) + '</div>';
+        if (primary.title) inner += '<div class="dj-mp-snippet-title">' + esc(primary.title) + '</div>';
+        var snippet = (primary.content || '').replace(/\s+/g, ' ').trim();
+        if (snippet) inner += '<div class="dj-mp-snippet">' + esc(snippet.slice(0, 120)) + (snippet.length > 120 ? '…' : '') + '</div>';
+        if (entries.length > 1) inner += '<div class="dj-mp-more">+' + (entries.length - 1) + ' more</div>';
+      }
+      if (inMonth) {
+        inner += '<button type="button" class="dj-mp-add" title="New entry" onclick="event.stopPropagation();openNewEntryForDate(\'' + ds + '\')">+</button>';
+      }
+
+      html += '<div class="' + cls + '" data-date="' + ds + '" data-in-month="' + (inMonth ? '1' : '0') + '" onclick="plannerCellClick(\'' + ds + '\',' + (inMonth ? 'true' : 'false') + ')">' + inner + '</div>';
+    });
+  });
+
+  grid.innerHTML = html;
+}
+
+function openNewEntryForDate(ds) {
+  selectedDate = ds;
+  openNewEntry();
+}
+
+function plannerCellClick(ds, inMonth) {
+  if (!inMonth) return;
+  selectedDate = ds;
+  buildCalendar();
+  buildMonthPlanner();
+  var entries = entriesForDate(ds);
+  if (entries.length === 1) {
+    viewEntry(entries[0].id);
+  } else if (entries.length > 1) {
+    setDiaryView('list');
+    applyFilters();
+  } else {
+    openNewEntryForDate(ds);
+  }
+}
+
 // ── Load entries ─────────────────────────────────────────────────
 async function loadEntries(){
   try{
     allEntries = await rpc('get_my_diary_entries',{p_year:currentYear,p_month:currentMonth+1}) || [];
     buildCalendar();
+    buildMonthPlanner();
     applyFilters();
     loadStats();
     // AP-03: deep-link from the Culinary Life timeline — ?edit=<entry id>
@@ -439,6 +700,7 @@ function handleSearch(q){
   rpc('search_my_diary',{p_query:q.trim()}).then(res=>{
     allEntries = res||[];
     buildCalendar();
+    buildMonthPlanner();
     applyFilters();
   }).catch(()=>{});
 }
@@ -573,7 +835,12 @@ async function deleteViewingEntry(){
   currentYear  = now.getFullYear();
   currentMonth = now.getMonth();
   selectedDate = todayStr();
+  try {
+    var saved = localStorage.getItem('tcj_diary_view');
+    if (saved === 'month' || saved === 'list') diaryView = saved;
+  } catch (_) {}
   buildMoodPicker();
+  setDiaryView(diaryView);
   loadEntries();
   // Close modals on backdrop click
   document.getElementById('dj-modal').addEventListener('click', function(e){ if(e.target===this) closeModal(); });

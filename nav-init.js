@@ -321,7 +321,30 @@ function buildSectionNav() {
     document.body.insertBefore(a, document.body.firstChild);
   }
 
+  // Pages that only have <div data-nav-host> need the full sticky header + section tabs.
+  function ensureSiteNavShell() {
+    if (document.querySelector('.nav')) return;
+    var placeholder = document.querySelector('[data-nav-host]');
+    if (!placeholder) return;
+    var nav = document.createElement('nav');
+    nav.className = 'nav';
+    nav.innerHTML =
+      '<a class="nav-logo" href="index.html">' +
+        '<img src="favicon.svg" alt="The Culinary Journal" class="nav-logo-icon" ' +
+        'style="width:32px;height:32px;border-radius:8px;flex-shrink:0;">' +
+        '<span class="nav-logo-text">The Culinary Journal</span>' +
+        '<span class="nav-logo-badge">Est. 2025</span>' +
+      '</a>' +
+      '<div class="nav-btns" id="nav-btns"></div>';
+    var tabNav = document.createElement('div');
+    tabNav.className = 'tab-nav';
+    placeholder.parentNode.insertBefore(nav, placeholder);
+    placeholder.parentNode.insertBefore(tabNav, placeholder);
+    placeholder.remove();
+  }
+
   function init() {
+    ensureSiteNavShell();
     injectSkipLink();
     canonicalizeLogo();
     buildSectionNav();

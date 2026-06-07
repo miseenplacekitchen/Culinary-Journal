@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="style.css">
 <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
+<script src="library-chrome.js"></script>
 <script src="nav-init.js"></script>
 <style>
 .lp-page { min-height:100vh; background:var(--bg); }
@@ -93,6 +94,7 @@
   <div class="nav-btns" id="nav-btns"><!-- populated by nav-init.js --></div>
 </nav>
 <div class="tab-nav"></div>
+<div id="lib-chrome"></div>
 <div id="lp-content">
   <div class="lp-loading"><div class="spinner"></div></div>
 </div>
@@ -285,6 +287,7 @@ async function loadLinkedRecipes(profileName) {
 }
 
 async function init() {
+  LibraryChrome.render({ root: 'lib-chrome', active: profType, compact: true });
   if (!profSlug) { showError('No profile specified.'); return; }
   try {
     const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');

@@ -13,14 +13,11 @@
 <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
 <script src="page-guard.js"></script>
+<script src="library-chrome.js"></script>
 <style>
 *, *::before, *::after { box-sizing:border-box; }
 body { background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--text-high); margin:0; }
-.ls-wrap { max-width:820px; margin:0 auto; padding:60px 24px 100px; }
-.ls-back { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--text-mid); text-decoration:none; margin-bottom:32px; }
-.ls-back:hover { color:var(--accent); }
-.ls-title { font-family:'Cormorant Garamond',serif; font-size:2.2rem; font-weight:600; color:var(--text-high); margin-bottom:6px; }
-.ls-subtitle { font-size:14px; color:var(--text-muted); margin-bottom:36px; }
+.ls-wrap { max-width:820px; margin:0 auto; padding:0; }
 .ls-type-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:36px; }
 .ls-type-btn { padding:8px 16px; border-radius:8px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); cursor:pointer; }
 .ls-type-btn.active { background:var(--accent); border-color:var(--accent); color:#0C0702; font-weight:600; }
@@ -49,11 +46,11 @@ body { background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--text-
 @media(max-width:640px){ .ls-2col { grid-template-columns:1fr; } }
 </style>
 </head>
-<body>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+<div id="lib-chrome"></div>
+<div class="lib-content">
 <div class="ls-wrap">
-  <a href="library-directory.html" class="ls-back">← Library</a>
-  <h1 class="ls-title">Submit a Profile</h1>
-  <p class="ls-subtitle">Create a new library profile. All fields marked <span style="color:var(--accent)">*</span> are required. Images are required before publishing.</p>
   <div id="ls-msg" class="ls-msg"></div>
 
   <!-- Type selector -->
@@ -458,13 +455,15 @@ async function loadExisting(id) {
     setVal('f-chefs', p.chefs_notes); setVal('f-brand', p.recommended_brand);
     setVal('f-dyk', p.did_you_know); setVal('f-status', p.status); setVal('f-visibility', p.visibility);
     if (p.image_url) { var ei = document.createElement('img'); ei.src = p.image_url; ei.style.maxHeight = '100px'; document.getElementById('f-img-preview').replaceChildren(ei); }
-    document.querySelector('.ls-title').textContent = 'Edit Profile';
+    document.title = 'Edit Profile — The Culinary Journal';
+    var chromeTitle = document.getElementById('lib-chrome-title');
+    if (chromeTitle && window.LibraryChrome) chromeTitle.innerHTML = LibraryChrome.titleHtml('Edit Profile');
   } catch(_) {}
 }
 
 renderTypeFields();
-// ── Page init — runs after all declarations ──────────────────────
-(function initPage() {
+// ── Page init — runs after Library chrome mounts ─────────────────
+function initPage() {
   var t = params.get('type');
   if (t && t !== 'ingredient') {
     currentType = t;
@@ -481,8 +480,16 @@ renderTypeFields();
   renderTypeFields();
   var id = params.get('id');
   if (id) { loadExisting(id); }
-})();
+}
 
+</script>
+</div>
+</div>
+<script src="nav-init.js"></script>
+<script>
+LibraryChrome.render({ root: 'lib-chrome', active: 'submit' });
+document.title = 'Submit a Profile — The Culinary Journal';
+initPage();
 </script>
 </body>
 </html>

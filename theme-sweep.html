@@ -7,6 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
   <style>
     .ts-wrap { max-width:1100px; margin:0 auto; padding:28px 20px 60px; }
     .ts-title { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--text-high); }
@@ -27,6 +28,7 @@
   </style>
 </head>
 <body class="page-bg cj-body">
+<div data-nav-host></div>
 <div class="ts-wrap">
   <h1 class="ts-title">Theme Sweep — 47 live themes</h1>
   <p class="ts-sub">Preview each theme on key pages. Mark Pass or Issue — progress saves in your browser. Use while signed in so theme-init applies correctly.</p>
@@ -95,5 +97,6 @@ function render(){
 }
 document.addEventListener('DOMContentLoaded', render);
 </script>
+<script src="nav-init.js"></script>
 </body>
 </html>
