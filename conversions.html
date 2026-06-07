@@ -99,7 +99,7 @@
 
   <!-- Region selector -->
   <div class="cv-region-bar">
-    <div class="cv-region-label">Recipe standard — cups, spoons &amp; labels match this region</div>
+    <div class="cv-region-label">Where is your recipe from? Each region has its own unit group — metric, AU/NZ, UK, and US are equal.</div>
     <div class="cv-region-btns" id="cv-region-btns" role="group" aria-label="Measurement region"></div>
     <div class="cv-region-note" id="cv-region-note"></div>
   </div>
@@ -306,50 +306,82 @@ document.title = 'Conversions & Weights — The Culinary Journal';
 <script>
 // ── Unit definitions (base: ml / g / mm) ─────────────────────────
 const VOL_UNITS = [
-  ['ml',         'Millilitres (ml)',                 1],
-  ['l',          'Litres (L)',                       1000],
-  ['tsp-m',      'Teaspoon — metric (5 ml)',         5],
-  ['tsp-us',     'Teaspoon — US (4.93 ml)',          4.92892159],
-  ['tbsp-au',    'Tablespoon — Australia (20 ml)',   20],
-  ['tbsp-m',     'Tablespoon — metric/UK (15 ml)',   15],
-  ['tbsp-us',    'Tablespoon — US (14.79 ml)',       14.7867648],
-  ['cup-au',     'Cup — Australia/metric (250 ml)',  250],
-  ['cup-us',     'Cup — US (236.59 ml)',             236.588237],
-  ['cup-uslegal','Cup — US nutrition label (240 ml)',240],
-  ['floz-us',    'Fluid ounce — US',                 29.5735296],
-  ['floz-imp',   'Fluid ounce — imperial (UK)',      28.4130625],
-  ['pint-us',    'Pint — US liquid',                 473.176473],
-  ['pint-imp',   'Pint — imperial (UK/AU)',          568.26125],
-  ['quart-us',   'Quart — US',                       946.352946],
-  ['quart-imp',  'Quart — imperial',                 1136.5225],
-  ['gal-us',     'Gallon — US',                      3785.411784],
-  ['gal-imp',    'Gallon — imperial',                4546.09]
+  ['ml',         'Millilitres — ml',                      1],
+  ['l',          'Litres — L',                            1000],
+  ['tsp-m',      'Teaspoon — 5 ml (metric)',              5],
+  ['tbsp-m',     'Tablespoon — 15 ml (metric / UK)',      15],
+  ['tbsp-au',    'Tablespoon — 20 ml (AU / NZ)',           20],
+  ['cup-au',     'Cup — 250 ml (AU / NZ / metric)',         250],
+  ['floz-imp',   'Fluid ounce — 28.4 ml (imperial)',       28.4130625],
+  ['pint-imp',   'Pint — 568 ml (imperial)',               568.26125],
+  ['quart-imp',  'Quart — 1.14 L (imperial)',              1136.5225],
+  ['gal-imp',    'Gallon — 4.55 L (imperial)',             4546.09],
+  ['tsp-us',     'Teaspoon — 4.9 ml (US)',                 4.92892159],
+  ['tbsp-us',    'Tablespoon — 14.8 ml (US)',             14.7867648],
+  ['cup-us',     'Cup — 237 ml (US)',                      236.588237],
+  ['cup-uslegal','Cup — 240 ml (US nutrition label)',      240],
+  ['floz-us',    'Fluid ounce — 29.6 ml (US)',             29.5735296],
+  ['pint-us',    'Pint — 473 ml (US liquid)',              473.176473],
+  ['quart-us',   'Quart — 946 ml (US)',                    946.352946],
+  ['gal-us',     'Gallon — 3.79 L (US)',                   3785.411784]
 ];
 const WT_UNITS = [
-  ['mg',    'Milligrams (mg)',  0.001],
-  ['g',     'Grams (g)',        1],
-  ['kg',    'Kilograms (kg)',   1000],
-  ['oz',    'Ounces (oz)',      28.349523125],
-  ['lb',    'Pounds (lb)',      453.59237],
-  ['stone', 'Stone (st)',       6350.29318]
+  ['mg',    'Milligrams — mg',   0.001],
+  ['g',     'Grams — g',         1],
+  ['kg',    'Kilograms — kg',    1000],
+  ['oz',    'Ounces — oz',       28.349523125],
+  ['lb',    'Pounds — lb',       453.59237],
+  ['stone', 'Stone — st (UK)',   6350.29318]
 ];
 const LEN_UNITS = [
-  ['mm', 'Millimetres (mm)', 1],
-  ['cm', 'Centimetres (cm)', 10],
-  ['m',  'Metres (m)',       1000],
-  ['in', 'Inches (in)',      25.4],
-  ['ft', 'Feet (ft)',        304.8],
-  ['yd', 'Yards (yd)',       914.4]
+  ['mm', 'Millimetres — mm', 1],
+  ['cm', 'Centimetres — cm', 10],
+  ['m',  'Metres — m',       1000],
+  ['in', 'Inches — in',      25.4],
+  ['ft', 'Feet — ft',        304.8],
+  ['yd', 'Yards — yd',       914.4]
 ];
 
+// Dropdown optgroups — each region gets equal footing, ordered by recipe origin
+const VOL_GROUPS = [
+  { id: 'metric', label: 'Metric — international (SI)',           keys: ['ml','l','tsp-m','tbsp-m'] },
+  { id: 'au',     label: 'Australia & New Zealand',               keys: ['cup-au','tbsp-au'] },
+  { id: 'uk',     label: 'United Kingdom & imperial',             keys: ['floz-imp','pint-imp','quart-imp','gal-imp'] },
+  { id: 'us',     label: 'United States customary',               keys: ['tsp-us','tbsp-us','cup-us','cup-uslegal','floz-us','pint-us','quart-us','gal-us'] }
+];
+const WT_GROUPS = [
+  { id: 'metric',   label: 'Metric — international (SI)',         keys: ['mg','g','kg'] },
+  { id: 'imperial', label: 'Ounces & pounds (US & UK recipes)',   keys: ['oz','lb'] },
+  { id: 'uk',       label: 'United Kingdom',                      keys: ['stone'] }
+];
+const LEN_GROUPS = [
+  { id: 'metric',   label: 'Metric — international (SI)',         keys: ['mm','cm','m'] },
+  { id: 'imperial', label: 'Inches & feet (US & UK)',             keys: ['in','ft','yd'] }
+];
+const GROUP_ORDER = {
+  vol: { metric: ['metric','au','uk','us'], au: ['au','metric','uk','us'], uk: ['uk','metric','au','us'], us: ['us','metric','au','uk'] },
+  wt:  { metric: ['metric','imperial','uk'], au: ['metric','imperial','uk'], uk: ['metric','imperial','uk'], us: ['imperial','metric','uk'] },
+  len: { metric: ['metric','imperial'], au: ['metric','imperial'], uk: ['metric','imperial'], us: ['imperial','metric'] }
+};
+const REGION_ORDER = ['metric', 'au', 'uk', 'us'];
+
 const REGIONS = {
+  metric: {
+    label: 'Metric (international)',
+    flag: '🌐',
+    note: 'SI units — millilitres, grams, centimetres. The neutral bridge when converting between any two recipe traditions.',
+    volDefault: ['ml','l'],
+    wtDefault:  ['g','kg'],
+    lenDefault: ['cm','m'],
+    baking: [
+      ['100 g plain flour', '≈ ⅔ metric cup'], ['200 g sugar', '1 metric cup'],
+      ['250 g butter', '1 metric cup'], ['15 ml', '1 metric tbsp']
+    ]
+  },
   au: {
-    label: 'Australia',
+    label: 'Australia & NZ',
     flag: '🇦🇺',
-    note: 'Australian recipes use a 250 ml cup and 20 ml tablespoon. Metric weights are standard.',
-    volPrimary: ['cup-au','tbsp-au','tsp-m','ml','l','floz-imp','pint-imp'],
-    wtPrimary:  ['g','kg','oz','lb'],
-    lenPrimary: ['cm','mm','in','ft'],
+    note: '250 ml cup, 20 ml tablespoon. Metric weights are standard in Australian and New Zealand kitchens.',
     volDefault: ['cup-au','ml'],
     wtDefault:  ['g','oz'],
     lenDefault: ['cm','in'],
@@ -358,28 +390,10 @@ const REGIONS = {
       ['1 cup butter', '250g'], ['1 cup milk', '250ml'], ['1 tbsp butter', '20g']
     ]
   },
-  us: {
-    label: 'United States',
-    flag: '🇺🇸',
-    note: 'US recipes use a 236.59 ml cup and 14.79 ml tablespoon. Stick butter is 113 g (½ cup).',
-    volPrimary: ['cup-us','tbsp-us','tsp-us','floz-us','ml','pint-us','quart-us','gal-us'],
-    wtPrimary:  ['oz','lb','g','kg'],
-    lenPrimary: ['in','ft','cm','mm'],
-    volDefault: ['cup-us','ml'],
-    wtDefault:  ['oz','g'],
-    lenDefault: ['in','cm'],
-    baking: [
-      ['1 cup all-purpose flour', '120g'], ['1 cup granulated sugar', '200g'],
-      ['1 cup butter (2 sticks)', '227g'], ['1 cup milk', '240ml'], ['1 tbsp butter', '14g']
-    ]
-  },
   uk: {
     label: 'United Kingdom',
     flag: '🇬🇧',
-    note: 'UK recipes often use imperial fluid ounces and pints alongside metric. Gas mark is standard for ovens.',
-    volPrimary: ['tbsp-m','floz-imp','pint-imp','ml','l','cup-au','tsp-m'],
-    wtPrimary:  ['g','oz','lb','kg'],
-    lenPrimary: ['cm','in','mm','ft'],
+    note: 'Imperial fluid ounces and pints sit alongside metric. Gas mark is the usual oven scale.',
     volDefault: ['floz-imp','ml'],
     wtDefault:  ['g','oz'],
     lenDefault: ['cm','in'],
@@ -388,19 +402,16 @@ const REGIONS = {
       ['1 cup butter', '225g'], ['1 tbsp butter', '15g'], ['1 imperial pint milk', '568ml']
     ]
   },
-  metric: {
-    label: 'Metric (SI)',
-    flag: '🌐',
-    note: 'Pure metric — millilitres, grams, centimetres. No regional cup confusion.',
-    volPrimary: ['ml','l','tsp-m','tbsp-m','cup-au'],
-    wtPrimary:  ['g','kg','mg'],
-    lenPrimary: ['mm','cm','m'],
-    volDefault: ['ml','l'],
-    wtDefault:  ['g','kg'],
-    lenDefault: ['cm','m'],
+  us: {
+    label: 'United States',
+    flag: '🇺🇸',
+    note: '237 ml cup, 14.8 ml tablespoon. Volumes differ from AU, UK, and metric — always check which cup a recipe means.',
+    volDefault: ['cup-us','ml'],
+    wtDefault:  ['oz','g'],
+    lenDefault: ['in','cm'],
     baking: [
-      ['100 g plain flour', '≈ ⅔ metric cup'], ['200 g sugar', '1 metric cup'],
-      ['250 g butter', '1 metric cup'], ['15 ml', '1 metric tbsp']
+      ['1 cup all-purpose flour', '120g'], ['1 cup granulated sugar', '200g'],
+      ['1 cup butter (2 sticks)', '227g'], ['1 cup milk', '240ml'], ['1 tbsp butter', '14g']
     ]
   }
 };
@@ -424,16 +435,19 @@ function unitFactor(units, key) {
   return u ? u[2] : 1;
 }
 
-function populateSelect(sel, units, primaryKeys) {
+function populateSelectFair(sel, units, groups, kind, activeRegion) {
   sel.innerHTML = '';
-  const primary = [], other = [];
-  units.forEach(function(u) {
-    (primaryKeys.indexOf(u[0]) >= 0 ? primary : other).push(u);
-  });
-  function addGroup(label, list) {
+  const unitMap = {};
+  units.forEach(function(u) { unitMap[u[0]] = u; });
+  const order = (GROUP_ORDER[kind] && GROUP_ORDER[kind][activeRegion]) || groups.map(function(g) { return g.id; });
+
+  order.forEach(function(gid) {
+    const grp = groups.find(function(g) { return g.id === gid; });
+    if (!grp) return;
+    const list = grp.keys.map(function(k) { return unitMap[k]; }).filter(Boolean);
     if (!list.length) return;
     const og = document.createElement('optgroup');
-    og.label = label;
+    og.label = grp.label;
     list.forEach(function(u) {
       const o = document.createElement('option');
       o.value = u[0];
@@ -441,9 +455,7 @@ function populateSelect(sel, units, primaryKeys) {
       og.appendChild(o);
     });
     sel.appendChild(og);
-  }
-  addGroup('Your region', primary);
-  addGroup('All units', other);
+  });
 }
 
 // ── Bidirectional converter (Google Translate style) ─────────────
@@ -504,12 +516,12 @@ function applyRegion(region) {
   });
   document.getElementById('cv-region-note').textContent = r.note;
 
-  populateSelect(document.getElementById('vol-a-unit'), VOL_UNITS, r.volPrimary);
-  populateSelect(document.getElementById('vol-b-unit'), VOL_UNITS, r.volPrimary);
-  populateSelect(document.getElementById('wt-a-unit'),  WT_UNITS,  r.wtPrimary);
-  populateSelect(document.getElementById('wt-b-unit'),  WT_UNITS,  r.wtPrimary);
-  populateSelect(document.getElementById('len-a-unit'), LEN_UNITS, r.lenPrimary);
-  populateSelect(document.getElementById('len-b-unit'), LEN_UNITS, r.lenPrimary);
+  populateSelectFair(document.getElementById('vol-a-unit'), VOL_UNITS, VOL_GROUPS, 'vol', region);
+  populateSelectFair(document.getElementById('vol-b-unit'), VOL_UNITS, VOL_GROUPS, 'vol', region);
+  populateSelectFair(document.getElementById('wt-a-unit'),  WT_UNITS,  WT_GROUPS,  'wt',  region);
+  populateSelectFair(document.getElementById('wt-b-unit'),  WT_UNITS,  WT_GROUPS,  'wt',  region);
+  populateSelectFair(document.getElementById('len-a-unit'), LEN_UNITS, LEN_GROUPS, 'len', region);
+  populateSelectFair(document.getElementById('len-b-unit'), LEN_UNITS, LEN_GROUPS, 'len', region);
 
   converters.vol.setDefaults(r.volDefault[0], r.volDefault[1]);
   converters.wt.setDefaults(r.wtDefault[0],  r.wtDefault[1]);
@@ -523,8 +535,9 @@ function applyRegion(region) {
 
 function buildRegionBar() {
   const wrap = document.getElementById('cv-region-btns');
-  Object.keys(REGIONS).forEach(function(key) {
+  REGION_ORDER.forEach(function(key) {
     const r = REGIONS[key];
+    if (!r) return;
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'cv-region-btn';
@@ -631,9 +644,9 @@ document.addEventListener('DOMContentLoaded', function() {
   );
 
   buildRegionBar();
-  let saved = 'au';
-  try { saved = localStorage.getItem('tcj_conv_region') || 'au'; } catch (_) {}
-  if (!REGIONS[saved]) saved = 'au';
+  let saved = 'metric';
+  try { saved = localStorage.getItem('tcj_conv_region') || 'metric'; } catch (_) {}
+  if (!REGIONS[saved]) saved = 'metric';
   applyRegion(saved);
 
   addScalerRow('Plain Flour', 2);
