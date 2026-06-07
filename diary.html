@@ -539,6 +539,7 @@ function buildMonthCells(year, month) {
 function jumpToYear(year) {
   currentYear = parseInt(year, 10);
   selectedDate = null;
+  if (diaryView === 'month') buildMonthPlanner();
   loadEntries();
 }
 
@@ -598,7 +599,11 @@ function buildMiniCalendar(year, month, label, isCurrent) {
     if (map[ds] && map[ds].length) cls += ' has-entry';
     cells += '<div class="' + cls + '">' + i + '</div>';
   }
-  while ((pad + days) % 7 !== 0) cells += '<div class="dj-mp-mini-cell"></div>';
+  var miniCount = pad + days;
+  while (miniCount % 7 !== 0) {
+    cells += '<div class="dj-mp-mini-cell"></div>';
+    miniCount++;
+  }
   return '<div class="dj-mp-mini"><div class="dj-mp-mini-label' + (isCurrent ? ' current' : '') + '">' + esc(label) + '</div>' + dow + '<div class="dj-mp-mini-grid">' + cells + '</div></div>';
 }
 
@@ -615,6 +620,7 @@ function jumpToMonth(year, month) {
   currentYear = year;
   currentMonth = month;
   selectedDate = null;
+  if (diaryView === 'month') buildMonthPlanner();
   loadEntries();
 }
 
@@ -668,7 +674,7 @@ function buildMonthPlanner() {
     if (primary) {
       if (primary.mood) inner += '<div class="dj-mp-mood">' + esc(primary.mood) + '</div>';
       if (primary.title) inner += '<div class="dj-mp-snippet-title">' + esc(primary.title) + '</div>';
-      var snippet = (primary.content || '').replace(/\s+/g, ' ').trim();
+      var snippet = String(primary.content || '').replace(/\s+/g, ' ').trim();
       if (snippet) inner += '<div class="dj-mp-snippet">' + esc(snippet.slice(0, 120)) + (snippet.length > 120 ? '…' : '') + '</div>';
       if (entries.length > 1) inner += '<div class="dj-mp-more">+' + (entries.length - 1) + ' more</div>';
     }
@@ -720,6 +726,7 @@ async function loadEntries(){
     }
   }catch(e){
     renderEntries([]);
+    if (diaryView === 'month') buildMonthPlanner();
   }
 }
 
