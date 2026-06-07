@@ -66,10 +66,20 @@ Phase | Label                         | Status
 29    | Cross-cutting backlog batch     | DONE ✅ (SQL ✅ Betty)
 30    | Meal planner depth (MP)         | DONE ✅ (no SQL)
 31    | Print Studio depth              | DONE ✅ (SQL ✅ Betty)
+32    | Library + meal planner + allergy | CODE ✅ — SQL pending Betty
 
 fix-phase29-library-content.sql      | 5 ingredient profiles (ginger…flour) | DONE ✅ Betty — potato→Sebago (248)
 fix-phase29-library-submissions.sql | Member library submit + admin RPCs  | DONE ✅ Betty
 fix-phase31-print-orders.sql        | Print & Post order intent queue      | DONE ✅ Betty
+fix-phase32-batch.sql               | Household meals, slots, allergy, lib approve | Pending Betty
+fix-phase32-library-profiles.sql    | Desiree + Kipfler potato profiles    | Pending Betty
+
+Phase 32:
+  • Library: admin Submissions tab — approve publishes profile live
+  • Meal planner: household shared sync (~20s), skip rest of week, auto-grocery on cook
+  • meal_plan_slots structured rows synced on save
+  • Allergy: hide-unsafe policy (Family Profiles), DB substitutions lookup RPC
+  • Desiree/Kipfler library profiles linked (249, 250)
 
 Phase 31 Print Studio:
   • Smarter auto-split: layout/meta-aware capacity + weighted step chunks

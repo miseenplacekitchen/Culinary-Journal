@@ -146,6 +146,8 @@
     .mp-grocery-drop.open { display:block; }
     .mp-grocery-drop button { display:block; width:100%; text-align:left; padding:8px 12px; border:none; background:none; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-high); cursor:pointer; border-radius:6px; }
     .mp-grocery-drop button:hover { background:var(--text-ghost); }
+    .mp-household-bar { display:none; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:10px 14px; margin-bottom:16px; background:var(--text-ghost); border:1px solid var(--border); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); }
+    .mp-household-bar a { color:var(--accent); text-decoration:none; font-weight:500; }
     @media print {
       .nav,.tab-nav,.mp-header,.mp-mode-bar,#mp-today,.mp-summary,#mp-month-view,.mp-modal,button { display:none !important; }
       #mp-print-output { display:block !important; }
@@ -175,6 +177,7 @@
 <div class="tab-nav"></div>
 
 <div class="mp-wrap">
+  <div id="mp-household-bar" class="mp-household-bar"></div>
   <div class="mp-header">
     <div>
       <h1 class="mp-title">🗓 Meal Planner</h1>
@@ -201,6 +204,7 @@
       <div class="mp-actions">
         <button class="mp-btn mp-btn-ghost" onclick="copyLastWeek()" title="Copy previous week's meals">📋 Copy last week</button>
         <button class="mp-btn mp-btn-ghost" onclick="printWeek()" title="Print this week's meal plan">🖨 Print Week</button>
+        <button class="mp-btn mp-btn-ghost" onclick="skipRestOfWeek()" title="Mark remaining days this week as skipped">⏭ Skip rest of week</button>
         <button class="mp-btn mp-btn-ghost" onclick="clearWeek()">Clear Week</button>
         <a href="diary.html" class="mp-btn mp-btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center">📔 Diary</a>
         <div class="mp-grocery-menu">
@@ -453,10 +457,32 @@ function getPlan() {
   catch(_) { return {}; }
 }
 
+var _mpHouseholdShared = false;
+var _mpSyncPoll = null;
+
+function updateMealHouseholdBar(data) {
+  var bar = document.getElementById('mp-household-bar');
+  if (!bar) return;
+  if (data && data.shared) {
+    bar.style.display = 'flex';
+    bar.innerHTML = '<span>🏠 <strong>' + esc(data.household_name || 'Household') + '</strong> — shared meal plan (syncs with your partner)</span>' +
+      '<a href="household.html">Manage household →</a>';
+    _mpHouseholdShared = true;
+  } else {
+    var sess = null;
+    try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
+    bar.style.display = sess ? 'flex' : 'none';
+    if (sess) {
+      bar.innerHTML = '<span>Personal meal plan</span><a href="household.html">Link partner for shared planning →</a>';
+    }
+    _mpHouseholdShared = false;
+  }
+}
+
 function savePlan(plan) {
   const key = getWeekKey(currentWeekOffset);
   localStorage.setItem(key, JSON.stringify(plan));
-  // Sync to Supabase in background
+  localStorage.setItem('tcj_meal_ts_' + key, String(Date.now()));
   clearTimeout(window._mpSyncTimer);
   window._mpSyncTimer = setTimeout(async function() {
     try {
@@ -475,7 +501,7 @@ function savePlan(plan) {
   }, 1200);
 }
 
-async function loadPlanFromSupabase() {
+async function syncMealPlanFromCloud(force) {
   try {
     const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
     if (!sess || !sess.access_token) return;
@@ -491,11 +517,46 @@ async function loadPlanFromSupabase() {
     });
     if (!res.ok) return;
     const remote = await res.json();
-    if (remote && typeof remote === 'object' && Object.keys(remote).length) {
-      localStorage.setItem(key, JSON.stringify(remote));
+    if (!remote || typeof remote !== 'object') return;
+    updateMealHouseholdBar(remote);
+    var plan = remote.plan_data || remote;
+    if (remote.plan_data !== undefined) plan = remote.plan_data;
+    var remoteTime = remote.updated_at ? new Date(remote.updated_at).getTime() : 0;
+    var localTs = parseInt(localStorage.getItem('tcj_meal_ts_' + key) || '0', 10);
+    if (force || remoteTime > localTs || (_mpHouseholdShared && remoteTime >= localTs)) {
+      localStorage.setItem(key, JSON.stringify(plan || {}));
+      if (remoteTime) localStorage.setItem('tcj_meal_ts_' + key, String(remoteTime));
       renderCalendar();
     }
   } catch(_) {}
+}
+
+async function loadPlanFromSupabase() {
+  await syncMealPlanFromCloud(true);
+}
+
+function skipRestOfWeek() {
+  var dates = getWeekDates(currentWeekOffset);
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var plan = getPlan();
+  var changed = 0;
+  dates.forEach(function (date, i) {
+    if (date < today) return;
+    var day = DAYS[i];
+    MEALS.forEach(function (meal) {
+      var slot = plan[day] && plan[day][meal];
+      if (!slot || !slot.id) return;
+      if ((slot.status || 'planned') === 'planned') {
+        if (!plan[day]) plan[day] = {};
+        plan[day][meal] = Object.assign({}, slot, { status: 'skipped' });
+        changed++;
+      }
+    });
+  });
+  if (!changed) { alert('No planned meals left to skip from today onward.'); return; }
+  if (!confirm('Mark ' + changed + ' remaining meal(s) as skipped?')) return;
+  savePlan(plan);
+  renderCalendar();
 }
 
 function getSlot(day, meal) {
@@ -1155,6 +1216,9 @@ async function markMealCooked(day, meal, e) {
   if (confirm('Any leftovers to save to the fridge?')) {
     await promptLeftoversToFridge(day, meal, slot, { skipConfirm: true });
   }
+  if (confirm('Add ingredients for this meal to your grocery list?')) {
+    await exportMealsToGrocery([{ slot: slot, day: day, meal: meal, weekKey: getWeekKey(currentWeekOffset) }], '');
+  }
   renderCalendar();
 }
 
@@ -1194,6 +1258,9 @@ function applyRecipeFilters() {
     if (prepFilterMax != null) {
       var total = recipeTotalMinutes(r);
       if (!total || total > prepFilterMax) return false;
+    }
+    if (hideUnsafeRecipes && typeof AllergyEngine !== 'undefined' && familyProfiles.length) {
+      if (AllergyEngine.isRecipeUnsafe(r, familyProfiles) || checkRecipeConflicts(r).length) return false;
     }
     return true;
   });
@@ -1453,12 +1520,35 @@ async function loadRecipes() {
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
+var hideUnsafeRecipes = false;
+
+async function loadAllergySettings() {
+  hideUnsafeRecipes = false;
+  try {
+    if (typeof AllergyEngine !== 'undefined') await AllergyEngine.loadSubstitutionsFromDB(SUPA_URL, SUPA_KEY);
+    var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    if (!sess || !sess.access_token) return;
+    var res = await fetch(SUPA_URL + '/rest/v1/rpc/get_my_allergy_settings', {
+      method: 'POST',
+      headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + sess.access_token, 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    if (res.ok) {
+      var data = await res.json();
+      hideUnsafeRecipes = !!(data && data.hide_unsafe_recipes);
+    }
+  } catch (_) {}
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   renderCalendar();
   loadRecipes();
   loadFamilyProfiles();
+  loadAllergySettings();
   loadPlanFromSupabase();
   prefetchPantryFromCloud();
+  if (_mpSyncPoll) clearInterval(_mpSyncPoll);
+  _mpSyncPoll = setInterval(function () { syncMealPlanFromCloud(false); }, 20000);
   document.getElementById('mp-modal').addEventListener('click', function(e) {
     if (e.target === this) closePicker();
   });

@@ -414,8 +414,78 @@ function switchLibTab(tab) {
   document.querySelectorAll('#v-library-mgmt .ap-inner-tab').forEach(function(b) {
     b.classList.toggle('active', b.dataset.tab === tab);
   });
+  if (tab === 'lm-submissions') { loadLibSubmissions(); return; }
   var info = LIB_TYPE_MAP[tab];
   if (info) { LIB_CURRENT_TYPE = info.type; loadLibProfiles(); }
+}
+
+async function loadLibSubmissions(status) {
+  var panel = document.getElementById('lm-panel');
+  if (!panel) return;
+  panel.innerHTML = '<div class="ap-loading">Loading submissions…</div>';
+  var filter = status || 'pending';
+  try {
+    var rows = await rpc('admin_get_library_submissions', { p_status: filter, p_limit: 50 });
+    buildLibSubmissionsPanel(panel, Array.isArray(rows) ? rows : [], filter);
+  } catch (e) {
+    panel.innerHTML = '<div class="ap-empty">Error: ' + esc(e.message || e) + '</div>';
+  }
+}
+
+function buildLibSubmissionsPanel(panel, items, filter) {
+  var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">' +
+    '<div style="display:flex;gap:8px">' +
+    ['pending', 'approved', 'rejected'].map(function (s) {
+      return '<button onclick="loadLibSubmissions(\'' + s + '\')" style="font-family:DM Sans,sans-serif;font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:' +
+        (filter === s ? 'var(--accent)' : 'none') + ';color:' + (filter === s ? '#0C0702' : 'var(--text-mid)') + ';cursor:pointer">' +
+        s.charAt(0).toUpperCase() + s.slice(1) + '</button>';
+    }).join('') +
+    '</div><span style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid)">Approve publishes profile live</span></div>';
+  if (!items.length) {
+    panel.innerHTML = html + '<div class="ap-empty">No ' + filter + ' submissions.</div>';
+    return;
+  }
+  html += '<div class="ap-table"><table style="width:100%;border-collapse:collapse"><thead><tr>' +
+    ['Type', 'Name', 'Submitted', 'Preview', 'Actions'].map(function (h) {
+      return '<th style="text-align:left;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-muted);padding:8px 12px;border-bottom:1px solid var(--border)">' + h + '</th>';
+    }).join('') + '</tr></thead><tbody>';
+  items.forEach(function (sub) {
+    var p = sub.payload || {};
+    var name = p.name || sub.slug || '—';
+    var when = sub.created_at ? new Date(sub.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+    var preview = [p.flavour_profile, p.flavour_wheel, p.what_its_for, p.characteristics].filter(Boolean)[0] || p.chefs_notes || '';
+    preview = String(preview).slice(0, 120) + (String(preview).length > 120 ? '…' : '');
+    var actions = filter === 'pending'
+      ? '<button data-action="lib-sub-approve" data-sid="' + esc(sub.id) + '" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #6dc86d;background:rgba(100,200,100,.1);color:#6dc86d;cursor:pointer;margin-right:6px">Approve</button>' +
+        '<button data-action="lib-sub-reject" data-sid="' + esc(sub.id) + '" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--text-mid);cursor:pointer">Reject</button>'
+      : '<span style="font-size:11px;color:var(--text-mid)">' + esc(sub.status) + '</span>';
+    html += '<tr style="border-bottom:1px solid rgba(255,255,255,.04)">' +
+      '<td style="padding:8px 12px;font-size:12px;color:var(--text-mid)">' + esc(sub.profile_type || '') + '</td>' +
+      '<td style="padding:8px 12px;font-size:13px;color:var(--text-high)">' + esc(name) + '</td>' +
+      '<td style="padding:8px 12px;font-size:11px;color:var(--text-mid)">' + esc(when) + '</td>' +
+      '<td style="padding:8px 12px;font-size:11px;color:var(--text-mid);max-width:240px">' + esc(preview) + '</td>' +
+      '<td style="padding:8px 12px">' + actions + '</td></tr>';
+  });
+  html += '</tbody></table></div>';
+  panel.innerHTML = html;
+  panel.onclick = function (e) {
+    var btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    var sid = btn.dataset.sid;
+    if (btn.dataset.action === 'lib-sub-approve') reviewLibSubmission(sid, 'approve');
+    if (btn.dataset.action === 'lib-sub-reject') reviewLibSubmission(sid, 'reject');
+  };
+}
+
+async function reviewLibSubmission(id, action) {
+  var notes = action === 'reject' ? prompt('Rejection notes for submitter (optional):', '') : '';
+  if (action === 'reject' && notes === null) return;
+  if (action === 'approve' && !confirm('Approve and publish this profile to the library?')) return;
+  try {
+    await rpc('admin_review_library_submission', { p_id: id, p_action: action, p_notes: notes || null });
+    alert(action === 'approve' ? 'Published to library.' : 'Submission rejected.');
+    loadLibSubmissions('pending');
+  } catch (e) { alert('Error: ' + (e.message || e)); }
 }
 
 async function loadLibProfiles(status) {

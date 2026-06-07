@@ -114,6 +114,33 @@ window.AllergyEngine = (function () {
     return allergyWarnings(recipe, profiles);
   }
 
+  var _dbSubstitutions = {};
+
+  function setSubstitutionsLookup(map) {
+    _dbSubstitutions = map && typeof map === 'object' ? map : {};
+  }
+
+  function loadSubstitutionsFromDB(supaUrl, supaKey) {
+    if (!supaUrl || !supaKey) return Promise.resolve();
+    return fetch(supaUrl + '/rest/v1/rpc/get_substitutions_lookup', {
+      method: 'POST',
+      headers: { apikey: supaKey, 'Content-Type': 'application/json' },
+      body: '{}'
+    }).then(function (res) { return res.ok ? res.json() : {}; })
+      .then(function (data) { setSubstitutionsLookup(data || {}); })
+      .catch(function () {});
+  }
+
+  function dbSubsForIngredient(name) {
+    var k = String(name || '').toLowerCase().trim();
+    if (!k) return [];
+    if (_dbSubstitutions[k]) return _dbSubstitutions[k];
+    for (var key in _dbSubstitutions) {
+      if (k.indexOf(key) >= 0 || key.indexOf(k) >= 0) return _dbSubstitutions[key];
+    }
+    return [];
+  }
+
   var SUBSTITUTE_HINTS = {
     'Dairy': ['oat milk', 'coconut cream', 'plant-based butter'],
     'Gluten': ['rice flour', 'cornstarch', 'gluten-free pasta'],
@@ -136,11 +163,35 @@ window.AllergyEngine = (function () {
     });
     var hits = detected.filter(function (a) { return profileAllergens.has(a); });
     var tips = [];
+    var seen = {};
     hits.forEach(function (a) {
       var subs = SUBSTITUTE_HINTS[a];
-      if (subs && subs.length) tips.push(a + ' → try ' + subs.slice(0, 2).join(' or '));
+      if (subs && subs.length) {
+        var line = a + ' → try ' + subs.slice(0, 2).join(' or ');
+        if (!seen[line]) { seen[line] = true; tips.push(line); }
+      }
+    });
+    (recipe.ingredients || []).forEach(function (sec) {
+      (sec.items || []).forEach(function (item) {
+        var ing = item.ingredient || item.name || '';
+        if (!ing) return;
+        var dbSubs = dbSubsForIngredient(ing);
+        dbSubs.slice(0, 2).forEach(function (row) {
+          var line = ing + ' → ' + row.substitute + (row.ratio ? ' (' + row.ratio + ')' : '') +
+            (row.dietary_benefit ? ' · ' + row.dietary_benefit : '');
+          if (!seen[line]) { seen[line] = true; tips.push(line); }
+        });
+      });
     });
     return tips;
+  }
+
+  /** True when family profiles would get allergy/dietary warnings for this recipe */
+  function isRecipeUnsafe(recipe, profiles) {
+    if (!profiles || !profiles.length || !recipe) return false;
+    var hasIngs = (recipe.ingredients || []).some(function (s) { return (s.items || []).length; });
+    if (hasIngs) return checkRecipe(recipe, profiles, 'family').length > 0;
+    return checkRecipeLight(recipe, profiles).length > 0;
   }
 
   function formatConfirmList(warnings, recipe, profiles) {
@@ -262,6 +313,10 @@ window.AllergyEngine = (function () {
     checkRecipeLight: checkRecipeLight,
     formatConfirmList: formatConfirmList,
     suggestSubstitutes: suggestSubstitutes,
+    isRecipeUnsafe: isRecipeUnsafe,
+    loadSubstitutionsFromDB: loadSubstitutionsFromDB,
+    setSubstitutionsLookup: setSubstitutionsLookup,
+    dbSubsForIngredient: dbSubsForIngredient,
     parseGuestAllergies: parseGuestAllergies,
     seatingProximityWarnings: seatingProximityWarnings,
     warningsForSeat: warningsForSeat

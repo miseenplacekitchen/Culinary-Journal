@@ -733,6 +733,7 @@ loadCategories();
 // ══════════════════════════════════════════════════════════
 var allCommunityRecipes = [];
 var browseFamilyProfiles = [];
+var hideUnsafeRecipes = false;
 var activeDietFilter = '';
 var activeChefFilter = '';
 var activeSpiceFilter = '';
@@ -744,8 +745,10 @@ var CR_CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Ea
 
 async function loadBrowseFamilyProfiles() {
   browseFamilyProfiles = [];
+  hideUnsafeRecipes = false;
   var banner = document.getElementById('cr-family-banner');
   try {
+    if (typeof AllergyEngine !== 'undefined') await AllergyEngine.loadSubstitutionsFromDB(SUPA_URL_CR, SUPA_KEY_CR);
     var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
     if (!sess || !sess.access_token) {
       if (banner) banner.style.display = 'none';
@@ -757,12 +760,22 @@ async function loadBrowseFamilyProfiles() {
       body: JSON.stringify({})
     });
     if (res.ok) browseFamilyProfiles = await res.json() || [];
+    var polRes = await fetch(SUPA_URL_CR + '/rest/v1/rpc/get_my_allergy_settings', {
+      method: 'POST',
+      headers: { apikey: SUPA_KEY_CR, Authorization: 'Bearer ' + sess.access_token, 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    if (polRes.ok) {
+      var pol = await polRes.json();
+      hideUnsafeRecipes = !!(pol && pol.hide_unsafe_recipes);
+    }
   } catch(_) {}
   if (banner) {
     if (browseFamilyProfiles.length) {
       var names = browseFamilyProfiles.map(function (p) { return p.name; }).join(', ');
       banner.style.display = 'block';
       banner.innerHTML = '👪 <strong>Family allergy check active</strong> — cards flagged for ' + names +
+        (hideUnsafeRecipes ? ' · <strong>unsafe recipes hidden</strong>' : '') +
         '. Based on profile allergies, dietary needs, and recipe name/tags (open recipe for full ingredient check). ' +
         '<a href="family-profiles.html" style="color:var(--accent)">Edit profiles →</a>';
     } else {
@@ -982,6 +995,9 @@ function renderCommunityRecipes() {
     if (activeChefFilter) {
       var chefName = r.credit_name || (r.username ? '@'+r.username : '');
       if (chefName !== activeChefFilter) return false;
+    }
+    if (hideUnsafeRecipes && browseFamilyProfiles.length && typeof AllergyEngine !== 'undefined') {
+      if (AllergyEngine.isRecipeUnsafe(r, browseFamilyProfiles) || browseAllergyWarnings(r).length) return false;
     }
     return true;
   });

@@ -50,6 +50,8 @@ A · DONE — shipped (Phases 1–26 SQL + Phase 27/28 code). Strike after live 
   • Phase 29: library member submit workflow (SQL + library-submit.html) · admin inbox
   • Phase 29/31 SQL ✅ Betty confirmed — all 5 ingredient links including potato→Sebago (248)
   • Phase 30 meal planner: hierarchy filters, family groups, copy week, cloud pantry, diary dots
+  • Phase 32: library approve→publish · household meal sync · meal_plan_slots · hide-unsafe · DB substitutes
+  • Phase 32 SQL pending Betty: fix-phase32-batch.sql + fix-phase32-library-profiles.sql
   • GL-07 aisle layout · GL-08 multi-store · GL-09 copy/print export (grocery.html)
   • Self-service deactivation · onboarding allergy/health · MP-05 Today panel
   • Baby food stage on family profiles (UI + SQL in fix-phase4)
@@ -77,17 +79,12 @@ C · DECIDE — Betty decision before build
   • G3 quantity model (presence vs strict numeric)
 
 D · OPEN — still to build or deepen (work through these)
-  Library
-  • Write/link more library profiles · admin approve member submissions into published profiles
+  Library (remaining)
+  • Write/link more library profiles beyond starters
 
   Recipe
   • Hero 4.1 live verify (CSS shipped — Betty visual check)
   • Pipeline hardening if Lane 2 spot-check fails
-
-  Meal planner (remaining after Phase 30)
-  • MP-04 household shared meal plan sync (personal cloud only today)
-  • MP-10–14 edge cases: bulk skip week, auto-grocery on cook, structured meal rows in DB
-  • MP-12 live verify: grocery export skips pantry items after cloud prefetch
 
   Grocery / pantry
   • Regional ingredient intelligence · shared-edit conflict handling
@@ -98,9 +95,6 @@ D · OPEN — still to build or deepen (work through these)
 
   Social / chefs
   • Most-saved ranking (needs engagement data) · wedding/large-event showcases
-
-  Allergy / health
-  • Hard “hide unsafe” policy option · substitutes from DB table (not just hints)
 
   Table planner & events
   • Multi-table wedding venue polish · event→meal-planner sync · guest scaling on all event pages
