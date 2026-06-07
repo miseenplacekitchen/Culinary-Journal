@@ -150,8 +150,10 @@
     .dj-mp-mini-dow span { text-align:center; }
     .dj-mp-mini-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); }
     .dj-mp-mini-cell { padding:4px 0; text-align:center; border-radius:4px; min-height:22px; line-height:22px; }
-    .dj-mp-mini-cell.in-month { color:var(--text-high); font-weight:500; }
+    .dj-mp-mini-cell.in-month { color:var(--text-high); font-weight:500; cursor:pointer; transition:background .15s,color .15s; }
+    .dj-mp-mini-cell.in-month:hover { background:rgb(from var(--accent) r g b / .18); color:var(--accent); }
     .dj-mp-mini-cell.today { background:var(--accent); color:#fff; font-weight:700; }
+    .dj-mp-mini-cell.today:hover { filter:brightness(.92); color:#fff; }
     .dj-mp-mini-cell.has-entry { font-weight:700; color:var(--accent); }
     .dj-mp-nav { display:flex; gap:8px; align-items:center; }
     .dj-mp-nav button { padding:8px 14px; border:1px solid var(--border); border-radius:8px; background:none; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); cursor:pointer; }
@@ -179,10 +181,34 @@
     .dj-mp-cell.selected { background:rgb(from var(--accent) r g b / .12); box-shadow:inset 0 0 0 1.5px var(--accent); }
     .dj-mp-cell.today .dj-mp-date { color:var(--accent); font-weight:700; }
     .dj-mp-date { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600; color:var(--text-mid); margin-bottom:6px; }
-    .dj-mp-snippet { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-high); line-height:1.45; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
-    .dj-mp-snippet-title { font-family:'Cormorant Garamond',serif; font-size:12px; font-weight:600; color:var(--text-high); margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .dj-mp-mood { font-size:14px; line-height:1; margin-bottom:4px; }
+    .dj-mp-entry-row { display:flex; align-items:center; gap:5px; padding:3px 5px; margin:2px 0; border-radius:6px; cursor:pointer; transition:background .15s; }
+    .dj-mp-entry-row:hover { background:rgb(from var(--accent) r g b / .12); }
+    .dj-mp-entry-emoji { font-size:12px; line-height:1; flex-shrink:0; }
+    .dj-mp-entry-title { font-family:'Cormorant Garamond',serif; font-size:11px; font-weight:600; color:var(--text-high); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .dj-mp-more { font-family:'DM Sans',sans-serif; font-size:9px; color:var(--accent); margin-top:4px; font-weight:600; }
+    .dj-feelings-matrix { margin-bottom:4px; }
+    .dj-feelings-heading { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--text-mid); margin-bottom:10px; }
+    .dj-feelings-grid { display:flex; flex-wrap:wrap; gap:8px; }
+    .dj-feeling-chip { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:20px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; border:1px solid var(--border); }
+    .dj-feeling-emoji { font-size:18px; line-height:1; }
+    .dj-feeling-chip.tone-happy { background:rgba(255,193,7,.12); border-color:rgba(255,193,7,.35); color:#e8c547; }
+    .dj-feeling-chip.tone-calm { background:rgba(100,181,246,.12); border-color:rgba(100,181,246,.35); color:#7eb8e8; }
+    .dj-feeling-chip.tone-thoughtful { background:rgba(149,117,205,.12); border-color:rgba(149,117,205,.35); color:#b39ddb; }
+    .dj-feeling-chip.tone-sad { background:rgba(144,164,174,.15); border-color:rgba(144,164,174,.4); color:#90a4ae; }
+    .dj-feeling-chip.tone-strong { background:rgba(255,112,67,.12); border-color:rgba(255,112,67,.35); color:#ff8a65; }
+    .dj-feeling-chip.tone-grateful { background:rgba(129,199,132,.12); border-color:rgba(129,199,132,.35); color:#81c784; }
+    .dj-feeling-chip.tone-low { background:rgba(120,144,156,.12); border-color:rgba(120,144,156,.35); color:#78909c; }
+    .dj-feelings-empty { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); font-style:italic; }
+    .dj-day-entry-list { display:flex; flex-direction:column; gap:10px; }
+    .dj-day-entry-item { display:flex; align-items:flex-start; gap:12px; padding:14px 16px; border:1px solid var(--border); border-radius:12px; cursor:pointer; transition:border-color .15s,background .15s; background:var(--text-ghost); }
+    .dj-day-entry-item:hover { border-color:var(--accent); background:rgb(from var(--accent) r g b / .06); }
+    .dj-day-entry-emoji { font-size:22px; line-height:1; flex-shrink:0; margin-top:2px; }
+    .dj-day-entry-body { flex:1; min-width:0; }
+    .dj-day-entry-name { font-family:'Cormorant Garamond',serif; font-size:1.15rem; font-weight:700; color:var(--text-high); margin-bottom:4px; }
+    .dj-day-entry-meta { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .dj-day-entry-type { padding:2px 8px; border-radius:20px; font-weight:600; }
+    .dj-day-entry-mood { font-size:16px; line-height:1; }
+    .dj-day-entry-edit { font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); flex-shrink:0; align-self:center; }
     .dj-mp-add { position:absolute; bottom:6px; right:8px; width:22px; height:22px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text-mid); font-size:14px; line-height:1; cursor:pointer; opacity:0; transition:opacity .15s; }
     .dj-mp-cell:hover .dj-mp-add { opacity:1; }
     .dj-mp-add:hover { border-color:var(--accent); color:var(--accent); }
@@ -349,11 +375,29 @@
   </div>
 </div>
 
+<!-- Day entries modal (monthly calendar) -->
+<div class="dj-modal" id="dj-day-modal">
+  <div class="dj-modal-box">
+    <div class="dj-modal-head">
+      <div class="dj-modal-title" id="day-modal-title">Entry</div>
+      <button class="dj-modal-close" onclick="closeDayModal()">✕</button>
+    </div>
+    <div class="dj-modal-body">
+      <div id="day-feelings-matrix"></div>
+      <div class="dj-day-entry-list" id="day-entry-list"></div>
+    </div>
+    <div class="dj-modal-foot">
+      <button class="dj-btn dj-btn-secondary" onclick="closeDayModal()">Close</button>
+      <button class="dj-btn dj-btn-primary" onclick="openNewEntryForDay()">+ New Entry</button>
+    </div>
+  </div>
+</div>
+
 <!-- View Modal (read mode) -->
 <div class="dj-modal" id="dj-view">
   <div class="dj-modal-box">
     <div class="dj-modal-head">
-      <div class="dj-modal-title">Entry</div>
+      <div class="dj-modal-title" id="view-modal-title">Entry</div>
       <div style="display:flex;gap:8px">
         <button class="dj-btn dj-btn-secondary" style="padding:6px 14px;font-size:12px" onclick="editFromView()">Edit</button>
         <button class="dj-btn dj-btn-danger" style="padding:6px 14px;font-size:12px" onclick="deleteViewingEntry()">Delete</button>
@@ -361,8 +405,8 @@
       </div>
     </div>
     <div class="dj-modal-body">
-      <div id="view-mood" style="font-size:28px;margin-bottom:4px"></div>
       <div class="dj-view-title" id="view-title"></div>
+      <div id="view-feelings-matrix"></div>
       <div class="dj-view-date" id="view-date"></div>
       <div class="dj-view-divider"></div>
       <div class="dj-view-content" id="view-content"></div>
@@ -380,8 +424,17 @@ const MOODS = ['😊','😄','🥰','😌','🤔','😐','😴','😢','😤','�
 const TYPE_LABELS  = {general:'General',recipe:'Recipe Notes',event:'Event',reflection:'Reflection',goals:'Goals',gratitude:'Gratitude'};
 const TYPE_EMOJIS  = {general:'📝',recipe:'🍳',event:'🎉',reflection:'💭',goals:'🎯',gratitude:'🙏'};
 const TYPE_COLOURS = {general:'rgba(126,145,163,.2)',recipe:'rgba(196,151,59,.15)',event:'rgba(76,175,118,.15)',reflection:'rgba(124,99,172,.15)',goals:'rgba(244,144,54,.15)',gratitude:'rgba(232,99,142,.15)'};
+const MOOD_META = {
+  '😊': { label: 'Happy', tone: 'happy' }, '😄': { label: 'Joyful', tone: 'happy' }, '🥰': { label: 'Loved', tone: 'happy' },
+  '🤩': { label: 'Excited', tone: 'happy' }, '😎': { label: 'Confident', tone: 'happy' }, '✨': { label: 'Sparkling', tone: 'happy' },
+  '😌': { label: 'Calm', tone: 'calm' }, '🫶': { label: 'Warm', tone: 'calm' },
+  '🤔': { label: 'Thoughtful', tone: 'thoughtful' }, '😐': { label: 'Neutral', tone: 'thoughtful' },
+  '😴': { label: 'Tired', tone: 'low' }, '😢': { label: 'Sad', tone: 'sad' }, '😤': { label: 'Frustrated', tone: 'sad' },
+  '💪': { label: 'Determined', tone: 'strong' }, '🙏': { label: 'Grateful', tone: 'grateful' }
+};
+const YEAR_MIN = 1990;
 
-let currentYear, currentMonth, allEntries = [], filteredEntries = [], activeType = '', selectedDate = null, viewingEntry = null;
+let currentYear, currentMonth, allEntries = [], filteredEntries = [], activeType = '', selectedDate = null, viewingEntry = null, dayModalDate = null;
 let diaryView = 'list';
 const MP_DOW_HEADERS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const MP_MINI_DOW = ['M','T','W','T','F','S','S'];
@@ -424,7 +477,52 @@ async function removeDiaryEntry(id){
   }
 }
 function fmtDate(d){ const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
+function fmtDateShort(d){
+  const dt = new Date(d + 'T00:00:00');
+  const day = String(dt.getDate()).padStart(2, '0');
+  const month = dt.toLocaleDateString('en-GB', { month: 'short' });
+  return day + ' ' + month + ' ' + dt.getFullYear();
+}
+function entryEmoji(type){ return TYPE_EMOJIS[type] || '📝'; }
+function entryTypeLabel(type){ return TYPE_LABELS[type] || 'General'; }
+function entryTypeColour(type){ return TYPE_COLOURS[type] || TYPE_COLOURS.general; }
 function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+function buildFeelingsMatrixHtml(entries){
+  const moods = [];
+  entries.forEach(function(e){
+    if (e.mood && moods.indexOf(e.mood) === -1) moods.push(e.mood);
+  });
+  if (!moods.length) {
+    return '<div class="dj-feelings-matrix"><div class="dj-feelings-heading">Feelings</div><div class="dj-feelings-empty">No feelings recorded for this day</div></div>';
+  }
+  const chips = moods.map(function(m){
+    const meta = MOOD_META[m] || { label: 'Felt', tone: 'thoughtful' };
+    return '<span class="dj-feeling-chip tone-' + meta.tone + '"><span class="dj-feeling-emoji">' + m + '</span><span>' + esc(meta.label) + '</span></span>';
+  }).join('');
+  const heading = moods.length > 1 ? 'Feelings today' : 'Feeling';
+  return '<div class="dj-feelings-matrix"><div class="dj-feelings-heading">' + heading + '</div><div class="dj-feelings-grid">' + chips + '</div></div>';
+}
+
+function buildDayEntryListHtml(entries){
+  return entries.map(function(e){
+    const emoji = entryEmoji(e.entry_type);
+    const label = esc(entryTypeLabel(e.entry_type));
+    const colour = entryTypeColour(e.entry_type);
+    const mood = e.mood ? '<span class="dj-day-entry-mood" title="Feeling">' + esc(e.mood) + '</span>' : '';
+    return '<div class="dj-day-entry-item" role="button" tabindex="0" data-entry-id="' + esc(e.id) + '" onclick="editEntryById(\'' + esc(e.id) + '\')">' +
+      '<span class="dj-day-entry-emoji">' + emoji + '</span>' +
+      '<div class="dj-day-entry-body">' +
+        '<div class="dj-day-entry-name">' + esc(e.title || 'Untitled') + '</div>' +
+        '<div class="dj-day-entry-meta">' +
+          '<span class="dj-day-entry-type" style="background:' + colour + '">' + emoji + ' ' + label + '</span>' +
+          mood +
+        '</div>' +
+      '</div>' +
+      '<span class="dj-day-entry-edit">Edit</span>' +
+    '</div>';
+  }).join('');
+}
 
 // ── Mood picker ──────────────────────────────────────────────────
 function buildMoodPicker(){
@@ -548,7 +646,7 @@ function syncYearSelect() {
   if (!sel) return;
   var base = new Date().getFullYear();
   if (!sel.options.length) {
-    for (var y = base - 5; y <= base + 5; y++) {
+    for (var y = YEAR_MIN; y <= base + 5; y++) {
       var opt = document.createElement('option');
       opt.value = y;
       opt.textContent = y;
@@ -597,7 +695,7 @@ function buildMiniCalendar(year, month, label, isCurrent) {
     var cls = 'dj-mp-mini-cell in-month';
     if (ds === today) cls += ' today';
     if (map[ds] && map[ds].length) cls += ' has-entry';
-    cells += '<div class="' + cls + '">' + i + '</div>';
+    cells += '<div class="' + cls + '" role="button" tabindex="0" onclick="jumpToMiniDate(' + year + ',' + month + ',' + i + ')">' + i + '</div>';
   }
   var miniCount = pad + days;
   while (miniCount % 7 !== 0) {
@@ -622,6 +720,16 @@ function jumpToMonth(year, month) {
   selectedDate = null;
   if (diaryView === 'month') buildMonthPlanner();
   loadEntries();
+}
+
+function jumpToMiniDate(year, month, day) {
+  currentYear = year;
+  currentMonth = month;
+  selectedDate = dateStr(year, month, day);
+  if (diaryView === 'month') buildMonthPlanner();
+  loadEntries().then(function () {
+    openDayEntries(selectedDate);
+  });
 }
 
 function buildMonthPlanner() {
@@ -663,7 +771,6 @@ function buildMonthPlanner() {
     var ds = dateStr(cell.y, cell.m, cell.d);
     var inMonth = cell.inMonth;
     var entries = map[ds] || [];
-    var primary = entries[0];
     var cls = 'dj-mp-cell';
     if (weekend) cls += ' weekend';
     if (!inMonth) cls += ' other-month';
@@ -671,13 +778,13 @@ function buildMonthPlanner() {
     if (ds === selectedDate) cls += ' selected';
 
     var inner = '<div class="dj-mp-date">' + cell.d + '</div>';
-    if (primary) {
-      if (primary.mood) inner += '<div class="dj-mp-mood">' + esc(primary.mood) + '</div>';
-      if (primary.title) inner += '<div class="dj-mp-snippet-title">' + esc(primary.title) + '</div>';
-      var snippet = String(primary.content || '').replace(/\s+/g, ' ').trim();
-      if (snippet) inner += '<div class="dj-mp-snippet">' + esc(snippet.slice(0, 120)) + (snippet.length > 120 ? '…' : '') + '</div>';
-      if (entries.length > 1) inner += '<div class="dj-mp-more">+' + (entries.length - 1) + ' more</div>';
-    }
+    entries.slice(0, 3).forEach(function (e) {
+      var emoji = entryEmoji(e.entry_type);
+      inner += '<div class="dj-mp-entry-row" role="button" tabindex="0" onclick="event.stopPropagation();editEntryById(\'' + esc(e.id) + '\')">' +
+        '<span class="dj-mp-entry-emoji">' + emoji + '</span>' +
+        '<span class="dj-mp-entry-title">' + esc(e.title || 'Untitled') + '</span></div>';
+    });
+    if (entries.length > 3) inner += '<div class="dj-mp-more">+' + (entries.length - 3) + ' more</div>';
     if (inMonth) {
       inner += '<button type="button" class="dj-mp-add" title="New entry" onclick="event.stopPropagation();openNewEntryForDate(\'' + ds + '\')">+</button>';
     }
@@ -698,15 +805,31 @@ function plannerCellClick(ds, inMonth) {
   selectedDate = ds;
   buildCalendar();
   buildMonthPlanner();
+  openDayEntries(ds);
+}
+
+function openDayEntries(ds) {
+  dayModalDate = ds;
   var entries = entriesForDate(ds);
-  if (entries.length === 1) {
-    viewEntry(entries[0].id);
-  } else if (entries.length > 1) {
-    setDiaryView('list');
-    applyFilters();
-  } else {
+  if (!entries.length) {
     openNewEntryForDate(ds);
+    return;
   }
+  document.getElementById('day-modal-title').textContent = 'Entry for ' + fmtDateShort(ds);
+  document.getElementById('day-feelings-matrix').innerHTML = buildFeelingsMatrixHtml(entries);
+  document.getElementById('day-entry-list').innerHTML = buildDayEntryListHtml(entries);
+  document.getElementById('dj-day-modal').classList.add('open');
+}
+
+function closeDayModal() {
+  document.getElementById('dj-day-modal').classList.remove('open');
+  dayModalDate = null;
+}
+
+function openNewEntryForDay() {
+  if (!dayModalDate) return;
+  closeDayModal();
+  openNewEntryForDate(dayModalDate);
 }
 
 // ── Load entries ─────────────────────────────────────────────────
@@ -819,25 +942,13 @@ async function saveEntry(){
   }catch(e){ alert('Could not save: '+e.message); }
 }
 
-// ── View entry ───────────────────────────────────────────────────
-function viewEntry(id){
-  const e = allEntries.find(x=>String(x.id)===String(id))
-         || filteredEntries.find(x=>String(x.id)===String(id));
-  if(!e) return;
-  viewingEntry = e;
-  document.getElementById('view-mood').textContent    = e.mood||'';
-  document.getElementById('view-title').textContent   = e.title||'Untitled';
-  document.getElementById('view-date').textContent    = fmtDate(e.entry_date) + ' · ' + (TYPE_EMOJIS[e.entry_type]||'📝') + ' ' + (TYPE_LABELS[e.entry_type]||'General');
-  document.getElementById('view-content').textContent = e.content||'';
-  const tagsEl = document.getElementById('view-tags');
-  tagsEl.innerHTML = (e.tags||[]).map(t=>`<span class="dj-entry-tag">${t}</span>`).join('');
-  document.getElementById('dj-view').classList.add('open');
+// ── View / edit entry ─────────────────────────────────────────────
+function findEntry(id){
+  return allEntries.find(x=>String(x.id)===String(id))
+      || filteredEntries.find(x=>String(x.id)===String(id));
 }
-function closeView(){ document.getElementById('dj-view').classList.remove('open'); viewingEntry=null; }
-function editFromView(){
-  if(!viewingEntry) return;
-  closeView();
-  const e = viewingEntry;
+
+function populateEditForm(e){
   document.getElementById('entry-id').value      = e.id;
   document.getElementById('entry-date').value    = e.entry_date;
   document.getElementById('entry-type').value    = e.entry_type||'general';
@@ -847,6 +958,37 @@ function editFromView(){
   setMood(e.mood||'');
   document.getElementById('delete-btn').style.display = 'inline-block';
   document.getElementById('modal-title').textContent  = 'Edit Entry';
+}
+
+function editEntryById(id){
+  const e = findEntry(id);
+  if(!e) return;
+  viewingEntry = e;
+  closeDayModal();
+  closeView();
+  populateEditForm(e);
+  document.getElementById('dj-modal').classList.add('open');
+}
+
+function viewEntry(id){
+  const e = findEntry(id);
+  if(!e) return;
+  viewingEntry = e;
+  const emoji = entryEmoji(e.entry_type);
+  document.getElementById('view-modal-title').textContent = 'Entry for ' + fmtDateShort(e.entry_date);
+  document.getElementById('view-title').innerHTML = emoji + ' ' + esc(e.title||'Untitled');
+  document.getElementById('view-feelings-matrix').innerHTML = buildFeelingsMatrixHtml([e]);
+  document.getElementById('view-date').textContent = entryTypeLabel(e.entry_type) + (e.mood ? ' · ' + e.mood : '');
+  document.getElementById('view-content').textContent = e.content||'';
+  const tagsEl = document.getElementById('view-tags');
+  tagsEl.innerHTML = (e.tags||[]).map(t=>`<span class="dj-entry-tag">${esc(t)}</span>`).join('');
+  document.getElementById('dj-view').classList.add('open');
+}
+function closeView(){ document.getElementById('dj-view').classList.remove('open'); viewingEntry=null; }
+function editFromView(){
+  if(!viewingEntry) return;
+  closeView();
+  populateEditForm(viewingEntry);
   document.getElementById('dj-modal').classList.add('open');
 }
 
@@ -886,7 +1028,16 @@ async function deleteViewingEntry(){
   loadEntries();
   // Close modals on backdrop click
   document.getElementById('dj-modal').addEventListener('click', function(e){ if(e.target===this) closeModal(); });
+  document.getElementById('dj-day-modal').addEventListener('click', function(e){ if(e.target===this) closeDayModal(); });
   document.getElementById('dj-view').addEventListener('click',  function(e){ if(e.target===this) closeView();  });
+  document.getElementById('day-entry-list').addEventListener('keydown', function(e){
+    if(e.key !== 'Enter' && e.key !== ' ') return;
+    const row = e.target.closest('.dj-day-entry-item');
+    if(!row) return;
+    e.preventDefault();
+    const id = row.getAttribute('data-entry-id');
+    if(id) editEntryById(id);
+  });
   document.getElementById('dj-entries').addEventListener('click', function(e){
     const card = e.target.closest('.dj-entry');
     if(!card) return;
