@@ -737,8 +737,11 @@
       margin-bottom: 16px;
     }
     .sr-flow-bar {
-      display: flex; flex-wrap: nowrap; align-items: stretch; justify-content: space-between;
-      gap: 6px; margin-bottom: 18px; width: 100%;
+      display: flex; flex-wrap: nowrap; align-items: stretch; gap: 8px;
+      margin-bottom: 18px; width: 100%;
+    }
+    .sr-flow-steps {
+      display: flex; flex: 1 1 auto; min-width: 0; gap: 6px;
     }
     .sr-flow-step {
       flex: 1 1 0; min-width: 0; text-align: center;
@@ -753,6 +756,18 @@
       outline: none;
     }
     .sr-flow-step em { font-style: normal; color: var(--accent); font-weight: 600; margin-right: 4px; }
+    .sr-flow-collapse {
+      flex: 0 0 auto; align-self: stretch;
+      padding: 8px 14px; border: 1px solid var(--border); border-radius: 20px;
+      background: rgba(255,255,255,0.02);
+      font-family: "DM Sans", sans-serif; font-size: 11px; font-weight: 500;
+      color: var(--text-muted); cursor: pointer; letter-spacing: 0.03em;
+      white-space: nowrap; transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .sr-flow-collapse:hover, .sr-flow-collapse:focus-visible {
+      border-color: var(--accent); color: var(--accent); background: rgba(255,255,255,0.05);
+      outline: none;
+    }
     .sr-step-num {
       font-family: "DM Sans", sans-serif; font-size: 11px; font-weight: 600;
       color: var(--accent); background: var(--border); padding: 3px 8px; border-radius: 4px;
@@ -771,22 +786,35 @@
     .sr-subsection.collapsed .sr-subsection-title::after { transform: rotate(-90deg); }
     .sr-draft-prompt {
       display: none; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
-      padding: 14px 18px; margin-bottom: 16px; border-radius: 10px;
-      border: 1px solid var(--border); background: rgba(212,160,23,0.08);
+      padding: 14px 18px; margin-bottom: 16px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--text-ghost);
       font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high);
     }
+    .sr-draft-prompt strong { color: var(--accent); font-weight: 500; }
     .sr-draft-prompt-actions { display: flex; gap: 8px; flex-wrap: wrap; }
     .sr-draft-prompt-actions button {
-      font-family: "DM Sans", sans-serif; font-size: 12px; padding: 8px 14px; border-radius: 8px;
-      cursor: pointer; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-high);
+      font-family: "DM Sans", sans-serif; font-size: 12px; padding: 8px 14px; border-radius: 20px;
+      cursor: pointer; border: 1px solid var(--border); background: rgba(255,255,255,0.02);
+      color: var(--text-high); transition: border-color 0.15s, background 0.15s, color 0.15s;
+    }
+    .sr-draft-prompt-actions button:hover {
+      border-color: var(--accent); color: var(--accent); background: rgba(255,255,255,0.05);
     }
     .sr-draft-prompt-actions button:first-child {
-      background: var(--accent); color: #fff; border-color: var(--accent);
+      border-color: rgb(from var(--accent) r g b / 0.45);
+      background: rgb(from var(--accent) r g b / 0.12);
+      color: var(--text-high);
+    }
+    .sr-draft-prompt-actions button:first-child:hover {
+      border-color: var(--accent);
+      background: rgb(from var(--accent) r g b / 0.2);
+      color: var(--accent);
     }
 
     /* ── RESPONSIVE ──────────────────────────── */
     @media (max-width: 680px) {
       .sr-flow-step { font-size: 9px; padding: 7px 3px; }
+      .sr-flow-collapse { font-size: 9px; padding: 7px 10px; }
       .sr-grid, .sr-grid-3, .origin-row { grid-template-columns: 1fr; }
       .sr-full { grid-column: 1; }
       .ing-row { grid-template-columns: 70px 100px 1fr 28px; }
@@ -949,26 +977,15 @@
     </div>
 
     <nav class="sr-flow-bar" aria-label="Recipe workflow">
-      <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-paste')"><em>1</em> Import</button>
-      <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-details')"><em>2</em> Details</button>
-      <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-ingredients')"><em>3</em> Ingredients</button>
-      <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-procedure')"><em>4</em> Procedure</button>
-      <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-notes')"><em>5</em> Notes &amp; submit</button>
+      <div class="sr-flow-steps">
+        <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-paste')"><em>1</em> Import</button>
+        <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-details')"><em>2</em> Details</button>
+        <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-ingredients')"><em>3</em> Ingredients</button>
+        <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-procedure')"><em>4</em> Procedure</button>
+        <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-notes')"><em>5</em> Notes &amp; submit</button>
+      </div>
+      <button type="button" id="btn-toggle-all" class="sr-flow-collapse" onclick="toggleAllSections()">Collapse All ▾</button>
     </nav>
-
-    <!-- COLLAPSE / EXPAND ALL -->
-    <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
-      <button type="button" id="btn-toggle-all"
-        onclick="toggleAllSections()"
-        style="font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500;
-               color:var(--text-high); background:none; border:1px solid var(--border);
-               border-radius:8px; padding:8px 18px; cursor:pointer; letter-spacing:0.03em;
-               transition:all 0.15s;"
-        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
-        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-mid)'">
-        Collapse All ▾
-      </button>
-    </div>
 
     <!-- 1. PASTE & PARSE -->
     <div class="sr-section" id="section-paste">
