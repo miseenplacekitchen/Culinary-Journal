@@ -973,7 +973,7 @@
         </div>
         <div id="scan-status" style="font-family:'DM Sans',sans-serif;font-size:12px;margin-top:6px;display:none"></div>
         <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.6">
-          Pipeline: photo or PDF → OCR → cleaned recipe text (ingredients, method, serves, notes, tips) in the paste box → auto-parses ingredients &amp; procedure.
+          Pipeline: photo or PDF → text extraction → cleaned ingredients, method, serves, notes &amp; tips in the paste box. Click <strong>Parse Recipe</strong> to fill the form.
         </div>
       </div>
 
@@ -2728,8 +2728,28 @@ function isScanNoiseLine(line) {
   if (/^©|copyright|all rights reserved/i.test(line)) return true;
   if (/^www\.|^https?:\/\//i.test(line)) return true;
   if (/^(recipe\s+by|photograph|photo\s+by|source:)/i.test(line)) return true;
+  if (/woolworths\.com|feedback|fresh ideas/i.test(line)) return true;
+  if (/^\d{1,2}\/\d{1,2}\/\d{2,4}/.test(line)) return true;
   if (line.length > 200 && !/\d/.test(line)) return true;
   return false;
+}
+
+function isNutritionOrMetaLine(line) {
+  if (!line) return true;
+  if (/nutrition/i.test(line)) return true;
+  if (/\d+\s*kJ|\bkJ\s*\/|\/\s*\d+\s*Cal|\bdaily energy intake/i.test(line)) return true;
+  if (/^protein$|^fat$|^carbs$|^sugars$/i.test(line)) return true;
+  if (/^\d+(\.\d+)?g$/i.test(line)) return true;
+  if (/quantities above are a guide|average adult diet/i.test(line)) return true;
+  if (/^description$/i.test(line)) return true;
+  if (/est\.?\s*cost|difficulty$/i.test(line)) return true;
+  if (/^prep$|^cook$/i.test(line)) return true;
+  if (/^%|^\d+%\s+of\s+daily/i.test(line)) return true;
+  return false;
+}
+
+function isStepHeaderLine(line) {
+  return /^step\s+\d+\s+of\s+\d+/i.test(line);
 }
 
 function isIngredientLikeLine(line) {
@@ -2742,9 +2762,11 @@ function isIngredientLikeLine(line) {
 }
 
 function isMethodLikeLine(line) {
-  if (isScanNoiseLine(line)) return false;
+  if (isScanNoiseLine(line) || isNutritionOrMetaLine(line)) return false;
+  if (isStepHeaderLine(line)) return true;
   if (/^(?:step\s*)?\d+[\.\):\-]\s+\S/i.test(line)) return true;
-  if (line.length >= 20 && line.length <= 400 && /[a-z]/i.test(line)) return true;
+  if (line.length < 15 || line.length > 400) return false;
+  if (/\b(heat|add|cook|stir|bake|serve|mix|combine|pour|place|remove|transfer|cover|season|bring|simmer|boil|fry|grill|roast|whisk|fold|drain|cool|chop|slice|preheat|microwave)\b/i.test(line)) return true;
   return false;
 }
 
@@ -2765,15 +2787,100 @@ function cleanScanContentLine(line, section) {
 }
 
 function detectScanSection(line) {
+  if (/^\d+\s+ingredients?$/i.test(line)) return 'ing';
   if (/^(ingredients?|what you(?:'ll| will) need|you will need)\s*:?$/i.test(line)) return 'ing';
   if (/^(prep\s+work|directions?|method|steps?|instructions?|procedure|how\s+to(?:\s+make|\s+cook)?)\s*:?$/i.test(line)) return 'meth';
   if (/^(serves?|servings?|yield)\s*:?$/i.test(line)) return 'serves';
   if (/^(?:serves?|servings?|yield)\s*:?\s*[\d\u00BC\-]/i.test(line)) return 'serves';
   if (/^(notes?|cooking\s+notes?)\s*:?$/i.test(line)) return 'notes';
   if (/^(tips?|hints?|tricks?|variations?)\s*:?$/i.test(line)) return 'tips';
-  if (/^(nutrition|nutritional|copyright|chef|author|photograph|photo\s+by|recipe\s+by)\s*:?$/i.test(line)) return 'junk';
+  if (isNutritionOrMetaLine(line)) return 'junk';
+  if (/^(copyright|chef|author|photograph|photo\s+by|recipe\s+by|description|feedback)\s*:?$/i.test(line)) return 'junk';
   if (/^(prep\s*time|cook\s*time|total\s*time|storage|garnish)\s*:?$/i.test(line)) return 'junk';
   return null;
+}
+
+function collectMethodSteps(lines, startIdx, endIdx) {
+  var steps = [];
+  var current = '';
+  for (var i = startIdx; i < endIdx; i++) {
+    var ln = lines[i];
+    if (isNutritionOrMetaLine(ln) || isScanNoiseLine(ln)) break;
+    if (detectScanSection(ln) === 'junk') break;
+    if (isStepHeaderLine(ln)) {
+      if (current) steps.push(cleanScanContentLine(current, 'meth'));
+      current = ln.replace(/^step\s+\d+\s+of\s+\d+\s*/i, '').trim();
+      continue;
+    }
+    if (isStepHeaderLine(ln) || /^(?:step\s*)?\d+[\.\):\-]\s+\S/i.test(ln)) {
+      if (current) steps.push(cleanScanContentLine(current, 'meth'));
+      current = ln.replace(/^(?:step\s*)?\d+[\.\):\-]\s*/i, '').trim();
+    } else if (current) {
+      current += ' ' + ln;
+    } else if (isMethodLikeLine(ln)) {
+      steps.push(cleanScanContentLine(ln, 'meth'));
+    }
+  }
+  if (current) steps.push(cleanScanContentLine(current, 'meth'));
+  return steps.filter(Boolean);
+}
+
+function extractByLayout(lines) {
+  var ingStart = -1, methStart = -1, ingEnd = -1, methEnd = lines.length;
+  var title = '';
+
+  for (var i = 0; i < lines.length; i++) {
+    var ln = lines[i];
+    var hdr = detectScanSection(ln);
+    if (!title && i < 3 && ln.length < 80 && !hdr && !isNutritionOrMetaLine(ln) && !isScanNoiseLine(ln) && !/^\d/.test(ln)) {
+      title = ln.replace(/^recipe\s*:\s*/i, '').trim();
+    }
+    if (ingStart < 0 && hdr === 'ing') ingStart = /^\d+\s+ingredients?$/i.test(ln) ? i + 1 : i + 1;
+    if (methStart < 0 && hdr === 'meth') methStart = i + 1;
+    if (ingStart >= 0 && ingEnd < 0 && methStart < 0 && (hdr === 'junk' || isNutritionOrMetaLine(ln) || /^description$/i.test(ln))) ingEnd = i;
+    if (methStart >= 0 && (hdr === 'junk' || isNutritionOrMetaLine(ln) || /quantities above are a guide/i.test(ln))) {
+      methEnd = i;
+      break;
+    }
+  }
+
+  if (ingStart < 0) {
+    for (var j = 0; j < lines.length; j++) {
+      if (isIngredientLikeLine(lines[j]) && !isNutritionOrMetaLine(lines[j])) {
+        ingStart = j;
+        break;
+      }
+    }
+    if (ingStart >= 0) {
+      for (var k = ingStart; k < lines.length; k++) {
+        if (methStart >= 0 && k >= methStart) { ingEnd = methStart; break; }
+        if (isNutritionOrMetaLine(lines[k]) || /^method$/i.test(lines[k]) || /^description$/i.test(lines[k])) {
+          ingEnd = k;
+          break;
+        }
+      }
+      if (ingEnd < 0 && methStart >= 0) ingEnd = methStart;
+    }
+  }
+
+  var ingLines = [];
+  if (ingStart >= 0) {
+    var end = ingEnd >= 0 ? ingEnd : (methStart >= 0 ? methStart : lines.length);
+    for (var a = ingStart; a < end; a++) {
+      if (isNutritionOrMetaLine(lines[a]) || detectScanSection(lines[a]) === 'junk') break;
+      if (isIngredientLikeLine(lines[a])) {
+        var cleaned = cleanScanContentLine(lines[a], 'ing');
+        if (cleaned) ingLines.push(cleaned);
+      }
+    }
+  }
+
+  var methLines = [];
+  if (methStart >= 0) {
+    methLines = collectMethodSteps(lines, methStart, methEnd);
+  }
+
+  return { title: title, ingLines: ingLines, methLines: methLines };
 }
 
 function parseServesNumber(servesLines) {
@@ -2789,76 +2896,52 @@ function extractRecipeCore(text) {
     : text.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
   var lines = normalized.split('\n').map(stripScanLine).filter(function(l) { return l.length > 0; });
 
-  var sections = { ing: [], meth: [], serves: [], notes: [], tips: [] };
-  var current = null;
-  var title = '';
+  var layout = extractByLayout(lines);
+  var sections = {
+    ing: layout.ingLines.slice(),
+    meth: layout.methLines.slice(),
+    serves: [],
+    notes: [],
+    tips: []
+  };
+  var title = layout.title;
 
-  function pushLine(sec, raw) {
-    var cleaned = cleanScanContentLine(raw, sec);
-    if (!cleaned) return;
-    if (sec === 'ing' && !isIngredientLikeLine(cleaned)) return;
-    if (sec === 'meth' && !isMethodLikeLine(cleaned)) return;
-    if (sec === 'notes' || sec === 'tips' || sec === 'serves') {
-      if (cleaned.length < 2) return;
-    }
-    sections[sec].push(cleaned);
-  }
-
-  for (var i = 0; i < lines.length; i++) {
-    var ln = lines[i];
-    var hdr = detectScanSection(ln);
-
-    if (hdr === 'junk') { current = null; continue; }
-
-    if (hdr) {
-      current = hdr;
-      if (hdr === 'serves') {
-        var servesInline = ln.replace(/^(?:serves?|servings?|yield)\s*:?\s*/i, '').trim();
-        if (servesInline && /\d/.test(servesInline)) pushLine('serves', servesInline);
-      }
-      continue;
-    }
-
-    if (!current) {
-      if (!title && ln.length < 72 && !/^\d/.test(ln) && !isScanNoiseLine(ln)) {
-        title = ln.replace(/^recipe\s*:\s*/i, '').trim();
-      }
-      continue;
-    }
-
-    pushLine(current, ln);
-  }
-
-  // Heuristic when headings were missed
   if (!sections.ing.length && !sections.meth.length) {
-    current = 'scan';
-    for (var n = 0; n < lines.length; n++) {
-      var raw = lines[n];
-      var h = detectScanSection(raw);
-      if (h === 'junk') { current = null; continue; }
-      if (h) { current = h; continue; }
-
-      if (current === 'scan') {
-        if (isIngredientLikeLine(raw)) { current = 'ing'; pushLine('ing', raw); }
-        else if (/^(?:step\s*)?\d+[\.\):\-]\s+\S/i.test(raw)) { current = 'meth'; pushLine('meth', raw); }
-        else if (!title && raw.length < 72 && !/^\d/.test(raw)) title = raw.replace(/^recipe\s*:\s*/i, '').trim();
-      } else if (current === 'ing') {
-        if (/^(?:step\s*)?\d+[\.\):\-]\s+\S/i.test(raw)) { current = 'meth'; pushLine('meth', raw); }
-        else if (isIngredientLikeLine(raw)) pushLine('ing', raw);
-        else if (detectScanSection(raw)) { current = detectScanSection(raw); }
-      } else if (current === 'meth') {
-        var nextSec = detectScanSection(raw);
-        if (nextSec && nextSec !== 'junk') { current = nextSec; continue; }
-        if (isMethodLikeLine(raw)) pushLine('meth', raw);
-      } else if (current === 'serves' || current === 'notes' || current === 'tips') {
-        pushLine(current, raw);
+    var current = null;
+    function pushLine(sec, raw) {
+      var cleaned = cleanScanContentLine(raw, sec);
+      if (!cleaned) return;
+      if (sec === 'ing' && !isIngredientLikeLine(cleaned)) return;
+      if (sec === 'meth' && !isMethodLikeLine(cleaned)) return;
+      sections[sec].push(cleaned);
+    }
+    for (var i = 0; i < lines.length; i++) {
+      var ln = lines[i];
+      var hdr = detectScanSection(ln);
+      if (hdr === 'junk') { current = null; continue; }
+      if (hdr) {
+        current = hdr;
+        if (hdr === 'serves') {
+          var servesInline = ln.replace(/^(?:serves?|servings?|yield)\s*:?\s*/i, '').trim();
+          if (servesInline && /\d/.test(servesInline)) pushLine('serves', servesInline);
+        }
+        continue;
       }
+      if (!current) {
+        if (!title && ln.length < 72 && !/^\d/.test(ln) && !isScanNoiseLine(ln)) {
+          title = ln.replace(/^recipe\s*:\s*/i, '').trim();
+        }
+        continue;
+      }
+      pushLine(current, ln);
     }
   }
 
   var pasteParts = [];
   if (sections.ing.length) pasteParts.push('INGREDIENTS\n' + sections.ing.join('\n'));
-  if (sections.meth.length) pasteParts.push('METHOD\n' + sections.meth.join('\n'));
+  if (sections.meth.length) pasteParts.push('METHOD\n' + sections.meth.map(function(s, idx) {
+    return (idx + 1) + '. ' + s.replace(/^(?:step\s*)?\d+[\.\):\-]\s*/i, '');
+  }).join('\n'));
   if (sections.serves.length) pasteParts.push('SERVES\n' + sections.serves.join('\n'));
   if (sections.notes.length) pasteParts.push('NOTES\n' + sections.notes.join('\n'));
   if (sections.tips.length) pasteParts.push('TIPS\n' + sections.tips.join('\n'));
@@ -2871,9 +2954,6 @@ function extractRecipeCore(text) {
     ingCount: sections.ing.length,
     methCount: sections.meth.length,
     extraCount: extraCount,
-    servesText: sections.serves.join(' '),
-    notesText: sections.notes.join('\n'),
-    tipsText: sections.tips.join('\n'),
     hasContent: sections.ing.length > 0 || sections.meth.length > 0
   };
 }
@@ -2884,6 +2964,9 @@ async function applyScanResult(rawText, statusSuffix) {
   showScanStatus('Structuring recipe sections…', null);
   var extracted = extractRecipeCore(cleaned);
   var pasteEl = document.getElementById('paste-input');
+  var parseRes = document.getElementById('parse-result');
+  if (parseRes) parseRes.style.display = 'none';
+
   var finalText = extracted.hasContent ? extracted.pasteText : cleaned;
   if (pasteEl) pasteEl.value = finalText;
 
@@ -2892,37 +2975,20 @@ async function applyScanResult(rawText, statusSuffix) {
     if (nameEl && !nameEl.value.trim()) nameEl.value = extracted.title;
   }
 
-  var servesNum = parseServesNumber(extracted.servesText ? [extracted.servesText] : []);
-  if (servesNum) {
-    var servEl = document.getElementById('servings');
-    if (servEl && !servEl.value.trim()) servEl.value = servesNum;
-  }
-
-  var notesBits = [];
-  if (extracted.notesText) notesBits.push(extracted.notesText);
-  if (extracted.tipsText) notesBits.push(extracted.tipsText);
-  if (notesBits.length) {
-    var notesEl = document.getElementById('cooking-notes');
-    if (notesEl && !notesEl.value.trim()) notesEl.value = notesBits.join('\n\n');
-  }
-
   var srcScanned = document.getElementById('src-scanned');
   if (srcScanned) srcScanned.checked = true;
 
   if (extracted.hasContent) {
-    var extraMsg = extracted.extraCount
-      ? ' (+ serves/notes/tips in paste box)'
-      : '';
+    var extraMsg = extracted.extraCount ? ' (+ serves/notes/tips)' : '';
     showScanStatus(
       'Cleaned ' + extracted.ingCount + ' ingredient' + (extracted.ingCount === 1 ? '' : 's') +
-      ', ' + extracted.methCount + ' step' + (extracted.methCount === 1 ? '' : 's') +
-      extraMsg + (statusSuffix || '') + ' — parsing ingredients & procedure…',
+      ' and ' + extracted.methCount + ' step' + (extracted.methCount === 1 ? '' : 's') +
+      extraMsg + (statusSuffix || '') + ' — click Parse Recipe when ready.',
       true
     );
     document.getElementById('parse-tips').style.display = 'block';
-    setTimeout(function() { parseRecipe(); }, 200);
   } else {
-    showScanStatus('Could not structure recipe sections — cleaned OCR pasted. Add headings or edit, then Parse Recipe.' + (statusSuffix || ''), false);
+    showScanStatus('Could not structure recipe sections — cleaned text pasted. Add headings or edit, then click Parse Recipe.' + (statusSuffix || ''), false);
     if (pasteEl) pasteEl.value = cleaned;
     document.getElementById('parse-tips').style.display = 'block';
   }
@@ -2941,6 +3007,21 @@ async function ocrFromSource(source, statusPrefix) {
   return (result && result.data && result.data.text) ? result.data.text.trim() : '';
 }
 
+async function extractPdfPageText(page) {
+  var content = await page.getTextContent();
+  var items = (content.items || []).filter(function(it) { return it.str && it.str.trim(); });
+  if (!items.length) return '';
+  var lines = {};
+  items.forEach(function(item) {
+    var y = Math.round(item.transform[5]);
+    if (!lines[y]) lines[y] = [];
+    lines[y].push({ x: item.transform[4], str: item.str });
+  });
+  return Object.keys(lines).sort(function(a, b) { return Number(b) - Number(a); }).map(function(y) {
+    return lines[y].sort(function(a, b) { return a.x - b.x; }).map(function(it) { return it.str; }).join(' ');
+  }).join('\n');
+}
+
 async function scanRecipePdf(file) {
   var pdfjs = window.pdfjsLib;
   if (!pdfjs) {
@@ -2953,22 +3034,33 @@ async function scanRecipePdf(file) {
   var pdf = await pdfjs.getDocument({ data: buf }).promise;
   var maxPages = Math.min(pdf.numPages, 8);
   var allText = '';
+  var usedOcr = false;
+
   for (var p = 1; p <= maxPages; p++) {
     showScanStatus('Reading PDF page ' + p + ' of ' + maxPages + '…', null);
     var page = await pdf.getPage(p);
+    var pageText = await extractPdfPageText(page);
+    if (pageText && pageText.replace(/\s/g, '').length > 80) {
+      allText += pageText + '\n\n';
+      continue;
+    }
+    usedOcr = true;
     var viewport = page.getViewport({ scale: 2 });
     var canvas = document.createElement('canvas');
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
-    var pageText = await ocrFromSource(canvas, 'OCR page ' + p);
-    if (pageText) allText += pageText + '\n\n';
+    var ocrText = await ocrFromSource(canvas, 'OCR page ' + p);
+    if (ocrText) allText += ocrText + '\n\n';
   }
+
   if (!allText.trim()) {
     showScanStatus('No text detected in PDF — try a clearer scan or paste manually.', false);
     return;
   }
-  await applyScanResult(allText.trim(), ' from ' + maxPages + ' PDF page' + (maxPages === 1 ? '' : 's'));
+  var suffix = ' from ' + maxPages + ' PDF page' + (maxPages === 1 ? '' : 's');
+  if (usedOcr) suffix += ' (OCR fallback)';
+  await applyScanResult(allText.trim(), suffix);
 }
 
 async function scanRecipePhoto() {
