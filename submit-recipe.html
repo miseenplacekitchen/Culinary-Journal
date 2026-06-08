@@ -1894,18 +1894,25 @@ function ingNameMatches(a, b) {
 
 var ING_JUNK_NAMES = /^(plus|or|and|as needed|to taste|optional|garnish)$/i;
 
-function findIngredientInDb(query) {
+function findIngredientInDbExact(query) {
   if (!query || !Array.isArray(allIngredients) || !allIngredients.length) return null;
   var lc = ingDbNorm(query);
   if (!lc || ING_JUNK_NAMES.test(lc)) return null;
   var exact = allIngredients.find(function(i) { return ingNameMatches(ingDbNorm(ingDbName(i)), lc); });
   if (exact) return exact;
-  var akaHit = allIngredients.find(function(i) {
+  return allIngredients.find(function(i) {
     var aka = ((i['Also Known As'] || i.also_known_as || '') + '').toLowerCase();
     return aka.split(/[,;/]/).map(function(s) { return s.trim(); }).filter(Boolean)
       .some(function(a) { return ingNameMatches(a, lc); });
-  });
-  if (akaHit) return akaHit;
+  }) || null;
+}
+
+function findIngredientInDb(query) {
+  if (!query || !Array.isArray(allIngredients) || !allIngredients.length) return null;
+  var lc = ingDbNorm(query);
+  if (!lc || ING_JUNK_NAMES.test(lc)) return null;
+  var exactHit = findIngredientInDbExact(query);
+  if (exactHit) return exactHit;
   if (lc.length < 6) return null;
   var qWords = lc.split(/\s+/).filter(function(w) { return w.length > 2; });
   var candidates = allIngredients.filter(function(i) {
@@ -1983,11 +1990,13 @@ function applyIngredientDbMatch(row, opts) {
   if (!nameInput) return false;
   var parsedName = (nameInput.value || '').trim();
   if (!parsedName) return false;
-  var match = findIngredientInDb(parsedName);
+  var match = findIngredientInDbExact(parsedName) || findIngredientInDb(parsedName);
   if (!match) return false;
 
   var canon = ingDbName(match);
-  if (canon) nameInput.value = canon;
+  if (canon && (!parsedName || canon.length >= parsedName.length * 0.5)) {
+    nameInput.value = canon;
+  }
 
   setIngredientCategory(row, (match['Category'] || match.category || '').toString().trim());
 
@@ -2434,7 +2443,7 @@ function addIngRow(container, qty='', unit='', name='', note='', cat='') {
   if (name) {
     const input = row.querySelector('.ing-name-input');
     try { applyIngredientDbMatch(row, { parsedNote: note || '' }); } catch(_) {}
-    try { if (!findIngredientInDb(input.value)) validateIngredient(input); } catch(_) {}
+    try { if (!findIngredientInDbExact(input.value)) validateIngredient(input); } catch(_) {}
   }
   if (unit) {
     const custom = row.querySelector('.ing-unit-custom');
@@ -2815,8 +2824,12 @@ async function applyUrlImportToPaste(articleText, pageTitle, statusSuffix) {
   var finalText = extracted.hasContent ? extracted.pasteText : cleaned;
   if (pasteEl) pasteEl.value = finalText;
   var nameEl = document.getElementById('recipe-name');
-  if (nameEl && pageTitle) nameEl.value = pageTitle.trim();
-  else if (nameEl) {
+  if (nameEl && pageTitle) {
+    nameEl.value = pageTitle.trim();
+    try { clearDraftStorage(); } catch(_) {}
+    var draftPrompt = document.getElementById('draft-restore-prompt');
+    if (draftPrompt) draftPrompt.style.display = 'none';
+  } else if (nameEl) {
     var fallbackTitle = (extracted.title || '').trim();
     if (fallbackTitle && isLikelyRecipeTitleLine(fallbackTitle) && !nameEl.value.trim()) {
       nameEl.value = fallbackTitle;
@@ -3026,15 +3039,58 @@ function isLikelyRecipeTitleLine(line) {
   return true;
 }
 
+function isOrphanAltQtyLine(line) {
+  return /^\(?\s*or\s+[\d\u00BC-\u00BE\/]/i.test(String(line || '').trim());
+}
+
 function isValidParsedIngredient(item) {
   if (!item || !item.name) return false;
   var n = item.name.trim();
-  if (!n || ING_JUNK_NAMES.test(n) || isIngredientSubHeader(n)) return false;
+  if (!n || n.length < 2 || ING_JUNK_NAMES.test(n) || isIngredientSubHeader(n)) return false;
+  if (isOrphanAltQtyLine(n)) return false;
+  if (/^[\d\s\.\/\u00BC-\u00BE\u2150-\u215E\-]+$/.test(n)) return false;
   return true;
 }
 
+function mergeOrphanAltOntoItems(items) {
+  var out = [];
+  (items || []).forEach(function(item) {
+    item = item || {};
+    var name = (item.name || '').trim();
+    var note = (item.note || '').trim();
+    if (!name && /^or\s+/i.test(note)) {
+      if (out.length) {
+        var prevNote = out[out.length - 1];
+        prevNote.note = prevNote.note ? prevNote.note + '; ' + note : note;
+      }
+      return;
+    }
+    if (isOrphanAltQtyLine(name)) {
+      if (out.length) {
+        var prev = out[out.length - 1];
+        prev.note = prev.note ? prev.note + '; ' + name.replace(/^\(|\)$/g, '').trim() : name.replace(/^\(|\)$/g, '').trim();
+      }
+      return;
+    }
+    if (!name || !isValidParsedIngredient(item)) return;
+    out.push(item);
+  });
+  return out;
+}
+
+function fixMethodContractions(text) {
+  return String(text || '')
+    .replace(/\bdon\s+t\b/gi, "don't")
+    .replace(/\bcan\s+t\b/gi, "can't")
+    .replace(/\bwon\s+t\b/gi, "won't")
+    .replace(/\bisn\s+t\b/gi, "isn't")
+    .replace(/\bI\s+m\b/gi, "I'm")
+    .replace(/\byou\s+re\b/gi, "you're")
+    .replace(/\bit\s+s\b/gi, "it's");
+}
+
 function expandMethodStepText(stepText) {
-  var t = String(stepText || '').replace(/^(?:step\s*)?\d+[\.\):\-]\s*/i, '').trim();
+  var t = fixMethodContractions(String(stepText || '').replace(/^(?:step\s*)?\d+[\.\):\-]\s*/i, '').trim());
   if (!t) return [];
   if (t.length <= 220) return [t];
   var parts = t.split(/(?<=[.!?])\s+(?=[A-Z"'(])/);
@@ -3113,14 +3169,24 @@ function splitIngredientLine(line) {
   }
 
   // Standard prefix: "1/2 tsp salt"
-  var qtyPat = '[\\d\u00BC-\u00BE\u2150-\u215E\\/\\.\\s\u2013\\-]+';
-  var prefixRe = new RegExp('^(' + qtyPat + ')\\s*(' + PARSE_UNIT_WORDS + ')(?=\\s|\\.\\,|$)\\s*(.+)$', 'i');
+  var qtyPat = '[\\d\u00BC-\u00BE\u2150-\u215E]+(?:\\s+[\\d\u00BC-\u00BE\u2150-\u215E\\/]+)?';
+  var prefixRe = new RegExp('^(' + qtyPat + ')\\s*\\b(' + PARSE_UNIT_WORDS + ')\\b\\s*(.+)$', 'i');
   var prefix = prefixRe.exec(line);
   if (prefix && prefix[3]) {
     return {
       qty: normalizeParsedQty(prefix[1].trim()),
       unit: normalizeParsedUnit(prefix[2]),
       name: titleCaseIngredientName(prefix[3].trim()),
+      note: note
+    };
+  }
+
+  var countName = line.match(/^(\d+)\s+([A-Za-z][\w\s'()-]+)$/);
+  if (countName && countName[2] && !/^(tsp|tbsp|tbs|cup|cups|g|gm|kg|ml|oz|lb)\b/i.test(countName[2])) {
+    return {
+      qty: countName[1],
+      unit: '',
+      name: titleCaseIngredientName(countName[2].trim()),
       note: note
     };
   }
@@ -3749,6 +3815,13 @@ function parseRecipe() {
     if (/^\[[^\]]+\]\s*:/i.test(line)) continue;
     // Skip very long lines that look like story prose (over 180 chars with no numbers)
     if (line.length > 180 && !/\d/.test(line)) continue;
+    if (!inMethod && isOrphanAltQtyLine(line)) {
+      if (curIng && curIng.items.length) {
+        var prevItem = curIng.items[curIng.items.length - 1];
+        prevItem.note = prevItem.note ? prevItem.note + '; ' + line.trim() : line.trim();
+      }
+      continue;
+    }
 
     // ── Header detection ─────────────────────────────────────────────────────
     if (METH_HDR.test(line)) {
@@ -3809,6 +3882,9 @@ function parseRecipe() {
   }
   pushIng(); pushMeth();
 
+  ingSecs.forEach(function(sec) {
+    sec.items = mergeOrphanAltOntoItems(sec.items);
+  });
   methSecs.forEach(function(sec) {
     sec.steps = expandLongMethodSteps(sec.steps);
   });
