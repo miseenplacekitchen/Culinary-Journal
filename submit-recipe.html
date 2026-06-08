@@ -737,12 +737,20 @@
       margin-bottom: 16px;
     }
     .sr-flow-bar {
-      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px;
-      font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--text-muted);
+      display: flex; flex-wrap: nowrap; align-items: stretch; justify-content: space-between;
+      gap: 6px; margin-bottom: 18px; width: 100%;
     }
     .sr-flow-step {
-      padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px;
+      flex: 1 1 0; min-width: 0; text-align: center;
+      padding: 8px 6px; border: 1px solid var(--border); border-radius: 20px;
       background: rgba(255,255,255,0.02);
+      font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--text-muted);
+      cursor: pointer; transition: border-color 0.15s, color 0.15s, background 0.15s;
+      white-space: nowrap;
+    }
+    .sr-flow-step:hover, .sr-flow-step:focus-visible {
+      border-color: var(--accent); color: var(--accent); background: rgba(255,255,255,0.05);
+      outline: none;
     }
     .sr-flow-step em { font-style: normal; color: var(--accent); font-weight: 600; margin-right: 4px; }
     .sr-step-num {
@@ -778,6 +786,7 @@
 
     /* ── RESPONSIVE ──────────────────────────── */
     @media (max-width: 680px) {
+      .sr-flow-step { font-size: 9px; padding: 7px 3px; }
       .sr-grid, .sr-grid-3, .origin-row { grid-template-columns: 1fr; }
       .sr-full { grid-column: 1; }
       .ing-row { grid-template-columns: 70px 100px 1fr 28px; }
@@ -939,13 +948,13 @@
       </div>
     </div>
 
-    <div class="sr-flow-bar" aria-label="Suggested workflow">
-      <span class="sr-flow-step"><em>1</em> Import</span>
-      <span class="sr-flow-step"><em>2</em> Details</span>
-      <span class="sr-flow-step"><em>3</em> Ingredients</span>
-      <span class="sr-flow-step"><em>4</em> Procedure</span>
-      <span class="sr-flow-step"><em>5</em> Notes &amp; submit</span>
-    </div>
+    <nav class="sr-flow-bar" aria-label="Recipe workflow">
+      <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-paste')"><em>1</em> Import</button>
+      <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-details')"><em>2</em> Details</button>
+      <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-ingredients')"><em>3</em> Ingredients</button>
+      <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-procedure')"><em>4</em> Procedure</button>
+      <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-notes')"><em>5</em> Notes &amp; submit</button>
+    </nav>
 
     <!-- COLLAPSE / EXPAND ALL -->
     <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
@@ -4813,6 +4822,13 @@ function toggleMoveMenu(btn, type) {
 function renumberIngRows(container) {
   // Placeholder — ingredient rows don't currently have numbers
   // but keeping it here for future use
+}
+
+function scrollToFlowSection(sectionId) {
+  var sec = document.getElementById(sectionId);
+  if (!sec) return;
+  sec.classList.remove('collapsed');
+  sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function initSrSectionCollapse() {
