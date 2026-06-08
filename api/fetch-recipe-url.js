@@ -74,6 +74,109 @@ function extractSocialCaption(html, host) {
   };
 }
 
+function htmlFragmentToText(fragment) {
+  if (!fragment) return '';
+  return fragment
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|h[1-6]|li|tr|section|article)>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&#8211;|&ndash;/gi, '–')
+    .replace(/&#8212;|&mdash;/gi, '—')
+    .replace(/&#8220;|&ldquo;/gi, '"')
+    .replace(/&#8221;|&rdquo;/gi, '"')
+    .replace(/&#8216;|&lsquo;/gi, "'")
+    .replace(/&#8217;|&rsquo;/gi, "'")
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
+function extractArticleHtml(html) {
+  if (!html) return '';
+  const markers = [
+    /<div[^>]*class="[^"]*\bentry-content\b[^"]*"[^>]*>([\s\S]*)/i,
+    /<div[^>]*class="[^"]*\bwp-block-post-content\b[^"]*"[^>]*>([\s\S]*)/i,
+    /<div[^>]*class="[^"]*\bpost-content\b[^"]*"[^>]*>([\s\S]*)/i,
+    /<article[^>]*>([\s\S]*?)<\/article>/i,
+    /<div[^>]*itemprop=["']articleBody["'][^>]*>([\s\S]*)/i,
+    /<main[^>]*>([\s\S]*?)<\/main>/i
+  ];
+  for (let i = 0; i < markers.length; i++) {
+    const m = html.match(markers[i]);
+    if (!m || !m[1] || m[1].length < 200) continue;
+    let chunk = m[1];
+    const stops = [
+      /<footer\b/i, /class="[^"]*\bcomments-area\b/i, /id=["']comments["']/i,
+      /class="[^"]*\bsharedaddy\b/i, /class="[^"]*\bjp-relatedposts\b/i,
+      /class="[^"]*\bpost-navigation\b/i, /Share this:/i, /Leave a Reply/i,
+      /Recent Posts/i, /Loading Comments/i
+    ];
+    let cut = chunk.length;
+    stops.forEach(re => {
+      const idx = chunk.search(re);
+      if (idx > 150 && idx < cut) cut = idx;
+    });
+    chunk = chunk.slice(0, cut);
+    if (chunk.length > 200) return chunk;
+  }
+  return '';
+}
+
+function extractPageTitle(html) {
+  const og = html.match(/property=["']og:title["'][^>]*content=["']([^"']+)["']/i)
+    || html.match(/content=["']([^"']+)["'][^>]*property=["']og:title["']/i);
+  if (og && og[1]) {
+    return decodeHtmlEntities(og[1]).replace(/\s*[-|–—]\s*[^-|–—]+$/, '').trim();
+  }
+  const h1 = html.match(/<h1[^>]*class="[^"]*entry-title[^"]*"[^>]*>([\s\S]*?)<\/h1>/i);
+  if (h1 && h1[1]) return htmlFragmentToText(h1[1]).trim();
+  return '';
+}
+
+const BLOG_STOP_LINES = [
+  /^share this:/i, /^print\s*\(/i, /^email a link/i, /^like this:/i, /^loading\.?\.?\.?$/i,
+  /^one response to/i, /^leave a reply/i, /^cancel reply/i, /^recent posts/i, /^categories$/i,
+  /^trending$/i, /^subscribe to our newsletters/i, /^discover more from/i,
+  /^loading comments/i, /^write a comment/i, /^type your email/i, /^continue reading/i,
+  /^author$/i, /^written by$/i, /^facebook$/i, /^instagram$/i, /^youtube$/i, /^search$/i,
+  /^skip to content/i, /^about me$/i, /^recipe request$/i, /^copyright$/i, /^subscribe$/i,
+  /^happy cooking/i, /^with love$/i
+];
+
+const BLOG_NAV_LINES = /^(beef|chicken|mutton|egg|rice|bread|breakfast|cakes|snacks|soups|drinks|sea food|pickles|sweets|useful tips|my cooking|post delivery|healthy salads|indian vegetable|kerala sadya|spice mixes|chutneys|curryworld menu|biriyani|chinese dishes)/i;
+
+function trimBlogRecipeText(text) {
+  if (!text) return '';
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  let start = 0;
+  let ingIdx = lines.findIndex(l => /^ingredients?\s*:?\s*$/i.test(l.replace(/[\u00A0\u200B]/g, ' ').trim()));
+  if (ingIdx >= 0) {
+    start = ingIdx;
+  } else {
+    start = lines.findIndex(l => l.length > 10 && l.length < 90 && !BLOG_NAV_LINES.test(l) && !BLOG_STOP_LINES.some(re => re.test(l)));
+    if (start < 0) start = 0;
+  }
+  let end = lines.length;
+  for (let i = start; i < lines.length; i++) {
+    if (BLOG_STOP_LINES.some(re => re.test(lines[i]))) { end = i; break; }
+    if (/^share on /i.test(lines[i])) { end = i; break; }
+  }
+  return lines.slice(start, end).join('\n');
+}
+
+function extractArticleText(html) {
+  const fragment = extractArticleHtml(html);
+  const text = fragment ? htmlFragmentToText(fragment) : '';
+  if (text.length > 150) return trimBlogRecipeText(text);
+  const fallback = htmlFragmentToText(html.slice(0, 120000));
+  return trimBlogRecipeText(fallback);
+}
+
 async function tryInstagramOembed(url) {
   try {
     const oembedUrl = 'https://api.instagram.com/oembed?url=' + encodeURIComponent(url);
@@ -164,12 +267,17 @@ module.exports = async function handler(req, res) {
       });
     }
 
+    const articleText = extractArticleText(html);
+    const pageTitle = extractPageTitle(html);
     return res.status(200).json({
       ok: true,
       url,
       html: html.slice(0, MAX_BYTES),
       recipe: recipe || null,
-      hasRecipe: !!recipe
+      hasRecipe: !!recipe,
+      articleText: articleText || '',
+      pageTitle: pageTitle || '',
+      hasArticleText: articleText.length > 80
     });
   } catch (e) {
     clearTimeout(timer);

@@ -2640,6 +2640,136 @@ function generateStarterFromName() {
   setTimeout(parseRecipe, 200);
 }
 
+function decodeImportEntities(s) {
+  return String(s || '')
+    .replace(/&nbsp;/gi, ' ').replace(/&#8211;|&ndash;/gi, '–').replace(/&#8212;|&mdash;/gi, '—')
+    .replace(/&#8220;|&ldquo;/gi, '"').replace(/&#8221;|&rdquo;/gi, '"')
+    .replace(/&#8216;|&lsquo;/gi, "'").replace(/&#8217;|&rsquo;/gi, "'")
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+}
+
+function htmlFragmentToText(fragment) {
+  if (!fragment) return '';
+  return decodeImportEntities(fragment
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|h[1-6]|li|tr|section|article)>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim());
+}
+
+var BLOG_STOP_LINES = [
+  /^share this:/i, /^print\s*\(/i, /^email a link/i, /^like this:/i, /^loading\.?\.?\.?$/i,
+  /^one response to/i, /^leave a reply/i, /^cancel reply/i, /^recent posts/i, /^categories$/i,
+  /^trending$/i, /^subscribe to our newsletters/i, /^discover more from/i,
+  /^loading comments/i, /^write a comment/i, /^type your email/i, /^continue reading/i,
+  /^author$/i, /^written by$/i, /^facebook$/i, /^instagram$/i, /^youtube$/i, /^search$/i,
+  /^skip to content/i, /^about me$/i, /^recipe request$/i, /^copyright$/i, /^subscribe$/i,
+  /^happy cooking/i, /^with love$/i
+];
+
+var BLOG_NAV_LINES = /^(beef|chicken|mutton|egg|rice|bread|breakfast|cakes|snacks|soups|drinks|sea food|pickles|sweets|useful tips|my cooking|post delivery|healthy salads|indian vegetable|kerala sadya|spice mixes|chutneys|curryworld menu|biriyani|chinese dishes)/i;
+
+function isBlogIngredientsHeader(line) {
+  return /^ingredients?\s*:?\s*$/i.test(String(line || '').replace(/[\u00A0\u200B]/g, ' ').trim());
+}
+
+function trimBlogRecipeText(text) {
+  if (!text) return '';
+  var lines = text.split('\n').map(function(l) { return l.trim(); }).filter(Boolean);
+  var start = 0;
+  var ingIdx = -1;
+  for (var i = 0; i < lines.length; i++) {
+    if (isBlogIngredientsHeader(lines[i])) { ingIdx = i; break; }
+  }
+  if (ingIdx >= 0) start = ingIdx;
+  else {
+    for (var f = 0; f < lines.length; f++) {
+      if (lines[f].length > 10 && lines[f].length < 90 && !BLOG_NAV_LINES.test(lines[f]) && !BLOG_STOP_LINES.some(function(re) { return re.test(lines[f]); })) {
+        start = f; break;
+      }
+    }
+  }
+  var end = lines.length;
+  for (var k = start; k < lines.length; k++) {
+    var hit = false;
+    for (var s = 0; s < BLOG_STOP_LINES.length; s++) {
+      if (BLOG_STOP_LINES[s].test(lines[k])) { end = k; hit = true; break; }
+    }
+    if (hit || /^share on /i.test(lines[k])) break;
+  }
+  return lines.slice(start, end).join('\n');
+}
+
+function extractArticleHtmlFromPage(html) {
+  if (!html) return '';
+  var patterns = [
+    /<div[^>]*class="[^"]*\bentry-content\b[^"]*"[^>]*>([\s\S]*)/i,
+    /<div[^>]*class="[^"]*\bwp-block-post-content\b[^"]*"[^>]*>([\s\S]*)/i,
+    /<div[^>]*class="[^"]*\bpost-content\b[^"]*"[^>]*>([\s\S]*)/i,
+    /<article[^>]*>([\s\S]*?)<\/article>/i,
+    /<div[^>]*itemprop=["']articleBody["'][^>]*>([\s\S]*)/i
+  ];
+  for (var p = 0; p < patterns.length; p++) {
+    var m = html.match(patterns[p]);
+    if (!m || !m[1] || m[1].length < 200) continue;
+    var chunk = m[1];
+    var stops = [/<footer\b/i, /class="[^"]*\bcomments-area\b/i, /id=["']comments["']/i, /Share this:/i, /Leave a Reply/i, /Recent Posts/i];
+    var cut = chunk.length;
+    for (var si = 0; si < stops.length; si++) {
+      var idx = chunk.search(stops[si]);
+      if (idx > 150 && idx < cut) cut = idx;
+    }
+    chunk = chunk.slice(0, cut);
+    if (chunk.length > 200) return chunk;
+  }
+  return '';
+}
+
+function extractArticleTextFromHtml(html) {
+  var fragment = extractArticleHtmlFromPage(html);
+  var text = fragment ? htmlFragmentToText(fragment) : '';
+  if (text.length > 150) return trimBlogRecipeText(text);
+  return trimBlogRecipeText(htmlFragmentToText(html.slice(0, 120000)));
+}
+
+function extractPageTitleFromHtml(html) {
+  var og = html.match(/property=["']og:title["'][^>]*content=["']([^"']+)["']/i)
+    || html.match(/content=["']([^"']+)["'][^>]*property=["']og:title["']/i);
+  if (og && og[1]) return decodeImportEntities(og[1]).replace(/\s*[-|–—]\s*[^-|–—]+$/, '').trim();
+  var h1 = html.match(/<h1[^>]*class="[^"]*entry-title[^"]*"[^>]*>([\s\S]*?)<\/h1>/i);
+  if (h1 && h1[1]) return htmlFragmentToText(h1[1]).trim();
+  return '';
+}
+
+async function applyUrlImportToPaste(articleText, pageTitle, statusSuffix) {
+  var pasteEl = document.getElementById('paste-input');
+  var parseRes = document.getElementById('parse-result');
+  if (parseRes) parseRes.style.display = 'none';
+  var cleaned = await cleanupOcrText(articleText);
+  var extracted = extractRecipeCore(cleaned);
+  var finalText = extracted.hasContent ? extracted.pasteText : cleaned;
+  if (pasteEl) pasteEl.value = finalText;
+  var nameEl = document.getElementById('recipe-name');
+  var title = (extracted.title || pageTitle || '').trim();
+  if (nameEl && title && !nameEl.value.trim()) nameEl.value = title;
+  document.getElementById('parse-tips').style.display = 'block';
+  if (extracted.hasContent) {
+    showImportStatus(
+      'Extracted ' + extracted.ingCount + ' ingredient' + (extracted.ingCount === 1 ? '' : 's') +
+      ' and ' + extracted.methCount + ' step' + (extracted.methCount === 1 ? '' : 's') +
+      (statusSuffix || '') + ' — click Parse Recipe when ready.',
+      true
+    );
+  } else {
+    showImportStatus('Recipe text imported' + (statusSuffix || '') + ' — review in the paste box, then click Parse Recipe.', null);
+  }
+}
+
 async function importFromUrl() {
   var url = document.getElementById('source-url-input').value.trim();
   if (!url || !url.startsWith('http')) { showImportStatus('Please enter a valid recipe URL first.', false); return; }
@@ -2651,6 +2781,8 @@ async function importFromUrl() {
   showImportStatus('Fetching recipe...', null);
   var html = '';
   var recipe = null;
+  var pageTitle = '';
+  var articleText = '';
   try {
     var apiRes = await fetch('/api/fetch-recipe-url?url=' + encodeURIComponent(url), { signal: AbortSignal.timeout(14000) });
     if (apiRes.ok) {
@@ -2661,6 +2793,8 @@ async function importFromUrl() {
         collapseImportSection();
         return;
       }
+      pageTitle = payload.pageTitle || '';
+      articleText = payload.articleText || '';
       if (payload.social) {
         var caption = (payload.caption || '').trim();
         if (caption) {
@@ -2697,18 +2831,19 @@ async function importFromUrl() {
       return;
     }
   }
-  if (!html) { showImportStatus('Empty response — paste the recipe text manually.', false); return; }
-  recipe = extractJsonLdRecipe(html);
+  if (!html && !articleText) { showImportStatus('Empty response — paste the recipe text manually.', false); return; }
+  recipe = html ? extractJsonLdRecipe(html) : null;
   if (!recipe) {
-    var textBlob = html.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ')
-      .replace(/<[^>]+>/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
-    if (textBlob.length > 200) {
-      var cleaned = await cleanupOcrText(textBlob.slice(0, 15000));
-      document.getElementById('paste-input').value = cleaned;
-      showImportStatus('No structured recipe data — pasted page text for you to parse. Review and click Parse Recipe.', null);
+    if (!articleText && html) {
+      articleText = extractArticleTextFromHtml(html);
+      if (!pageTitle) pageTitle = extractPageTitleFromHtml(html);
+    }
+    if (articleText.length > 80) {
+      await applyUrlImportToPaste(articleText, pageTitle, ' from blog');
+      collapseImportSection();
       return;
     }
-    showImportStatus('No recipe data found. Try pasting the text manually.', false);
+    showImportStatus('No recipe content found on that page. Try pasting the text manually.', false);
     return;
   }
   populateFromJsonLd(recipe, url);
@@ -2838,6 +2973,7 @@ function isIngredientLikeLine(line) {
   if (/^[\d\u00BC-\u00BE\/]+\s*(cup|cups|tsp|tbsp|tbs|g|kg|ml|bunch|piece|clove|slice)\b/i.test(line)) return true;
   if (/^\d+\s*(tsp|tbsp|tbs|cup|cups|g|kg|ml|oz|lb|pinch)\b/i.test(line)) return true;
   if (/^[\-\u2013\u2014•]\s*\d/.test(line)) return true;
+  if (/^[\w\s.'()-]+-\s*[\d\u00BC-\u00BE\/]/i.test(line)) return true;
   return false;
 }
 
@@ -2894,6 +3030,12 @@ function collectIngredients(lines, startIdx, endIdx, title) {
     if (isNutritionOrMetaLine(ln) || detectScanSection(ln) === 'junk') break;
     if (/^method$/i.test(ln) || /^description$/i.test(ln)) break;
     if (title && ln === title) continue;
+    if (/^for\s+(?:the\s+)?/i.test(ln) && ln.length < 55) {
+      if (current) ings.push(cleanScanContentLine(current, 'ing'));
+      current = '';
+      ings.push(ln.replace(/\s+/g, ' ').trim());
+      continue;
+    }
     if (isIngredientLikeLine(ln)) {
       if (current) ings.push(cleanScanContentLine(current, 'ing'));
       current = ln;
