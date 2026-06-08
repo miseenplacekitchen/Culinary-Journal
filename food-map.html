@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Explore recipes by origin country and region on The Culinary Journal Food Map.">
+  <meta name="description" content="Explore approved recipes by continent, country and region on The Culinary Journal vintage world map.">
   <link rel="canonical" href="https://theculinaryjournal.site/food-map.html">
   <title>Food by Map — The Culinary Journal</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -13,28 +13,63 @@
   <script src="seo-schema.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); }
-    .fm-wrap { max-width:1100px; margin:0 auto; padding:32px 20px 80px; }
+    .fm-wrap { max-width:1180px; margin:0 auto; padding:32px 20px 80px; }
     .fm-title { font-family:'Cormorant Garamond',serif; font-size:1.9rem; font-weight:700; color:var(--text-high); margin-bottom:6px; }
-    .fm-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-bottom:24px; }
-    .fm-layout { display:grid; grid-template-columns:280px 1fr; gap:20px; }
-    @media(max-width:768px){ .fm-layout { grid-template-columns:1fr; } }
-    .fm-regions { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:14px; max-height:520px; overflow-y:auto; }
-    .fm-region { display:flex; justify-content:space-between; align-items:center; padding:9px 12px; border-radius:8px; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); border:none; background:none; width:100%; text-align:left; }
-    .fm-region:hover, .fm-region.active { background:rgb(from var(--accent) r g b / 0.1); color:var(--accent); }
-    .fm-region-count { font-size:11px; color:var(--text-mid); }
-    .fm-locality { font-size:10px; color:var(--text-mid); display:block; margin-top:2px; }
-    .fm-recipes { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+    .fm-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin-bottom:20px; max-width:720px; line-height:1.6; }
+    .fm-credit { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); margin-bottom:18px; opacity:0.85; }
+    .fm-layout { display:grid; grid-template-columns:1fr 320px; gap:22px; align-items:start; }
+    @media(max-width:900px){ .fm-layout { grid-template-columns:1fr; } }
+    .fm-map-panel {
+      background:linear-gradient(165deg,#e8dcc8 0%,#d9c9ad 45%,#cfc0a4 100%);
+      border:2px solid #9a8468;
+      border-radius:14px;
+      padding:18px;
+      box-shadow:inset 0 0 40px rgba(90,70,40,0.12), 0 8px 28px rgba(0,0,0,0.25);
+      position:relative;
+    }
+    .fm-map-panel::before {
+      content:''; position:absolute; inset:10px; border:1px dashed rgba(120,95,60,0.35); border-radius:10px; pointer-events:none;
+    }
+    .fm-map-title {
+      font-family:'Cormorant Garamond',serif; font-size:1rem; font-weight:700; letter-spacing:0.14em;
+      text-transform:uppercase; color:#5c4a32; text-align:center; margin-bottom:10px;
+    }
+    .fm-map-svg { width:100%; height:auto; display:block; cursor:pointer; }
+    .fm-map-svg path { transition:fill .18s, stroke .18s, filter .18s; cursor:pointer; }
+    .fm-map-svg path:hover, .fm-map-svg path.fm-active {
+      fill:#b8924a !important; stroke:#6b4f24; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+    .fm-side { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:16px; min-height:320px; }
+    .fm-crumb { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:14px; font-family:'DM Sans',sans-serif; font-size:11px; }
+    .fm-crumb button { background:none; border:none; color:var(--accent); cursor:pointer; padding:0; font:inherit; }
+    .fm-crumb span { color:var(--text-mid); }
+    .fm-level-label {
+      font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.12em;
+      text-transform:uppercase; color:var(--accent); margin-bottom:10px;
+    }
+    .fm-list { max-height:420px; overflow-y:auto; }
+    .fm-row {
+      display:flex; justify-content:space-between; align-items:center; width:100%;
+      padding:9px 12px; border-radius:8px; border:none; background:none; cursor:pointer;
+      font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-high); text-align:left;
+    }
+    .fm-row:hover, .fm-row.active { background:rgb(from var(--accent) r g b / 0.1); color:var(--accent); }
+    .fm-count { font-size:11px; color:var(--text-mid); font-weight:600; }
+    .fm-recipes { margin-top:24px; }
+    .fm-recipes-hd {
+      font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.12em;
+      text-transform:uppercase; color:var(--accent); margin-bottom:12px;
+    }
+    .fm-recipe-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; }
     .fm-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:10px; overflow:hidden; text-decoration:none; display:block; }
     .fm-card:hover { border-color:var(--accent-border); }
-    .fm-card-img { height:100px; display:flex; align-items:center; justify-content:center; font-size:28px; border-bottom:1px solid var(--border); }
+    .fm-card-img { height:96px; display:flex; align-items:center; justify-content:center; font-size:26px; border-bottom:1px solid var(--border); background:rgba(0,0,0,0.15); }
     .fm-card-img img { width:100%; height:100%; object-fit:cover; }
     .fm-card-body { padding:10px 12px; }
     .fm-card-name { font-family:'Cormorant Garamond',serif; font-size:0.95rem; font-weight:600; color:var(--text-high); }
     .fm-card-meta { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); margin-top:2px; }
-    .fm-empty { text-align:center; padding:40px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
-    .fm-subregions { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
-    .fm-sub-btn { font-family:'DM Sans',sans-serif; font-size:11px; padding:5px 10px; border-radius:8px; border:1px solid var(--border); background:none; color:var(--text-mid); cursor:pointer; }
-    .fm-sub-btn.active, .fm-sub-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .fm-empty { text-align:center; padding:28px 12px; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
+    .fm-fallback-note { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-top:10px; line-height:1.5; }
   </style>
   <script src="page-guard.js"></script>
 </head>
@@ -42,91 +77,216 @@
 <div data-nav-host></div>
 <div class="fm-wrap">
   <h1 class="fm-title">🌍 Food by Map</h1>
-  <p class="fm-sub">Browse by country and drill into contributor locality tags where available.</p>
+  <p class="fm-sub">A vintage atlas view of where our community's recipes come from. Tap a continent, then country and region — counts only on the map; recipes appear as you drill down.</p>
+  <p class="fm-credit">Map: schematic continent shapes (site asset). Inspired by classic atlas cartography — not a traced commercial map.</p>
   <div class="fm-layout">
-    <div class="fm-regions" id="fm-regions">Loading…</div>
     <div>
-      <div id="fm-region-label" style="font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:12px">Select a country</div>
-      <div class="fm-subregions" id="fm-subregions"></div>
-      <div class="fm-recipes" id="fm-recipes"><div class="fm-empty">Choose a country from the list.</div></div>
+      <div class="fm-map-panel">
+        <div class="fm-map-title">Recipes of the World</div>
+        <object id="fm-map-obj" class="fm-map-svg" data="assets/world-continents.svg" type="image/svg+xml" aria-label="World map by continent"></object>
+      </div>
+      <div class="fm-recipes" id="fm-recipes-block" style="display:none">
+        <div class="fm-recipes-hd" id="fm-recipes-label">Recipes</div>
+        <div class="fm-recipe-grid" id="fm-recipes"></div>
+      </div>
+    </div>
+    <div class="fm-side">
+      <div class="fm-crumb" id="fm-crumb"></div>
+      <div class="fm-level-label" id="fm-level-label">Continents</div>
+      <div class="fm-list" id="fm-list"><div class="fm-empty">Loading counts…</div></div>
+      <p class="fm-fallback-note" id="fm-fallback-note" style="display:none">Using on-page recipe data. Run <code>fix-phase36-platform-batch.sql</code> in Supabase for live origin counts.</p>
     </div>
   </div>
 </div>
 <script src="nav-init.js"></script>
 <script>
-var allRecipes = [], byCountry = {}, byLocality = {}, activeCountry = '', activeLocality = '';
+var state = { level:'continent', continent:'', country:'', state:'', counts:[], useRpc:true };
 var CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-async function load(){
-  try{
-    var res = await fetch(SUPA_URL+'/rest/v1/rpc/get_approved_recipes',{method:'POST',headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_limit:300})});
-    allRecipes = res.ok ? await res.json() : [];
-  }catch(_){ allRecipes = []; }
-  byCountry = {}; byLocality = {};
-  allRecipes.forEach(function(r){
-    var c = (r.origin_country||'').trim();
-    if(!c) return;
-    if(!byCountry[c]) byCountry[c]=[];
-    byCountry[c].push(r);
-    var loc = (r.origin_locality||'').trim();
-    if(loc){
-      var key = c + '::' + loc;
-      if(!byLocality[key]) byLocality[key]=[];
-      byLocality[key].push(r);
+var fallbackRecipes = [];
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function rpc(name, body){
+  var res = await fetch(SUPA_URL+'/rest/v1/rpc/'+name, {
+    method:'POST',
+    headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+    body: JSON.stringify(body||{})
+  });
+  if (!res.ok) throw new Error('RPC '+name+' failed');
+  return res.json();
+}
+
+function fallbackCounts(level, parent){
+  var map = {};
+  fallbackRecipes.forEach(function(r){
+    var cont = (r.origin_continent||'').trim() || 'Unmapped';
+    var country = (r.origin_country||'').trim() || 'Unspecified';
+    var st = (r.origin_state||'').trim() || 'Unspecified';
+    if (level === 'continent') {
+      map[cont] = (map[cont]||0) + 1;
+    } else if (level === 'country' && cont === parent) {
+      map[country] = (map[country]||0) + 1;
+    } else if (level === 'state' && country === parent) {
+      map[st] = (map[st]||0) + 1;
     }
   });
-  var keys = Object.keys(byCountry).sort();
-  var el = document.getElementById('fm-regions');
-  if(!keys.length){ el.innerHTML='<div class="fm-empty">No origin-tagged recipes yet.</div>'; return; }
-  el.innerHTML = keys.map(function(c){
-    var locs = Object.keys(byLocality).filter(function(k){ return k.indexOf(c+'::')===0; }).length;
-    return '<button type="button" class="fm-region" data-c="'+esc(c)+'"><span><span>'+esc(c)+'</span>'+
-      (locs?'<span class="fm-locality">'+locs+' region'+(locs===1?'':'s')+'</span>':'')+
-      '</span><span class="fm-region-count">'+byCountry[c].length+'</span></button>';
-  }).join('');
-  el.querySelectorAll('.fm-region').forEach(function(btn){
-    btn.addEventListener('click',function(){ selectCountry(btn.dataset.c, btn); });
-  });
-  if (typeof SeoSchema !== 'undefined') {
-    SeoSchema.itemList('Recipes by origin country', keys.map(function(c) {
-      return { name: c + ' (' + byCountry[c].length + ' recipes)', url: 'https://www.theculinaryjournal.site/food-map.html' };
-    }));
-    SeoSchema.webPage('Food by Map', 'Explore recipes by origin country and regional locality.', 'https://www.theculinaryjournal.site/food-map.html');
+  return Object.keys(map).sort().map(function(name){ return { name:name, recipe_count: map[name] }; });
+}
+
+async function loadCounts(level, parent){
+  if (!state.useRpc) return fallbackCounts(level, parent);
+  try {
+    return await rpc('get_recipe_origin_counts', { p_level: level, p_parent: parent || null }) || [];
+  } catch(e) {
+    state.useRpc = false;
+    document.getElementById('fm-fallback-note').style.display = 'block';
+    return fallbackCounts(level, parent);
   }
-  selectCountry(keys[0], el.querySelector('.fm-region'));
 }
-function renderSubregions(c){
-  var subs = Object.keys(byLocality).filter(function(k){ return k.indexOf(c+'::')===0; }).map(function(k){ return k.split('::')[1]; }).sort();
-  var wrap = document.getElementById('fm-subregions');
-  if(!subs.length){ wrap.innerHTML=''; return; }
-  wrap.innerHTML = '<button type="button" class="fm-sub-btn'+(activeLocality?'':' active')+'" data-loc="">All '+esc(c)+'</button>'+
-    subs.map(function(loc){
-      return '<button type="button" class="fm-sub-btn'+(activeLocality===loc?' active':'')+'" data-loc="'+esc(loc)+'">'+esc(loc)+' ('+byLocality[c+'::'+loc].length+')</button>';
-    }).join('');
-  wrap.querySelectorAll('.fm-sub-btn').forEach(function(btn){
-    btn.addEventListener('click',function(){ activeLocality=btn.dataset.loc||''; renderSubregions(c); renderRecipes(); });
+
+function renderCrumb(){
+  var el = document.getElementById('fm-crumb');
+  var parts = ['<button type="button" onclick="goLevel(\'continent\')">World</button>'];
+  if (state.continent) parts.push('<span>›</span><button type="button" onclick="goLevel(\'country\')">'+esc(state.continent)+'</button>');
+  if (state.country) parts.push('<span>›</span><button type="button" onclick="goLevel(\'state\')">'+esc(state.country)+'</button>');
+  if (state.state) parts.push('<span>›</span><span>'+esc(state.state)+'</span>');
+  el.innerHTML = parts.join('');
+}
+
+function highlightContinent(name){
+  document.querySelectorAll('#fm-map-obj svg path[data-continent]').forEach(function(p){
+    p.classList.toggle('fm-active', p.getAttribute('data-continent') === name);
   });
 }
-function selectCountry(c, btn){
-  activeCountry = c; activeLocality = '';
-  document.querySelectorAll('.fm-region').forEach(function(b){ b.classList.toggle('active', b.dataset.c===c); });
-  renderSubregions(c);
-  renderRecipes();
+
+async function goLevel(level){
+  state.level = level;
+  if (level === 'continent') { state.continent = ''; state.country = ''; state.state = ''; highlightContinent(''); }
+  if (level === 'country')   { state.country = ''; state.state = ''; highlightContinent(state.continent); }
+  if (level === 'state')     { state.state = ''; }
+  document.getElementById('fm-recipes-block').style.display = 'none';
+  await renderList();
 }
-function renderRecipes(){
-  var list = activeLocality && byLocality[activeCountry+'::'+activeLocality] ? byLocality[activeCountry+'::'+activeLocality] : (byCountry[activeCountry]||[]);
-  document.getElementById('fm-region-label').textContent = activeCountry + (activeLocality ? ' · ' + activeLocality : '') + ' · ' + list.length + ' recipe' + (list.length===1?'':'s');
+
+async function selectContinent(name){
+  state.level = 'country'; state.continent = name; state.country = ''; state.state = '';
+  highlightContinent(name);
+  document.getElementById('fm-recipes-block').style.display = 'none';
+  await renderList();
+}
+
+async function selectCountry(name){
+  state.level = 'state'; state.country = name; state.state = '';
+  document.getElementById('fm-recipes-block').style.display = 'none';
+  await renderList();
+}
+
+async function selectState(name){
+  state.level = 'recipes'; state.state = name;
+  await renderList();
+  await loadRecipes();
+}
+
+async function renderList(){
+  renderCrumb();
+  var labels = { continent:'Continents', country:'Countries', state:'Regions / States', recipes:'Selected region' };
+  document.getElementById('fm-level-label').textContent = labels[state.level] || '';
+  var parent = null;
+  if (state.level === 'country') parent = state.continent;
+  if (state.level === 'state') parent = state.country;
+  var counts = await loadCounts(state.level === 'recipes' ? 'state' : state.level, parent);
+  state.counts = counts;
+  var list = document.getElementById('fm-list');
+  if (!counts.length) {
+    list.innerHTML = '<div class="fm-empty">No recipes tagged at this level yet. Submit recipes with origin fields filled in.</div>';
+    return;
+  }
+  list.innerHTML = counts.map(function(row){
+    var active = (state.level==='country'&&row.name===state.country) ||
+                 (state.level==='state'&&row.name===state.state);
+    return '<button type="button" class="fm-row'+(active?' active':'')+'" data-name="'+esc(row.name)+'">' +
+      '<span>'+esc(row.name)+'</span><span class="fm-count">'+row.recipe_count+'</span></button>';
+  }).join('');
+  list.querySelectorAll('.fm-row').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var n = btn.getAttribute('data-name');
+      if (state.level === 'continent') selectContinent(n);
+      else if (state.level === 'country') selectCountry(n);
+      else if (state.level === 'state') selectState(n);
+    });
+  });
+}
+
+async function loadRecipes(){
+  var block = document.getElementById('fm-recipes-block');
   var grid = document.getElementById('fm-recipes');
-  if(!list.length){ grid.innerHTML='<div class="fm-empty">No recipes for this region.</div>'; return; }
-  grid.innerHTML = list.map(function(r){
-    var em = CAT_EMOJI[r.category]||'🍳';
-    return '<a class="fm-card" href="recipe-page.html?id='+r.id+'">'+
-      '<div class="fm-card-img">'+(r.image_url?'<img src="'+esc(r.image_url)+'" loading="lazy" alt="">':em)+'</div>'+
-      '<div class="fm-card-body"><div class="fm-card-name">'+esc(r.recipe_name)+'</div>'+
-      '<div class="fm-card-meta">'+esc(r.category||'')+(r.origin_locality?' · '+esc(r.origin_locality):'')+'</div></div></a>';
+  block.style.display = 'block';
+  document.getElementById('fm-recipes-label').textContent =
+    'Recipes · '+state.continent+' › '+state.country+' › '+state.state;
+  grid.innerHTML = '<div class="fm-empty">Loading…</div>';
+  var rows = [];
+  try {
+    if (state.useRpc) {
+      rows = await rpc('get_recipes_by_origin', {
+        p_continent: state.continent,
+        p_country: state.country,
+        p_state: state.state,
+        p_limit: 48
+      }) || [];
+    } else throw new Error('fallback');
+  } catch(e) {
+    rows = fallbackRecipes.filter(function(r){
+      var cont = (r.origin_continent||'').trim() || 'Unmapped';
+      var country = (r.origin_country||'').trim() || 'Unspecified';
+      var st = (r.origin_state||'').trim() || 'Unspecified';
+      return cont === state.continent && country === state.country && st === state.state;
+    });
+  }
+  if (!rows.length) {
+    grid.innerHTML = '<div class="fm-empty">No public recipes in this region yet.</div>';
+    return;
+  }
+  grid.innerHTML = rows.map(function(r){
+    var emoji = CAT_EMOJI[r.category] || '🍽';
+    var img = r.image_url
+      ? '<img src="'+esc(r.image_url)+'" alt="" loading="lazy">'
+      : emoji;
+    var meta = [r.origin_country, r.origin_state].filter(Boolean).join(' · ');
+    return '<a class="fm-card" href="recipe-page.html?id='+r.id+'">' +
+      '<div class="fm-card-img">'+img+'</div>' +
+      '<div class="fm-card-body"><div class="fm-card-name">'+esc(r.recipe_name)+'</div>' +
+      '<div class="fm-card-meta">'+esc(meta)+'</div></div></a>';
   }).join('');
 }
-document.addEventListener('DOMContentLoaded', load);
+
+function wireMap(){
+  var obj = document.getElementById('fm-map-obj');
+  function attach(svg){
+    if (!svg) return;
+    svg.querySelectorAll('path[data-continent]').forEach(function(p){
+      p.addEventListener('click', function(){ selectContinent(p.getAttribute('data-continent')); });
+    });
+  }
+  obj.addEventListener('load', function(){ attach(obj.contentDocument && obj.contentDocument.querySelector('svg')); });
+  if (obj.contentDocument) attach(obj.contentDocument.querySelector('svg'));
+}
+
+async function init(){
+  try {
+    var res = await fetch(SUPA_URL+'/rest/v1/rpc/get_approved_recipes', {
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+      body: JSON.stringify({p_limit:400})
+    });
+    fallbackRecipes = res.ok ? await res.json() : [];
+  } catch(_) { fallbackRecipes = []; }
+  wireMap();
+  await goLevel('continent');
+  if (typeof SeoSchema !== 'undefined') {
+    SeoSchema.webPage('Food by Map', 'Explore recipes by continent, country and region.', 'https://www.theculinaryjournal.site/food-map.html');
+  }
+}
+init();
 </script>
 </body>
 </html>

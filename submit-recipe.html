@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
   <script src="supabase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -906,7 +907,19 @@
 
     <!-- 1. PASTE & PARSE -->
     <div class="sr-section" id="section-paste">
-      <div class="sr-section-title">Paste Recipe Text <span>Optional</span></div>
+      <div class="sr-section-title">Import Recipe <span>Optional</span></div>
+
+      <div class="sr-field">
+        <label class="sr-label">Photo scan <span style="font-weight:400;text-transform:none;color:var(--text-muted)">(cookbook page or handwritten card)</span></label>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <input type="file" id="scan-file-input" accept="image/*" capture="environment" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)">
+          <button type="button" class="sr-parse-btn" style="padding:9px 16px;font-size:12px" onclick="scanRecipePhoto()">📸 Scan &amp; clean up</button>
+        </div>
+        <div id="scan-status" style="font-family:'DM Sans',sans-serif;font-size:12px;margin-top:6px;display:none"></div>
+        <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.6">
+          Pipeline: photo → OCR → AI/rule cleanup → you review below → admin may refine on approval.
+        </div>
+      </div>
 
       <div class="sr-field">
         <label class="sr-label">Recipe URL <span style="font-weight:400;text-transform:none;color:var(--text-muted)">(paste a link — we can auto-import from most recipe websites)</span></label>
@@ -2467,19 +2480,102 @@ async function importFromUrl() {
   var url = document.getElementById('source-url-input').value.trim();
   if (!url || !url.startsWith('http')) { showImportStatus('Please enter a valid recipe URL first.', false); return; }
   showImportStatus('Fetching recipe...', null);
+  var html = '';
+  var recipe = null;
   try {
-    var proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
-    var res = await fetch(proxyUrl, {signal: AbortSignal.timeout(10000)});
-    if (!res.ok) throw new Error('Could not fetch the page.');
-    var data = await res.json();
-    var html = data.contents || '';
-    if (!html) throw new Error('Empty response.');
-    var recipe = extractJsonLdRecipe(html);
-    if (!recipe) throw new Error('No recipe data found. Try pasting the text manually.');
-    populateFromJsonLd(recipe, url);
-    showImportStatus('Recipe imported! Review all fields below before submitting.', true);
+    var apiRes = await fetch('/api/fetch-recipe-url?url=' + encodeURIComponent(url), { signal: AbortSignal.timeout(14000) });
+    if (apiRes.ok) {
+      var payload = await apiRes.json();
+      if (payload.recipe) {
+        populateFromJsonLd(payload.recipe, url);
+        showImportStatus('Recipe imported via site fetch. Review all fields below before submitting.', true);
+        return;
+      }
+      html = payload.html || '';
+    }
+  } catch(_) {}
+  if (!html) {
+    try {
+      var proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+      var res = await fetch(proxyUrl, {signal: AbortSignal.timeout(12000)});
+      if (!res.ok) throw new Error('Could not fetch the page.');
+      var data = await res.json();
+      html = data.contents || '';
+    } catch(e) {
+      showImportStatus((e.message || 'Import failed') + ' — paste the recipe text manually instead.', false);
+      return;
+    }
+  }
+  if (!html) { showImportStatus('Empty response — paste the recipe text manually.', false); return; }
+  recipe = extractJsonLdRecipe(html);
+  if (!recipe) {
+    var textBlob = html.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ')
+      .replace(/<[^>]+>/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+    if (textBlob.length > 200) {
+      var cleaned = await cleanupOcrText(textBlob.slice(0, 15000));
+      document.getElementById('paste-input').value = cleaned;
+      showImportStatus('No structured recipe data — pasted page text for you to parse. Review and click Parse Recipe.', null);
+      return;
+    }
+    showImportStatus('No recipe data found. Try pasting the text manually.', false);
+    return;
+  }
+  populateFromJsonLd(recipe, url);
+  showImportStatus('Recipe imported! Review all fields below before submitting.', true);
+}
+
+function showScanStatus(msg, ok) {
+  var el = document.getElementById('scan-status');
+  if (!el) return;
+  el.textContent = (ok===true?'✅ ':ok===false?'⚠ ':'⏳ ') + msg;
+  el.style.display = 'block';
+  el.style.color = ok===true?'var(--success)':ok===false?'var(--danger)':'var(--text-muted)';
+}
+
+async function cleanupOcrText(raw) {
+  try {
+    var sess = null;
+    try { sess = JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch(_) {}
+    var auth = (sess&&sess.access_token) ? 'Bearer '+sess.access_token : 'Bearer '+SUPA_KEY;
+    var res = await fetch(SUPA_URL+'/rest/v1/rpc/cleanup_recipe_ocr', {
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':auth,'Content-Type':'application/json'},
+      body: JSON.stringify({ p_text: raw })
+    });
+    if (res.ok) {
+      var data = await res.json();
+      if (data && data.cleaned) return data.cleaned;
+    }
+  } catch(_) {}
+  return raw.replace(/[ \t]{2,}/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+}
+
+async function scanRecipePhoto() {
+  var input = document.getElementById('scan-file-input');
+  if (!input || !input.files || !input.files[0]) {
+    showScanStatus('Choose a photo first.', false); return;
+  }
+  showScanStatus('Reading photo (OCR)…', null);
+  if (typeof Tesseract === 'undefined') {
+    showScanStatus('OCR library still loading — try again in a moment.', false); return;
+  }
+  try {
+    var result = await Tesseract.recognize(input.files[0], 'eng', { logger: function(m) {
+      if (m.status === 'recognizing text' && m.progress) {
+        showScanStatus('Reading photo… ' + Math.round(m.progress * 100) + '%', null);
+      }
+    }});
+    var raw = (result && result.data && result.data.text) ? result.data.text.trim() : '';
+    if (!raw) { showScanStatus('No text detected — try a clearer, flatter photo.', false); return; }
+    showScanStatus('Cleaning up text…', null);
+    var cleaned = await cleanupOcrText(raw);
+    document.getElementById('paste-input').value = cleaned;
+    var srcScanned = document.getElementById('src-scanned');
+    if (srcScanned) srcScanned.checked = true;
+    showScanStatus('OCR complete — review the text below, edit mistakes, then Parse Recipe.', true);
+    document.getElementById('parse-tips').style.display = 'block';
   } catch(e) {
-    showImportStatus((e.message || 'Import failed') + ' — paste the recipe text manually instead.', false);
+    showScanStatus((e.message || 'Scan failed') + ' — paste text manually.', false);
   }
 }
 
@@ -2574,6 +2670,13 @@ function parseRecipe() {
   const stripBullet = s => s.replace(/^[\u2022\u00b7\u2023\u2043*\-\u2013\u2014]\s+/, '').trim();
   const rawLines    = text.split('\n').map(l => stripBullet(l.trim())).filter(l => l);
 
+  // Detect recipe title from first short line (before sections)
+  const titleCand = rawLines[0];
+  if (titleCand && titleCand.length < 72 && !/^\d/.test(titleCand) && !/^ingredients?$/i.test(titleCand)) {
+    const nameEl = document.getElementById('recipe-name');
+    if (nameEl && !nameEl.value.trim()) nameEl.value = titleCand.replace(/^recipe\s*:\s*/i,'').trim();
+  }
+
   // ── Section header patterns ───────────────────────────────────────────────
   // Method headers — trigger method mode
   const METH_HDR = /^(prep\s+work|directions?|method|steps?|instructions?|procedure|how\s+to\s+(make|cook|prepare)|to\s+(make|cook|serve)|to\s+assemble)\s*:?$/i;
@@ -2629,7 +2732,12 @@ function parseRecipe() {
     curMeth = { name: (name || 'DIRECTIONS').toUpperCase(), steps: [] };
   };
 
+  // Auto-enter method mode when numbered steps appear without a header
+  const numberedSteps = rawLines.filter(l => /^(?:step\s*)?\d+[\.\)]\s+\S/i.test(l)).length;
+  if (numberedSteps >= 3 && !rawLines.some(l => METH_HDR.test(l))) inMethod = true;
+
   for (const line of rawLines) {
+    if (line === titleCand && titleCand.length < 72 && !inMethod && !ING_HDR.test(line)) continue;
     // Skip metadata-style lines [source]: ...
     if (/^\[[^\]]+\]\s*:/i.test(line)) continue;
     // Skip very long lines that look like story prose (over 180 chars with no numbers)

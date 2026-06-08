@@ -448,6 +448,8 @@
       <button class="ap-nav-item" id="nav-site-mgmt" onclick="switchView('site-mgmt')">&#9881;&#65039; Site Management</button>
       <button class="ap-nav-item" id="nav-finance" onclick="switchView('finance')">&#128176; Finance Management</button>
       <button class="ap-nav-item" id="nav-library-mgmt" onclick="switchView('library-mgmt')">📚 Library Management</button>
+      <button class="ap-nav-item" id="nav-festival-mgmt" onclick="switchView('festival-mgmt')">🎉 Festival Management</button>
+      <button class="ap-nav-item" id="nav-voc-mgmt" onclick="switchView('voc-mgmt')">📣 Voice of the Customer <span class="ap-nav-badge" id="badge-voc" style="display:none">0</span></button>
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
         <a href="index.html" class="ap-nav-item" style="text-decoration:none;font-size:12px">View Site</a>
         <a href="index.html" class="ap-nav-item" style="text-decoration:none;font-size:12px">Homepage</a>
@@ -855,6 +857,22 @@
           <div class="ap-loading">Loading…</div>
         </div>
       </div>
+
+      <div id="v-festival-mgmt" style="display:none">
+        <div class="ap-inner-tabs">
+          <button class="ap-inner-tab active" data-tab="fm-overview" onclick="switchFestTab('fm-overview')">Overview</button>
+          <button class="ap-inner-tab" data-tab="fm-interface" onclick="switchFestTab('fm-interface')">FM Interface</button>
+        </div>
+        <div id="fest-panel" style="margin-top:16px"><div class="ap-loading">Loading…</div></div>
+      </div>
+
+      <div id="v-voc-mgmt" style="display:none">
+        <div class="ap-inner-tabs">
+          <button class="ap-inner-tab active" data-tab="voc-inbox" onclick="switchVocTab('voc-inbox')">Inbox</button>
+          <button class="ap-inner-tab" data-tab="voc-taxonomy" onclick="switchVocTab('voc-taxonomy')">Taxonomy</button>
+        </div>
+        <div id="voc-panel" style="margin-top:16px"><div class="ap-loading">Loading…</div></div>
+      </div>
     </main>
   </div>
 </div>
@@ -1013,6 +1031,7 @@
   <script src="dashboard-users.js?v=20260608"></script>
   <script src="dashboard-ingredients.js?v=20260608"></script>
   <script src="dashboard-site.js?v=20260608"></script>
+  <script src="dashboard-platform.js?v=20260609"></script>
   <script src="dashboard-analytics.js?v=20260608"></script>
 </body>
 </html>

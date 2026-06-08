@@ -9,12 +9,11 @@
 var CJ_SECTIONS = [
   {
     id:'recipebook', label:'The Recipe Book', emoji:'📖', primaryPage:'recipes.html',
-    pages:['recipes.html','chefs.html','search.html','submit-recipe.html','draft-recipes.html','food-map.html','festival-calendar.html'],
+    pages:['recipes.html','chefs.html','search.html','submit-recipe.html','draft-recipes.html','food-map.html','festival-planner.html','festival-calendar.html'],
     links:[
       {href:'recipes.html',      emoji:'🍽', label:'Browse Recipes'},
       {href:'chefs.html',        emoji:'👨‍🍳', label:'Chef Directory'},
       {href:'food-map.html',     emoji:'🌍', label:'Food by Map'},
-      {href:'festival-calendar.html', emoji:'🎉', label:'Festival Calendar'},
       {href:'submit-recipe.html',emoji:'📝', label:'Submit a Recipe'},
     ]
   },
@@ -32,9 +31,10 @@ var CJ_SECTIONS = [
   },
   {
     id:'guestlist', label:'The Guest List', emoji:'🪑', primaryPage:'table-planner.html',
-    pages:['table-planner.html','dietary-card.html'],
+    pages:['table-planner.html','dietary-card.html','festival-planner.html','festival-calendar.html','onam-sadya.html','eid-feast.html','christmas-roast.html'],
     links:[
       {href:'table-planner.html',   emoji:'🪑', label:'Table Planner'},
+      {href:'festival-planner.html', emoji:'🎉', label:'Festival Planner'},
     ]
   },
   {
@@ -665,8 +665,8 @@ setTimeout(function() { if(typeof loadNotifCount === "function") loadNotifCount(
 // ══════════════════════════════════════════════════════
 // FEEDBACK WIDGET — The Culinary Journal
 // Floating ✉ button on all pages except: recipe-page, dashboard, login
-// Submissions stored in Supabase feedback table.
-// Betty reviews from Admin Panel → User Management → Feedback.
+// Submissions via submit_user_feedback RPC → user_feedback table.
+// Betty reviews from Admin Panel → Voice of the Customer.
 // ══════════════════════════════════════════════════════
 (function initFeedbackWidget() {
   var path = window.location.pathname;
@@ -707,11 +707,12 @@ setTimeout(function() { if(typeof loadNotifCount === "function") loadNotifCount(
 
   /* Type options */
   var TYPE_OPTS = [
-    { value:'general',    label:'General feedback'       },
-    { value:'suggestion', label:'Suggestion or idea'     },
-    { value:'bug',        label:'Something isn\u2019t working' },
-    { value:'recipe',     label:'Recipe feedback'        },
-    { value:'other',      label:'Other'                  }
+    { value:'general',      label:'General feedback',       voc:'noise' },
+    { value:'suggestion',   label:'Feature wish / idea',    voc:'signals' },
+    { value:'kudos',        label:'Something I love',       voc:'signals' },
+    { value:'bug',          label:'Something isn\u2019t working', voc:'actionable' },
+    { value:'recipe',       label:'Recipe feedback',        voc:'signals' },
+    { value:'other',        label:'Other',                  voc:'noise' }
   ];
 
   /* Floating button */
@@ -740,8 +741,8 @@ setTimeout(function() { if(typeof loadNotifCount === "function") loadNotifCount(
     }).join('');
 
     box.innerHTML =
-      '<div class="tcj-fb-title">Feedback to The Culinary Journal</div>' +
-      '<p class="tcj-fb-sub">Got a suggestion, spotted something wrong, or just want to say hello? We read everything.</p>' +
+      '<div class="tcj-fb-title">Your voice matters</div>' +
+      '<p class="tcj-fb-sub">Share feedback, ideas, or praise — every message feeds our Voice of the Customer inbox.</p>' +
 
       '<label class="tcj-fb-lbl">Type <span class="tcj-fb-req">*</span></label>' +
       '<div class="tcj-fb-dd-wrap">' +
@@ -845,22 +846,22 @@ setTimeout(function() { if(typeof loadNotifCount === "function") loadNotifCount(
       msgEl.textContent = '';
 
       var authHeader = (sess&&sess.access_token) ? 'Bearer '+sess.access_token : 'Bearer '+SUPA_KEY;
-      fetch(SUPA_URL+'/rest/v1/feedback', {
+      var vocCat = (TYPE_OPTS.find(function(o){ return o.value===selectedType; })||{}).voc || 'noise';
+      fetch(SUPA_URL+'/rest/v1/rpc/submit_user_feedback', {
         method:'POST',
         headers:{
           'apikey':SUPA_KEY,
           'Authorization':authHeader,
-          'Content-Type':'application/json',
-          'Prefer':'return=minimal'
+          'Content-Type':'application/json'
         },
         body: JSON.stringify({
-          type:     selectedType,
-          feedback: msg,
-          name:     name,
-          email:    email,
-          username: prof ? (prof.username||null) : null,
-          user_id:  (sess&&sess.user) ? sess.user.id : null,
-          status:   'new'
+          p_feedback: msg,
+          p_type: selectedType,
+          p_name: name,
+          p_email: email,
+          p_voc_category: vocCat,
+          p_source: 'in_app_widget',
+          p_action_required: vocCat === 'actionable'
         })
       })
       .then(function(res){

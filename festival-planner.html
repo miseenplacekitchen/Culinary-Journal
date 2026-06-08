@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Plan festivals and feast days — Onam Sadya, Eid, Christmas and more with dish slots and recipe variants.">
+  <link rel="canonical" href="https://theculinaryjournal.site/festival-planner.html">
+  <title>Festival Planner — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="seo-schema.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .fp-wrap { max-width:1040px; margin:0 auto; padding:32px 20px 80px; }
+    .fp-title { font-family:'Cormorant Garamond',serif; font-size:1.9rem; font-weight:700; color:var(--text-high); }
+    .fp-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin:6px 0 24px; line-height:1.6; max-width:720px; }
+    .fp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; margin-bottom:28px; }
+    .fp-card {
+      background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:18px;
+      cursor:pointer; transition:all .15s;
+    }
+    .fp-card:hover, .fp-card.active { border-color:var(--accent-border); background:rgb(from var(--accent) r g b / 0.06); }
+    .fp-emoji { font-size:28px; margin-bottom:8px; }
+    .fp-name { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:600; color:var(--text-high); }
+    .fp-when { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-top:4px; }
+    .fp-count { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--accent); margin-top:8px; font-weight:600; }
+    .fp-detail { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:20px; }
+    .fp-detail-hd { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:16px; }
+    .fp-detail-title { font-family:'Cormorant Garamond',serif; font-size:1.35rem; font-weight:700; color:var(--text-high); }
+    .fp-links { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+    .fp-links a {
+      font-family:'DM Sans',sans-serif; font-size:12px; padding:8px 14px;
+      border:1px solid var(--border); border-radius:8px; color:var(--accent); text-decoration:none;
+    }
+    .fp-dish {
+      display:flex; align-items:flex-start; gap:12px; padding:12px 14px;
+      border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background:rgba(0,0,0,0.12);
+    }
+    .fp-dish-num { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700; color:var(--accent); width:24px; }
+    .fp-dish-body { flex:1; }
+    .fp-dish-name { font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; color:var(--text-high); }
+    .fp-variants { margin-top:6px; display:flex; flex-wrap:wrap; gap:6px; }
+    .fp-variant {
+      font-family:'DM Sans',sans-serif; font-size:10px; padding:4px 8px; border-radius:6px;
+      border:1px solid var(--border); color:var(--text-mid); text-decoration:none;
+    }
+    .fp-variant.featured { border-color:var(--accent); color:var(--accent); }
+    .fp-empty { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); padding:16px 0; }
+  </style>
+  <script src="page-guard.js"></script>
+</head>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+<div class="fp-wrap">
+  <h1 class="fp-title">🎉 Festival Planner</h1>
+  <p class="fp-sub">Occasion menus with traditional dish slots — from intimate home gatherings to large feasts. Open a dedicated planner where available, or browse dish structure and linked recipes here.</p>
+  <div class="fp-grid" id="fp-grid">Loading festivals…</div>
+  <div class="fp-detail" id="fp-detail" style="display:none">
+    <div class="fp-detail-hd">
+      <span class="fp-emoji" id="fp-detail-emoji"></span>
+      <div>
+        <div class="fp-detail-title" id="fp-detail-title"></div>
+        <div class="fp-when" id="fp-detail-when"></div>
+      </div>
+    </div>
+    <p class="fp-sub" id="fp-detail-desc" style="margin:0 0 14px"></p>
+    <div class="fp-links" id="fp-detail-links"></div>
+    <div id="fp-dishes"></div>
+  </div>
+</div>
+<script src="nav-init.js"></script>
+<script>
+var FESTIVALS_FALLBACK = [
+  { slug:'onam', emoji:'🌺', name:'Onam / Vishu', when_label:'Aug–Sep (Malayalam calendar)', description:'Traditional sadya on banana leaf.', planner_path:'onam-sadya.html', dish_count:20 },
+  { slug:'eid', emoji:'🌙', name:'Eid', when_label:'Islamic lunar calendar', description:'Feast-day recipes and planner.', planner_path:'eid-feast.html', dish_count:0 },
+  { slug:'christmas', emoji:'🎄', name:'Christmas', when_label:'25 December', description:'Holiday roasts and puddings.', planner_path:'christmas-roast.html', dish_count:0 },
+  { slug:'diwali', emoji:'🪔', name:'Diwali', when_label:'Oct–Nov', description:'Sweets and feast dishes.', planner_path:null, dish_count:0 },
+  { slug:'wedding', emoji:'💒', name:'Wedding & celebrations', when_label:'Year-round', description:'Large gatherings and feast menus.', planner_path:null, dish_count:0 }
+];
+var festivals = [], activeSlug = '';
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function rpc(name, body){
+  var res = await fetch(SUPA_URL+'/rest/v1/rpc/'+name, {
+    method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+    body: JSON.stringify(body||{})
+  });
+  if (!res.ok) throw new Error(name);
+  return res.json();
+}
+
+function renderGrid(){
+  var grid = document.getElementById('fp-grid');
+  grid.innerHTML = festivals.map(function(f){
+    var dishes = f.dish_count ? f.dish_count+' dish slot'+(f.dish_count===1?'':'s') : 'Browse recipes';
+    return '<div class="fp-card'+(f.slug===activeSlug?' active':'')+'" data-slug="'+esc(f.slug)+'">' +
+      '<div class="fp-emoji">'+f.emoji+'</div>' +
+      '<div class="fp-name">'+esc(f.name)+'</div>' +
+      '<div class="fp-when">'+esc(f.when_label||'')+'</div>' +
+      '<div class="fp-count">'+dishes+'</div></div>';
+  }).join('');
+  grid.querySelectorAll('.fp-card').forEach(function(el){
+    el.addEventListener('click', function(){ showFestival(el.dataset.slug); });
+  });
+}
+
+async function showFestival(slug){
+  activeSlug = slug;
+  renderGrid();
+  var fest = festivals.find(function(f){ return f.slug === slug; });
+  if (!fest) return;
+  var detail = await rpc('get_festival_detail', { p_slug: slug }).catch(function(){ return null; });
+  if (!detail) {
+    detail = Object.assign({}, fest, { dishes: [] });
+    if (slug === 'onam') {
+      var ONAM = ['Upperi / banana chips','Inji curry','Mango pickle','Lime pickle','Pappadam','Banana (ripe)','Salt','Parippu + ghee','Sambar','Rasam','Avial','Thoran','Olan','Kalan','Erissery','Pulisery','Kootu curry','Payasam (first)','Payasam (second)','Rice'];
+      detail.dishes = ONAM.map(function(n,i){ return { dish_name:n, sort_order:i+1, recipes:[] }; });
+    }
+  }
+  document.getElementById('fp-detail').style.display = 'block';
+  document.getElementById('fp-detail-emoji').textContent = fest.emoji || '🎉';
+  document.getElementById('fp-detail-title').textContent = fest.name;
+  document.getElementById('fp-detail-when').textContent = fest.when_label || '';
+  document.getElementById('fp-detail-desc').textContent = fest.description || '';
+  var links = document.getElementById('fp-detail-links');
+  var linkHtml = '';
+  if (fest.planner_path) linkHtml += '<a href="'+esc(fest.planner_path)+'">Open dedicated planner →</a>';
+  if (slug === 'wedding') linkHtml += '<a href="table-planner.html">Table planner →</a>';
+  linkHtml += '<a href="grocery.html">Grocery list</a><a href="meal-planner.html">Meal planner</a>';
+  links.innerHTML = linkHtml;
+  var dishes = detail.dishes || [];
+  var box = document.getElementById('fp-dishes');
+  if (!dishes.length) {
+    box.innerHTML = '<div class="fp-empty">Dish slots coming soon for this festival. Browse Feast Days recipes or submit occasion-tagged recipes.</div>';
+    return;
+  }
+  box.innerHTML = dishes.map(function(d, i){
+    var variants = (d.recipes || []).map(function(r){
+      if (!r.recipe_id) return '';
+      var cls = r.is_featured ? 'fp-variant featured' : 'fp-variant';
+      var label = r.variant_label || r.recipe_name || 'Recipe';
+      return '<a class="'+cls+'" href="recipe-page.html?id='+r.recipe_id+'">'+esc(label)+'</a>';
+    }).filter(Boolean).join('');
+    return '<div class="fp-dish"><span class="fp-dish-num">'+(d.sort_order||i+1)+'</span><div class="fp-dish-body">' +
+      '<div class="fp-dish-name">'+esc(d.dish_name)+'</div>' +
+      (variants ? '<div class="fp-variants">'+variants+'</div>' : '<div class="fp-empty" style="padding:4px 0;font-size:11px">No linked recipes yet — admin can add variants in Festival Management.</div>') +
+      '</div></div>';
+  }).join('');
+}
+
+async function init(){
+  try {
+    festivals = await rpc('get_public_festivals') || [];
+  } catch(_) {
+    festivals = FESTIVALS_FALLBACK;
+  }
+  if (!festivals.length) festivals = FESTIVALS_FALLBACK;
+  renderGrid();
+  showFestival(festivals[0].slug);
+  if (typeof SeoSchema !== 'undefined') {
+    SeoSchema.webPage('Festival Planner', 'Plan feast days with dish slots and recipe variants.', 'https://www.theculinaryjournal.site/festival-planner.html');
+  }
+}
+init();
+</script>
+</body>
+</html>

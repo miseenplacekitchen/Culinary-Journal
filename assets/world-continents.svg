@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" role="img" aria-label="World map by continent">
+  <defs>
+    <filter id="paper">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="noise"/>
+      <feColorMatrix type="saturate" values="0.2"/>
+      <feBlend in="SourceGraphic" in2="noise" mode="multiply"/>
+    </filter>
+  </defs>
+  <rect width="1000" height="520" fill="#e8dcc8"/>
+  <rect width="1000" height="520" fill="#d4c4a8" opacity="0.35" filter="url(#paper)"/>
+  <!-- Simplified continent shapes  public-domain style schematic, not Rand McNally trace -->
+  <g id="continents" stroke="#8b7355" stroke-width="1.2" fill-opacity="0.92">
+    <path id="continent-north-america" data-continent="North America" fill="#c9b896" d="M120,80 L280,60 L320,120 L300,200 L260,240 L200,260 L140,220 L100,160 Z"/>
+    <path id="continent-south-america" data-continent="South America" fill="#b8a882" d="M240,260 L300,250 L320,320 L300,420 L260,460 L220,400 L230,300 Z"/>
+    <path id="continent-europe" data-continent="Europe" fill="#d2bc98" d="M470,90 L540,80 L560,130 L530,170 L480,160 L450,120 Z"/>
+    <path id="continent-africa" data-continent="Africa" fill="#c4ad86" d="M470,180 L540,170 L560,250 L540,360 L490,390 L450,320 L455,220 Z"/>
+    <path id="continent-asia" data-continent="Asia" fill="#cdb995" d="M560,70 L820,60 L880,140 L860,220 L780,260 L700,240 L620,200 L560,150 Z"/>
+    <path id="continent-oceania" data-continent="Oceania" fill="#bda77f" d="M760,300 L860,290 L900,340 L870,400 L800,410 L750,360 Z"/>
+    <path id="continent-antarctica" data-continent="Antarctica" fill="#a8b0a0" d="M180,470 L820,470 L800,500 L200,500 Z"/>
+  </g>
+</svg>

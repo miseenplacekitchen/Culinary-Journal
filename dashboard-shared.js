@@ -332,6 +332,8 @@ async function init() {
       var n = Array.isArray(rows) ? rows.length : 0;
       var el = document.getElementById('badge-feedback');
       if (el) { el.textContent = n||''; el.style.display = n ? 'inline-block' : 'none'; }
+      var vocEl = document.getElementById('badge-voc');
+      if (vocEl) { vocEl.textContent = n||''; vocEl.style.display = n ? 'inline-block' : 'none'; }
     }).catch(function(){});
   } catch(e) {
     showFatalError('Dashboard error: ' + e.message);
@@ -350,7 +352,7 @@ function signOut() {
   window.location.href = 'login.html';
 }
 
-const ALL_VIEWS = ['dashboard','recipe-mgmt','user-mgmt','ingredients','site-mgmt','finance','library-mgmt'];
+const ALL_VIEWS = ['dashboard','recipe-mgmt','user-mgmt','ingredients','site-mgmt','finance','library-mgmt','festival-mgmt','voc-mgmt'];
 
 function toggleApSide() {
   var side = document.querySelector('.ap-side');
@@ -376,8 +378,8 @@ function switchView(view, ingTab) {
   const nb = document.getElementById('nav-' + view);
   if (nb) nb.classList.add('active');
   ALL_VIEWS.forEach(function(v) { const el = document.getElementById('v-' + v); if (el) el.style.display = (v===view)?'block':'none'; });
-  const titles = { 'dashboard':'Dashboard', 'recipe-mgmt':'Recipe Management', 'user-mgmt':'User Management', 'ingredients':'Ingredients Management', 'site-mgmt':'Site Management', 'finance':'Finance Management', 'library-mgmt':'Library Management' };
-  const subs   = { 'dashboard':'Overview of site activity.', 'recipe-mgmt':'Review, approve and manage all submitted recipes.', 'user-mgmt':'Manage member registrations and accounts.', 'ingredients':'Browse, add and edit the ingredient database.', 'site-mgmt':'Control pages, features, announcements, themes, email templates and site settings.', 'finance':'Manage membership tiers, subscriptions, pricing and revenue.', 'library-mgmt':'Manage ingredient, spice, tool, cut and preservation profiles.' };
+  const titles = { 'dashboard':'Dashboard', 'recipe-mgmt':'Recipe Management', 'user-mgmt':'User Management', 'ingredients':'Ingredients Management', 'site-mgmt':'Site Management', 'finance':'Finance Management', 'library-mgmt':'Library Management', 'festival-mgmt':'Festival Management', 'voc-mgmt':'Voice of the Customer' };
+  const subs   = { 'dashboard':'Overview of site activity.', 'recipe-mgmt':'Review, approve and manage all submitted recipes.', 'user-mgmt':'Manage member registrations and accounts.', 'ingredients':'Browse, add and edit the ingredient database.', 'site-mgmt':'Control pages, features, announcements, themes, email templates and site settings.', 'finance':'Manage membership tiers, subscriptions, pricing and revenue.', 'library-mgmt':'Manage ingredient, spice, tool, cut and preservation profiles.', 'festival-mgmt':'Festivals, dish slots and recipe variants for occasion planners.', 'voc-mgmt':'Categorised member feedback — signals, noise and actionable items.' };
   setEl('page-title', titles[view] || view);
   setEl('page-sub',   subs[view]   || '');
   var mobileTitle = document.querySelector('.ap-mobile-title');
@@ -393,6 +395,8 @@ function switchView(view, ingTab) {
   if (view === 'site-mgmt')   { var _smt=localStorage.getItem('tcj_active_sm_tab')||'sm-pages'; switchSMTab(_smt); }
   if (view === 'finance')     { switchFinanceTab(localStorage.getItem('tcj_active_finance_tab')||'fi-overview'); }
   if (view === 'library-mgmt') { switchLibTab(localStorage.getItem('tcj_active_lib_tab')||'lm-ingredients'); }
+  if (view === 'festival-mgmt') { switchFestTab(localStorage.getItem('tcj_active_fest_tab')||'fm-overview'); }
+  if (view === 'voc-mgmt') { switchVocTab(localStorage.getItem('tcj_active_voc_tab')||'voc-inbox'); }
 }
 
 // ── RECIPE MANAGEMENT ─────────────────────────────────────────────
