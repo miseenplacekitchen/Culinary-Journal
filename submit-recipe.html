@@ -1753,7 +1753,7 @@ window.normalizeUnit = function(u) {
     handfuls:'handful', pinches:'pinch', stalks:'stalk', ears:'ear',
     cans:'can', jars:'jar', packets:'packet', sachets:'sachet',
     bottles:'bottle', tins:'tin', packs:'pack',
-    sticks:'stick', pods:'pod', dashes:'dash', drops:'drop',
+    sticks:'stick', pods:'pod', nos:'no', dashes:'dash', drops:'drop',
     knobs:'knob', sheets:'sheet', blocks:'block', bars:'bar'
   };
   return map[lc] || lc;
@@ -3074,9 +3074,10 @@ function titleCaseIngredientName(name) {
   }).join(' ');
 }
 
-var PARSE_UNIT_WORDS = '(?:teaspoons?|tsp|tablespoons?|tbsp|tbs|cups?|grams?|g|gm|kilograms?|kg|millilitres?|milliliters?|ml|litres?|liters?|l|ounces?|oz|pounds?|lbs?|lb|pinch(?:es)?|bunch(?:es)?|cloves?|leaves?|sprigs?|handfuls?|to\\s+taste)';
+var PARSE_UNIT_WORDS = '(?:teaspoons?|tsp|tablespoons?|tbsp|tbs|cups?|grams?|g|gm|kilograms?|kg|millilitres?|milliliters?|ml|litres?|liters?|l|ounces?|oz|pounds?|lbs?|lb|pinch(?:es)?|bunch(?:es)?|cloves?|leaves?|sprigs?|handfuls?|handful|pods?|nos?|drops?|pieces?|slice|slices|to\\s+taste)';
 // Matches 1/2, 1 1/2, ½, 0.25 — slash fractions must be in-token (not only after a space).
 var PARSE_QTY_PAT = '[\\d\u00BC-\u00BE\u2150-\u215E\\/\\.]+(?:\\s+[\\d\u00BC-\u00BE\u2150-\u215E\\/\\.]+)?';
+var PARSE_PREP_NOTE_WORDS = 'chopped|sliced(?:\\s+lengthwise)?|finely\\s+chopped|medium|black|reqd|as\\s+needed|as\\s+reqd|to\\s+taste|for\\s+frying';
 
 function normalizeParsedQty(qty) {
   if (!qty) return '';
@@ -3147,34 +3148,74 @@ function normalizeIngredientAlias(name) {
     'chilli sauce': 'Chilli Sauce', 'ketchup': 'Ketchup', 'salt': 'Salt', 'water': 'Water', 'curd': 'Curd',
     'corn flour': 'Cornflour', 'meal maker': 'Soya Chunks', 'soya nuggets': 'Soya Chunks',
     'lem': 'Lemon Juice', 'ging': 'Ginger Garlic Paste', 'cori': 'Coriander Leaves',
-    'gree': 'Green Chilli', 'wate': 'Water'
+    'gree': 'Green Chilli', 'wate': 'Water',
+    'red chilly powder': 'Red Chilli Powder', 'red chilli powder': 'Red Chilli Powder',
+    'mint leaves': 'Mint Leaves', 'mint leaves (pudhina)': 'Mint Leaves',
+    'small onion': 'Small Onion', 'small onions': 'Small Onion',
+    'pepper powder': 'Pepper Powder', 'pepper powder (black)': 'Pepper Powder',
+    'basmati rice': 'Basmati Rice', 'pine apple essence': 'Pineapple Essence',
+    'pineapple essence': 'Pineapple Essence', 'cashew nuts': 'Cashew Nuts',
+    'yellow colour': 'Yellow Food Colour'
   };
   return map[lc] || name;
 }
 
 function inferIngredientUnit(name, qty) {
   var n = String(name || '').toLowerCase();
+  if (/\b(ghee|oil|dalda)\b/.test(n) && !qty) return '';
   if (/\bleaves?\b/.test(n)) return 'leaf';
-  if (/\b(chilli|chillies|pepper)\b/.test(n) && qty && /^\d+$/.test(String(qty).trim())) return 'piece';
+  if (/\bcloves?\b/.test(n) && !/\bcardamom\b/.test(n) && qty) return 'clove';
+  if (/\b(cinnamon|cardamom|egg|onion|chilli|chillies|raisin|cashew|garlic|pineapple)\b/.test(n) && qty && /^\d+$/.test(String(qty).trim())) return 'piece';
+  if (/\b(pepper)\b/.test(n) && qty && /^\d+$/.test(String(qty).trim()) && !/powder/.test(n)) return 'piece';
   if (/\bsalt\b/.test(n) && !qty) return 'pinch';
+  if (/\bhandful\b/.test(n)) return 'handful';
   return '';
+}
+
+function parseTrailingQtyInName(name, existingNote) {
+  var n = normalizeBlogIngredientLine(String(name || '').trim());
+  if (!n) return null;
+  var dashNote = n.match(new RegExp('^(.+?)\\s+(' + PARSE_QTY_PAT + ')\\s*\\b(' + PARSE_UNIT_WORDS +
+    ')\\b\\s*[-–—]\\s*(.+)$', 'i'));
+  if (dashNote) {
+    return {
+      qty: normalizeParsedQty(dashNote[2].trim()),
+      unit: normalizeParsedUnit(dashNote[3]),
+      name: titleCaseIngredientName(dashNote[1].trim()),
+      note: existingNote ? existingNote + '; ' + dashNote[4].trim() : dashNote[4].trim()
+    };
+  }
+  var m = n.match(new RegExp('^(.+?)\\s+(' + PARSE_QTY_PAT + ')\\s*\\b(' + PARSE_UNIT_WORDS + ')\\b\\s*(.*)$', 'i'));
+  if (!m || !m[1] || !m[1].trim()) return null;
+  var tail = (m[4] || '').trim();
+  var note = existingNote || '';
+  if (tail) note = note ? note + '; ' + tail : tail;
+  return {
+    qty: normalizeParsedQty(m[2].trim()),
+    unit: normalizeParsedUnit(m[3]),
+    name: titleCaseIngredientName(m[1].trim()),
+    note: note
+  };
 }
 
 function reparseEmbeddedIngredientName(item) {
   if (!item || !(item.name || '').trim()) return item || {};
-  if ((item.qty || item.unit) && (item.name || '').trim()) return item;
+  var trail = parseTrailingQtyInName(item.name, item.note);
+  if (trail) return trail;
   var embedded = splitIngredientLine(item.name);
-  if (!embedded || embedded.header || !(embedded.name || '').trim()) return item;
-  if (!embedded.qty && !embedded.unit) return item;
-  return {
-    qty: item.qty || embedded.qty || '',
-    unit: item.unit || embedded.unit || '',
-    name: embedded.name,
-    note: item.note || embedded.note || ''
-  };
+  if (embedded && !embedded.header && (embedded.name || '').trim() && (embedded.qty || embedded.unit)) {
+    return {
+      qty: embedded.qty || item.qty || '',
+      unit: embedded.unit || item.unit || '',
+      name: embedded.name,
+      note: [item.note, embedded.note].filter(Boolean).join('; ').replace(/^;\s*/, '')
+    };
+  }
+  return item;
 }
 
 function isEmbeddedPrefixIngredientName(name) {
+  if (parseTrailingQtyInName(name)) return true;
   var s = splitIngredientLine(name);
   return !!(s && !s.header && (s.name || '').trim() && (s.qty || s.unit));
 }
@@ -3217,7 +3258,7 @@ function consolidateParsedItems(items) {
       var frag = extractQtyUnitFragment(name);
       if (frag && i + 1 < list.length) {
         var next = list[i + 1];
-        if (next.name && !isQtyUnitFragment(next.name)) {
+        if (next.name && !isQtyUnitFragment(next.name) && !next.qty && !next.unit) {
           next.qty = next.qty || frag.qty;
           next.unit = next.unit || frag.unit;
           if (frag.rest) next.note = next.note ? next.note + '; ' + frag.rest : frag.rest;
@@ -3226,6 +3267,8 @@ function consolidateParsedItems(items) {
           continue;
         }
       }
+      list.splice(i, 1);
+      continue;
     }
 
     if (!name && (item.qty || item.unit || note) && i + 1 < list.length) {
@@ -3250,14 +3293,6 @@ function consolidateParsedItems(items) {
       }
     }
 
-    if ((name || '').trim() && !(item.qty || item.unit) && i + 1 < list.length) {
-      var unitNext = list[i + 1];
-      if (!(unitNext.name || '').trim() && unitNext.unit && !(unitNext.qty)) {
-        item.unit = unitNext.unit;
-        list.splice(i + 1, 1);
-      }
-    }
-
     i++;
   }
 
@@ -3274,7 +3309,8 @@ function consolidateParsedItems(items) {
       }
       return;
     }
-    item.name = normalizeIngredientAlias(titleCaseIngredientName(n));
+    item.name = normalizeIngredientAlias(titleCaseIngredientName(n))
+      .replace(/\s+as\s+reqd$/i, '').replace(/\s+to\s+taste$/i, '').trim();
     if (!item.unit) item.unit = inferIngredientUnit(item.name, item.qty);
     out.push(item);
   });
@@ -3317,13 +3353,27 @@ function normalizeStuckBlogQty(line) {
   return String(line || '').replace(/-\s*1(\d\/\d)/g, '- 1 $1');
 }
 
+function normalizeBlogIngredientLine(line) {
+  line = String(line || '').trim();
+  line = line.replace(/[–—]/g, '-');
+  line = normalizeStuckBlogQty(line);
+  line = line.replace(/(\d)(tbsp|tbs|tsp|kg|gm|g|ml|l|cups?|pods|nos|drops)\b/gi, '$1 $2');
+  line = line.replace(/([\d\u00BC-\u00BE\u2150-\u215E\/\.]+(?:\s+[\d\u00BC-\u00BE\u2150-\u215E\/\.]+)?)(kg|gm|g|ml|l|tbsp|tbs|tsp|cups?|pods|nos|drops)\b/gi, '$1 $2');
+  line = line.replace(/(frying|chopped|sliced|medium|black|reqd)(\()/gi, '$1 $2');
+  line = line.replace(/piece\(/gi, 'piece (');
+  line = line.replace(/(kg|g|tsp|tbsp|tbs|cups?|nos|pods?)\(([^)]+)\)/gi, '$1 ($2)');
+  line = line.replace(/\bone\s+pinch\b/gi, '1 pinch');
+  line = line.replace(/\bas\s+reqd\b/gi, 'as needed');
+  return line.replace(/\s+/g, ' ').trim();
+}
+
 function splitIngredientLine(line) {
   if (!line) return null;
   line = String(line).trim();
   if (!line) return null;
   line = line.replace(/[\s\-–—]+$/,'').trim();
   if (!line) return null;
-  line = normalizeStuckBlogQty(line);
+  line = normalizeBlogIngredientLine(line);
   if (isIngredientSubHeader(line)) return { header: true, name: line.replace(/\s*:?\s*$/, '') };
 
   var note = '';
@@ -3331,15 +3381,32 @@ function splitIngredientLine(line) {
     note = 'extra as needed';
     line = line.replace(/\s+plus\s*$/i, '').trim();
   }
+
+  var akaQty = line.match(/^(.+?)\(([^)]+)\)\s*-\s*(\d+)\s*$/);
+  if (akaQty) {
+    return {
+      qty: akaQty[3],
+      unit: '',
+      name: titleCaseIngredientName(akaQty[1].trim()),
+      note: note ? note + '; ' + akaQty[2].trim() : akaQty[2].trim()
+    };
+  }
+
   var orParen = line.match(/^(.+?)\s*\(\s*or\s+([^)]+)\)\s*$/i);
   if (orParen) {
     line = orParen[1].trim();
     note = 'or ' + orParen[2].trim();
   } else {
-    var parenNote = line.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
-    if (parenNote && parenNote[2].length < 80) {
-      line = parenNote[1].trim();
-      note = parenNote[2].trim();
+    var prepParen = line.match(new RegExp('^(.+?)\\s*\\((' + PARSE_PREP_NOTE_WORDS + ')\\)\\s*$', 'i'));
+    if (prepParen) {
+      line = prepParen[1].trim();
+      note = note ? note + '; ' + prepParen[2].trim() : prepParen[2].trim();
+    } else {
+      var parenNote = line.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+      if (parenNote && parenNote[2].length < 80 && !/\bfor\s+/i.test(parenNote[2])) {
+        line = parenNote[1].trim();
+        note = note ? note + '; ' + parenNote[2].trim() : parenNote[2].trim();
+      }
     }
   }
   var altQty = line.match(/\s+or\s+(\d[\d\s\/\.\u00BC-\u00BE]*\s*(?:g|gm|kg|ml|cup|cups|oz|lb)\b.*)$/i);
@@ -3391,6 +3458,49 @@ function splitIngredientLine(line) {
       note: note
     };
   }
+
+  var tasteOnly = line.match(/^(.+?)\s*-\s*(as\s+needed|as\s+reqd|to\s+taste)\s*$/i);
+  if (tasteOnly) {
+    return {
+      qty: '', unit: 'pinch',
+      name: titleCaseIngredientName(tasteOnly[1].trim()),
+      note: note || 'to taste'
+    };
+  }
+
+  var wordPinch = line.match(/^(.+?)\s*-\s*one\s+pinch\s*$/i);
+  if (wordPinch) {
+    return { qty: '1', unit: 'pinch', name: titleCaseIngredientName(wordPinch[1].trim()), note: note };
+  }
+
+  var handfulLine = line.match(/^(.+?)\s*-\s*handful\s*$/i);
+  if (handfulLine) {
+    return { qty: '', unit: 'handful', name: titleCaseIngredientName(handfulLine[1].trim()), note: note };
+  }
+
+  var sizePiece = line.match(/^(.+?)\s*-\s*(big|small)\s+piece(?:\s*\(([^)]+)\))?\s*$/i);
+  if (sizePiece) {
+    var spNote = sizePiece[2].toLowerCase() + ' piece';
+    if (sizePiece[3]) spNote += '; ' + sizePiece[3].trim();
+    note = note ? note + '; ' + spNote : spNote;
+    return { qty: '', unit: '', name: titleCaseIngredientName(sizePiece[1].trim()), note: note };
+  }
+
+  var nosFrying = line.match(/^(.+?)\s*-\s*(\d+)\s+nos\s+for\s+frying\s*(.*)$/i);
+  if (nosFrying) {
+    var fryExtra = (nosFrying[3] || '').trim();
+    if (fryExtra) note = note ? note + '; ' + fryExtra : fryExtra;
+    note = note ? note + '; for frying' : 'for frying';
+    return {
+      qty: nosFrying[2],
+      unit: 'no',
+      name: titleCaseIngredientName(nosFrying[1].trim()),
+      note: note
+    };
+  }
+
+  var trailInLine = parseTrailingQtyInName(line, note);
+  if (trailInLine) return trailInLine;
 
   // Standard prefix: "1/2 tsp salt" or qty+unit only "1 1/2 cup"
   var prefixRe = new RegExp('^(' + PARSE_QTY_PAT + ')\\s*\\b(' + PARSE_UNIT_WORDS + ')\\b(?:\\s+(.+))?$', 'i');
@@ -3496,7 +3606,9 @@ function isIngredientLikeLine(line) {
   if (/^[\d\u00BC-\u00BE\/]+\s*(cup|cups|tsp|tbsp|tbs|g|kg|ml|bunch|piece|clove|slice)\b/i.test(line)) return true;
   if (/^\d+\s*(tsp|tbsp|tbs|cup|cups|g|kg|ml|oz|lb|pinch)\b/i.test(line)) return true;
   if (/^[\-\u2013\u2014•]\s*\d/.test(line)) return true;
-  if (/^[\w\s.'()-]+-\s*[\d\u00BC-\u00BE\/]/i.test(line)) return true;
+  if (/^[\w\s.'()-]+[-–—]\s*[\d\u00BC-\u00BE\/]/i.test(line)) return true;
+  if (/^[\w\s.'()-]+\s+[\d\u00BC-\u00BE\/]/i.test(line)) return true;
+  if (splitIngredientLine(line)) return true;
   return false;
 }
 
@@ -3504,7 +3616,7 @@ function isBareIngredientLine(line) {
   if (!line || isScanNoiseLine(line) || isNutritionOrMetaLine(line)) return false;
   if (isIngredientSubHeader(line) || isStepHeaderLine(line) || detectScanSection(line)) return false;
   var cleaned = line.replace(/[\s\u2013\u2014\-]+$/,'').replace(/\s*-\s*$/,'').trim();
-  if (!cleaned || cleaned.length < 3 || cleaned.length > 55) return false;
+  if (!cleaned || cleaned.length < 3 || cleaned.length > 95) return false;
   if (!/^[a-zA-Z]/.test(cleaned) || /[.!?]/.test(cleaned)) return false;
   if (isIngredientLikeLine(cleaned) || isMethodLikeLine(cleaned)) return false;
   if (cleaned.split(/\s+/).length > 6) return false;
@@ -3534,7 +3646,7 @@ function cleanScanContentLine(line, section) {
   s = s.replace(/\s{2,}/g, ' ');
   s = s.replace(/(\d)\s+\/\s+(\d)/g, '$1/$2');
   s = s.replace(/^(\d+)\s*\.\s*(\d+)/, '$1.$2');
-  if (section === 'ing') s = normalizeStuckBlogQty(s);
+  if (section === 'ing') s = normalizeBlogIngredientLine(s);
   if (section === 'meth') {
     s = s.replace(/^(step\s*)(\d+)\s*[\.\):\-]\s*/i, '$1$2. ');
     s = s.replace(/\bdon\s+t\b/gi, "don't")
@@ -4052,9 +4164,11 @@ function parseRecipe() {
     item.name = (item.name || '').trim();
     if (pendingPartial) {
       if (item.name && !isQtyUnitFragment(item.name) && !isFragmentIngredientName(item.name) && !isEmbeddedPrefixIngredientName(item.name)) {
-        item.qty = item.qty || pendingPartial.qty;
-        item.unit = item.unit || pendingPartial.unit;
-        item.note = item.note || pendingPartial.note || '';
+        if (!item.qty && !item.unit) {
+          item.qty = pendingPartial.qty || '';
+          item.unit = pendingPartial.unit || '';
+          item.note = item.note || pendingPartial.note || '';
+        }
         pendingPartial = null;
       } else {
         if (isValidParsedIngredient(pendingPartial)) {
@@ -4065,6 +4179,7 @@ function parseRecipe() {
       }
     }
     if (!item.name && (item.qty || item.unit)) {
+      if (!item.qty && item.unit) return;
       pendingPartial = { qty: item.qty || '', unit: item.unit || '', name: '', note: item.note || '' };
       return;
     }
