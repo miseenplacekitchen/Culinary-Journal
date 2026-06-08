@@ -3057,15 +3057,22 @@ function splitIngredientLine(line) {
   if (isIngredientSubHeader(line)) return { header: true, name: line.replace(/\s*:?\s*$/, '') };
 
   var note = '';
+  var parenNote = line.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+  if (parenNote && parenNote[2].length < 80) {
+    line = parenNote[1].trim();
+    note = parenNote[2].trim();
+  }
   var altQty = line.match(/\s+or\s+(\d[\d\s\/\.\u00BC-\u00BE]*\s*(?:g|gm|kg|ml|cup|cups|oz|lb)\b.*)$/i);
   if (altQty) {
-    note = 'or ' + altQty[1].trim();
+    note = note ? note + '; or ' + altQty[1].trim() : 'or ' + altQty[1].trim();
     line = line.replace(altQty[0], '').trim();
   }
   var commaNote = line.match(/^(.+?),\s*(.{3,})$/);
   if (commaNote && commaNote[2].length < 100 && !/^(and|or)\s/i.test(commaNote[1])) {
     line = commaNote[1].trim();
-    note = commaNote[2].trim();
+    var cNote = commaNote[2].trim();
+    if (/^plus$/i.test(cNote)) note = note || 'extra as needed';
+    else note = note ? note + '; ' + cNote : cNote;
   }
 
   // Blog suffix: "Name - 1/2 tsp" or "Name -11/2tsp" or "Name -1/4cup"
@@ -3145,14 +3152,27 @@ function splitIngredientLine(line) {
   return null;
 }
 
+function formatIngredientNoteForPaste(note) {
+  if (!note) return '';
+  if (/^plus$/i.test(note)) return 'extra as needed';
+  if (/^or\s+/i.test(note)) return note;
+  return note;
+}
+
 function formatScannedIngredientLine(line) {
+  if (isIngredientSubHeader(line)) return line.replace(/\s+/g, ' ').trim();
   var split = splitIngredientLine(line);
   if (split && split.header) return split.name;
   if (split && split.name) {
     var parts = [split.qty, split.unit, split.name].filter(Boolean);
-    return split.note ? parts.join(' ') + ', ' + split.note : parts.join(' ');
+    var base = parts.join(' ');
+    if (!split.note) return base;
+    var note = formatIngredientNoteForPaste(split.note);
+    if (/^or\s+/i.test(note)) return base + ' (' + note + ')';
+    if (note === 'extra as needed') return base;
+    return base + ' — ' + note;
   }
-  return titleCaseIngredientName(line);
+  return titleCaseIngredientName(line.replace(/[\s\u2013\u2014\-]+$/,'').replace(/\s*-\s*$/,'').trim());
 }
 
 function normalizeMethodSteps(steps) {
@@ -3181,6 +3201,18 @@ function isIngredientLikeLine(line) {
   return false;
 }
 
+function isBareIngredientLine(line) {
+  if (!line || isScanNoiseLine(line) || isNutritionOrMetaLine(line)) return false;
+  if (isIngredientSubHeader(line) || isStepHeaderLine(line) || detectScanSection(line)) return false;
+  var cleaned = line.replace(/[\s\u2013\u2014\-]+$/,'').replace(/\s*-\s*$/,'').trim();
+  if (!cleaned || cleaned.length < 3 || cleaned.length > 55) return false;
+  if (!/^[a-zA-Z]/.test(cleaned) || /[.!?]/.test(cleaned)) return false;
+  if (isIngredientLikeLine(cleaned) || isMethodLikeLine(cleaned)) return false;
+  if (cleaned.split(/\s+/).length > 6) return false;
+  if (/\b(soak|wash|heat|add|cook|stir|mix|make|take|close|keep|fry|boil|saute|serve|cut|squeeze|prefer|usually|minimum)\b/i.test(cleaned)) return false;
+  return /^[a-zA-Z][\w\s'()-]*$/i.test(cleaned);
+}
+
 function isIngredientContinuation(line) {
   if (!line || isScanNoiseLine(line) || isNutritionOrMetaLine(line)) return false;
   if (isIngredientLikeLine(line) || isStepHeaderLine(line) || isMethodLikeLine(line)) return false;
@@ -3205,6 +3237,13 @@ function cleanScanContentLine(line, section) {
   s = s.replace(/^(\d+)\s*\.\s*(\d+)/, '$1.$2');
   if (section === 'meth') {
     s = s.replace(/^(step\s*)(\d+)\s*[\.\):\-]\s*/i, '$1$2. ');
+    s = s.replace(/\bdon\s+t\b/gi, "don't")
+      .replace(/\bcan\s+t\b/gi, "can't")
+      .replace(/\bwon\s+t\b/gi, "won't")
+      .replace(/\bisn\s+t\b/gi, "isn't")
+      .replace(/\bI\s+m\b/gi, "I'm")
+      .replace(/\byou\s+re\b/gi, "you're")
+      .replace(/\bit\s+s\b/gi, "it's");
   }
   if (section === 'serves') {
     s = s.replace(/^(?:serves?|servings?|yield)\s*:?\s*/i, '').trim();
@@ -3234,7 +3273,7 @@ function collectIngredients(lines, startIdx, endIdx, title) {
     if (isNutritionOrMetaLine(ln) || detectScanSection(ln) === 'junk') break;
     if (/^method$/i.test(ln) || /^description$/i.test(ln)) break;
     if (title && ln === title) continue;
-    if (/^for\s+(?:the\s+)?/i.test(ln) && ln.length < 55) {
+    if (isIngredientSubHeader(ln)) {
       if (current) ings.push(cleanScanContentLine(current, 'ing'));
       current = '';
       ings.push(ln.replace(/\s+/g, ' ').trim());
@@ -3243,6 +3282,10 @@ function collectIngredients(lines, startIdx, endIdx, title) {
     if (isIngredientLikeLine(ln)) {
       if (current) ings.push(cleanScanContentLine(current, 'ing'));
       current = ln;
+    } else if (isBareIngredientLine(ln)) {
+      if (current) ings.push(cleanScanContentLine(current, 'ing'));
+      current = '';
+      ings.push(ln.replace(/[\s\u2013\u2014\-]+$/,'').replace(/\s*-\s*$/,'').trim());
     } else if (current && isIngredientContinuation(ln)) {
       current += ' ' + ln;
     } else if (current) {
@@ -3690,6 +3733,7 @@ function parseRecipe() {
   if (numberedSteps >= 2 && !rawLines.some(l => METH_HDR.test(l))) inMethod = true;
 
   const looksLikeIngLine = (line) => {
+    if (isBareIngredientLine(line)) return true;
     if (splitIngredientLine(line)) return true;
     if (line.length < 3 || line.length > 120) return false;
     if (/[.!?]{2,}/.test(line)) return false;
