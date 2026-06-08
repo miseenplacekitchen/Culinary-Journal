@@ -703,6 +703,7 @@ async function doUpdateRequest(id, status) {
 // ── UM Feedback ───────────────────────────────────────────────────
 
 async function loadUMFeedback(container) {
+  if (typeof loadVocInbox === 'function') { loadVocInbox(container); return; }
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading…</div>';
   try {
     var rows = await rpc('admin_get_feedback', {p_status:null}) || [];
