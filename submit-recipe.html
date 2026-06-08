@@ -2753,12 +2753,22 @@ function isStepHeaderLine(line) {
 }
 
 function isIngredientLikeLine(line) {
-  if (isScanNoiseLine(line)) return false;
+  if (isScanNoiseLine(line) || isNutritionOrMetaLine(line)) return false;
+  if (isStepHeaderLine(line)) return false;
   if (/^(?:step\s*)?\d+[\.\):\-]\s+\S/i.test(line)) return false;
-  if (/^\s*[\d\u00BC-\u00BE\/]/.test(line)) return true;
-  if (/\b(tsp|tbsp|cup|cups|g|kg|ml|oz|lb|pinch|clove|slice|piece|bunch)\b/i.test(line)) return true;
-  if (/^[\-\u2013\u2014•]/.test(line) && line.length < 100) return true;
-  return line.length >= 3 && line.length <= 100 && line.split(/\s+/).length <= 12 && !/[.!?]{2,}/.test(line);
+  if (/^\d+\s+ingredients?$/i.test(line)) return false;
+  if (/^(ingredients?|method|description|nutrition|feedback)$/i.test(line)) return false;
+  if (/^\d+[\d\s\/\.\u00BC-\u00BE-]*(g|kg|ml|l|oz|lb|tsp|tbsp|tbs|cup|cups)\b/i.test(line)) return true;
+  if (/^[\d\u00BC-\u00BE\/]+\s*(cup|cups|tsp|tbsp|tbs|g|kg|ml|bunch|piece|clove|slice)\b/i.test(line)) return true;
+  if (/^\d+\s*(tsp|tbsp|tbs|cup|cups|g|kg|ml|oz|lb|pinch)\b/i.test(line)) return true;
+  if (/^[\-\u2013\u2014•]\s*\d/.test(line)) return true;
+  return false;
+}
+
+function isIngredientContinuation(line) {
+  if (!line || isScanNoiseLine(line) || isNutritionOrMetaLine(line)) return false;
+  if (isIngredientLikeLine(line) || isStepHeaderLine(line) || isMethodLikeLine(line)) return false;
+  return line.length > 1 && line.length < 50 && /^[a-z(]/.test(line);
 }
 
 function isMethodLikeLine(line) {
@@ -2800,6 +2810,28 @@ function detectScanSection(line) {
   return null;
 }
 
+function collectIngredients(lines, startIdx, endIdx, title) {
+  var ings = [];
+  var current = '';
+  for (var i = startIdx; i < endIdx; i++) {
+    var ln = lines[i];
+    if (isNutritionOrMetaLine(ln) || detectScanSection(ln) === 'junk') break;
+    if (/^method$/i.test(ln) || /^description$/i.test(ln)) break;
+    if (title && ln === title) continue;
+    if (isIngredientLikeLine(ln)) {
+      if (current) ings.push(cleanScanContentLine(current, 'ing'));
+      current = ln;
+    } else if (current && isIngredientContinuation(ln)) {
+      current += ' ' + ln;
+    } else if (current) {
+      ings.push(cleanScanContentLine(current, 'ing'));
+      current = '';
+    }
+  }
+  if (current) ings.push(cleanScanContentLine(current, 'ing'));
+  return ings.filter(Boolean);
+}
+
 function collectMethodSteps(lines, startIdx, endIdx) {
   var steps = [];
   var current = '';
@@ -2807,18 +2839,21 @@ function collectMethodSteps(lines, startIdx, endIdx) {
     var ln = lines[i];
     if (isNutritionOrMetaLine(ln) || isScanNoiseLine(ln)) break;
     if (detectScanSection(ln) === 'junk') break;
+    if (isIngredientLikeLine(ln) && !isMethodLikeLine(ln)) continue;
     if (isStepHeaderLine(ln)) {
       if (current) steps.push(cleanScanContentLine(current, 'meth'));
       current = ln.replace(/^step\s+\d+\s+of\s+\d+\s*/i, '').trim();
       continue;
     }
-    if (isStepHeaderLine(ln) || /^(?:step\s*)?\d+[\.\):\-]\s+\S/i.test(ln)) {
-      if (current) steps.push(cleanScanContentLine(current, 'meth'));
-      current = ln.replace(/^(?:step\s*)?\d+[\.\):\-]\s*/i, '').trim();
-    } else if (current) {
-      current += ' ' + ln;
+    if (current) {
+      if (/^[a-z(]/.test(ln) || (!isStepHeaderLine(ln) && !isIngredientLikeLine(ln))) {
+        current += ' ' + ln;
+      } else {
+        steps.push(cleanScanContentLine(current, 'meth'));
+        current = isMethodLikeLine(ln) ? ln : '';
+      }
     } else if (isMethodLikeLine(ln)) {
-      steps.push(cleanScanContentLine(ln, 'meth'));
+      current = ln;
     }
   }
   if (current) steps.push(cleanScanContentLine(current, 'meth'));
@@ -2846,7 +2881,7 @@ function extractByLayout(lines) {
 
   if (ingStart < 0) {
     for (var j = 0; j < lines.length; j++) {
-      if (isIngredientLikeLine(lines[j]) && !isNutritionOrMetaLine(lines[j])) {
+      if (isIngredientLikeLine(lines[j])) {
         ingStart = j;
         break;
       }
@@ -2866,13 +2901,7 @@ function extractByLayout(lines) {
   var ingLines = [];
   if (ingStart >= 0) {
     var end = ingEnd >= 0 ? ingEnd : (methStart >= 0 ? methStart : lines.length);
-    for (var a = ingStart; a < end; a++) {
-      if (isNutritionOrMetaLine(lines[a]) || detectScanSection(lines[a]) === 'junk') break;
-      if (isIngredientLikeLine(lines[a])) {
-        var cleaned = cleanScanContentLine(lines[a], 'ing');
-        if (cleaned) ingLines.push(cleaned);
-      }
-    }
+    ingLines = collectIngredients(lines, ingStart, end, title);
   }
 
   var methLines = [];
@@ -2940,8 +2969,8 @@ function extractRecipeCore(text) {
   var pasteParts = [];
   if (sections.ing.length) pasteParts.push('INGREDIENTS\n' + sections.ing.join('\n'));
   if (sections.meth.length) pasteParts.push('METHOD\n' + sections.meth.map(function(s, idx) {
-    return (idx + 1) + '. ' + s.replace(/^(?:step\s*)?\d+[\.\):\-]\s*/i, '');
-  }).join('\n'));
+    return (idx + 1) + '. ' + s.replace(/^(?:step\s*)?\d+[\.\):\-]\s*/i, '').trim();
+  }).join('\n\n'));
   if (sections.serves.length) pasteParts.push('SERVES\n' + sections.serves.join('\n'));
   if (sections.notes.length) pasteParts.push('NOTES\n' + sections.notes.join('\n'));
   if (sections.tips.length) pasteParts.push('TIPS\n' + sections.tips.join('\n'));
@@ -3007,19 +3036,36 @@ async function ocrFromSource(source, statusPrefix) {
   return (result && result.data && result.data.text) ? result.data.text.trim() : '';
 }
 
-async function extractPdfPageText(page) {
-  var content = await page.getTextContent();
-  var items = (content.items || []).filter(function(it) { return it.str && it.str.trim(); });
-  if (!items.length) return '';
+function pdfItemsToLines(items, yTolerance) {
+  var tol = yTolerance || 3;
   var lines = {};
   items.forEach(function(item) {
-    var y = Math.round(item.transform[5]);
+    var y = Math.round(item.transform[5] / tol) * tol;
     if (!lines[y]) lines[y] = [];
     lines[y].push({ x: item.transform[4], str: item.str });
   });
   return Object.keys(lines).sort(function(a, b) { return Number(b) - Number(a); }).map(function(y) {
     return lines[y].sort(function(a, b) { return a.x - b.x; }).map(function(it) { return it.str; }).join(' ');
-  }).join('\n');
+  });
+}
+
+async function extractPdfPageText(page) {
+  var content = await page.getTextContent();
+  var items = (content.items || []).filter(function(it) { return it.str && it.str.trim(); });
+  if (!items.length) return '';
+
+  var viewport = page.getViewport({ scale: 1 });
+  var midX = viewport.width * 0.44;
+  var leftItems = items.filter(function(it) { return it.transform[4] < midX; });
+  var rightItems = items.filter(function(it) { return it.transform[4] >= midX; });
+
+  if (leftItems.length > 8 && rightItems.length > 8) {
+    var leftLines = pdfItemsToLines(leftItems);
+    var rightLines = pdfItemsToLines(rightItems);
+    return leftLines.join('\n') + '\n' + rightLines.join('\n');
+  }
+
+  return pdfItemsToLines(items).join('\n');
 }
 
 async function scanRecipePdf(file) {
