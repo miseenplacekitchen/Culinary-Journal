@@ -332,6 +332,10 @@
     .ap-inner-tab  { padding:10px 20px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all .15s;margin-bottom:-1px;flex-shrink:0; }
     .ap-inner-tab:hover  { color:var(--text-high); }
     .ap-inner-tab.active { color:var(--accent);border-bottom-color:var(--accent);font-weight:600; }
+    .ap-inner-tabs-secondary { margin-top:-8px; margin-bottom:18px; border-bottom:none; opacity:0.92; }
+    .ap-inner-tabs-secondary .ap-inner-tab { font-size:11px; padding:6px 14px; color:var(--text-mid); border-bottom-width:1px; }
+    .ap-inner-tabs-label { font-family:"DM Sans",sans-serif; font-size:9px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-mid); padding:0 4px 6px; margin-top:4px; }
+    .ap-parked-banner { padding:10px 14px; background:rgba(212,160,23,0.08); border:1px solid rgba(212,160,23,0.25); border-radius:8px; margin-bottom:16px; font-family:"DM Sans",sans-serif; font-size:12px; color:var(--text-mid); line-height:1.55; }
     .ap-inner-panel      { display:none; }
     .ap-inner-panel.active { display:block; }
 
@@ -441,18 +445,32 @@
       </a>
     </div>
     <nav class="ap-nav">
-      <button class="ap-nav-item active" id="nav-dashboard" onclick="switchView('dashboard')" style="font-weight:600">&#127968; Dashboard <span class="ap-nav-badge" id="badge-pending">0</span></button>
-      <button class="ap-nav-item" id="nav-recipe-mgmt" onclick="switchView('recipe-mgmt')">&#128214; Recipe Management <span class="ap-nav-badge" id="badge-pending-recipes" style="display:none">0</span></button>
-      <button class="ap-nav-item" id="nav-user-mgmt" onclick="switchView('user-mgmt')">&#128101; User Management <span class="ap-nav-badge" id="badge-pending-users">0</span></button>
-      <button class="ap-nav-item" id="nav-ingredients" onclick="switchView('ingredients')">&#129365; Ingredient Management</button>
-      <button class="ap-nav-item" id="nav-site-mgmt" onclick="switchView('site-mgmt')">&#9881;&#65039; Site Management</button>
-      <button class="ap-nav-item" id="nav-finance" onclick="switchView('finance')">&#128176; Finance Management</button>
-      <button class="ap-nav-item" id="nav-library-mgmt" onclick="switchView('library-mgmt')">📚 Library Management</button>
-      <button class="ap-nav-item" id="nav-festival-mgmt" onclick="switchView('festival-mgmt')">🎉 Festival Management</button>
-      <button class="ap-nav-item" id="nav-voc-mgmt" onclick="switchView('voc-mgmt')">📣 Voice of the Customer <span class="ap-nav-badge" id="badge-voc" style="display:none">0</span></button>
+      <div class="ap-nav-label">Overview</div>
+      <button class="ap-nav-item active" id="nav-dashboard" onclick="switchView('dashboard')">&#127968; Dashboard <span class="ap-nav-badge" id="badge-pending">0</span></button>
+
+      <div class="ap-nav-label">Operations</div>
+      <button class="ap-nav-item" id="nav-recipe-mgmt" onclick="switchView('recipe-mgmt')">&#128214; Recipes <span class="ap-nav-badge" id="badge-pending-recipes" style="display:none">0</span></button>
+      <button class="ap-nav-item" id="nav-user-mgmt" onclick="switchView('user-mgmt')">&#128101; Members <span class="ap-nav-badge" id="badge-pending-users">0</span></button>
+      <button class="ap-nav-item" id="nav-ingredients" onclick="switchView('ingredients')">&#129365; Ingredients</button>
+
+      <div class="ap-nav-label">Content</div>
+      <button class="ap-nav-item" id="nav-library-mgmt" onclick="switchView('library-mgmt')">&#128218; Library</button>
+
+      <div class="ap-nav-label">Settings</div>
+      <button class="ap-nav-item" id="nav-site-mgmt" onclick="switchView('site-mgmt')">&#9881; Site</button>
+      <button class="ap-nav-item" id="nav-finance" onclick="switchView('finance')">&#128176; Finance</button>
+
+      <div class="ap-nav-group" id="nav-group-parked">
+        <button type="button" class="ap-nav-group-btn" onclick="toggleNavGroup('nav-group-parked')">
+          <span>Parked</span><span class="ap-nav-group-chevron">&#9662;</span>
+        </button>
+        <div class="ap-nav-group-children">
+          <button type="button" class="ap-nav-child" id="nav-festival-mgmt" onclick="switchView('festival-mgmt')">&#127881; Festivals</button>
+        </div>
+      </div>
+
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
-        <a href="index.html" class="ap-nav-item" style="text-decoration:none;font-size:12px">View Site</a>
-        <a href="index.html" class="ap-nav-item" style="text-decoration:none;font-size:12px">Homepage</a>
+        <a href="index.html" class="ap-nav-item" style="text-decoration:none;font-size:12px">&#8599; View Site</a>
       </div>
     </nav>
     <div class="ap-side-foot">
@@ -476,12 +494,10 @@
 
       <!-- QUICK ACTIONS -->
       <div class="ap-quick-actions">
-        <button type="button" class="ap-quick-btn warn" onclick="switchView('recipe-mgmt');switchRecipeTab('pending')">&#9203; Review Pending Recipes</button>
-        <button type="button" class="ap-quick-btn accent" onclick="switchView('finance');switchFinanceTab('fi-members')">&#128176; Manage Member Tiers</button>
-        <button type="button" class="ap-quick-btn" onclick="switchView('site-mgmt')">&#9881;&#65039; Site Management</button>
-        <button type="button" class="ap-quick-btn" onclick="switchView('user-mgmt')">&#128101; User Management</button>
-        <button type="button" class="ap-quick-btn" onclick="window.open('lane2-spot-check.html','_blank')">&#9989; Lane 2 Spot-Check</button>
-        <button type="button" class="ap-quick-btn" onclick="window.open('theme-sweep.html','_blank')">&#127912; Theme Sweep (47)</button>
+        <button type="button" class="ap-quick-btn warn" onclick="switchView('recipe-mgmt');switchRecipeTab('pending')">&#9203; Pending Recipes</button>
+        <button type="button" class="ap-quick-btn" onclick="switchView('user-mgmt');switchUserTab('pending')">&#128101; New Members</button>
+        <button type="button" class="ap-quick-btn" onclick="switchView('ingredients');switchIngTab('pending')">&#129365; Ingredient Queue</button>
+        <button type="button" class="ap-quick-btn accent" onclick="switchView('user-mgmt');switchUserTab('feedback')">&#128236; Voice of Customer</button>
       </div>
 
       <!-- STATS ROW 1 — Recipes & Members -->
@@ -539,22 +555,25 @@
     </div>
 
     <div id="v-recipe-mgmt" style="display:none">
-      <div class="ap-inner-tabs">
-        <button class="ap-inner-tab active" data-tab="all"         onclick="switchRecipeTab('all')">All Recipes</button>
-        <button class="ap-inner-tab"        data-tab="pending"     onclick="switchRecipeTab('pending')">Pending Review <span class="ap-nav-badge" id="rtab-badge-pending" style="position:static;margin-left:4px">0</span></button>
+      <div class="ap-inner-tabs ap-inner-tabs-primary">
+        <button class="ap-inner-tab active" data-tab="all"         onclick="switchRecipeTab('all')">All</button>
+        <button class="ap-inner-tab"        data-tab="pending"     onclick="switchRecipeTab('pending')">Pending <span class="ap-nav-badge" id="rtab-badge-pending" style="position:static;margin-left:4px">0</span></button>
         <button class="ap-inner-tab"        data-tab="approved"    onclick="switchRecipeTab('approved')">Approved</button>
         <button class="ap-inner-tab"        data-tab="rejected"    onclick="switchRecipeTab('rejected')">Rejected</button>
-        <button class="ap-inner-tab"        data-tab="analytics"   onclick="switchRecipeTab('analytics')">&#128202; Analytics</button>
-        <button class="ap-inner-tab"        data-tab="taxonomy"    onclick="switchRecipeTab('taxonomy')">Sub-cats &amp; Divisions</button>
-        <button class="ap-inner-tab"        data-tab="sourcelinks" onclick="switchRecipeTab('sourcelinks')">Source Links</button>
-        <button class="ap-inner-tab"        data-tab="nutrition"   onclick="switchRecipeTab('nutrition')">Nutrition</button>
-        <button class="ap-inner-tab"        data-tab="printqueue"  onclick="switchRecipeTab('printqueue')">Print Queue</button>
-        <button class="ap-inner-tab"        data-tab="collections" onclick="switchRecipeTab('collections')">Collections</button>
-        <button class="ap-inner-tab"        data-tab="featured"    onclick="switchRecipeTab('featured')">&#11088; Featured</button>
-        <button class="ap-inner-tab"        data-tab="audit"       onclick="switchRecipeTab('audit')">Audit Trail</button>
-        <button class="ap-inner-tab"        data-tab="rmsettings"  onclick="switchRecipeTab('rmsettings')">&#9881;&#65039; RM Interface</button>
-        <button class="ap-inner-tab"        data-tab="rotw"        onclick="switchRecipeTab('rotw')">&#11088; Recipe of the Week</button>
-        <button class="ap-inner-tab"        data-tab="notes"       onclick="switchRecipeTab('notes')">&#128221; Cooking Tips <span class="ap-nav-badge" id="rtab-badge-notes" style="position:static;margin-left:4px">0</span></button>
+        <button class="ap-inner-tab"        data-tab="rotw"        onclick="switchRecipeTab('rotw')">Recipe of the Week</button>
+        <button class="ap-inner-tab"        data-tab="notes"       onclick="switchRecipeTab('notes')">Cooking Tips <span class="ap-nav-badge" id="rtab-badge-notes" style="position:static;margin-left:4px">0</span></button>
+      </div>
+      <div class="ap-inner-tabs-label">Tools &amp; data</div>
+      <div class="ap-inner-tabs ap-inner-tabs-secondary">
+        <button class="ap-inner-tab" data-tab="analytics"   onclick="switchRecipeTab('analytics')">Analytics</button>
+        <button class="ap-inner-tab" data-tab="taxonomy"    onclick="switchRecipeTab('taxonomy')">Sub-cats</button>
+        <button class="ap-inner-tab" data-tab="sourcelinks" onclick="switchRecipeTab('sourcelinks')">Source Links</button>
+        <button class="ap-inner-tab" data-tab="nutrition"   onclick="switchRecipeTab('nutrition')">Nutrition</button>
+        <button class="ap-inner-tab" data-tab="printqueue"  onclick="switchRecipeTab('printqueue')">Print Queue</button>
+        <button class="ap-inner-tab" data-tab="collections" onclick="switchRecipeTab('collections')">Collections</button>
+        <button class="ap-inner-tab" data-tab="featured"    onclick="switchRecipeTab('featured')">Featured</button>
+        <button class="ap-inner-tab" data-tab="audit"       onclick="switchRecipeTab('audit')">Audit</button>
+        <button class="ap-inner-tab" data-tab="rmsettings"  onclick="switchRecipeTab('rmsettings')">Settings</button>
       </div>
       <div id="rmgmt-list-panel">
         <div class="ap-stats" style="margin-bottom:16px">
@@ -605,19 +624,22 @@
 
     <!-- USER MANAGEMENT -->
     <div id="v-user-mgmt" style="display:none">
-      <div class="ap-inner-tabs">
-        <button class="ap-inner-tab active" data-tab="members"      onclick="switchUserTab('members')">&#128101; All Members <span class="ap-nav-badge" id="badge-all-users" style="position:static;margin-left:4px"></span></button>
-        <button class="ap-inner-tab"        data-tab="pending"      onclick="switchUserTab('pending')">&#9203; Pending <span class="ap-nav-badge" id="badge-pending-users-2" style="position:static;margin-left:4px">0</span></button>
-        <button class="ap-inner-tab"        data-tab="deactivated"  onclick="switchUserTab('deactivated')">Deactivated</button>
-        <button class="ap-inner-tab"        data-tab="reports"      onclick="switchUserTab('reports')">Reports</button>
-        <button class="ap-inner-tab"        data-tab="requests"     onclick="switchUserTab('requests')">Recipe Requests</button>
-        <button class="ap-inner-tab"        data-tab="feedback"     onclick="switchUserTab('feedback')">Feedback</button>
-        <button class="ap-inner-tab"        data-tab="chefs"        onclick="switchUserTab('chefs')">Chef Directory</button>
-        <button class="ap-inner-tab"        data-tab="family-refs"  onclick="switchUserTab('family-refs')">Family Lists</button>
-        <button class="ap-inner-tab"        data-tab="invites"      onclick="switchUserTab('invites')">Invites</button>
-        <button class="ap-inner-tab"        data-tab="analytics"    onclick="switchUserTab('analytics')">&#128202; Analytics</button>
-        <button class="ap-inner-tab"        data-tab="audit"        onclick="switchUserTab('audit')">Audit Trail</button>
-        <button class="ap-inner-tab"        data-tab="umsettings"   onclick="switchUserTab('umsettings')">&#9881;&#65039; UM Interface</button>
+      <div class="ap-inner-tabs ap-inner-tabs-primary">
+        <button class="ap-inner-tab active" data-tab="members"   onclick="switchUserTab('members')">All Members <span class="ap-nav-badge" id="badge-all-users" style="position:static;margin-left:4px"></span></button>
+        <button class="ap-inner-tab"        data-tab="pending"   onclick="switchUserTab('pending')">Pending <span class="ap-nav-badge" id="badge-pending-users-2" style="position:static;margin-left:4px">0</span></button>
+        <button class="ap-inner-tab"        data-tab="reports"   onclick="switchUserTab('reports')">Reports</button>
+        <button class="ap-inner-tab"        data-tab="feedback"  onclick="switchUserTab('feedback')">Voice of Customer <span class="ap-nav-badge" id="badge-voc" style="position:static;margin-left:4px;display:none">0</span></button>
+      </div>
+      <div class="ap-inner-tabs-label">More</div>
+      <div class="ap-inner-tabs ap-inner-tabs-secondary">
+        <button class="ap-inner-tab" data-tab="deactivated" onclick="switchUserTab('deactivated')">Deactivated</button>
+        <button class="ap-inner-tab" data-tab="requests"    onclick="switchUserTab('requests')">Recipe Requests</button>
+        <button class="ap-inner-tab" data-tab="chefs"       onclick="switchUserTab('chefs')">Chefs</button>
+        <button class="ap-inner-tab" data-tab="family-refs" onclick="switchUserTab('family-refs')">Family Lists</button>
+        <button class="ap-inner-tab" data-tab="invites"     onclick="switchUserTab('invites')">Invites</button>
+        <button class="ap-inner-tab" data-tab="analytics"   onclick="switchUserTab('analytics')">Analytics</button>
+        <button class="ap-inner-tab" data-tab="audit"       onclick="switchUserTab('audit')">Audit</button>
+        <button class="ap-inner-tab" data-tab="umsettings"  onclick="switchUserTab('umsettings')">Settings</button>
       </div>
       <div id="upanel-members"      data-panel="members"      style="padding:0"></div>
       <div id="upanel-pending"      data-panel="pending"      style="display:none;padding:0"></div>
@@ -833,7 +855,7 @@
         <button class="ap-inner-tab"        data-tab="fi-members"     onclick="switchFinanceTab('fi-members')">Member Tiers</button>
         <button class="ap-inner-tab"        data-tab="fi-pricing"     onclick="switchFinanceTab('fi-pricing')">Pricing</button>
         <button class="ap-inner-tab"        data-tab="fi-history"     onclick="switchFinanceTab('fi-history')">History</button>
-        <button class="ap-inner-tab" data-tab="fi-interface" onclick="switchFinanceTab('fi-interface')">&#9881;&#65039; FM Interface</button>
+        <button class="ap-inner-tab" data-tab="fi-interface" onclick="switchFinanceTab('fi-interface')">Settings</button>
       </div>
       <div id="upanel-fi-overview"  data-panel="fi-overview"  style="padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
       <div id="upanel-fi-members"   data-panel="fi-members"   style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
@@ -859,19 +881,12 @@
       </div>
 
       <div id="v-festival-mgmt" style="display:none">
+        <div class="ap-parked-banner">&#9888; <strong>Parked.</strong> Festival work is paused while we tidy the admin panel. The public Festival Planner stays live; use this area only when you return to occasion planning.</div>
         <div class="ap-inner-tabs">
           <button class="ap-inner-tab active" data-tab="fm-overview" onclick="switchFestTab('fm-overview')">Overview</button>
-          <button class="ap-inner-tab" data-tab="fm-interface" onclick="switchFestTab('fm-interface')">FM Interface</button>
+          <button class="ap-inner-tab" data-tab="fm-interface" onclick="switchFestTab('fm-interface')">Editor</button>
         </div>
         <div id="fest-panel" style="margin-top:16px"><div class="ap-loading">Loading…</div></div>
-      </div>
-
-      <div id="v-voc-mgmt" style="display:none">
-        <div class="ap-inner-tabs">
-          <button class="ap-inner-tab active" data-tab="voc-inbox" onclick="switchVocTab('voc-inbox')">Inbox</button>
-          <button class="ap-inner-tab" data-tab="voc-taxonomy" onclick="switchVocTab('voc-taxonomy')">Taxonomy</button>
-        </div>
-        <div id="voc-panel" style="margin-top:16px"><div class="ap-loading">Loading…</div></div>
       </div>
     </main>
   </div>
@@ -1025,13 +1040,13 @@
   </div>
 </div>
   <!-- Dashboard modules — split from monolithic dashboard.html -->
-  <script src="dashboard-shared.js?v=20260608"></script>
+  <script src="dashboard-shared.js?v=20260611"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
   <script src="dashboard-recipes.js?v=20260609"></script>
   <script src="dashboard-users.js?v=20260608"></script>
   <script src="dashboard-ingredients.js?v=20260608"></script>
   <script src="dashboard-site.js?v=20260608"></script>
-  <script src="dashboard-platform.js?v=20260610"></script>
+  <script src="dashboard-platform.js?v=20260611"></script>
   <script src="dashboard-analytics.js?v=20260608"></script>
 </body>
 </html>
