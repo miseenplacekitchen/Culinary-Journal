@@ -11,6 +11,7 @@
   <script src="theme-init.js"></script>
   <script src="supabase-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -735,6 +736,45 @@
       padding-bottom: 22px;
       margin-bottom: 16px;
     }
+    .sr-flow-bar {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px;
+      font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--text-muted);
+    }
+    .sr-flow-step {
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px;
+      background: rgba(255,255,255,0.02);
+    }
+    .sr-flow-step em { font-style: normal; color: var(--accent); font-weight: 600; margin-right: 4px; }
+    .sr-step-num {
+      font-family: "DM Sans", sans-serif; font-size: 11px; font-weight: 600;
+      color: var(--accent); background: var(--border); padding: 3px 8px; border-radius: 4px;
+      letter-spacing: 0.08em;
+    }
+    .sr-subsection { margin-top: 8px; border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+    .sr-subsection.collapsed { padding-bottom: 14px; }
+    .sr-subsection.collapsed > *:not(.sr-subsection-title) { display: none !important; }
+    .sr-subsection-title {
+      font-family: "Cormorant Garamond", serif; font-size: 1.15rem; font-weight: 600;
+      color: var(--accent); margin: 0 0 16px; cursor: pointer; user-select: none;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .sr-subsection-title::after { content: '▾'; font-size: 18px; color: var(--accent); transition: transform 0.2s; }
+    .sr-subsection.collapsed .sr-subsection-title { margin-bottom: 0; }
+    .sr-subsection.collapsed .sr-subsection-title::after { transform: rotate(-90deg); }
+    .sr-draft-prompt {
+      display: none; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+      padding: 14px 18px; margin-bottom: 16px; border-radius: 10px;
+      border: 1px solid var(--border); background: rgba(212,160,23,0.08);
+      font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high);
+    }
+    .sr-draft-prompt-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .sr-draft-prompt-actions button {
+      font-family: "DM Sans", sans-serif; font-size: 12px; padding: 8px 14px; border-radius: 8px;
+      cursor: pointer; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-high);
+    }
+    .sr-draft-prompt-actions button:first-child {
+      background: var(--accent); color: #fff; border-color: var(--accent);
+    }
 
     /* ── RESPONSIVE ──────────────────────────── */
     @media (max-width: 680px) {
@@ -891,6 +931,22 @@
     <!-- MESSAGE -->
     <div class="sr-msg" id="sr-msg"></div>
 
+    <div class="sr-draft-prompt" id="draft-restore-prompt">
+      <span>Unsaved draft found: <strong id="draft-restore-name">Untitled</strong></span>
+      <div class="sr-draft-prompt-actions">
+        <button type="button" onclick="confirmRestoreDraft()">Continue draft</button>
+        <button type="button" onclick="discardDraftAndStartFresh()">Start fresh</button>
+      </div>
+    </div>
+
+    <div class="sr-flow-bar" aria-label="Suggested workflow">
+      <span class="sr-flow-step"><em>1</em> Import</span>
+      <span class="sr-flow-step"><em>2</em> Details</span>
+      <span class="sr-flow-step"><em>3</em> Ingredients</span>
+      <span class="sr-flow-step"><em>4</em> Procedure</span>
+      <span class="sr-flow-step"><em>5</em> Notes &amp; submit</span>
+    </div>
+
     <!-- COLLAPSE / EXPAND ALL -->
     <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
       <button type="button" id="btn-toggle-all"
@@ -907,17 +963,17 @@
 
     <!-- 1. PASTE & PARSE -->
     <div class="sr-section" id="section-paste">
-      <div class="sr-section-title">Import Recipe <span>Optional</span></div>
+      <div class="sr-section-title"><span class="sr-step-num">1</span> Import Recipe <span>Optional</span></div>
 
       <div class="sr-field">
         <label class="sr-label">Photo scan <span style="font-weight:400;text-transform:none;color:var(--text-muted)">(cookbook page or handwritten card)</span></label>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-          <input type="file" id="scan-file-input" accept="image/*" capture="environment" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)">
+          <input type="file" id="scan-file-input" accept="image/*,application/pdf,.pdf" capture="environment" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)">
           <button type="button" class="sr-parse-btn" style="padding:9px 16px;font-size:12px" onclick="scanRecipePhoto()">📸 Scan &amp; clean up</button>
         </div>
         <div id="scan-status" style="font-family:'DM Sans',sans-serif;font-size:12px;margin-top:6px;display:none"></div>
         <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.6">
-          Pipeline: photo → OCR → AI/rule cleanup → you review below → admin may refine on approval.
+          Pipeline: photo or PDF → OCR → cleanup → you review below → admin may refine on approval.
         </div>
       </div>
 
@@ -936,14 +992,16 @@
         <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.6">
           <strong style="color:var(--text-high)">Works best with:</strong>
           recipe websites (auto-detects structured data), ingredients listed one per line, steps clearly numbered or sectioned.<br>
-          <span style="opacity:0.7">For Instagram captions, TikTok descriptions, or messy blog text — paste what you have and correct anything the parser misses.
-          AI-powered import for any format is coming in a future update.</span>
+          <span style="opacity:0.7">Instagram and TikTok links try to pull the caption first. If there is no recipe structure, enter the dish name and use <strong>Generate starter</strong>.</span>
         </div>
         <textarea class="sr-input sr-paste-textarea" id="paste-input" maxlength="20000" placeholder="Paste a recipe here. Works best with structured text — ingredients one per line, steps numbered. For messier content, paste and correct what the parser misses."></textarea>
       </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button class="sr-parse-btn" onclick="parseRecipe()">
           ✦ Parse Recipe
+        </button>
+        <button type="button" class="sr-parse-btn" style="padding:9px 16px;font-size:12px" onclick="generateStarterFromName()" title="Build a starter template from the recipe name">
+          ✨ Generate starter
         </button>
         <button type="button" onclick="clearPaste()" style="font-family:'DM Sans',sans-serif;font-size:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;text-decoration:underline">Clear</button>
       </div>
@@ -959,7 +1017,7 @@
 
     <!-- 2. RECIPE DETAILS -->
     <div class="sr-section" id="section-details">
-      <div class="sr-section-title">Recipe Details</div>
+      <div class="sr-section-title"><span class="sr-step-num">2</span> Recipe Details</div>
 
       <div class="sr-grid">
         <!-- Recipe Name -->
@@ -1143,9 +1201,12 @@
           <div class="sr-hint" style="margin-top:8px"><span class="sr-i">i</span> Sub-categories and divisions help members browse within a category. Admin manages these under Recipe Management → Sub-cats &amp; Divisions.</div>
         </div>
 
-        <!-- Recipe characteristics: Spice + Sweet + Difficulty, side-by-side on
-             desktop (3 columns), stacked on mobile. Neutral boxes — the COLOUR
-             lives on the icons themselves, not the buttons. -->
+      </div>
+
+      <div class="sr-subsection collapsed" id="subsection-levels-tags">
+        <div class="sr-subsection-title">Levels, times &amp; tags <span style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">expand when ready</span></div>
+
+        <!-- Recipe characteristics: Spice + Sweet + Difficulty -->
         <div class="sr-field sr-full levels-grid">
           <!-- Spice Level — inline SVG chillies with hardcoded colours -->
           <div class="level-col">
@@ -1451,15 +1512,13 @@
         </div>
       </div>
 
+      </div><!-- /subsection-levels-tags -->
 
-
-
-
-    </div>
+    </div><!-- /section-details -->
 
     <!-- 3. INGREDIENTS -->
     <div class="sr-section" id="section-ingredients">
-      <div class="sr-section-title">Ingredients</div>
+      <div class="sr-section-title"><span class="sr-step-num">3</span> Ingredients</div>
       <div id="ing-db-status" class="sr-hint" style="display:none; margin: -16px 0 14px;"></div>
       <div id="ingredient-sections"></div>
       <button class="btn-add-section" onclick="addIngSection()">+ Add Ingredient Section</button>
@@ -1467,7 +1526,7 @@
 
     <!-- 4. PROCEDURE -->
     <div class="sr-section" id="section-procedure">
-      <div class="sr-section-title">Procedure</div>
+      <div class="sr-section-title"><span class="sr-step-num">4</span> Procedure</div>
       <div class="sr-hint" style="margin: -16px 0 16px;">
         <span class="sr-i">i</span> Please update the steps for the recipe and split it into clearly labelled sections, such as:
         <div style="margin:3px 0 0 36px; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid);">
@@ -1481,7 +1540,7 @@
 
     <!-- 5. COOKING NOTES & TIPS — public, prints on the recipe card -->
     <div class="sr-section" id="section-notes">
-      <div class="sr-section-title">Cooking Notes &amp; Tips</div>
+      <div class="sr-section-title"><span class="sr-step-num">5</span> Cooking Notes &amp; Tips</div>
       <div class="sr-field">
         <label class="sr-label">Tips, tricks, variations &amp; what to watch out for <span class="opt">optional</span></label>
         <div class="sr-hint" style="margin: -4px 0 8px">
@@ -1493,7 +1552,7 @@
 
     <!-- 6. SOURCE & CREDITS -->
     <div class="sr-section" id="section-credits">
-      <div class="sr-section-title">Source & Credits</div>
+      <div class="sr-section-title"><span class="sr-step-num">6</span> Source &amp; Credits</div>
 
       <!-- Source Type -->
       <div class="sr-field" style="margin-bottom:24px">
@@ -1698,6 +1757,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   try { await loadIngredients(); } catch(e) { console.error('Ingredient load error:', e); }
   try { addIngSection('Ingredients'); } catch(e) { console.error(e); }
   try { initSectionSorting(); } catch(e) { console.error('sort init', e); }
+  try { initSrSectionCollapse(); } catch(e) { console.error('collapse init', e); }
   try { addMethodSection('PREP WORK'); } catch(e) { console.error(e); }
   try { addMethodSection('DIRECTIONS'); } catch(e) { console.error(e); }
   try { initCategoryTaxonomy(); } catch(e) { console.error(e); }
@@ -1723,13 +1783,15 @@ window.addEventListener('DOMContentLoaded', async () => {
           restoreDraft(namedRaw);
           window._activeDraftId = draftId;
         } else {
-          loadDraftSilent();
+          await maybeOfferDraftRestore();
         }
+      } else if (urlParams.get('new') === '1') {
+        clearDraftStorage();
       } else {
-        loadDraftSilent();
+        await maybeOfferDraftRestore();
       }
     }
-  } catch(e) { console.error('Draft load error:', e); loadDraftSilent(); }
+  } catch(e) { console.error('Draft load error:', e); await maybeOfferDraftRestore(); }
   try { setupSourceToggle(); } catch(e) { console.error(e); }
   try { setupAutoSave(); } catch(e) { console.error(e); }
 });
@@ -2480,17 +2542,82 @@ function isSocialMediaUrl(url) {
   return /instagram\.com|tiktok\.com|facebook\.com\/(reel|watch|share)|youtube\.com\/(shorts|watch)|pinterest\.com\/pin/i.test(url || '');
 }
 
+function looksLikeStructuredRecipe(text) {
+  if (!text || text.length < 40) return false;
+  var t = text.toLowerCase();
+  if (/\b(ingredients?|method|instructions?|directions?|serves|prep|cook)\b/.test(t)) return true;
+  var lines = text.split('\n').filter(function(l) { return l.trim(); });
+  var withQty = lines.filter(function(l) {
+    return /^\s*[\d\u00BC-\u00BE\/]/.test(l) || /\b(tsp|tbsp|cup|g|ml|oz|lb)\b/i.test(l);
+  }).length;
+  var numbered = lines.filter(function(l) { return /^\s*\d+[\.\)]\s/.test(l); }).length;
+  return withQty >= 3 || numbered >= 3;
+}
+
+function extractTitleFromCaption(caption) {
+  if (!caption) return '';
+  var first = caption.split('\n').map(function(l) { return l.trim(); }).filter(Boolean)[0] || '';
+  first = first.replace(/#[\w\u00C0-\u024F]+/g, '').trim();
+  if (first.length > 80) first = first.slice(0, 80);
+  return first;
+}
+
+function generateRecipeFromName(name) {
+  var n = (name || '').trim();
+  if (!n) return null;
+  var lower = n.toLowerCase();
+  var ings = [], steps = [];
+  if (/pickle|achar|upperi|thoran/i.test(lower)) {
+    ings = ['2 cups main vegetable or fruit, diced', '2 tbsp salt', '1 tsp turmeric', '1–2 tsp chilli powder', '1 tsp mustard seeds', '3 tbsp oil'];
+    steps = ['Wash and dry produce; cut into even pieces.', 'Mix salt and spices; coat evenly and rest 15 minutes.', 'Heat oil, splutter mustard seeds, pour over mixture.', 'Bottle when cool; rest at least 24 hours before serving.'];
+  } else if (/chutney|thuvaiyal|pachadi/i.test(lower)) {
+    ings = ['1 cup grated coconut (or main base)', '2 tbsp oil', '1 tsp mustard seeds', '2–4 dried red chillies', 'salt to taste', 'water as needed'];
+    steps = ['Dry-roast or sauté aromatics until fragrant.', 'Grind base with minimal water to desired consistency.', 'Temper mustard seeds and chillies in oil; pour over chutney.', 'Adjust salt and serve chilled or at room temperature.'];
+  } else if (/curry|korma|masala|stew/i.test(lower)) {
+    ings = ['500 g main protein or vegetables', '2 medium onions, sliced', '3 cloves garlic, minced', '1 inch ginger, grated', '2 tbsp oil', '1 tsp ground spices', 'salt to taste', 'water or stock as needed'];
+    steps = ['Sauté onions in oil until golden; add garlic and ginger.', 'Add spices and cook until fragrant.', 'Add main ingredient; cover and cook until tender.', 'Season, simmer to desired consistency, and serve hot.'];
+  } else if (/cake|cookie|brownie|muffin|bread|bake/i.test(lower)) {
+    ings = ['250 g flour', '150 g sugar', '100 g butter or oil', '2 eggs', '1 tsp baking powder', 'pinch of salt', 'milk or water as needed'];
+    steps = ['Preheat oven and prepare tin.', 'Cream butter and sugar; add eggs.', 'Fold in dry ingredients until just combined.', 'Bake until set and golden; cool before serving.'];
+  } else if (/salad|raita/i.test(lower)) {
+    ings = ['3 cups vegetables or greens', '2 tbsp oil or yoghurt base', '1 tbsp lemon juice', 'salt and pepper to taste', 'fresh herbs for garnish'];
+    steps = ['Prep and chop all components.', 'Whisk dressing; toss with main ingredients.', 'Rest 10 minutes for flavours to meld.', 'Garnish and serve chilled.'];
+  } else {
+    ings = ['500 g main ingredient', '1 medium onion, diced', '2 cloves garlic, minced', '2 tbsp oil', 'salt and pepper to taste', 'water or stock as needed'];
+    steps = ['Prep all ingredients.', 'Sauté aromatics in oil until softened.', 'Add main ingredient and cook through.', 'Season, finish, and serve.'];
+  }
+  return 'INGREDIENTS\n' + ings.join('\n') + '\n\nMETHOD\n' + steps.map(function(s, i) { return (i + 1) + '. ' + s; }).join('\n');
+}
+
+function generateStarterFromName() {
+  var nameEl = document.getElementById('recipe-name');
+  var pasteEl = document.getElementById('paste-input');
+  var name = (nameEl && nameEl.value.trim()) || '';
+  if (!name && pasteEl) {
+    var paste = pasteEl.value.trim();
+    if (paste && paste.split('\n').length <= 2) name = extractTitleFromCaption(paste);
+  }
+  if (!name) {
+    showMsg('Enter a recipe name first (or paste a short caption with the dish name), then click Generate starter.', 'error');
+    if (nameEl) nameEl.focus();
+    return;
+  }
+  if (nameEl && !nameEl.value.trim()) nameEl.value = name;
+  var stub = generateRecipeFromName(name);
+  if (pasteEl && stub) pasteEl.value = stub;
+  showMsg('Starter template generated for “' + name + '”. Review, edit, then Parse Recipe.', 'success');
+  document.getElementById('parse-tips').style.display = 'block';
+  setTimeout(parseRecipe, 200);
+}
+
 async function importFromUrl() {
   var url = document.getElementById('source-url-input').value.trim();
   if (!url || !url.startsWith('http')) { showImportStatus('Please enter a valid recipe URL first.', false); return; }
-  if (isSocialMediaUrl(url)) {
-    showImportStatus('Instagram, TikTok and similar links cannot be auto-imported (login wall). Copy the recipe from the caption or comments, paste below, or use Photo scan.', false);
-    var creditUrl = document.getElementById('credit-url');
-    if (creditUrl && !creditUrl.value) creditUrl.value = url;
-    var srcSomewhere = document.querySelector('input[name="source-type"][value="From Somewhere Else"]');
-    if (srcSomewhere) srcSomewhere.checked = true;
-    return;
-  }
+  var creditUrl = document.getElementById('credit-url');
+  if (creditUrl && !creditUrl.value) creditUrl.value = url;
+  var srcSomewhere = document.querySelector('input[name="source-type"][value="From Somewhere Else"]');
+  if (srcSomewhere) srcSomewhere.checked = true;
+
   showImportStatus('Fetching recipe...', null);
   var html = '';
   var recipe = null;
@@ -2501,9 +2628,31 @@ async function importFromUrl() {
       if (payload.recipe) {
         populateFromJsonLd(payload.recipe, url);
         showImportStatus('Recipe imported via site fetch. Review all fields below before submitting.', true);
+        collapseImportSection();
+        return;
+      }
+      if (payload.social) {
+        var caption = (payload.caption || '').trim();
+        if (caption) {
+          document.getElementById('paste-input').value = caption;
+          var title = extractTitleFromCaption(caption);
+          var nameEl = document.getElementById('recipe-name');
+          if (nameEl && title && !nameEl.value.trim()) nameEl.value = title;
+          if (payload.hasRecipeStructure || looksLikeStructuredRecipe(caption)) {
+            showImportStatus((payload.platform || 'Social') + ' caption imported — parsing now. Review and correct anything that looks wrong.', true);
+            setTimeout(function() { parseRecipe(); collapseImportSection(); }, 300);
+          } else {
+            showImportStatus((payload.platform || 'Social') + ' caption found but no clear recipe structure. Enter the dish name above and click Generate starter, or paste the full recipe from comments.', false);
+          }
+          return;
+        }
+        showImportStatus('Could not read the ' + (payload.platform || 'social') + ' caption automatically. Paste the recipe from comments below, or enter the dish name and use Generate starter.', false);
         return;
       }
       html = payload.html || '';
+    } else if (isSocialMediaUrl(url)) {
+      showImportStatus('Could not reach that social post. Paste the caption or recipe text below, or enter the dish name and use Generate starter.', false);
+      return;
     }
   } catch(_) {}
   if (!html) {
@@ -2534,6 +2683,12 @@ async function importFromUrl() {
   }
   populateFromJsonLd(recipe, url);
   showImportStatus('Recipe imported! Review all fields below before submitting.', true);
+  collapseImportSection();
+}
+
+function collapseImportSection() {
+  var sec = document.getElementById('section-paste');
+  if (sec) sec.classList.add('collapsed');
 }
 
 function showScanStatus(msg, ok) {
@@ -2562,22 +2717,72 @@ async function cleanupOcrText(raw) {
   return raw.replace(/[ \t]{2,}/g,' ').replace(/\n{3,}/g,'\n\n').trim();
 }
 
+function tesseractLogger(prefix) {
+  return function(m) {
+    if (m.status === 'recognizing text' && m.progress) {
+      showScanStatus(prefix + '… ' + Math.round(m.progress * 100) + '%', null);
+    }
+  };
+}
+
+async function ocrFromSource(source, statusPrefix) {
+  var result = await Tesseract.recognize(source, 'eng', { logger: tesseractLogger(statusPrefix) });
+  return (result && result.data && result.data.text) ? result.data.text.trim() : '';
+}
+
+async function scanRecipePdf(file) {
+  var pdfjs = window.pdfjsLib;
+  if (!pdfjs) {
+    showScanStatus('PDF library still loading — try again in a moment.', false);
+    return;
+  }
+  pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  showScanStatus('Opening PDF…', null);
+  var buf = await file.arrayBuffer();
+  var pdf = await pdfjs.getDocument({ data: buf }).promise;
+  var maxPages = Math.min(pdf.numPages, 8);
+  var allText = '';
+  for (var p = 1; p <= maxPages; p++) {
+    showScanStatus('Reading PDF page ' + p + ' of ' + maxPages + '…', null);
+    var page = await pdf.getPage(p);
+    var viewport = page.getViewport({ scale: 2 });
+    var canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+    var pageText = await ocrFromSource(canvas, 'OCR page ' + p);
+    if (pageText) allText += pageText + '\n\n';
+  }
+  if (!allText.trim()) {
+    showScanStatus('No text detected in PDF — try a clearer scan or paste manually.', false);
+    return;
+  }
+  showScanStatus('Cleaning up text…', null);
+  var cleaned = await cleanupOcrText(allText.trim());
+  document.getElementById('paste-input').value = cleaned;
+  var srcScanned = document.getElementById('src-scanned');
+  if (srcScanned) srcScanned.checked = true;
+  showScanStatus('PDF OCR complete (' + maxPages + ' page' + (maxPages === 1 ? '' : 's') + ') — review text, then Parse Recipe.', true);
+  document.getElementById('parse-tips').style.display = 'block';
+}
+
 async function scanRecipePhoto() {
   var input = document.getElementById('scan-file-input');
   if (!input || !input.files || !input.files[0]) {
-    showScanStatus('Choose a photo first.', false); return;
+    showScanStatus('Choose a photo or PDF first.', false); return;
   }
-  showScanStatus('Reading photo (OCR)…', null);
   if (typeof Tesseract === 'undefined') {
     showScanStatus('OCR library still loading — try again in a moment.', false); return;
   }
+  var file = input.files[0];
+  var isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
   try {
-    var result = await Tesseract.recognize(input.files[0], 'eng', { logger: function(m) {
-      if (m.status === 'recognizing text' && m.progress) {
-        showScanStatus('Reading photo… ' + Math.round(m.progress * 100) + '%', null);
-      }
-    }});
-    var raw = (result && result.data && result.data.text) ? result.data.text.trim() : '';
+    if (isPdf) {
+      await scanRecipePdf(file);
+      return;
+    }
+    showScanStatus('Reading photo (OCR)…', null);
+    var raw = await ocrFromSource(file, 'Reading photo');
     if (!raw) { showScanStatus('No text detected — try a clearer, flatter photo.', false); return; }
     showScanStatus('Cleaning up text…', null);
     var cleaned = await cleanupOcrText(raw);
@@ -2673,14 +2878,24 @@ function populateFromJsonLd(r, sourceUrl) {
 
 // ── IMPROVED PASTE AREA HELPERS ───────────────────────────────────
 // ── PASTE PARSER ─────────────────────────────────────────────────────────────
+function preprocessRecipeText(text) {
+  return text
+    .replace(/\r\n/g, '\n')
+    .replace(/#[\w\u00C0-\u024F]+/g, '')
+    .replace(/(?:^|\n)\s*(?:\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F])?\s*(?:INGREDIENTS?|WHAT YOU(?:'LL| WILL) NEED|YOU WILL NEED)\s*:?\s*/gi, '\nINGREDIENTS\n')
+    .replace(/(?:^|\n)\s*(?:METHOD|INSTRUCTIONS?|DIRECTIONS?|STEPS?|HOW TO (?:MAKE|COOK|PREPARE))\s*:?\s*/gi, '\nMETHOD\n')
+    .replace(/\n{3,}/g, '\n\n');
+}
+
 function parseRecipe() {
   const el = document.getElementById('paste-input');
-  const text = el ? el.value.trim() : '';
+  const text = el ? preprocessRecipeText(el.value.trim()) : '';
   if (!text) { showMsg('Please paste recipe text first.', 'error'); return; }
+  if (el && el.value !== text) el.value = text;
 
   // ── Pre-processing ────────────────────────────────────────────────────────
-  const stripBullet = s => s.replace(/^[\u2022\u00b7\u2023\u2043*\-\u2013\u2014]\s+/, '').trim();
-  const rawLines    = text.split('\n').map(l => stripBullet(l.trim())).filter(l => l);
+  const stripBullet = s => s.replace(/^[\u2022\u00b7\u2023\u2043*\-\u2013\u2014\u25AA\u25CF\u25CB\u2713\u2714]\s+/, '').trim();
+  const rawLines    = text.split('\n').map(l => stripBullet(l.trim())).filter(l => l.length > 0);
 
   // Detect recipe title from first short line (before sections)
   const titleCand = rawLines[0];
@@ -2745,8 +2960,20 @@ function parseRecipe() {
   };
 
   // Auto-enter method mode when numbered steps appear without a header
-  const numberedSteps = rawLines.filter(l => /^(?:step\s*)?\d+[\.\)]\s+\S/i.test(l)).length;
-  if (numberedSteps >= 3 && !rawLines.some(l => METH_HDR.test(l))) inMethod = true;
+  const numberedSteps = rawLines.filter(l => /^(?:step\s*)?\d+[\.\):\-]\s+\S/i.test(l)).length;
+  if (numberedSteps >= 2 && !rawLines.some(l => METH_HDR.test(l))) inMethod = true;
+
+  const looksLikeIngLine = (line) => {
+    const ingMatch = ING_RE.exec(line);
+    ING_RE.lastIndex = 0;
+    if (ingMatch && (ingMatch[1] || ingMatch[2] || ingMatch[3])) return true;
+    if (line.length < 3 || line.length > 120) return false;
+    if (/[.!?]{2,}/.test(line)) return false;
+    if (/^(?:step\s*)?\d+[\.\)]\s/i.test(line)) return false;
+    if (/\b(tsp|tbsp|cup|cups|g|kg|ml|oz|lb|pinch|clove|slice|piece)\b/i.test(line)) return true;
+    if (/^[\d\u00BC-\u00BE\/]/.test(line)) return true;
+    return /^[a-zA-Z][\w\s\-'(),]{2,}$/.test(line) && line.split(/\s+/).length <= 10;
+  };
 
   for (const line of rawLines) {
     if (line === titleCand && titleCand.length < 72 && !inMethod && !ING_HDR.test(line)) continue;
@@ -2786,22 +3013,59 @@ function parseRecipe() {
     } else {
       if (!curIng) startIngSection('Ingredients');
       const m = ING_RE.exec(line);
-      if (m) {
+      if (m && (m[1] || m[2] || m[3])) {
         const qty  = (m[1] || '').trim().replace(/\s+/g, ' ');
         const unit = (m[2] || '').trim();
-        // m[3] is the ingredient name — strip trailing parenthetical notes if very long
         const raw  = (m[3] || '').trim();
-        // Separate inline note from name: "garlic, finely chopped" → name + note
         const commaNote = raw.match(/^([^,(]{3,}?),\s*(.{5,})$/);
         const name = commaNote ? commaNote[1].trim() : raw;
         const note = commaNote ? commaNote[2].trim() : '';
-        if (name.length < 80) {  // skip lines that are probably prose
+        if (name.length < 80) {
           curIng.items.push({ qty, unit, name, note });
         }
+      } else if (looksLikeIngLine(line)) {
+        const dashSplit = line.match(/^(.+?)\s*[\u2013\u2014\-]\s+(.+)$/);
+        if (dashSplit && /\d|tsp|tbsp|cup|g|ml/i.test(dashSplit[1])) {
+          const m2 = ING_RE.exec(dashSplit[1] + ' ' + dashSplit[2]);
+          if (m2 && m2[3]) {
+            curIng.items.push({ qty: (m2[1]||'').trim(), unit: (m2[2]||'').trim(), name: m2[3].trim(), note: '' });
+          } else {
+            curIng.items.push({ qty: '', unit: '', name: line, note: '' });
+          }
+        } else {
+          curIng.items.push({ qty: '', unit: '', name: line, note: '' });
+        }
+      } else if (/^(?:step\s*)?\d+[\.\):\-]\s+\S/i.test(line)) {
+        inMethod = true;
+        pushIng();
+        startMethSection('DIRECTIONS');
+        const stepText = line.replace(/^(?:step\s*)?\d+[\.\):\-]\s*/i, '').trim();
+        if (stepText) curMeth.steps.push(stepText);
       }
     }
   }
   pushIng(); pushMeth();
+
+  // Fallback: split blocks when headers were missed
+  if (!ingSecs.some(s => s.items.length) && methSecs.every(s => !s.steps.length)) {
+    const ingIdx = rawLines.findIndex(l => ING_HDR.test(l));
+    const methIdx = rawLines.findIndex(l => METH_HDR.test(l));
+    if (ingIdx >= 0 && methIdx > ingIdx) {
+      ingSecs = []; methSecs = []; curIng = null; curMeth = null;
+      startIngSection('Ingredients');
+      for (let i = ingIdx + 1; i < methIdx; i++) {
+        const ln = rawLines[i];
+        if (looksLikeIngLine(ln)) curIng.items.push({ qty:'', unit:'', name: ln, note:'' });
+      }
+      pushIng();
+      startMethSection('DIRECTIONS');
+      for (let i = methIdx + 1; i < rawLines.length; i++) {
+        const ln = rawLines[i].replace(/^(?:step\s*)?\d+[\.\):\-]\s*/i, '').trim();
+        if (ln && ln.length < 300) curMeth.steps.push(ln);
+      }
+      pushMeth();
+    }
+  }
 
   // ── Populate form ─────────────────────────────────────────────────────────
   const ingHost  = document.getElementById('ingredient-sections');
@@ -2846,10 +3110,15 @@ function parseRecipe() {
         + ingSecs.length + ' ingredient section' + (ingSecs.length===1?'':'s')
         + ' and ' + methSecs.length + ' method section' + (methSecs.length===1?'':'s')
         + '. Review and correct anything that looks wrong.';
+      collapseImportSection();
+      var ingSec = document.getElementById('section-ingredients');
+      if (ingSec) setTimeout(function() { ingSec.scrollIntoView({ behavior:'smooth', block:'start' }); }, 400);
     } else {
       res.className = 'sr-parse-result warn';
-      res.textContent = 'Text was detected but could not be structured automatically. '
-        + 'Try adding clear headings (Ingredients, Method) and one ingredient per line, then parse again.';
+      var nameOnly = rawLines.length <= 3 && !looksLikeStructuredRecipe(text);
+      res.textContent = nameOnly
+        ? 'Only a title or short caption was detected. Enter the dish name above and click Generate starter, or paste a fuller recipe with Ingredients and Method headings.'
+        : 'Text was detected but could not be structured automatically. Try adding clear headings (Ingredients, Method) and one ingredient per line, or use Generate starter from the recipe name.';
     }
     res.style.display = 'block';
   }
@@ -2881,8 +3150,9 @@ function detectUrlPaste(url) {
   if (url.includes('youtube.com'))    platform = 'YouTube';
   if (url.includes('pinterest.com'))  platform = 'Pinterest';
   if (isSocialMediaUrl(url)) {
-    msgEl.textContent = '✓ ' + platform + ' link — cannot auto-import. Paste caption/recipe text below or use Photo scan.';
-    msgEl.style.color = '#d4a017';
+    msgEl.textContent = '✓ ' + platform + ' link — click Import to try the caption, or paste recipe text below.';
+    msgEl.style.color = 'var(--accent)';
+    msgEl.style.display = 'block';
     return;
   }
   msgEl.textContent = '✓ ' + platform + ' link detected — source will be credited. Click Import or paste text below.';
@@ -3344,6 +3614,8 @@ function collectFormData() {
     shelf_life_storage:   document.getElementById('shelf-life-storage')?.value || '',
     after_open_value:     document.getElementById('after-open-value')?.value   || '',
     after_open_unit:      document.getElementById('after-open-unit')?.value    || 'weeks',
+    paste_text:           (document.getElementById('paste-input')?.value || '').trim(),
+    source_url:           (document.getElementById('source-url-input')?.value || '').trim(),
   };
 }
 
@@ -3385,6 +3657,8 @@ function restoreDraft(raw) {
   setVal('credit-handle',   d.credit_handle);
   setVal('credit-url',      d.credit_url);
   setVal('origin-locality', d.origin_locality);
+  setVal('paste-input',     d.paste_text);
+  setVal('source-url-input', d.source_url);
 
   // Radios
   setRadio('category',    d.category);
@@ -3598,6 +3872,108 @@ function onFormActivity(e) {
   if (!tag || !['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
   clearTimeout(_autoSaveTimer);
   _autoSaveTimer = setTimeout(saveDraft, 2000);
+}
+
+function draftHasContent(d) {
+  if (!d) return false;
+  if (d.recipe_name && d.recipe_name.trim()) return true;
+  if (d.introduction && d.introduction.trim()) return true;
+  if (d.paste_text && d.paste_text.trim()) return true;
+  if (Array.isArray(d.ingredients) && d.ingredients.some(function(s) {
+    return s.items && s.items.some(function(i) { return (i.ingredient || i.name || '').trim(); });
+  })) return true;
+  if (Array.isArray(d.method) && d.method.some(function(s) {
+    return s.steps && s.steps.some(function(st) {
+      return (typeof st === 'string' ? st : (st.text || st.title || '')).trim();
+    });
+  })) return true;
+  return false;
+}
+
+function clearDraftStorage() {
+  try { lsRemove(DRAFT_KEY); } catch(_) {}
+  _draftDbId = null;
+  window._activeDraftId = null;
+}
+
+async function maybeOfferDraftRestore() {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('new') === '1') {
+    clearDraftStorage();
+    return;
+  }
+  let draftName = '';
+  let hasDraft = false;
+  try {
+    const raw = lsGet(DRAFT_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (draftHasContent(d)) {
+        hasDraft = true;
+        draftName = d.recipe_name || 'Untitled';
+      }
+    }
+  } catch(_) {}
+  if (!hasDraft && session && session.access_token) {
+    try {
+      const res = await fetch(
+        SUPABASE_URL + '/rest/v1/recipe_drafts?select=id,draft_data&order=updated_at.desc&limit=1',
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token } }
+      );
+      if (res.ok) {
+        const rows = await res.json();
+        if (rows && rows[0] && draftHasContent(rows[0].draft_data)) {
+          hasDraft = true;
+          draftName = (rows[0].draft_data && rows[0].draft_data.recipe_name) || 'Untitled';
+        }
+      }
+    } catch(_) {}
+  }
+  if (hasDraft) {
+    const el = document.getElementById('draft-restore-prompt');
+    const nameEl = document.getElementById('draft-restore-name');
+    if (nameEl) nameEl.textContent = draftName;
+    if (el) el.style.display = 'flex';
+    return;
+  }
+}
+
+function confirmRestoreDraft() {
+  const el = document.getElementById('draft-restore-prompt');
+  if (el) el.style.display = 'none';
+  loadDraftSilent();
+}
+
+function discardDraftAndStartFresh() {
+  clearDraftStorage();
+  const el = document.getElementById('draft-restore-prompt');
+  if (el) el.style.display = 'none';
+  resetSubmitFormBasics();
+}
+
+function resetSubmitFormBasics() {
+  _draftRestoring = true;
+  try {
+    ['recipe-name','native-title','introduction','prep-time','cook-time','additional-time',
+     'servings','cooking-notes','personal-notes','credit-name','credit-handle','credit-url',
+     'origin-locality','paste-input','source-url-input'].forEach(function(id) {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    document.querySelectorAll('input.tag-cb').forEach(function(cb) { cb.checked = false; });
+    document.querySelectorAll('input[name="category"],input[name="spice"],input[name="sweet"],input[name="difficulty"]').forEach(function(r) { r.checked = false; });
+    const srcOrig = document.getElementById('src-original');
+    if (srcOrig) srcOrig.checked = true;
+    const ingHost = document.getElementById('ingredient-sections');
+    const methHost = document.getElementById('method-sections');
+    if (ingHost) { ingHost.innerHTML = ''; ingSectionCount = 0; addIngSection('Ingredients'); }
+    if (methHost) { methHost.innerHTML = ''; methodSectionCount = 0; addMethodSection('PREP WORK'); addMethodSection('DIRECTIONS'); }
+    if (typeof clearFilters === 'function') clearFilters();
+    if (typeof removeImage === 'function') removeImage();
+    document.getElementById('parse-result').style.display = 'none';
+    document.getElementById('section-paste').classList.remove('collapsed');
+  } catch(_) {}
+  setTimeout(function() { _draftRestoring = false; }, 600);
 }
 
 // ── Load ──────────────────────────────────────────────────────────────────────
@@ -4044,17 +4420,36 @@ function renumberIngRows(container) {
   // but keeping it here for future use
 }
 
+function initSrSectionCollapse() {
+  document.querySelectorAll('.sr-section > .sr-section-title').forEach(function(title) {
+    title.addEventListener('click', function(e) {
+      if (e.target.closest('button,a,input,label,select')) return;
+      title.parentElement.classList.toggle('collapsed');
+    });
+  });
+  document.querySelectorAll('.sr-subsection-title').forEach(function(title) {
+    title.addEventListener('click', function() {
+      title.parentElement.classList.toggle('collapsed');
+    });
+  });
+}
+
 // ── COLLAPSE / EXPAND ALL SECTIONS ───────────────────────────────────────
 var _allCollapsed = false;
 function toggleAllSections() {
-  const btn      = document.getElementById('btn-toggle-all');
-  const sections = document.querySelectorAll('.ing-section, .method-section');
-  _allCollapsed  = !_allCollapsed;
-  sections.forEach(function(sec) {
+  const btn = document.getElementById('btn-toggle-all');
+  _allCollapsed = !_allCollapsed;
+  document.querySelectorAll('.sr-section').forEach(function(sec) {
+    sec.classList.toggle('collapsed', _allCollapsed);
+  });
+  document.querySelectorAll('.sr-subsection').forEach(function(sub) {
+    sub.classList.toggle('collapsed', _allCollapsed);
+  });
+  document.querySelectorAll('.ing-section, .method-section').forEach(function(sec) {
     const body = sec.querySelector('.ing-rows, .step-rows');
     if (body) body.style.display = _allCollapsed ? 'none' : '';
   });
-  if (btn) btn.textContent = _allCollapsed ? '⊞ Expand All' : '⊟ Collapse All';
+  if (btn) btn.textContent = _allCollapsed ? 'Expand All ▴' : 'Collapse All ▾';
 }
 
 // ── SAVE NAMED DRAFT ──────────────────────────────────────────────────────
