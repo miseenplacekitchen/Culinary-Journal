@@ -137,17 +137,23 @@ async function showFestival(slug){
     box.innerHTML = '<div class="fp-empty">Dish slots coming soon for this festival. Browse Feast Days recipes or submit occasion-tagged recipes.</div>';
     return;
   }
-  box.innerHTML = dishes.map(function(d, i){
-    var variants = (d.recipes || []).map(function(r){
-      if (!r.recipe_id) return '';
-      var cls = r.is_featured ? 'fp-variant featured' : 'fp-variant';
-      var label = r.variant_label || r.recipe_name || 'Recipe';
-      return '<a class="'+cls+'" href="recipe-page.html?id='+r.recipe_id+'">'+esc(label)+'</a>';
-    }).filter(Boolean).join('');
-    return '<div class="fp-dish"><span class="fp-dish-num">'+(d.sort_order||i+1)+'</span><div class="fp-dish-body">' +
-      '<div class="fp-dish-name">'+esc(d.dish_name)+'</div>' +
-      (variants ? '<div class="fp-variants">'+variants+'</div>' : '<div class="fp-empty" style="padding:4px 0;font-size:11px">No linked recipes yet — admin can add variants in Festival Management.</div>') +
-      '</div></div>';
+  var sections = {};
+  dishes.forEach(function(d){ var s = d.section_label || 'Menu'; if(!sections[s]) sections[s]=[]; sections[s].push(d); });
+  var secNames = Object.keys(sections);
+  box.innerHTML = secNames.map(function(sec){
+    var rows = sections[sec].map(function(d, i){
+      var variants = (d.recipes || []).map(function(r){
+        if (!r.recipe_id) return '';
+        var cls = r.is_featured ? 'fp-variant featured' : 'fp-variant';
+        var label = r.variant_label || r.recipe_name || 'Recipe';
+        return '<a class="'+cls+'" href="recipe-page.html?id='+r.recipe_id+'">'+esc(label)+'</a>';
+      }).filter(Boolean).join('');
+      return '<div class="fp-dish"><span class="fp-dish-num">'+(d.sort_order||i+1)+'</span><div class="fp-dish-body">' +
+        '<div class="fp-dish-name">'+esc(d.dish_name)+'</div>' +
+        (variants ? '<div class="fp-variants">'+variants+'</div>' : '<div class="fp-empty" style="padding:4px 0;font-size:11px">No linked recipes yet.</div>') +
+        '</div></div>';
+    }).join('');
+    return '<div style="margin-bottom:18px"><div style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:8px">'+esc(sec)+'</div>'+rows+'</div>';
   }).join('');
 }
 

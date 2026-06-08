@@ -83,7 +83,7 @@
     <div>
       <div class="fm-map-panel">
         <div class="fm-map-title">Recipes of the World</div>
-        <object id="fm-map-obj" class="fm-map-svg" data="assets/world-continents.svg" type="image/svg+xml" aria-label="World map by continent"></object>
+        <div id="fm-map-obj" class="fm-map-svg" aria-label="World map by continent">Loading map…</div>
       </div>
       <div class="fm-recipes" id="fm-recipes-block" style="display:none">
         <div class="fm-recipes-hd" id="fm-recipes-label">Recipes</div>
@@ -154,7 +154,7 @@ function renderCrumb(){
 }
 
 function highlightContinent(name){
-  document.querySelectorAll('#fm-map-obj svg path[data-continent]').forEach(function(p){
+  document.querySelectorAll('#fm-map-host svg path[data-continent], #fm-map-obj svg path[data-continent]').forEach(function(p){
     p.classList.toggle('fm-active', p.getAttribute('data-continent') === name);
   });
 }
@@ -260,15 +260,18 @@ async function loadRecipes(){
 }
 
 function wireMap(){
-  var obj = document.getElementById('fm-map-obj');
-  function attach(svg){
+  var host = document.getElementById('fm-map-obj');
+  if (!host) return;
+  fetch('assets/world-continents.svg').then(function(r){ return r.text(); }).then(function(svgText){
+    host.outerHTML = '<div id="fm-map-host" class="fm-map-svg">' + svgText + '</div>';
+    var svg = document.querySelector('#fm-map-host svg');
     if (!svg) return;
     svg.querySelectorAll('path[data-continent]').forEach(function(p){
       p.addEventListener('click', function(){ selectContinent(p.getAttribute('data-continent')); });
     });
-  }
-  obj.addEventListener('load', function(){ attach(obj.contentDocument && obj.contentDocument.querySelector('svg')); });
-  if (obj.contentDocument) attach(obj.contentDocument.querySelector('svg'));
+  }).catch(function(){
+    host.innerHTML = '<div class="fm-empty">Map could not load.</div>';
+  });
 }
 
 async function init(){

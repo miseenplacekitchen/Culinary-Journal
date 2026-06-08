@@ -2476,9 +2476,21 @@ function renumberSteps(container) {
 // ── RECIPE AUTO-IMPORT FROM URL ──────────────────────────────────
 var NL = String.fromCharCode(10);
 
+function isSocialMediaUrl(url) {
+  return /instagram\.com|tiktok\.com|facebook\.com\/(reel|watch|share)|youtube\.com\/(shorts|watch)|pinterest\.com\/pin/i.test(url || '');
+}
+
 async function importFromUrl() {
   var url = document.getElementById('source-url-input').value.trim();
   if (!url || !url.startsWith('http')) { showImportStatus('Please enter a valid recipe URL first.', false); return; }
+  if (isSocialMediaUrl(url)) {
+    showImportStatus('Instagram, TikTok and similar links cannot be auto-imported (login wall). Copy the recipe from the caption or comments, paste below, or use Photo scan.', false);
+    var creditUrl = document.getElementById('credit-url');
+    if (creditUrl && !creditUrl.value) creditUrl.value = url;
+    var srcSomewhere = document.querySelector('input[name="source-type"][value="From Somewhere Else"]');
+    if (srcSomewhere) srcSomewhere.checked = true;
+    return;
+  }
   showImportStatus('Fetching recipe...', null);
   var html = '';
   var recipe = null;
@@ -2868,7 +2880,12 @@ function detectUrlPaste(url) {
   if (url.includes('tiktok.com'))     platform = 'TikTok';
   if (url.includes('youtube.com'))    platform = 'YouTube';
   if (url.includes('pinterest.com'))  platform = 'Pinterest';
-  msgEl.textContent = '✓ ' + platform + ' link detected — source will be credited. Paste the recipe text below.';
+  if (isSocialMediaUrl(url)) {
+    msgEl.textContent = '✓ ' + platform + ' link — cannot auto-import. Paste caption/recipe text below or use Photo scan.';
+    msgEl.style.color = '#d4a017';
+    return;
+  }
+  msgEl.textContent = '✓ ' + platform + ' link detected — source will be credited. Click Import or paste text below.';
   msgEl.style.display = 'block';
   msgEl.style.color = 'var(--accent)';
 }

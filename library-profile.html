@@ -188,13 +188,21 @@ function buildSections(p) {
   } else if (t === 'tool') {
     main =
       section('What It Is', p.what_its_for) +
+      section('Best For', p.best_for) +
       section('How to Use It', p.how_to_use) +
       section('How to Care for It', p.how_to_care) +
+      section('Care Schedule', p.care_schedule) +
+      section('If You Don\'t Have One', p.swap_if_missing) +
+      section('Pairs Well With', p.pairs_well_with) +
       section('What to Look For When Buying', p.what_to_look_for) +
       section('Common Mistakes', p.common_mistakes);
     sidebar =
       sidebarCard('At a Glance', [
         ['Category', p.tool_category],
+        ['Material', p.material],
+        ['Capacity / Size', p.capacity_notes],
+        ['Heat &amp; Use', p.heat_compatibility],
+        ['Skill Level', p.skill_level],
         ['Price Range', p.price_range],
         ['Recommended Brand', p.recommended_brand],
       ]) +

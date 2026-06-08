@@ -42,6 +42,15 @@ module.exports = async function handler(req, res) {
     return res.status(403).json({ error: 'URL not allowed' });
   }
 
+  const socialHosts = ['instagram.com', 'tiktok.com', 'www.tiktok.com'];
+  if (socialHosts.some(h => host === h || host.endsWith('.' + h))) {
+    return res.status(422).json({
+      error: 'Social media URLs cannot be imported automatically',
+      platform: host.includes('instagram') ? 'Instagram' : 'TikTok',
+      hint: 'Copy the recipe from the caption or comments and paste it, or use Photo scan.'
+    });
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
