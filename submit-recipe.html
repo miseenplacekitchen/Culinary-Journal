@@ -1990,13 +1990,17 @@ function applyIngredientDbMatch(row, opts) {
   if (!nameInput) return false;
   var parsedName = (nameInput.value || '').trim();
   if (!parsedName) return false;
-  var match = findIngredientInDbExact(parsedName) || findIngredientInDb(parsedName);
+  var aliased = normalizeIngredientAlias(parsedName);
+  if (aliased !== parsedName) nameInput.value = aliased;
+  parsedName = (nameInput.value || '').trim();
+
+  var exactMatch = findIngredientInDbExact(parsedName);
+  var match = exactMatch || (parsedName.length >= 5 && !isFragmentIngredientName(parsedName)
+    ? findIngredientInDb(parsedName) : null);
   if (!match) return false;
 
   var canon = ingDbName(match);
-  if (canon && (!parsedName || canon.length >= parsedName.length * 0.5)) {
-    nameInput.value = canon;
-  }
+  if (exactMatch && canon) nameInput.value = canon;
 
   setIngredientCategory(row, (match['Category'] || match.category || '').toString().trim());
 
@@ -3043,39 +3047,138 @@ function isOrphanAltQtyLine(line) {
   return /^\(?\s*or\s+[\d\u00BC-\u00BE\/]/i.test(String(line || '').trim());
 }
 
+function isQtyUnitFragment(text) {
+  var t = String(text || '').trim();
+  if (!t) return false;
+  return new RegExp(
+    '^[\\d\u00BC-\u00BE\u2150-\u215E]+(?:\\s+[\\d\u00BC-\u00BE\u2150-\u215E\\/]+)?' +
+    '(?:\\s*(?:' + PARSE_UNIT_WORDS + '))?\\s*$', 'i'
+  ).test(t);
+}
+
+function extractQtyUnitFragment(text) {
+  var t = String(text || '').trim();
+  var m = t.match(new RegExp(
+    '^([\\d\u00BC-\u00BE\u2150-\u215E]+(?:\\s+[\\d\u00BC-\u00BE\u2150-\u215E\\/]+)?)\\s*\\b(' +
+    PARSE_UNIT_WORDS + ')\\b\\s*(.*)$', 'i'
+  ));
+  if (!m) return null;
+  return {
+    qty: normalizeParsedQty(m[1].trim()),
+    unit: normalizeParsedUnit(m[2]),
+    rest: (m[3] || '').trim()
+  };
+}
+
+function normalizeIngredientAlias(name) {
+  var lc = String(name || '').toLowerCase().trim();
+  var map = {
+    'soya': 'Soya Chunks', 'soya chunks': 'Soya Chunks',
+    'kashmiri chilli powder': 'Kashmiri Chilli Powder', 'kashmiri chilli powde': 'Kashmiri Chilli Powder',
+    'chilli powder': 'Chilli Powder', 'turmeric powder': 'Turmeric Powder',
+    'lemon juice': 'Lemon Juice', 'ginger garlic paste': 'Ginger Garlic Paste',
+    'ginger garlic': 'Ginger Garlic Paste', 'cornflour': 'Cornflour', 'rice flour': 'Rice Flour',
+    'garam masala': 'Garam Masala', 'cumin powder': 'Cumin Powder',
+    'green chilli': 'Green Chilli', 'green chillies': 'Green Chilli',
+    'curry leaves': 'Curry Leaves', 'coriander leaves': 'Coriander Leaves',
+    'chilli sauce': 'Chilli Sauce', 'ketchup': 'Ketchup', 'salt': 'Salt', 'water': 'Water', 'curd': 'Curd',
+    'corn flour': 'Cornflour', 'meal maker': 'Soya Chunks', 'soya nuggets': 'Soya Chunks'
+  };
+  return map[lc] || name;
+}
+
+function inferIngredientUnit(name, qty) {
+  var n = String(name || '').toLowerCase();
+  if (/\bleaves?\b/.test(n)) return 'leaf';
+  if (/\b(chilli|chillies|pepper)\b/.test(n) && qty && /^\d+$/.test(String(qty).trim())) return 'piece';
+  if (/\bsalt\b/.test(n) && !qty) return 'pinch';
+  return '';
+}
+
 function isValidParsedIngredient(item) {
   if (!item || !item.name) return false;
   var n = item.name.trim();
   if (!n || n.length < 2 || ING_JUNK_NAMES.test(n) || isIngredientSubHeader(n)) return false;
+  if (isFragmentIngredientName(n)) return false;
   if (isOrphanAltQtyLine(n)) return false;
+  if (isQtyUnitFragment(n)) return false;
   if (/^[\d\s\.\/\u00BC-\u00BE\u2150-\u215E\-]+$/.test(n)) return false;
+  if (/^[\d\s\.\/\u00BC-\u00BE\u2150-\u215E]+\s*(tsp|tbsp|tbs|cup|cups|g|gm|kg|ml|oz|lb)\s*$/i.test(n)) return false;
   return true;
 }
 
-function mergeOrphanAltOntoItems(items) {
-  var out = [];
-  (items || []).forEach(function(item) {
-    item = item || {};
+function consolidateParsedItems(items) {
+  var list = (items || []).slice();
+  var i = 0;
+  while (i < list.length) {
+    var item = list[i] || {};
     var name = (item.name || '').trim();
     var note = (item.note || '').trim();
+
     if (!name && /^or\s+/i.test(note)) {
+      if (i + 1 < list.length) {
+        list[i + 1].note = list[i + 1].note ? list[i + 1].note + '; ' + note : note;
+        if (item.qty && !list[i + 1].qty) list[i + 1].qty = item.qty;
+        if (item.unit && !list[i + 1].unit) list[i + 1].unit = item.unit;
+      } else if (list.length) {
+        var prev = list[i - 1];
+        if (prev) prev.note = prev.note ? prev.note + '; ' + note : note;
+      }
+      list.splice(i, 1);
+      continue;
+    }
+
+    if (name && isQtyUnitFragment(name)) {
+      var frag = extractQtyUnitFragment(name);
+      if (frag && i + 1 < list.length) {
+        var next = list[i + 1];
+        if (next.name && !isQtyUnitFragment(next.name)) {
+          next.qty = next.qty || frag.qty;
+          next.unit = next.unit || frag.unit;
+          if (frag.rest) next.note = next.note ? next.note + '; ' + frag.rest : frag.rest;
+          else if (item.note) next.note = next.note ? next.note + '; ' + item.note : item.note;
+          list.splice(i, 1);
+          continue;
+        }
+      }
+    }
+
+    if (!name && (item.qty || item.unit) && i + 1 < list.length) {
+      var nxt = list[i + 1];
+      if (nxt.name && !nxt.qty && !nxt.unit) {
+        nxt.qty = item.qty || nxt.qty;
+        nxt.unit = item.unit || nxt.unit;
+        nxt.note = nxt.note || item.note || note;
+        list.splice(i, 1);
+        continue;
+      }
+    }
+
+    i++;
+  }
+
+  var out = [];
+  list.forEach(function(item) {
+    item = item || {};
+    var n = (item.name || '').trim();
+    if (!n || !isValidParsedIngredient(item)) return;
+    if (isOrphanAltQtyLine(n)) {
       if (out.length) {
-        var prevNote = out[out.length - 1];
-        prevNote.note = prevNote.note ? prevNote.note + '; ' + note : note;
+        out[out.length - 1].note = out[out.length - 1].note
+          ? out[out.length - 1].note + '; ' + n.replace(/^\(|\)$/g, '').trim()
+          : n.replace(/^\(|\)$/g, '').trim();
       }
       return;
     }
-    if (isOrphanAltQtyLine(name)) {
-      if (out.length) {
-        var prev = out[out.length - 1];
-        prev.note = prev.note ? prev.note + '; ' + name.replace(/^\(|\)$/g, '').trim() : name.replace(/^\(|\)$/g, '').trim();
-      }
-      return;
-    }
-    if (!name || !isValidParsedIngredient(item)) return;
+    item.name = normalizeIngredientAlias(titleCaseIngredientName(n));
+    if (!item.unit) item.unit = inferIngredientUnit(item.name, item.qty);
     out.push(item);
   });
   return out;
+}
+
+function mergeOrphanAltOntoItems(items) {
+  return consolidateParsedItems(items);
 }
 
 function fixMethodContractions(text) {
@@ -3106,13 +3209,24 @@ function expandLongMethodSteps(steps) {
   return out;
 }
 
+function normalizeStuckBlogQty(line) {
+  return String(line || '').replace(/-\s*1(\d\/\d)/g, '- 1 $1');
+}
+
 function splitIngredientLine(line) {
   if (!line) return null;
   line = String(line).trim();
   if (!line) return null;
+  line = line.replace(/[\s\-–—]+$/,'').trim();
+  if (!line) return null;
+  line = normalizeStuckBlogQty(line);
   if (isIngredientSubHeader(line)) return { header: true, name: line.replace(/\s*:?\s*$/, '') };
 
   var note = '';
+  if (/\s+plus\s*$/i.test(line)) {
+    note = 'extra as needed';
+    line = line.replace(/\s+plus\s*$/i, '').trim();
+  }
   var parenNote = line.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
   if (parenNote && parenNote[2].length < 80) {
     line = parenNote[1].trim();
@@ -3131,19 +3245,7 @@ function splitIngredientLine(line) {
     else note = note ? note + '; ' + cNote : cNote;
   }
 
-  // Blog suffix: "Name - 1/2 tsp" or "Name -11/2tsp" or "Name -1/4cup"
-  var stuck = line.match(new RegExp('^(.+?)\\s*-\\s*([\\d\\u00BC-\\u00BE\\u2150-\\u215E\\/\\.\\s]+)(' + PARSE_UNIT_WORDS + ')\\b\\s*(.*)$', 'i'));
-  if (stuck && /[\d\u00BC-\u00BE\/]/.test(stuck[2])) {
-    var extra = (stuck[4] || '').trim();
-    if (extra) note = note ? note + '; ' + extra : extra;
-    return {
-      qty: normalizeParsedQty(stuck[2].trim()),
-      unit: normalizeParsedUnit(stuck[3]),
-      name: titleCaseIngredientName(stuck[1].trim()),
-      note: note
-    };
-  }
-
+  // Blog suffix: "Name - 1/2 tsp" or "Name -11/2tsp" (normalizeStuckBlogQty fixes -11/2 → - 1 1/2)
   var doubled = line.match(new RegExp('^(.+?)\\s*-\\s*1(\\d\\/\\d)(' + PARSE_UNIT_WORDS + ')\\b\\s*(.*)$', 'i'));
   if (doubled) {
     var extra2 = (doubled[4] || '').trim();
@@ -3152,6 +3254,18 @@ function splitIngredientLine(line) {
       qty: '1 ' + doubled[2],
       unit: normalizeParsedUnit(doubled[3]),
       name: titleCaseIngredientName(doubled[1].trim()),
+      note: note
+    };
+  }
+
+  var stuck = line.match(new RegExp('^(.+?)\\s*-\\s*([\\d\\u00BC-\\u00BE\\u2150-\\u215E\\/\\.\\s]+)(' + PARSE_UNIT_WORDS + ')\\b\\s*(.*)$', 'i'));
+  if (stuck && /[\d\u00BC-\u00BE\/]/.test(stuck[2])) {
+    var extra = (stuck[4] || '').trim();
+    if (extra) note = note ? note + '; ' + extra : extra;
+    return {
+      qty: normalizeParsedQty(stuck[2].trim()),
+      unit: normalizeParsedUnit(stuck[3]),
+      name: titleCaseIngredientName(stuck[1].trim()),
       note: note
     };
   }
@@ -3211,11 +3325,19 @@ function splitIngredientLine(line) {
     };
   }
 
-  var bare = line.replace(/\s*-\s*$/,'').trim();
+  var bare = line.replace(/[\s\-–—]+$/,'').trim();
   if (bare && /^[a-zA-Z]/.test(bare) && bare.length < 80 && !ING_JUNK_NAMES.test(bare)) {
     return { qty: '', unit: '', name: titleCaseIngredientName(bare), note: note };
   }
   return null;
+}
+
+function isFragmentIngredientName(name) {
+  var n = String(name || '').trim();
+  if (!n) return false;
+  if (/^[\d\u00BC-\u00BE\u2150-\u215E\/\.]+\s*(?:t|ts|tb|c|cu|cup|g|gm)?$/i.test(n)) return true;
+  if (/^\d+\s*\/\s*\d+\s*[A-Za-z]{1,2}$/.test(n)) return true;
+  return false;
 }
 
 function formatIngredientNoteForPaste(note) {
@@ -3301,6 +3423,7 @@ function cleanScanContentLine(line, section) {
   s = s.replace(/\s{2,}/g, ' ');
   s = s.replace(/(\d)\s+\/\s+(\d)/g, '$1/$2');
   s = s.replace(/^(\d+)\s*\.\s*(\d+)/, '$1.$2');
+  if (section === 'ing') s = normalizeStuckBlogQty(s);
   if (section === 'meth') {
     s = s.replace(/^(step\s*)(\d+)\s*[\.\):\-]\s*/i, '$1$2. ');
     s = s.replace(/\bdon\s+t\b/gi, "don't")
@@ -3794,6 +3917,64 @@ function parseRecipe() {
     curMeth = { name: (name || 'DIRECTIONS').toUpperCase(), steps: [] };
   };
 
+  let pendingPartial = null;
+  const flushPendingPartial = () => {
+    if (pendingPartial) {
+      if (pendingPartial.name && isValidParsedIngredient(pendingPartial)) {
+        if (!curIng) startIngSection('Ingredients');
+        curIng.items.push(pendingPartial);
+      } else if (!pendingPartial.name && (pendingPartial.qty || pendingPartial.unit) && curIng && curIng.items.length) {
+        var lastItem = curIng.items[curIng.items.length - 1];
+        lastItem.qty = lastItem.qty || pendingPartial.qty;
+        lastItem.unit = lastItem.unit || pendingPartial.unit;
+        if (pendingPartial.note) {
+          lastItem.note = lastItem.note ? lastItem.note + '; ' + pendingPartial.note : pendingPartial.note;
+        }
+      }
+    }
+    pendingPartial = null;
+  };
+  const pushIngredientItem = (item) => {
+    if (!item) return;
+    item.name = (item.name || '').trim();
+    if (pendingPartial) {
+      if (item.name && !item.qty && !item.unit && !isQtyUnitFragment(item.name)) {
+        item.qty = pendingPartial.qty || item.qty;
+        item.unit = pendingPartial.unit || item.unit;
+        item.note = item.note || pendingPartial.note || '';
+        pendingPartial = null;
+      } else {
+        if (isValidParsedIngredient(pendingPartial)) {
+          if (!curIng) startIngSection('Ingredients');
+          curIng.items.push(pendingPartial);
+        }
+        pendingPartial = null;
+      }
+    }
+    if (!item.name && (item.qty || item.unit)) {
+      pendingPartial = { qty: item.qty || '', unit: item.unit || '', name: '', note: item.note || '' };
+      return;
+    }
+    if (item.name && isQtyUnitFragment(item.name)) {
+      var frag = extractQtyUnitFragment(item.name);
+      if (frag && !frag.rest) {
+        pendingPartial = { qty: frag.qty, unit: frag.unit, name: '', note: item.note || '' };
+        return;
+      }
+      if (frag && frag.rest) {
+        item.qty = item.qty || frag.qty;
+        item.unit = item.unit || frag.unit;
+        item.name = frag.rest;
+      }
+    }
+    item.name = normalizeIngredientAlias(titleCaseIngredientName(item.name));
+    if (!item.unit) item.unit = inferIngredientUnit(item.name, item.qty);
+    if (isValidParsedIngredient(item)) {
+      if (!curIng) startIngSection('Ingredients');
+      curIng.items.push(item);
+    }
+  };
+
   // Auto-enter method mode when numbered steps appear without a header
   const numberedSteps = rawLines.filter(l => /^(?:step\s*)?\d+[\.\):\-]\s+\S/i.test(l)).length;
   if (numberedSteps >= 2 && !rawLines.some(l => METH_HDR.test(l))) inMethod = true;
@@ -3816,25 +3997,33 @@ function parseRecipe() {
     // Skip very long lines that look like story prose (over 180 chars with no numbers)
     if (line.length > 180 && !/\d/.test(line)) continue;
     if (!inMethod && isOrphanAltQtyLine(line)) {
-      if (curIng && curIng.items.length) {
+      var altText = line.replace(/^\(|\)$/g, '').trim();
+      if (pendingPartial) {
+        pendingPartial.note = pendingPartial.note ? pendingPartial.note + '; ' + altText : altText;
+      } else if (curIng && curIng.items.length) {
         var prevItem = curIng.items[curIng.items.length - 1];
-        prevItem.note = prevItem.note ? prevItem.note + '; ' + line.trim() : line.trim();
+        prevItem.note = prevItem.note ? prevItem.note + '; ' + altText : altText;
+      } else {
+        pendingPartial = { qty: '', unit: '', name: '', note: altText };
       }
       continue;
     }
 
     // ── Header detection ─────────────────────────────────────────────────────
     if (METH_HDR.test(line)) {
+      flushPendingPartial();
       var methLabel = /^method$/i.test(line.trim()) ? 'DIRECTIONS' : line.replace(/\s*:?\s*$/,'');
       pushIng(); startMethSection(methLabel);
       inMethod = true; continue;
     }
     if (ING_HDR.test(line)) {
+      flushPendingPartial();
       pushMeth(); startIngSection('Ingredients');
       inMethod = false; continue;
     }
     // Named ingredient sub-section: "For the Marinade:" / "For Marination" / "Sauce:" etc.
     if (!inMethod && (isIngredientSubHeader(line) || ING_SUB_WORDS.test(line) || ING_SUB.test(line))) {
+      flushPendingPartial();
       const label = line.replace(/\s*:?\s*$/, '');
       startIngSection(label);
       continue;
@@ -3862,14 +4051,17 @@ function parseRecipe() {
       if (!curIng) startIngSection('Ingredients');
       const parsed = splitIngredientLine(line);
       if (parsed && parsed.header) {
+        flushPendingPartial();
         startIngSection(parsed.name);
-      } else if (parsed && parsed.name && parsed.name.length < 80) {
-        var item = { qty: parsed.qty || '', unit: parsed.unit || '', name: parsed.name, note: parsed.note || '' };
-        if (isValidParsedIngredient(item)) curIng.items.push(item);
-      } else if (looksLikeIngLine(line)) {
-        var bareItem = { qty: '', unit: '', name: titleCaseIngredientName(line), note: '' };
-        if (isValidParsedIngredient(bareItem)) curIng.items.push(bareItem);
+      } else if (parsed && (parsed.name || parsed.qty || parsed.unit)) {
+        pushIngredientItem({
+          qty: parsed.qty || '', unit: parsed.unit || '',
+          name: parsed.name || '', note: parsed.note || ''
+        });
+      } else if (looksLikeIngLine(line) && !isQtyUnitFragment(line)) {
+        pushIngredientItem({ qty: '', unit: '', name: line, note: '' });
       } else if (/^(?:step\s*)?\d+[\.\):\-]\s+\S/i.test(line)) {
+        flushPendingPartial();
         inMethod = true;
         pushIng();
         startMethSection('DIRECTIONS');
@@ -3880,10 +4072,11 @@ function parseRecipe() {
       }
     }
   }
+  flushPendingPartial();
   pushIng(); pushMeth();
 
   ingSecs.forEach(function(sec) {
-    sec.items = mergeOrphanAltOntoItems(sec.items);
+    sec.items = consolidateParsedItems(sec.items);
   });
   methSecs.forEach(function(sec) {
     sec.steps = expandLongMethodSteps(sec.steps);
@@ -3900,11 +4093,12 @@ function parseRecipe() {
         const ln = rawLines[i];
         const p = splitIngredientLine(ln);
         if (p && p.header) startIngSection(p.name);
-        else if (p && p.name) {
-          var fbItem = { qty: p.qty || '', unit: p.unit || '', name: p.name, note: p.note || '' };
-          if (isValidParsedIngredient(fbItem)) curIng.items.push(fbItem);
+        else if (p && (p.name || p.qty || p.unit)) {
+          pushIngredientItem({ qty: p.qty || '', unit: p.unit || '', name: p.name || '', note: p.note || '' });
         }
-        else if (looksLikeIngLine(ln)) curIng.items.push({ qty:'', unit:'', name: titleCaseIngredientName(ln), note:'' });
+        else if (looksLikeIngLine(ln) && !isQtyUnitFragment(ln)) {
+          pushIngredientItem({ qty:'', unit:'', name: ln, note:'' });
+        }
       }
       pushIng();
       startMethSection('DIRECTIONS');
