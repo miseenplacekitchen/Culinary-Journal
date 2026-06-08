@@ -1835,7 +1835,7 @@ async function loadIngredients() {
     // No Authorization header — ingredients are public reference data.
     // This means expired JWTs don't break autocomplete. The RLS policy
     // in enable-ingredients-rls-read.sql allows anon SELECT.
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/ingredients?select=${encodeURIComponent('"Ingredient Name","Also Known As","Category","Unit"')}&limit=2000`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/ingredients?select=${encodeURIComponent('"Ingredient Name","Also Known As","Category","Unit","Notes"')}&limit=2000`, {
       headers: { 'apikey': SUPABASE_KEY }
     });
     if (!res.ok) {
@@ -1879,59 +1879,154 @@ async function loadIngredients() {
 // Check one ingredient input against the DB. Sets/removes the orange "unknown"
 // badge + red border. Does NOT show the autocomplete dropdown (used for
 // parser-populated rows and on-load revalidation).
+function ingDbName(i) {
+  return ((i && (i['Ingredient Name'] || i.ingredient_name)) || '').toString().trim();
+}
+function ingDbNorm(s) {
+  return String(s || '').toLowerCase().trim();
+}
+function ingNameMatches(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  if (a === b + 's' || a + 's' === b) return true;
+  return false;
+}
+
+function findIngredientInDb(query) {
+  if (!query || !Array.isArray(allIngredients) || !allIngredients.length) return null;
+  var lc = ingDbNorm(query);
+  var exact = allIngredients.find(function(i) { return ingNameMatches(ingDbNorm(ingDbName(i)), lc); });
+  if (exact) return exact;
+  var akaHit = allIngredients.find(function(i) {
+    var aka = ((i['Also Known As'] || i.also_known_as || '') + '').toLowerCase();
+    return aka.split(/[,;/]/).map(function(s) { return s.trim(); }).filter(Boolean)
+      .some(function(a) { return ingNameMatches(a, lc); });
+  });
+  if (akaHit) return akaHit;
+  if (lc.length < 4) return null;
+  var candidates = allIngredients.filter(function(i) {
+    var n = ingDbNorm(ingDbName(i));
+    return n && (n.indexOf(lc) >= 0 || lc.indexOf(n) >= 0);
+  });
+  if (!candidates.length) return null;
+  candidates.sort(function(a, b) {
+    var na = ingDbNorm(ingDbName(a)), nb = ingDbNorm(ingDbName(b));
+    if (na.startsWith(lc) !== nb.startsWith(lc)) return na.startsWith(lc) ? -1 : 1;
+    return na.length - nb.length;
+  });
+  return candidates[0];
+}
+
+function setIngredientCategory(row, dbCat) {
+  if (!row || !dbCat) return;
+  var catSel = row.querySelector('.ing-cat-select');
+  if (!catSel) return;
+  var exists = Array.from(catSel.options).some(function(o) { return o.value === dbCat; });
+  if (!exists) {
+    var opt = document.createElement('option');
+    opt.value = dbCat;
+    opt.textContent = dbCat;
+    catSel.appendChild(opt);
+  }
+  catSel.value = dbCat;
+}
+
+function getUnitValue(row) {
+  var wrap = row && row.querySelector('.ing-unit-wrap');
+  if (!wrap) return '';
+  var custom = wrap.querySelector('.ing-unit-custom');
+  if (custom && custom.style.display !== 'none') return custom.value.trim();
+  var valSpan = wrap.querySelector('.ing-unit-picker-val');
+  if (valSpan) return valSpan.dataset.value || '';
+  return '';
+}
+
+function setUnitValue(row, unit) {
+  if (!row || !unit) return;
+  var normalized = window.normalizeUnit ? window.normalizeUnit(unit) : String(unit).trim().toLowerCase();
+  if (!normalized) return;
+  var wrap = row.querySelector('.ing-unit-wrap');
+  if (!wrap) return;
+  var picker = wrap.querySelector('.ing-unit-picker');
+  var custom = wrap.querySelector('.ing-unit-custom');
+  var valSpan = wrap.querySelector('.ing-unit-picker-val');
+  var badge = wrap.querySelector('.ing-unknown-unit-badge');
+  if (UNITS.includes(normalized)) {
+    if (custom) { custom.style.display = 'none'; custom.value = ''; }
+    if (picker) picker.style.display = '';
+    if (valSpan) {
+      valSpan.textContent = normalized;
+      valSpan.dataset.value = normalized;
+      valSpan.classList.remove('placeholder');
+    }
+    if (badge) badge.style.display = 'none';
+  } else if (custom) {
+    if (picker) picker.style.display = 'none';
+    custom.style.display = '';
+    custom.value = normalized;
+    try { validateUnit(custom); } catch(_) {}
+  }
+}
+
+function applyIngredientDbMatch(row, opts) {
+  if (!row) return false;
+  opts = opts || {};
+  var nameInput = row.querySelector('.ing-name-input');
+  if (!nameInput) return false;
+  var parsedName = (nameInput.value || '').trim();
+  if (!parsedName) return false;
+  var match = findIngredientInDb(parsedName);
+  if (!match) return false;
+
+  var canon = ingDbName(match);
+  if (canon) nameInput.value = canon;
+
+  setIngredientCategory(row, (match['Category'] || match.category || '').toString().trim());
+
+  if (!getUnitValue(row)) {
+    var dbUnit = window.normalizeUnit ? window.normalizeUnit((match['Unit'] || match.unit || '').toString().trim()) : '';
+    if (dbUnit) {
+      setUnitValue(row, dbUnit);
+      try {
+        var custom = row.querySelector('.ing-unit-custom');
+        if (custom && custom.style.display !== 'none') validateUnit(custom);
+      } catch(_) {}
+    }
+  }
+
+  var noteIn = row.querySelector('.ing-note-col');
+  if (noteIn && !noteIn.value.trim()) {
+    if (opts.parsedNote) noteIn.value = opts.parsedNote;
+    else {
+      var dbNote = (match['Notes'] || match.notes || '').toString().trim();
+      if (dbNote && dbNote.length < 120) noteIn.value = dbNote;
+    }
+  }
+
+  var badge = row.querySelector('.ing-unknown-badge');
+  if (badge) badge.style.display = 'none';
+  nameInput.classList.remove('ing-unknown');
+  return true;
+}
+
 function validateIngredient(input) {
   if (!input) return;
   const wrap  = input.closest('.ing-name-wrap') || input.parentElement;
   if (!wrap) return;
   const badge = wrap.querySelector('.ing-unknown-badge');
-  const value = (input.value || '').trim().toLowerCase();
+  const value = (input.value || '').trim();
   if (!value) {
     if (badge) badge.style.display = 'none';
     input.classList.remove('ing-unknown');
     return;
   }
-  // If the DB hasn't loaded yet, don't flag — just leave it.
   if (!Array.isArray(allIngredients) || allIngredients.length === 0) return;
 
-  const found = allIngredients.some(i => {
-    const n   = ((i['Ingredient Name'] || i.ingredient_name || '') + '').toLowerCase();
-    const aka = ((i['Also Known As']   || i.also_known_as   || '') + '').toLowerCase();
-    if (n === value) return true;
-    // Handle plurals
-    if (n === value + 's' || n + 's' === value) return true;
-    // "Also Known As" is comma/semicolon/slash separated — split and match each
-    return aka.split(/[,;/]/).map(s => s.trim()).some(a => a === value || a + 's' === value || a === value + 's');
-  });
+  const row = input.closest('.ing-row');
+  if (applyIngredientDbMatch(row)) return;
 
-  if (found) {
-    if (badge) badge.style.display = 'none';
-    input.classList.remove('ing-unknown');
-    // Auto-fill the unit from the DB if it's currently empty (covers the
-    // case where the paste-parser identified an ingredient name but didn't
-    // capture a unit — e.g. "15-20 curry leaves").
-    try {
-      const row = input.closest('.ing-row');
-      const unitIn = row && row.querySelector('.ing-unit-input');
-      if (unitIn && !unitIn.value.trim()) {
-        const lc = value;  // already lowercase
-        const match = allIngredients.find(i =>
-          ((i['Ingredient Name'] || i.ingredient_name || '') + '').toLowerCase() === lc ||
-          ((i['Ingredient Name'] || i.ingredient_name || '') + '').toLowerCase() === lc + 's' ||
-          ((i['Ingredient Name'] || i.ingredient_name || '') + '').toLowerCase() + 's' === lc
-        );
-        if (match) {
-          const dbUnit = window.normalizeUnit((match['Unit'] || match.unit || '').toString().trim());
-          if (dbUnit) {
-            unitIn.value = dbUnit;
-            try { validateUnit(unitIn); } catch(_) {}
-          }
-        }
-      }
-    } catch(_) {}
-  } else {
-    if (badge) badge.style.display = 'block';
-    input.classList.add('ing-unknown');
-  }
+  if (badge) badge.style.display = 'block';
+  input.classList.add('ing-unknown');
 }
 
 function validateAllIngredientRows() {
@@ -2334,12 +2429,14 @@ function addIngRow(container, qty='', unit='', name='', note='', cat='') {
   // against the DB right away so unknown ones show the orange badge.
   if (name) {
     const input = row.querySelector('.ing-name-input');
-    try { validateIngredient(input); } catch(_) {}
+    try { applyIngredientDbMatch(row, { parsedNote: note || '' }); } catch(_) {}
+    try { if (!findIngredientInDb(input.value)) validateIngredient(input); } catch(_) {}
   }
-  // Also validate the unit so a pre-filled custom unit shows the warning right away
   if (unit) {
-    const unitIn = row.querySelector('.ing-unit-input');
-    try { validateUnit(unitIn); } catch(_) {}
+    const custom = row.querySelector('.ing-unit-custom');
+    if (custom && custom.style.display !== 'none') {
+      try { validateUnit(custom); } catch(_) {}
+    }
   }
 }
 
@@ -2435,52 +2532,11 @@ function selectIngredient(item, name) {
   const wrap = item.closest('.ing-name-wrap');
   wrap.querySelector('.ing-name-input').value = name;
   wrap.querySelector('.ing-autocomplete').style.display = 'none';
-  wrap.querySelector('.ing-name-input').classList.remove('ing-unknown');
-  wrap.querySelector('.ing-unknown-badge').style.display = 'none';
-
-  // Auto-fill the standard unit from the ingredient DB — but ONLY if the
-  // unit field is empty, so we never overwrite what the user already typed
-  // (or what the parser pulled from the paste).
   try {
     const row = wrap.closest('.ing-row');
-    if (row && Array.isArray(allIngredients)) {
-      const lc = name.toLowerCase();
-      const match = allIngredients.find(i =>
-        ((i['Ingredient Name'] || i.ingredient_name || '') + '').toLowerCase() === lc
-      );
-      if (match) {
-        // Auto-fill unit — only if empty
-        const unitIn = row.querySelector('.ing-unit-input');
-        if (unitIn && !unitIn.value.trim()) {
-          const dbUnit = window.normalizeUnit((match['Unit'] || match.unit || '').toString().trim());
-          if (dbUnit) {
-            unitIn.value = dbUnit;
-            try { validateUnit(unitIn); } catch(_) {}
-          }
-        }
-        // Auto-fill category — always fill when ingredient is matched
-        const catSel = row.querySelector('.ing-cat-select');
-        if (catSel) {
-          const dbCat = (match['Category'] || match.category || '').toString().trim();
-          if (dbCat) {
-            // Ensure the option exists in the select before setting value
-            const exists = Array.from(catSel.options).some(o => o.value === dbCat);
-            if (!exists) {
-              const opt = document.createElement('option');
-              opt.value = dbCat;
-              opt.textContent = dbCat;
-              catSel.appendChild(opt);
-            }
-            catSel.value = dbCat;
-          }
-        }
-        // Trigger autosave
-        try {
-          const form = document.getElementById('main-form');
-          if (form) form.dispatchEvent(new Event('input', { bubbles: true }));
-        } catch(_) {}
-      }
-    }
+    applyIngredientDbMatch(row);
+    const form = document.getElementById('main-form');
+    if (form) form.dispatchEvent(new Event('input', { bubbles: true }));
   } catch(_) {}
 }
 
@@ -2937,16 +2993,105 @@ function titleCaseIngredientName(name) {
   }).join(' ');
 }
 
+var PARSE_UNIT_WORDS = '(?:teaspoons?|tsp|tablespoons?|tbsp|tbs|cups?|grams?|g|gm|kilograms?|kg|millilitres?|milliliters?|ml|litres?|liters?|l|ounces?|oz|pounds?|lbs?|lb|pinch(?:es)?|bunch(?:es)?|cloves?|leaves?|sprigs?|handfuls?|to\\s+taste)';
+
+function normalizeParsedQty(qty) {
+  if (!qty) return '';
+  qty = String(qty).trim().replace(/\s+/g, ' ');
+  var doubled = qty.match(/^1(\d\/\d)$/);
+  if (doubled) return '1 ' + doubled[1];
+  return qty;
+}
+
+function normalizeParsedUnit(unit) {
+  if (!unit) return '';
+  var u = String(unit).trim();
+  if (window.normalizeUnit) u = window.normalizeUnit(u);
+  return u;
+}
+
+function isIngredientSubHeader(line) {
+  if (!line || line.length > 55 || /\d/.test(line)) return false;
+  if (/^for\s+(?:the\s+)?[a-z][\w\s]{2,40}$/i.test(line)) return true;
+  return /^(sauce|filling|topping|garnish|marinade|marinate|marination|batter|crust|glaze|frosting|icing|dressing|stuffing|coating|base|pastry|dough|syrup|broth|stock|spice\s*mix|spice\s*blend|masala|tadka|tempering|paste|chutney|raita|salsa|pickle|gravy|curry\s*base|to\s+serve|serving|assembly)\s*:?$/i.test(line);
+}
+
+function splitIngredientLine(line) {
+  if (!line) return null;
+  line = String(line).trim();
+  if (!line) return null;
+  if (isIngredientSubHeader(line)) return { header: true, name: line.replace(/\s*:?\s*$/, '') };
+
+  var note = '';
+  var commaNote = line.match(/^(.+?),\s*(.{3,})$/);
+  if (commaNote && commaNote[2].length < 100 && !/^(and|or)\s/i.test(commaNote[1])) {
+    line = commaNote[1].trim();
+    note = commaNote[2].trim();
+  }
+
+  // Blog suffix: "Name - 1/2 tsp" or "Name -11/2tsp" or "Name -1/4cup"
+  var stuck = line.match(new RegExp('^(.+?)\\s*-\\s*([\\d\\u00BC-\\u00BE\\u2150-\\u215E\\/\\.\\s]+)(' + PARSE_UNIT_WORDS + ')\\b\\s*(.*)$', 'i'));
+  if (stuck && /[\d\u00BC-\u00BE\/]/.test(stuck[2])) {
+    var extra = (stuck[4] || '').trim();
+    if (extra) note = note ? note + '; ' + extra : extra;
+    return {
+      qty: normalizeParsedQty(stuck[2].trim()),
+      unit: normalizeParsedUnit(stuck[3]),
+      name: titleCaseIngredientName(stuck[1].trim()),
+      note: note
+    };
+  }
+
+  var doubled = line.match(new RegExp('^(.+?)\\s*-\\s*1(\\d\\/\\d)(' + PARSE_UNIT_WORDS + ')\\b\\s*(.*)$', 'i'));
+  if (doubled) {
+    var extra2 = (doubled[4] || '').trim();
+    if (extra2) note = note ? note + '; ' + extra2 : extra2;
+    return {
+      qty: '1 ' + doubled[2],
+      unit: normalizeParsedUnit(doubled[3]),
+      name: titleCaseIngredientName(doubled[1].trim()),
+      note: note
+    };
+  }
+
+  var blog = line.match(new RegExp('^(.+?)\\s*-\\s*([\\d\\u00BC-\\u00BE\\u2150-\\u215E\\/\\.\\s]+)\\s*(' + PARSE_UNIT_WORDS + ')?\\b\\s*(.*)$', 'i'));
+  if (blog && /[\d\u00BC-\u00BE\/]/.test(blog[2])) {
+    var extra3 = (blog[4] || '').trim();
+    if (extra3) note = note ? note + '; ' + extra3 : extra3;
+    return {
+      qty: normalizeParsedQty(blog[2].trim()),
+      unit: normalizeParsedUnit(blog[3] || ''),
+      name: titleCaseIngredientName(blog[1].trim()),
+      note: note
+    };
+  }
+
+  // Standard prefix: "1/2 tsp salt"
+  var qtyPat = '[\\d\u00BC-\u00BE\u2150-\u215E\\/\\.\\s\u2013\\-]+';
+  var prefixRe = new RegExp('^(' + qtyPat + ')\\s*(' + PARSE_UNIT_WORDS + ')(?=\\s|\\.\\,|$)\\s*(.+)$', 'i');
+  var prefix = prefixRe.exec(line);
+  if (prefix && prefix[3]) {
+    return {
+      qty: normalizeParsedQty(prefix[1].trim()),
+      unit: normalizeParsedUnit(prefix[2]),
+      name: titleCaseIngredientName(prefix[3].trim()),
+      note: note
+    };
+  }
+
+  var bare = line.replace(/\s*-\s*$/,'').trim();
+  if (bare && /^[a-zA-Z]/.test(bare) && bare.length < 80) {
+    return { qty: '', unit: '', name: titleCaseIngredientName(bare), note: note };
+  }
+  return null;
+}
+
 function formatScannedIngredientLine(line) {
-  var m = line.match(/^(\d[\d\s\/\.\u00BC-\u00BE-]*(?:\s*(?:tsp|tbsp|tbs|cup|cups|g|kg|ml|l|oz|lb))?)\s+(.+)$/i);
-  if (!m) m = line.match(/^([\d\u00BC-\u00BE\/]+(?:\s*(?:cup|cups|tsp|tbsp|tbs|bunch|g|kg))?)\s+(.+)$/i);
-  if (m) {
-    var raw = m[2].trim();
-    var commaNote = raw.match(/^([^,(]{3,}?),\s*(.+)$/);
-    if (commaNote) {
-      return m[1].trim().replace(/\s+/g, ' ') + ' ' + titleCaseIngredientName(commaNote[1].trim()) + ', ' + commaNote[2].trim();
-    }
-    return m[1].trim().replace(/\s+/g, ' ') + ' ' + titleCaseIngredientName(raw);
+  var split = splitIngredientLine(line);
+  if (split && split.header) return split.name;
+  if (split && split.name) {
+    var parts = [split.qty, split.unit, split.name].filter(Boolean);
+    return split.note ? parts.join(' ') + ', ' + split.note : parts.join(' ');
   }
   return titleCaseIngredientName(line);
 }
@@ -3466,37 +3611,12 @@ function parseRecipe() {
   // Method headers — trigger method mode
   const METH_HDR = /^(prep\s+work|directions?|method|steps?|instructions?|procedure|how\s+to\s+(make|cook|prepare)|to\s+(make|cook|serve)|to\s+assemble)\s*:?$/i;
 
-  // Ingredient sub-section headers — named groups, e.g. "For the Marinade:"
-  // Covers: "For the X", "For X", or standalone labels like "Sauce:", "Filling:"
+  // Ingredient sub-section headers — named groups, e.g. "For the Marinade:" / "For Marination"
   const ING_SUB = /^(?:for\s+(?:the\s+)?(.+?)|(?:the\s+)?(.+?))\s*:$/i;
-  const ING_SUB_WORDS = /^(sauce|filling|topping|garnish|marinade|marinate|batter|crust|glaze|frosting|icing|dressing|stuffing|coating|base|pastry|dough|syrup|broth|stock|spice\s*mix|spice\s*blend|masala|tadka|tempering|tempering\s*spices|paste|chutney|raita|salsa|pickle|pickle\s*brine|gravy|curry\s*base|to\s+serve|serving|assembly|to\s+assemble)\s*:?$/i;
+  const ING_SUB_WORDS = /^(sauce|filling|topping|garnish|marinade|marinate|marination|batter|crust|glaze|frosting|icing|dressing|stuffing|coating|base|pastry|dough|syrup|broth|stock|spice\s*mix|spice\s*blend|masala|tadka|tempering|tempering\s*spices|paste|chutney|raita|salsa|pickle|pickle\s*brine|gravy|curry\s*base|to\s+serve|serving|assembly|to\s+assemble)\s*:?$/i;
 
   // Explicit ingredient header
   const ING_HDR  = /^(ingredients?)\s*:?$/i;
-
-  // ── Unit vocabulary ───────────────────────────────────────────────────────
-  const UNIT_ALTS = [
-    'teaspoons?','tsp','tablespoons?','tbsp','cups?',
-    'fluid\\s+oz','fl\\.?\\s*oz','ounces?','oz',
-    'pounds?','lbs?','lb',
-    'grams?','g','kilograms?','kg',
-    'millilitres?','milliliters?','ml','litres?','liters?','l',
-    'inches?|inch','cm',
-    'pieces?','slices?','fillets?','steaks?',
-    'leaves?|leaf','cloves?','heads?',
-    'sprigs?','bunch(?:es)?','handfuls?',
-    'pinch(?:es)?','dashes?','drops?','knobs?',
-    'stalks?','sticks?','sheets?','pods?',
-    'cans?','tins?','jars?','bottles?','packets?','sachets?','packs?',
-    'small','medium','large','whole',
-    'to\\s+taste'
-  ].join('|');
-
-  // Quantity pattern: fractions, decimals, unicode vulgar fractions, ranges
-  const QTY_PAT = '[\\d\u00BC-\u00BE\u2150-\u215E\\/\\.\\s\u2013\\-]+';
-  const ING_RE  = new RegExp(
-    '^(' + QTY_PAT + ')?\\s*(' + UNIT_ALTS + ')?[\\s\\.,]*(.{2,})$', 'i'
-  );
 
   // ── Parsing state ─────────────────────────────────────────────────────────
   let ingSecs    = [];
@@ -3522,9 +3642,7 @@ function parseRecipe() {
   if (numberedSteps >= 2 && !rawLines.some(l => METH_HDR.test(l))) inMethod = true;
 
   const looksLikeIngLine = (line) => {
-    const ingMatch = ING_RE.exec(line);
-    ING_RE.lastIndex = 0;
-    if (ingMatch && (ingMatch[1] || ingMatch[2] || ingMatch[3])) return true;
+    if (splitIngredientLine(line)) return true;
     if (line.length < 3 || line.length > 120) return false;
     if (/[.!?]{2,}/.test(line)) return false;
     if (/^(?:step\s*)?\d+[\.\)]\s/i.test(line)) return false;
@@ -3549,8 +3667,8 @@ function parseRecipe() {
       pushMeth(); startIngSection('Ingredients');
       inMethod = false; continue;
     }
-    // Named ingredient sub-section: "For the Marinade:" or "Sauce:" etc.
-    if (!inMethod && (ING_SUB_WORDS.test(line) || ING_SUB.test(line))) {
+    // Named ingredient sub-section: "For the Marinade:" / "For Marination" / "Sauce:" etc.
+    if (!inMethod && (isIngredientSubHeader(line) || ING_SUB_WORDS.test(line) || ING_SUB.test(line))) {
       const label = line.replace(/\s*:?\s*$/, '');
       startIngSection(label);
       continue;
@@ -3574,29 +3692,13 @@ function parseRecipe() {
 
     } else {
       if (!curIng) startIngSection('Ingredients');
-      const m = ING_RE.exec(line);
-      if (m && (m[1] || m[2] || m[3])) {
-        const qty  = (m[1] || '').trim().replace(/\s+/g, ' ');
-        const unit = (m[2] || '').trim();
-        const raw  = (m[3] || '').trim();
-        const commaNote = raw.match(/^([^,(]{3,}?),\s*(.{5,})$/);
-        const name = titleCaseIngredientName(commaNote ? commaNote[1].trim() : raw);
-        const note = commaNote ? commaNote[2].trim() : '';
-        if (name.length < 80) {
-          curIng.items.push({ qty, unit, name, note });
-        }
+      const parsed = splitIngredientLine(line);
+      if (parsed && parsed.header) {
+        startIngSection(parsed.name);
+      } else if (parsed && parsed.name && parsed.name.length < 80) {
+        curIng.items.push({ qty: parsed.qty || '', unit: parsed.unit || '', name: parsed.name, note: parsed.note || '' });
       } else if (looksLikeIngLine(line)) {
-        const dashSplit = line.match(/^(.+?)\s*[\u2013\u2014\-]\s+(.+)$/);
-        if (dashSplit && /\d|tsp|tbsp|cup|g|ml/i.test(dashSplit[1])) {
-          const m2 = ING_RE.exec(dashSplit[1] + ' ' + dashSplit[2]);
-          if (m2 && m2[3]) {
-            curIng.items.push({ qty: (m2[1]||'').trim(), unit: (m2[2]||'').trim(), name: titleCaseIngredientName(m2[3].trim()), note: '' });
-          } else {
-            curIng.items.push({ qty: '', unit: '', name: titleCaseIngredientName(line), note: '' });
-          }
-        } else {
-          curIng.items.push({ qty: '', unit: '', name: titleCaseIngredientName(line), note: '' });
-        }
+        curIng.items.push({ qty: '', unit: '', name: titleCaseIngredientName(line), note: '' });
       } else if (/^(?:step\s*)?\d+[\.\):\-]\s+\S/i.test(line)) {
         inMethod = true;
         pushIng();
@@ -3617,7 +3719,10 @@ function parseRecipe() {
       startIngSection('Ingredients');
       for (let i = ingIdx + 1; i < methIdx; i++) {
         const ln = rawLines[i];
-        if (looksLikeIngLine(ln)) curIng.items.push({ qty:'', unit:'', name: titleCaseIngredientName(ln), note:'' });
+        const p = splitIngredientLine(ln);
+        if (p && p.header) startIngSection(p.name);
+        else if (p && p.name) curIng.items.push({ qty: p.qty || '', unit: p.unit || '', name: p.name, note: p.note || '' });
+        else if (looksLikeIngLine(ln)) curIng.items.push({ qty:'', unit:'', name: titleCaseIngredientName(ln), note:'' });
       }
       pushIng();
       startMethSection('DIRECTIONS');
@@ -3649,6 +3754,7 @@ function parseRecipe() {
       c.innerHTML = '';
       sec.items.forEach(item => {
         addIngRow(c, item.qty, item.unit, item.name, item.note || '', '');
+        try { applyIngredientDbMatch(c.lastElementChild, { parsedNote: item.note || '' }); } catch(_) {}
         parsed++;
       });
     });
@@ -3990,16 +4096,6 @@ function switchToUnitSelect(customInput) {
     customInput.style.display = 'none';
     customInput.value = '';
   }
-}
-
-function getUnitValue(row) {
-  var wrap = row.querySelector('.ing-unit-wrap');
-  if (!wrap) return '';
-  var custom = wrap.querySelector('.ing-unit-custom');
-  if (custom && custom.style.display !== 'none') return custom.value.trim();
-  var valSpan = wrap.querySelector('.ing-unit-picker-val');
-  if (valSpan) return valSpan.dataset.value || '';
-  return '';
 }
 
 // Close unit dropdowns when clicking outside
