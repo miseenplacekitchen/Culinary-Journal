@@ -92,6 +92,10 @@
     .sr-paste-textarea { min-height: 160px; font-family: "DM Sans", sans-serif; font-size: 13px; line-height: 1.7; }
     .sr-parse-btn { margin-top: 12px; display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--accent); color: var(--bg); border: none; border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
     .sr-parse-btn:hover { opacity: 0.85; }
+    .sr-parse-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .sr-rewrite-btn { margin-top: 12px; display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: transparent; color: var(--accent); border: 1px solid rgb(from var(--accent) r g b / 0.45); border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.2s, border-color 0.2s; }
+    .sr-rewrite-btn:hover:not(:disabled) { opacity: 0.9; border-color: var(--accent); }
+    .sr-rewrite-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .sr-parse-result { margin-top: 12px; font-family: "DM Sans", sans-serif; font-size: 13px; padding: 10px 14px; border-radius: 8px; display: none; }
     .sr-parse-result.success { background: rgba(85,204,119,0.1); border: 1px solid rgba(85,204,119,0.3); color: #55cc77; }
     .sr-parse-result.info { background: rgb(from var(--accent) r g b / 0.1); border: 1px solid rgb(from var(--accent) r g b / 0.3); color: var(--accent); }
@@ -1078,6 +1082,9 @@
         <button class="sr-parse-btn" onclick="parseRecipe()">
           ✦ Parse Recipe
         </button>
+        <button type="button" class="sr-rewrite-btn" id="btn-rewrite-procedure" onclick="rewriteProcedure()" title="Polish procedure steps into formal, professional language (after parsing)">
+          ✎ Rewrite procedure
+        </button>
         <button type="button" class="sr-parse-btn" style="padding:9px 16px;font-size:12px" onclick="generateStarterFromName()" title="Build a starter template from the recipe name">
           ✨ Generate starter
         </button>
@@ -1089,7 +1096,8 @@
         • Include "Ingredients" and "Method" or "Instructions" headings<br>
         • Each ingredient on its own line works best<br>
         • Numbers at the start of steps are auto-detected<br>
-        • Section headers like "For the sauce:" are recognised
+        • Section headers like "For the sauce:" are recognised<br>
+        • After parsing, use <strong>Rewrite procedure</strong> to polish steps into clearer professional language (optional, runs in your browser)
       </div>
     </div>
 
@@ -1613,7 +1621,13 @@
         </div>
       </div>
       <div id="method-sections"></div>
-      <button class="btn-add-section" onclick="addMethodSection()">+ Add Procedure Section</button>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px">
+        <button class="btn-add-section" onclick="addMethodSection()">+ Add Procedure Section</button>
+        <button type="button" class="sr-rewrite-btn" id="btn-rewrite-procedure-2" style="margin-top:0;padding:8px 16px;font-size:12px" onclick="rewriteProcedure()" title="Polish all procedure steps into formal, professional language">
+          ✎ Rewrite procedure
+        </button>
+        <button type="button" id="btn-undo-rewrite" onclick="undoProcedureRewrite()" style="display:none;font-family:'DM Sans',sans-serif;font-size:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;text-decoration:underline">Undo rewrite</button>
+      </div>
     </div>
 
     <!-- 5. COOKING NOTES & TIPS — public, prints on the recipe card -->
@@ -4462,6 +4476,277 @@ function clearPaste() {
   document.getElementById('parse-tips').style.display = 'none';
   document.getElementById('source-url-input').value = '';
   document.getElementById('url-detect-msg').style.display = 'none';
+}
+
+// ── REWRITE PROCEDURE (local polish, no API) ─────────────────────────────
+window._procedureRewriteUndo = null;
+
+function expandContractionsToFormal(text) {
+  return String(text || '')
+    .replace(/\bdon't\b/gi, 'do not')
+    .replace(/\bdoesn't\b/gi, 'does not')
+    .replace(/\bdidn't\b/gi, 'did not')
+    .replace(/\bcan't\b/gi, 'cannot')
+    .replace(/\bwon't\b/gi, 'will not')
+    .replace(/\bisn't\b/gi, 'is not')
+    .replace(/\baren't\b/gi, 'are not')
+    .replace(/\bwasn't\b/gi, 'was not')
+    .replace(/\bweren't\b/gi, 'were not')
+    .replace(/\bhaven't\b/gi, 'have not')
+    .replace(/\bhasn't\b/gi, 'has not')
+    .replace(/\bhadn't\b/gi, 'had not')
+    .replace(/\bwouldn't\b/gi, 'would not')
+    .replace(/\bshouldn't\b/gi, 'should not')
+    .replace(/\bcouldn't\b/gi, 'could not')
+    .replace(/\bmustn't\b/gi, 'must not')
+    .replace(/\bI'm\b/gi, 'I am')
+    .replace(/\byou're\b/gi, 'you are')
+    .replace(/\bwe're\b/gi, 'we are')
+    .replace(/\bthey're\b/gi, 'they are')
+    .replace(/\bit's\b/gi, 'it is')
+    .replace(/\bthat's\b/gi, 'that is')
+    .replace(/\bthere's\b/gi, 'there is')
+    .replace(/\blet's\b/gi, 'let us');
+}
+
+function capitalizeProcedureSentences(text) {
+  var t = String(text || '').trim();
+  if (!t) return '';
+  t = t.charAt(0).toUpperCase() + t.slice(1);
+  return t.replace(/([.!?]\s+)([a-z])/g, function(_m, p1, p2) { return p1 + p2.toUpperCase(); });
+}
+
+function rewriteProcedureStepText(text) {
+  var t = String(text || '').trim();
+  if (!t) return '';
+
+  t = fixMethodContractions(t);
+  t = t.replace(/[–—]/g, ', ');
+  t = t.replace(/\s+\.\s*\./g, '.');
+  t = t.replace(/\.{3,}/g, '.');
+  t = t.replace(/\s*,\s*/g, ', ');
+  t = t.replace(/\s*;\s*/g, '; ');
+  t = t.replace(/\.([A-Za-z(])/g, '. $1');
+  t = t.replace(/([.!?])\s*([Tt]hen|Next|Now|After|When|While|Add|Mix|Heat|Stir|Cover|Remove|Transfer|Serve)\b/g, '$1 $2');
+
+  var informal = [
+    [/\bkeep\s+that\s+also\s+aside\b/gi, 'set aside'],
+    [/\bkeep\s+aside\b/gi, 'set aside'],
+    [/\bkeep\s+that\s+aside\b/gi, 'set aside'],
+    [/\bswitch\s+off\s+the\s+gas\b/gi, 'turn off the heat'],
+    [/\bturn\s+off\s+the\s+gas\b/gi, 'turn off the heat'],
+    [/\btill\s+(\d)/gi, 'until $1'],
+    [/\btill\s+/gi, 'until '],
+    [/\bth\s+cooked\b/gi, 'three-quarters cooked'],
+    [/\b¾\s*th\b/gi, 'three-quarters'],
+    [/\b½\s*tsp\b/gi, 'half teaspoon'],
+    [/\b1\/2\s*tsp\b/gi, 'half teaspoon'],
+    [/\b1\/4\s*cup\b/gi, 'quarter cup'],
+    [/\b1\/2\s*cup\b/gi, 'half cup'],
+    [/\bget\s+soften\b/gi, 'become tender'],
+    [/\bgets\s+soften\b/gi, 'becomes tender'],
+    [/\bget\s+softened\b/gi, 'become tender'],
+    [/\bgets\s+softened\b/gi, 'becomes tender'],
+    [/\bsoften\s+turn\s+off\b/gi, 'becomes tender, then turn off'],
+    [/\bgolden\s+colour\b/gi, 'golden brown'],
+    [/\blight\s+brown\s+colour\b/gi, 'light brown'],
+    [/\bdark\s+brown\s+colour\b/gi, 'dark brown'],
+    [/\bvery\s+low\s+flame\b/gi, 'very low heat'],
+    [/\blow\s+flame\b/gi, 'low heat'],
+    [/\bhigh\s+flame\b/gi, 'high heat'],
+    [/\bgood\s+amount\s+of\s+oil\b/gi, 'sufficient oil'],
+    [/\bsmall\s+amount\s+of\s+water\b/gi, 'a small amount of water'],
+    [/\bif\s+u\s+want\b/gi, 'if desired'],
+    [/\bIf\s+u\s+want\b/gi, 'If desired'],
+    [/\bb4\s+serving\b/gi, 'before serving'],
+    [/\bb4\s+/gi, 'before '],
+    [/\bapprox\.?\b/gi, 'approximately'],
+    [/\b(\d+)\s*mins?\b/gi, '$1 minutes'],
+    [/\b(\d+)\s*hrs?\b/gi, '$1 hours'],
+    [/\bdeg\.?\s*c\b/gi, 'degrees Celsius'],
+    [/\bdegree\s+celsius\b/gi, 'degrees Celsius'],
+    [/\b&\b/g, 'and'],
+    [/\s+\+\s+/g, ' and '],
+    [/\.\s*keep\s+aside/gi, '. Set aside'],
+    [/\.\s*drain\s+and\s+keep\s+aside/gi, '. Drain and set aside']
+  ];
+  informal.forEach(function(pair) { t = t.replace(pair[0], pair[1]); });
+
+  t = expandContractionsToFormal(t);
+  t = t.replace(/\s{2,}/g, ' ').trim();
+  t = capitalizeProcedureSentences(t);
+  t = t.replace(/\s+([,.;])/g, '$1');
+  if (t.length > 12 && !/[.!?]$/.test(t)) t += '.';
+  return t;
+}
+
+function rewriteProcedureStepTitle(title) {
+  var t = String(title || '').trim();
+  if (!t) return '';
+  t = t.replace(/[–—]/g, ', ');
+  t = expandContractionsToFormal(t);
+  return titleCaseIngredientName(t);
+}
+
+function rewriteProcedureSections(sections) {
+  return (sections || []).map(function(sec) {
+    return {
+      name: String(sec.name || 'DIRECTIONS').trim(),
+      steps: (sec.steps || []).map(function(st) {
+        if (typeof st === 'string') {
+          return { title: '', text: rewriteProcedureStepText(st) };
+        }
+        return {
+          title: rewriteProcedureStepTitle(st.title || ''),
+          text: rewriteProcedureStepText(st.text || '')
+        };
+      })
+    };
+  });
+}
+
+function snapshotProcedureFromForm() {
+  var sections = [];
+  document.querySelectorAll('.method-section').forEach(function(sec) {
+    var name = (sec.querySelector('.method-section-name') && sec.querySelector('.method-section-name').value.trim()) || 'DIRECTIONS';
+    var steps = [];
+    sec.querySelectorAll('.step-row').forEach(function(row) {
+      var title = (row.querySelector('.step-title-input') && row.querySelector('.step-title-input').value.trim()) || '';
+      var text = (row.querySelector('.step-input') && row.querySelector('.step-input').value.trim()) || '';
+      if (title || text) steps.push({ title: title, text: text });
+    });
+    if (steps.length) sections.push({ name: name, steps: steps });
+  });
+  return sections;
+}
+
+function extractMethodSectionsFromPaste() {
+  var pasteEl = document.getElementById('paste-input');
+  var text = pasteEl ? preprocessRecipeText(pasteEl.value.trim()) : '';
+  if (!text) return [];
+  var lines = text.split('\n').map(function(l) {
+    return l.replace(/^[\u2022\u00b7\u2023\u2043*\-\u2013\u2014\u25AA\u25CF\u25CB\u2713\u2714]\s+/, '').trim();
+  }).filter(function(l) { return l.length > 0; });
+
+  var METH_HDR = /^(prep\s+work|directions?|method|steps?|instructions?|procedure|how\s+to\s+(make|cook|prepare))\s*:?$/i;
+  var ING_HDR = /^ingredients?\s*:?$/i;
+  var sections = [];
+  var cur = null;
+  var inMethod = false;
+  var ingIdx = lines.findIndex(function(l) { return ING_HDR.test(l); });
+  var methIdx = lines.findIndex(function(l) { return METH_HDR.test(l); });
+
+  lines.forEach(function(line, idx) {
+    if (methIdx >= 0 && idx > methIdx) inMethod = true;
+    else if (ingIdx >= 0 && idx >= ingIdx && idx < (methIdx >= 0 ? methIdx : lines.length)) inMethod = false;
+
+    if (METH_HDR.test(line)) {
+      var label = /^method$/i.test(line.trim()) ? 'DIRECTIONS' : line.replace(/\s*:?\s*$/, '');
+      cur = { name: label, steps: [] };
+      sections.push(cur);
+      inMethod = true;
+      return;
+    }
+    if (ING_HDR.test(line)) { inMethod = false; return; }
+    if (!inMethod && !/^(?:step\s*)?\d+[\.\):\-]\s+\S/i.test(line)) return;
+    if (!cur) {
+      cur = { name: 'DIRECTIONS', steps: [] };
+      sections.push(cur);
+    }
+    var stepText = line.replace(/^(?:step\s*)?\d+[\.\):\-]\s*/i, '').trim();
+    if (stepText && stepText.length > 4) {
+      expandMethodStepText(stepText).forEach(function(part) {
+        if (part) cur.steps.push({ title: '', text: part });
+      });
+    }
+  });
+  return sections.filter(function(s) { return s.steps.length > 0; });
+}
+
+function collectProcedureForRewrite() {
+  var fromForm = snapshotProcedureFromForm();
+  if (fromForm.length) return { sections: fromForm, source: 'form' };
+  var fromPaste = extractMethodSectionsFromPaste();
+  if (fromPaste.length) return { sections: fromPaste, source: 'paste' };
+  return { sections: [], source: '' };
+}
+
+function applyProcedureSections(sections) {
+  var methHost = document.getElementById('method-sections');
+  if (!methHost) return 0;
+  methHost.innerHTML = '';
+  methodSectionCount = 0;
+  var stepCount = 0;
+  (sections || []).forEach(function(sec) {
+    addMethodSection(sec.name || 'DIRECTIONS');
+    var c = methHost.lastChild.querySelector('.step-rows');
+    c.innerHTML = '';
+    (sec.steps || []).forEach(function(st) {
+      if (typeof st === 'string') {
+        addStep(c, st);
+        stepCount++;
+      } else if (st && (st.title || st.text)) {
+        addStep(c, { title: st.title || '', text: st.text || '' });
+        stepCount++;
+      }
+    });
+  });
+  if (!stepCount) {
+    addMethodSection('PREP WORK');
+    addMethodSection('DIRECTIONS');
+  }
+  return stepCount;
+}
+
+function showRewriteResult(msg, ok) {
+  var res = document.getElementById('parse-result');
+  if (!res) {
+    showMsg(msg, ok ? 'success' : 'error');
+    return;
+  }
+  res.className = 'sr-parse-result ' + (ok ? 'success' : 'info');
+  res.textContent = msg;
+  res.style.display = 'block';
+}
+
+function rewriteProcedure() {
+  var collected = collectProcedureForRewrite();
+  if (!collected.sections.length) {
+    showMsg('No procedure steps found. Parse the recipe first or add steps in the Procedure section.', 'error');
+    return;
+  }
+
+  window._procedureRewriteUndo = collected.sections.map(function(sec) {
+    return {
+      name: sec.name,
+      steps: sec.steps.map(function(st) { return { title: st.title || '', text: st.text || '' }; })
+    };
+  });
+  var undoBtn = document.getElementById('btn-undo-rewrite');
+  if (undoBtn) undoBtn.style.display = 'none';
+
+  var rewritten = rewriteProcedureSections(collected.sections);
+  var applied = applyProcedureSections(rewritten);
+  showRewriteResult('✓ Polished ' + applied + ' step' + (applied === 1 ? '' : 's') +
+    '. Review and edit anything that looks off, or click Undo rewrite.', true);
+
+  if (undoBtn) undoBtn.style.display = 'inline';
+  var procSec = document.getElementById('section-procedure');
+  if (procSec) setTimeout(function() { procSec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300);
+  try { saveDraft(); } catch(_) {}
+}
+
+function undoProcedureRewrite() {
+  if (!window._procedureRewriteUndo || !window._procedureRewriteUndo.length) {
+    showMsg('Nothing to undo.', 'error');
+    return;
+  }
+  applyProcedureSections(window._procedureRewriteUndo);
+  window._procedureRewriteUndo = null;
+  var undoBtn = document.getElementById('btn-undo-rewrite');
+  if (undoBtn) undoBtn.style.display = 'none';
+  showRewriteResult('Restored procedure steps from before the rewrite.', true);
+  try { saveDraft(); } catch(_) {}
 }
 
 function detectUrlPaste(url) {
