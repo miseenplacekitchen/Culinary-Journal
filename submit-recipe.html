@@ -1946,11 +1946,18 @@ function ingNameMatches(a, b) {
 
 var ING_JUNK_NAMES = /^(plus|or|and|as needed|to taste|optional|garnish)$/i;
 
+function findPrimaryIngredientInDb(query) {
+  if (!query || !Array.isArray(allIngredients) || !allIngredients.length) return null;
+  var lc = ingDbNorm(query);
+  if (!lc || ING_JUNK_NAMES.test(lc)) return null;
+  return allIngredients.find(function(i) { return ingNameMatches(ingDbNorm(ingDbName(i)), lc); }) || null;
+}
+
 function findIngredientInDbExact(query) {
   if (!query || !Array.isArray(allIngredients) || !allIngredients.length) return null;
   var lc = ingDbNorm(query);
   if (!lc || ING_JUNK_NAMES.test(lc)) return null;
-  var exact = allIngredients.find(function(i) { return ingNameMatches(ingDbNorm(ingDbName(i)), lc); });
+  var exact = findPrimaryIngredientInDb(query);
   if (exact) return exact;
   return allIngredients.find(function(i) {
     var aka = ((i['Also Known As'] || i.also_known_as || '') + '').toLowerCase();
@@ -2046,13 +2053,14 @@ function applyIngredientDbMatch(row, opts) {
   if (aliased !== parsedName) nameInput.value = aliased;
   parsedName = (nameInput.value || '').trim();
 
+  var primaryMatch = findPrimaryIngredientInDb(parsedName);
   var exactMatch = findIngredientInDbExact(parsedName);
   var match = exactMatch || (parsedName.length >= 5 && !isFragmentIngredientName(parsedName)
     ? findIngredientInDb(parsedName) : null);
   if (!match) return false;
 
   var canon = ingDbName(match);
-  if (exactMatch && canon) nameInput.value = canon;
+  if (primaryMatch && canon) nameInput.value = canon;
 
   setIngredientCategory(row, (match['Category'] || match.category || '').toString().trim());
 
@@ -3067,6 +3075,8 @@ function titleCaseIngredientName(name) {
 }
 
 var PARSE_UNIT_WORDS = '(?:teaspoons?|tsp|tablespoons?|tbsp|tbs|cups?|grams?|g|gm|kilograms?|kg|millilitres?|milliliters?|ml|litres?|liters?|l|ounces?|oz|pounds?|lbs?|lb|pinch(?:es)?|bunch(?:es)?|cloves?|leaves?|sprigs?|handfuls?|to\\s+taste)';
+// Matches 1/2, 1 1/2, ½, 0.25 — slash fractions must be in-token (not only after a space).
+var PARSE_QTY_PAT = '[\\d\u00BC-\u00BE\u2150-\u215E\\/\\.]+(?:\\s+[\\d\u00BC-\u00BE\u2150-\u215E\\/\\.]+)?';
 
 function normalizeParsedQty(qty) {
   if (!qty) return '';
@@ -3106,16 +3116,14 @@ function isQtyUnitFragment(text) {
   var t = String(text || '').trim();
   if (!t) return false;
   return new RegExp(
-    '^[\\d\u00BC-\u00BE\u2150-\u215E]+(?:\\s+[\\d\u00BC-\u00BE\u2150-\u215E\\/]+)?' +
-    '(?:\\s*(?:' + PARSE_UNIT_WORDS + '))?\\s*$', 'i'
+    '^' + PARSE_QTY_PAT + '(?:\\s*(?:' + PARSE_UNIT_WORDS + '))?\\s*$', 'i'
   ).test(t);
 }
 
 function extractQtyUnitFragment(text) {
   var t = String(text || '').trim();
   var m = t.match(new RegExp(
-    '^([\\d\u00BC-\u00BE\u2150-\u215E]+(?:\\s+[\\d\u00BC-\u00BE\u2150-\u215E\\/]+)?)\\s*\\b(' +
-    PARSE_UNIT_WORDS + ')\\b\\s*(.*)$', 'i'
+    '^(' + PARSE_QTY_PAT + ')\\s*\\b(' + PARSE_UNIT_WORDS + ')\\b\\s*(.*)$', 'i'
   ));
   if (!m) return null;
   return {
@@ -3132,7 +3140,7 @@ function normalizeIngredientAlias(name) {
     'kashmiri chilli powder': 'Kashmiri Chilli Powder', 'kashmiri chilli powde': 'Kashmiri Chilli Powder',
     'chilli powder': 'Chilli Powder', 'turmeric powder': 'Turmeric Powder',
     'lemon juice': 'Lemon Juice', 'ginger garlic paste': 'Ginger Garlic Paste',
-    'ginger garlic': 'Ginger Garlic Paste', 'cornflour': 'Cornflour', 'rice flour': 'Rice Flour',
+    'cornflour': 'Cornflour', 'rice flour': 'Rice Flour',
     'garam masala': 'Garam Masala', 'cumin powder': 'Cumin Powder',
     'green chilli': 'Green Chilli', 'green chillies': 'Green Chilli',
     'curry leaves': 'Curry Leaves', 'coriander leaves': 'Coriander Leaves',
@@ -3152,10 +3160,30 @@ function inferIngredientUnit(name, qty) {
   return '';
 }
 
+function reparseEmbeddedIngredientName(item) {
+  if (!item || !(item.name || '').trim()) return item || {};
+  if ((item.qty || item.unit) && (item.name || '').trim()) return item;
+  var embedded = splitIngredientLine(item.name);
+  if (!embedded || embedded.header || !(embedded.name || '').trim()) return item;
+  if (!embedded.qty && !embedded.unit) return item;
+  return {
+    qty: item.qty || embedded.qty || '',
+    unit: item.unit || embedded.unit || '',
+    name: embedded.name,
+    note: item.note || embedded.note || ''
+  };
+}
+
+function isEmbeddedPrefixIngredientName(name) {
+  var s = splitIngredientLine(name);
+  return !!(s && !s.header && (s.name || '').trim() && (s.qty || s.unit));
+}
+
 function isValidParsedIngredient(item) {
   if (!item || !item.name) return false;
   var n = item.name.trim();
   if (!n || n.length < 2 || ING_JUNK_NAMES.test(n) || isIngredientSubHeader(n)) return false;
+  if (isEmbeddedPrefixIngredientName(n)) return false;
   if (isFragmentIngredientName(n)) return false;
   if (isOrphanAltQtyLine(n)) return false;
   if (isQtyUnitFragment(n)) return false;
@@ -3235,7 +3263,7 @@ function consolidateParsedItems(items) {
 
   var out = [];
   list.forEach(function(item) {
-    item = item || {};
+    item = reparseEmbeddedIngredientName(item || {});
     var n = (item.name || '').trim();
     if (!n || !isValidParsedIngredient(item)) return;
     if (isOrphanAltQtyLine(n)) {
@@ -3365,8 +3393,7 @@ function splitIngredientLine(line) {
   }
 
   // Standard prefix: "1/2 tsp salt" or qty+unit only "1 1/2 cup"
-  var qtyPat = '[\\d\u00BC-\u00BE\u2150-\u215E]+(?:\\s+[\\d\u00BC-\u00BE\u2150-\u215E\\/]+)?';
-  var prefixRe = new RegExp('^(' + qtyPat + ')\\s*\\b(' + PARSE_UNIT_WORDS + ')\\b(?:\\s+(.+))?$', 'i');
+  var prefixRe = new RegExp('^(' + PARSE_QTY_PAT + ')\\s*\\b(' + PARSE_UNIT_WORDS + ')\\b(?:\\s+(.+))?$', 'i');
   var prefix = prefixRe.exec(line);
   if (prefix) {
     var restName = (prefix[3] || '').trim();
@@ -4024,7 +4051,7 @@ function parseRecipe() {
     if (!item) return;
     item.name = (item.name || '').trim();
     if (pendingPartial) {
-      if (item.name && !isQtyUnitFragment(item.name) && !isFragmentIngredientName(item.name)) {
+      if (item.name && !isQtyUnitFragment(item.name) && !isFragmentIngredientName(item.name) && !isEmbeddedPrefixIngredientName(item.name)) {
         item.qty = item.qty || pendingPartial.qty;
         item.unit = item.unit || pendingPartial.unit;
         item.note = item.note || pendingPartial.note || '';
@@ -4053,8 +4080,10 @@ function parseRecipe() {
         item.name = frag.rest;
       }
     }
+    item = reparseEmbeddedIngredientName(item);
     item.name = normalizeIngredientAlias(titleCaseIngredientName(item.name));
     if (!item.unit) item.unit = inferIngredientUnit(item.name, item.qty);
+    if (!item.qty && !item.note && /\b(water|lemon juice)\b/i.test(item.name)) item.note = 'as needed';
     if (isValidParsedIngredient(item)) {
       if (!curIng) startIngSection('Ingredients');
       curIng.items.push(item);
@@ -4147,7 +4176,7 @@ function parseRecipe() {
           qty: parsed.qty || '', unit: parsed.unit || '',
           name: parsed.name || '', note: parsed.note || ''
         });
-      } else if (looksLikeIngLine(line) && !isQtyUnitFragment(line) && !isFragmentIngredientName(line)) {
+      } else if (looksLikeIngLine(line) && !isQtyUnitFragment(line) && !isFragmentIngredientName(line) && !isEmbeddedPrefixIngredientName(line)) {
         pushIngredientItem({ qty: '', unit: '', name: line, note: '' });
       } else if (/^(?:step\s*)?\d+[\.\):\-]\s+\S/i.test(line)) {
         flushPendingPartial();
@@ -4219,6 +4248,7 @@ function parseRecipe() {
       const c = ingHost.lastChild.querySelector('.ing-rows');
       c.innerHTML = '';
       sec.items.forEach(item => {
+        item = reparseEmbeddedIngredientName(item || {});
         if (!item || !(item.name || '').trim() || !isValidParsedIngredient(item)) return;
         addIngRow(c, item.qty, item.unit, item.name, item.note || '', '');
         try { applyIngredientDbMatch(c.lastElementChild, { parsedNote: item.note || '' }); } catch(_) {}
@@ -4696,22 +4726,22 @@ function buildSubmitPrintSheet() {
   if (meta.length) html += '<div class="sr-print-meta">' + escPrint(meta.join(' · ')) + '</div>';
   if (intro) html += '<div class="sr-print-block">' + escPrint(intro) + '</div>';
 
+  var ingHeaderDone = false;
   document.querySelectorAll('.ing-section').forEach(function(sec) {
     var secName = (sec.querySelector('.ing-section-name') && sec.querySelector('.ing-section-name').value.trim()) || 'Ingredients';
     var rows = [];
     sec.querySelectorAll('.ing-row').forEach(function(row) {
       var ing = (row.querySelector('.ing-name-input') && row.querySelector('.ing-name-input').value.trim()) || '';
+      var qty = (row.querySelector('.ing-input') && row.querySelector('.ing-input').value.trim()) || '';
+      var unit = getUnitValue(row) || '';
+      var note = (row.querySelector('.ing-note-col') && row.querySelector('.ing-note-col').value.trim()) || '';
       if (!ing) return;
-      rows.push({
-        qty: (row.querySelector('.ing-input') && row.querySelector('.ing-input').value.trim()) || '',
-        unit: getUnitValue(row) || '',
-        ing: ing,
-        note: (row.querySelector('.ing-note-col') && row.querySelector('.ing-note-col').value.trim()) || ''
-      });
+      var fixed = reparseEmbeddedIngredientName({ qty: qty, unit: unit, name: ing, note: note });
+      rows.push({ qty: fixed.qty || '', unit: fixed.unit || '', ing: fixed.name || ing, note: fixed.note || '' });
     });
     if (!rows.length) return;
-    html += '<div class="sr-print-h2">Ingredients</div>';
-    if (secName && secName.toLowerCase() !== 'ingredients') html += '<div class="sr-print-h3">' + escPrint(secName) + '</div>';
+    if (!ingHeaderDone) { html += '<div class="sr-print-h2">Ingredients</div>'; ingHeaderDone = true; }
+    html += '<div class="sr-print-h3">' + escPrint(secName) + '</div>';
     html += '<table class="sr-print-ing-table"><thead><tr><th>Qty</th><th>Unit</th><th>Ingredient</th><th>Note</th></tr></thead><tbody>';
     rows.forEach(function(r) {
       html += '<tr><td>' + escPrint(r.qty) + '</td><td>' + escPrint(r.unit) + '</td><td>' + escPrint(r.ing) + '</td><td>' + escPrint(r.note) + '</td></tr>';
