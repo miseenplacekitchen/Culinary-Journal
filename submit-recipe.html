@@ -2886,8 +2886,13 @@ async function applyUrlImportToPaste(articleText, pageTitle, statusSuffix) {
   var pasteEl = document.getElementById('paste-input');
   var parseRes = document.getElementById('parse-result');
   if (parseRes) parseRes.style.display = 'none';
-  var cleaned = await cleanupOcrText(articleText);
-  var extracted = extractRecipeCore(cleaned);
+  // Structure from raw article text first — OCR cleanup RPC can drop short lines like "Chicken -1 1/2kg".
+  var extracted = extractRecipeCore(articleText);
+  var cleaned = articleText;
+  if (!extracted.hasContent) {
+    cleaned = await cleanupOcrText(articleText);
+    extracted = extractRecipeCore(cleaned);
+  }
   var finalText = extracted.hasContent ? extracted.pasteText : cleaned;
   if (pasteEl) pasteEl.value = finalText;
   var nameEl = document.getElementById('recipe-name');
@@ -3160,6 +3165,23 @@ function normalizeIngredientAlias(name) {
   return map[lc] || name;
 }
 
+function stripRedundantUnitFromName(name, unit) {
+  if (!name || !unit) return (name || '').trim();
+  var n = String(name).trim();
+  var u = String(unit).trim().toLowerCase();
+  var strip = {
+    handful: /^handful\s+/i,
+    pinch: /^pinch(?:es)?\s+/i,
+    tbsp: /^tbsps?\s+/i,
+    tsp: /^tsps?\s+/i,
+    cup: /^cups?\s+/i,
+    drop: /^drops?\s+/i,
+    pod: /^pods?\s+/i
+  };
+  if (strip[u]) return n.replace(strip[u], '').trim();
+  return n;
+}
+
 function inferIngredientUnit(name, qty) {
   var n = String(name || '').toLowerCase();
   if (/\b(ghee|oil|dalda)\b/.test(n) && !qty) return '';
@@ -3273,10 +3295,14 @@ function consolidateParsedItems(items) {
 
     if (!name && (item.qty || item.unit || note) && i + 1 < list.length) {
       var nxt = list[i + 1];
-      if ((nxt.name || '').trim()) {
+      if ((nxt.name || '').trim() && !nxt.qty && !nxt.unit) {
         nxt.qty = nxt.qty || item.qty;
         nxt.unit = nxt.unit || item.unit;
         nxt.note = nxt.note || item.note || note;
+        list.splice(i, 1);
+        continue;
+      }
+      if (!item.qty && item.unit) {
         list.splice(i, 1);
         continue;
       }
@@ -3310,8 +3336,10 @@ function consolidateParsedItems(items) {
       return;
     }
     item.name = normalizeIngredientAlias(titleCaseIngredientName(n))
-      .replace(/\s+as\s+reqd$/i, '').replace(/\s+to\s+taste$/i, '').trim();
+      .replace(/\s+as\s+reqd$/i, '').replace(/\s+as\s+needed$/i, '')
+      .replace(/\s+to\s+taste$/i, '').trim();
     if (!item.unit) item.unit = inferIngredientUnit(item.name, item.qty);
+    item.name = stripRedundantUnitFromName(item.name, item.unit);
     out.push(item);
   });
   return out;
@@ -3677,6 +3705,14 @@ function detectScanSection(line) {
   return null;
 }
 
+function expandBundledIngredientLine(line) {
+  var trimmed = String(line || '').trim();
+  if (!trimmed) return [];
+  var parts = trimmed.match(/\b[A-Za-z][A-Za-z\s.'()-]{0,40}?-\d[\d\u00BC-\u00BE\/\.]*(?:\s*(?:tsp|tbsp|tbs|kg|g|nos?|pods?|drops?|handful))?\b/gi);
+  if (parts && parts.length > 1) return parts.map(function(p) { return p.trim(); });
+  return [trimmed];
+}
+
 function collectIngredients(lines, startIdx, endIdx, title) {
   var ings = [];
   var current = '';
@@ -3693,11 +3729,19 @@ function collectIngredients(lines, startIdx, endIdx, title) {
     }
     if (isIngredientLikeLine(ln)) {
       if (current) ings.push(cleanScanContentLine(current, 'ing'));
-      current = ln;
+      var bundled = expandBundledIngredientLine(ln);
+      if (bundled.length > 1) {
+        current = '';
+        bundled.forEach(function(part) { ings.push(cleanScanContentLine(part, 'ing')); });
+      } else {
+        current = ln;
+      }
     } else if (isBareIngredientLine(ln)) {
       if (current) ings.push(cleanScanContentLine(current, 'ing'));
       current = '';
-      ings.push(ln.replace(/[\s\u2013\u2014\-]+$/,'').replace(/\s*-\s*$/,'').trim());
+      expandBundledIngredientLine(ln).forEach(function(part) {
+        ings.push(part.replace(/[\s\u2013\u2014\-]+$/,'').replace(/\s*-\s*$/,'').trim());
+      });
     } else if (current && isIngredientContinuation(ln)) {
       current += ' ' + ln;
     } else if (current) {
@@ -4149,10 +4193,12 @@ function parseRecipe() {
       } else if (!pendingPartial.name && (pendingPartial.qty || pendingPartial.unit || pendingPartial.note)) {
         if (curIng && curIng.items.length) {
           var lastItem = curIng.items[curIng.items.length - 1];
-          lastItem.qty = lastItem.qty || pendingPartial.qty;
-          lastItem.unit = lastItem.unit || pendingPartial.unit;
-          if (pendingPartial.note) {
-            lastItem.note = lastItem.note ? lastItem.note + '; ' + pendingPartial.note : pendingPartial.note;
+          if (!lastItem.qty && !lastItem.unit) {
+            lastItem.qty = pendingPartial.qty || '';
+            lastItem.unit = pendingPartial.unit || '';
+            if (pendingPartial.note) {
+              lastItem.note = lastItem.note ? lastItem.note + '; ' + pendingPartial.note : pendingPartial.note;
+            }
           }
         }
       }
@@ -4196,8 +4242,10 @@ function parseRecipe() {
       }
     }
     item = reparseEmbeddedIngredientName(item);
-    item.name = normalizeIngredientAlias(titleCaseIngredientName(item.name));
+    item.name = normalizeIngredientAlias(titleCaseIngredientName(item.name))
+      .replace(/\s+as\s+needed$/i, '').replace(/\s+as\s+reqd$/i, '').trim();
     if (!item.unit) item.unit = inferIngredientUnit(item.name, item.qty);
+    item.name = stripRedundantUnitFromName(item.name, item.unit);
     if (!item.qty && !item.note && /\b(water|lemon juice)\b/i.test(item.name)) item.note = 'as needed';
     if (isValidParsedIngredient(item)) {
       if (!curIng) startIngSection('Ingredients');
@@ -4852,7 +4900,8 @@ function buildSubmitPrintSheet() {
       var note = (row.querySelector('.ing-note-col') && row.querySelector('.ing-note-col').value.trim()) || '';
       if (!ing) return;
       var fixed = reparseEmbeddedIngredientName({ qty: qty, unit: unit, name: ing, note: note });
-      rows.push({ qty: fixed.qty || '', unit: fixed.unit || '', ing: fixed.name || ing, note: fixed.note || '' });
+      var fixedName = stripRedundantUnitFromName(fixed.name || ing, fixed.unit || unit);
+      rows.push({ qty: fixed.qty || '', unit: fixed.unit || '', ing: fixedName, note: fixed.note || '' });
     });
     if (!rows.length) return;
     if (!ingHeaderDone) { html += '<div class="sr-print-h2">Ingredients</div>'; ingHeaderDone = true; }
