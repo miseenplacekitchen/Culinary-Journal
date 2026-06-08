@@ -1,4 +1,4 @@
-// Festivals (parked) + Voice of the Customer inbox — dashboard-platform.js
+// Festival Management + Voice of the Customer — dashboard-platform.js
 
 var VOC_CATEGORIES = [
   { id:'actionable', label:'Actionable', color:'#dc5050' },
@@ -108,7 +108,7 @@ async function fmSaveNewFest() {
       p_planner_path: document.getElementById('fm-nf-planner').value.trim() || null,
       p_is_active: true
     });
-    auditLog('Festivals', 'Created festival', null, null, null, null);
+    auditLog('Festival Management', 'Created festival', null, null, null, null);
     loadFestOverview(document.getElementById('fest-panel'));
   } catch (e) { alert('Error: ' + e.message); }
 }
@@ -116,7 +116,7 @@ async function fmSaveNewFest() {
 async function fmToggleActive(id, on) {
   try {
     await rpc('admin_toggle_festival', { p_id: id, p_is_active: !!on });
-    auditLog('Festivals', on ? 'Activated festival' : 'Deactivated festival', null, id, null, null);
+    auditLog('Festival Management', on ? 'Activated festival' : 'Deactivated festival', null, id, null, null);
   } catch (e) { alert('Error: ' + e.message); loadFestOverview(document.getElementById('fest-panel')); }
 }
 
@@ -128,8 +128,7 @@ async function loadFestInterface(container) {
     var rows = await rpc('admin_get_festivals') || [];
     container.innerHTML =
       '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);line-height:1.7;margin-bottom:14px">' +
-      '<span class="ap-parked-banner" style="display:block;margin-bottom:12px">Parked feature — editor remains available but is not in active development.</span>' +
-      'Define <strong style="color:var(--text-high)">sections</strong> (Main, Sides, Desserts…), add dish slots, and link approved recipe variants.</div>' +
+      'Edit festivals, define <strong style="color:var(--text-high)">sections</strong> (Main, Sides, Desserts…), add dish slots, and link approved recipe variants.</div>' +
       '<div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">' +
         '<label style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid)">Festival</label>' +
         '<select id="fm-pick-fest" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-high);font-family:DM Sans,sans-serif;font-size:12px;min-width:220px"></select>' +
@@ -234,7 +233,7 @@ async function fmSaveFest(id) {
       p_sort_order: parseInt(document.getElementById('fm-ef-sort').value, 10) || 0,
       p_is_active: document.getElementById('fm-ef-active').checked
     });
-    auditLog('Festivals', 'Updated festival', null, id, null, null);
+    auditLog('Festival Management', 'Updated festival', null, id, null, null);
     fmEditFest(document.getElementById('fm-ef-slug').value.trim());
   } catch (e) { alert('Error: ' + e.message); }
 }

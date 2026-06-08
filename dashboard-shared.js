@@ -352,12 +352,7 @@ function signOut() {
   window.location.href = 'login.html';
 }
 
-const ALL_VIEWS = ['dashboard','recipe-mgmt','user-mgmt','ingredients','site-mgmt','finance','library-mgmt','festival-mgmt'];
-
-function toggleNavGroup(id) {
-  var grp = document.getElementById(id);
-  if (grp) grp.classList.toggle('open');
-}
+const ALL_VIEWS = ['dashboard','recipe-mgmt','user-mgmt','ingredients','site-mgmt','finance','library-mgmt','festival-mgmt','voc-mgmt'];
 
 function toggleApSide() {
   var side = document.querySelector('.ap-side');
@@ -377,20 +372,14 @@ function closeApSide() {
 }
 
 function switchView(view, ingTab) {
-  if (view === 'voc-mgmt') { switchView('user-mgmt'); switchUserTab('feedback'); return; }
   closeApSide();
   localStorage.setItem('tcj_active_view', view);
-  document.querySelectorAll('.ap-nav-item, .ap-nav-child').forEach(function(el) { el.classList.remove('active'); });
-  document.querySelectorAll('.ap-nav-group-btn').forEach(function(el) { el.classList.remove('has-active'); });
+  document.querySelectorAll('.ap-nav-item').forEach(function(el) { el.classList.remove('active'); });
   const nb = document.getElementById('nav-' + view);
-  if (nb) {
-    nb.classList.add('active');
-    var grp = nb.closest('.ap-nav-group');
-    if (grp) { grp.classList.add('open'); var gb = grp.querySelector('.ap-nav-group-btn'); if (gb) gb.classList.add('has-active'); }
-  }
+  if (nb) nb.classList.add('active');
   ALL_VIEWS.forEach(function(v) { const el = document.getElementById('v-' + v); if (el) el.style.display = (v===view)?'block':'none'; });
-  const titles = { 'dashboard':'Dashboard', 'recipe-mgmt':'Recipes', 'user-mgmt':'Members', 'ingredients':'Ingredients', 'site-mgmt':'Site', 'finance':'Finance', 'library-mgmt':'Library', 'festival-mgmt':'Festivals (Parked)' };
-  const subs   = { 'dashboard':'What needs your attention today.', 'recipe-mgmt':'Review queue, approvals, and recipe tools.', 'user-mgmt':'Members, reports, and Voice of Customer feedback.', 'ingredients':'Ingredient database — unchanged.', 'site-mgmt':'Pages, features, themes, and announcements.', 'finance':'Tiers, pricing, and billing.', 'library-mgmt':'Spice, tool, cut, and preservation profiles.', 'festival-mgmt':'Paused — occasion planning returns later.' };
+  const titles = { 'dashboard':'Dashboard', 'recipe-mgmt':'Recipe Management', 'user-mgmt':'User Management', 'ingredients':'Ingredients Management', 'site-mgmt':'Site Management', 'finance':'Finance Management', 'library-mgmt':'Library Management', 'festival-mgmt':'Festival Management', 'voc-mgmt':'Voice of the Customer' };
+  const subs   = { 'dashboard':'Overview of site activity.', 'recipe-mgmt':'Review, approve and manage all submitted recipes.', 'user-mgmt':'Manage member registrations and accounts.', 'ingredients':'Browse, add and edit the ingredient database.', 'site-mgmt':'Control pages, features, announcements, themes, email templates and site settings.', 'finance':'Manage membership tiers, subscriptions, pricing and revenue.', 'library-mgmt':'Manage ingredient, spice, tool, cut and preservation profiles.', 'festival-mgmt':'Festivals, dish slots and recipe variants for occasion planners.', 'voc-mgmt':'Categorised member feedback — signals, noise and actionable items.' };
   setEl('page-title', titles[view] || view);
   setEl('page-sub',   subs[view]   || '');
   var mobileTitle = document.querySelector('.ap-mobile-title');
@@ -407,6 +396,7 @@ function switchView(view, ingTab) {
   if (view === 'finance')     { switchFinanceTab(localStorage.getItem('tcj_active_finance_tab')||'fi-overview'); }
   if (view === 'library-mgmt') { switchLibTab(localStorage.getItem('tcj_active_lib_tab')||'lm-ingredients'); }
   if (view === 'festival-mgmt') { switchFestTab(localStorage.getItem('tcj_active_fest_tab')||'fm-overview'); }
+  if (view === 'voc-mgmt') { switchVocTab(localStorage.getItem('tcj_active_voc_tab')||'voc-inbox'); }
 }
 
 // ── RECIPE MANAGEMENT ─────────────────────────────────────────────
@@ -713,7 +703,6 @@ async function doUpdateRequest(id, status) {
 // ── UM Feedback ───────────────────────────────────────────────────
 
 async function loadUMFeedback(container) {
-  if (typeof loadVocInbox === 'function') { loadVocInbox(container); return; }
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading…</div>';
   try {
     var rows = await rpc('admin_get_feedback', {p_status:null}) || [];
