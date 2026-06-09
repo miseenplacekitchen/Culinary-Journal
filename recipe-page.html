@@ -376,7 +376,7 @@
   <script src="allergy-engine.js"></script>
   <script src="seo-schema.js"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
-  <script src="lib/recipe-hero-labels.js?v=20260628"></script>
+  <script src="lib/recipe-hero-labels.js?v=20260629"></script>
   <script src="nav-init.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -1668,6 +1668,8 @@ function renderHeroImage(r) {
   heroImg.onerror = function () {
     showPlaceholder('Image could not be loaded');
   };
+  if (/^https?:\/\//i.test(url)) heroImg.crossOrigin = 'anonymous';
+  else heroImg.removeAttribute('crossOrigin');
   heroImg.src = url;
   if (heroImg.complete && heroImg.naturalWidth) onHeroReady();
 }
