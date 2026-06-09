@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hero label geometry test</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root { --accent: #9b4dca; }
+    body { margin: 24px; background: #f5f0e8; font-family: sans-serif; }
+    .sr-img-hero-frame { display: flex; justify-content: center; }
+    .sr-img-hero-ring-wrap { position: relative; width: 400px; aspect-ratio: 1; }
+    .sr-img-hero-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
+    .sr-img-hero-ring-stroke { fill: none; stroke: var(--accent); stroke-width: 3; }
+    .rh-label-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; overflow: visible; }
+    .rh-ring-text {
+      font-family: "Cormorant Garamond", Georgia, serif;
+      font-size: var(--rh-font, 16px);
+      font-style: italic; font-weight: 400;
+      stroke: rgba(255,255,255,0.85); stroke-width: 2px; paint-order: stroke fill;
+    }
+    .sr-img-hero-circle {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      width: 80%; height: 80%; border-radius: 50%; overflow: hidden; z-index: 1;
+      border: 3px solid var(--accent); background: #fff;
+    }
+    .sr-img-hero-img { position: absolute; left: 50%; top: 50%; max-width: none; display: block; }
+    .debug { margin-top: 16px; font-size: 12px; white-space: pre-wrap; }
+    .marker { fill: red; }
+    .guide { fill: none; stroke: rgba(255,0,0,0.35); stroke-width: 1; stroke-dasharray: 4 3; }
+  </style>
+</head>
+<body>
+  <h1>Hero label test</h1>
+  <div class="sr-img-hero-frame">
+    <div class="sr-img-hero-ring-wrap" id="wrap">
+      <svg class="sr-img-hero-ring" viewBox="0 0 420 420" xmlns="http://www.w3.org/2000/svg">
+        <circle class="sr-img-hero-ring-stroke" cx="210" cy="210" r="168"/>
+      </svg>
+      <div class="sr-img-hero-circle">
+        <img id="img" class="sr-img-hero-img" alt="test" src="../assets/c__Users_betty_AppData_Roaming_Cursor_User_workspaceStorage_empty-window_images_image-017fd866-9df3-4391-be2a-a1219ef298d5.png">
+      </div>
+    </div>
+  </div>
+  <div class="debug" id="out"></div>
+  <script src="../lib/recipe-hero-labels.js?v=20260612"></script>
+  <script>
+    var img = document.getElementById('img');
+    function run() {
+      var wrap = document.getElementById('wrap');
+      var circle = wrap.querySelector('.sr-img-hero-circle');
+      var cw = circle.clientWidth;
+      var base = Math.max(cw / img.naturalWidth, cw / img.naturalHeight);
+      var w = img.naturalWidth * base;
+      var h = img.naturalHeight * base;
+      img.style.width = w + 'px';
+      img.style.height = h + 'px';
+      img.style.transform = 'translate(-50%, -50%)';
+      RecipeHeroLabels.render(wrap, { handle: '@nehccik_nerom' });
+      setTimeout(function() {
+        var svg = wrap.querySelector('.rh-label-svg');
+        var brandPath = svg && svg.querySelector('#rh-arc-brand');
+        var out = document.getElementById('out');
+        out.textContent = 'SVG: ' + (svg ? 'yes' : 'NO') + '\nBrand path: ' + (brandPath && brandPath.getAttribute('d')) + '\nBrand text: ' + (svg && svg.querySelector('#rh-text-brand textPath') && svg.querySelector('#rh-text-brand textPath').textContent);
+      }, 200);
+    }
+    img.onload = run;
+    if (img.complete) run();
+  </script>
+</body>
+</html>
