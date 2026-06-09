@@ -18,7 +18,7 @@
   <script src="lib/import-audit.js"></script>
   <script src="lib/recipe-import-validate.js"></script>
   <script src="lib/recipe-import-paths.js"></script>
-  <script src="lib/recipe-hero-labels.js?v=20260614"></script>
+  <script src="lib/recipe-hero-labels.js?v=20260615"></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -687,13 +687,9 @@
     .sr-img-hero-ring-wrap { position: relative; width: min(400px, 100%); aspect-ratio: 1; }
     .sr-img-hero-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
     .sr-img-hero-ring-stroke { fill: none; stroke: var(--accent); stroke-width: 3; }
-    .rh-label-svg {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 5; overflow: visible;
-    }
-    .rh-ring-text {
+    .sr-img-hero-ring .rh-ring-text {
       font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-      font-size: var(--rh-font, 15px);
+      font-size: 15px;
       font-style: italic; font-weight: 400; letter-spacing: 0.03em;
     }
     .sr-img-hero-circle {
@@ -1247,8 +1243,18 @@
             <div id="img-preview-state" class="img-preview-wrap" style="display:none" onclick="event.stopPropagation()">
               <div class="sr-img-hero-frame">
                 <div class="sr-img-hero-ring-wrap">
-                  <svg class="sr-img-hero-ring" viewBox="0 0 420 420" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                  <svg class="sr-img-hero-ring" viewBox="0 0 420 420" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                     <circle class="sr-img-hero-ring-stroke" cx="210" cy="210" r="168"/>
+                    <defs>
+                      <path id="sr-ring-arc-brand" fill="none"/>
+                      <path id="sr-ring-arc-handle" fill="none"/>
+                    </defs>
+                    <text class="rh-ring-text rh-ring-brand" text-anchor="middle">
+                      <textPath xlink:href="#sr-ring-arc-brand" href="#sr-ring-arc-brand" startOffset="50%">The Culinary Journal</textPath>
+                    </text>
+                    <text class="rh-ring-text rh-ring-handle" text-anchor="start" style="display:none">
+                      <textPath xlink:href="#sr-ring-arc-handle" href="#sr-ring-arc-handle" startOffset="100%"></textPath>
+                    </text>
                   </svg>
                   <div class="sr-img-hero-circle" id="sr-img-hero-circle">
                     <img id="img-preview-img" class="sr-img-hero-img" alt="Recipe photo preview" draggable="false" decoding="async">
