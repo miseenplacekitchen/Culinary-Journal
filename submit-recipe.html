@@ -68,6 +68,14 @@
     }
     .intro-counter.amber { color: rgb(from var(--warn) r g b / 0.95); }
     .intro-counter.red   { color: var(--danger); font-weight: 600; }
+    .paste-counter {
+      font-family: "DM Sans", sans-serif;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: right;
+      margin-top: 4px;
+    }
+    .paste-counter.warn { color: rgb(from var(--warn) r g b / 0.95); }
     /* Source URL nudge — when user picks "From Somewhere Else" / "Scanned",
        gently pulse the URL input so they don't forget to add the credit link. */
     @keyframes source-url-pulse {
@@ -1121,7 +1129,8 @@
           recipe websites (auto-detects structured data), ingredients listed one per line, steps clearly numbered or sectioned.<br>
           <span style="opacity:0.7">Instagram and TikTok links try to pull the caption first. If there is no recipe structure, enter the dish name and use <strong>Generate starter</strong>.</span>
         </div>
-        <textarea class="sr-input sr-paste-textarea" id="paste-input" maxlength="20000" placeholder="Paste a recipe here. Works best with structured text — ingredients one per line, steps numbered. For messier content, paste and correct what the parser misses."></textarea>
+        <textarea class="sr-input sr-paste-textarea" id="paste-input" maxlength="50000" placeholder="Paste a recipe here — full length, no word limit. Works best with ingredients one per line and numbered steps." oninput="updatePasteCounter()"></textarea>
+        <div class="paste-counter" id="paste-counter"><span id="paste-chars">0</span> characters (up to 50,000 — not the 100-word Introduction below)</div>
       </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button class="sr-parse-btn" onclick="parseRecipe()">
@@ -1174,7 +1183,7 @@
           <div class="sr-hint" style="margin: -4px 0 8px">
             <span class="sr-i">i</span> Describe the dish itself in no more than 100 words. Include details such as its origin, flavour profile, typical serving style, and any distinctive characteristics. Please don&rsquo;t include personal stories or memories in this section. Personal experiences can be placed under &ldquo;Personal Notes&rdquo; below.
           </div>
-          <textarea class="sr-input sr-textarea" id="introduction" maxlength="800"
+          <textarea class="sr-input sr-textarea" id="introduction"
             placeholder="e.g. White coconut chutney is a traditional South Indian condiment commonly served with idli, dosa, vada, and various breakfast preparations. Known for its mild flavour, creamy texture, and pale appearance, this chutney emphasizes fresh coconut and restrained seasoning."
             oninput="updateIntroCounter()"></textarea>
           <div class="intro-counter" id="intro-counter"><span id="intro-words">0</span> / 100 words</div>
@@ -1956,6 +1965,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   try { updateImgRingHandle(); } catch(e) { console.error(e); }
   try { setupSourceToggle(); } catch(e) { console.error(e); }
   try { setupAutoSave(); } catch(e) { console.error(e); }
+  try { updatePasteCounter(); updateIntroCounter(); } catch(e) { console.error(e); }
 });
 
 // updateNav() removed — nav-init.js handles navigation
@@ -5610,7 +5620,7 @@ function parseRecipe() {
 
   if (core && core.segmentRecipeImportText) {
     const seg = core.segmentRecipeImportText(raw);
-    if (seg.normalizedText && el) el.value = seg.normalizedText;
+    /* Keep the contributor's full paste — do not replace with the shorter structured extract. */
     if (seg.meta) applyBlogMetaToForm(seg.meta);
     populateAuxiliaryFromSections({ notes: seg.notes || [], tips: seg.tips || [], serves: seg.serves || [] });
     if (seg.hasContent && !(seg.ingCount === 0 && seg.methCount === 0)) {
@@ -5620,7 +5630,7 @@ function parseRecipe() {
   }
 
   const text = preprocessRecipeText(raw);
-  if (el && el.value !== text) el.value = text;
+  /* Legacy path: keep original paste text in the box; parser uses preprocessed copy only. */
 
   // ── Legacy line parser (unusual layouts only) ─────────────────────────────
   const stripBullet = s => s.replace(/^[\u2022\u00b7\u2023\u2043*\-\u2013\u2014\u25AA\u25CF\u25CB\u2713\u2714]\s+/, '').trim();
@@ -8045,14 +8055,31 @@ function updateTotalTime() {
   if (el) el.value = totalMins > 0 ? fmtTime(totalMins) : '';
 }
 
+// ── PASTE + INTRODUCTION COUNTERS ─────────────────────────────────────────
+function updatePasteCounter() {
+  var el = document.getElementById('paste-input');
+  var cnt = document.getElementById('paste-chars');
+  var wrap = document.getElementById('paste-counter');
+  if (!el || !cnt) return;
+  var len = (el.value || '').length;
+  cnt.textContent = len.toLocaleString();
+  if (wrap) {
+    wrap.className = 'paste-counter' + (len > 45000 ? ' warn' : '');
+    wrap.title = len > 45000 ? 'Approaching the 50,000 character limit' : '';
+  }
+}
+
 // ── INTRODUCTION WORD COUNTER ─────────────────────────────────────────────
 function updateIntroCounter() {
   const el  = document.getElementById('introduction');
   const cnt = document.getElementById('intro-words');
+  const wrap = document.getElementById('intro-counter');
   if (!el || !cnt) return;
   const words = (el.value || '').trim().split(/\s+/).filter(Boolean).length;
-  cnt.textContent = words + ' / 100 words';
-  cnt.style.color = words > 100 ? 'var(--danger)' : 'var(--text-mid)';
+  cnt.textContent = words;
+  if (wrap) {
+    wrap.className = 'intro-counter' + (words > 100 ? ' red' : words >= 80 ? ' amber' : '');
+  }
 }
 
 // ── DUPLICATE RECIPE NAME CHECK ───────────────────────────────────────────
