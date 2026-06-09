@@ -179,9 +179,10 @@ function buildSectionNav() {
 
    Signed IN  →  [ @username ▾ ]  opens a dropdown:
                    • header (full name + @username)
-                   • My Profile
+                   • Admin Panel (admins only)
                    • Submit a Recipe
-                   • Browse Recipes
+                   • Submit Library Profile (admins only)
+                   • Notifications / My Profile
                    • ─────────────
                    • Sign Out
    Signed OUT →  [ Sign In ]  [ Hub ▾ ]   Hub opens:
@@ -253,6 +254,49 @@ function buildSectionNav() {
 
   function item(href, icon, label) {
     return '<a class="cj-menu-item" role="menuitem" href="' + href + '">' + icon + '<span>' + label + '</span></a>';
+  }
+
+  var ADMIN_EMAIL = 'miseenplacekitchen.official@gmail.com';
+
+  function isNavAdmin(profile, session) {
+    if (profile && profile.is_admin === true) return true;
+    var email = (profile && profile.email) || (session && session.user && session.user.email) || '';
+    return String(email).toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  }
+
+  function buildLoggedInUserMenuHtml(profile, session) {
+    var username = (session && session.username) || (profile && profile.username) || '';
+    var fullName = (profile && (profile.full_name || profile.name)) || '';
+    var isAdmin = isNavAdmin(profile, session);
+    return (
+      '<div class="cj-menu-wrap" id="cj-user">' +
+        '<button class="cj-trigger" id="cj-user-trigger" type="button" aria-haspopup="true" aria-expanded="false">' +
+          '<span class="cj-handle">@' + escapeHtml(username || 'me') + '</span>' + IC.chevron +
+        '</button>' +
+        '<div class="cj-menu" role="menu" aria-label="Account menu">' +
+          (fullName || username ?
+            '<div class="cj-menu-head">' +
+              (fullName ? '<div class="cj-menu-name">' + escapeHtml(fullName) + '</div>' : '') +
+              '<div class="cj-menu-handle">@' + escapeHtml(username || 'me') + '</div>' +
+            '</div><div class="cj-menu-sep"></div>' : '') +
+          (isAdmin ? item('dashboard.html', IC.dashboard, 'Admin Panel') : '') +
+          item('submit-recipe.html', IC.submit, 'Submit a Recipe') +
+          (isAdmin ? item('library-submit.html', IC.drafts, '📚 Submit Library Profile') : '') +
+          '<div class="cj-menu-sep"></div>' +
+          item('notifications.html', IC.bell, 'Notifications') +
+          item('profile.html',       IC.profile, 'My Profile') +
+          '<div class="cj-menu-sep"></div>' +
+          '<button class="cj-menu-item cj-menu-danger" id="cj-signout" type="button" role="menuitem">' + IC.signout + '<span>Sign Out</span></button>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function buildLoggedInNavHtml(profile, session) {
+    return (
+      '<button class="cj-notif-bell" id="nav-notif-btn" onclick="toggleNotifPanel()" title="Notifications" style="position:relative;background:none;border:1px solid var(--border);border-radius:8px;width:34px;height:34px;cursor:pointer;color:var(--text-mid);font-size:16px;display:inline-flex;align-items:center;justify-content:center;margin-right:8px;transition:color 0.15s,border-color 0.15s">🔔<span id="nav-notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--accent);color:#0f1117;border-radius:10px;font-size:10px;font-weight:700;padding:1px 5px;font-family:DM Sans,sans-serif;min-width:16px;text-align:center"></span></button>' +
+      buildLoggedInUserMenuHtml(profile, session)
+    );
   }
 
 
@@ -370,34 +414,10 @@ function buildSectionNav() {
     try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
     try { profile = JSON.parse(localStorage.getItem('tcj_profile') || '{}') || {}; } catch (_) {}
     var loggedIn = !!(session && session.access_token);
-    var username = (session && session.username) || profile.username || '';
-    var fullName = profile.full_name || profile.name || '';
-    var isAdmin  = !!(loggedIn && profile.is_admin);
 
     var html;
     if (loggedIn) {
-      html =
-        '<button class="cj-notif-bell" id="nav-notif-btn" onclick="toggleNotifPanel()" title="Notifications" style="position:relative;background:none;border:1px solid var(--border);border-radius:8px;width:34px;height:34px;cursor:pointer;color:var(--text-mid);font-size:16px;display:inline-flex;align-items:center;justify-content:center;margin-right:8px;transition:color 0.15s,border-color 0.15s">🔔<span id="nav-notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--accent);color:#0f1117;border-radius:10px;font-size:10px;font-weight:700;padding:1px 5px;font-family:DM Sans,sans-serif;min-width:16px;text-align:center"></span></button>' +
-        '<div class="cj-menu-wrap" id="cj-user">' +
-          '<button class="cj-trigger" id="cj-user-trigger" type="button" aria-haspopup="true" aria-expanded="false">' +
-            '<span class="cj-handle">@' + escapeHtml(username || 'me') + '</span>' + IC.chevron +
-          '</button>' +
-          '<div class="cj-menu" role="menu" aria-label="Account menu">' +
-            (fullName || username ?
-              '<div class="cj-menu-head">' +
-                (fullName ? '<div class="cj-menu-name">' + escapeHtml(fullName) + '</div>' : '') +
-                '<div class="cj-menu-handle">@' + escapeHtml(username || 'me') + '</div>' +
-              '</div><div class="cj-menu-sep"></div>' : '') +
-            (isAdmin ? item('dashboard.html', IC.dashboard, 'Admin Panel') : '') +
-            item('submit-recipe.html', IC.submit, 'Submit a Recipe') +
-            (isAdmin ? item('library-submit.html', IC.drafts, '📚 Submit Library Profile') : '') +
-            '<div class="cj-menu-sep"></div>' +
-            item('notifications.html', IC.bell, 'Notifications') +
-            item('profile.html',       IC.profile, 'My Profile') +
-            '<div class="cj-menu-sep"></div>' +
-            '<button class="cj-menu-item cj-menu-danger" id="cj-signout" type="button" role="menuitem">' + IC.signout + '<span>Sign Out</span></button>' +
-          '</div>' +
-        '</div>';
+      html = buildLoggedInNavHtml(profile, session);
     } else {
       html =
         '<a href="login.html" class="cj-trigger cj-primary">Sign In</a>' +
@@ -440,12 +460,10 @@ function buildSectionNav() {
         session.username = p.username;
         localStorage.setItem('tcj_session', JSON.stringify(session));
       }
-      var trigger = host.querySelector('#cj-user-trigger .cj-handle');
-      if (trigger) trigger.textContent = '@' + (p.username || session.username || 'me');
-      var menuName = host.querySelector('.cj-menu-name');
-      if (menuName && p.full_name) menuName.textContent = p.full_name;
-      var menuHandle = host.querySelector('.cj-menu-handle');
-      if (menuHandle) menuHandle.textContent = '@' + (p.username || session.username || 'me');
+      // Rebuild dropdown so Admin Panel reflects fresh server-side is_admin
+      host.innerHTML = buildLoggedInNavHtml(p, session);
+      wire(host);
+      if (typeof loadNotifCount === 'function') loadNotifCount();
     }).catch(function(){});
   }
 
