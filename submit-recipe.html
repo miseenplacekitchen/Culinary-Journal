@@ -450,7 +450,7 @@
     /* ── INGREDIENT SECTIONS ─────────────────── */
     .ing-section { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
     .ing-section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-    .ing-section-name { flex: 1; font-family: "DM Sans", sans-serif; font-size: 14px; font-weight: 500; color: var(--text-high); background: transparent; border: none; border-bottom: 1px solid var(--border); padding: 4px 0; outline: none; }
+    .ing-section-name { flex: 1; font-family: "DM Sans", sans-serif; font-size: 14px; font-weight: 500; text-transform: uppercase; color: var(--text-high); background: transparent; border: none; border-bottom: 1px solid var(--border); padding: 4px 0; outline: none; }
     .ing-section-name:focus { border-bottom-color: var(--accent); }
     .ing-section-name::placeholder { color: var(--text-high); font-weight: 400; }
     .btn-remove-section { background: none; border: none; color: var(--text-high); cursor: pointer; font-size: 18px; padding: 0; line-height: 1; opacity: 0.5; transition: opacity 0.2s; }
@@ -559,6 +559,7 @@
     }
     .ing-autocomplete-item:last-child { border-bottom: none; }
     .ing-autocomplete-item:hover { background: rgb(from var(--accent) r g b / 0.22); color: var(--text-high); }
+    .ing-autocomplete-item.ing-autocomplete-custom { border-bottom: 1px solid var(--border); font-style: italic; color: var(--accent); }
     .ing-autocomplete-cat { font-size: 11px; color: var(--text-mid); letter-spacing: 0.02em; }
     .ing-unknown { border-color: #e09955 !important; }
     .ing-unknown-badge { font-size: 10px; color: #e09955; margin-top: 2px; display: block; }
@@ -570,8 +571,9 @@
     .method-section-name:focus { border-bottom-color: var(--accent); }
     .method-section-name::placeholder { color: var(--text-high); font-weight: 400; }
     .step-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; padding-left: 12px; }
+    .step-content-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
     .step-number { font-family: "Cormorant Garamond", serif; font-size: 18px; color: var(--accent); min-width: 24px; padding-top: 6px; text-align: center; }
-    .step-input { flex: 1; font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high); background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; resize: vertical; min-height: 60px; box-sizing: border-box; outline: none; line-height: 1.6; }
+    .step-input { width: 100%; font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high); background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; resize: vertical; min-height: 80px; max-height: 520px; box-sizing: border-box; outline: none; line-height: 1.6; overflow: auto; }
     .step-input:focus { border-color: var(--accent); }
     .step-input::placeholder { color: var(--text-high); opacity: 0.6; }
     .btn-add-step { display: flex; align-items: center; gap: 6px; background: none; border: 1px dashed var(--border); border-radius: 6px; padding: 7px 14px; font-family: "DM Sans", sans-serif; font-size: 12px; color: var(--text-high); cursor: pointer; transition: all 0.2s; margin-top: 8px; }
@@ -2056,6 +2058,18 @@ function findIngredientInDbExact(query) {
   }) || null;
 }
 
+function ingredientExactMatchInPool(query, pool) {
+  if (!query || !Array.isArray(pool) || !pool.length) return null;
+  var lc = ingDbNorm(query);
+  if (!lc || ING_JUNK_NAMES.test(lc)) return null;
+  return pool.find(function(i) {
+    if (ingNameMatches(ingDbNorm(ingDbName(i)), lc)) return true;
+    var aka = ((i['Also Known As'] || i.also_known_as || '') + '').toLowerCase();
+    return aka.split(/[,;/]/).map(function(s) { return s.trim(); }).filter(Boolean)
+      .some(function(a) { return ingNameMatches(a, lc); });
+  }) || null;
+}
+
 function findIngredientInDb(query) {
   if (!query || !Array.isArray(allIngredients) || !allIngredients.length) return null;
   var lc = ingDbNorm(query);
@@ -2067,16 +2081,16 @@ function findIngredientInDb(query) {
   var candidates = allIngredients.filter(function(i) {
     var n = ingDbNorm(ingDbName(i));
     if (!n || n.length < 4) return false;
-    if (n.startsWith(lc) && lc.length >= 6) return true;
-    if (lc.startsWith(n) && n.length >= 6) return true;
-    if (qWords.length >= 2 && qWords.every(function(w) { return n.indexOf(w) >= 0; })) return true;
+    if (lc === n) return true;
+    if (lc.indexOf(n) >= 0 && n.length >= 6) return true;
+    if (qWords.length >= 2 && qWords.every(function(w) { return n.indexOf(w) >= 0; })) {
+      return n.split(/\s+/).filter(Boolean).length === qWords.length;
+    }
     return false;
   });
   if (!candidates.length) return null;
   candidates.sort(function(a, b) {
-    var na = ingDbNorm(ingDbName(a)), nb = ingDbNorm(ingDbName(b));
-    if (na.startsWith(lc) !== nb.startsWith(lc)) return na.startsWith(lc) ? -1 : 1;
-    return na.length - nb.length;
+    return ingDbNorm(ingDbName(a)).length - ingDbNorm(ingDbName(b)).length;
   });
   return candidates[0];
 }
@@ -2145,8 +2159,11 @@ function applyIngredientDbMatch(row, opts) {
 
   var primaryMatch = findPrimaryIngredientInDb(parsedName);
   var exactMatch = findIngredientInDbExact(parsedName);
-  var match = exactMatch || (parsedName.length >= 5 && !isFragmentIngredientName(parsedName)
-    ? findIngredientInDb(parsedName) : null);
+  var match = exactMatch;
+  if (!match && opts.allowFuzzy) {
+    match = (parsedName.length >= 5 && !isFragmentIngredientName(parsedName))
+      ? findIngredientInDb(parsedName) : null;
+  }
   if (!match) return false;
 
   var canon = ingDbName(match);
@@ -2519,6 +2536,29 @@ function setupSourceToggle() {
   }
 }
 
+function formatIngredientSectionName(name) {
+  var t = String(name || '').trim();
+  return t ? t.toUpperCase() : 'INGREDIENTS';
+}
+
+function formatProcedureSectionName(name) {
+  var t = String(name || '').trim();
+  return t ? t.toUpperCase() : 'DIRECTIONS';
+}
+
+function enforceIngredientSectionCaps(input) {
+  if (!input) return;
+  var pos = input.selectionStart;
+  input.value = input.value.toUpperCase();
+  try { input.setSelectionRange(pos, pos); } catch(_) {}
+}
+
+function autoGrowStepTextarea(ta) {
+  if (!ta) return;
+  ta.style.height = 'auto';
+  ta.style.height = Math.max(80, Math.min(520, ta.scrollHeight)) + 'px';
+}
+
 // ── ADD INGREDIENT SECTION ────────────────────────────
 function addIngSection(name = '') {
   ingSectionCount++;
@@ -2529,7 +2569,7 @@ function addIngSection(name = '') {
   div.innerHTML = `
     <div class="ing-section-header">
       <span class="section-drag-handle" title="Drag to reorder section">⠿</span>
-      <input class="ing-section-name" type="text" maxlength="100" placeholder="Section name — e.g. For the Marinade" value="${name}">
+      <input class="ing-section-name" type="text" maxlength="100" placeholder="Section name — e.g. FOR THE MARINADE" value="${formatIngredientSectionName(name)}" oninput="enforceIngredientSectionCaps(this)">
       <button class="btn-remove-section" onclick="this.closest('.ing-section').remove()" title="Remove section">×</button>
     </div>
     <div class="ing-col-headers">
@@ -2565,7 +2605,7 @@ function addIngRow(container, qty='', unit='', name='', note='', cat='') {
     <span class="drag-handle" title="Drag to reorder">⠿</span>
     <input class="ing-input" type="text" maxlength="20" placeholder="½" oninput="autoFraction(this)" onblur="autoFraction(this)" value="${esc(qty)}">
     <div class="ing-unit-wrap">
-      <div class="ing-unit-picker" style="${!unit||UNITS.includes(unit)?'':'display:none'}" onclick="toggleUnitPicker(this,event)" title="Pick a unit">
+      <div class="ing-unit-picker" tabindex="0" style="${!unit||UNITS.includes(unit)?'':'display:none'}" onclick="toggleUnitPicker(this,event)" onkeydown="unitPickerKeydown(this,event)" title="Pick a unit — Delete to clear">
         <span class="ing-unit-picker-val${unit&&UNITS.includes(unit)?'':' placeholder'}" data-value="${UNITS.includes(unit)?esc(unit):''}">${unit&&UNITS.includes(unit)?esc(unit):'— unit —'}</span>
         <span class="ing-unit-arrow">▾</span>
       </div>
@@ -2573,7 +2613,7 @@ function addIngRow(container, qty='', unit='', name='', note='', cat='') {
       <input class="ing-unit-custom" type="text" maxlength="30" placeholder="type unit…"
         value="${!unit||UNITS.includes(unit)?'':esc(unit)}"
         style="${!unit||UNITS.includes(unit)?'display:none':''}"
-        oninput="validateUnit(this)" onblur="switchToUnitSelect(this)">
+        oninput="validateUnit(this)" onkeydown="unitCustomKeydown(this,event)" onblur="switchToUnitSelect(this)">
       <span class="ing-unknown-unit-badge" style="display:none" title="Not in standard list — admin will review">⚠</span>
     </div>
     <div class="ing-name-wrap">
@@ -2596,7 +2636,7 @@ function addIngRow(container, qty='', unit='', name='', note='', cat='') {
   // against the DB right away so unknown ones show the orange badge.
   if (name) {
     const input = row.querySelector('.ing-name-input');
-    try { applyIngredientDbMatch(row, { parsedNote: note || '' }); } catch(_) {}
+    try { applyIngredientDbMatch(row, { parsedNote: note || '', allowFuzzy: true }); } catch(_) {}
     try { if (!findIngredientInDbExact(input.value)) validateIngredient(input); } catch(_) {}
   }
   if (unit) {
@@ -2642,7 +2682,8 @@ function onCategoryChange(sel) {
 }
 
 function searchIngredients(input) {
-  const query = input.value.trim().toLowerCase();
+  const typed = input.value.trim();
+  const query = typed.toLowerCase();
   const ac = input.nextElementSibling;
   const badge = ac.nextElementSibling;
   const col = 'Ingredient Name';
@@ -2668,25 +2709,41 @@ function searchIngredients(input) {
     });
   }
 
+  const exactMatch = query.length >= 1 ? ingredientExactMatchInPool(typed, pool) : null;
+
   if (matches.length === 0) {
     // "Unknown ingredient" only applies once the user has actually typed.
     ac.style.display = 'none';
     if (query.length >= 1) { badge.style.display = 'block'; input.classList.add('ing-unknown'); }
-    else { badge.style.display = 'none'; }
+    else { badge.style.display = 'none'; input.classList.remove('ing-unknown'); }
     return;
   }
 
-  badge.style.display = 'none';
-  input.classList.remove('ing-unknown');
-  ac.innerHTML = matches.map(m => {
+  if (exactMatch) {
+    badge.style.display = 'none';
+    input.classList.remove('ing-unknown');
+  } else if (query.length >= 1) {
+    badge.style.display = 'block';
+    input.classList.add('ing-unknown');
+  } else {
+    badge.style.display = 'none';
+    input.classList.remove('ing-unknown');
+  }
+
+  var html = '';
+  if (query.length >= 1 && !exactMatch) {
+    html += `<div class="ing-autocomplete-item ing-autocomplete-custom" data-name="${escIng(typed)}" onmousedown="selectIngredientEl(this)">
+      Use "${escIng(typed)}" as new ingredient
+    </div>`;
+  }
+  html += matches.map(m => {
     const name = m[col] || m.ingredient_name || '';
     const cat  = m['Category'] || m.category || '';
-    // Use a data attribute (not a string baked into onmousedown) so names
-    // containing apostrophes — e.g. "Confectioner's Sugar" — never break.
     return `<div class="ing-autocomplete-item" data-name="${escIng(name)}" onmousedown="selectIngredientEl(this)">
       ${escIng(name)} <span class="ing-autocomplete-cat">${escIng(cat)}</span>
     </div>`;
   }).join('');
+  ac.innerHTML = html;
   ac.style.display = 'block';
 }
 
@@ -2697,11 +2754,17 @@ function selectIngredientEl(el) {
 
 function selectIngredient(item, name) {
   const wrap = item.closest('.ing-name-wrap');
-  wrap.querySelector('.ing-name-input').value = name;
+  const input = wrap.querySelector('.ing-name-input');
+  input.value = name;
   wrap.querySelector('.ing-autocomplete').style.display = 'none';
   try {
     const row = wrap.closest('.ing-row');
-    applyIngredientDbMatch(row);
+    var isCustom = item.classList && item.classList.contains('ing-autocomplete-custom');
+    if (isCustom) {
+      validateIngredient(input);
+    } else {
+      applyIngredientDbMatch(row);
+    }
     const form = document.getElementById('main-form');
     if (form) form.dispatchEvent(new Event('input', { bubbles: true }));
   } catch(_) {}
@@ -2756,14 +2819,14 @@ function addStep(container, stepData = '') {
   row.innerHTML = `
     <span class="drag-handle" title="Drag to reorder">⠿</span>
     <span class="step-number">${stepNum}</span>
-    <div class="step-content-wrap" style="flex:1;display:flex;flex-direction:column;gap:6px">
+    <div class="step-content-wrap">
       <input class="step-title-input" type="text" maxlength="80"
         placeholder="Step title (optional) — e.g. Pack Mangoes"
         value="${stepTitle ? stepTitle.replace(/"/g,'&quot;') : ''}"
         style="font-family:'DM Sans',sans-serif;font-size:12px;font-style:italic;
           color:var(--text-high);background:var(--text-ghost);border:1px solid var(--border);
           border-radius:6px;padding:6px 10px;outline:none;transition:border-color 0.2s">
-      <textarea class="step-input" maxlength="1500" placeholder="Describe this step...">${stepBody}</textarea>
+      <textarea class="step-input" maxlength="1500" placeholder="Describe this step..." oninput="autoGrowStepTextarea(this)">${stepBody}</textarea>
     </div>
     <div class="ing-move-wrap" style="position:relative;margin-top:8px">
       <button class="btn-move-row" onclick="toggleMoveMenu(this,'method')" title="Move to another section">⇄</button>
@@ -2772,6 +2835,7 @@ function addStep(container, stepData = '') {
     <button class="btn-remove-row" onclick="removeStep(this)" style="margin-top:8px">×</button>
   `;
   container.appendChild(row);
+  autoGrowStepTextarea(row.querySelector('.step-input'));
   renumberSteps(container);
 }
 
@@ -5428,19 +5492,19 @@ function buildIngSecsFromImportLines(lines) {
   (lines || []).forEach(function(line) {
     var p = splitIngredientLine(line);
     if (p && p.header) {
-      cur = { name: p.name, items: [] };
+      cur = { name: formatIngredientSectionName(p.name), items: [] };
       ingSecs.push(cur);
     } else if (p && (p.name || p.qty || p.unit)) {
-      if (!cur) { cur = { name: 'Ingredients', items: [] }; ingSecs.push(cur); }
+      if (!cur) { cur = { name: 'INGREDIENTS', items: [] }; ingSecs.push(cur); }
       cur.items.push({
         qty: p.qty || '', unit: p.unit || '', name: p.name || '', note: p.note || ''
       });
     } else if (line && line.length > 1 && !/^ingredients?$/i.test(line)) {
-      if (!cur) { cur = { name: 'Ingredients', items: [] }; ingSecs.push(cur); }
+      if (!cur) { cur = { name: 'INGREDIENTS', items: [] }; ingSecs.push(cur); }
       cur.items.push({ qty: '', unit: '', name: line, note: '' });
     }
   });
-  if (!ingSecs.length) ingSecs.push({ name: 'Ingredients', items: [] });
+  if (!ingSecs.length) ingSecs.push({ name: 'INGREDIENTS', items: [] });
   return ingSecs;
 }
 
@@ -5554,7 +5618,7 @@ function finalizeParsedRecipe(ctx) {
           return;
         }
         addIngRow(c, item.qty, item.unit, item.name, item.note || '', '');
-        try { applyIngredientDbMatch(c.lastElementChild, { parsedNote: item.note || '' }); } catch(_) {}
+        try { applyIngredientDbMatch(c.lastElementChild, { parsedNote: item.note || '', allowFuzzy: true }); } catch(_) {}
         ingCount++;
       });
     });
@@ -5691,7 +5755,7 @@ function parseRecipe() {
 
   const startIngSection = (name) => {
     pushIng();
-    curIng = { name: name || 'Ingredients', items: [] };
+    curIng = { name: formatIngredientSectionName(name || 'Ingredients'), items: [] };
   };
   const startMethSection = (name) => {
     pushMeth();
@@ -6598,15 +6662,55 @@ function initSectionSorting() {
 
 
 // ── UNIT FIELD — custom dropdown matching ingredient autocomplete ─────────────
+function clearUnitWrap(wrap) {
+  if (!wrap) return;
+  var picker = wrap.querySelector('.ing-unit-picker');
+  var custom = wrap.querySelector('.ing-unit-custom');
+  var valSpan = wrap.querySelector('.ing-unit-picker-val');
+  var badge = wrap.querySelector('.ing-unknown-unit-badge');
+  var dropdown = wrap.querySelector('.ing-unit-dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+  if (picker) { picker.style.display = ''; picker.classList.remove('open'); }
+  if (custom) { custom.style.display = 'none'; custom.value = ''; }
+  if (valSpan) {
+    valSpan.textContent = '\u2014 unit \u2014';
+    valSpan.dataset.value = '';
+    valSpan.classList.add('placeholder');
+  }
+  if (badge) badge.style.display = 'none';
+  if (dropdown) {
+    dropdown.querySelectorAll('.ing-unit-option').forEach(function(o) {
+      o.classList.remove('selected');
+    });
+  }
+}
+
+function unitPickerKeydown(el, e) {
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    clearUnitWrap(el.closest('.ing-unit-wrap'));
+    e.preventDefault();
+  } else if (e.key === 'Enter' || e.key === ' ') {
+    toggleUnitPicker(el, e);
+    e.preventDefault();
+  }
+}
+
+function unitCustomKeydown(el, e) {
+  if ((e.key === 'Delete' || e.key === 'Backspace') && !el.value) {
+    clearUnitWrap(el.closest('.ing-unit-wrap'));
+    e.preventDefault();
+  }
+}
+
 function unitDropdownHtml(selected) {
-  var items = '';
+  var items = '<div class="ing-unit-option" data-value="" onmousedown="pickUnit(this,event)">\u2014 clear \u2014</div>';
   UNITS.forEach(function(u) {
     if (!u) return;
     var isSel = u === selected;
     items += '<div class="ing-unit-option' + (isSel ? ' selected' : '') +
-             '" data-value="' + u + '" onmousedown="pickUnit(this)">' + u + '</div>';
+             '" data-value="' + u + '" onmousedown="pickUnit(this,event)">' + u + '</div>';
   });
-  items += '<div class="ing-unit-option other-opt" data-value="__other__" onmousedown="pickUnit(this)">Other\u2026</div>';
+  items += '<div class="ing-unit-option other-opt" data-value="__other__" onmousedown="pickUnit(this,event)">Other\u2026</div>';
   return items;
 }
 
@@ -6634,7 +6738,8 @@ function closeAllUnitDropdowns() {
   });
 }
 
-function pickUnit(option) {
+function pickUnit(option, e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
   var wrap = option.closest('.ing-unit-wrap');
   var picker   = wrap.querySelector('.ing-unit-picker');
   var valSpan  = picker.querySelector('.ing-unit-picker-val');
@@ -6646,11 +6751,16 @@ function pickUnit(option) {
   dropdown.style.display = 'none';
   picker.classList.remove('open');
 
+  if (val === '') {
+    clearUnitWrap(wrap);
+    return;
+  }
+
   if (val === '__other__') {
     picker.style.display = 'none';
     custom.style.display = '';
     custom.value = '';
-    custom.focus();
+    setTimeout(function() { custom.focus(); }, 0);
   } else {
     // Mark selected in list
     dropdown.querySelectorAll('.ing-unit-option').forEach(function(o) {
@@ -7250,6 +7360,7 @@ function restoreDraft(raw) {
           });
         }
       } catch(e) { console.warn('Draft restore - method:', e); }
+      document.querySelectorAll('.step-input').forEach(function(ta) { autoGrowStepTextarea(ta); });
     }, 400);
   }
 }
