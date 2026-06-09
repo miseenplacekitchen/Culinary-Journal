@@ -1124,19 +1124,16 @@
 
       <div class="sr-field">
         <label class="sr-label">Recipe URL <span style="font-weight:400;text-transform:none;color:var(--text-muted)">(paste a link — we can auto-import from most recipe websites)</span></label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input class="sr-input" type="url" id="source-url-input" placeholder="https://www.allrecipes.com/recipe/..." oninput="detectUrlPaste(this.value)" style="font-size:13px;flex:1">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input class="sr-input" type="url" id="source-url-input" placeholder="https://www.allrecipes.com/reel/..." oninput="detectUrlPaste(this.value)" style="font-size:13px;flex:1;min-width:200px">
           <button type="button" class="sr-parse-btn" style="white-space:nowrap;padding:9px 16px;font-size:12px" onclick="importFromUrl()">⬇ Import</button>
+          <button type="button" id="btn-google-ai-mode" class="sr-rewrite-btn" style="display:none;white-space:nowrap;margin-top:0;padding:9px 14px;font-size:12px" onclick="openGoogleAiModeWithRecipePrompt(event)" title="Open Google AI Mode with a recipe prompt for this link">◇ Google AI Mode</button>
         </div>
         <div id="url-detect-msg" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-muted);margin-top:4px;display:none"></div>
         <div id="url-import-status" style="font-family:'DM Sans',sans-serif;font-size:12px;margin-top:6px;display:none"></div>
-        <div id="sr-video-recipe-help" class="sr-video-recipe-help" style="display:none" role="region" aria-label="Video-only recipe help">
-          <span>Recipe only in the video? Open Google AI Mode with your link, then paste the result into the box below and <strong>Parse Recipe</strong>.</span>
-          <div class="sr-video-recipe-help-actions">
-            <button type="button" class="sr-video-recipe-help-btn" onclick="openGoogleAiModeWithRecipePrompt(event)">Open Google AI Mode</button>
-          </div>
+        <div id="sr-video-recipe-help" class="sr-video-recipe-help" style="display:none" role="region" aria-label="Google AI Mode prompt">
           <details>
-            <summary>Copy prompt if it doesn&rsquo;t appear in Google</summary>
+            <summary>Copy prompt if it doesn&rsquo;t appear in Google AI Mode</summary>
             <textarea class="sr-ai-prompt-text" id="google-ai-prompt-text" readonly rows="8" onclick="this.select()"></textarea>
           </details>
         </div>
@@ -1147,7 +1144,7 @@
         <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.6">
           <strong style="color:var(--text-high)">Works best with:</strong>
           recipe websites (auto-detects structured data), ingredients listed one per line, steps clearly numbered or sectioned.<br>
-          <span style="opacity:0.7">Instagram and TikTok: paste the reel URL above and click <strong>Import</strong> to pull the caption, then <strong>Parse Recipe</strong> (free, in-browser — any language). If the recipe is only in the video, use <strong>Open Google AI Mode</strong> under the URL field.</span>
+          <span style="opacity:0.7">Instagram and TikTok: paste the reel URL above, click <strong>Import</strong> for the caption, or <strong>Google AI Mode</strong> if the recipe is only in the video — then paste the result here and <strong>Parse Recipe</strong>.</span>
         </div>
         <textarea class="sr-input sr-paste-textarea" id="paste-input" maxlength="50000" placeholder="Paste a recipe here — full length, no word limit. Works best with ingredients one per line and numbered steps." oninput="updatePasteCounter()"></textarea>
         <div class="paste-counter" id="paste-counter"><span id="paste-chars">0</span> characters (up to 50,000 — not the 100-word Introduction below)</div>
@@ -1980,6 +1977,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   try { setupSourceToggle(); } catch(e) { console.error(e); }
   try { setupAutoSave(); } catch(e) { console.error(e); }
   try { updatePasteCounter(); updateIntroCounter(); } catch(e) { console.error(e); }
+  try {
+    var urlInput = document.getElementById('source-url-input');
+    if (urlInput && urlInput.value.trim()) detectUrlPaste(urlInput.value.trim());
+  } catch(e) { console.error(e); }
 });
 
 // updateNav() removed — nav-init.js handles navigation
@@ -4687,13 +4688,21 @@ async function applySocialCaptionImport(opts) {
       warnings: ['Social caption import — free parser only, no paid AI. Review all fields.']
     });
   }
-  var structured = opts.hasRecipeStructure || looksLikeStructuredRecipe(cleaned);
-  if (structured || cleaned.length >= 40) {
+  var isSocialMeta = (typeof RecipeImportCore !== 'undefined' && RecipeImportCore.looksLikeSocialMetadataCaption)
+    ? RecipeImportCore.looksLikeSocialMetadataCaption(cleaned)
+    : /\d[\d,.\s]*\s+likes?\b/i.test(cleaned) && !/\bingredients?\b/i.test(cleaned);
+  var structured = !isSocialMeta && (opts.hasRecipeStructure || looksLikeStructuredRecipe(cleaned));
+  if (structured) {
     showImportStatus(
       platform + ' caption imported — parsing now with the free in-browser parser (any language). Review and correct everything before submitting.',
       true
     );
     setTimeout(function() { parseRecipe(); }, 300);
+  } else if (cleaned.length >= 20 && !isSocialMeta) {
+    showImportStatus(
+      platform + ' text imported into the paste box — review it, edit if needed, then click Parse Recipe.',
+      null
+    );
   } else {
     maybeShowVideoRecipeHelp(opts.url || '', 'video-only');
     showImportStatus(
@@ -4875,26 +4884,52 @@ function expandPasteSection() {
   if (sec) sec.classList.remove('collapsed');
 }
 
+function clearImportUiState() {
+  var ids = ['url-detect-msg', 'url-import-status', 'scan-status', 'parse-result', 'import-confidence-banner', 'parse-tips', 'sr-msg'];
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (id === 'url-detect-msg' || id === 'url-import-status' || id === 'scan-status' || id === 'parse-result' || id === 'import-confidence-banner' || id === 'parse-tips' || id === 'sr-msg') {
+      el.style.display = 'none';
+    }
+  });
+  hideParseReviewNote();
+  window._lastParseConfidence = null;
+  window._parseDroppedIng = 0;
+  if (typeof TcjImportAudit !== 'undefined') TcjImportAudit.reset();
+}
+
+async function deleteDraftsFromDb() {
+  if (!session || !session.access_token || !session.user || !session.user.id) return;
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/recipe_drafts?user_id=eq.' + encodeURIComponent(session.user.id), {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token }
+    });
+  } catch(_) {}
+  _draftDbId = null;
+}
+
 function performStartFresh() {
+  _draftRestoring = true;
+  clearTimeout(_autoSaveTimer);
+  clearTimeout(_draftSyncTimer);
+  try { lsRemove(DRAFT_BACKUP_KEY); } catch(_) {}
   clearDraftStorage();
+  deleteDraftsFromDb();
   hideVideoRecipeHelp();
   var draftPrompt = document.getElementById('draft-restore-prompt');
   if (draftPrompt) draftPrompt.style.display = 'none';
   resetSubmitFormBasics();
+  clearImportUiState();
   expandPasteSection();
-  if (window.location.search.indexOf('new=1') >= 0) {
-    try { window.history.replaceState({}, document.title, window.location.pathname); } catch(_) {}
-  }
+  try { window.history.replaceState({}, document.title, window.location.pathname); } catch(_) {}
 }
 
 function startFreshImport() {
   if (!confirm('Discard the saved draft and start with a blank form? This cannot be undone unless you still have a backup.')) return;
-  if (window.location.search.indexOf('new=1') >= 0) {
-    performStartFresh();
-    showMsg('Form cleared — paste or import a new recipe.', 'info');
-    return;
-  }
-  window.location.href = 'submit-recipe.html?new=1';
+  performStartFresh();
+  showMsg('Form cleared — paste or import a new recipe.', 'info');
 }
 
 function flattenParseItems(ingSecs) {
@@ -6085,14 +6120,9 @@ function parseRecipe() {
 
 function clearPaste() {
   document.getElementById('paste-input').value = '';
-  document.getElementById('parse-result').style.display = 'none';
-  var confBanner = document.getElementById('import-confidence-banner');
-  if (confBanner) confBanner.style.display = 'none';
-  hideParseReviewNote();
-  document.getElementById('parse-tips').style.display = 'none';
   document.getElementById('source-url-input').value = '';
-  document.getElementById('url-detect-msg').style.display = 'none';
-  window._lastParseConfidence = null;
+  hideVideoRecipeHelp();
+  clearImportUiState();
 }
 
 // ── REWRITE PROCEDURE (local polish, no API) ─────────────────────────────
@@ -6530,16 +6560,20 @@ function refreshGoogleAiModePromptTip() {
   el.value = buildGoogleAiModeRecipePrompt(linkUrl);
 }
 
-function showVideoRecipeHelp() {
+function setGoogleAiModeUiVisible(visible) {
   var panel = document.getElementById('sr-video-recipe-help');
-  if (!panel) return;
-  panel.style.display = 'block';
-  refreshGoogleAiModePromptTip();
+  var btn = document.getElementById('btn-google-ai-mode');
+  if (btn) btn.style.display = visible ? 'inline-flex' : 'none';
+  if (panel) panel.style.display = visible ? 'block' : 'none';
+  if (visible) refreshGoogleAiModePromptTip();
+}
+
+function showVideoRecipeHelp() {
+  setGoogleAiModeUiVisible(true);
 }
 
 function hideVideoRecipeHelp() {
-  var panel = document.getElementById('sr-video-recipe-help');
-  if (panel) panel.style.display = 'none';
+  setGoogleAiModeUiVisible(false);
 }
 
 function openGoogleAiModeWithRecipePrompt(ev) {
@@ -6558,7 +6592,7 @@ function maybeShowVideoRecipeHelp(url, reason) {
   showVideoRecipeHelp();
   if (reason === 'video-only') {
     showImportStatus(
-      'Caption missing or too short — the recipe may only be in the video. Use Open Google AI Mode above, then paste the result here and Parse Recipe.',
+      'Caption missing or too short — the recipe may only be in the video. Click Google AI Mode beside Import, then paste the result here and Parse Recipe.',
       false
     );
   }
@@ -6571,8 +6605,6 @@ function detectUrlPaste(url) {
     hideVideoRecipeHelp();
     return;
   }
-  var help = document.getElementById('sr-video-recipe-help');
-  if (help && help.style.display !== 'none') refreshGoogleAiModePromptTip();
   // Auto-fill credit URL fields
   const creditUrl = document.getElementById('credit-url');
   if (creditUrl && !creditUrl.value) creditUrl.value = url;
@@ -6588,11 +6620,13 @@ function detectUrlPaste(url) {
   if (url.includes('youtube.com'))    platform = 'YouTube';
   if (url.includes('pinterest.com'))  platform = 'Pinterest';
   if (isSocialMediaUrl(url)) {
-    msgEl.textContent = '✓ ' + platform + ' link — click Import for the caption (free). If the recipe is only in the video, use Open Google AI Mode below.';
+    showVideoRecipeHelp();
+    msgEl.textContent = '✓ ' + platform + ' link — Import pulls the caption (free). Recipe only in the video? Click Google AI Mode beside Import.';
     msgEl.style.color = 'var(--accent)';
     msgEl.style.display = 'block';
     return;
   }
+  hideVideoRecipeHelp();
   msgEl.textContent = '✓ ' + platform + ' link detected — source will be credited. Click Import or paste text below.';
   msgEl.style.display = 'block';
   msgEl.style.color = 'var(--accent)';
@@ -7743,11 +7777,7 @@ async function bootstrapDraftOnLoad() {
     if (loaded) return { loaded: true, name: (document.getElementById('recipe-name') || {}).value || '' };
   }
   if (urlParams.get('new') === '1') {
-    clearDraftStorage();
-    hideVideoRecipeHelp();
-    var draftPrompt = document.getElementById('draft-restore-prompt');
-    if (draftPrompt) draftPrompt.style.display = 'none';
-    resetSubmitFormBasics();
+    performStartFresh();
     return { loaded: true, name: '' };
   }
   const draftId = urlParams.get('draft');
@@ -8178,7 +8208,7 @@ function resetSubmitFormBasics() {
   try {
     ['recipe-name','native-title','introduction','prep-time','cook-time','additional-time',
      'servings','cooking-notes','personal-notes','credit-name','credit-handle','credit-url',
-     'origin-locality','paste-input','source-url-input'].forEach(function(id) {
+     'origin-locality','paste-input','source-url-input','sr-subcategory-input','sr-division-input'].forEach(function(id) {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
@@ -8192,11 +8222,10 @@ function resetSubmitFormBasics() {
     if (methHost) { methHost.innerHTML = ''; methodSectionCount = 0; addMethodSection('PREP WORK'); addMethodSection('DIRECTIONS'); }
     if (typeof clearFilters === 'function') clearFilters();
     if (typeof removeImage === 'function') removeImage();
-    var parseResult = document.getElementById('parse-result');
-    if (parseResult) parseResult.style.display = 'none';
     var pasteSec = document.getElementById('section-paste');
     if (pasteSec) pasteSec.classList.remove('collapsed');
     hideVideoRecipeHelp();
+    clearImportUiState();
   } catch(_) {}
   setTimeout(function() { _draftRestoring = false; }, 600);
 }
