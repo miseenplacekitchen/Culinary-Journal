@@ -18,7 +18,7 @@
   <script src="lib/import-audit.js"></script>
   <script src="lib/recipe-import-validate.js"></script>
   <script src="lib/recipe-import-paths.js"></script>
-  <script src="lib/recipe-hero-labels.js?v=20260606b"></script>
+  <script src="lib/recipe-hero-labels.js?v=20260606c"></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -690,17 +690,16 @@
     .sr-img-label-layer {
       position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: visible;
     }
-    .sr-img-hero-char {
-      position: absolute;
+    .recipe-hero-label-text {
       font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
       font-style: italic; font-weight: 400; letter-spacing: 0.03em;
-      color: #2a1e14;
-      text-shadow: 0 0 2px rgba(255,255,255,0.95), 0 0 5px rgba(255,255,255,0.75);
-      white-space: pre; line-height: 1;
+      fill: #2a1e14;
+      stroke: none;
+      filter: drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 0 5px rgba(255,255,255,0.75));
     }
-    .sr-img-preview-canvas {
-      position: absolute; left: 0; top: 0; width: 100%; height: 100%;
-      display: block; pointer-events: none;
+    .recipe-hero-labels-svg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      overflow: visible; pointer-events: none;
     }
     .sr-img-hero-circle {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -708,8 +707,9 @@
       background: #fff; border: 3px solid var(--accent);
       box-shadow: 0 8px 28px rgba(0,0,0,0.18);
     }
-    .sr-img-hero-img.sr-img-source {
-      position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none;
+    .sr-img-hero-img {
+      position: absolute; left: 50%; top: 50%; max-width: none; display: block;
+      user-select: none; pointer-events: none;
     }
     #img-drag-overlay {
       position: absolute; inset: 0; cursor: grab; z-index: 3; border-radius: 50%;
@@ -1255,8 +1255,7 @@
                     <circle class="sr-img-hero-ring-stroke" cx="210" cy="210" r="168"/>
                   </svg>
                   <div class="sr-img-hero-circle" id="sr-img-hero-circle">
-                    <canvas id="img-preview-canvas" class="sr-img-preview-canvas" aria-hidden="true"></canvas>
-                    <img id="img-preview-img" class="sr-img-hero-img sr-img-source" alt="Recipe photo preview" draggable="false" decoding="sync">
+                    <img id="img-preview-img" class="sr-img-hero-img" alt="Recipe photo preview" draggable="false" decoding="async">
                     <div id="img-drag-overlay" title="Drag to reposition"></div>
                   </div>
                   <div class="sr-img-label-layer" aria-hidden="true"></div>
@@ -7630,28 +7629,12 @@ function getImgEditorMetrics() {
 function layoutPreviewImage() {
   var m = getImgEditorMetrics();
   if (!m) return;
-  var canvas = document.getElementById('img-preview-canvas');
-  var cw = m.cw;
-  var ch = m.ch;
   var w = Math.max(1, m.img.naturalWidth * m.scale);
   var h = Math.max(1, m.img.naturalHeight * m.scale);
-  var drawX = (cw / 2) + m.panX - (w / 2);
-  var drawY = (ch / 2) + m.panY - (h / 2);
-  if (canvas) {
-    var dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.round(cw * dpr);
-    canvas.height = Math.round(ch * dpr);
-    canvas.style.width = cw + 'px';
-    canvas.style.height = ch + 'px';
-    var ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, cw, ch);
-    if (ctx.imageSmoothingEnabled !== undefined) {
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-    }
-    ctx.drawImage(m.img, drawX, drawY, w, h);
-  }
+  m.img.style.width = w + 'px';
+  m.img.style.height = h + 'px';
+  m.img.style.transform =
+    'translate(calc(-50% + ' + m.panX + 'px), calc(-50% + ' + m.panY + 'px))';
   sampleImgBackdrop(m.img);
   renderImgHeroLabels();
 }
@@ -7700,10 +7683,7 @@ function renderImgHeroLabels() {
   var wrap = document.querySelector('.sr-img-hero-ring-wrap');
   if (!wrap || !window.RecipeHeroLabels) return;
   var handle = getImgRingHandleText();
-  RecipeHeroLabels.render(wrap, {
-    handle: handle || undefined,
-    charClass: 'sr-img-hero-char'
-  });
+  RecipeHeroLabels.render(wrap, { handle: handle || undefined });
 }
 
 function updateImgRingHandle() {
@@ -7766,12 +7746,29 @@ function initRecipePhotoEditor() {
   window.addEventListener('resize', layoutPreviewImage);
 }
 
+function reviveImgBlobUrl(sourceUrl) {
+  if (window._imgBlobUrl) return Promise.resolve(window._imgBlobUrl);
+  if (window._imgNativeFile) {
+    window._imgBlobUrl = URL.createObjectURL(window._imgNativeFile);
+    return Promise.resolve(window._imgBlobUrl);
+  }
+  if (!sourceUrl || !String(sourceUrl).startsWith('data:')) {
+    return Promise.resolve(sourceUrl || '');
+  }
+  return fetch(sourceUrl).then(function(res) { return res.blob(); }).then(function(blob) {
+    window._imgBlobUrl = URL.createObjectURL(blob);
+    return window._imgBlobUrl;
+  }).catch(function() { return sourceUrl; });
+}
+
 function showImagePreview(url, opts) {
   opts = opts || {};
   if (!url) return;
   if (!opts.keepCrop || !window._imgSourceUrl) window._imgSourceUrl = url;
+  if (!opts.keepCrop || !window._imgSourceDataUrl) {
+    window._imgSourceDataUrl = window._imgSourceDataUrl || url;
+  }
   window.uploadedImageUrl = window._imgSourceUrl || url;
-  var displayUrl = (opts && opts.displayUrl) || url;
   var img = document.getElementById('img-preview-img');
   var preState = document.getElementById('img-preview-state');
   var emState = document.getElementById('img-empty-state');
@@ -7788,17 +7785,35 @@ function showImagePreview(url, opts) {
   var uploadBox = document.getElementById('img-upload-box');
   if (uploadBox) uploadBox.classList.add('has-img-preview');
   if (!img) return;
-  if (/^https?:\/\//i.test(url)) img.crossOrigin = 'anonymous';
-  else img.removeAttribute('crossOrigin');
-  img.onload = function() {
-    layoutPreviewImage();
-    updateImgRingHandle();
-  };
-  img.src = displayUrl;
-  if (img.complete) {
-    layoutPreviewImage();
-    updateImgRingHandle();
+  function onReady() {
+    if (img.decode) {
+      img.decode().then(function() {
+        layoutPreviewImage();
+        updateImgRingHandle();
+      }).catch(function() {
+        layoutPreviewImage();
+        updateImgRingHandle();
+      });
+    } else {
+      layoutPreviewImage();
+      updateImgRingHandle();
+    }
   }
+  img.onload = onReady;
+  var preferred = (opts && opts.displayUrl) || window._imgBlobUrl;
+  if (preferred) {
+    if (/^https?:\/\//i.test(preferred)) img.crossOrigin = 'anonymous';
+    else img.removeAttribute('crossOrigin');
+    img.src = preferred;
+    if (img.complete) onReady();
+    return;
+  }
+  reviveImgBlobUrl(url).then(function(displayUrl) {
+    if (/^https?:\/\//i.test(displayUrl)) img.crossOrigin = 'anonymous';
+    else img.removeAttribute('crossOrigin');
+    img.src = displayUrl || url;
+    if (img.complete) onReady();
+  });
 }
 
 function handleImageUpload(input) {
@@ -7809,10 +7824,12 @@ function handleImageUpload(input) {
   if (window._imgBlobUrl) {
     try { URL.revokeObjectURL(window._imgBlobUrl); } catch(_) {}
   }
+  window._imgNativeFile = file;
   window._imgBlobUrl = URL.createObjectURL(file);
   var reader = new FileReader();
   reader.onload = function(e) {
     window._imgSourceDataUrl = e.target.result;
+    window._imgSourceUrl = e.target.result;
     showImagePreview(e.target.result, { displayUrl: window._imgBlobUrl });
   };
   reader.readAsDataURL(file);
@@ -7831,6 +7848,7 @@ function removeImage() {
   window.uploadedImageUrl = '';
   window._imgSourceUrl = '';
   window._imgSourceDataUrl = '';
+  window._imgNativeFile = null;
   if (window._imgBlobUrl) {
     try { URL.revokeObjectURL(window._imgBlobUrl); } catch(_) {}
     window._imgBlobUrl = '';
@@ -7870,7 +7888,7 @@ function bakeRecipeImageCrop() {
       var m = getImgEditorMetrics();
       if (!m) { resolve(window.uploadedImageUrl || ''); return; }
       var maxSrc = Math.max(m.img.naturalWidth, m.img.naturalHeight);
-      var outSize = Math.min(2400, Math.max(1200, Math.round(maxSrc * m.scale)));
+      var outSize = Math.min(2400, Math.max(1200, maxSrc));
       var canvas = document.createElement('canvas');
       canvas.width = outSize;
       canvas.height = outSize;
