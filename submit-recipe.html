@@ -1055,7 +1055,7 @@
         </div>
         <div id="scan-status" style="font-family:'DM Sans',sans-serif;font-size:12px;margin-top:6px;display:none"></div>
         <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.6">
-          Pipeline: photo or PDF → text extraction → cleaned ingredients, method, serves, notes &amp; tips in the paste box. Click <strong>Parse Recipe</strong> to fill the form.
+          Pipeline: photo or PDF → text extraction → cleaned ingredients, method, serves, notes &amp; tips → auto-parse into the form. Review and correct anything that looks wrong.
         </div>
       </div>
 
@@ -2932,9 +2932,10 @@ async function applyUrlImportToPaste(articleText, pageTitle, statusSuffix) {
     showImportStatus(
       'Extracted ' + extracted.ingCount + ' ingredient' + (extracted.ingCount === 1 ? '' : 's') +
       ' and ' + extracted.methCount + ' step' + (extracted.methCount === 1 ? '' : 's') +
-      (statusSuffix || '') + ' — click Parse Recipe when ready.',
+      (statusSuffix || '') + ' — parsing now. Review and correct anything that looks wrong.',
       true
     );
+    setTimeout(function() { if (typeof parseRecipe === 'function') parseRecipe(); }, 300);
   } else {
     showImportStatus('Recipe text imported' + (statusSuffix || '') + ' — review in the paste box, then click Parse Recipe.', null);
   }
@@ -2957,13 +2958,27 @@ async function importFromUrl() {
     var apiRes = await fetch('/api/fetch-recipe-url?url=' + encodeURIComponent(url), { signal: AbortSignal.timeout(14000) });
     if (apiRes.ok) {
       var payload = await apiRes.json();
-      if (payload.recipe) {
+      pageTitle = payload.pageTitle || '';
+      articleText = payload.articleText || '';
+      if (articleText.length <= 80 && payload.html) {
+        articleText = extractArticleTextFromHtml(payload.html);
+      }
+      if (payload.recipe && recipeJsonLdHasIngredients(payload.recipe)) {
         populateFromJsonLd(payload.recipe, url);
         showImportStatus('Recipe imported via site fetch. Review all fields below before submitting.', true);
         return;
       }
-      pageTitle = payload.pageTitle || '';
-      articleText = payload.articleText || '';
+      if (articleText.length > 80) {
+        await applyUrlImportToPaste(articleText, pageTitle, ' from blog');
+        applyJsonLdMetaToForm(payload.recipe);
+        showImportStatus('Recipe imported from blog text' + (payload.recipe ? ' (schema had no ingredient list)' : '') + '. Review all fields below before submitting.', true);
+        return;
+      }
+      if (payload.recipe) {
+        populateFromJsonLd(payload.recipe, url);
+        showImportStatus('Recipe imported via schema (ingredients may be incomplete). Review and correct before submitting.', null);
+        return;
+      }
       if (payload.social) {
         var caption = (payload.caption || '').trim();
         if (caption) {
@@ -3001,21 +3016,27 @@ async function importFromUrl() {
     }
   }
   if (!html && !articleText) { showImportStatus('Empty response — paste the recipe text manually.', false); return; }
+  if (!articleText && html) {
+    articleText = extractArticleTextFromHtml(html);
+    if (!pageTitle) pageTitle = extractPageTitleFromHtml(html);
+  }
   recipe = html ? extractJsonLdRecipe(html) : null;
-  if (!recipe) {
-    if (!articleText && html) {
-      articleText = extractArticleTextFromHtml(html);
-      if (!pageTitle) pageTitle = extractPageTitleFromHtml(html);
-    }
-    if (articleText.length > 80) {
-      await applyUrlImportToPaste(articleText, pageTitle, ' from blog');
-      return;
-    }
-    showImportStatus('No recipe content found on that page. Try pasting the text manually.', false);
+  if (recipe && recipeJsonLdHasIngredients(recipe)) {
+    populateFromJsonLd(recipe, url);
+    showImportStatus('Recipe imported! Review all fields below before submitting.', true);
     return;
   }
-  populateFromJsonLd(recipe, url);
-  showImportStatus('Recipe imported! Review all fields below before submitting.', true);
+  if (articleText.length > 80) {
+    await applyUrlImportToPaste(articleText, pageTitle, ' from blog');
+    applyJsonLdMetaToForm(recipe);
+    return;
+  }
+  if (recipe) {
+    populateFromJsonLd(recipe, url);
+    showImportStatus('Recipe imported via schema (ingredients may be incomplete). Review and correct before submitting.', null);
+    return;
+  }
+  showImportStatus('No recipe content found on that page. Try pasting the text manually.', false);
 }
 
 function showScanStatus(msg, ok) {
@@ -4178,10 +4199,11 @@ async function applyScanResult(rawText, statusSuffix) {
     showScanStatus(
       'Cleaned ' + extracted.ingCount + ' ingredient' + (extracted.ingCount === 1 ? '' : 's') +
       ' and ' + extracted.methCount + ' step' + (extracted.methCount === 1 ? '' : 's') +
-      extraMsg + (statusSuffix || '') + ' — click Parse Recipe when ready.',
+      extraMsg + (statusSuffix || '') + ' — parsing now. Review and correct anything that looks wrong.',
       true
     );
     document.getElementById('parse-tips').style.display = 'block';
+    setTimeout(function() { if (typeof parseRecipe === 'function') parseRecipe(); }, 300);
   } else {
     showScanStatus('Could not structure recipe sections — cleaned text pasted. Add headings or edit, then click Parse Recipe.' + (statusSuffix || ''), false);
     if (pasteEl) pasteEl.value = cleaned;
@@ -4346,6 +4368,29 @@ function extractInstructions(instructions) {
   }).filter(Boolean).join(NL);
 }
 
+function recipeJsonLdHasIngredients(r) {
+  if (!r || !r.recipeIngredient) return false;
+  var ing = r.recipeIngredient;
+  if (Array.isArray(ing)) {
+    return ing.some(function(i) { return String(i || '').trim().length > 1; });
+  }
+  return String(ing).trim().length > 1;
+}
+
+function applyJsonLdMetaToForm(r) {
+  if (!r) return;
+  var prepEl = document.getElementById('prep-time');
+  var cookEl = document.getElementById('cook-time');
+  if (prepEl && r.prepTime && !prepEl.value.trim()) prepEl.value = parseDuration(r.prepTime);
+  if (cookEl && r.cookTime && !cookEl.value.trim()) cookEl.value = parseDuration(r.cookTime);
+  var servEl = document.getElementById('servings');
+  if (servEl && r.recipeYield && !servEl.value.trim()) {
+    var yld = typeof r.recipeYield === 'string' ? r.recipeYield : (r.recipeYield[0] || '');
+    var num = parseInt(yld, 10);
+    if (!isNaN(num)) servEl.value = num;
+  }
+}
+
 function populateFromJsonLd(r, sourceUrl) {
   var nameEl = document.getElementById('recipe-name');
   if (nameEl && r.name) nameEl.value = r.name;
@@ -4353,21 +4398,11 @@ function populateFromJsonLd(r, sourceUrl) {
   var ingredients = (r.recipeIngredient || []).join(NL);
   var instructions = extractInstructions(r.recipeInstructions || []);
   var pasteText = (ingredients ? 'INGREDIENTS' + NL + ingredients + NL + NL : '') +
-                  (instructions ? 'INSTRUCTIONS' + NL + instructions : '');
+                  (instructions ? 'METHOD' + NL + instructions : '');
   var pasteEl = document.getElementById('paste-input');
   if (pasteEl && pasteText) pasteEl.value = pasteText;
 
-  var prepEl = document.getElementById('prep-time');
-  var cookEl = document.getElementById('cook-time');
-  if (prepEl && r.prepTime) prepEl.value = parseDuration(r.prepTime);
-  if (cookEl && r.cookTime) cookEl.value = parseDuration(r.cookTime);
-
-  var servEl = document.getElementById('servings');
-  if (servEl && r.recipeYield) {
-    var yld = typeof r.recipeYield === 'string' ? r.recipeYield : (r.recipeYield[0]||'');
-    var num = parseInt(yld);
-    if (!isNaN(num)) servEl.value = num;
-  }
+  applyJsonLdMetaToForm(r);
 
   var creditUrl = document.getElementById('credit-url');
   if (creditUrl && !creditUrl.value) creditUrl.value = sourceUrl;
@@ -4930,6 +4965,7 @@ function parseRecipe() {
   let curIng     = null;
   let curMeth    = null;
   let inMethod   = false;
+  let absorbAux  = false;
 
   const pushIng  = () => { if (curIng  && curIng.items.length)  ingSecs.push(curIng);   curIng  = null; };
   const pushMeth = () => { if (curMeth && curMeth.steps.length) methSecs.push(curMeth); curMeth = null; };
@@ -5015,6 +5051,10 @@ function parseRecipe() {
   const methLineIdx = rawLines.findIndex(function(l) { return METH_HDR.test(l); });
   const ingLineIdx  = rawLines.findIndex(function(l) { return ING_HDR.test(l); });
 
+  if (ingLineIdx < 0 && methLineIdx > 0) {
+    startIngSection('Ingredients');
+  }
+
   const looksLikeIngLine = (line) => {
     if (isBareIngredientLine(line)) return true;
     if (splitIngredientLine(line)) return true;
@@ -5031,7 +5071,7 @@ function parseRecipe() {
     if (methLineIdx >= 0 && lineIdx > methLineIdx) inMethod = true;
     else if (ingLineIdx >= 0 && lineIdx >= ingLineIdx && lineIdx < (methLineIdx >= 0 ? methLineIdx : rawLines.length)) inMethod = false;
 
-    if (line === titleCand && isLikelyRecipeTitleLine(titleCand) && !inMethod && !ING_HDR.test(line)) continue;
+    if (line === titleCand && isLikelyRecipeTitleLine(titleCand) && !inMethod && !ING_HDR.test(line) && (ingLineIdx < 0 || lineIdx < ingLineIdx)) continue;
     // Skip metadata-style lines [source]: ...
     if (/^\[[^\]]+\]\s*:/i.test(line)) continue;
     // Skip very long lines that look like story prose (over 180 chars with no numbers)
@@ -5068,8 +5108,25 @@ function parseRecipe() {
       startIngSection(label);
       continue;
     }
-    // Named method sub-section while in method mode: "Note:", "Tips:", etc.
-    if (inMethod && /^(notes?|tips?|to\s+serve|serving\s+suggestion)\s*:?$/i.test(line)) {
+    if (inMethod && /^(?:notes?|cooking\s+notes?(?:\s*&\s*tips?)?|tips?|hints?|tricks?|variations?)\s*:?$/i.test(line)) {
+      absorbAux = true;
+      continue;
+    }
+    if (inMethod && /^(?:step\s*)?\d+[\.\):\-]\s*(?:notes?|cooking\s+notes?|tips?)\s*:?$/i.test(line)) {
+      absorbAux = true;
+      continue;
+    }
+    if (absorbAux) {
+      if (/^(?:ingredients?|method|directions?|instructions?|steps?)\s*:?$/i.test(line)) {
+        absorbAux = false;
+      } else if (line) {
+        if (isRecipeTipOrNoteLine(line) || isMethodAttributionLine(line) || absorbAux) {
+          appendCookingNote(line);
+        }
+        continue;
+      }
+    }
+    if (inMethod && /^(to\s+serve|serving\s+suggestion)\s*:?$/i.test(line)) {
       startMethSection(line.replace(/\s*:?\s*$/, ''));
       continue;
     }
