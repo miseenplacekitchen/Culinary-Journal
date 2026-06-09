@@ -60,7 +60,16 @@ const conf = Core.computeImportConfidence(seg.ingCount, seg.method);
 assert('kothiyavunu: 4 ingredients', seg.ingCount >= 4);
 assert('kothiyavunu: 8+ steps', seg.methCount >= 8);
 assert('kothiyavunu: wheat qty clean', /Wheat Flour.*2 cups/i.test(seg.ingredients[0] || '') && !/Grated Coconut/.test(seg.ingredients[0] || ''));
-assert('kothiyavunu: confidence allows enrich', conf.allowEnrich === true);
+assert('kothiyavunu: enrich gated off (score < 70)', conf.allowEnrich === false && conf.score === 60);
+
+// Fixture expectations from wave1-import-fixtures.json
+fixtures.fixtures.forEach(function (fx) {
+  if (fx.id === 'kothiyavunu-gothambu-puttu') {
+    assert('fixture kothiyavunu: ingredients', seg.ingCount >= fx.expect.ingredients_min);
+    assert('fixture kothiyavunu: steps', seg.methCount >= fx.expect.steps_min && seg.methCount <= fx.expect.steps_max);
+    if (fx.expect.auto_enrich === false) assert('fixture kothiyavunu: no auto enrich', conf.allowEnrich === false);
+  }
+});
 
 // Wave 2 — hostname registry
 const strat = Extract.resolveHostStrategy('www.kothiyavunu.com');

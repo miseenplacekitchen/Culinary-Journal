@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Submit your recipe to The Culinary Journal community — share family favourites and regional dishes.">
   <link rel="canonical" href="https://theculinaryjournal.site/submit-recipe.html">
-  <meta name="tcj-build" content="20260609-wave2-extract">
+  <meta name="tcj-build" content="20260609-wave2-gapfix">
   <title>Submit a Recipe — The Culinary Journal</title>
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
@@ -4563,7 +4563,7 @@ function populateFromJsonLd(r, sourceUrl) {
 var AUTO_REVIEW_MARKER = '--- Auto review on parse (remove when done) ---';
 var PARSER_VERSION = (typeof RecipeImportCore !== 'undefined' && RecipeImportCore.PARSER_VERSION)
   ? RecipeImportCore.PARSER_VERSION : '2.0.0-wave2';
-var PARSE_CONFIDENCE_ENRICH_MIN = 60;
+var PARSE_CONFIDENCE_ENRICH_MIN = 70;
 
 function isIngredientQtyOnlyLine(line) {
   line = String(line || '').trim();
@@ -4778,6 +4778,8 @@ function regroupIngredientSections(ingSecs) {
 function reorganizeMethodSections(methSecs) {
   if (!methSecs || !methSecs.length) return methSecs;
   if (methHasCleanNumberedList(methSecs)) return methSecs;
+  if (methSecs.length === 1 && (methSecs[0].steps || []).length >= 4) return methSecs;
+  if (methSecs.length === 1 && /^directions$/i.test(String(methSecs[0].name || '').trim())) return methSecs;
   if (window._lastParseConfidence && !window._lastParseConfidence.allowEnrich) return methSecs;
   var total = methSecs.reduce(function(n, s) { return n + (s.steps || []).length; }, 0);
   if (total < 4) return methSecs;
@@ -5216,10 +5218,12 @@ function enrichAndApplyParsedMetadata(ctx) {
   if (styleCfg.shelfLife) summary.push('Shelf life: confirm manually');
 
   var regroup = (window._lastParseConfidence && window._lastParseConfidence.score >= 70);
+  var keepMethodLayout = ctx.fromSegment || methHasCleanNumberedList(ctx.methSecs)
+    || (ctx.methSecs && ctx.methSecs.length === 1 && (ctx.methSecs[0].steps || []).length >= 4);
   return {
     summary: summary,
     ingSecs: regroup ? regroupIngredientSections(ctx.ingSecs) : ctx.ingSecs,
-    methSecs: reorganizeMethodSections(ctx.methSecs)
+    methSecs: keepMethodLayout ? ctx.methSecs : reorganizeMethodSections(ctx.methSecs)
   };
 }
 
@@ -5228,20 +5232,13 @@ function enrichAndApplyParsedMetadata(ctx) {
 function splitInlineIngredientBlob(line) {
   line = String(line || '').replace(/\s+/g, ' ').trim();
   if (!line || line.length < 35) return [line];
-  var re = /([A-Za-z][A-Za-z0-9\s/'().\/\u00C0-\u024F-]{1,65}?)\s*:\s*/g;
-  var hits = [];
-  var m;
-  while ((m = re.exec(line)) !== null) {
-    hits.push({ start: m.index, name: m[1].trim(), valStart: m.index + m[0].length });
+  var core = (typeof RecipeImportCore !== 'undefined' ? RecipeImportCore : null);
+  if (core && core.normalizeRecipeImportText) {
+    var norm = core.normalizeRecipeImportText(line);
+    var parts = norm.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+    if (parts.length >= 2) return parts;
   }
-  if (hits.length < 2) return [line];
-  var parts = [];
-  for (var i = 0; i < hits.length; i++) {
-    var end = i + 1 < hits.length ? hits[i + 1].start : line.length;
-    var val = line.slice(hits[i].valStart, end).trim();
-    if (hits[i].name) parts.push(val ? hits[i].name + ' : ' + val : hits[i].name + ' :');
-  }
-  return parts.length >= 2 ? parts : [line];
+  return [line];
 }
 
 function splitInlineNumberedSteps(line) {
@@ -5254,6 +5251,8 @@ function splitInlineNumberedSteps(line) {
 
 function normalizeBundledBlogRecipeText(text) {
   if (!text) return '';
+  var core = (typeof RecipeImportCore !== 'undefined' ? RecipeImportCore : null);
+  if (core && core.normalizeRecipeImportText) return core.normalizeRecipeImportText(text);
   var t = String(text).replace(/\r\n/g, '\n');
   t = t
     .replace(/Food\s+Advertisements\s+by\s*(\d+\.)/gi, '\n$1')
@@ -5459,7 +5458,8 @@ function parseRecipeViaSegment(seg, rawText) {
     methSecs: [{ name: 'DIRECTIONS', steps: (seg.method || []).slice() }],
     text: seg.normalizedText || rawText,
     titleCand: titleCand,
-    extraWarnings: (seg.warnings || []).slice()
+    extraWarnings: (seg.warnings || []).slice(),
+    fromSegment: true
   });
 }
 
