@@ -40,12 +40,9 @@
     .rp-hero-ring-wrap { position: relative; width: min(440px, 82vw); height: min(440px, 82vw); }
     .rp-hero-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
     .rp-hero-ring-stroke { fill: none; stroke: var(--accent); stroke-width: 3; }
-    .rh-ring-text {
-      font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-      font-size: 15px; font-style: italic; font-weight: 400; letter-spacing: 0.04em;
-      fill: #2a1e14;
-      stroke: none;
-      filter: drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 0 5px rgba(255,255,255,0.75));
+    .rh-label-canvas {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 5;
     }
     .rp-hero-circle {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -372,7 +369,7 @@
   <script src="allergy-engine.js"></script>
   <script src="seo-schema.js"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
-  <script src="lib/recipe-hero-labels.js?v=20260609"></script>
+  <script src="lib/recipe-hero-labels.js?v=20260610"></script>
   <script src="nav-init.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -397,18 +394,8 @@
   <!-- HERO — circular image with curved ring text (Issue 4.1) -->
   <div class="rp-hero-frame" id="rp-hero">
     <div class="rp-hero-ring-wrap">
-      <svg class="rp-hero-ring" id="hero-ring-svg" viewBox="0 0 420 420" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+      <svg class="rp-hero-ring" id="hero-ring-svg" viewBox="0 0 420 420" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
         <circle class="rp-hero-ring-stroke" cx="210" cy="210" r="168"/>
-        <defs>
-          <path id="rh-arc-brand" d="M 52.94 210 A 157.06 157.06 0 0 0 73.99 131.47" fill="none"/>
-          <path id="rh-arc-handle" d="M 210 367.06 A 157.06 157.06 0 0 1 288.53 346.01" fill="none"/>
-        </defs>
-        <text class="rh-ring-text" id="rh-text-brand">
-          <textPath href="#rh-arc-brand" xlink:href="#rh-arc-brand" startOffset="0%" text-anchor="start">The Culinary Journal</textPath>
-        </text>
-        <text class="rh-ring-text" id="rh-text-handle" style="display:none">
-          <textPath href="#rh-arc-handle" xlink:href="#rh-arc-handle" startOffset="0%" text-anchor="start"></textPath>
-        </text>
       </svg>
       <div class="rp-hero-circle">
         <div class="rp-hero-placeholder" id="hero-placeholder">

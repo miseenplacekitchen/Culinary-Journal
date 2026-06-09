@@ -18,7 +18,7 @@
   <script src="lib/import-audit.js"></script>
   <script src="lib/recipe-import-validate.js"></script>
   <script src="lib/recipe-import-paths.js"></script>
-  <script src="lib/recipe-hero-labels.js?v=20260609"></script>
+  <script src="lib/recipe-hero-labels.js?v=20260610"></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -687,12 +687,9 @@
     .sr-img-hero-ring-wrap { position: relative; width: min(400px, 100%); aspect-ratio: 1; }
     .sr-img-hero-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
     .sr-img-hero-ring-stroke { fill: none; stroke: var(--accent); stroke-width: 3; }
-    .rh-ring-text {
-      font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-      font-size: 15px; font-style: italic; font-weight: 400; letter-spacing: 0.03em;
-      fill: #2a1e14;
-      stroke: none;
-      filter: drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 0 5px rgba(255,255,255,0.75));
+    .rh-label-canvas {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 5;
     }
     .sr-img-hero-circle {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -1244,19 +1241,8 @@
             <div id="img-preview-state" class="img-preview-wrap" style="display:none" onclick="event.stopPropagation()">
               <div class="sr-img-hero-frame">
                 <div class="sr-img-hero-ring-wrap">
-                  <svg class="sr-img-hero-ring" viewBox="0 0 420 420" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                  <svg class="sr-img-hero-ring" viewBox="0 0 420 420" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
                     <circle class="sr-img-hero-ring-stroke" cx="210" cy="210" r="168"/>
-                    <defs>
-                      <!-- r=157.06 = photo edge 168 − 3px border − 2mm; brand 180°→150°, handle 270°→300° -->
-                      <path id="rh-arc-brand" d="M 52.94 210 A 157.06 157.06 0 0 0 73.99 131.47" fill="none"/>
-                      <path id="rh-arc-handle" d="M 210 367.06 A 157.06 157.06 0 0 1 288.53 346.01" fill="none"/>
-                    </defs>
-                    <text class="rh-ring-text" id="rh-text-brand">
-                      <textPath href="#rh-arc-brand" xlink:href="#rh-arc-brand" startOffset="0%" text-anchor="start">The Culinary Journal</textPath>
-                    </text>
-                    <text class="rh-ring-text" id="rh-text-handle" style="display:none">
-                      <textPath href="#rh-arc-handle" xlink:href="#rh-arc-handle" startOffset="0%" text-anchor="start"></textPath>
-                    </text>
                   </svg>
                   <div class="sr-img-hero-circle" id="sr-img-hero-circle">
                     <img id="img-preview-img" class="sr-img-hero-img" alt="Recipe photo preview" draggable="false" decoding="async">
@@ -7886,15 +7872,11 @@ function adjustZoom(direction) {
 
 function bakeRecipeImageCrop() {
   return new Promise(function(resolve) {
-    var img = document.getElementById('img-preview-img');
-    if (!img || !img.src || !window.uploadedImageUrl) {
-      resolve(window.uploadedImageUrl || '');
-      return;
-    }
-    function bake() {
+    if (!window.uploadedImageUrl) { resolve(''); return; }
+    function bake(drawable, nw, nh) {
       var m = getImgEditorMetrics();
-      if (!m) { resolve(window.uploadedImageUrl || ''); return; }
-      var maxSrc = Math.max(m.img.naturalWidth, m.img.naturalHeight);
+      if (!m || !nw || !nh) { resolve(window.uploadedImageUrl || ''); return; }
+      var maxSrc = Math.max(nw, nh);
       var outSize = Math.min(2400, Math.max(1200, maxSrc));
       var canvas = document.createElement('canvas');
       canvas.width = outSize;
@@ -7912,19 +7894,31 @@ function bakeRecipeImageCrop() {
       ctx.fillStyle = (circleEl && circleEl.style.background) ? circleEl.style.background : '#fff';
       ctx.fillRect(0, 0, outSize, outSize);
       var ratio = outSize / m.cw;
-      var drawW = m.img.naturalWidth * m.scale * ratio;
-      var drawH = m.img.naturalHeight * m.scale * ratio;
+      var drawW = nw * m.scale * ratio;
+      var drawH = nh * m.scale * ratio;
       var drawX = (outSize / 2) + (m.panX * ratio) - (drawW / 2);
       var drawY = (outSize / 2) + (m.panY * ratio) - (drawH / 2);
       try {
-        ctx.drawImage(m.img, drawX, drawY, drawW, drawH);
+        ctx.drawImage(drawable, drawX, drawY, drawW, drawH);
         resolve(canvas.toDataURL('image/jpeg', 0.97));
       } catch(_) {
         resolve(window.uploadedImageUrl || '');
       }
     }
-    if (img.complete && img.naturalWidth) bake();
-    else img.onload = bake;
+    function bakeFromPreviewImg() {
+      var img = document.getElementById('img-preview-img');
+      if (!img || !img.src) { resolve(window.uploadedImageUrl || ''); return; }
+      function run() { bake(img, img.naturalWidth, img.naturalHeight); }
+      if (img.complete && img.naturalWidth) run();
+      else img.onload = run;
+    }
+    if (window._imgNativeFile && typeof createImageBitmap === 'function') {
+      createImageBitmap(window._imgNativeFile).then(function(bitmap) {
+        bake(bitmap, bitmap.width, bitmap.height);
+      }).catch(bakeFromPreviewImg);
+      return;
+    }
+    bakeFromPreviewImg();
   });
 }
 
