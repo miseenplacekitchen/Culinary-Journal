@@ -42,8 +42,11 @@
     .rp-hero-ring-stroke { fill: none; stroke: var(--accent); stroke-width: 3; }
     .rp-ring-text {
       font-family: "Monotype Corsiva", "Apple Chancery", "Segoe Script", cursive;
-      font-size: 16px; font-style: italic; font-weight: 400; letter-spacing: 0.05em;
-      fill: color-mix(in srgb, var(--accent) 42%, #1a1208);
+      font-size: 17px; font-style: italic; font-weight: 400; letter-spacing: 0.05em;
+      fill: var(--accent);
+      stroke: #1a1008;
+      stroke-width: 2.5px;
+      paint-order: stroke fill;
     }
     .rp-hero-circle {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -396,8 +399,8 @@
     <div class="rp-hero-ring-wrap">
       <svg class="rp-hero-ring" id="hero-ring-svg" viewBox="0 0 420 420" aria-hidden="true">
         <defs>
-          <path id="rp-arc-brand" d="M 54,210 A 156,156 0 0 0 69,144" fill="none"/>
-          <path id="rp-arc-handle" d="M 232,364.5 A 156,156 0 0 1 283.2,347.7" fill="none"/>
+          <path id="rp-arc-brand" d="M 37,210 A 173,173 0 0 0 52.4,135.5" fill="none"/>
+          <path id="rp-arc-handle" d="M 231.7,381.5 A 173,173 0 0 1 303,362.7" fill="none"/>
         </defs>
         <circle class="rp-hero-ring-stroke" cx="210" cy="210" r="168"/>
         <text class="rp-ring-text" id="hero-ring-brand">

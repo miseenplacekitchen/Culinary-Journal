@@ -688,8 +688,11 @@
     .sr-img-hero-ring-stroke { fill: none; stroke: var(--accent); stroke-width: 3; }
     .sr-img-ring-text {
       font-family: "Monotype Corsiva", "Apple Chancery", "Segoe Script", cursive;
-      font-size: 16px; font-style: italic; font-weight: 400; letter-spacing: 0.05em;
-      fill: color-mix(in srgb, var(--accent) 42%, #1a1208);
+      font-size: 17px; font-style: italic; font-weight: 400; letter-spacing: 0.05em;
+      fill: var(--accent);
+      stroke: #1a1008;
+      stroke-width: 2.5px;
+      paint-order: stroke fill;
     }
     .sr-img-hero-circle {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -1243,10 +1246,10 @@
                 <div class="sr-img-hero-ring-wrap">
                   <svg class="sr-img-hero-ring" viewBox="0 0 420 420" aria-hidden="true">
                     <defs>
-                      <!-- ~180° → ~152° along upper-left (inset ~2mm from inner circle) -->
-                      <path id="sr-arc-brand" d="M 54,210 A 156,156 0 0 0 69,144" fill="none"/>
-                      <!-- ~278° → ~298° along lower-right (inset ~2mm from inner circle) -->
-                      <path id="sr-arc-handle" d="M 232,364.5 A 156,156 0 0 1 283.2,347.7" fill="none"/>
+                      <!-- Ring band outside photo (r=173): ~180° → ~152° -->
+                      <path id="sr-arc-brand" d="M 37,210 A 173,173 0 0 0 52.4,135.5" fill="none"/>
+                      <!-- Ring band outside photo (r=173): ~278° → ~305° -->
+                      <path id="sr-arc-handle" d="M 231.7,381.5 A 173,173 0 0 1 303,362.7" fill="none"/>
                     </defs>
                     <circle class="sr-img-hero-ring-stroke" cx="210" cy="210" r="168"/>
                     <text class="sr-img-ring-text" id="sr-img-ring-brand">
@@ -6910,6 +6913,7 @@ function collectFormData() {
     origin_locality:      (document.getElementById('origin-locality')?.value || '').trim(),
     introduction:         (document.getElementById('introduction')?.value      || '').trim(),
     image_url:            window.uploadedImageUrl || '',
+    image_source_url:     window._imgSourceUrl || window.uploadedImageUrl || '',
     image_pan_x:          window._imgCrop ? (window._imgCrop.panX || 0) : 0,
     image_pan_y:          window._imgCrop ? (window._imgCrop.panY || 0) : 0,
     image_zoom:           window._imgCrop ? (window._imgCrop.zoom || 1) : 1,
@@ -7046,11 +7050,12 @@ function restoreDraft(raw) {
   checkAll(d.flavor_profile_tags);
 
   // Image
-  if (d.image_url) {
-    window.uploadedImageUrl = d.image_url;
+  if (d.image_url || d.image_source_url) {
+    window._imgSourceUrl = d.image_source_url || d.image_url;
+    window.uploadedImageUrl = d.image_url || d.image_source_url;
     try {
       if (typeof showImagePreview === 'function') {
-        showImagePreview(d.image_url, {
+        showImagePreview(window._imgSourceUrl, {
           keepCrop: true,
           panX: d.image_pan_x != null ? d.image_pan_x : 0,
           panY: d.image_pan_y != null ? d.image_pan_y : 0,
@@ -7452,12 +7457,16 @@ async function submitRecipe() {
 
   if (data.image_url && document.getElementById('img-preview-img')?.src) {
     try {
-      data.image_url = await bakeRecipeImageCrop();
-    } catch(_) {}
+      var bakedUrl = await bakeRecipeImageCrop();
+      data.image_url = await uploadRecipeImageToStorage(bakedUrl);
+    } catch(e) {
+      console.warn('Recipe image export/upload:', e);
+    }
   }
   delete data.image_pan_x;
   delete data.image_pan_y;
   delete data.image_zoom;
+  delete data.image_source_url;
 
   if (data.origin_country && !data.origin_state) {
     const proceed = confirm(
@@ -7623,10 +7632,12 @@ function getImgEditorMetrics() {
 function layoutPreviewImage() {
   var m = getImgEditorMetrics();
   if (!m) return;
-  m.img.style.width = m.img.naturalWidth + 'px';
-  m.img.style.height = m.img.naturalHeight + 'px';
+  var w = Math.max(1, Math.round(m.img.naturalWidth * m.scale));
+  var h = Math.max(1, Math.round(m.img.naturalHeight * m.scale));
+  m.img.style.width = w + 'px';
+  m.img.style.height = h + 'px';
   m.img.style.transform =
-    'translate(calc(-50% + ' + m.panX + 'px), calc(-50% + ' + m.panY + 'px)) scale(' + m.scale + ')';
+    'translate(calc(-50% + ' + m.panX + 'px), calc(-50% + ' + m.panY + 'px))';
   sampleImgBackdrop(m.img);
 }
 
@@ -7736,7 +7747,9 @@ function initRecipePhotoEditor() {
 function showImagePreview(url, opts) {
   opts = opts || {};
   if (!url) return;
-  window.uploadedImageUrl = url;
+  if (!opts.keepCrop || !window._imgSourceUrl) window._imgSourceUrl = url;
+  window.uploadedImageUrl = window._imgSourceUrl || url;
+  url = window._imgSourceUrl || url;
   var img = document.getElementById('img-preview-img');
   var preState = document.getElementById('img-preview-state');
   var emState = document.getElementById('img-empty-state');
@@ -7787,6 +7800,7 @@ function handleImageDrop(e) {
 
 function removeImage() {
   window.uploadedImageUrl = '';
+  window._imgSourceUrl = '';
   resetImgCrop();
   var img = document.getElementById('img-preview-img');
   var preState = document.getElementById('img-preview-state');
@@ -7821,11 +7835,16 @@ function bakeRecipeImageCrop() {
     function bake() {
       var m = getImgEditorMetrics();
       if (!m) { resolve(window.uploadedImageUrl || ''); return; }
-      var outSize = 800;
+      var maxSrc = Math.max(m.img.naturalWidth, m.img.naturalHeight);
+      var outSize = Math.min(2400, Math.max(1200, Math.round(maxSrc * m.scale)));
       var canvas = document.createElement('canvas');
       canvas.width = outSize;
       canvas.height = outSize;
       var ctx = canvas.getContext('2d');
+      if (ctx.imageSmoothingEnabled !== undefined) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+      }
       ctx.beginPath();
       ctx.arc(outSize / 2, outSize / 2, outSize / 2, 0, Math.PI * 2);
       ctx.closePath();
@@ -7840,7 +7859,7 @@ function bakeRecipeImageCrop() {
       var drawY = (outSize / 2) + (m.panY * ratio) - (drawH / 2);
       try {
         ctx.drawImage(m.img, drawX, drawY, drawW, drawH);
-        resolve(canvas.toDataURL('image/jpeg', 0.92));
+        resolve(canvas.toDataURL('image/jpeg', 0.97));
       } catch(_) {
         resolve(window.uploadedImageUrl || '');
       }
@@ -7848,6 +7867,33 @@ function bakeRecipeImageCrop() {
     if (img.complete && img.naturalWidth) bake();
     else img.onload = bake;
   });
+}
+
+async function uploadRecipeImageToStorage(dataUrl) {
+  if (!dataUrl) return '';
+  if (!dataUrl.startsWith('data:')) return dataUrl;
+  if (!session || !session.access_token) return dataUrl;
+  var userId = (session.user && session.user.id) || session.id;
+  if (!userId) return dataUrl;
+  try {
+    var blob = await fetch(dataUrl).then(function(r) { return r.blob(); });
+    var ext = (blob.type && blob.type.indexOf('png') >= 0) ? 'png' : 'jpg';
+    var path = userId + '/' + Date.now() + '-recipe.' + ext;
+    var res = await fetch(SUPABASE_URL + '/storage/v1/object/recipe-images/' + path, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + session.access_token,
+        'Content-Type': blob.type || 'image/jpeg',
+        'x-upsert': 'true'
+      },
+      body: blob
+    });
+    if (!res.ok) return dataUrl;
+    return SUPABASE_URL + '/storage/v1/object/public/recipe-images/' + path;
+  } catch(_) {
+    return dataUrl;
+  }
 }
 
 // ── TIME CALCULATOR ────────────────────────────────────────────────────────
