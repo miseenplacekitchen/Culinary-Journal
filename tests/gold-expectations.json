@@ -35,6 +35,14 @@
       "auto_enrich": false,
       "category_must_be": "Grains & Comfort"
     },
+    "method-prose-stages.txt": {
+      "ingredients_min": 4,
+      "steps_min": 4,
+      "steps_max": 6,
+      "junk_steps": 0,
+      "method_sections_min": 2,
+      "auto_enrich": false
+    },
     "pineapple-biryani-annotated.txt": {
       "ingredients_min": 35,
       "ingredients_max": 42,

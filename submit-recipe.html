@@ -5451,14 +5451,35 @@ function normalizeSegmentStep(step) {
 
 function buildMethSecsFromSegment(seg) {
   if (seg && seg.methodSections && seg.methodSections.length) {
-    return seg.methodSections.map(function(sec) {
+    var fromSeg = seg.methodSections.map(function(sec) {
       return {
         name: String(sec.name || 'DIRECTIONS').toUpperCase(),
         steps: (sec.steps || []).map(normalizeSegmentStep).filter(Boolean)
       };
     }).filter(function(sec) { return (sec.steps || []).length > 0; });
+    if (fromSeg.length) return fromSeg;
   }
-  return [{ name: 'DIRECTIONS', steps: (seg && seg.method ? seg.method.slice() : []) }];
+  var flat = (seg && seg.method ? seg.method.slice() : []).filter(Boolean);
+  return flat.length ? [{ name: 'DIRECTIONS', steps: flat }] : [];
+}
+
+function methSecsHaveSteps(methSecs) {
+  return (methSecs || []).some(function(sec) { return (sec.steps || []).length > 0; });
+}
+
+function buildMethSecsWithPasteFallback(seg) {
+  var methSecs = buildMethSecsFromSegment(seg);
+  if (methSecsHaveSteps(methSecs)) return methSecs;
+  var fromPaste = extractMethodSectionsFromPaste();
+  if (!fromPaste.length) return methSecs;
+  return fromPaste.map(function(sec) {
+    return {
+      name: String(sec.name || 'DIRECTIONS').toUpperCase(),
+      steps: (sec.steps || []).map(function(st) {
+        return typeof st === 'string' ? st : (st.text || '');
+      }).filter(Boolean)
+    };
+  }).filter(function(sec) { return (sec.steps || []).length > 0; });
 }
 
 function finalizeParsedRecipe(ctx) {
@@ -5601,7 +5622,7 @@ function parseRecipeViaSegment(seg, rawText) {
   ingSecs = ingSecs.filter(function(sec) { return (sec.items || []).length > 0; });
   finalizeParsedRecipe({
     ingSecs: ingSecs,
-    methSecs: buildMethSecsFromSegment(seg),
+    methSecs: buildMethSecsWithPasteFallback(seg),
     text: seg.normalizedText || rawText,
     titleCand: titleCand,
     extraWarnings: (seg.warnings || []).slice(),
@@ -6196,14 +6217,51 @@ function extractMethodSectionsFromPaste() {
 
   var METH_HDR = /^(prep\s+work|directions?|method|steps?|instructions?|procedure|how\s+to\s+(make|cook|prepare))\s*:?$/i;
   var ING_HDR = /^ingredients?\s*:?$/i;
+  var POST_RECIPE = /^(?:tips?|notes?|clarity\s*check|clarity_check|optional\s+for\s+serving)\s*:?$/i;
+  var core = (typeof RecipeImportCore !== 'undefined' ? RecipeImportCore : null);
+  var isStageHeader = core && core.isMethodStageHeader
+    ? function(l, n) { return core.isMethodStageHeader(l, n); }
+    : function(l, n) {
+        var t = String(l || '').trim();
+        if (!t || /^\d+[\.\):\-]\s/.test(t)) return false;
+        var nx = String(n || '').trim();
+        return !!(nx && (/^\d+[\.\):\-]\s+\S/.test(nx) || /\b(mix|add|heat|stir|cook|wash|fry|layer|serve|rest|cover|simmer|marinate)\b/i.test(nx)));
+      };
+  var looksLikeProse = core && core.looksLikeMethodProseStep
+    ? function(l) { return core.looksLikeMethodProseStep(l); }
+    : function(l) {
+        return /\b(mix|add|heat|stir|cook|wash|fry|layer|serve|rest|cover|simmer|marinate|combine|drain|fold|spread)\b/i.test(String(l || ''));
+      };
+
   var sections = [];
   var cur = null;
   var inMethod = false;
   var ingIdx = lines.findIndex(function(l) { return ING_HDR.test(l); });
   var methIdx = lines.findIndex(function(l) { return METH_HDR.test(l); });
+  if (methIdx < 0) {
+    for (var mi = (ingIdx >= 0 ? ingIdx + 1 : 0); mi < lines.length; mi++) {
+      if (POST_RECIPE.test(lines[mi])) break;
+      if (/^\d+[\.\):\-]\s+\S/.test(lines[mi]) || isStageHeader(lines[mi], lines[mi + 1])) {
+        methIdx = mi;
+        break;
+      }
+    }
+  }
+
+  function pushStep(stepText) {
+    if (!stepText || stepText.length <= 4 || isJunkMethodStep(stepText)) return;
+    if (!cur) {
+      cur = { name: 'DIRECTIONS', steps: [] };
+      sections.push(cur);
+    }
+    expandMethodStepText(stepText).forEach(function(part) {
+      if (part) cur.steps.push({ title: '', text: part });
+    });
+  }
 
   lines.forEach(function(line, idx) {
-    if (methIdx >= 0 && idx > methIdx) inMethod = true;
+    if (POST_RECIPE.test(line)) { inMethod = false; return; }
+    if (methIdx >= 0 && idx >= methIdx) inMethod = true;
     else if (ingIdx >= 0 && idx >= ingIdx && idx < (methIdx >= 0 ? methIdx : lines.length)) inMethod = false;
 
     if (METH_HDR.test(line)) {
@@ -6214,17 +6272,19 @@ function extractMethodSectionsFromPaste() {
       return;
     }
     if (ING_HDR.test(line)) { inMethod = false; return; }
-    if (!inMethod && !/^(?:step\s*)?\d+[\.\):\-]\s+\S/i.test(line)) return;
-    if (!cur) {
-      cur = { name: 'DIRECTIONS', steps: [] };
+    if (inMethod && isStageHeader(line, lines[idx + 1])) {
+      cur = { name: line.replace(/\s*:?\s*$/, ''), steps: [] };
       sections.push(cur);
+      return;
     }
-    var stepText = line.replace(/^(?:step\s*)?\d+[\.\):\-]\s*/i, '').trim();
-    if (stepText && stepText.length > 4) {
-      expandMethodStepText(stepText).forEach(function(part) {
-        if (part) cur.steps.push({ title: '', text: part });
-      });
+    if (!inMethod) return;
+
+    var numMatch = line.match(/^(?:step\s*)?(\d+)[\.\):\-]\s+(.+)$/i);
+    if (numMatch) {
+      pushStep(numMatch[2].trim());
+      return;
     }
+    if (looksLikeProse(line)) pushStep(line);
   });
   return sections.filter(function(s) { return s.steps.length > 0; });
 }

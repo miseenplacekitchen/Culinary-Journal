@@ -160,6 +160,14 @@ assert('dietary: GF+wheat blocked', Validate.dietaryContradictions(['Wheat flour
 assert('dietary: vegan+chicken blocked', Validate.dietaryContradictions(['Chicken'], ['tag-vegan']).length === 1);
 assert('category: puttu not ocean', Validate.categoryContradictsTitle('Ocean & River', 'Gothambu Puttu Recipe') !== null);
 
+const proseMethod = loadFixture('method-prose-stages.txt');
+if (proseMethod) {
+  const seg = Core.segmentRecipeImportText(proseMethod);
+  assert('prose method: steps_min', seg.methCount >= 4);
+  assert('prose method: sections', (seg.methodSections || []).length >= 2);
+  runGoldFixture('method-prose-stages.txt', gold.fixtures['method-prose-stages.txt'] || {});
+}
+
 const pineapple = loadFixture('pineapple-biryani-annotated.txt');
 if (pineapple) {
   const seg = Core.segmentRecipeImportText(pineapple);
