@@ -1117,13 +1117,13 @@
           <button type="button" class="sr-parse-btn" style="padding:9px 16px;font-size:12px" onclick="scanRecipePhoto()">📸 Scan &amp; clean up</button>
         </div>
         <div id="scan-status" style="font-family:'DM Sans',sans-serif;font-size:12px;margin-top:6px;display:none"></div>
-        <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.6">
-          Pipeline: photo or PDF → text extraction → cleaned ingredients, method, serves, notes &amp; tips → auto-parse into the form. Review and correct anything that looks wrong.
+        <div class="sr-hint" style="margin-top:6px">
+          <span class="sr-i">i</span> Upload a cookbook page, handwritten card, or PDF. Review the extracted text before submitting.
         </div>
       </div>
 
       <div class="sr-field">
-        <label class="sr-label">Recipe URL <span style="font-weight:400;text-transform:none;color:var(--text-muted)">(paste a link — we can auto-import from most recipe websites)</span></label>
+        <label class="sr-label">Recipe URL <span style="font-weight:400;text-transform:none;color:var(--text-muted)">(blog, Instagram, TikTok, or other link)</span></label>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <input class="sr-input" type="url" id="source-url-input" placeholder="https://www.allrecipes.com/reel/..." oninput="detectUrlPaste(this.value)" style="font-size:13px;flex:1;min-width:200px">
           <button type="button" class="sr-parse-btn" style="white-space:nowrap;padding:9px 16px;font-size:12px" onclick="importFromUrl()">⬇ Import</button>
@@ -1134,10 +1134,8 @@
 
       <div class="sr-field">
         <label class="sr-label">Paste recipe text here</label>
-        <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.6">
-          <strong style="color:var(--text-high)">Works best with:</strong>
-          recipe websites (auto-detects structured data), ingredients listed one per line, steps clearly numbered or sectioned.<br>
-          <span style="opacity:0.7">Instagram and TikTok: paste the reel URL above and click <strong>Import</strong> for the caption. If the recipe is only in the video, use <strong>Google AI Mode</strong> below, paste the result here, then <strong>Parse Recipe</strong>.</span>
+        <div class="sr-hint" style="margin:-4px 0 10px">
+          <span class="sr-i">i</span> Paste the complete recipe &mdash; ingredients on separate lines, steps numbered. Use the buttons below to structure it into the form.
         </div>
         <textarea class="sr-input sr-paste-textarea" id="paste-input" maxlength="50000" placeholder="Paste a recipe here — full length, no word limit. Works best with ingredients one per line and numbered steps." oninput="updatePasteCounter()"></textarea>
         <div class="paste-counter" id="paste-counter"><span id="paste-chars">0</span> characters (up to 50,000 — not the 100-word Introduction below)</div>
@@ -1157,15 +1155,9 @@
         </button>
         <button type="button" onclick="clearPaste()" style="font-family:'DM Sans',sans-serif;font-size:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;text-decoration:underline">Clear</button>
       </div>
-      <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.65">
-        <strong style="color:var(--text-high)">Parse</strong> fills the form from the paste box &middot;
-        <strong style="color:var(--text-high)">Google AI Mode</strong> extracts a video recipe (paste result here, then Parse) &middot;
-        <strong style="color:var(--text-high)">Rewrite</strong> polishes steps already in Procedure &middot;
-        <strong style="color:var(--text-high)">Generate starter</strong> needs only a recipe name
-      </div>
       <div id="sr-video-recipe-help" class="sr-video-recipe-help" style="margin-top:8px" role="region" aria-label="Google AI Mode prompt">
         <details>
-          <summary>Copy Google AI Mode prompt if it doesn&rsquo;t appear automatically</summary>
+          <summary>Copy prompt for Google AI Mode</summary>
           <textarea class="sr-ai-prompt-text" id="google-ai-prompt-text" readonly rows="8" onclick="this.select()"></textarea>
         </details>
       </div>
@@ -4704,19 +4696,19 @@ async function applySocialCaptionImport(opts) {
   var structured = !isSocialMeta && (opts.hasRecipeStructure || looksLikeStructuredRecipe(cleaned));
   if (structured) {
     showImportStatus(
-      platform + ' caption imported — parsing now with the free in-browser parser (any language). Review and correct everything before submitting.',
+      platform + ' caption loaded and structured. Please review all fields before submitting.',
       true
     );
     setTimeout(function() { parseRecipe(); }, 300);
   } else if (cleaned.length >= 20 && !isSocialMeta) {
     showImportStatus(
-      platform + ' text imported into the paste box — review it, edit if needed, then click Parse Recipe.',
+      platform + ' text loaded. Review the paste box, then click Parse Recipe.',
       null
     );
   } else {
     maybeShowVideoRecipeHelp(opts.url || '', 'video-only');
     showImportStatus(
-      platform + ' caption is short or unstructured — recipe may be in the video. Use the Google AI Mode prompt below, or add headings / paste from comments.',
+      platform + ' caption is brief. If the recipe is in the video, try Google AI Mode, then paste the result and click Parse Recipe.',
       false
     );
   }
@@ -6598,7 +6590,7 @@ function maybeShowVideoRecipeHelp(url, reason) {
   showVideoRecipeHelp();
   if (reason === 'video-only') {
     showImportStatus(
-      'Caption missing or too short — the recipe may only be in the video. Click Google AI Mode below, paste the result here, then Parse Recipe.',
+      'No caption found. If the recipe is in the video, use Google AI Mode, paste the result here, then Parse Recipe.',
       false
     );
   }
@@ -6627,7 +6619,7 @@ function detectUrlPaste(url) {
   if (url.includes('pinterest.com'))  platform = 'Pinterest';
   if (isSocialMediaUrl(url)) {
     refreshGoogleAiModeOnUrlChange();
-    msgEl.textContent = '✓ ' + platform + ' link — Import pulls the caption (free). Recipe only in the video? Click Google AI Mode under the paste box.';
+    msgEl.textContent = '✓ ' + platform + ' link detected. Click Import to load the caption.';
     msgEl.style.color = 'var(--accent)';
     msgEl.style.display = 'block';
     return;
