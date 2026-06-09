@@ -31,6 +31,17 @@
         "ingredients_min": 5,
         "qty_patterns": ["1 1/2"]
       }
+    },
+    {
+      "id": "curryworld-biriyani",
+      "url": "https://curryworld.me/2008/03/19/chicken-biriyani-kerala-style/",
+      "expect": {
+        "ingredients_min": 35,
+        "steps_min": 14,
+        "steps_max": 16,
+        "junk_steps": 0,
+        "auto_enrich": false
+      }
     }
   ]
 }

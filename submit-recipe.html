@@ -2834,7 +2834,8 @@ var BLOG_STOP_LINES = [
   /^happy cooking/i, /^with love$/i,
   /food advertisements by/i, /^\(?\s*\d+\s*reviews?\s*\)?\.?$/i,
   /^check here for more/i, /^sharing is caring/i, /^bon appetit/i,
-  /^related posts?/i, /^\d+\s+comments?$/i
+  /^related posts?/i, /^\d+\s+comments?$/i,
+  /^note\s*:/i, /^love$/i, /^veena$/i, /^vinu$/i, /^loading$/i
 ];
 
 var BLOG_NAV_LINES = /^(beef|chicken|mutton|egg|rice|bread|breakfast|cakes|snacks|soups|drinks|sea food|pickles|sweets|useful tips|my cooking|post delivery|healthy salads|indian vegetable|kerala sadya|spice mixes|chutneys|curryworld menu|biriyani|chinese dishes)/i;
@@ -3186,6 +3187,7 @@ function normalizeParsedUnit(unit) {
   if (!unit) return '';
   var u = String(unit).trim();
   if (window.normalizeUnit) u = window.normalizeUnit(u);
+  if (u === 'no' || u === 'nos') return 'piece';
   return u;
 }
 
@@ -3302,7 +3304,7 @@ function isIngredientSubHeader(line) {
   if (!line || line.length > 55) return false;
   if (isMethodSectionHeader(line)) return false;
   if (/\d/.test(line)) return false;
-  if (/^for\s+(?:the\s+)?[a-z][\w\s]{2,40}:?\s*$/i.test(line) && /:\s*$/.test(String(line).trim())) return true;
+  if (/^for\s+(?:the\s+)?[a-z][\w\s]{2,40}\s*$/i.test(String(line).trim())) return true;
   return /^(sauce|filling|topping|garnish|marinade|marinate|marination|batter|crust|glaze|frosting|icing|dressing|stuffing|coating|base|pastry|dough|syrup|broth|stock|spice\s*mix|spice\s*blend|masala|tadka|tempering|paste|chutney|raita|salsa|pickle|gravy|curry\s*base|to\s+serve|serving|assembly)\s*:?$/i.test(line);
 }
 
@@ -3518,16 +3520,16 @@ function consolidateParsedItems(items) {
       continue;
     }
 
-    if (!name && (item.qty || item.unit || note) && i + 1 < list.length) {
+    if (!name && !item.qty && item.unit && !note) {
+      list.splice(i, 1);
+      continue;
+    }
+    if (!name && item.qty && i + 1 < list.length) {
       var nxt = list[i + 1];
       if ((nxt.name || '').trim() && !nxt.qty && !nxt.unit) {
         nxt.qty = nxt.qty || item.qty;
         nxt.unit = nxt.unit || item.unit;
         nxt.note = nxt.note || item.note || note;
-        list.splice(i, 1);
-        continue;
-      }
-      if (!item.qty && item.unit) {
         list.splice(i, 1);
         continue;
       }
@@ -3618,6 +3620,9 @@ function normalizeBlogIngredientLine(line) {
   line = line.replace(/(kg|g|tsp|tbsp|tbs|cups?|nos|pods?)\(([^)]+)\)/gi, '$1 ($2)');
   line = line.replace(/\bone\s+pinch\b/gi, '1 pinch');
   line = line.replace(/\bas\s+reqd\b/gi, 'as needed');
+  line = line.replace(/([a-z])(big|small)\s+piece/gi, '$1 - $2 piece');
+  line = line.replace(/([a-z])-(big|small)\s+piece/gi, '$1 - $2 piece');
+  line = line.replace(/(colour|color)-one\s+pinch/gi, '$1 - one pinch');
   return line.replace(/\s+/g, ' ').trim();
 }
 
@@ -3772,18 +3777,18 @@ function splitIngredientLine(line) {
     var spNote = sizePiece[2].toLowerCase() + ' piece';
     if (sizePiece[3]) spNote += '; ' + sizePiece[3].trim();
     note = note ? note + '; ' + spNote : spNote;
-    return { qty: '', unit: '', name: titleCaseIngredientName(sizePiece[1].trim()), note: note };
+    return { qty: '1', unit: 'piece', name: titleCaseIngredientName(sizePiece[1].trim()), note: note };
   }
 
-  var nosFrying = line.match(/^(.+?)\s*-\s*(\d+)\s+nos\s+for\s+frying\s*(.*)$/i);
-  if (nosFrying) {
-    var fryExtra = (nosFrying[3] || '').trim();
-    if (fryExtra) note = note ? note + '; ' + fryExtra : fryExtra;
-    note = note ? note + '; for frying' : 'for frying';
+  var nosQty = line.match(/^(.+?)\s*-\s*(\d+)\s+nos(?:\s+for\s+frying)?\s*(.*)$/i);
+  if (nosQty) {
+    var nosExtra = (nosQty[3] || '').replace(/^\(|\)$/g, '').trim();
+    if (nosExtra) note = note ? note + '; ' + nosExtra : nosExtra;
+    if (/for\s+frying/i.test(line)) note = note ? note + '; for frying' : 'for frying';
     return {
-      qty: nosFrying[2],
-      unit: 'no',
-      name: titleCaseIngredientName(nosFrying[1].trim()),
+      qty: nosQty[2],
+      unit: 'piece',
+      name: titleCaseIngredientName(nosQty[1].trim()),
       note: note
     };
   }
@@ -4619,9 +4624,11 @@ function isJunkMethodStep(step) {
     /^continue reading/i, /^discover more from/i, /^subscribe to our newsletter/i,
     /^written by$/i, /^author$/i,     /^\d+\s+comments?$/i, /^recent posts$/i, /^categories$/i,
     /^\d+\/\d+\s*\(\d+\s*reviews?\)/i, /^until next time/i, /^related posts?\s*:/i,
-    /^puttu\s+kappa\s+puttu/i, /^erachi\s+puttu/i
+    /^puttu\s+kappa\s+puttu/i, /^erachi\s+puttu/i,
+    /^note\s*:/i, /^love$/i, /^veena$/i, /^vinu$/i, /^notes?$/i, /^loading$/i
   ];
   if (junkRes.some(function(re) { return re.test(t); })) return true;
+  if (t.length <= 18 && /^[A-Za-z][a-z]{2,14}$/.test(t) && !/\b(rice|chicken|onion|salt|water|heat|add|mix)\b/i.test(t)) return true;
   if (t.length < 28 && /^serve\s+(hot|with|warm)/i.test(t) && !/\b(heat|add|mix|stir|place|cover|knead|roll)\b/i.test(t)) return true;
   if (t.length < 18 && /^(?:serves?|yield)\s*:?\s*[\d\u00BC]/i.test(t)) return true;
   return false;

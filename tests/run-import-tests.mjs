@@ -71,7 +71,8 @@ Object.entries(gold.fixtures || {}).forEach(function ([file, expect]) {
 (wave1.fixtures || []).forEach(function (fx) {
   const file = fx.id === 'kothiyavunu-gothambu-puttu' ? 'kothiyavunu-puttu-blob.txt'
     : fx.id === 'curryworld-rumali-roti' ? 'rumali-roti-blob.txt'
-    : fx.id === 'curryworld-soya-65' ? 'soya-65-blob.txt' : null;
+    : fx.id === 'curryworld-soya-65' ? 'soya-65-blob.txt'
+    : fx.id === 'curryworld-biriyani' ? 'curryworld-biriyani-blob.txt' : null;
   if (file && fx.expect) runBlobFixture(file, fx.expect);
 });
 

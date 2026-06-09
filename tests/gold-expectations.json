@@ -25,6 +25,15 @@
       "qty_patterns": ["1 1/2", "1½"],
       "ingredient_contains": ["Soya", "Corn flour", "Yogurt"],
       "junk_steps": 0
+    },
+    "curryworld-biriyani-blob.txt": {
+      "ingredients_exact": 37,
+      "steps_min": 14,
+      "steps_max": 16,
+      "ingredient_contains": ["Chicken", "Basmati Rice", "For Marinade", "Garam masala", "Raisins"],
+      "junk_steps": 0,
+      "auto_enrich": false,
+      "category_must_be": "Grains & Comfort"
     }
   }
 }
