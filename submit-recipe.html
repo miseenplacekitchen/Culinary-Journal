@@ -18,7 +18,7 @@
   <script src="lib/import-audit.js"></script>
   <script src="lib/recipe-import-validate.js"></script>
   <script src="lib/recipe-import-paths.js"></script>
-  <script src="lib/recipe-hero-labels.js?v=20260608"></script>
+  <script src="lib/recipe-hero-labels.js?v=20260609"></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -687,16 +687,9 @@
     .sr-img-hero-ring-wrap { position: relative; width: min(400px, 100%); aspect-ratio: 1; }
     .sr-img-hero-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
     .sr-img-hero-ring-stroke { fill: none; stroke: var(--accent); stroke-width: 3; }
-    .sr-img-label-layer {
-      position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: visible;
-    }
-    .recipe-hero-labels-svg {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      overflow: visible; pointer-events: none;
-    }
-    .recipe-hero-label-text {
+    .rh-ring-text {
       font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-      font-style: italic; font-weight: 400; letter-spacing: 0.03em;
+      font-size: 15px; font-style: italic; font-weight: 400; letter-spacing: 0.03em;
       fill: #2a1e14;
       stroke: none;
       filter: drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 0 5px rgba(255,255,255,0.75));
@@ -1251,14 +1244,24 @@
             <div id="img-preview-state" class="img-preview-wrap" style="display:none" onclick="event.stopPropagation()">
               <div class="sr-img-hero-frame">
                 <div class="sr-img-hero-ring-wrap">
-                  <svg class="sr-img-hero-ring" viewBox="0 0 420 420" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                  <svg class="sr-img-hero-ring" viewBox="0 0 420 420" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                     <circle class="sr-img-hero-ring-stroke" cx="210" cy="210" r="168"/>
+                    <defs>
+                      <!-- r=157.06 = photo edge 168 − 3px border − 2mm; brand 180°→150°, handle 270°→300° -->
+                      <path id="rh-arc-brand" d="M 52.94 210 A 157.06 157.06 0 0 0 73.99 131.47" fill="none"/>
+                      <path id="rh-arc-handle" d="M 210 367.06 A 157.06 157.06 0 0 1 288.53 346.01" fill="none"/>
+                    </defs>
+                    <text class="rh-ring-text" id="rh-text-brand">
+                      <textPath href="#rh-arc-brand" xlink:href="#rh-arc-brand" startOffset="0%" text-anchor="start">The Culinary Journal</textPath>
+                    </text>
+                    <text class="rh-ring-text" id="rh-text-handle" style="display:none">
+                      <textPath href="#rh-arc-handle" xlink:href="#rh-arc-handle" startOffset="0%" text-anchor="start"></textPath>
+                    </text>
                   </svg>
                   <div class="sr-img-hero-circle" id="sr-img-hero-circle">
                     <img id="img-preview-img" class="sr-img-hero-img" alt="Recipe photo preview" draggable="false" decoding="async">
                     <div id="img-drag-overlay" title="Drag to reposition"></div>
                   </div>
-                  <div class="sr-img-label-layer" aria-hidden="true"></div>
                   <div class="img-overlay">
                     <button type="button" class="btn-img-action" onclick="event.stopPropagation(); document.getElementById('recipe-image-input').click()">&#8635; Change</button>
                     <button type="button" class="btn-img-action btn-img-remove" onclick="event.stopPropagation(); removeImage()">&times; Remove</button>
@@ -7045,18 +7048,22 @@ function restoreDraft(raw) {
   checkAll(d.meal_type_tags);
   checkAll(d.flavor_profile_tags);
 
-  // Image
+  // Image — always preview from original source, never a baked thumbnail
   if (d.image_url || d.image_source_url) {
-    window._imgSourceUrl = d.image_source_url || d.image_url;
-    window._imgSourceDataUrl = d.image_source_url || d.image_url;
-    window.uploadedImageUrl = d.image_url || d.image_source_url;
+    var imgSource = d.image_source_url || d.image_url;
+    window._imgSourceUrl = imgSource;
+    window._imgSourceDataUrl = imgSource;
+    window.uploadedImageUrl = d.image_url || imgSource;
     try {
       if (typeof showImagePreview === 'function') {
-        showImagePreview(window._imgSourceDataUrl || window._imgSourceUrl, {
-          keepCrop: true,
-          panX: d.image_pan_x != null ? d.image_pan_x : 0,
-          panY: d.image_pan_y != null ? d.image_pan_y : 0,
-          zoom: d.image_zoom != null ? d.image_zoom : 1
+        reviveImgBlobUrl(imgSource).then(function(blobUrl) {
+          showImagePreview(imgSource, {
+            keepCrop: true,
+            displayUrl: blobUrl || undefined,
+            panX: d.image_pan_x != null ? d.image_pan_x : 0,
+            panY: d.image_pan_y != null ? d.image_pan_y : 0,
+            zoom: d.image_zoom != null ? d.image_zoom : 1
+          });
         });
       }
     } catch(_) {}
