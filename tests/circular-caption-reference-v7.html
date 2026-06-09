@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Circular caption — reference v7</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; background: #1c1f26; color: #e8e6df; }
+  .wrap { max-width: 460px; margin: 0 auto; }
+  h1 { font-size: 18px; font-weight: 500; }
+  p.note { font-size: 13px; line-height: 1.6; color: #b8b4a8; }
+  .stage { position: relative; width: 400px; height: 400px; margin: 16px auto; }
+  #photo { position: absolute; inset: 8px; border-radius: 50%; background: #f4f5f3; box-sizing: border-box; }
+  #photo.dark { background: #242b27; }
+  svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .controls { display: flex; flex-direction: column; gap: 12px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 10px; }
+  input[type=text], select { padding: 6px 10px; border-radius: 6px; border: 1px solid #555; background: #2a2e37; color: #e8e6df; }
+  input[type=text] { flex: 1; }
+  input[type=range] { flex: 1; }
+  .readout { font-size: 12px; color: #b8b4a8; }
+  /* Uppercase everything in the captions, but leave the @ as a normal symbol. */
+  .caption { text-transform: uppercase; }
+  .caption .at { text-transform: none; font-family: Georgia, "Times New Roman", serif; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Circular caption — reference v7</h1>
+  <p class="note">
+    Drag the nudge slider to move The Culinary Journal right; the username stays exactly
+    opposite. Username sits 1&nbsp;mm closer to the ring than the brand. All caps except the @.
+  </p>
+
+  <div class="stage">
+    <div id="photo"></div>
+    <svg viewBox="0 0 400 400" aria-hidden="true">
+      <defs>
+        <filter id="softHalo" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="0" stdDeviation="0.6" flood-color="#000" flood-opacity="0.35"/>
+        </filter>
+        <path id="brandArc" fill="none"></path>
+        <path id="userArc"  fill="none"></path>
+      </defs>
+      <circle id="ring" cx="200" cy="200" fill="none"></circle>
+      <circle id="innerGuide" cx="200" cy="200" fill="none" stroke="#888" stroke-width="0.5" opacity="0.6" stroke-dasharray="3 4"></circle>
+      <text id="brandText" class="caption">
+        <textPath href="#brandArc" startOffset="50%" text-anchor="middle">The Culinary Journal</textPath>
+      </text>
+      <text id="userText" class="caption">
+        <textPath id="userPath" href="#userArc" startOffset="50%" text-anchor="middle"></textPath>
+      </text>
+    </svg>
+  </div>
+
+  <div class="controls">
+    <label>Nudge <input id="nudge" type="range" min="108" max="150" value="140" step="1"></label>
+    <div class="readout" id="readout"></div>
+    <label>Theme
+      <select id="themeSel">
+        <option value="lavender">Lavender</option>
+        <option value="forest">Forest</option>
+        <option value="terracotta">Terracotta</option>
+        <option value="slate">Slate</option>
+      </select>
+    </label>
+    <label>Username <input id="nameInput" type="text" value="@thecozyplacekitchen"></label>
+    <label><input id="bgToggle" type="checkbox"> Dark image</label>
+  </div>
+</div>
+
+<script>
+  const CX = 200, CY = 200;
+  const RING_OUTER = 190, RING_THICKNESS = 8;
+  const INNER_R = RING_OUTER - RING_THICKNESS;
+
+  const MM_TO_PX = 3.7795;
+  const GAP_BRAND_PX = 4 * MM_TO_PX;   // brand: 4mm to the capitals
+  const GAP_USER_PX  = 2 * MM_TO_PX;   // username: 2mm  (2mm closer than the brand)
+  const SIZE = 15;
+  const FONT = `400 ${SIZE}px 'Cinzel', serif`;
+
+  const probe = document.createElement('canvas').getContext('2d');
+  const ring = document.getElementById('ring');
+  const brandArc = document.getElementById('brandArc'), userArc = document.getElementById('userArc');
+  const nudge = document.getElementById('nudge'), readout = document.getElementById('readout');
+  const themeSel = document.getElementById('themeSel'), nameInput = document.getElementById('nameInput');
+  const bgToggle = document.getElementById('bgToggle'), userPath = document.getElementById('userPath');
+  const photo = document.getElementById('photo');
+
+  ring.setAttribute('r', RING_OUTER - RING_THICKNESS / 2);
+  ring.setAttribute('stroke-width', RING_THICKNESS);
+  document.getElementById('innerGuide').setAttribute('r', INNER_R);
+
+  // Your angle convention (0 = right, 90 = top, CCW). Internally converted to a
+  // 0 = top, clockwise system for placement.
+  const toClock = their => (((90 - their) % 360) + 360) % 360;
+
+  // polar/arc take the radius explicitly because brand and username use different radii.
+  function polar(clock, R) { const a = clock * Math.PI / 180; return { x: CX + R * Math.sin(a), y: CY - R * Math.cos(a) }; }
+  function arc(s, e, sweep, R) {
+    const p1 = polar(s, R), p2 = polar(e, R), large = Math.abs(e - s) > 180 ? 1 : 0;
+    return `M ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} A ${R} ${R} 0 ${large} ${sweep} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+  }
+
+  function rebuild() {
+    probe.font = FONT;
+    const brandAsc = probe.measureText('THE CULINARY JOURNAL').actualBoundingBoxAscent;
+    const userAsc  = probe.measureText((nameInput.value || '@username').toUpperCase()).actualBoundingBoxAscent;
+    const brandR = INNER_R - GAP_BRAND_PX - brandAsc;
+    const userR  = INNER_R - GAP_USER_PX  - userAsc;
+
+    const brandTheir = +nudge.value;          // brand angle in your convention
+    const userTheir  = (brandTheir + 180) % 360; // always exactly opposite
+    const bc = toClock(brandTheir);
+    const us = (toClock(userTheir));
+
+    brandArc.setAttribute('d', arc(bc - 42, bc + 42, 1, brandR));   // centre-anchored
+    userArc.setAttribute('d', arc(us + 42, us - 42, 0, userR));     // centre-anchored, mirror of brand → truly opposite
+
+    readout.textContent = `The Culinary Journal: ${brandTheir}°   ·   @user: ${userTheir}° (opposite)`;
+  }
+
+  const THEMES = {
+    lavender:   { ring: '#9b87cc', onLight: '#4a3f6b', onDark: '#efeaf7' },
+    forest:     { ring: '#4b7d5b', onLight: '#2c4533', onDark: '#e7f0ea' },
+    terracotta: { ring: '#c47a5a', onLight: '#653c28', onDark: '#f5e6dd' },
+    slate:      { ring: '#6b7280', onLight: '#2f3338', onDark: '#eceef0' },
+  };
+
+  function render() {
+    const t = THEMES[themeSel.value], dark = bgToggle.checked;
+    ring.setAttribute('stroke', t.ring);
+    const colour = dark ? t.onDark : t.onLight;
+    // Keep the @ as a literal symbol; the .at tspan renders it in a clean font.
+    userPath.innerHTML = (nameInput.value || '@username').replace('@', '<tspan class="at">@</tspan>');
+    document.querySelectorAll('.caption').forEach(el => {
+      el.setAttribute('fill', colour);
+      el.setAttribute('filter', dark ? 'url(#softHalo)' : 'none');
+      el.style.font = FONT;
+      el.style.letterSpacing = '0.5px';
+    });
+    rebuild();
+  }
+
+  nudge.addEventListener('input', render);
+  themeSel.addEventListener('change', render);
+  nameInput.addEventListener('input', render);
+  bgToggle.addEventListener('change', () => { photo.classList.toggle('dark', bgToggle.checked); render(); });
+
+  document.fonts.ready.then(render);
+</script>
+</body>
+</html>

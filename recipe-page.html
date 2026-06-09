@@ -25,7 +25,7 @@
   <script src="theme-init.js"></script>
   <script src="supabase-config.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     /* ── RECIPE PAGE ─────────────────────────── */
     .rp-wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px 80px; }
@@ -41,9 +41,15 @@
     .rp-hero-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
     .rp-hero-ring-stroke { fill: none; stroke: var(--accent); stroke-width: 3; }
     .rp-hero-ring .rh-ring-text {
-      font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+      font-family: "Cinzel", serif;
       font-size: 15px;
-      font-style: italic; font-weight: 400; letter-spacing: 0.04em;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .rp-hero-ring .rh-at {
+      text-transform: none;
+      font-family: Georgia, "Times New Roman", serif;
     }
     .rp-hero-circle {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -370,7 +376,7 @@
   <script src="allergy-engine.js"></script>
   <script src="seo-schema.js"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
-  <script src="lib/recipe-hero-labels.js?v=20260616"></script>
+  <script src="lib/recipe-hero-labels.js?v=20260617"></script>
   <script src="nav-init.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -398,14 +404,17 @@
       <svg class="rp-hero-ring" id="hero-ring-svg" viewBox="0 0 420 420" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
         <circle class="rp-hero-ring-stroke" cx="210" cy="210" r="168"/>
         <defs>
+          <filter id="rp-ring-softHalo" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="0" stdDeviation="0.6" flood-color="#000" flood-opacity="0.35"/>
+          </filter>
           <path id="rp-ring-arc-brand" fill="none"/>
           <path id="rp-ring-arc-handle" fill="none"/>
         </defs>
         <text class="rh-ring-text rh-ring-brand">
-          <textPath xlink:href="#rp-ring-arc-brand" href="#rp-ring-arc-brand" startOffset="50%" text-anchor="middle">The Culinary Journal</textPath>
+          <textPath xlink:href="#rp-ring-arc-brand" href="#rp-ring-arc-brand" startOffset="50%" text-anchor="middle">THE CULINARY JOURNAL</textPath>
         </text>
         <text class="rh-ring-text rh-ring-handle" style="display:none">
-          <textPath xlink:href="#rp-ring-arc-handle" href="#rp-ring-arc-handle" startOffset="0%" text-anchor="start"></textPath>
+          <textPath xlink:href="#rp-ring-arc-handle" href="#rp-ring-arc-handle" startOffset="50%" text-anchor="middle"></textPath>
         </text>
       </svg>
       <div class="rp-hero-circle">

@@ -18,10 +18,10 @@
   <script src="lib/import-audit.js"></script>
   <script src="lib/recipe-import-validate.js"></script>
   <script src="lib/recipe-import-paths.js"></script>
-  <script src="lib/recipe-hero-labels.js?v=20260616"></script>
+  <script src="lib/recipe-hero-labels.js?v=20260617"></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     /* ── PAGE LAYOUT ─────────────────────────── */
     .sr-page { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
@@ -688,9 +688,15 @@
     .sr-img-hero-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
     .sr-img-hero-ring-stroke { fill: none; stroke: var(--accent); stroke-width: 3; }
     .sr-img-hero-ring .rh-ring-text {
-      font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+      font-family: "Cinzel", serif;
       font-size: 15px;
-      font-style: italic; font-weight: 400; letter-spacing: 0.03em;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .sr-img-hero-ring .rh-at {
+      text-transform: none;
+      font-family: Georgia, "Times New Roman", serif;
     }
     .sr-img-hero-circle {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -1246,14 +1252,17 @@
                   <svg class="sr-img-hero-ring" viewBox="0 0 420 420" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                     <circle class="sr-img-hero-ring-stroke" cx="210" cy="210" r="168"/>
                     <defs>
+                      <filter id="sr-ring-softHalo" x="-50%" y="-50%" width="200%" height="200%">
+                        <feDropShadow dx="0" dy="0" stdDeviation="0.6" flood-color="#000" flood-opacity="0.35"/>
+                      </filter>
                       <path id="sr-ring-arc-brand" fill="none"/>
                       <path id="sr-ring-arc-handle" fill="none"/>
                     </defs>
                     <text class="rh-ring-text rh-ring-brand">
-                      <textPath xlink:href="#sr-ring-arc-brand" href="#sr-ring-arc-brand" startOffset="50%" text-anchor="middle">The Culinary Journal</textPath>
+                      <textPath xlink:href="#sr-ring-arc-brand" href="#sr-ring-arc-brand" startOffset="50%" text-anchor="middle">THE CULINARY JOURNAL</textPath>
                     </text>
                     <text class="rh-ring-text rh-ring-handle" style="display:none">
-                      <textPath xlink:href="#sr-ring-arc-handle" href="#sr-ring-arc-handle" startOffset="0%" text-anchor="start"></textPath>
+                      <textPath xlink:href="#sr-ring-arc-handle" href="#sr-ring-arc-handle" startOffset="50%" text-anchor="middle"></textPath>
                     </text>
                   </svg>
                   <div class="sr-img-hero-circle" id="sr-img-hero-circle">
@@ -7889,10 +7898,12 @@ function bakeRecipeImageCrop() {
       if (!m || !nw || !nh) { resolve(window.uploadedImageUrl || ''); return; }
       var maxSrc = Math.max(nw, nh);
       var outSize = Math.min(2400, Math.max(1200, maxSrc));
+      var dpr = Math.min(3, window.devicePixelRatio || 1);
       var canvas = document.createElement('canvas');
-      canvas.width = outSize;
-      canvas.height = outSize;
+      canvas.width = Math.round(outSize * dpr);
+      canvas.height = Math.round(outSize * dpr);
       var ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (ctx.imageSmoothingEnabled !== undefined) {
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
