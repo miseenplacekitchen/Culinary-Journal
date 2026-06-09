@@ -8,12 +8,15 @@
 <title>Library — Submit Profile — The Culinary Journal</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
 <script src="page-guard.js"></script>
 <script src="library-chrome.js"></script>
+<script src="library-mise.js"></script>
+<script src="lib/recipe-hero-labels.js?v=20260629"></script>
+<script src="lib/circular-hero-editor.js?v=20260629"></script>
 <style>
 *, *::before, *::after { box-sizing:border-box; }
 body { background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--text-high); margin:0; }
@@ -80,14 +83,27 @@ body { background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--text-
       <input class="ls-input" id="f-img-url" type="text" placeholder="Or paste image URL" style="margin-top:8px">
     </div>
     <div class="ls-row" style="margin-top:20px">
-      <label class="ls-label">Mise circle <small style="color:var(--text-muted)">(round prep-board photo for Library &amp; print)</small></label>
-      <div class="ls-img-box" onclick="document.getElementById('f-mise-file').click()" style="max-width:200px">
-        <div id="f-mise-preview"></div>
-        <div class="ls-img-text">Upload circular mise photo</div>
-        <input type="file" id="f-mise-file" accept="image/*" class="ls-hidden" onchange="previewMiseImage(this)">
+      <label class="ls-label">Mise circle <small style="color:var(--text-muted)">(same circular editor as recipes — THE CULINARY JOURNAL ring only)</small></label>
+      <div id="ls-mise-empty" class="ls-img-box" onclick="document.getElementById('f-mise-file').click()" style="max-width:320px;margin:0 auto">
+        <div class="ls-img-text">Click to upload mise photo</div>
       </div>
-      <input class="ls-input" id="f-mise-url" type="text" placeholder="Or paste mise image URL" style="margin-top:8px">
-      <select class="ls-select" id="f-image-status" style="margin-top:8px;max-width:220px">
+      <div id="ls-mise-editor" style="display:none">
+        <div class="lib-mise-editor-wrap">
+          <div class="sr-img-hero-ring-wrap" id="ls-mise-ring-wrap"></div>
+        </div>
+        <div class="lib-mise-zoom">
+          <button type="button" onclick="libMiseZoom(-1)" aria-label="Zoom out">−</button>
+          <span id="ls-mise-zoom-val">100%</span>
+          <button type="button" onclick="libMiseZoom(1)" aria-label="Zoom in">+</button>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:8px">✢ Drag to reposition within the circle</p>
+        <div style="text-align:center;margin-top:10px">
+          <button type="button" class="ls-btn ls-btn-secondary" style="font-size:12px;padding:8px 16px" onclick="clearMiseImage()">Remove mise photo</button>
+        </div>
+      </div>
+      <input type="file" id="f-mise-file" accept="image/*" class="ls-hidden" onchange="handleMiseFile(this)">
+      <input type="hidden" id="f-mise-url">
+      <select class="ls-select" id="f-image-status" style="margin-top:12px;max-width:280px">
         <option value="missing">No mise image</option>
         <option value="draft">Draft — not shown publicly</option>
         <option value="approved">Approved — visible in Library &amp; print</option>
@@ -337,9 +353,78 @@ async function uploadLibraryImage(file, pathPrefix, previewId, urlFieldId) {
   }
 }
 
-async function previewMiseImage(input) {
+var _libMiseEditor = null;
+
+function initMiseEditor() {
+  var wrap = document.getElementById('ls-mise-ring-wrap');
+  if (!wrap || wrap._miseInited) return;
+  wrap._miseInited = true;
+  wrap.innerHTML =
+    (window.LibraryMise && LibraryMise.ringSvg ? LibraryMise.ringSvg : '') +
+    '<div class="sr-img-hero-circle lib-mise-circle" id="ls-mise-circle">' +
+    '<img id="ls-mise-img" class="sr-img-hero-img" alt="Mise preview" draggable="false" decoding="async">' +
+    '<div id="ls-mise-drag" class="ls-mise-drag" title="Drag to reposition"></div></div>';
+  _libMiseEditor = CircularHeroEditor.create({
+    imgEl: document.getElementById('ls-mise-img'),
+    circleEl: document.getElementById('ls-mise-circle'),
+    overlayEl: document.getElementById('ls-mise-drag'),
+    zoomValEl: document.getElementById('ls-mise-zoom-val'),
+    ringWrapEl: wrap
+  });
+  window._libMiseEditor = _libMiseEditor;
+}
+
+function showMiseEditor(show) {
+  var empty = document.getElementById('ls-mise-empty');
+  var editor = document.getElementById('ls-mise-editor');
+  if (empty) empty.style.display = show ? 'none' : 'block';
+  if (editor) editor.style.display = show ? 'block' : 'none';
+}
+
+function handleMiseFile(input) {
   if (!input.files || !input.files[0]) return;
-  await uploadLibraryImage(input.files[0], 'library/mise', 'f-mise-preview', 'f-mise-url');
+  initMiseEditor();
+  showMiseEditor(true);
+  _libMiseEditor.loadFromFile(input.files[0]);
+  var st = document.getElementById('f-image-status');
+  if (st && st.value === 'missing') st.value = 'draft';
+  input.value = '';
+}
+
+function libMiseZoom(dir) {
+  if (_libMiseEditor) _libMiseEditor.adjustZoom(dir);
+}
+
+function clearMiseImage() {
+  var urlField = document.getElementById('f-mise-url');
+  if (urlField) urlField.value = '';
+  showMiseEditor(false);
+  var st = document.getElementById('f-image-status');
+  if (st) st.value = 'missing';
+  if (_libMiseEditor) _libMiseEditor.state.hasImage = false;
+}
+
+async function uploadMiseImage(dataUrl) {
+  if (!dataUrl) return '';
+  if (!dataUrl.startsWith('data:')) return dataUrl;
+  try {
+    var blob = await fetch(dataUrl).then(function (r) { return r.blob(); });
+    var ext = (blob.type && blob.type.indexOf('png') >= 0) ? 'png' : 'jpg';
+    var path = 'library/mise/' + currentType + '/' + Date.now() + '-mise.' + ext;
+    var res = await fetch(window.SUPA_URL + '/storage/v1/object/library-images/' + path, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + sess.access_token,
+        'Content-Type': blob.type || 'image/jpeg',
+        'x-upsert': 'true'
+      },
+      body: blob
+    });
+    if (!res.ok) return '';
+    return window.SUPA_URL + '/storage/v1/object/public/library-images/' + path;
+  } catch (_) {
+    return '';
+  }
 }
 
 async function previewImage(input) {
@@ -406,6 +491,21 @@ async function submitProfile() {
   const btn = document.getElementById('ls-submit-btn');
   btn.disabled = true; btn.textContent = 'Saving…';
 
+  var miseUrl = val('f-mise-url');
+  if (_libMiseEditor && _libMiseEditor.hasImage()) {
+    btn.textContent = 'Baking mise photo…';
+    var baked = await _libMiseEditor.bake();
+    if (baked) {
+      var uploaded = await uploadMiseImage(baked);
+      if (uploaded) {
+        miseUrl = uploaded;
+        var miseField = document.getElementById('f-mise-url');
+        if (miseField) miseField.value = uploaded;
+      }
+    }
+    btn.textContent = 'Saving…';
+  }
+
   const slug = slugify(name) + '-' + Date.now();
   const localNames = (val('f-local') || '').split(',').map(s => s.trim()).filter(Boolean);
 
@@ -415,7 +515,7 @@ async function submitProfile() {
     also_known_as:    val('f-aka') || null,
     local_names:      JSON.stringify(localNames),
     image_url:        imgUrl,
-    mise_image_url:   val('f-mise-url') || null,
+    mise_image_url:   miseUrl || null,
     image_status:     val('f-image-status') || 'missing',
     chefs_notes:      val('f-chefs') || null,
     recommended_brand: val('f-brand') || null,
@@ -527,10 +627,10 @@ async function loadExisting(id) {
     setVal('f-dyk', p.did_you_know); setVal('f-status', p.status); setVal('f-visibility', p.visibility);
     if (p.image_url) { var ei = document.createElement('img'); ei.src = p.image_url; ei.style.maxHeight = '100px'; document.getElementById('f-img-preview').replaceChildren(ei); }
     if (p.mise_image_url) {
-      var mi = document.createElement('img');
-      mi.src = p.mise_image_url;
-      mi.style.cssText = 'width:120px;height:120px;border-radius:50%;object-fit:cover';
-      document.getElementById('f-mise-preview').replaceChildren(mi);
+      initMiseEditor();
+      showMiseEditor(true);
+      setVal('f-mise-url', p.mise_image_url);
+      _libMiseEditor.loadFromUrl(p.mise_image_url);
     }
     document.title = 'Edit Profile — The Culinary Journal';
     var chromeTitle = document.getElementById('lib-chrome-title');

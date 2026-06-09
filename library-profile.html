@@ -8,12 +8,13 @@
 <title>Library Profile — The Culinary Journal</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
 <script src="library-chrome.js"></script>
 <script src="library-mise.js"></script>
+<script src="lib/recipe-hero-labels.js?v=20260629"></script>
 <script src="nav-init.js"></script>
 <style>
 .lp-page { min-height:100vh; background:var(--bg); }
@@ -342,7 +343,7 @@ async function init() {
         ${recipesHtml}
       </div>
     `;
-    LibraryMise.bindProtection(document.getElementById('lp-content'));
+    LibraryMise.mountRings(document.getElementById('lp-content'));
   } catch(e) {
     showError('Could not load this profile.');
   }
