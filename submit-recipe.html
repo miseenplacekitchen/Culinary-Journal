@@ -2922,6 +2922,10 @@ async function applyUrlImportToPaste(articleText, pageTitle, statusSuffix) {
     }
   }
   document.getElementById('parse-tips').style.display = 'block';
+  if (extracted.notes && extracted.notes.length) {
+    var notesEl = document.getElementById('cooking-notes');
+    if (notesEl && !notesEl.value.trim()) notesEl.value = extracted.notes.join('\n');
+  }
   if (extracted.hasContent) {
     showImportStatus(
       'Extracted ' + extracted.ingCount + ' ingredient' + (extracted.ingCount === 1 ? '' : 's') +
@@ -3113,6 +3117,40 @@ function normalizeParsedUnit(unit) {
   return u;
 }
 
+function normalizeRecipeTitleKey(text) {
+  return String(text || '').toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ')
+    .replace(/\brotti\b/g, 'roti').trim();
+}
+
+function isRecipeTitleEchoLine(line, title) {
+  var a = normalizeRecipeTitleKey(line);
+  if (!a || a.length < 4) return false;
+  var candidates = [title];
+  var nameEl = document.getElementById('recipe-name');
+  if (nameEl && nameEl.value.trim()) candidates.push(nameEl.value.trim());
+  for (var i = 0; i < candidates.length; i++) {
+    var b = normalizeRecipeTitleKey(candidates[i]);
+    if (b && a === b) return true;
+  }
+  return false;
+}
+
+function isMethodAttributionLine(line) {
+  var t = String(line || '').trim();
+  if (!t) return false;
+  return /^(?:i\s+got\s+this\s+recipe|i\s+am\s+sharing|i'?m\s+sharing|thanks\s+for|source:|recipe\s+(?:from|credit)|adapted\s+from)/i.test(t)
+    || /\b(?:van\s+re\s+vah|vah\s*re\s*vah|vahrehva|youtube|video\s+of\s+making|sharing\s+the\s+video|more\s+easier\s+for\s+u)\b/i.test(t)
+    || /\b(?:subscribe|follow\s+my\s+(?:page|blog)|like\s+my\s+page)\b/i.test(t);
+}
+
+function appendCookingNote(text) {
+  var el = document.getElementById('cooking-notes');
+  if (!el || !(text || '').trim()) return;
+  var note = String(text).trim();
+  var existing = el.value.trim();
+  el.value = existing ? existing + '\n' + note : note;
+}
+
 function isMethodSectionHeader(line) {
   var t = String(line || '').trim().replace(/\s*:?\s*$/, '');
   if (!t || t.length > 55) return false;
@@ -3135,8 +3173,9 @@ function isMethodStepLine(line) {
   if (isMethodSectionHeader(t)) return true;
   if (t.length < 8) return false;
   if (/^(?:so\s+)?ur\s+\w+\s+is\s+ready/i.test(t)) return false;
-  if (/^(then|next|finally|meanwhile|check)\b/i.test(t)) return true;
-  if (/\b(soak|wash|boil|fry|roast|heat|add|cook|stir|mix|crush|drain|remove|strain|saut[eé]|serve|check|sprinkle|place|close|cover|prick|decorate|layer|bring|simmer|bake|transfer|fold|whisk|blend|grind|chop|slice|peel|beat|reduce|season|garnish|dum|parboil|blanch|marinate|grease|greasing|greased|grease|skim|skim|toast|toast|brown|browning|sautéing|sauteing|keep\s+aside|set\s+aside|keep\s+that|drain|par-cook|parboil)\b/i.test(t)) return true;
+  if (/^(then|next|finally|meanwhile|check|do\s+the\s+same|both\s+of\s+them|when\s+it\s+starts|in\s+a\s+bowl)\b/i.test(t)) return true;
+  if (isMethodAttributionLine(t)) return false;
+  if (/\b(soak|wash|boil|fry|roast|heat|add|cook|stir|mix|make|knead|spread|cover|allow|rest|press|roll|dust|turn|fold|separate|mean|crush|drain|remove|strain|saut[eé]|serve|check|sprinkle|place|close|prick|decorate|layer|bring|simmer|bake|transfer|whisk|blend|grind|chop|slice|peel|beat|reduce|season|garnish|dum|parboil|blanch|marinate|grease|toast|brown|puff|split|share|keep\s+aside|set\s+aside|keep\s+that|par-cook|little\s+by\s+little|equal\s+size|puffing)\b/i.test(t)) return true;
   return false;
 }
 
@@ -3186,7 +3225,8 @@ function normalizeIngredientAlias(name) {
     'green chilli': 'Green Chilli', 'green chillies': 'Green Chilli',
     'curry leaves': 'Curry Leaves', 'coriander leaves': 'Coriander Leaves',
     'chilli sauce': 'Chilli Sauce', 'ketchup': 'Ketchup', 'salt': 'Salt', 'water': 'Water', 'curd': 'Curd',
-    'kismis': 'Raisins', 'basmati': 'Basmati Rice',
+    'kismis': 'Raisins', 'basmati': 'Basmati Rice', 'all purpose flour': 'All Purpose Flour',
+    'wheat flour': 'Wheat Flour', 'rice flour': 'Rice Flour',
     'corn flour': 'Cornflour', 'meal maker': 'Soya Chunks', 'soya nuggets': 'Soya Chunks',
     'lem': 'Lemon Juice', 'ging': 'Ginger Garlic Paste', 'cori': 'Coriander Leaves',
     'gree': 'Green Chilli', 'wate': 'Water',
@@ -3230,9 +3270,16 @@ function inferIngredientUnit(name, qty) {
   return '';
 }
 
+function isValidIngredientQtyFragment(s) {
+  var t = String(s || '').trim();
+  if (!t || /\bless\s+than\b/i.test(t)) return false;
+  if (!/^[\d\u00BC-\u00BE\u2150-\u215E\/\.\s]+$/.test(t)) return false;
+  return /[\d\u00BC-\u00BE\/]/.test(t);
+}
+
 function parseTrailingQtyInName(name, existingNote) {
   var n = normalizeBlogIngredientLine(String(name || '').trim());
-  if (!n) return null;
+  if (!n || /\bless\s+than\b/i.test(n)) return null;
   var dashNote = n.match(new RegExp('^(.+?)\\s+(' + PARSE_QTY_PAT + ')\\s*\\b(' + PARSE_UNIT_WORDS +
     ')\\b\\s*[-–—]\\s*(.+)$', 'i'));
   if (dashNote) {
@@ -3282,6 +3329,7 @@ function isValidParsedIngredient(item) {
   if (!item || !item.name) return false;
   var n = item.name.trim();
   if (!n || n.length < 2 || ING_JUNK_NAMES.test(n) || isIngredientSubHeader(n)) return false;
+  if (isRecipeTitleEchoLine(n)) return false;
   if (isEmbeddedPrefixIngredientName(n)) return false;
   if (isFragmentIngredientName(n)) return false;
   if (isOrphanAltQtyLine(n)) return false;
@@ -3499,8 +3547,31 @@ function splitIngredientLine(line) {
     };
   }
 
+  var lessThanQty = line.match(new RegExp('^(.+?)\\s*-\\s*less\\s+than\\s+(' + PARSE_QTY_PAT + ')\\s*(' + PARSE_UNIT_WORDS + ')?\\b\\s*(.*)$', 'i'));
+  if (lessThanQty) {
+    var ltExtra = (lessThanQty[4] || '').trim();
+    var ltNote = 'less than ' + lessThanQty[2].trim() + (lessThanQty[3] ? ' ' + normalizeParsedUnit(lessThanQty[3]) : '');
+    if (ltExtra) ltNote += '; ' + ltExtra;
+    note = note ? note + '; ' + ltNote : ltNote;
+    return {
+      qty: '', unit: '',
+      name: titleCaseIngredientName(lessThanQty[1].trim()),
+      note: note
+    };
+  }
+
+  var forUse = line.match(/^(.+?)\s*-\s*for\s+([a-z][\w\s]{2,40})\s*$/i);
+  if (forUse) {
+    note = note ? note + '; for ' + forUse[2].trim() : 'for ' + forUse[2].trim();
+    return {
+      qty: '', unit: '',
+      name: titleCaseIngredientName(forUse[1].trim()),
+      note: note
+    };
+  }
+
   var stuck = line.match(new RegExp('^(.+?)\\s*-\\s*([\\d\\u00BC-\\u00BE\\u2150-\\u215E\\/\\.\\s]+)(' + PARSE_UNIT_WORDS + ')\\b\\s*(.*)$', 'i'));
-  if (stuck && /[\d\u00BC-\u00BE\/]/.test(stuck[2])) {
+  if (stuck && isValidIngredientQtyFragment(stuck[2])) {
     var extra = (stuck[4] || '').trim();
     if (extra) note = note ? note + '; ' + extra : extra;
     return {
@@ -3512,7 +3583,7 @@ function splitIngredientLine(line) {
   }
 
   var blog = line.match(new RegExp('^(.+?)\\s*-\\s*([\\d\\u00BC-\\u00BE\\u2150-\\u215E\\/\\.\\s]+)\\s*(' + PARSE_UNIT_WORDS + ')?\\b\\s*(.*)$', 'i'));
-  if (blog && /[\d\u00BC-\u00BE\/]/.test(blog[2])) {
+  if (blog && isValidIngredientQtyFragment(blog[2])) {
     var extra3 = (blog[4] || '').trim();
     if (extra3) note = note ? note + '; ' + extra3 : extra3;
     return {
@@ -3700,7 +3771,8 @@ function isMethodLikeLine(line) {
   if (isStepHeaderLine(line)) return true;
   if (/^(?:step\s*)?\d+[\.\):\-]\s+\S/i.test(line)) return true;
   if (line.length < 8 || line.length > 400) return false;
-  if (/\b(heat|add|cook|stir|bake|serve|mix|combine|pour|place|remove|transfer|cover|season|bring|simmer|boil|fry|grill|roast|whisk|fold|drain|cool|chop|slice|preheat|microwave|soak|crush|roast|strain|saut[eé]|check|sprinkle|prick|decorate|layer|dum|grease)\b/i.test(line)) return true;
+  if (/\b(heat|add|cook|stir|bake|serve|mix|make|knead|spread|cover|allow|rest|press|roll|dust|turn|fold|separate|combine|pour|place|remove|transfer|season|bring|simmer|boil|fry|grill|roast|whisk|drain|cool|chop|slice|preheat|microwave|soak|crush|strain|saut[eé]|check|sprinkle|prick|decorate|layer|dum|grease|puff|split|share)\b/i.test(line)) return true;
+  if (/^(?:do\s+the\s+same|both\s+of\s+them|when\s+it\s+starts|in\s+a\s+bowl)\b/i.test(line)) return true;
   return false;
 }
 
@@ -3757,7 +3829,8 @@ function collectIngredients(lines, startIdx, endIdx, title) {
     var ln = lines[i];
     if (isNutritionOrMetaLine(ln) || detectScanSection(ln) === 'junk') break;
     if (/^method$/i.test(ln) || /^description$/i.test(ln)) break;
-    if (title && ln === title) continue;
+    if (title && (ln === title || isRecipeTitleEchoLine(ln, title))) continue;
+    if (isRecipeTitleEchoLine(ln, title)) continue;
     if (isIngredientSubHeader(ln)) {
       if (current) ings.push(cleanScanContentLine(current, 'ing'));
       current = '';
@@ -3790,7 +3863,7 @@ function collectIngredients(lines, startIdx, endIdx, title) {
   return ings.filter(Boolean);
 }
 
-function collectMethodSteps(lines, startIdx, endIdx) {
+function collectMethodSteps(lines, startIdx, endIdx, noteOut) {
   var steps = [];
   for (var i = startIdx; i < endIdx; i++) {
     var ln = cleanScanContentLine(lines[i], 'meth');
@@ -3798,6 +3871,10 @@ function collectMethodSteps(lines, startIdx, endIdx) {
     if (isNutritionOrMetaLine(ln) || isScanNoiseLine(ln)) break;
     if (detectScanSection(ln) === 'junk' || /^ingredients?$/i.test(ln)) break;
     if (/^(?:so\s+)?ur\s+\w+\s+is\s+ready/i.test(ln)) continue;
+    if (isMethodAttributionLine(ln)) {
+      if (noteOut) noteOut.push(ln);
+      continue;
+    }
     if (isMethodStepLine(ln)) {
       steps.push(ln.replace(/^(?:step|method)\s+\d+\s+of\s+\d+\s*/i, '').replace(/\s*:?\s*$/, '').trim());
       continue;
@@ -3857,11 +3934,12 @@ function extractByLayout(lines) {
   }
 
   var methLines = [];
+  var methNotes = [];
   if (methStart >= 0) {
-    methLines = collectMethodSteps(lines, methStart, methEnd);
+    methLines = collectMethodSteps(lines, methStart, methEnd, methNotes);
   }
 
-  return { title: title, ingLines: ingLines, methLines: methLines };
+  return { title: title, ingLines: ingLines, methLines: methLines, methNotes: methNotes };
 }
 
 function parseServesNumber(servesLines) {
@@ -3886,6 +3964,10 @@ function extractRecipeCore(text) {
     tips: []
   };
   var title = layout.title;
+
+  if (layout.methNotes && layout.methNotes.length) {
+    sections.notes = sections.notes.concat(layout.methNotes);
+  }
 
   if (!sections.ing.length && !sections.meth.length) {
     var current = null;
@@ -3937,6 +4019,7 @@ function extractRecipeCore(text) {
     pasteText: pasteParts.join('\n\n'),
     ingCount: sections.ing.length,
     methCount: sections.meth.length,
+    notes: sections.notes.slice(),
     extraCount: extraCount,
     hasContent: sections.ing.length > 0 || sections.meth.length > 0
   };
@@ -4189,6 +4272,16 @@ function parseRecipe() {
   const stripBullet = s => s.replace(/^[\u2022\u00b7\u2023\u2043*\-\u2013\u2014\u25AA\u25CF\u25CB\u2713\u2714]\s+/, '').trim();
   const rawLines    = text.split('\n').map(l => stripBullet(l.trim())).filter(l => l.length > 0);
 
+  const notesHdrIdx = rawLines.findIndex(function(l) { return /^(?:notes?|cooking\s+notes?)\s*:?$/i.test(l); });
+  if (notesHdrIdx >= 0) {
+    var importedNotes = [];
+    for (var ni = notesHdrIdx + 1; ni < rawLines.length; ni++) {
+      if (/^(?:ingredients?|method|tips?|serves?|servings?|yield)\s*:?$/i.test(rawLines[ni])) break;
+      if (rawLines[ni]) importedNotes.push(rawLines[ni]);
+    }
+    if (importedNotes.length) appendCookingNote(importedNotes.join('\n'));
+  }
+
   // Detect recipe title from first short line (before sections) — never an ingredient line
   const titleCand = rawLines[0];
   if (titleCand && isLikelyRecipeTitleLine(titleCand)) {
@@ -4366,6 +4459,10 @@ function parseRecipe() {
     if (inMethod) {
       if (!curMeth) startMethSection('DIRECTIONS');
       if (/^(?:so\s+)?ur\s+\w+\s+is\s+ready/i.test(line)) continue;
+      if (isMethodAttributionLine(line)) {
+        appendCookingNote(line);
+        continue;
+      }
       const stepChunks = line.replace(/^(?:step\s*)?\d+[\.\)]\s*/i, '').trim();
       if (stepChunks) {
         stepChunks.split(/\s*(?:(?:method|step)\s+\d+\s+of\s+\d+)\s*/i).forEach(function(chunk) {
@@ -4387,7 +4484,7 @@ function parseRecipe() {
           qty: parsed.qty || '', unit: parsed.unit || '',
           name: parsed.name || '', note: parsed.note || ''
         });
-      } else if (looksLikeIngLine(line) && !isQtyUnitFragment(line) && !isFragmentIngredientName(line) && !isEmbeddedPrefixIngredientName(line)) {
+      } else if (looksLikeIngLine(line) && !isQtyUnitFragment(line) && !isFragmentIngredientName(line) && !isEmbeddedPrefixIngredientName(line) && !isRecipeTitleEchoLine(line)) {
         pushIngredientItem({ qty: '', unit: '', name: line, note: '' });
       } else if (/^(?:step\s*)?\d+[\.\):\-]\s+\S/i.test(line)) {
         flushPendingPartial();
@@ -4420,6 +4517,7 @@ function parseRecipe() {
       startIngSection('Ingredients');
       for (let i = ingIdx + 1; i < methIdx; i++) {
         const ln = rawLines[i];
+        if (isRecipeTitleEchoLine(ln)) continue;
         const p = splitIngredientLine(ln);
         if (p && p.header) startIngSection(p.name);
         else if (p && (p.name || p.qty || p.unit)) {
@@ -4649,7 +4747,24 @@ function applyProcedurePhraseMap(text) {
     [/\bfew\s+cashew\s+nuts\b/gi, 'a few cashew nuts'],
     [/\ball\s+the\s+powders\b/gi, 'all the spice powders'],
     [/\bby\s+closing\s+the\s+pan\b/gi, 'with the pan covered'],
-    [/\bcook\s+by\s+closing\s+the\s+pan\b/gi, 'cook with the pan covered']
+    [/\bcook\s+by\s+closing\s+the\s+pan\b/gi, 'cook with the pan covered'],
+    [/\brottis\b/gi, 'rotis'],
+    [/\brotti\b/gi, 'roti'],
+    [/\bhave\s+to\s+separates\b/gi, 'carefully separate'],
+    [/\bseparates\s+into\b/gi, 'separate into'],
+    [/\b1\s+minutes\b/gi, '1 minute'],
+    [/\bmeans\s+u\s+need\b/gi, 'you will need'],
+    [/\blittle\s+by\s+little\b/gi, 'gradually'],
+    [/\bvery\s+very\s+hot\b/gi, 'very hot'],
+    [/\(\s*important\s+part[^)]*\)/gi, ''],
+    [/\bMix\s+well\.\./gi, 'Mix well.'],
+    [/\bmix\s+well\.\./gi, 'mix well.'],
+    [/\bThen\s+u\s+will\b/gi, 'You will'],
+    [/\bthen\s+u\s+will\b/gi, 'you will'],
+    [/\bvan\s+re\s+vah\b/gi, 'Vahrehva'],
+    [/\bchapati\b/gi, 'chapati'],
+    [/\bdough\s+at\s+a\s+time\b/gi, 'pieces of dough at a time'],
+    [/\bdo\s+the\s+same\s+with\s+the\s+second\s+dough\b/gi, 'Repeat with the second piece of dough']
   ];
   rules.forEach(function(pair) { t = t.replace(pair[0], pair[1]); });
   return t;
@@ -4693,6 +4808,7 @@ function rewriteProcedureSections(sections) {
       var rawText = typeof st === 'string' ? st : (st.text || '');
       var line = (rawText || rawTitle || '').trim();
       if (!line) return;
+      if (isMethodAttributionLine(line)) return;
       if (isMethodSectionHeader(line) && !rawTitle) {
         if (cur.steps.length) out.push(cur);
         cur = { name: line.replace(/\s*:?\s*$/, '').toUpperCase(), steps: [] };
