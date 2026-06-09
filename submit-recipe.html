@@ -18,6 +18,7 @@
   <script src="lib/import-audit.js"></script>
   <script src="lib/recipe-import-validate.js"></script>
   <script src="lib/recipe-import-paths.js"></script>
+  <script src="lib/recipe-hero-labels.js?v=20260606b"></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -686,16 +687,20 @@
     .sr-img-hero-ring-wrap { position: relative; width: min(400px, 100%); aspect-ratio: 1; }
     .sr-img-hero-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
     .sr-img-hero-ring-stroke { fill: none; stroke: var(--accent); stroke-width: 3; }
-    .sr-img-inner-labels {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 4; overflow: visible;
+    .sr-img-label-layer {
+      position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: visible;
     }
-    .sr-img-ring-text {
+    .sr-img-hero-char {
+      position: absolute;
       font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-      font-size: 14px; font-style: italic; font-weight: 400; letter-spacing: 0.03em;
-      fill: #2a1e14;
-      stroke: none;
-      filter: drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 0 5px rgba(255,255,255,0.75));
+      font-style: italic; font-weight: 400; letter-spacing: 0.03em;
+      color: #2a1e14;
+      text-shadow: 0 0 2px rgba(255,255,255,0.95), 0 0 5px rgba(255,255,255,0.75);
+      white-space: pre; line-height: 1;
+    }
+    .sr-img-preview-canvas {
+      position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+      display: block; pointer-events: none;
     }
     .sr-img-hero-circle {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -703,10 +708,8 @@
       background: #fff; border: 3px solid var(--accent);
       box-shadow: 0 8px 28px rgba(0,0,0,0.18);
     }
-    .sr-img-hero-img {
-      position: absolute; left: 50%; top: 50%; max-width: none; display: block;
-      user-select: none; pointer-events: none;
-      image-rendering: auto;
+    .sr-img-hero-img.sr-img-source {
+      position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none;
     }
     #img-drag-overlay {
       position: absolute; inset: 0; cursor: grab; z-index: 3; border-radius: 50%;
@@ -1252,22 +1255,11 @@
                     <circle class="sr-img-hero-ring-stroke" cx="210" cy="210" r="168"/>
                   </svg>
                   <div class="sr-img-hero-circle" id="sr-img-hero-circle">
-                    <img id="img-preview-img" class="sr-img-hero-img" alt="Recipe photo preview" draggable="false" decoding="sync">
+                    <canvas id="img-preview-canvas" class="sr-img-preview-canvas" aria-hidden="true"></canvas>
+                    <img id="img-preview-img" class="sr-img-hero-img sr-img-source" alt="Recipe photo preview" draggable="false" decoding="sync">
                     <div id="img-drag-overlay" title="Drag to reposition"></div>
                   </div>
-                  <!-- Labels on full ring-wrap coords (not inside overflow:hidden photo clip) -->
-                  <svg class="sr-img-inner-labels" viewBox="0 0 420 420" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <path id="sr-arc-brand" d="M 52,210 A 158,158 0 0 0 98,98" fill="none"/>
-                      <path id="sr-arc-handle" d="M 223,367 A 158,158 0 0 1 311,329" fill="none"/>
-                    </defs>
-                    <text class="sr-img-ring-text" id="sr-img-ring-brand">
-                      <textPath href="#sr-arc-brand" startOffset="0%" text-anchor="start">The Culinary Journal</textPath>
-                    </text>
-                    <text class="sr-img-ring-text" id="sr-img-ring-handle" style="display:none">
-                      <textPath href="#sr-arc-handle" startOffset="0%" text-anchor="start"></textPath>
-                    </text>
-                  </svg>
+                  <div class="sr-img-label-layer" aria-hidden="true"></div>
                   <div class="img-overlay">
                     <button type="button" class="btn-img-action" onclick="event.stopPropagation(); document.getElementById('recipe-image-input').click()">&#8635; Change</button>
                     <button type="button" class="btn-img-action btn-img-remove" onclick="event.stopPropagation(); removeImage()">&times; Remove</button>
@@ -7638,13 +7630,30 @@ function getImgEditorMetrics() {
 function layoutPreviewImage() {
   var m = getImgEditorMetrics();
   if (!m) return;
+  var canvas = document.getElementById('img-preview-canvas');
+  var cw = m.cw;
+  var ch = m.ch;
   var w = Math.max(1, m.img.naturalWidth * m.scale);
   var h = Math.max(1, m.img.naturalHeight * m.scale);
-  m.img.style.width = w + 'px';
-  m.img.style.height = h + 'px';
-  m.img.style.transform =
-    'translate(calc(-50% + ' + m.panX + 'px), calc(-50% + ' + m.panY + 'px))';
+  var drawX = (cw / 2) + m.panX - (w / 2);
+  var drawY = (ch / 2) + m.panY - (h / 2);
+  if (canvas) {
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(cw * dpr);
+    canvas.height = Math.round(ch * dpr);
+    canvas.style.width = cw + 'px';
+    canvas.style.height = ch + 'px';
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cw, ch);
+    if (ctx.imageSmoothingEnabled !== undefined) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+    }
+    ctx.drawImage(m.img, drawX, drawY, w, h);
+  }
   sampleImgBackdrop(m.img);
+  renderImgHeroLabels();
 }
 
 function sampleImgBackdrop(img) {
@@ -7670,28 +7679,35 @@ function sampleImgBackdrop(img) {
   }
 }
 
-function updateImgRingHandle() {
-  var handleEl = document.getElementById('sr-img-ring-handle');
-  var handlePath = handleEl && handleEl.querySelector('textPath');
-  if (!handleEl || !handlePath) return;
+function getImgRingHandleText() {
   var sourceType = document.querySelector('input[name="source-type"]:checked');
   var credit = (document.getElementById('credit-handle') && document.getElementById('credit-handle').value.trim()) || '';
   var profile = null;
   try { profile = JSON.parse(lsGet('tcj_profile') || 'null'); } catch(_) {}
-  var handle = '';
   if (credit && sourceType && sourceType.value !== 'Original') {
-    handle = '@' + credit.replace(/^@/, '');
-  } else if (profile && profile.username) {
-    handle = '@' + String(profile.username).replace(/^@/, '');
-  } else if (session && session.user && session.user.email) {
-    handle = '@' + session.user.email.split('@')[0];
+    return '@' + credit.replace(/^@/, '');
   }
-  if (handle) {
-    handlePath.textContent = handle;
-    handleEl.style.display = '';
-  } else {
-    handleEl.style.display = 'none';
+  if (profile && profile.username) {
+    return '@' + String(profile.username).replace(/^@/, '');
   }
+  if (session && session.user && session.user.email) {
+    return '@' + session.user.email.split('@')[0];
+  }
+  return '';
+}
+
+function renderImgHeroLabels() {
+  var wrap = document.querySelector('.sr-img-hero-ring-wrap');
+  if (!wrap || !window.RecipeHeroLabels) return;
+  var handle = getImgRingHandleText();
+  RecipeHeroLabels.render(wrap, {
+    handle: handle || undefined,
+    charClass: 'sr-img-hero-char'
+  });
+}
+
+function updateImgRingHandle() {
+  renderImgHeroLabels();
 }
 
 function initRecipePhotoEditor() {

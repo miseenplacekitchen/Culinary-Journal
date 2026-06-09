@@ -40,16 +40,16 @@
     .rp-hero-ring-wrap { position: relative; width: min(440px, 82vw); height: min(440px, 82vw); }
     .rp-hero-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
     .rp-hero-ring-stroke { fill: none; stroke: var(--accent); stroke-width: 3; }
-    .rp-inner-labels {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 4; overflow: visible;
+    .rp-img-label-layer {
+      position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: visible;
     }
-    .rp-ring-text {
+    .rp-hero-char {
+      position: absolute;
       font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-      font-size: 15px; font-style: italic; font-weight: 400; letter-spacing: 0.04em;
-      fill: #2a1e14;
-      stroke: none;
-      filter: drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 0 5px rgba(255,255,255,0.75));
+      font-style: italic; font-weight: 400; letter-spacing: 0.04em;
+      color: #2a1e14;
+      text-shadow: 0 0 2px rgba(255,255,255,0.95), 0 0 5px rgba(255,255,255,0.75);
+      white-space: pre; line-height: 1;
     }
     .rp-hero-circle {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -376,6 +376,7 @@
   <script src="allergy-engine.js"></script>
   <script src="seo-schema.js"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
+  <script src="lib/recipe-hero-labels.js?v=20260606b"></script>
   <script src="nav-init.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -410,18 +411,7 @@
         <img id="hero-img" class="rp-hero-img" style="display:none" alt="Recipe photo">
         <div class="rp-hero-vignette" id="hero-overlay" style="display:none"></div>
       </div>
-      <svg class="rp-inner-labels" viewBox="0 0 420 420" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <path id="rp-arc-brand" d="M 52,210 A 158,158 0 0 0 98,98" fill="none"/>
-          <path id="rp-arc-handle" d="M 223,367 A 158,158 0 0 1 311,329" fill="none"/>
-        </defs>
-        <text class="rp-ring-text" id="hero-ring-brand">
-          <textPath href="#rp-arc-brand" startOffset="0%" text-anchor="start">The Culinary Journal</textPath>
-        </text>
-        <text class="rp-ring-text" id="hero-ring-handle" style="display:none">
-          <textPath href="#rp-arc-handle" startOffset="0%" text-anchor="start"></textPath>
-        </text>
-      </svg>
+      <div class="rp-img-label-layer" aria-hidden="true"></div>
     </div>
   </div>
 
@@ -1694,20 +1684,27 @@ function sampleHeroBackdrop(img) {
 }
 
 function applyWatermark(r) {
-  var handleEl = document.getElementById('hero-ring-handle');
-  if (!handleEl) return;
-  var handlePath = handleEl.querySelector('textPath');
-  var handle = '';
-  if (r.credit_handle && r.source_type !== 'Original') {
-    handle = '@' + String(r.credit_handle).replace(/^@/, '');
-  } else if (r.username) {
-    handle = '@' + String(r.username).replace(/^@/, '');
+  var wrap = document.querySelector('.rp-hero-ring-wrap');
+  if (!wrap || !window.RecipeHeroLabels) return;
+  window._heroRecipe = r;
+  function render() {
+    var recipe = window._heroRecipe;
+    if (!recipe) return;
+    var handle = '';
+    if (recipe.credit_handle && recipe.source_type !== 'Original') {
+      handle = '@' + String(recipe.credit_handle).replace(/^@/, '');
+    } else if (recipe.username) {
+      handle = '@' + String(recipe.username).replace(/^@/, '');
+    }
+    RecipeHeroLabels.render(wrap, {
+      handle: handle || undefined,
+      charClass: 'rp-hero-char'
+    });
   }
-  if (handle && handlePath) {
-    handlePath.textContent = handle;
-    handleEl.style.display = '';
-  } else {
-    handleEl.style.display = 'none';
+  render();
+  if (!wrap._labelRO && typeof ResizeObserver !== 'undefined') {
+    wrap._labelRO = new ResizeObserver(render);
+    wrap._labelRO.observe(wrap);
   }
 }
 
