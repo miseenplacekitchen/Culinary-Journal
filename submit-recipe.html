@@ -674,20 +674,33 @@
     .img-preview-wrap {
       position: relative;
       width: 100%;
-    }
-    #img-preview {
-      display: block;
-      width: 100%;
-      height: 320px;
-      background-size: cover;
-      background-position: 50% 50%;
-      background-repeat: no-repeat;
-      background-color: var(--bg);
-      border-radius: 6px;
-    }
-    .img-preview-wrap {
       background: var(--bg);
       border-radius: 6px;
+    }
+    .sr-img-hero-frame {
+      display: flex; justify-content: center; align-items: center;
+      padding: 28px 16px 12px; background: #1a100f; border-radius: 12px 12px 0 0;
+    }
+    .sr-img-hero-ring-wrap { position: relative; width: min(360px, 100%); aspect-ratio: 1; }
+    .sr-img-hero-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
+    .sr-img-hero-ring-stroke { fill: none; stroke: #6d2832; stroke-width: 3; }
+    .sr-img-ring-text {
+      font-family: "Monotype Corsiva", "Apple Chancery", "Segoe Script", cursive;
+      font-size: 18px; font-style: italic; letter-spacing: 0.06em;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.65));
+    }
+    .sr-img-hero-circle {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      width: 80%; height: 80%; border-radius: 50%; overflow: hidden; z-index: 1;
+      background: #241816; border: 3px solid #6d2832;
+      box-shadow: 0 0 0 1px rgba(109,40,50,0.55), 0 12px 36px rgba(0,0,0,0.45);
+    }
+    .sr-img-hero-img {
+      position: absolute; left: 50%; top: 50%; max-width: none; display: block;
+      user-select: none; pointer-events: none; will-change: transform;
+    }
+    #img-drag-overlay {
+      position: absolute; inset: 0; cursor: grab; z-index: 3; border-radius: 50%;
     }
     .img-overlay {
       position: absolute;
@@ -904,7 +917,6 @@
   
 
     /* ── IMAGE DRAG TO PAN ───────────────────── */
-    #img-drag-overlay { cursor: grab; }
     #img-drag-overlay.dragging { cursor: grabbing !important; }
 
     /* ── PHOTO ZOOM / POSITION CONTROLS ─────────── */
@@ -1225,26 +1237,37 @@
               <div class="img-meta">JPG &middot; PNG &middot; WebP &nbsp;&middot;&nbsp; Max 5MB &nbsp;&middot;&nbsp; Recommended 1200&times;800</div>
             </div>
             <div id="img-preview-state" class="img-preview-wrap" style="display:none" onclick="event.stopPropagation()">
-              <!-- Background-image div — no native browser drag interference -->
-              <div id="img-preview"
-                   style="width:100%;height:320px;background-size:cover;background-position:50% 50%;background-repeat:no-repeat;background-color:var(--bg);border-radius:6px;">
-              </div>
-              <!-- Drag overlay — sits on top, captures all drag events cleanly -->
-              <div id="img-drag-overlay"
-                   style="position:absolute;top:0;left:0;right:0;height:320px;cursor:grab;z-index:3;"
-                   title="Drag to reposition">
+              <div class="sr-img-hero-frame">
+                <div class="sr-img-hero-ring-wrap">
+                  <svg class="sr-img-hero-ring" viewBox="0 0 420 420" aria-hidden="true">
+                    <defs>
+                      <path id="sr-arc-top" d="M 48,210 A 162,162 0 0 1 372,210" fill="none"/>
+                      <path id="sr-arc-bottom" d="M 372,210 A 162,162 0 0 1 48,210" fill="none"/>
+                    </defs>
+                    <circle class="sr-img-hero-ring-stroke" cx="210" cy="210" r="168"/>
+                    <text class="sr-img-ring-text" id="sr-img-ring-brand" fill="#C4973B">
+                      <textPath href="#sr-arc-top" startOffset="50%" text-anchor="middle">The Culinary Journal</textPath>
+                    </text>
+                    <text class="sr-img-ring-text" id="sr-img-ring-handle" fill="#C4973B" style="display:none">
+                      <textPath href="#sr-arc-bottom" startOffset="50%" text-anchor="middle"></textPath>
+                    </text>
+                  </svg>
+                  <div class="sr-img-hero-circle" id="sr-img-hero-circle">
+                    <img id="img-preview-img" class="sr-img-hero-img" alt="Recipe photo preview" draggable="false">
+                    <div id="img-drag-overlay" title="Drag to reposition"></div>
+                  </div>
+                </div>
               </div>
               <div class="img-overlay">
                 <button type="button" class="btn-img-action" onclick="event.stopPropagation(); document.getElementById('recipe-image-input').click()">&#8635; Change</button>
                 <button type="button" class="btn-img-action btn-img-remove" onclick="event.stopPropagation(); removeImage()">&times; Remove</button>
               </div>
-              <!-- PHOTO CONTROLS -->
               <div class="img-controls" id="img-controls">
                 <div class="img-ctrl-group">
                   <span class="img-ctrl-label">Zoom</span>
-                  <button type="button" class="img-ctrl-btn" onclick="event.stopPropagation(); adjustZoom(-10)" title="Zoom out">−</button>
+                  <button type="button" class="img-ctrl-btn" onclick="event.stopPropagation(); adjustZoom(-1)" title="Zoom out">−</button>
                   <span class="img-ctrl-val" id="img-zoom-val">100%</span>
-                  <button type="button" class="img-ctrl-btn" onclick="event.stopPropagation(); adjustZoom(10)" title="Zoom in">+</button>
+                  <button type="button" class="img-ctrl-btn" onclick="event.stopPropagation(); adjustZoom(1)" title="Zoom in">+</button>
                 </div>
                 <div class="img-ctrl-group">
                   <span class="img-ctrl-label" style="opacity:0.8">✥ Drag to reposition</span>
@@ -1916,6 +1939,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   } catch(e) { console.error('Draft load error:', e); await maybeOfferDraftRestore(); }
   try { cleanupPersonalNotesField(); } catch(e) { console.error(e); }
+  try { initRecipePhotoEditor(); } catch(e) { console.error(e); }
+  try { updateImgRingHandle(); } catch(e) { console.error(e); }
   try { setupSourceToggle(); } catch(e) { console.error(e); }
   try { setupAutoSave(); } catch(e) { console.error(e); }
 });
@@ -6881,6 +6906,9 @@ function collectFormData() {
     origin_locality:      (document.getElementById('origin-locality')?.value || '').trim(),
     introduction:         (document.getElementById('introduction')?.value      || '').trim(),
     image_url:            window.uploadedImageUrl || '',
+    image_pan_x:          window._imgCrop ? (window._imgCrop.panX || 0) : 0,
+    image_pan_y:          window._imgCrop ? (window._imgCrop.panY || 0) : 0,
+    image_zoom:           window._imgCrop ? (window._imgCrop.zoom || 1) : 1,
     prep_time_minutes:    document.getElementById('prep-time')?.value.trim()   || '',
     cook_time_minutes:    document.getElementById('cook-time')?.value.trim()   || '',
     additional_time_minutes: document.getElementById('additional-time')?.value.trim() || '',
@@ -7017,14 +7045,13 @@ function restoreDraft(raw) {
   if (d.image_url) {
     window.uploadedImageUrl = d.image_url;
     try {
-      if (typeof showImagePreview === 'function') { showImagePreview(d.image_url); }
-      else {
-        var pr = document.getElementById('img-preview');
-        var ps = document.getElementById('img-preview-state');
-        var es = document.getElementById('img-empty-state');
-        if (pr) pr.style.backgroundImage = 'url(' + d.image_url + ')';
-        if (ps) ps.style.display = 'block';
-        if (es) es.style.display = 'none';
+      if (typeof showImagePreview === 'function') {
+        showImagePreview(d.image_url, {
+          keepCrop: true,
+          panX: d.image_pan_x != null ? d.image_pan_x : 0,
+          panY: d.image_pan_y != null ? d.image_pan_y : 0,
+          zoom: d.image_zoom != null ? d.image_zoom : 1
+        });
       }
     } catch(_) {}
   }
@@ -7419,6 +7446,15 @@ async function submitRecipe() {
   const err  = validate(data);
   if (err) { showMsg(err, 'error'); return; }
 
+  if (data.image_url && document.getElementById('img-preview-img')?.src) {
+    try {
+      data.image_url = await bakeRecipeImageCrop();
+    } catch(_) {}
+  }
+  delete data.image_pan_x;
+  delete data.image_pan_y;
+  delete data.image_zoom;
+
   if (data.origin_country && !data.origin_state) {
     const proceed = confirm(
       'You picked ' + data.origin_country + ' as the country but no state/region.\n\n' +
@@ -7547,24 +7583,165 @@ async function submitRecipe() {
 
 
 
-// ── IMAGE UPLOAD & PREVIEW ─────────────────────────────────────────────────
-function showImagePreview(url) {
+// ── IMAGE UPLOAD & CIRCULAR CROP PREVIEW ───────────────────────────────────
+window._imgCrop = { panX: 0, panY: 0, zoom: 1 };
+
+function resetImgCrop() {
+  window._imgCrop = { panX: 0, panY: 0, zoom: 1 };
+  var zoomVal = document.getElementById('img-zoom-val');
+  if (zoomVal) zoomVal.textContent = '100%';
+}
+
+function getImgEditorMetrics() {
+  var img = document.getElementById('img-preview-img');
+  var circle = document.getElementById('sr-img-hero-circle');
+  if (!img || !circle || !img.naturalWidth) return null;
+  var cw = circle.clientWidth;
+  var ch = circle.clientHeight;
+  var baseScale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
+  var zoom = window._imgCrop.zoom || 1;
+  return {
+    img: img,
+    circle: circle,
+    cw: cw,
+    ch: ch,
+    baseScale: baseScale,
+    scale: baseScale * zoom,
+    panX: window._imgCrop.panX || 0,
+    panY: window._imgCrop.panY || 0
+  };
+}
+
+function layoutPreviewImage() {
+  var m = getImgEditorMetrics();
+  if (!m) return;
+  m.img.style.width = m.img.naturalWidth + 'px';
+  m.img.style.height = m.img.naturalHeight + 'px';
+  m.img.style.transform =
+    'translate(calc(-50% + ' + m.panX + 'px), calc(-50% + ' + m.panY + 'px)) scale(' + m.scale + ')';
+}
+
+function updateImgRingHandle() {
+  var handleEl = document.getElementById('sr-img-ring-handle');
+  var handlePath = handleEl && handleEl.querySelector('textPath');
+  var brandEl = document.getElementById('sr-img-ring-brand');
+  var accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#C4973B';
+  if (brandEl) brandEl.setAttribute('fill', accent);
+  if (!handleEl || !handlePath) return;
+  var sourceType = document.querySelector('input[name="source-type"]:checked');
+  var credit = (document.getElementById('credit-handle') && document.getElementById('credit-handle').value.trim()) || '';
+  var profile = null;
+  try { profile = JSON.parse(lsGet('tcj_profile') || 'null'); } catch(_) {}
+  var handle = '';
+  if (credit && sourceType && sourceType.value !== 'Original') {
+    handle = '@' + credit.replace(/^@/, '');
+  } else if (profile && profile.username) {
+    handle = '@' + String(profile.username).replace(/^@/, '');
+  } else if (session && session.user && session.user.email) {
+    handle = '@' + session.user.email.split('@')[0];
+  }
+  if (handle) {
+    handlePath.textContent = handle;
+    handleEl.setAttribute('fill', accent);
+    handleEl.style.display = '';
+  } else {
+    handleEl.style.display = 'none';
+  }
+}
+
+function initRecipePhotoEditor() {
+  var overlay = document.getElementById('img-drag-overlay');
+  if (!overlay || overlay._imgEditorBound) return;
+  overlay._imgEditorBound = true;
+
+  var dragging = false;
+  var startX = 0;
+  var startY = 0;
+  var startPanX = 0;
+  var startPanY = 0;
+
+  function pointer(e) {
+    return e.touches && e.touches.length ? e.touches[0] : e;
+  }
+
+  function onStart(e) {
+    if (!window.uploadedImageUrl) return;
+    dragging = true;
+    overlay.classList.add('dragging');
+    var pt = pointer(e);
+    startX = pt.clientX;
+    startY = pt.clientY;
+    startPanX = window._imgCrop.panX || 0;
+    startPanY = window._imgCrop.panY || 0;
+    e.preventDefault();
+  }
+
+  function onMove(e) {
+    if (!dragging) return;
+    var pt = pointer(e);
+    window._imgCrop.panX = startPanX + (pt.clientX - startX);
+    window._imgCrop.panY = startPanY + (pt.clientY - startY);
+    layoutPreviewImage();
+    e.preventDefault();
+  }
+
+  function onEnd() {
+    dragging = false;
+    overlay.classList.remove('dragging');
+  }
+
+  overlay.addEventListener('mousedown', onStart);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onEnd);
+  overlay.addEventListener('touchstart', onStart, { passive: false });
+  window.addEventListener('touchmove', onMove, { passive: false });
+  window.addEventListener('touchend', onEnd);
+
+  var creditHandle = document.getElementById('credit-handle');
+  if (creditHandle) creditHandle.addEventListener('input', updateImgRingHandle);
+  document.querySelectorAll('input[name="source-type"]').forEach(function(r) {
+    r.addEventListener('change', updateImgRingHandle);
+  });
+  window.addEventListener('resize', layoutPreviewImage);
+}
+
+function showImagePreview(url, opts) {
+  opts = opts || {};
   if (!url) return;
   window.uploadedImageUrl = url;
-  const preview  = document.getElementById('img-preview');
-  const preState = document.getElementById('img-preview-state');
-  const emState  = document.getElementById('img-empty-state');
-  if (preview)  preview.style.backgroundImage = 'url(' + url + ')';
+  var img = document.getElementById('img-preview-img');
+  var preState = document.getElementById('img-preview-state');
+  var emState = document.getElementById('img-empty-state');
+  if (!opts.keepCrop) resetImgCrop();
+  if (opts.panX != null) window._imgCrop.panX = opts.panX;
+  if (opts.panY != null) window._imgCrop.panY = opts.panY;
+  if (opts.zoom != null) {
+    window._imgCrop.zoom = opts.zoom;
+    var zoomVal = document.getElementById('img-zoom-val');
+    if (zoomVal) zoomVal.textContent = Math.round(opts.zoom * 100) + '%';
+  }
   if (preState) preState.style.display = 'block';
-  if (emState)  emState.style.display  = 'none';
+  if (emState) emState.style.display = 'none';
+  if (!img) return;
+  if (/^https?:\/\//i.test(url)) img.crossOrigin = 'anonymous';
+  else img.removeAttribute('crossOrigin');
+  img.onload = function() {
+    layoutPreviewImage();
+    updateImgRingHandle();
+  };
+  img.src = url;
+  if (img.complete) {
+    layoutPreviewImage();
+    updateImgRingHandle();
+  }
 }
 
 function handleImageUpload(input) {
-  const file = input && input.files && input.files[0];
+  var file = input && input.files && input.files[0];
   if (!file) return;
   if (!file.type.startsWith('image/')) { showMsg('Please upload an image file.', 'error'); return; }
-  if (file.size > 10 * 1024 * 1024)   { showMsg('Image must be under 10 MB.', 'error');  return; }
-  const reader = new FileReader();
+  if (file.size > 10 * 1024 * 1024) { showMsg('Image must be under 10 MB.', 'error'); return; }
+  var reader = new FileReader();
   reader.onload = function(e) { showImagePreview(e.target.result); };
   reader.readAsDataURL(file);
 }
@@ -7572,31 +7749,68 @@ function handleImageUpload(input) {
 function handleImageDrop(e) {
   e.preventDefault();
   e.stopPropagation();
-  const box = document.getElementById('img-upload-box');
+  var box = document.getElementById('img-upload-box');
   if (box) box.classList.remove('drag-over');
-  const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
   if (file) handleImageUpload({ files: [file] });
 }
 
 function removeImage() {
   window.uploadedImageUrl = '';
-  const preview  = document.getElementById('img-preview');
-  const preState = document.getElementById('img-preview-state');
-  const emState  = document.getElementById('img-empty-state');
-  if (preview)  { preview.style.backgroundImage = ''; }
+  resetImgCrop();
+  var img = document.getElementById('img-preview-img');
+  var preState = document.getElementById('img-preview-state');
+  var emState = document.getElementById('img-empty-state');
+  if (img) img.removeAttribute('src');
   if (preState) preState.style.display = 'none';
-  if (emState)  emState.style.display  = 'block';
-  const fileInput = document.getElementById('recipe-image-input');
+  if (emState) emState.style.display = 'block';
+  var fileInput = document.getElementById('recipe-image-input');
   if (fileInput) fileInput.value = '';
 }
 
-function adjustZoom(delta) {
-  const preview = document.getElementById('img-preview');
-  if (!preview) return;
-  const current = parseFloat(preview.dataset.zoom || '1');
-  const next    = Math.min(3, Math.max(0.5, current + delta));
-  preview.dataset.zoom = next;
-  preview.style.backgroundSize = (next * 100) + '%';
+function adjustZoom(direction) {
+  var step = 0.1;
+  var next = Math.min(3, Math.max(0.5, (window._imgCrop.zoom || 1) + (direction > 0 ? step : -step)));
+  window._imgCrop.zoom = next;
+  var zoomVal = document.getElementById('img-zoom-val');
+  if (zoomVal) zoomVal.textContent = Math.round(next * 100) + '%';
+  layoutPreviewImage();
+}
+
+function bakeRecipeImageCrop() {
+  return new Promise(function(resolve) {
+    var img = document.getElementById('img-preview-img');
+    if (!img || !img.src || !window.uploadedImageUrl) {
+      resolve(window.uploadedImageUrl || '');
+      return;
+    }
+    function bake() {
+      var m = getImgEditorMetrics();
+      if (!m) { resolve(window.uploadedImageUrl || ''); return; }
+      var outSize = 800;
+      var canvas = document.createElement('canvas');
+      canvas.width = outSize;
+      canvas.height = outSize;
+      var ctx = canvas.getContext('2d');
+      ctx.beginPath();
+      ctx.arc(outSize / 2, outSize / 2, outSize / 2, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      var ratio = outSize / m.cw;
+      var drawW = m.img.naturalWidth * m.scale * ratio;
+      var drawH = m.img.naturalHeight * m.scale * ratio;
+      var drawX = (outSize / 2) + (m.panX * ratio) - (drawW / 2);
+      var drawY = (outSize / 2) + (m.panY * ratio) - (drawH / 2);
+      try {
+        ctx.drawImage(m.img, drawX, drawY, drawW, drawH);
+        resolve(canvas.toDataURL('image/jpeg', 0.92));
+      } catch(_) {
+        resolve(window.uploadedImageUrl || '');
+      }
+    }
+    if (img.complete && img.naturalWidth) bake();
+    else img.onload = bake;
+  });
 }
 
 // ── TIME CALCULATOR ────────────────────────────────────────────────────────
