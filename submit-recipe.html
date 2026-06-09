@@ -18,7 +18,7 @@
   <script src="lib/import-audit.js"></script>
   <script src="lib/recipe-import-validate.js"></script>
   <script src="lib/recipe-import-paths.js"></script>
-  <script src="lib/recipe-hero-labels.js?v=20260611"></script>
+  <script src="lib/recipe-hero-labels.js?v=20260613"></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -687,9 +687,16 @@
     .sr-img-hero-ring-wrap { position: relative; width: min(400px, 100%); aspect-ratio: 1; }
     .sr-img-hero-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
     .sr-img-hero-ring-stroke { fill: none; stroke: var(--accent); stroke-width: 3; }
-    .rh-label-canvas {
+    .rh-label-svg {
       position: absolute; inset: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 5;
+      pointer-events: none; z-index: 5; overflow: visible;
+    }
+    .rh-ring-text {
+      font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+      font-size: var(--rh-font, 15px);
+      font-style: italic; font-weight: 400; letter-spacing: 0.03em;
+      stroke: rgba(255,255,255,0.92); stroke-width: 2.5px; paint-order: stroke fill;
+      filter: drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 1px 3px rgba(0,0,0,0.45));
     }
     .sr-img-hero-circle {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -700,6 +707,7 @@
     .sr-img-hero-img {
       position: absolute; left: 50%; top: 50%; max-width: none; display: block;
       user-select: none; pointer-events: none;
+      image-rendering: high-quality;
     }
     #img-drag-overlay {
       position: absolute; inset: 0; cursor: grab; z-index: 3; border-radius: 50%;
@@ -7034,18 +7042,17 @@ function restoreDraft(raw) {
   checkAll(d.meal_type_tags);
   checkAll(d.flavor_profile_tags);
 
-  // Image — always preview from original source, never a baked thumbnail
-  if (d.image_url || d.image_source_url) {
-    var imgSource = d.image_source_url || d.image_url;
-    window._imgSourceUrl = imgSource;
-    window._imgSourceDataUrl = imgSource;
-    window.uploadedImageUrl = d.image_url || imgSource;
+  // Image — preview ONLY from original source (never baked image_url alone)
+  if (d.image_source_url) {
+    window._imgSourceUrl = d.image_source_url;
+    window._imgSourceDataUrl = d.image_source_url;
+    window.uploadedImageUrl = d.image_url || d.image_source_url;
     try {
       if (typeof showImagePreview === 'function') {
-        reviveImgBlobUrl(imgSource).then(function(blobUrl) {
-          showImagePreview(imgSource, {
+        reviveImgBlobUrl(d.image_source_url).then(function(blobUrl) {
+          showImagePreview(d.image_source_url, {
             keepCrop: true,
-            displayUrl: blobUrl || undefined,
+            displayUrl: blobUrl,
             panX: d.image_pan_x != null ? d.image_pan_x : 0,
             panY: d.image_pan_y != null ? d.image_pan_y : 0,
             zoom: d.image_zoom != null ? d.image_zoom : 1
@@ -7053,6 +7060,8 @@ function restoreDraft(raw) {
         });
       }
     } catch(_) {}
+  } else if (d.image_url) {
+    window.uploadedImageUrl = d.image_url;
   }
 
   // Cooking style + shelf life
@@ -7751,7 +7760,7 @@ function reviveImgBlobUrl(sourceUrl) {
   return fetch(sourceUrl).then(function(res) { return res.blob(); }).then(function(blob) {
     window._imgBlobUrl = URL.createObjectURL(blob);
     return window._imgBlobUrl;
-  }).catch(function() { return sourceUrl; });
+  }).catch(function() { return ''; });
 }
 
 function showImagePreview(url, opts) {
@@ -7763,6 +7772,7 @@ function showImagePreview(url, opts) {
   }
   window.uploadedImageUrl = window._imgSourceUrl || url;
   var img = document.getElementById('img-preview-img');
+  var displayOnly = (opts && opts.displayUrl) || window._imgBlobUrl;
   var preState = document.getElementById('img-preview-state');
   var emState = document.getElementById('img-empty-state');
   if (!opts.keepCrop) resetImgCrop();
@@ -7793,19 +7803,16 @@ function showImagePreview(url, opts) {
     }
   }
   img.onload = onReady;
-  var preferred = (opts && opts.displayUrl) || window._imgBlobUrl;
-  if (preferred) {
-    if (/^https?:\/\//i.test(preferred)) img.crossOrigin = 'anonymous';
+  function setSrc(src) {
+    if (!src || String(src).indexOf('data:') === 0) return;
+    if (/^https?:\/\//i.test(src)) img.crossOrigin = 'anonymous';
     else img.removeAttribute('crossOrigin');
-    img.src = preferred;
-    if (img.complete) onReady();
-    return;
+    img.src = src;
+    if (img.complete && img.naturalWidth) onReady();
   }
-  reviveImgBlobUrl(url).then(function(displayUrl) {
-    if (/^https?:\/\//i.test(displayUrl)) img.crossOrigin = 'anonymous';
-    else img.removeAttribute('crossOrigin');
-    img.src = displayUrl || url;
-    if (img.complete) onReady();
+  if (displayOnly) { setSrc(displayOnly); return; }
+  reviveImgBlobUrl(url).then(function(blobUrl) {
+    setSrc(blobUrl || displayOnly);
   });
 }
 
