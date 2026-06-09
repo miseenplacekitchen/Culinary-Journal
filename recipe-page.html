@@ -376,7 +376,7 @@
   <script src="allergy-engine.js"></script>
   <script src="seo-schema.js"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
-  <script src="lib/recipe-hero-labels.js?v=20260618"></script>
+  <script src="lib/recipe-hero-labels.js?v=20260619"></script>
   <script src="nav-init.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -1479,9 +1479,6 @@ function renderRecipe(r) {
   // Credit
   renderCredit(r);
 
-  // Hero watermark
-  applyWatermark(r);
-
   // Ingredients
   renderIngredients(r.ingredients || []);
 
@@ -1661,16 +1658,18 @@ function renderHeroImage(r) {
     showPlaceholder('No image for this recipe yet');
     return;
   }
-  heroImg.onload = function () {
+  function onHeroReady() {
     heroImg.style.display = 'block';
     if (heroPh) heroPh.style.display = 'none';
     sampleHeroBackdrop(heroImg);
     try { applyWatermark(r); } catch(_) {}
-  };
+  }
+  heroImg.onload = onHeroReady;
   heroImg.onerror = function () {
     showPlaceholder('Image could not be loaded');
   };
   heroImg.src = url;
+  if (heroImg.complete && heroImg.naturalWidth) onHeroReady();
 }
 
 function sampleHeroBackdrop(img) {
