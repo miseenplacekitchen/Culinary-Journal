@@ -1082,6 +1082,7 @@
       <span>Unsaved draft found: <strong id="draft-restore-name">Untitled</strong></span>
       <div class="sr-draft-prompt-actions">
         <button type="button" onclick="confirmRestoreDraft()">Continue draft</button>
+        <button type="button" onclick="recoverDraftBackup()">Recover backup</button>
         <button type="button" onclick="discardDraftAndStartFresh()">Start fresh</button>
       </div>
     </div>
@@ -1805,7 +1806,9 @@
 <script>
 
 const DRAFT_KEY        = 'tcj_recipe_draft';
+const DRAFT_BACKUP_KEY = 'tcj_recipe_draft_backup';
 const DRAFTS_INDEX_KEY = 'tcj_drafts_index';
+const DRAFT_RESTORE_SETTLE_MS = 2500;
 
 let session = null;
 let allIngredients = [];
@@ -1924,44 +1927,26 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   } catch(e) { console.error(e); }
   try { await loadIngredients(); } catch(e) { console.error('Ingredient load error:', e); }
-  try { addIngSection('Ingredients'); } catch(e) { console.error(e); }
   try { initSectionSorting(); } catch(e) { console.error('sort init', e); }
   try { initSrSectionCollapse(); } catch(e) { console.error('collapse init', e); }
-  try { addMethodSection('PREP WORK'); } catch(e) { console.error(e); }
-  try { addMethodSection('DIRECTIONS'); } catch(e) { console.error(e); }
   try { initCategoryTaxonomy(); } catch(e) { console.error(e); }
-  // Resubmit rejected/pending submission — ?id=UUID (takes priority over drafts)
-  // Or load a named draft — ?draft=ID — otherwise auto-save
+  _draftRestoring = true;
   try {
-    const urlParams = new URLSearchParams(window.location.search);
-    const editId    = urlParams.get('id');
-    let formLoaded  = false;
-    if (editId) {
-      formLoaded = await loadSubmissionForEdit(editId);
+    const boot = await bootstrapDraftOnLoad();
+    if (!boot.loaded) {
+      addDefaultSubmitSections();
+    } else if (boot.name) {
+      showMsg('Draft restored: ' + boot.name, 'success');
+      const prompt = document.getElementById('draft-restore-prompt');
+      if (prompt) prompt.style.display = 'none';
     }
-    if (!formLoaded) {
-      const draftId = urlParams.get('draft');
-      if (draftId) {
-        const namedKey = 'tcj_draft_' + draftId;
-        const namedRaw = lsGet(namedKey);
-        if (namedRaw) {
-          const secWrap  = document.getElementById('ingredient-sections');
-          const methWrap = document.getElementById('method-sections');
-          if (secWrap)  { secWrap.innerHTML = '';  ingSectionCount = 0; }
-          if (methWrap) { methWrap.innerHTML = ''; methodSectionCount = 0; }
-          restoreDraft(namedRaw);
-          window._activeDraftId = draftId;
-        } else {
-          await maybeOfferDraftRestore();
-        }
-      } else if (urlParams.get('new') === '1') {
-        clearDraftStorage();
-        discardDraftAndStartFresh();
-      } else {
-        await maybeOfferDraftRestore();
-      }
-    }
-  } catch(e) { console.error('Draft load error:', e); await maybeOfferDraftRestore(); }
+  } catch(e) {
+    console.error('Draft load error:', e);
+    addDefaultSubmitSections();
+    await maybeOfferDraftRestore();
+  } finally {
+    finishDraftRestoreWindow();
+  }
   try { cleanupPersonalNotesField(); } catch(e) { console.error(e); }
   try { initRecipePhotoEditor(); } catch(e) { console.error(e); }
   try { updateImgRingHandle(); } catch(e) { console.error(e); }
@@ -4836,9 +4821,14 @@ function expandPasteSection() {
 }
 
 function startFreshImport() {
-  try { clearDraftStorage(); } catch(_) {}
+  var existing = null;
+  try { existing = JSON.parse(lsGet(DRAFT_KEY) || 'null'); } catch(_) {}
+  if (draftHasContent(existing)) {
+    if (!confirm('Start a fresh recipe? Your saved draft will stay in Drafts until you choose Start fresh on the restore banner.')) return;
+  }
   if (window.location.search.indexOf('new=1') >= 0) {
-    discardDraftAndStartFresh();
+    try { clearDraftStorage(); } catch(_) {}
+    resetSubmitFormBasics();
     expandPasteSection();
     showMsg('Form cleared — paste or import a new recipe.', 'info');
     return;
@@ -7193,12 +7183,200 @@ function collectFormData() {
   return data;
 }
 
+function addDefaultSubmitSections() {
+  var ingHost = document.getElementById('ingredient-sections');
+  var methHost = document.getElementById('method-sections');
+  if (ingHost && !ingHost.children.length) addIngSection('Ingredients');
+  if (methHost && !methHost.children.length) {
+    addMethodSection('PREP WORK');
+    addMethodSection('DIRECTIONS');
+  }
+}
+
+function draftRichnessScore(d) {
+  if (!d) return 0;
+  var score = 0;
+  if ((d.recipe_name || '').trim()) score += 10;
+  if ((d.paste_text || '').trim()) score += Math.min(60, (d.paste_text || '').length / 35);
+  if ((d.introduction || '').trim()) score += 6;
+  (d.ingredients || []).forEach(function(sec) {
+    (sec.items || []).forEach(function(i) {
+      if ((i.ingredient || i.name || '').trim()) score += 3;
+    });
+  });
+  (d.method || []).forEach(function(sec) {
+    (sec.steps || []).forEach(function(st) {
+      var t = (typeof st === 'string' ? st : (st.text || st.title || '')).trim();
+      if (t) score += 4;
+    });
+  });
+  return score;
+}
+
+function backupDraftBeforeWrite(key) {
+  var current = lsGet(key);
+  if (!current) return;
+  try {
+    var parsed = JSON.parse(current);
+    if (!draftHasContent(parsed)) return;
+  } catch(_) { return; }
+  lsSet(DRAFT_BACKUP_KEY, current);
+}
+
+function finishDraftRestoreWindow() {
+  setTimeout(function() { _draftRestoring = false; }, DRAFT_RESTORE_SETTLE_MS);
+}
+
+async function loadNamedDraftFromDbByLocalKey(localId) {
+  if (!session || !session.access_token || !localId) return false;
+  try {
+    const res = await fetch(
+      SUPABASE_URL + '/rest/v1/recipe_drafts?local_key=eq.tcj_draft_' + encodeURIComponent(localId) +
+      '&user_id=eq.' + session.user.id + '&order=updated_at.desc&limit=1&select=id,draft_data',
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token } }
+    );
+    if (!res.ok) return false;
+    const rows = await res.json();
+    if (!rows || !rows[0] || !rows[0].draft_data || !draftHasContent(rows[0].draft_data)) return false;
+    window._activeDraftId = localId;
+    _draftDbId = rows[0].id;
+    lsSet('tcj_draft_' + localId, JSON.stringify(rows[0].draft_data));
+    restoreDraft(JSON.stringify(rows[0].draft_data));
+    return true;
+  } catch(_) { return false; }
+}
+
+async function restoreDraftById(draftId) {
+  if (!draftId) return false;
+  _draftRestoring = true;
+  if (draftId === 'autosave') {
+    const raw = lsGet(DRAFT_KEY);
+    if (raw) {
+      try {
+        if (draftHasContent(JSON.parse(raw))) {
+          restoreDraft(raw);
+          return true;
+        }
+      } catch(_) {}
+    }
+    return await loadLatestFromDb();
+  }
+  const localKey = 'tcj_draft_' + draftId;
+  const localRaw = lsGet(localKey);
+  if (localRaw) {
+    window._activeDraftId = draftId;
+    restoreDraft(localRaw);
+    loadDbDraftId(draftId);
+    return true;
+  }
+  if (await loadNamedDraftFromDbByLocalKey(draftId)) return true;
+  return await loadFromDb(draftId);
+}
+
+async function restoreBestAvailableDraft() {
+  const raw = lsGet(DRAFT_KEY);
+  if (raw) {
+    try {
+      const d = JSON.parse(raw);
+      if (draftHasContent(d)) {
+        restoreDraft(raw);
+        return { name: d.recipe_name || 'Untitled' };
+      }
+    } catch(_) {}
+  }
+  const backup = lsGet(DRAFT_BACKUP_KEY);
+  if (backup) {
+    try {
+      const d = JSON.parse(backup);
+      if (draftHasContent(d)) {
+        restoreDraft(backup);
+        lsSet(DRAFT_KEY, backup);
+        return { name: (d.recipe_name || 'Untitled') + ' (from backup)' };
+      }
+    } catch(_) {}
+  }
+  if (session && session.access_token) {
+    const loaded = await loadLatestFromDb();
+    if (loaded) {
+      try {
+        const d = JSON.parse(lsGet(DRAFT_KEY) || 'null');
+        return { name: (d && d.recipe_name) || 'Untitled' };
+      } catch(_) {
+        return { name: 'Untitled' };
+      }
+    }
+  }
+  return null;
+}
+
+async function bootstrapDraftOnLoad() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const editId = urlParams.get('id');
+  if (editId) {
+    const loaded = await loadSubmissionForEdit(editId);
+    if (loaded) return { loaded: true, name: (document.getElementById('recipe-name') || {}).value || '' };
+  }
+  if (urlParams.get('new') === '1') {
+    clearDraftStorage();
+    discardDraftAndStartFresh();
+    return { loaded: true, name: '' };
+  }
+  const draftId = urlParams.get('draft');
+  if (draftId) {
+    const ok = await restoreDraftById(draftId);
+    if (ok) {
+      try {
+        const d = JSON.parse(lsGet('tcj_draft_' + draftId) || lsGet(DRAFT_KEY) || 'null');
+        return { loaded: true, name: (d && d.recipe_name) || 'Untitled' };
+      } catch(_) {
+        return { loaded: true, name: 'Untitled' };
+      }
+    }
+  }
+  const restored = await restoreBestAvailableDraft();
+  if (restored) return { loaded: true, name: restored.name };
+  return { loaded: false, name: '' };
+}
+
+function recoverDraftBackup(silent) {
+  const backup = lsGet(DRAFT_BACKUP_KEY);
+  if (!backup) {
+    if (!silent) showMsg('No draft backup found in this browser.', 'error');
+    return false;
+  }
+  try {
+    if (!draftHasContent(JSON.parse(backup))) {
+      if (!silent) showMsg('Backup exists but looks empty.', 'error');
+      return false;
+    }
+  } catch(_) {
+    if (!silent) showMsg('Could not read draft backup.', 'error');
+    return false;
+  }
+  _draftRestoring = true;
+  restoreDraft(backup);
+  lsSet(DRAFT_KEY, backup);
+  const prompt = document.getElementById('draft-restore-prompt');
+  if (prompt) prompt.style.display = 'none';
+  finishDraftRestoreWindow();
+  if (!silent) showMsg('Recovered draft from local backup.', 'success');
+  return true;
+}
+
 // ── RESTORE DRAFT ─────────────────────────────────────────────────────────────
 function restoreDraft(raw) {
   if (!raw) return;
   let d;
   try { d = JSON.parse(raw); } catch(_) { return; }
   if (!d) return;
+
+  _draftRestoring = true;
+  if (draftHasContent(d)) {
+    const secWrap = document.getElementById('ingredient-sections');
+    const methWrap = document.getElementById('method-sections');
+    if (secWrap) { secWrap.innerHTML = ''; ingSectionCount = 0; }
+    if (methWrap) { methWrap.innerHTML = ''; methodSectionCount = 0; }
+  }
 
   const setVal = (id, v) => {
     if (v === null || v === undefined || v === '') return;
@@ -7320,7 +7498,7 @@ function restoreDraft(raw) {
       try {
         const secWrap = document.getElementById('ingredient-sections');
         if (secWrap) {
-          secWrap.innerHTML = ''; ingSectionCount = 0;
+          if (!secWrap.children.length) { secWrap.innerHTML = ''; ingSectionCount = 0; }
           d.ingredients.forEach(function(sec) {
             const sectionName = sec.section || sec.name || '';
             addIngSection(sectionName);
@@ -7335,9 +7513,15 @@ function restoreDraft(raw) {
               } else { addIngRow(rowContainer); }
             }
           });
+          secWrap.querySelectorAll('.ing-section').forEach(function(sec) {
+            var rows = sec.querySelector('.ing-rows');
+            if (rows && !rows.querySelector('.ing-row')) addIngRow(rows);
+          });
         }
       } catch(e) { console.warn('Draft restore - ingredients:', e); }
     }, 400);
+  } else if (draftHasContent(d)) {
+    setTimeout(function() { addDefaultSubmitSections(); }, 400);
   }
 
   // Method
@@ -7346,7 +7530,7 @@ function restoreDraft(raw) {
       try {
         const methWrap = document.getElementById('method-sections');
         if (methWrap) {
-          methWrap.innerHTML = ''; methodSectionCount = 0;
+          if (!methWrap.children.length) { methWrap.innerHTML = ''; methodSectionCount = 0; }
           d.method.forEach(function(sec) {
             const sectionName = sec.section || sec.name || '';
             addMethodSection(sectionName);
@@ -7385,8 +7569,20 @@ function saveDraft() {
   let data;
   try { data = collectFormData(); } catch(_) { return; }
 
+  var existing = null;
+  try { existing = JSON.parse(lsGet(DRAFT_KEY) || 'null'); } catch(_) {}
+  if (existing && draftHasContent(existing)) {
+    var newScore = draftRichnessScore(data);
+    var oldScore = draftRichnessScore(existing);
+    if (newScore < oldScore * 0.45 && oldScore >= 12) return;
+  }
+
+  backupDraftBeforeWrite(DRAFT_KEY);
+  if (window._activeDraftId) backupDraftBeforeWrite('tcj_draft_' + window._activeDraftId);
+
   // 1. Write to localStorage immediately (zero latency)
   lsSet(DRAFT_KEY, JSON.stringify(data));
+  if (window._activeDraftId) lsSet('tcj_draft_' + window._activeDraftId, JSON.stringify(data));
   updateAutoSaveMsg();
 
   // 2. Sync to Supabase (debounced, every 30 s at most)
@@ -7504,6 +7700,15 @@ async function maybeOfferDraftRestore() {
       }
     }
   } catch(_) {}
+  if (!hasDraft) {
+    try {
+      const backup = lsGet(DRAFT_BACKUP_KEY);
+      if (backup && draftHasContent(JSON.parse(backup))) {
+        hasDraft = true;
+        draftName = (JSON.parse(backup).recipe_name || 'Untitled') + ' (backup)';
+      }
+    } catch(_) {}
+  }
   if (!hasDraft && session && session.access_token) {
     try {
       const res = await fetch(
@@ -7535,6 +7740,7 @@ function confirmRestoreDraft() {
 }
 
 function discardDraftAndStartFresh() {
+  if (!confirm('Discard the saved draft and start with a blank form? This cannot be undone unless you still have a backup.')) return;
   clearDraftStorage();
   const el = document.getElementById('draft-restore-prompt');
   if (el) el.style.display = 'none';
@@ -7568,48 +7774,28 @@ function resetSubmitFormBasics() {
 
 // ── Load ──────────────────────────────────────────────────────────────────────
 async function loadDraftSilent() {
-  _draftRestoring = true;   // pause auto-save
-
+  _draftRestoring = true;
   try {
-    // 1. Check for a named draft in the URL (?draft=ID)
     const urlParams = new URLSearchParams(window.location.search);
-    const draftId   = urlParams.get('draft');
-
-    // Named draft — could be a Supabase UUID or a localStorage key
-    if (draftId && draftId !== 'autosave') {
-      // Try localStorage first (fast)
-      const localKey = 'tcj_draft_' + draftId;
-      const localRaw = lsGet(localKey);
-      if (localRaw) {
-        window._activeDraftId = draftId;
-        restoreDraft(localRaw);
-        // Also try to find/create its Supabase row
-        loadDbDraftId(draftId);
-        return;
-      }
-      // Try Supabase (draft may have been cleared from localStorage)
-      if (session && session.access_token) {
-        await loadFromDb(draftId);
-        return;
-      }
+    const draftId = urlParams.get('draft');
+    if (draftId) {
+      if (await restoreDraftById(draftId)) return;
     }
-
-    // 2. Load most recent Supabase draft for this user
     if (session && session.access_token) {
       const loaded = await loadLatestFromDb();
       if (loaded) return;
     }
-
-    // 3. Fall back to localStorage auto-save
     const raw = lsGet(DRAFT_KEY);
     if (raw) restoreDraft(raw);
-
+    else recoverDraftBackup(true);
   } catch(e) {
-    // If anything goes wrong, just try localStorage
-    try { const raw = lsGet(DRAFT_KEY); if (raw) restoreDraft(raw); } catch(_) {}
+    try {
+      const raw = lsGet(DRAFT_KEY);
+      if (raw) restoreDraft(raw);
+      else recoverDraftBackup(true);
+    } catch(_) {}
   } finally {
-    // Re-enable auto-save after restore has had time to complete
-    setTimeout(function() { _draftRestoring = false; }, 600);
+    finishDraftRestoreWindow();
   }
 }
 
@@ -7632,19 +7818,20 @@ async function loadLatestFromDb() {
   try {
     const res = await fetch(
       SUPABASE_URL + '/rest/v1/recipe_drafts?user_id=eq.' + session.user.id +
-      '&order=updated_at.desc&limit=1&select=id,draft_data',
+      '&order=updated_at.desc&limit=1&select=id,draft_data,local_key',
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token } }
     );
     if (!res.ok) return false;
     const rows = await res.json();
-    if (!rows || !rows.length) {
-      // No DB draft — try localStorage
-      const raw = lsGet(DRAFT_KEY);
-      if (raw) { restoreDraft(raw); return true; }
-      return false;
-    }
+    if (!rows || !rows.length || !draftHasContent(rows[0].draft_data)) return false;
     _draftDbId = rows[0].id;
-    restoreDraft(JSON.stringify(rows[0].draft_data));
+    const payload = JSON.stringify(rows[0].draft_data);
+    restoreDraft(payload);
+    lsSet(DRAFT_KEY, payload);
+    if (rows[0].local_key && String(rows[0].local_key).indexOf('tcj_draft_') === 0) {
+      lsSet(rows[0].local_key, payload);
+      window._activeDraftId = rows[0].local_key.replace(/^tcj_draft_/, '');
+    }
     return true;
   } catch(_) { return false; }
 }
