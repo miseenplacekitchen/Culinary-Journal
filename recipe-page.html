@@ -40,13 +40,16 @@
     .rp-hero-ring-wrap { position: relative; width: min(440px, 82vw); height: min(440px, 82vw); }
     .rp-hero-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
     .rp-hero-ring-stroke { fill: none; stroke: var(--accent); stroke-width: 3; }
+    .rp-inner-labels {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 4; overflow: visible;
+    }
     .rp-ring-text {
-      font-family: "Monotype Corsiva", "Apple Chancery", "Segoe Script", cursive;
-      font-size: 17px; font-style: italic; font-weight: 400; letter-spacing: 0.05em;
-      fill: var(--accent);
-      stroke: #1a1008;
-      stroke-width: 2.5px;
-      paint-order: stroke fill;
+      font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+      font-size: 15px; font-style: italic; font-weight: 400; letter-spacing: 0.04em;
+      fill: #2a1e14;
+      stroke: none;
+      filter: drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 0 5px rgba(255,255,255,0.75));
     }
     .rp-hero-circle {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -349,7 +352,7 @@
     @media (max-width: 700px) {
       .rp-hero-frame { padding: 36px 12px; border-radius: 10px; }
       .rp-hero-ring-wrap { width: min(340px, 92vw); height: min(340px, 92vw); }
-      .rp-ring-text { font-size: 15px; }
+      .rp-ring-text { font-size: 14px; }
       .rp-nutrition-grid { grid-template-columns: repeat(2, 1fr); }
       .rp-combined.active { grid-template-columns: 1fr; }
       .rp-ing-row { grid-template-columns: 28px 90px 1fr 28px 28px; }
@@ -398,23 +401,25 @@
   <div class="rp-hero-frame" id="rp-hero">
     <div class="rp-hero-ring-wrap">
       <svg class="rp-hero-ring" id="hero-ring-svg" viewBox="0 0 420 420" aria-hidden="true">
-        <defs>
-          <path id="rp-arc-brand" d="M 37,210 A 173,173 0 0 0 52.4,135.5" fill="none"/>
-          <path id="rp-arc-handle" d="M 231.7,381.5 A 173,173 0 0 1 303,362.7" fill="none"/>
-        </defs>
         <circle class="rp-hero-ring-stroke" cx="210" cy="210" r="168"/>
-        <text class="rp-ring-text" id="hero-ring-brand">
-          <textPath href="#rp-arc-brand" startOffset="0%" text-anchor="start">The Culinary Journal</textPath>
-        </text>
-        <text class="rp-ring-text" id="hero-ring-handle" style="display:none">
-          <textPath href="#rp-arc-handle" startOffset="0%" text-anchor="start"></textPath>
-        </text>
       </svg>
       <div class="rp-hero-circle">
         <div class="rp-hero-placeholder" id="hero-placeholder">
           <span class="rp-hero-placeholder-text">Loading recipe image...</span>
         </div>
         <img id="hero-img" class="rp-hero-img" style="display:none" alt="Recipe photo">
+        <svg class="rp-inner-labels" viewBox="0 0 420 420" aria-hidden="true" xmlns:xlink="http://www.w3.org/1999/xlink">
+          <defs>
+            <path id="rp-arc-brand" d="M 52,210 A 158,158 0 0 0 70.5,135.8" fill="none"/>
+            <path id="rp-arc-handle" d="M 210,368 A 158,158 0 0 1 286.9,346.8" fill="none"/>
+          </defs>
+          <text class="rp-ring-text" id="hero-ring-brand">
+            <textPath href="#rp-arc-brand" xlink:href="#rp-arc-brand" startOffset="0%" text-anchor="start">The Culinary Journal</textPath>
+          </text>
+          <text class="rp-ring-text" id="hero-ring-handle" style="display:none">
+            <textPath href="#rp-arc-handle" xlink:href="#rp-arc-handle" startOffset="0%" text-anchor="start"></textPath>
+          </text>
+        </svg>
         <div class="rp-hero-vignette" id="hero-overlay" style="display:none"></div>
       </div>
     </div>
