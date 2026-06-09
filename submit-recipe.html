@@ -1376,6 +1376,7 @@
           <optgroup label="Baking &amp; Confectionery">
             <option value="baking">Baking &amp; Pastry</option>
             <option value="bread">Bread &amp; Dough</option>
+            <option value="griddle">Griddle &amp; Flatbread</option>
             <option value="candy">Candy &amp; Confectionery</option>
           </optgroup>
           <optgroup label="Marinades &amp; Passive">
@@ -2922,10 +2923,11 @@ async function applyUrlImportToPaste(articleText, pageTitle, statusSuffix) {
     }
   }
   document.getElementById('parse-tips').style.display = 'block';
-  if (extracted.notes && extracted.notes.length) {
-    var notesEl = document.getElementById('cooking-notes');
-    if (notesEl && !notesEl.value.trim()) notesEl.value = extracted.notes.join('\n');
-  }
+  populateAuxiliaryFromSections({
+    notes: extracted.notes || [],
+    tips: extracted.tips || [],
+    serves: extracted.serves || []
+  });
   if (extracted.hasContent) {
     showImportStatus(
       'Extracted ' + extracted.ingCount + ' ingredient' + (extracted.ingCount === 1 ? '' : 's') +
@@ -3149,6 +3151,75 @@ function appendCookingNote(text) {
   var note = String(text).trim();
   var existing = el.value.trim();
   el.value = existing ? existing + '\n' + note : note;
+}
+
+function createAuxCollector() {
+  return { notes: [], tips: [], serves: [] };
+}
+
+function isRecipeTipOrNoteLine(line) {
+  var t = String(line || '').trim();
+  if (!t) return false;
+  return /^(?:tips?|hints?|tricks?|variations?|notes?|cooking\s+notes?|chef'?s?\s+note|watch\s+out|caution|important)\s*:?\s*\S/i.test(t);
+}
+
+function pushAuxLine(aux, line) {
+  if (!aux || !(line || '').trim()) return;
+  var t = String(line).trim();
+  if (/^(?:tips?|hints?|tricks?|variations?|chef'?s?\s+note)\s*:?\s*/i.test(t)) {
+    aux.tips.push(t.replace(/^(?:tips?|hints?|tricks?|variations?|chef'?s?\s+note)\s*:?\s*/i, '').trim() || t);
+  } else {
+    aux.notes.push(t);
+  }
+}
+
+function mergeAuxSections(a, b) {
+  a = a || createAuxCollector();
+  b = b || createAuxCollector();
+  return {
+    notes: (a.notes || []).concat(b.notes || []),
+    tips: (a.tips || []).concat(b.tips || []),
+    serves: (a.serves || []).concat(b.serves || [])
+  };
+}
+
+function populateAuxiliaryFromSections(aux) {
+  if (!aux) return;
+  var blocks = [];
+  if (aux.notes && aux.notes.length) blocks.push(aux.notes.join('\n'));
+  if (aux.tips && aux.tips.length) {
+    blocks.push(aux.tips.map(function(t) { return /^tip/i.test(t) ? t : 'Tip: ' + t; }).join('\n'));
+  }
+  if (blocks.length) {
+    var block = blocks.join('\n\n');
+    var notesEl = document.getElementById('cooking-notes');
+    if (notesEl && notesEl.value.indexOf(block) < 0) appendCookingNote(block);
+  }
+  if (aux.serves && aux.serves.length) {
+    var n = parseServesNumber(aux.serves);
+    if (n) {
+      var servEl = document.getElementById('servings');
+      if (servEl && !servEl.value.trim()) servEl.value = n;
+    }
+  }
+}
+
+function importAuxSectionsFromRawLines(rawLines) {
+  var aux = createAuxCollector();
+  var current = null;
+  for (var i = 0; i < rawLines.length; i++) {
+    var ln = rawLines[i];
+    if (/^(?:notes?|cooking\s+notes?|notes?\s*&\s*tips?)\s*:?$/i.test(ln)) { current = 'notes'; continue; }
+    if (/^(?:tips?|hints?|tricks?|variations?|tips?\s*&\s*notes?)\s*:?$/i.test(ln)) { current = 'tips'; continue; }
+    if (/^(?:serves?|servings?|yield)\s*:?$/i.test(ln)) { current = 'serves'; continue; }
+    if (/^(?:ingredients?|method|directions?|instructions?|steps?)\s*:?$/i.test(ln)) { current = null; continue; }
+    if (!current) {
+      if (isRecipeTipOrNoteLine(ln)) pushAuxLine(aux, ln);
+      continue;
+    }
+    if (ln) aux[current].push(ln);
+  }
+  populateAuxiliaryFromSections(aux);
 }
 
 function isMethodSectionHeader(line) {
@@ -3806,8 +3877,8 @@ function detectScanSection(line) {
   if (/^(prep\s+work|directions?|method|steps?|instructions?|procedure|how\s+to(?:\s+make|\s+cook)?)\s*:?$/i.test(line)) return 'meth';
   if (/^(serves?|servings?|yield)\s*:?$/i.test(line)) return 'serves';
   if (/^(?:serves?|servings?|yield)\s*:?\s*[\d\u00BC\-]/i.test(line)) return 'serves';
-  if (/^(notes?|cooking\s+notes?)\s*:?$/i.test(line)) return 'notes';
-  if (/^(tips?|hints?|tricks?|variations?)\s*:?$/i.test(line)) return 'tips';
+  if (/^(notes?|cooking\s+notes?|notes?\s*&\s*tips?)\s*:?$/i.test(line)) return 'notes';
+  if (/^(tips?|hints?|tricks?|variations?|tips?\s*&\s*notes?)\s*:?$/i.test(line)) return 'tips';
   if (isNutritionOrMetaLine(line)) return 'junk';
   if (/^(copyright|chef|author|photograph|photo\s+by|recipe\s+by|description|feedback)\s*:?$/i.test(line)) return 'junk';
   if (/^(prep\s*time|cook\s*time|total\s*time|storage|garnish)\s*:?$/i.test(line)) return 'junk';
@@ -3871,8 +3942,11 @@ function collectMethodSteps(lines, startIdx, endIdx, noteOut) {
     if (isNutritionOrMetaLine(ln) || isScanNoiseLine(ln)) break;
     if (detectScanSection(ln) === 'junk' || /^ingredients?$/i.test(ln)) break;
     if (/^(?:so\s+)?ur\s+\w+\s+is\s+ready/i.test(ln)) continue;
-    if (isMethodAttributionLine(ln)) {
-      if (noteOut) noteOut.push(ln);
+    if (isMethodAttributionLine(ln) || isRecipeTipOrNoteLine(ln)) {
+      if (noteOut) pushAuxLine(noteOut, ln);
+      continue;
+    }
+    if (detectScanSection(ln) === 'notes' || detectScanSection(ln) === 'tips') {
       continue;
     }
     if (isMethodStepLine(ln)) {
@@ -3887,6 +3961,44 @@ function collectMethodSteps(lines, startIdx, endIdx, noteOut) {
     if (ln.length >= 8) steps.push(ln);
   }
   return expandLongMethodSteps(normalizeMethodSteps(steps.filter(Boolean)));
+}
+
+function collectPostRecipeSections(lines, startIdx) {
+  var out = createAuxCollector();
+  var current = null;
+  for (var i = startIdx; i < lines.length; i++) {
+    var ln = stripScanLine(lines[i]);
+    if (!ln) continue;
+    if (isScanNoiseLine(ln) || /^(?:love|loading|leave a reply|trending|subscribe|follow my)\b/i.test(ln)) break;
+    var hdr = detectScanSection(ln);
+    if (hdr === 'notes' || hdr === 'tips' || hdr === 'serves') {
+      current = hdr;
+      var inline = ln.replace(/^(?:notes?|cooking\s+notes?|tips?|hints?|serves?|servings?|yield|notes?\s*&\s*tips?)\s*:?\s*/i, '').trim();
+      if (inline) {
+        if (hdr === 'serves' && /\d/.test(inline)) out.serves.push(inline);
+        else if (hdr === 'notes') out.notes.push(inline);
+        else if (hdr === 'tips') out.tips.push(inline);
+      }
+      continue;
+    }
+    if (hdr === 'ing' || hdr === 'meth') break;
+    if (hdr === 'junk') { current = null; continue; }
+    if (isRecipeTipOrNoteLine(ln)) {
+      pushAuxLine(out, ln);
+      continue;
+    }
+    if (current === 'notes') {
+      var cn = cleanScanContentLine(ln, 'notes');
+      if (cn) out.notes.push(cn);
+    } else if (current === 'tips') {
+      var ct = cleanScanContentLine(ln, 'notes');
+      if (ct) out.tips.push(ct);
+    } else if (current === 'serves') {
+      var cs = cleanScanContentLine(ln, 'serves');
+      if (cs) out.serves.push(cs);
+    }
+  }
+  return out;
 }
 
 function extractByLayout(lines) {
@@ -3934,12 +4046,13 @@ function extractByLayout(lines) {
   }
 
   var methLines = [];
-  var methNotes = [];
+  var aux = createAuxCollector();
   if (methStart >= 0) {
-    methLines = collectMethodSteps(lines, methStart, methEnd, methNotes);
+    methLines = collectMethodSteps(lines, methStart, methEnd, aux);
+    aux = mergeAuxSections(aux, collectPostRecipeSections(lines, methEnd));
   }
 
-  return { title: title, ingLines: ingLines, methLines: methLines, methNotes: methNotes };
+  return { title: title, ingLines: ingLines, methLines: methLines, aux: aux };
 }
 
 function parseServesNumber(servesLines) {
@@ -3965,8 +4078,10 @@ function extractRecipeCore(text) {
   };
   var title = layout.title;
 
-  if (layout.methNotes && layout.methNotes.length) {
-    sections.notes = sections.notes.concat(layout.methNotes);
+  if (layout.aux) {
+    sections.notes = sections.notes.concat(layout.aux.notes || []);
+    sections.tips = sections.tips.concat(layout.aux.tips || []);
+    sections.serves = sections.serves.concat(layout.aux.serves || []);
   }
 
   if (!sections.ing.length && !sections.meth.length) {
@@ -3976,6 +4091,11 @@ function extractRecipeCore(text) {
       if (!cleaned) return;
       if (sec === 'ing' && !isIngredientLikeLine(cleaned)) return;
       if (sec === 'meth' && !isMethodStepLine(cleaned) && !isMethodLikeLine(cleaned)) return;
+      if (sec === 'notes' || sec === 'tips') {
+        if (isRecipeTipOrNoteLine(cleaned) && sec === 'notes') sections.tips.push(cleaned);
+        else sections[sec].push(cleaned);
+        return;
+      }
       sections[sec].push(cleaned);
     }
     for (var i = 0; i < lines.length; i++) {
@@ -4020,6 +4140,8 @@ function extractRecipeCore(text) {
     ingCount: sections.ing.length,
     methCount: sections.meth.length,
     notes: sections.notes.slice(),
+    tips: sections.tips.slice(),
+    serves: sections.serves.slice(),
     extraCount: extraCount,
     hasContent: sections.ing.length > 0 || sections.meth.length > 0
   };
@@ -4044,6 +4166,12 @@ async function applyScanResult(rawText, statusSuffix) {
 
   var srcScanned = document.getElementById('src-scanned');
   if (srcScanned) srcScanned.checked = true;
+
+  populateAuxiliaryFromSections({
+    notes: extracted.notes || [],
+    tips: extracted.tips || [],
+    serves: extracted.serves || []
+  });
 
   if (extracted.hasContent) {
     var extraMsg = extracted.extraCount ? ' (+ serves/notes/tips)' : '';
@@ -4251,6 +4379,507 @@ function populateFromJsonLd(r, sourceUrl) {
 }
 
 
+// ── AUTO-ENRICH PARSED RECIPE (local, no API) ───────────────────────────────
+var AUTO_REVIEW_MARKER = '--- Auto review on parse (remove when done) ---';
+
+function flattenParseItems(ingSecs) {
+  var out = [];
+  (ingSecs || []).forEach(function(sec) {
+    (sec.items || []).forEach(function(item) { out.push(item); });
+  });
+  return out;
+}
+
+function flattenParseSteps(methSecs) {
+  var out = [];
+  (methSecs || []).forEach(function(sec) {
+    (sec.steps || []).forEach(function(st) { out.push(String(st || '').trim()); });
+  });
+  return out.filter(Boolean);
+}
+
+function parseQtyToNumber(qty) {
+  var s = String(qty || '').trim();
+  if (!s) return 0;
+  var mixed = s.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+  if (mixed) return parseInt(mixed[1], 10) + parseInt(mixed[2], 10) / parseInt(mixed[3], 10);
+  var frac = s.match(/^(\d+)\/(\d+)$/);
+  if (frac) return parseInt(frac[1], 10) / parseInt(frac[2], 10);
+  var n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
+function classifyMethodStep(step) {
+  var t = String(step || '').toLowerCase();
+  if (/\b(fold|cover with a kitchen|keep in a bowl|until serving|hold|store covered)\b/.test(t)) return 'holding';
+  if (/\b(heat|tawa|griddle|pan|fry|bake|boil|simmer|puff|turn it|flip|cook|grill|roast|steam|broil)\b/.test(t)) return 'cook';
+  if (/\b(combine|mix|knead|cover|rest|soak|marinate|chop|prepare|divide|roll|dust|spread|layer|press|make|allow)\b/.test(t)) return 'prep';
+  return 'prep';
+}
+
+function regroupIngredientSections(ingSecs) {
+  var all = [];
+  (ingSecs || []).forEach(function(sec) {
+    (sec.items || []).forEach(function(item) { all.push(item); });
+  });
+  if (!all.length) return ingSecs || [];
+
+  var main = [], dusting = [], layering = [], garnish = [];
+  all.forEach(function(item) {
+    var note = String(item.note || '').toLowerCase();
+    var name = String(item.name || '').toLowerCase();
+    if (/for dusting|dusting/.test(note) || (/rice flour/.test(name) && /dusting/.test(note))) {
+      dusting.push(item);
+    } else if (/for layering|layering|between layers/.test(note) || (name === 'oil' && !item.qty)) {
+      layering.push(item);
+    } else if (/garnish|to serve|for serving/.test(note)) {
+      garnish.push(item);
+    } else {
+      main.push(item);
+    }
+  });
+
+  if (!dusting.length && !layering.length && !garnish.length) return ingSecs;
+
+  var out = [];
+  var mainName = 'Ingredients';
+  if (main.length && main.some(function(i) { return /flour|dough/i.test(i.name || ''); })) mainName = 'Main Dough';
+  if (main.length) out.push({ name: mainName, items: main });
+  if (layering.length) out.push({ name: 'For Layering', items: layering });
+  if (dusting.length) out.push({ name: 'Dusting', items: dusting });
+  if (garnish.length) out.push({ name: 'Garnish', items: garnish });
+  return out.length ? out : ingSecs;
+}
+
+function reorganizeMethodSections(methSecs) {
+  if (!methSecs || !methSecs.length) return methSecs;
+  var total = methSecs.reduce(function(n, s) { return n + (s.steps || []).length; }, 0);
+  if (total < 4) return methSecs;
+  if (methSecs.length > 1 && methSecs.some(function(s) { return /prep\s*work/i.test(s.name || ''); })) return methSecs;
+
+  var prep = [], cook = [], holding = [];
+  methSecs.forEach(function(sec) {
+    (sec.steps || []).forEach(function(st) {
+      var kind = classifyMethodStep(st);
+      if (kind === 'holding') holding.push(st);
+      else if (kind === 'cook') cook.push(st);
+      else prep.push(st);
+    });
+  });
+  if (!prep.length || !cook.length) return methSecs;
+
+  var out = [{ name: 'PREP WORK', steps: prep }];
+  if (cook.length) out.push({ name: 'DIRECTIONS', steps: cook });
+  if (holding.length) out.push({ name: 'FINISHING', steps: holding });
+  return out;
+}
+
+function inferRecipeCategory(name, items, steps) {
+  var blob = (name + ' ' + steps.join(' ') + ' ' + items.map(function(i) {
+    return (i.name || '') + ' ' + (i.note || '');
+  }).join(' ')).toLowerCase();
+
+  var rules = [
+    { re: /\b(biriyani|biryani|pilaf|pulao|fried rice)\b/, value: 'Grains & Comfort' },
+    { re: /\b(roti|rotti|chapati|paratha|naan|flatbread|bread|loaf|roll|pita|kulcha|dosa|appam|idiyappam)\b/, value: 'Breads & Bakes' },
+    { re: /\b(cake|cookie|brownie|muffin|cupcake|halwa|ladoo|barfi|kheer|pudding|dessert|sweet|pie|tart)\b/, value: 'Sweet Serenades' },
+    { re: /\b(soup|rasam|shorba|broth|stew)\b/, value: 'Slow & Soulful' },
+    { re: /\b(pickle|chutney|jam|preserve|ferment|canning)\b/, value: 'Preserved & Cherished' },
+    { re: /\b(salad|raita)\b/, value: 'Garden & Earth' },
+    { re: /\b(smoothie|juice|lassi|chai|tea|coffee|cocktail|drink|shake)\b/, value: 'Sips & Stories' },
+    { re: /\b(fish|prawn|shrimp|crab|lobster|salmon|tuna|seafood|meen)\b/, value: 'Ocean & River' },
+    { re: /\b(chicken|mutton|lamb|beef|pork|meat|steak|bacon|sausage)\b/, value: 'Meat & Fire' },
+    { re: /\b(breakfast|pancake|waffle|omelette|porridge)\b/, value: 'Rise & Shine' }
+  ];
+  for (var i = 0; i < rules.length; i++) {
+    if (rules[i].re.test(blob)) return rules[i].value;
+  }
+  if (/\b(rice|dal|lentil|grain)\b/.test(blob)) return 'Grains & Comfort';
+  if (/\b(vegetable|sabzi|curry|thoran)\b/.test(blob)) return 'Garden & Earth';
+  return 'Grains & Comfort';
+}
+
+function inferSpiceSweetLevels(items, name) {
+  var blob = (name + ' ' + items.map(function(i) {
+    return (i.name || '') + ' ' + (i.note || '');
+  }).join(' ')).toLowerCase();
+
+  var spiceHits = 0;
+  var spicyWords = ['chilli', 'chili', 'chilly', 'pepper', 'cayenne', 'jalapeno', 'habanero', 'schezwan', 'sambal', 'harissa', 'gochugaru', 'paprika', 'wasabi', 'hot sauce'];
+  spicyWords.forEach(function(w) { if (blob.indexOf(w) >= 0) spiceHits++; });
+  var spice = 'Not Applicable';
+  if (spiceHits === 1) spice = 'Mild';
+  else if (spiceHits === 2) spice = 'Medium';
+  else if (spiceHits === 3) spice = 'Hot';
+  else if (spiceHits === 4) spice = 'Very Hot';
+  else if (spiceHits >= 5) spice = 'Extremely Hot';
+
+  var sweetHits = 0;
+  var sweetWords = ['sugar', 'jaggery', 'honey', 'syrup', 'milkmaid', 'condensed milk', 'chocolate', 'cocoa', 'sweet', 'molasses', 'maple'];
+  sweetWords.forEach(function(w) { if (blob.indexOf(w) >= 0) sweetHits++; });
+  var sweet = 'Not Applicable';
+  if (/\b(cake|cookie|dessert|halwa|ladoo|kheer|pudding|sweet)\b/i.test(name)) {
+    if (sweetHits >= 3) sweet = 'Very Sweet';
+    else if (sweetHits >= 2) sweet = 'Sweet';
+    else sweet = 'Lightly Sweet';
+  } else if (sweetHits >= 2) sweet = 'Lightly Sweet';
+  else if (sweetHits === 1) sweet = 'Subtly Sweet';
+
+  return { spice: spice, sweet: sweet };
+}
+
+function ingredientBlob(items) {
+  return items.map(function(i) {
+    return ((i.name || '') + ' ' + (i.note || '')).toLowerCase();
+  }).join(' ');
+}
+
+function inferDietaryAndHealth(items) {
+  var blob = ingredientBlob(items);
+  var tags = [];
+  var hasMeat = /\b(chicken|mutton|lamb|beef|pork|bacon|sausage|ham|meat|fish|prawn|shrimp|crab|lobster|salmon|tuna|anchovy)\b/.test(blob);
+  var hasEgg = /\begg\b/.test(blob);
+  var hasDairy = /\b(milk|butter|ghee|cream|cheese|paneer|yoghurt|yogurt|curd)\b/.test(blob);
+  var hasGluten = /\b(wheat|all purpose flour|all-purpose flour|maida|bread flour|semolina|barley|rye)\b/.test(blob);
+  var hasNuts = /\b(almond|cashew|walnut|peanut|pistachio|hazelnut|pecan|nut)\b/.test(blob);
+
+  if (!hasMeat && !hasEgg) tags.push('tag-veg');
+  if (!hasMeat && !hasEgg && !hasDairy) tags.push('tag-vegan');
+  if (!hasGluten) tags.push('tag-gf');
+  if (!hasDairy) tags.push('tag-df');
+  if (!hasNuts) tags.push('tag-nf');
+  if (!hasEgg) tags.push('tag-ef');
+  if (!/\b(shrimp|prawn|crab|lobster|shellfish)\b/.test(blob)) tags.push('tag-sf');
+  if (items.length <= 8) tags.push('tag-kf');
+  return tags;
+}
+
+function inferMealOccasionStyleTags(name, category, items, times) {
+  var tags = ['tag-everyday', 'tag-trad'];
+  var blob = (name + ' ' + category).toLowerCase();
+  if (/\b(roti|rotti|chapati|paratha|naan|bread|flatbread)\b/.test(blob)) tags.push('tag-mt-bread');
+  else if (/\b(biriyani|biryani|rice|pulao|pilaf)\b/.test(blob)) tags.push('tag-mt-rice');
+  else if (category === 'Sweet Serenades') tags.push('tag-mt-dessert');
+  else if (/\b(soup)\b/.test(blob)) tags.push('tag-mt-soup');
+  else if (/\b(salad|raita)\b/.test(blob)) tags.push('tag-mt-salad');
+  else if (/\b(drink|juice|lassi|chai|tea|coffee)\b/.test(blob)) tags.push('tag-mt-drink');
+  else if (category === 'Meat & Fire' || category === 'Ocean & River') tags.push('tag-mt-main');
+  else if (category === 'Breads & Bakes') tags.push('tag-mt-bread');
+  else tags.push('tag-mt-side');
+
+  if ((times.prep + times.cook) <= 30) tags.push('tag-quick');
+  if (/\b(comfort|home|simple)\b/.test(blob) || category === 'Grains & Comfort') tags.push('tag-comfort');
+  if (!/\b(chilli|chili|spice)\b/.test(ingredientBlob(items))) tags.push('tag-fp-mild');
+  return tags;
+}
+
+function estimateRecipeTimes(items, steps) {
+  var prep = 0, cook = 0;
+  steps.forEach(function(step) {
+    var kind = classifyMethodStep(step);
+    var t = String(step || '').toLowerCase();
+    if (kind === 'cook') cook += /\b(heat|simmer|bake|roast|dum)\b/.test(t) ? 5 : 3;
+    else if (/\b(knead|roll|layer|marinate)\b/.test(t)) prep += 4;
+    else prep += 2;
+  });
+  prep = Math.max(10, Math.min(120, prep || 15));
+  cook = Math.max(5, Math.min(180, cook || 10));
+
+  var cupTotal = 0, riceCups = 0;
+  items.forEach(function(i) {
+    if ((i.unit || '').toLowerCase().indexOf('cup') >= 0) {
+      var n = parseQtyToNumber(i.qty);
+      cupTotal += n;
+      if (/rice/i.test(i.name || '')) riceCups += n;
+    }
+  });
+  var servings = 4;
+  if (riceCups > 0) servings = Math.max(2, Math.round(riceCups * 3));
+  else if (cupTotal > 0) servings = Math.max(2, Math.round(cupTotal * 4));
+
+  return { prep: prep, cook: cook, servings: servings };
+}
+
+function parseDurationTokenToMinutes(num, unit) {
+  var n = parseInt(num, 10);
+  if (isNaN(n)) return 0;
+  var u = String(unit || 'min').toLowerCase();
+  if (/hour|hr/.test(u)) return n * 60;
+  if (/day/.test(u)) return n * 1440;
+  if (/week/.test(u)) return n * 10080;
+  return n;
+}
+
+function passiveValueForStyle(totalMinutes, extraUnit) {
+  if (!totalMinutes) return 0;
+  if (extraUnit === 'hr') return Math.max(1, Math.round(totalMinutes / 60 * 10) / 10);
+  if (extraUnit === 'day') return Math.max(1, Math.round(totalMinutes / 1440 * 10) / 10);
+  if (extraUnit === 'week') return Math.max(1, Math.round(totalMinutes / 10080 * 10) / 10);
+  return totalMinutes;
+}
+
+function extractPassiveTimeDetails(text, steps, items) {
+  var blob = (text || '') + ' ' + (steps || []).join(' ');
+  var hasMarinadeIng = (items || []).some(function(i) {
+    return /marinade|marination/i.test((i.name || '') + ' ' + (i.note || ''));
+  });
+
+  var patterns = [
+    { re: /\bmarinat(?:e|ion|ing)?\b[^.]{0,70}?(\d+)\s*(?:to|-)\s*(\d+)\s*(hours?|hrs?|minutes?|mins?|days?)/i, stage: 'marinating', range: true },
+    { re: /\bmarinat(?:e|ion|ing)?\b[^.]{0,70}?(\d+)\s*(hours?|hrs?|minutes?|mins?|days?)/i, stage: 'marinating', range: false },
+    { re: /\b(?:prove|proof|rise|rising)\b[^.]{0,70}?(\d+)\s*(?:to|-)\s*(\d+)\s*(hours?|hrs?|minutes?|mins?)/i, stage: 'bread', range: true },
+    { re: /\b(?:prove|proof|rise|rising)\b[^.]{0,70}?(\d+)\s*(hours?|hrs?|minutes?|mins?)/i, stage: 'bread', range: false },
+    { re: /\b(?:ferment|fermentation)\b[^.]{0,70}?(\d+)\s*(?:to|-)\s*(\d+)\s*(hours?|hrs?|days?|weeks?)/i, stage: 'fermentation', range: true },
+    { re: /\b(?:ferment|fermentation)\b[^.]{0,70}?(\d+)\s*(hours?|hrs?|days?|weeks?)/i, stage: 'fermentation', range: false },
+    { re: /\b(?:brine|brining)\b[^.]{0,70}?(\d+)\s*(?:to|-)\s*(\d+)\s*(hours?|hrs?|minutes?|mins?|days?)/i, stage: 'brining', range: true },
+    { re: /\b(?:brine|brining)\b[^.]{0,70}?(\d+)\s*(hours?|hrs?|minutes?|mins?|days?)/i, stage: 'brining', range: false },
+    { re: /\b(?:soak|soaking)\b[^.]{0,70}?(\d+)\s*(?:to|-)\s*(\d+)\s*(hours?|hrs?|minutes?|mins?)/i, stage: 'soak', range: true },
+    { re: /\b(?:soak|soaking)\b[^.]{0,70}?(\d+)\s*(hours?|hrs?|minutes?|mins?)/i, stage: 'soak', range: false },
+    { re: /\b(?:rest|resting|allow to rest)\b[^.]{0,70}?(\d+)\s*(?:to|-)\s*(\d+)\s*(hours?|hrs?|minutes?|mins?)/i, stage: 'rest', range: true },
+    { re: /\b(?:rest|resting|allow to rest)\b[^.]{0,70}?(\d+)\s*(hours?|hrs?|minutes?|mins?)/i, stage: 'rest', range: false },
+    { re: /\bovernight\b/i, stage: hasMarinadeIng ? 'marinating' : 'rest', overnight: true }
+  ];
+
+  for (var i = 0; i < patterns.length; i++) {
+    var p = patterns[i];
+    if (p.overnight) {
+      if (p.re.test(blob)) {
+        return {
+          minutes: 480,
+          stage: p.stage,
+          label: 'Overnight (' + (p.stage === 'marinating' ? 'marinating' : 'resting') + ', estimated as 8 hours)'
+        };
+      }
+      continue;
+    }
+    var m = blob.match(p.re);
+    if (!m) continue;
+    var mins = 0;
+    var label = '';
+    if (p.range) {
+      var a = parseDurationTokenToMinutes(m[1], m[3]);
+      var b = parseDurationTokenToMinutes(m[2], m[3]);
+      mins = Math.round((a + b) / 2);
+      label = p.stage + ' (' + m[1] + ' to ' + m[2] + ' ' + m[3] + ' from source)';
+    } else {
+      mins = parseDurationTokenToMinutes(m[1], m[2]);
+      label = p.stage + ' (' + m[1] + ' ' + m[2] + ' from source)';
+    }
+    return { minutes: mins, stage: p.stage, label: label };
+  }
+  return { minutes: 0, stage: '', label: '' };
+}
+
+function inferCookingStyle(name, items, steps, text, passive) {
+  var blob = (name + ' ' + (text || '') + ' ' + (steps || []).join(' ') + ' ' + ingredientBlob(items)).toLowerCase();
+  var passiveStage = passive && passive.stage;
+
+  if (passiveStage === 'marinating' || (/\b(marinat|marination|marinade)\b/.test(blob) && /\bmarinat/.test(blob))) return 'marinating';
+  if (passiveStage === 'brining' || /\b(brine|brining)\b/.test(blob)) return 'brining';
+  if (passiveStage === 'fermentation' || /\b(ferment|kimchi|kombucha|sourdough starter)\b/.test(blob)) return 'fermentation';
+  if (/\b(jam|chutney|marmalade|conserve|fruit preserve)\b/.test(blob) && !/\b(roti|chapati|flatbread)\b/.test(blob)) return 'jam';
+  if (/\b(pickle|pickling|achar|aachar)\b/.test(blob)) {
+    return /\b(quick|refrigerator|fridge|instant)\b/.test(blob) ? 'pickling-q' : 'pickling-t';
+  }
+  if (/\b(canning|water bath canner|pressure canner|sterilise jars|sterilize jars)\b/.test(blob)) return 'canning';
+  if (/\b(dehydrat|dehydrator|sun.?dry)\b/.test(blob)) return 'dehydrating';
+  if (/\b(curing|cold smoke|gravlax|cured meat)\b/.test(blob)) return 'curing';
+
+  if (passiveStage === 'bread' || /\b(yeast|prove|proof|second rise|first rise)\b/.test(blob)) return 'bread';
+  if (/\b(roti|rotti|chapati|paratha|naan|rumali|flatbread|tawa|griddle)\b/.test(blob)) return 'griddle';
+  if (/\b(bake|baking|oven \d|cake|cookie|muffin|pastry|pie crust)\b/.test(blob)) return 'baking';
+  if (/\b(candy|fudge|toffee|confection)\b/.test(blob)) return 'candy';
+
+  if (/\b(pressure cook|instant pot|whistle|pressure cooker)\b/.test(blob)) return 'pressure';
+  if (/\b(slow cook|crockpot|crock pot|brais(e|ing) for hours)\b/.test(blob)) return 'slow-cook';
+  if (/\b(sous vide)\b/.test(blob)) return 'sous-vide';
+  if (/\b(smoker|hot smoke|smoking at)\b/.test(blob)) return 'smoking-hot';
+  if (/\b(grill|bbq|barbecue)\b/.test(blob)) return 'bbq';
+  if (/\b(deep.?fry|deep fry)\b/.test(blob)) return 'deep-fry';
+  if (/\b(air fry|airfryer)\b/.test(blob)) return 'air-fry';
+  if (/\b(stir.?fry|wok)\b/.test(blob)) return 'stir-fry';
+  if (/\b(steam|steamer|\bdum\b|idli steamer)\b/.test(blob)) return 'steam-poach';
+  if (/\b(roast|roasting)\b/.test(blob) && /\b(oven|\d+\s*°|degrees)\b/.test(blob)) return 'roasting';
+  if (/\b(raw|no.?cook|uncooked salad)\b/.test(blob) && !/\b(cook|heat|bake|fry)\b/.test(blob)) return 'raw';
+
+  return '';
+}
+
+function inferOriginRegion(text) {
+  var url = ((document.getElementById('credit-url') || {}).value || '') +
+            ((document.getElementById('source-url-input') || {}).value || '');
+  var blob = (text || '') + ' ' + url;
+  if (/curryworld|kerala\s+recipes|kerala\s+ruchi/i.test(blob)) {
+    return (typeof REGION_HINTS !== 'undefined' ? REGION_HINTS : []).find(function(r) {
+      return r.name === 'South Indian (Kerala)';
+    }) || null;
+  }
+  if (/\bkerala\b/i.test(blob)) return REGION_HINTS ? REGION_HINTS[0] : null;
+  if (/\btamil\s+nadu\b/i.test(blob)) return REGION_HINTS ? REGION_HINTS[1] : null;
+  if (/\bnorth\s+indian\b|\bpunjab/i.test(blob)) return REGION_HINTS ? REGION_HINTS[2] : null;
+  return null;
+}
+
+function buildAutoIntroduction(name, items, category) {
+  var n = String(name || '').trim();
+  var flours = items.filter(function(i) { return /flour/i.test(i.name || ''); }).map(function(i) { return i.name; });
+  if (/\b(roti|rotti|chapati|paratha|rumali)\b/i.test(n)) {
+    var intro = 'A thin flatbread made from a soft dough and cooked on a very hot tawa.';
+    if (flours.length) intro += ' Prepared with ' + flours.join(' and ') + '.';
+    return intro;
+  }
+  if (/\b(biriyani|biryani)\b/i.test(n)) {
+    return 'A layered rice dish prepared with aromatic spices and the ingredients listed below.';
+  }
+  if (category) return 'A ' + category.toLowerCase() + ' recipe prepared from the ingredients and method below.';
+  return '';
+}
+
+function normalizeAutoRecipeName(name) {
+  return String(name || '').trim().replace(/\brotti\b/gi, 'Roti');
+}
+
+function buildClarityNotes(name, items, meta) {
+  var lines = [];
+  lines.push('Estimated values (confirm or edit): Prep ' + meta.times.prep + ' min, Cook ' + meta.times.cook + ' min, Servings ' + meta.times.servings + '.');
+  if (meta.cookingStyle) {
+    lines.push('Cooking style auto-selected: ' + (meta.cookingStyleLabel || meta.cookingStyle) + '.');
+  }
+  if (meta.passive && meta.passive.minutes) {
+    lines.push('Passive stage: ' + (meta.passive.label || (meta.passive.minutes + ' min from source')) + '.');
+  }
+  if (meta.needsShelfLife) {
+    lines.push('Shelf life (sealed and after opening) not in source. Admin should confirm storage and shelf life.');
+  }
+  items.forEach(function(i) {
+    if (!i.qty && !/to taste|as needed|less than/i.test(i.note || '')) {
+      lines.push('Quantity not in source: ' + (i.name || 'ingredient') + (i.note ? ' (' + i.note + ')' : '') + '.');
+    }
+  });
+  if (!meta.origin) lines.push('Origin not detected from source. Confirm continent, country, and region.');
+  if (/\b(roti|rotti)\b/i.test(name)) lines.push('Confirm recipe title spelling: Rumali Roti vs Rumali Rotti.');
+  return lines.join('\n');
+}
+
+function cookingStyleLabel(key) {
+  var el = document.querySelector('#cooking-style option[value="' + key + '"]');
+  return el ? el.textContent.trim() : key;
+}
+
+function ensureFormRadio(name, value) {
+  document.querySelectorAll('input[name="' + name + '"]').forEach(function(r) {
+    r.checked = (r.value === value);
+  });
+}
+
+function ensureTagChecked(id) {
+  var el = document.getElementById(id);
+  if (el) el.checked = true;
+}
+
+function setFormTextIfEmpty(id, value) {
+  var el = document.getElementById(id);
+  if (el && value && !String(el.value || '').trim()) el.value = value;
+}
+
+function setFormNumber(id, value) {
+  var el = document.getElementById(id);
+  if (el && value != null && value !== '') el.value = value;
+}
+
+function expandLevelsTagsSection() {
+  var sub = document.getElementById('subsection-levels-tags');
+  if (sub) sub.classList.remove('collapsed');
+}
+
+function appendPersonalReviewNote(block) {
+  var el = document.getElementById('personal-notes');
+  if (!el || !block) return;
+  var existing = el.value || '';
+  if (existing.indexOf(AUTO_REVIEW_MARKER) >= 0) {
+    existing = existing.split(AUTO_REVIEW_MARKER)[0].replace(/\s+$/, '');
+  }
+  el.value = existing ? existing + '\n\n' + AUTO_REVIEW_MARKER + '\n' + block : AUTO_REVIEW_MARKER + '\n' + block;
+}
+
+function enrichAndApplyParsedMetadata(ctx) {
+  var items = flattenParseItems(ctx.ingSecs);
+  var steps = flattenParseSteps(ctx.methSecs);
+  if (!items.length && !steps.length) return null;
+
+  var name = normalizeAutoRecipeName(
+    (document.getElementById('recipe-name') && document.getElementById('recipe-name').value.trim()) ||
+    ctx.title || ''
+  );
+  var nameEl = document.getElementById('recipe-name');
+  if (nameEl && name) nameEl.value = normalizeAutoRecipeName(nameEl.value.trim() || name);
+
+  var category = inferRecipeCategory(name, items, steps);
+  var levels = inferSpiceSweetLevels(items, name);
+  var times = estimateRecipeTimes(items, steps);
+  var passive = extractPassiveTimeDetails(ctx.text, steps, items);
+  var cookingStyle = inferCookingStyle(name, items, steps, ctx.text, passive);
+  var styleCfg = (typeof COOKING_STYLE_CFG !== 'undefined' ? COOKING_STYLE_CFG : {})[cookingStyle] || {};
+  var origin = inferOriginRegion(ctx.text);
+  var intro = buildAutoIntroduction(name, items, category);
+
+  var csEl = document.getElementById('cooking-style');
+  if (csEl) {
+    csEl.value = cookingStyle;
+    if (typeof applyCookingStyle === 'function') applyCookingStyle(cookingStyle);
+  }
+
+  ensureFormRadio('category', category);
+  ensureFormRadio('spice', levels.spice);
+  ensureFormRadio('sweet', levels.sweet);
+  setFormTextIfEmpty('introduction', intro);
+  setFormNumber('prep-time', times.prep);
+  setFormNumber('cook-time', times.cook);
+  setFormNumber('servings', times.servings);
+  if (passive.minutes) {
+    var extraUnit = styleCfg.extraUnit || window._extraUnit || 'min';
+    setFormNumber('additional-time', passiveValueForStyle(passive.minutes, extraUnit));
+  }
+
+  if (origin && typeof applyRegion === 'function' && !window.fCountry) applyRegion(origin);
+
+  inferDietaryAndHealth(items).forEach(ensureTagChecked);
+  inferMealOccasionStyleTags(name, category, items, times).forEach(ensureTagChecked);
+
+  if (typeof updateTotalTime === 'function') updateTotalTime();
+  expandLevelsTagsSection();
+  appendPersonalReviewNote(buildClarityNotes(name, items, {
+    times: times,
+    passive: passive,
+    origin: origin,
+    cookingStyle: cookingStyle,
+    cookingStyleLabel: cookingStyleLabel(cookingStyle),
+    needsShelfLife: !!styleCfg.shelfLife
+  }));
+
+  var summary = [
+    category,
+    levels.spice === 'Not Applicable' ? 'Spice N/A' : ('Spice: ' + levels.spice),
+    'Prep ' + times.prep + 'm [est.]',
+    'Cook ' + times.cook + 'm [est.]',
+    'Serves ' + times.servings + ' [est.]'
+  ];
+  if (cookingStyle) summary.push(cookingStyleLabel(cookingStyle));
+  if (passive.minutes && styleCfg.extraLabel) {
+    summary.push(styleCfg.extraLabel + ' ' + passiveValueForStyle(passive.minutes, styleCfg.extraUnit || 'min') + ' ' + (styleCfg.extraUnit || 'min'));
+  } else if (passive.minutes) {
+    summary.push('Passive ' + passive.minutes + 'm');
+  }
+  if (origin && origin.name) summary.push('Origin: ' + origin.name);
+  if (styleCfg.shelfLife) summary.push('Shelf life: confirm manually');
+
+  return {
+    summary: summary,
+    ingSecs: regroupIngredientSections(ctx.ingSecs),
+    methSecs: reorganizeMethodSections(ctx.methSecs)
+  };
+}
+
 // ── IMPROVED PASTE AREA HELPERS ───────────────────────────────────
 // ── PASTE PARSER ─────────────────────────────────────────────────────────────
 function preprocessRecipeText(text) {
@@ -4259,6 +4888,9 @@ function preprocessRecipeText(text) {
     .replace(/#[\w\u00C0-\u024F]+/g, '')
     .replace(/(?:^|\n)\s*(?:\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDE4F])?\s*(?:INGREDIENTS?|WHAT YOU(?:'LL| WILL) NEED|YOU WILL NEED)\s*:?\s*/gi, '\nINGREDIENTS\n')
     .replace(/(?:^|\n)\s*(?:METHOD|INSTRUCTIONS?|DIRECTIONS?|STEPS?|HOW TO (?:MAKE|COOK|PREPARE))\s*:?\s*/gi, '\nMETHOD\n')
+    .replace(/(?:^|\n)\s*(?:COOKING\s+)?NOTES?\s*(?:&\s*TIPS?)?\s*:?\s*/gi, '\nNOTES\n')
+    .replace(/(?:^|\n)\s*(?:TIPS?|HINTS?|TRICKS?|VARIATIONS?)\s*:?\s*/gi, '\nTIPS\n')
+    .replace(/(?:^|\n)\s*(?:SERVES?|SERVINGS?|YIELD)\s*:?\s*/gi, '\nSERVES\n')
     .replace(/\n{3,}/g, '\n\n');
 }
 
@@ -4272,15 +4904,7 @@ function parseRecipe() {
   const stripBullet = s => s.replace(/^[\u2022\u00b7\u2023\u2043*\-\u2013\u2014\u25AA\u25CF\u25CB\u2713\u2714]\s+/, '').trim();
   const rawLines    = text.split('\n').map(l => stripBullet(l.trim())).filter(l => l.length > 0);
 
-  const notesHdrIdx = rawLines.findIndex(function(l) { return /^(?:notes?|cooking\s+notes?)\s*:?$/i.test(l); });
-  if (notesHdrIdx >= 0) {
-    var importedNotes = [];
-    for (var ni = notesHdrIdx + 1; ni < rawLines.length; ni++) {
-      if (/^(?:ingredients?|method|tips?|serves?|servings?|yield)\s*:?$/i.test(rawLines[ni])) break;
-      if (rawLines[ni]) importedNotes.push(rawLines[ni]);
-    }
-    if (importedNotes.length) appendCookingNote(importedNotes.join('\n'));
-  }
+  importAuxSectionsFromRawLines(rawLines);
 
   // Detect recipe title from first short line (before sections) — never an ingredient line
   const titleCand = rawLines[0];
@@ -4542,6 +5166,17 @@ function parseRecipe() {
     }
   }
 
+  var enrichResult = enrichAndApplyParsedMetadata({
+    ingSecs: ingSecs,
+    methSecs: methSecs,
+    text: text,
+    title: titleCand
+  });
+  if (enrichResult) {
+    ingSecs = enrichResult.ingSecs || ingSecs;
+    methSecs = enrichResult.methSecs || methSecs;
+  }
+
   // ── Populate form ─────────────────────────────────────────────────────────
   const ingHost  = document.getElementById('ingredient-sections');
   const methHost = document.getElementById('method-sections');
@@ -4585,10 +5220,13 @@ function parseRecipe() {
   if (res) {
     if (ingCount > 0 || stepCount > 0) {
       res.className = 'sr-parse-result success';
+      var enrichMsg = enrichResult && enrichResult.summary && enrichResult.summary.length
+        ? ' Auto-filled: ' + enrichResult.summary.join(', ') + '. Uncheck anything inaccurate.'
+        : '';
       res.textContent = '\u2713 Detected ' + ingCount + ' ingredient' + (ingCount === 1 ? '' : 's')
         + ' across ' + ingSecs.length + ' section' + (ingSecs.length === 1 ? '' : 's')
-        + ' and ' + stepCount + ' step' + (stepCount === 1 ? '' : 's')
-        + '. Review and correct anything that looks wrong.';
+        + ' and ' + stepCount + ' step' + (stepCount === 1 ? '' : 's') + '.' + enrichMsg
+        + ' See Personal Notes for review checklist.';
       var ingSec = document.getElementById('section-ingredients');
       if (ingSec) setTimeout(function() { ingSec.scrollIntoView({ behavior:'smooth', block:'start' }); }, 400);
     } else {
@@ -5023,6 +5661,7 @@ var COOKING_STYLE_CFG = {
   'sous-vide':    { cookLabel:'Sous Vide Time',             cookHint:'Total time in the water bath.',             cookUnit:'hr',   extraLabel:'Sear / Finish Time',    extraUnit:'min',  servesLabel:'Serves',  servesUnit:'people',  shelfLife:false, extraHint:'Quick sear or finishing step after the bath.' },
   'baking':       { cookLabel:'Baking Time',                cookHint:'Active time in the oven.',                  cookUnit:'min',  extraLabel:'Rest / Cool Time',      extraUnit:'min',  servesLabel:'Makes',   servesUnit:'pieces',  shelfLife:true,  extraHint:'Time to cool or rest before cutting, icing, or serving.' },
   'bread':        { cookLabel:'Baking Time',                cookHint:'Time in the oven.',                         cookUnit:'min',  extraLabel:'Prove Time',            extraUnit:'hr',   servesLabel:'Makes',   servesUnit:'loaves',  shelfLife:true,  extraHint:'Total proving / rising time (first and second prove combined).' },
+  'griddle':      { cookLabel:'Griddle / Pan Time',         cookHint:'Active time on the tawa, griddle, or pan.',  cookUnit:'min',  extraLabel:'Rest Time',             extraUnit:'min',  servesLabel:'Makes',   servesUnit:'pieces',  shelfLife:false, extraHint:'Dough resting time before rolling, or holding time before serving.' },
   'candy':        { cookLabel:'Cook Time',                  cookHint:'Active time cooking the candy mixture.',    cookUnit:'min',  extraLabel:'Set / Cool Time',       extraUnit:'min',  servesLabel:'Makes',   servesUnit:'pieces',  shelfLife:true,  extraHint:'Time for the candy to set or cool to the correct texture.' },
   'marinating':   { cookLabel:'Cook Time',                  cookHint:'Active cooking time after marinating.',     cookUnit:'min',  extraLabel:'Marinade Time',         extraUnit:'hr',   servesLabel:'Serves',  servesUnit:'people',  shelfLife:false, extraHint:'Time the item marinates before cooking.' },
   'brining':      { cookLabel:'Cook Time',                  cookHint:'Active cooking time after brining.',        cookUnit:'min',  extraLabel:'Brine Time',            extraUnit:'hr',   servesLabel:'Serves',  servesUnit:'people',  shelfLife:false, extraHint:'Time the item sits in the brine before cooking.' },
@@ -5056,6 +5695,8 @@ function applyCookingStyle(key) {
   if (extraRow) {
     if (cfg.extraLabel) {
       extraRow.style.display = '';
+      var exFldShow = extraRow.querySelector('.sr-field:first-child');
+      if (exFldShow) exFldShow.style.display = '';
       var exLbl = document.getElementById('lbl-extra-time');
       var exUnt = document.getElementById('unit-extra-time');
       var exHnt = document.getElementById('hint-extra-time');
@@ -5368,6 +6009,20 @@ function escPrint(s) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function getCheckedTagText(ids) {
+  return (ids || []).map(function(id) {
+    var el = document.getElementById(id);
+    if (!el || !el.checked) return '';
+    var lbl = document.querySelector('label[for="' + id + '"]');
+    return lbl ? lbl.textContent.replace(/\s+/g, ' ').trim() : (el.value || '');
+  }).filter(Boolean);
+}
+
+function getPrintRadioValue(name) {
+  var el = document.querySelector('input[name="' + name + '"]:checked');
+  return el ? el.value : '';
+}
+
 function buildSubmitPrintSheet() {
   var host = document.getElementById('sr-print-host');
   var out = document.getElementById('sr-print-output');
@@ -5377,21 +6032,74 @@ function buildSubmitPrintSheet() {
   var intro = (document.getElementById('introduction') && document.getElementById('introduction').value.trim()) || '';
   var prep = (document.getElementById('prep-time') && document.getElementById('prep-time').value.trim()) || '';
   var cook = (document.getElementById('cook-time') && document.getElementById('cook-time').value.trim()) || '';
+  var extra = (document.getElementById('additional-time') && document.getElementById('additional-time').value.trim()) || '';
+  var total = (document.getElementById('total-time') && document.getElementById('total-time').value.trim()) || '';
   var serves = (document.getElementById('servings') && document.getElementById('servings').value.trim()) || '';
-  var cat = '';
-  var catEl = document.querySelector('input[name="category"]:checked');
-  if (catEl) cat = catEl.value || '';
+  var servesUnit = (document.getElementById('servings-unit') && document.getElementById('servings-unit').value) || 'people';
+  var cat = getPrintRadioValue('category');
+  var spice = getPrintRadioValue('spice');
+  var sweet = getPrintRadioValue('sweet');
+  var csKey = (document.getElementById('cooking-style') && document.getElementById('cooking-style').value) || '';
+  var csCfg = (typeof COOKING_STYLE_CFG !== 'undefined' ? COOKING_STYLE_CFG : {})[csKey] || {};
+  var csLabel = '';
+  if (csKey) {
+    var csOpt = document.querySelector('#cooking-style option[value="' + csKey + '"]');
+    csLabel = csOpt ? csOpt.textContent.trim() : csKey;
+  }
+  var subcat = (document.getElementById('sr-subcategory') && document.getElementById('sr-subcategory').value.trim()) || '';
+  var division = (document.getElementById('sr-division') && document.getElementById('sr-division').value.trim()) || '';
+  var locality = (document.getElementById('origin-locality') && document.getElementById('origin-locality').value.trim()) || '';
+  var originParts = [window.fContinent, window.fCountry, window.fState, locality].filter(Boolean);
 
   var meta = [];
   if (cat) meta.push(cat);
+  if (subcat) meta.push(subcat);
+  if (division) meta.push(division);
+  if (csLabel) meta.push(csLabel);
   if (prep) meta.push('Prep ' + prep + ' min');
-  if (cook) meta.push('Cook ' + cook + ' min');
-  if (serves) meta.push('Serves ' + serves);
+  if (cook) meta.push((csCfg.cookLabel || 'Cook') + ' ' + cook + ' ' + (csCfg.cookUnit === 'hr' ? 'hr' : 'min'));
+  if (extra && csCfg.extraLabel) meta.push(csCfg.extraLabel + ' ' + extra + ' ' + (csCfg.extraUnit || 'min'));
+  else if (extra) meta.push('Passive ' + extra + ' min');
+  if (total) meta.push('Total ' + total);
+  if (serves) meta.push((csCfg.servesLabel || 'Serves') + ' ' + serves + ' ' + servesUnit);
+  if (spice && spice !== 'Not Applicable') meta.push('Spice: ' + spice);
+  if (sweet && sweet !== 'Not Applicable') meta.push('Sweet: ' + sweet);
+
+  var tagGroups = [
+    { title: 'Meal Type', tags: getCheckedTagText(['tag-mt-breakfast','tag-mt-brunch','tag-mt-lunch','tag-mt-dinner','tag-mt-snack','tag-mt-drink','tag-mt-soup','tag-mt-salad','tag-mt-main','tag-mt-side','tag-mt-appetizer','tag-mt-bread','tag-mt-rice','tag-mt-dessert','tag-mt-frozen','tag-mt-preserve']) },
+    { title: 'Occasion', tags: getCheckedTagText(['tag-everyday','tag-quick5','tag-quick','tag-bbq','tag-party','tag-wedding','tag-xmas','tag-goodfri','tag-lent','tag-easter','tag-thanksgiving','tag-ramadan','tag-eid','tag-diwali','tag-onam']) },
+    { title: 'Style', tags: getCheckedTagText(['tag-trad','tag-modern','tag-fusion','tag-streetfood','tag-finedining','tag-comfort']) },
+    { title: 'Flavour', tags: getCheckedTagText(['tag-fp-spicy','tag-fp-tangy','tag-fp-savoury','tag-fp-sweet','tag-fp-rich','tag-fp-creamy','tag-fp-fresh','tag-fp-smoky','tag-fp-nutty','tag-fp-fruity','tag-fp-salty','tag-fp-umami','tag-fp-bitter','tag-fp-earthy','tag-fp-floral','tag-fp-mild']) },
+    { title: 'Dietary', tags: getCheckedTagText(['tag-vegan','tag-veg','tag-gf','tag-df','tag-nf','tag-sf','tag-ef','tag-halal','tag-kosher']) },
+    { title: 'Health', tags: getCheckedTagText(['tag-hp','tag-lc','tag-lf','tag-ls','tag-diab','tag-bf','tag-kf']) }
+  ];
 
   var html = '<div class="sr-print-title">' + escPrint(name) + '</div>';
   if (native) html += '<div class="sr-print-meta">' + escPrint(native) + '</div>';
+  if (originParts.length) html += '<div class="sr-print-meta">Origin: ' + escPrint(originParts.join(' · ')) + '</div>';
   if (meta.length) html += '<div class="sr-print-meta">' + escPrint(meta.join(' · ')) + '</div>';
-  if (intro) html += '<div class="sr-print-block">' + escPrint(intro) + '</div>';
+  if (intro) {
+    html += '<div class="sr-print-h2">Introduction</div><div class="sr-print-block">' + escPrint(intro) + '</div>';
+  }
+
+  tagGroups.forEach(function(g) {
+    if (g.tags.length) {
+      html += '<div class="sr-print-h3">' + escPrint(g.title) + '</div><div class="sr-print-meta">' + escPrint(g.tags.join(' · ')) + '</div>';
+    }
+  });
+
+  var slVal = (document.getElementById('shelf-life-value') && document.getElementById('shelf-life-value').value.trim()) || '';
+  if (slVal) {
+    var slUnit = (document.getElementById('shelf-life-unit') && document.getElementById('shelf-life-unit').value) || 'months';
+    var slStore = (document.getElementById('shelf-life-storage') && document.getElementById('shelf-life-storage').value) || '';
+    var afterVal = (document.getElementById('after-open-value') && document.getElementById('after-open-value').value.trim()) || '';
+    var afterUnit = (document.getElementById('after-open-unit') && document.getElementById('after-open-unit').value) || 'weeks';
+    html += '<div class="sr-print-h2">Shelf Life</div><div class="sr-print-block">';
+    html += 'Sealed: ' + escPrint(slVal + ' ' + slUnit);
+    if (slStore) html += ' (' + escPrint(slStore) + ')';
+    if (afterVal) html += '\nAfter opening: ' + escPrint(afterVal + ' ' + afterUnit);
+    html += '</div>';
+  }
 
   var ingHeaderDone = false;
   document.querySelectorAll('.ing-section').forEach(function(sec) {
@@ -5438,6 +6146,14 @@ function buildSubmitPrintSheet() {
   var notes = (document.getElementById('cooking-notes') && document.getElementById('cooking-notes').value.trim()) || '';
   if (notes) {
     html += '<div class="sr-print-h2">Cooking Notes &amp; Tips</div><div class="sr-print-block">' + escPrint(notes) + '</div>';
+  }
+
+  var personal = (document.getElementById('personal-notes') && document.getElementById('personal-notes').value.trim()) || '';
+  if (personal) {
+    personal = personal.split(AUTO_REVIEW_MARKER)[0].replace(/\s+$/, '');
+    if (personal) {
+      html += '<div class="sr-print-h2">Personal Notes</div><div class="sr-print-block">' + escPrint(personal) + '</div>';
+    }
   }
 
   html += '<div class="sr-print-footer">The Culinary Journal · Recipe draft · ' + escPrint(new Date().toLocaleDateString()) + '</div>';
