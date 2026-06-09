@@ -3,16 +3,20 @@ name: Recipe import tests
 on:
   push:
     paths:
-      - 'lib/recipe-import-*.js'
+      - 'lib/**'
       - 'api/fetch-recipe-url.js'
       - 'tests/**'
       - 'package.json'
+      - 'submit-recipe.html'
+      - 'dashboard-recipes.js'
   pull_request:
     paths:
-      - 'lib/recipe-import-*.js'
+      - 'lib/**'
       - 'api/fetch-recipe-url.js'
       - 'tests/**'
       - 'package.json'
+      - 'submit-recipe.html'
+      - 'dashboard-recipes.js'
 
 jobs:
   import-tests:

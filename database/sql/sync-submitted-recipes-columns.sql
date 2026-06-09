@@ -20,4 +20,19 @@ ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS origin_locality          
 ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS reviewer_notes           text;
 ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS reviewed_at              timestamptz;
 
+-- Wave 3 import audit (see fix-phase38-import-audit.sql)
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS paste_text              text;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS source_url              text;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS parser_version          text;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS extractor_version       text;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS import_extractor        text;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS import_confidence_score integer;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS import_warnings         jsonb DEFAULT '[]'::jsonb;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS import_paste_snapshot   text;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS import_raw_article_text text;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS imported_at             timestamptz;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS procedure_rewritten     boolean DEFAULT false;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS import_merge_mode       boolean DEFAULT false;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS import_source_url       text;
+
 SELECT 'submitted_recipes columns synced' AS status;

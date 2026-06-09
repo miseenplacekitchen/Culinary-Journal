@@ -247,6 +247,36 @@ async function openRecipeModal(id) {
       panel.appendChild(srcBlock);
     }
 
+    // Import audit trail (Wave 3)
+    if (r.import_confidence_score != null || r.parser_version || (r.import_warnings && r.import_warnings.length) || r.import_paste_snapshot) {
+      var iaBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(91,143,212,0.06);border-left:3px solid #5B8FD4');
+      iaBlock.appendChild(mk('div',"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#5B8FD4;margin-bottom:10px",'Import audit'));
+      if (r.parser_version) iaBlock.innerHTML += field('Parser', r.parser_version);
+      if (r.import_extractor) iaBlock.innerHTML += field('Extractor', r.import_extractor);
+      if (r.import_confidence_score != null) iaBlock.innerHTML += field('Confidence', String(r.import_confidence_score) + '/100');
+      if (r.imported_at) iaBlock.innerHTML += field('Imported', new Date(r.imported_at).toLocaleString());
+      if (r.procedure_rewritten) iaBlock.innerHTML += field('Procedure', 'Rewritten after import');
+      if (r.import_merge_mode) iaBlock.innerHTML += field('Merge mode', 'Schema + blog text');
+      var warns = [];
+      try {
+        warns = Array.isArray(r.import_warnings) ? r.import_warnings : (r.import_warnings ? JSON.parse(r.import_warnings) : []);
+      } catch(_) {}
+      if (warns.length) {
+        var wEl = mk('div',"font-size:12px;color:var(--text-mid);margin-top:8px;line-height:1.6");
+        wEl.textContent = 'Warnings: ' + warns.join(' · ');
+        iaBlock.appendChild(wEl);
+      }
+      if (r.import_paste_snapshot) {
+        var snap = mk('details','margin-top:10px');
+        snap.innerHTML = '<summary style="cursor:pointer;font-size:12px;color:var(--text-high)">Paste snapshot (post-extract)</summary>';
+        var pre = mk('pre','margin-top:8px;padding:10px;background:var(--bg);border-radius:8px;font-size:11px;white-space:pre-wrap;max-height:180px;overflow:auto;color:var(--text-mid)');
+        pre.textContent = String(r.import_paste_snapshot).slice(0, 4000);
+        snap.appendChild(pre);
+        iaBlock.appendChild(snap);
+      }
+      panel.appendChild(iaBlock);
+    }
+
     // Unknown ingredients — ingredients submitted that aren't in the database yet
     var unknowns = [];
     try {

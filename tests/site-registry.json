@@ -1,0 +1,49 @@
+{
+  "version": "3.0.0-wave3",
+  "phases": {
+    "phase1_wp_raw": {
+      "label": "Kerala / South Indian WP raw",
+      "sites": [
+        { "id": "curryworld", "host": "curryworld.me", "strategy": "wp-raw", "fixture": "rumali-roti-blob.txt", "notes": "JSON-LD partial — merge mode" },
+        { "id": "kothiyavunu", "host": "kothiyavunu.com", "strategy": "wp-raw", "fixture": "kothiyavunu-puttu-blob.txt", "notes": "Inline colon-blob" },
+        { "id": "malayali", "host": "malayali.me", "strategy": "wp-raw" },
+        { "id": "villagecookingkerala", "host": "villagecookingkerala.com", "strategy": "wp-raw" },
+        { "id": "sandhyahariharan", "host": "sandhyahariharan.co.uk", "strategy": "wp-raw" }
+      ]
+    },
+    "phase2_wprm": {
+      "label": "WP + recipe plugin",
+      "sites": [
+        { "id": "vegrecipesofindia", "host": "vegrecipesofindia.com", "strategy": "wprm", "fixture": "wprm-sample.html" },
+        { "id": "yummytummyaarthi", "host": "yummytummyaarthi.com", "strategy": "wprm" },
+        { "id": "mariasmenu", "host": "mariasmenu.com", "strategy": "wprm" },
+        { "id": "saffrontrail", "host": "saffrontrail.com", "strategy": "wprm" },
+        { "id": "mykoreankitchen", "host": "mykoreankitchen.com", "strategy": "wprm" }
+      ]
+    }
+  },
+  "expectations": {
+    "kothiyavunu-puttu-blob.txt": {
+      "ingredients_min": 4,
+      "steps_min": 8,
+      "steps_max": 10,
+      "auto_enrich": false,
+      "category_must_not": ["Ocean & River"],
+      "dietary_must_not": ["Gluten Free"]
+    },
+    "rumali-roti-blob.txt": {
+      "ingredients_min": 3,
+      "steps_min": 3,
+      "merge_mode": true
+    },
+    "wprm-sample.html": {
+      "ingredients_min": 3,
+      "steps_min": 3,
+      "extractor": "wprm"
+    },
+    "soya-65-blob.txt": {
+      "ingredients_min": 3,
+      "qty_patterns": ["1 1/2", "1½"]
+    }
+  }
+}

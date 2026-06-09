@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Submit your recipe to The Culinary Journal community — share family favourites and regional dishes.">
   <link rel="canonical" href="https://theculinaryjournal.site/submit-recipe.html">
-  <meta name="tcj-build" content="20260609-wave2-gapfix">
+  <meta name="tcj-build" content="20260609-wave3-audit">
   <title>Submit a Recipe — The Culinary Journal</title>
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
@@ -15,6 +15,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
   <script src="lib/recipe-import-core.js"></script>
   <script src="lib/recipe-import-extract.js"></script>
+  <script src="lib/import-audit.js"></script>
+  <script src="lib/recipe-import-paths.js"></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -4488,6 +4490,18 @@ function importStatusSuffixFromPayload(payload) {
 }
 
 async function applyServerImportPayload(payload, url) {
+  if (typeof TcjImportAudit !== 'undefined') {
+    TcjImportAudit.recordUrlImport({
+      url: url,
+      parserVersion: payload.parserVersion,
+      extractorVersion: payload.extractorVersion,
+      extractor: payload.extractor,
+      mergeMode: payload.mergeMode,
+      pasteText: payload.articleText,
+      rawArticle: payload.import_raw_article_text || payload.articleText,
+      warnings: payload.warnings || []
+    });
+  }
   var articleText = payload.articleText || '';
   var suffix = importStatusSuffixFromPayload(payload);
   var warn = (payload.warnings || []).join('; ');
@@ -5355,6 +5369,9 @@ function finalizeParsedRecipe(ctx) {
   }
   window._lastParseConfidence = confidence;
   window._parseDroppedIng = 0;
+  if (typeof TcjImportAudit !== 'undefined') {
+    TcjImportAudit.recordParse(confidence, text);
+  }
 
   var enrichResult = enrichAndApplyParsedMetadata({
     ingSecs: ingSecs,
@@ -5476,7 +5493,7 @@ function parseRecipe() {
     if (seg.normalizedText && el) el.value = seg.normalizedText;
     if (seg.meta) applyBlogMetaToForm(seg.meta);
     populateAuxiliaryFromSections({ notes: seg.notes || [], tips: seg.tips || [], serves: seg.serves || [] });
-    if (seg.hasContent && seg.ingCount >= 1 && seg.methCount >= 2) {
+    if (seg.hasContent && seg.ingCount >= 2 && seg.methCount >= 2) {
       parseRecipeViaSegment(seg, raw);
       return;
     }
@@ -6149,6 +6166,7 @@ function rewriteProcedure() {
     '. Review and edit anything that looks off, or click Undo rewrite.', true);
 
   if (undoBtn) undoBtn.style.display = 'inline';
+  if (typeof TcjImportAudit !== 'undefined') TcjImportAudit.markProcedureRewritten();
   var procSec = document.getElementById('section-procedure');
   if (procSec) setTimeout(function() { procSec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300);
   try { saveDraft(); } catch(_) {}
@@ -6163,6 +6181,7 @@ function undoProcedureRewrite() {
   window._procedureRewriteUndo = null;
   var undoBtn = document.getElementById('btn-undo-rewrite');
   if (undoBtn) undoBtn.style.display = 'none';
+  if (typeof TcjImportAudit !== 'undefined') TcjImportAudit.clearProcedureRewritten();
   showRewriteResult('Restored procedure steps from before the rewrite.', true);
   try { saveDraft(); } catch(_) {}
 }
@@ -6795,7 +6814,7 @@ function collectFormData() {
     if (steps.length > 0 || sectionName) method.push({ section: sectionName, steps });
   });
 
-  return {
+  var data = {
     recipe_name:          (document.getElementById('recipe-name')?.value       || '').trim(),
     native_title:         (document.getElementById('native-title')?.value      || '').trim(),
     category:             document.querySelector('input[name="category"]:checked')?.value  || '',
@@ -6842,6 +6861,16 @@ function collectFormData() {
     import_confidence_score: window._lastParseConfidence ? window._lastParseConfidence.score : null,
     import_warnings:      (window._lastImportMeta && window._lastImportMeta.import_warnings) || []
   };
+  if (typeof TcjImportAudit !== 'undefined') {
+    var auditFields = TcjImportAudit.collectForSubmit();
+    Object.keys(auditFields).forEach(function(k) {
+      if (auditFields[k] !== undefined && auditFields[k] !== null && auditFields[k] !== '') {
+        data[k] = auditFields[k];
+      }
+    });
+  }
+  if (!data.import_source_url && data.source_url) data.import_source_url = data.source_url;
+  return data;
 }
 
 // ── RESTORE DRAFT ─────────────────────────────────────────────────────────────
@@ -6884,6 +6913,12 @@ function restoreDraft(raw) {
   setVal('origin-locality', d.origin_locality);
   setVal('paste-input',     d.paste_text);
   setVal('source-url-input', d.source_url);
+
+  if (d.parser_version && d.parser_version !== PARSER_VERSION) {
+    appendPersonalReviewNote(
+      'Draft was saved with parser ' + d.parser_version + ' (current ' + PARSER_VERSION + '). Re-import or re-parse for best results.'
+    );
+  }
 
   // Radios
   setRadio('category',    d.category);
@@ -7119,6 +7154,7 @@ function clearDraftStorage() {
   try { lsRemove(DRAFT_KEY); } catch(_) {}
   _draftDbId = null;
   window._activeDraftId = null;
+  if (typeof TcjImportAudit !== 'undefined') TcjImportAudit.reset();
 }
 
 async function maybeOfferDraftRestore() {
