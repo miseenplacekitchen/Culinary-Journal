@@ -185,6 +185,60 @@ async function openRecipeModal(id) {
     titleBlock.appendChild(metaRow);
     panel.appendChild(titleBlock);
 
+    // Recipe image — admin can replace before approving
+    var imgBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border)');
+    imgBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:10px",'Recipe Image'));
+    var imgPreview = document.createElement('img');
+    imgPreview.id = 'rm-edit-image-preview';
+    imgPreview.alt = r.recipe_name || 'Recipe image';
+    imgPreview.style.cssText = 'width:100%;max-height:220px;object-fit:cover;border-radius:10px;border:1px solid var(--border);background:var(--bg);margin-bottom:10px';
+    if (r.image_url) {
+      imgPreview.src = r.image_url;
+    } else {
+      imgPreview.style.display = 'none';
+      imgBlock.appendChild(mk('div',"font-size:12px;color:var(--text-mid);margin-bottom:10px",'No image uploaded'));
+    }
+    if (r.image_url) imgBlock.appendChild(imgPreview);
+    var imgFile = document.createElement('input');
+    imgFile.type = 'file';
+    imgFile.accept = 'image/jpeg,image/png,image/webp';
+    imgFile.id = 'rm-edit-image-file';
+    imgFile.style.display = 'none';
+    var imgBtnRow = mk('div','display:flex;align-items:center;gap:10px;flex-wrap:wrap');
+    var pickImgBtn = mk('button','padding:6px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--accent);font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer', r.image_url ? 'Replace Image' : 'Upload Image');
+    var saveImgBtn = mk('button','padding:6px 14px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;display:none','Save Image');
+    saveImgBtn.id = 'rm-save-image-btn';
+    var imgMsg = mk('span','font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid)','');
+    imgMsg.id = 'rm-image-msg';
+    imgFile.addEventListener('change', function() {
+      var f = imgFile.files && imgFile.files[0];
+      if (!f) return;
+      if (f.size > 5 * 1024 * 1024) {
+        imgMsg.textContent = 'Image must be under 5 MB';
+        imgMsg.style.color = '#dc5050';
+        imgFile.value = '';
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        if (!imgPreview.parentNode) imgBlock.insertBefore(imgPreview, imgBtnRow);
+        imgPreview.src = ev.target.result;
+        imgPreview.style.display = 'block';
+        imgPreview.dataset.pendingDataUrl = ev.target.result;
+        saveImgBtn.style.display = 'inline-block';
+        imgMsg.textContent = '';
+      };
+      reader.readAsDataURL(f);
+    });
+    pickImgBtn.addEventListener('click', function() { imgFile.click(); });
+    saveImgBtn.addEventListener('click', function() { saveRecipeImage(r.id); });
+    imgBtnRow.appendChild(pickImgBtn);
+    imgBtnRow.appendChild(saveImgBtn);
+    imgBtnRow.appendChild(imgMsg);
+    imgBlock.appendChild(imgBtnRow);
+    imgBlock.appendChild(imgFile);
+    panel.appendChild(imgBlock);
+
     // Ingredients
     if (r.ingredients) {
       var ingBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border)');
@@ -520,6 +574,63 @@ async function doReviewRecipe(id, status) {
   } catch(e) {
     document.querySelectorAll('#rm-detail-panel button').forEach(function(b){ b.disabled = false; });
     if (msg) { msg.textContent = 'Error: ' + e.message; msg.style.color = '#dc5050'; }
+  }
+}
+
+async function uploadAdminRecipeImage(dataUrl, recipeId) {
+  if (!dataUrl || !dataUrl.startsWith('data:')) return dataUrl || '';
+  if (!session || !session.access_token) throw new Error('Session expired');
+  var userId = (session.user && session.user.id) || session.id;
+  if (!userId) throw new Error('Not signed in');
+  var blob = await fetch(dataUrl).then(function(res) { return res.blob(); });
+  var ext = 'jpg';
+  if (blob.type && blob.type.indexOf('png') >= 0) ext = 'png';
+  else if (blob.type && blob.type.indexOf('webp') >= 0) ext = 'webp';
+  var path = userId + '/admin-' + recipeId + '-' + Date.now() + '.' + ext;
+  var res = await fetch(SUPABASE_URL + '/storage/v1/object/recipe-images/' + path, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + session.access_token,
+      'Content-Type': blob.type || 'image/jpeg',
+      'x-upsert': 'true'
+    },
+    body: blob
+  });
+  if (!res.ok) throw new Error('Upload failed (' + res.status + ')');
+  return SUPABASE_URL + '/storage/v1/object/public/recipe-images/' + path;
+}
+
+async function saveRecipeImage(id) {
+  var preview = document.getElementById('rm-edit-image-preview');
+  var fileIn = document.getElementById('rm-edit-image-file');
+  var msg = document.getElementById('rm-image-msg');
+  var saveBtn = document.getElementById('rm-save-image-btn');
+  var dataUrl = preview && preview.dataset.pendingDataUrl;
+  if (!dataUrl) {
+    if (msg) { msg.textContent = 'Choose an image first'; msg.style.color = '#dc5050'; }
+    return;
+  }
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Uploading\u2026'; }
+  if (msg) msg.textContent = '';
+  try {
+    var url = await uploadAdminRecipeImage(dataUrl, id);
+    await rpc('admin_edit_recipe', {
+      p_id: id,
+      p_image_url: url
+    });
+    if (preview) {
+      preview.src = url;
+      delete preview.dataset.pendingDataUrl;
+    }
+    if (fileIn) fileIn.value = '';
+    if (saveBtn) { saveBtn.style.display = 'none'; saveBtn.disabled = false; saveBtn.textContent = 'Save Image'; }
+    if (msg) { msg.textContent = '\u2713 Image updated'; msg.style.color = '#4caf76'; }
+    auditLog('Recipe Management', 'Recipe Image Updated', null, id, url, null);
+    if (currentRecipe) currentRecipe.image_url = url;
+  } catch(e) {
+    if (msg) { msg.textContent = 'Error: ' + e.message; msg.style.color = '#dc5050'; }
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Image'; }
   }
 }
 
