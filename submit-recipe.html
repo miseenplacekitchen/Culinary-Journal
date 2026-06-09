@@ -109,6 +109,8 @@
     .sr-import-confidence { margin-top: 10px; font-family: "DM Sans", sans-serif; font-size: 12px; padding: 10px 14px; border-radius: 8px; line-height: 1.55; display: none; }
     .sr-import-confidence.review { background: rgba(255,180,50,0.08); border: 1px solid rgba(255,180,50,0.3); color: var(--text-high); }
     .sr-import-confidence.ok { background: rgba(85,204,119,0.08); border: 1px solid rgba(85,204,119,0.25); color: var(--text-high); }
+    .sr-parse-review { margin-top: 20px; font-family: "DM Sans", sans-serif; font-size: 12px; padding: 12px 16px; border-radius: 8px; line-height: 1.55; display: none; background: rgba(255,180,50,0.08); border: 1px solid rgba(255,180,50,0.3); color: var(--text-high); }
+    .sr-parse-review-title { font-weight: 600; margin-bottom: 6px; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; }
 
     /* ── CATEGORY PILL GRID ──────────────────── */
     .cat-grid {
@@ -571,18 +573,23 @@
     .btn-add-section:hover { border-color: var(--accent); color: var(--accent); }
 
     /* ── SUBMIT BAR ──────────────────────────── */
-    .sr-submit-bar { display: flex; align-items: center; justify-content: space-between; background: var(--text-ghost); border: 1px solid var(--border); border-radius: 12px; padding: 20px 28px; margin-top: 32px; }
+    .sr-submit-bar { display: flex; flex-direction: column; gap: 16px; background: var(--text-ghost); border: 1px solid var(--border); border-radius: 12px; padding: 20px 28px; margin-top: 32px; }
     .sr-submit-info { font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high); }
     .sr-submit-info strong { color: var(--text-high); }
-    .btn-submit { padding: 12px 32px; background: var(--accent); color: var(--text-high); border: none; border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
+    .sr-submit-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; width: 100%; }
+    .sr-submit-actions .btn-submit,
+    .sr-submit-actions .btn-draft,
+    .sr-submit-actions .btn-cancel,
+    .sr-submit-actions .sr-print-btn { margin: 0; width: 100%; justify-content: center; white-space: nowrap; }
+    .btn-submit { padding: 12px 16px; background: var(--accent); color: var(--text-high); border: none; border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
     .btn-submit:hover { opacity: 0.85; }
     .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-draft { padding: 12px 20px; background: none; color: var(--text-high); border: 1px solid var(--border); border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 14px; cursor: pointer; transition: all 0.2s; margin-right: 10px; }
+    .btn-draft { padding: 12px 16px; background: none; color: var(--text-high); border: 1px solid var(--border); border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 14px; cursor: pointer; transition: all 0.2s; }
     .btn-draft:hover { border-color: var(--accent); color: var(--accent); }
     /* Cancel — discards draft + clears the form. Quieter than the others
        so it isn't the most obvious choice. Red-tinted border on hover to
        signal "destructive action". */
-    .btn-cancel { padding: 12px 20px; background: none; color: var(--text-high); border: 1px solid var(--border); border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 14px; cursor: pointer; transition: all 0.2s; margin-right: 10px; }
+    .btn-cancel { padding: 12px 16px; background: none; color: var(--text-high); border: 1px solid var(--border); border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 14px; cursor: pointer; transition: all 0.2s; }
     .btn-cancel:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
 
     /* ── MESSAGES ────────────────────────────── */
@@ -887,7 +894,12 @@
       .ing-col-headers { display: none; }
       .ing-cat-select, .ing-row .ing-note-col { grid-column: 1 / -1; }
       .ing-note-col { display: none; }
-      .sr-submit-bar { flex-direction: column; gap: 14px; text-align: center; }
+      .sr-submit-bar { gap: 12px; text-align: center; }
+      .sr-submit-actions { gap: 6px; }
+      .sr-submit-actions .btn-submit,
+      .sr-submit-actions .btn-draft,
+      .sr-submit-actions .btn-cancel,
+      .sr-submit-actions .sr-print-btn { padding: 10px 6px; font-size: 11px; }
     }
   
 
@@ -1721,13 +1733,15 @@
       </div>
     </div>
 
+    <div id="parse-review-panel" class="sr-parse-review" role="status" aria-live="polite" style="display:none"></div>
+
     <!-- SUBMIT BAR -->
     <div class="sr-submit-bar">
       <div class="sr-submit-info">
         Your recipe will be <strong>reviewed</strong> before it goes live.<br>
         You will be notified once it is published. 🔔
       </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="sr-submit-actions">
         <button type="button" class="sr-print-btn" onclick="printSubmitRecipe()" title="Print or save as PDF">🖨 Print / PDF</button>
         <button class="btn-cancel" onclick="cancelSubmission()">Cancel Submission</button>
         <button class="btn-draft" onclick="saveNamedDraft(true)">Save Draft</button>
@@ -1901,6 +1915,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
     }
   } catch(e) { console.error('Draft load error:', e); await maybeOfferDraftRestore(); }
+  try { cleanupPersonalNotesField(); } catch(e) { console.error(e); }
   try { setupSourceToggle(); } catch(e) { console.error(e); }
   try { setupAutoSave(); } catch(e) { console.error(e); }
 });
@@ -5143,14 +5158,35 @@ function expandLevelsTagsSection() {
   if (sub) sub.classList.remove('collapsed');
 }
 
-function appendPersonalReviewNote(block) {
+function stripAutoReviewFromNotes(text) {
+  if (!text || text.indexOf(AUTO_REVIEW_MARKER) < 0) return String(text || '').trim();
+  return text.split(AUTO_REVIEW_MARKER)[0].replace(/\s+$/, '');
+}
+
+function cleanupPersonalNotesField() {
   var el = document.getElementById('personal-notes');
-  if (!el || !block) return;
-  var existing = el.value || '';
-  if (existing.indexOf(AUTO_REVIEW_MARKER) >= 0) {
-    existing = existing.split(AUTO_REVIEW_MARKER)[0].replace(/\s+$/, '');
+  if (!el) return;
+  var cleaned = stripAutoReviewFromNotes(el.value);
+  if (cleaned !== el.value) el.value = cleaned;
+}
+
+function hideParseReviewNote() {
+  var el = document.getElementById('parse-review-panel');
+  if (el) el.style.display = 'none';
+}
+
+function showParseReviewNote(block, opts) {
+  opts = opts || {};
+  var el = document.getElementById('parse-review-panel');
+  if (!el || !block) {
+    hideParseReviewNote();
+    return;
   }
-  el.value = existing ? existing + '\n\n' + AUTO_REVIEW_MARKER + '\n' + block : AUTO_REVIEW_MARKER + '\n' + block;
+  cleanupPersonalNotesField();
+  var title = opts.title || 'Import review — verify before submitting';
+  var safe = String(block).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  el.innerHTML = '<div class="sr-parse-review-title">' + title + '</div>' + safe.replace(/\n/g, '<br>');
+  el.style.display = 'block';
 }
 
 function enrichAndApplyParsedMetadata(ctx) {
@@ -5207,14 +5243,14 @@ function enrichAndApplyParsedMetadata(ctx) {
 
   if (typeof updateTotalTime === 'function') updateTotalTime();
   expandLevelsTagsSection();
-  appendPersonalReviewNote(buildClarityNotes(name, items, {
+  showParseReviewNote(buildClarityNotes(name, items, {
     times: times,
     passive: passive,
     origin: origin,
     cookingStyle: cookingStyle,
     cookingStyleLabel: cookingStyleLabel(cookingStyle),
     needsShelfLife: !!styleCfg.shelfLife
-  }));
+  }), { title: 'Auto-filled values — confirm or edit' });
 
   var summary = [
     category,
@@ -5385,7 +5421,7 @@ function finalizeParsedRecipe(ctx) {
     ingSecs = enrichResult.ingSecs || ingSecs;
     methSecs = enrichResult.methSecs || methSecs;
   } else if (enrichResult && enrichResult.skipped && !confidence.allowEnrich) {
-    appendPersonalReviewNote(
+    showParseReviewNote(
       'Import confidence ' + confidence.score + '/100 — verify ingredients, method, category, and tags before submitting.'
     );
   }
@@ -5450,7 +5486,7 @@ function finalizeParsedRecipe(ctx) {
       res.textContent = (needsReview ? '\u26A0' : '\u2713') + ' Detected ' + ingCount + ' ingredient' + (ingCount === 1 ? '' : 's')
         + ' across ' + ingSecs.length + ' section' + (ingSecs.length === 1 ? '' : 's')
         + ' and ' + stepCount + ' step' + (stepCount === 1 ? '' : 's') + '.' + enrichMsg
-        + (enrichResult && enrichResult.summary ? ' See Personal Notes for review checklist.' : ' Source text kept in paste box.');
+        + (enrichResult && enrichResult.summary ? ' See Import Review below for checklist.' : ' Source text kept in paste box.');
       showImportConfidenceBanner(confidence, ingCount, stepCount);
       var scrollTarget = needsReview ? document.getElementById('section-paste') : document.getElementById('section-ingredients');
       if (scrollTarget) setTimeout(function() { scrollTarget.scrollIntoView({ behavior:'smooth', block:'start' }); }, 400);
@@ -5821,6 +5857,7 @@ function clearPaste() {
   document.getElementById('parse-result').style.display = 'none';
   var confBanner = document.getElementById('import-confidence-banner');
   if (confBanner) confBanner.style.display = 'none';
+  hideParseReviewNote();
   document.getElementById('parse-tips').style.display = 'none';
   document.getElementById('source-url-input').value = '';
   document.getElementById('url-detect-msg').style.display = 'none';
@@ -6863,7 +6900,7 @@ function collectFormData() {
     credit_handle:        (document.getElementById('credit-handle')?.value     || '').trim(),
     credit_url:           (document.getElementById('credit-url')?.value        || '').trim(),
     visibility:           document.querySelector('input[name="visibility"]:checked')?.value || 'Public',
-    personal_notes:       (document.getElementById('personal-notes')?.value    || '').trim(),
+    personal_notes:       stripAutoReviewFromNotes((document.getElementById('personal-notes')?.value || '').trim()),
     cooking_style:        document.getElementById('cooking-style')?.value      || '',
     servings_unit:        document.getElementById('servings-unit')?.value      || 'people',
     shelf_life_value:     document.getElementById('shelf-life-value')?.value   || '',
@@ -6922,7 +6959,8 @@ function restoreDraft(raw) {
   setVal('additional-time', d.additional_time_minutes);
   setVal('servings',        d.servings);
   setVal('cooking-notes',   d.cooking_notes);
-  setVal('personal-notes',  d.personal_notes);
+  var pNotesEl = document.getElementById('personal-notes');
+  if (pNotesEl) pNotesEl.value = stripAutoReviewFromNotes(d.personal_notes || '');
   setVal('credit-name',     d.credit_name);
   setVal('credit-handle',   d.credit_handle);
   setVal('credit-url',      d.credit_url);
@@ -6931,8 +6969,9 @@ function restoreDraft(raw) {
   setVal('source-url-input', d.source_url);
 
   if (d.parser_version && d.parser_version !== PARSER_VERSION) {
-    appendPersonalReviewNote(
-      'Draft was saved with parser ' + d.parser_version + ' (current ' + PARSER_VERSION + '). Re-import or re-parse for best results.'
+    showParseReviewNote(
+      'Draft was saved with parser ' + d.parser_version + ' (current ' + PARSER_VERSION + '). Re-import or re-parse for best results.',
+      { title: 'Parser version changed' }
     );
   }
 
