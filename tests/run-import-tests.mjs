@@ -160,6 +160,19 @@ assert('dietary: GF+wheat blocked', Validate.dietaryContradictions(['Wheat flour
 assert('dietary: vegan+chicken blocked', Validate.dietaryContradictions(['Chicken'], ['tag-vegan']).length === 1);
 assert('category: puttu not ocean', Validate.categoryContradictsTitle('Ocean & River', 'Gothambu Puttu Recipe') !== null);
 
+const pineapple = loadFixture('pineapple-biryani-annotated.txt');
+if (pineapple) {
+  const seg = Core.segmentRecipeImportText(pineapple);
+  const conf = Core.computeImportConfidence(seg.ingCount, seg.method, [], seg.ingredients);
+  assert('pineapple annotated: no clarity check in steps', !(seg.method || []).some(function (s) {
+    return /please\s+confirm|this\s+may\s+be\s+a\s+typo/i.test(String(s || ''));
+  }));
+  assert('pineapple annotated: tips captured', (seg.tips || []).length >= 3);
+  assert('pineapple annotated: submitWarn on pollution', conf.submitWarn === true || conf.score < 70);
+  assert('pineapple annotated: prep 75m', seg.meta && seg.meta.prep === '75');
+  runGoldFixture('pineapple-biryani-annotated.txt', gold.fixtures['pineapple-biryani-annotated.txt'] || {});
+}
+
 // Category inference from core
 if (kothi) {
   const seg = Core.segmentRecipeImportText(kothi);

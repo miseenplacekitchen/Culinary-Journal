@@ -34,6 +34,20 @@
       "junk_steps": 0,
       "auto_enrich": false,
       "category_must_be": "Grains & Comfort"
+    },
+    "pineapple-biryani-annotated.txt": {
+      "ingredients_min": 35,
+      "ingredients_max": 42,
+      "steps_min": 15,
+      "steps_max": 20,
+      "junk_steps": 0,
+      "tips_min": 3,
+      "auto_enrich": false,
+      "ingredient_must_not": ["Chicken Marinade", "Masala", "Rice", "Fried Garnish"],
+      "meta_prep_minutes": 75,
+      "meta_cook_minutes": 75,
+      "spice_label": "Very Hot",
+      "sweet_label": "Subtly Sweet"
     }
   }
 }

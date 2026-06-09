@@ -3357,8 +3357,11 @@ function isIngredientSubHeader(line) {
   if (!line || line.length > 55) return false;
   if (isMethodSectionHeader(line)) return false;
   if (/\d/.test(line)) return false;
-  if (/^for\s+(?:the\s+)?[a-z][\w\s]{2,40}\s*$/i.test(String(line).trim())) return true;
-  return /^(sauce|filling|topping|garnish|marinade|marinate|marination|batter|crust|glaze|frosting|icing|dressing|stuffing|coating|base|pastry|dough|syrup|broth|stock|spice\s*mix|spice\s*blend|masala|tadka|tempering|paste|chutney|raita|salsa|pickle|gravy|curry\s*base|to\s+serve|serving|assembly)\s*:?$/i.test(line);
+  var core = (typeof RecipeImportCore !== 'undefined' ? RecipeImportCore : null);
+  if (core && core.isIngredientGroupHeader && core.isIngredientGroupHeader(line, '')) return true;
+  var t = String(line).trim().replace(/\s*:?\s*$/, '');
+  if (/^for\s+(?:the\s+)?[a-z][\w\s]{2,40}\s*$/i.test(t)) return true;
+  return /^(sauce|filling|topping|garnish|marinade|marinate|marination|batter|crust|glaze|frosting|icing|dressing|stuffing|coating|base|pastry|dough|syrup|broth|stock|spice\s*mix|spice\s*blend|masala|rice|tadka|tempering|paste|chutney|raita|salsa|pickle|gravy|curry\s*base|to\s+serve|serving|assembly|chicken\s+marinade|fried\s+garnish|layering\s+and\s+finishing|optional\s+for\s+serving)\s*:?$/i.test(t);
 }
 
 function isMethodStepLine(line) {
@@ -4705,7 +4708,7 @@ function methHasCleanNumberedList(methSecs) {
   return numbered.length >= Math.max(3, Math.ceil(steps.length * 0.55));
 }
 
-function computeParseConfidence(ingCount, methSecs, extraWarnings) {
+function computeParseConfidence(ingCount, methSecs, extraWarnings, ingredientLines) {
   var core = (typeof RecipeImportCore !== 'undefined' ? RecipeImportCore : null);
   var stepTexts = [];
   (methSecs || []).forEach(function(s) {
@@ -4715,7 +4718,7 @@ function computeParseConfidence(ingCount, methSecs, extraWarnings) {
     });
   });
   if (core && core.computeImportConfidence) {
-    return core.computeImportConfidence(ingCount, stepTexts, extraWarnings);
+    return core.computeImportConfidence(ingCount, stepTexts, extraWarnings, ingredientLines);
   }
   return { score: 0, warnings: extraWarnings || [], allowEnrich: false, submitWarn: true, goodStepCount: 0, junkCount: 0, parserVersion: PARSER_VERSION };
 }
@@ -4723,7 +4726,7 @@ function computeParseConfidence(ingCount, methSecs, extraWarnings) {
 function showImportConfidenceBanner(confidence, ingCount, stepCount) {
   var el = document.getElementById('import-confidence-banner');
   if (!el || !confidence) { if (el) el.style.display = 'none'; return; }
-  var review = !confidence.allowEnrich;
+  var review = !confidence.allowEnrich || confidence.submitWarn;
   el.className = 'sr-import-confidence ' + (review ? 'review' : 'ok');
   var lines = [
     (review ? 'Review required' : 'Import looks good') + ' — confidence ' + confidence.score + '/100 · parser ' + (confidence.parserVersion || PARSER_VERSION),
@@ -5434,9 +5437,18 @@ function finalizeParsedRecipe(ctx) {
   var core = (typeof RecipeImportCore !== 'undefined' ? RecipeImportCore : null);
   var flatSteps = [];
   methSecs.forEach(function(s) { flatSteps = flatSteps.concat(s.steps || []); });
+  var flatIngLines = (ctx.importIngredientLines || []).slice();
+  if (!flatIngLines.length) {
+    ingSecs.forEach(function(sec) {
+      if (sec.name && sec.name !== 'Ingredients') flatIngLines.push(sec.name + ':');
+      (sec.items || []).forEach(function(it) {
+        flatIngLines.push([it.qty, it.unit, it.name].filter(Boolean).join(' ').trim());
+      });
+    });
+  }
   var confidence = (core && core.computeImportConfidence)
-    ? core.computeImportConfidence(validIngCount, flatSteps, extraWarnings)
-    : computeParseConfidence(validIngCount, methSecs, extraWarnings);
+    ? core.computeImportConfidence(validIngCount, flatSteps, extraWarnings, flatIngLines)
+    : computeParseConfidence(validIngCount, methSecs, extraWarnings, flatIngLines);
   if (rawIngCount > validIngCount) {
     confidence.warnings.push((rawIngCount - validIngCount) + ' ingredient line(s) look invalid');
     confidence.score = Math.max(0, confidence.score - Math.min(15, (rawIngCount - validIngCount) * 5));
@@ -5516,7 +5528,7 @@ function finalizeParsedRecipe(ctx) {
   var res = document.getElementById('parse-result');
   if (res) {
     if (ingCount > 0 || stepCount > 0) {
-      var needsReview = !confidence.allowEnrich;
+      var needsReview = !confidence.allowEnrich || confidence.submitWarn;
       res.className = 'sr-parse-result ' + (needsReview ? 'warn' : 'success');
       var enrichMsg = enrichResult && enrichResult.summary && enrichResult.summary.length
         ? ' Auto-filled: ' + enrichResult.summary.join(', ') + '. Uncheck anything inaccurate.'
@@ -5543,6 +5555,11 @@ function parseRecipeViaSegment(seg, rawText) {
     var nameEl = document.getElementById('recipe-name');
     if (nameEl && !nameEl.value.trim()) nameEl.value = titleCand.replace(/^recipe\s*:\s*/i, '').trim();
   }
+  if (seg.meta) applyBlogMetaToForm(seg.meta);
+  if (seg.description) setFormTextIfEmpty('introduction', seg.description);
+  if (seg.spiceLabel) ensureFormRadio('spice', seg.spiceLabel);
+  if (seg.sweetLabel) ensureFormRadio('sweet', seg.sweetLabel);
+  populateAuxiliaryFromSections({ notes: seg.notes || [], tips: seg.tips || [], serves: seg.serves || [] });
   var ingSecs = buildIngSecsFromImportLines(seg.ingredients);
   ingSecs.forEach(function(sec) { sec.items = consolidateParsedItems(sec.items); });
   finalizeParsedRecipe({
@@ -5551,6 +5568,7 @@ function parseRecipeViaSegment(seg, rawText) {
     text: seg.normalizedText || rawText,
     titleCand: titleCand,
     extraWarnings: (seg.warnings || []).slice(),
+    importIngredientLines: (seg.ingredients || []).slice(),
     fromSegment: true
   });
 }
