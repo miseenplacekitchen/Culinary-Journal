@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Submit your recipe to The Culinary Journal community — share family favourites and regional dishes.">
   <link rel="canonical" href="https://theculinaryjournal.site/submit-recipe.html">
-  <meta name="tcj-build" content="20260609-wave3-audit">
+  <meta name="tcj-build" content="20260609-wp-raw-extract">
   <title>Submit a Recipe — The Culinary Journal</title>
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
@@ -4499,7 +4499,8 @@ async function applyServerImportPayload(payload, url) {
       mergeMode: payload.mergeMode,
       pasteText: payload.articleText,
       rawArticle: payload.import_raw_article_text || payload.articleText,
-      warnings: payload.warnings || []
+      warnings: payload.warnings || [],
+      attribution: payload.attribution || null
     });
   }
   var articleText = payload.articleText || '';
@@ -4576,7 +4577,7 @@ function populateFromJsonLd(r, sourceUrl) {
 // ── AUTO-ENRICH PARSED RECIPE (local, no API) ───────────────────────────────
 var AUTO_REVIEW_MARKER = '--- Auto review on parse (remove when done) ---';
 var PARSER_VERSION = (typeof RecipeImportCore !== 'undefined' && RecipeImportCore.PARSER_VERSION)
-  ? RecipeImportCore.PARSER_VERSION : '2.0.0-wave2';
+  ? RecipeImportCore.PARSER_VERSION : '2.1.0-wp-raw';
 var PARSE_CONFIDENCE_ENRICH_MIN = 70;
 
 function isIngredientQtyOnlyLine(line) {

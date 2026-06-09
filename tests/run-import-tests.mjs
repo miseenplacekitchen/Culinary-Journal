@@ -105,5 +105,29 @@ if (kothi) {
   assert('enrich min 70: puttu blocked', conf.allowEnrich === false);
 }
 
+// WP-raw live HTML fixture (Kothiyavunu — family probe, not per-recipe tuning)
+const kothiLiveHtml = loadFixture('kothiyavunu-puttu-live.html');
+if (kothiLiveHtml) {
+  const payload = Extract.buildImportPayload({
+    html: kothiLiveHtml,
+    host: 'kothiyavunu.com',
+    url: 'https://www.kothiyavunu.com/2013/08/gothambu-puttu-recipe-wheat-puttu-recipe/',
+    recipe: Extract.extractJsonLdRecipe(kothiLiveHtml),
+    pageTitle: 'Gothambu Puttu Recipe',
+    fetchStatus: 'ok'
+  });
+  const exp = registry.expectations['kothiyavunu-puttu-blob.txt'] || {};
+  assert('kothi live html: extractor wp-raw', payload.extractor === 'wp-raw');
+  assert('kothi live html: version 2.1+', (payload.extractorVersion || '').startsWith('2.1'));
+  if (exp.ingredients_min != null) assert('kothi live html: ingredients_min', payload.ingCount >= exp.ingredients_min);
+  if (exp.steps_min != null) assert('kothi live html: steps_min', payload.methCount >= exp.steps_min);
+  if (exp.steps_max != null) assert('kothi live html: steps_max', payload.methCount <= exp.steps_max);
+  assert('kothi live html: no triple METHOD', (payload.articleText.match(/\nMETHOD/g) || []).length <= 2);
+  assert('kothi live html: attribution url', payload.attribution && payload.attribution.source_url.includes('kothiyavunu'));
+  assert('kothi live html: raw audit trail', (payload.import_raw_article_text || '').length > 100);
+  const conf = Core.computeImportConfidence(payload.ingCount, Core.segmentRecipeImportText(payload.articleText).method);
+  if (exp.auto_enrich === false) assert('kothi live html: enrich gated', conf.allowEnrich === false);
+}
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed > 0 ? 1 : 0);
