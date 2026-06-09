@@ -688,8 +688,8 @@
     .sr-img-hero-ring-stroke { fill: none; stroke: var(--accent); stroke-width: 3; }
     .sr-img-ring-text {
       font-family: "Monotype Corsiva", "Apple Chancery", "Segoe Script", cursive;
-      font-size: 17px; font-style: italic; letter-spacing: 0.06em; fill: var(--accent);
-      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35));
+      font-size: 16px; font-style: italic; font-weight: 400; letter-spacing: 0.05em;
+      fill: color-mix(in srgb, var(--accent) 42%, #1a1208);
     }
     .sr-img-hero-circle {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -1243,10 +1243,10 @@
                 <div class="sr-img-hero-ring-wrap">
                   <svg class="sr-img-hero-ring" viewBox="0 0 420 420" aria-hidden="true">
                     <defs>
-                      <!-- 180° (left) → 0° (right) along the top -->
-                      <path id="sr-arc-brand" d="M 48,210 A 162,162 0 0 1 372,210" fill="none"/>
-                      <!-- 270° (bottom) → 0° (right) along the bottom-right, upright -->
-                      <path id="sr-arc-handle" d="M 210,372 A 162,162 0 0 0 372,210" fill="none"/>
+                      <!-- ~180° → ~152° along upper-left (inset ~2mm from inner circle) -->
+                      <path id="sr-arc-brand" d="M 54,210 A 156,156 0 0 0 69,144" fill="none"/>
+                      <!-- ~278° → ~298° along lower-right (inset ~2mm from inner circle) -->
+                      <path id="sr-arc-handle" d="M 232,364.5 A 156,156 0 0 1 283.2,347.7" fill="none"/>
                     </defs>
                     <circle class="sr-img-hero-ring-stroke" cx="210" cy="210" r="168"/>
                     <text class="sr-img-ring-text" id="sr-img-ring-brand">
