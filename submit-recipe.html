@@ -1127,16 +1127,9 @@
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <input class="sr-input" type="url" id="source-url-input" placeholder="https://www.allrecipes.com/reel/..." oninput="detectUrlPaste(this.value)" style="font-size:13px;flex:1;min-width:200px">
           <button type="button" class="sr-parse-btn" style="white-space:nowrap;padding:9px 16px;font-size:12px" onclick="importFromUrl()">⬇ Import</button>
-          <button type="button" id="btn-google-ai-mode" class="sr-rewrite-btn" style="display:none;white-space:nowrap;margin-top:0;padding:9px 14px;font-size:12px" onclick="openGoogleAiModeWithRecipePrompt(event)" title="Open Google AI Mode with a recipe prompt for this link">◇ Google AI Mode</button>
         </div>
         <div id="url-detect-msg" style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-muted);margin-top:4px;display:none"></div>
         <div id="url-import-status" style="font-family:'DM Sans',sans-serif;font-size:12px;margin-top:6px;display:none"></div>
-        <div id="sr-video-recipe-help" class="sr-video-recipe-help" style="display:none" role="region" aria-label="Google AI Mode prompt">
-          <details>
-            <summary>Copy prompt if it doesn&rsquo;t appear in Google AI Mode</summary>
-            <textarea class="sr-ai-prompt-text" id="google-ai-prompt-text" readonly rows="8" onclick="this.select()"></textarea>
-          </details>
-        </div>
       </div>
 
       <div class="sr-field">
@@ -1144,22 +1137,37 @@
         <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.6">
           <strong style="color:var(--text-high)">Works best with:</strong>
           recipe websites (auto-detects structured data), ingredients listed one per line, steps clearly numbered or sectioned.<br>
-          <span style="opacity:0.7">Instagram and TikTok: paste the reel URL above, click <strong>Import</strong> for the caption, or <strong>Google AI Mode</strong> if the recipe is only in the video — then paste the result here and <strong>Parse Recipe</strong>.</span>
+          <span style="opacity:0.7">Instagram and TikTok: paste the reel URL above and click <strong>Import</strong> for the caption. If the recipe is only in the video, use <strong>Google AI Mode</strong> below, paste the result here, then <strong>Parse Recipe</strong>.</span>
         </div>
         <textarea class="sr-input sr-paste-textarea" id="paste-input" maxlength="50000" placeholder="Paste a recipe here — full length, no word limit. Works best with ingredients one per line and numbered steps." oninput="updatePasteCounter()"></textarea>
         <div class="paste-counter" id="paste-counter"><span id="paste-chars">0</span> characters (up to 50,000 — not the 100-word Introduction below)</div>
       </div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <button class="sr-parse-btn" onclick="parseRecipe()">
+        <button class="sr-parse-btn" onclick="parseRecipe()" title="Read the paste box and fill Ingredients + Procedure below">
           ✦ Parse Recipe
         </button>
-        <button type="button" class="sr-rewrite-btn" id="btn-rewrite-procedure" onclick="rewriteProcedure()" title="Polish procedure steps into formal, professional language (after parsing)">
+        <button type="button" class="sr-rewrite-btn" id="btn-google-ai-mode-parse" style="margin-top:0;padding:9px 14px;font-size:12px" onclick="openGoogleAiModeWithRecipePrompt(event)" title="Open Google AI Mode with your reel URL and a recipe prompt (video-only recipes)">
+          ◇ Google AI Mode
+        </button>
+        <button type="button" class="sr-rewrite-btn" id="btn-rewrite-procedure" onclick="rewriteProcedure()" title="Polish existing Procedure steps into formal language — run after Parse Recipe">
           ✎ Rewrite procedure
         </button>
-        <button type="button" class="sr-parse-btn" style="padding:9px 16px;font-size:12px" onclick="generateStarterFromName()" title="Build a starter template from the recipe name">
+        <button type="button" class="sr-parse-btn" style="padding:9px 16px;font-size:12px" onclick="generateStarterFromName()" title="Build a blank Ingredients + Method template from the recipe name only — when you have no text yet">
           ✨ Generate starter
         </button>
         <button type="button" onclick="clearPaste()" style="font-family:'DM Sans',sans-serif;font-size:12px;background:none;border:none;color:var(--text-muted);cursor:pointer;text-decoration:underline">Clear</button>
+      </div>
+      <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.65">
+        <strong style="color:var(--text-high)">Parse</strong> fills the form from the paste box &middot;
+        <strong style="color:var(--text-high)">Google AI Mode</strong> extracts a video recipe (paste result here, then Parse) &middot;
+        <strong style="color:var(--text-high)">Rewrite</strong> polishes steps already in Procedure &middot;
+        <strong style="color:var(--text-high)">Generate starter</strong> needs only a recipe name
+      </div>
+      <div id="sr-video-recipe-help" class="sr-video-recipe-help" style="margin-top:8px" role="region" aria-label="Google AI Mode prompt">
+        <details>
+          <summary>Copy Google AI Mode prompt if it doesn&rsquo;t appear automatically</summary>
+          <textarea class="sr-ai-prompt-text" id="google-ai-prompt-text" readonly rows="8" onclick="this.select()"></textarea>
+        </details>
       </div>
       <div class="sr-parse-result" id="parse-result"></div>
       <div id="import-confidence-banner" class="sr-import-confidence" role="status" aria-live="polite"></div>
@@ -1980,6 +1988,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   try {
     var urlInput = document.getElementById('source-url-input');
     if (urlInput && urlInput.value.trim()) detectUrlPaste(urlInput.value.trim());
+    else refreshGoogleAiModePromptTip();
   } catch(e) { console.error(e); }
 });
 
@@ -3766,6 +3775,7 @@ function splitIngredientLine(line) {
   if (!line) return null;
   line = String(line).trim();
   if (!line) return null;
+  line = line.replace(/^[-•*]\s+/, '').replace(/\s*[–—]\s*/g, ' - ');
   line = line.replace(/[\s\-–—]+$/,'').trim();
   if (!line) return null;
   line = normalizeBlogIngredientLine(line);
@@ -6560,20 +6570,16 @@ function refreshGoogleAiModePromptTip() {
   el.value = buildGoogleAiModeRecipePrompt(linkUrl);
 }
 
-function setGoogleAiModeUiVisible(visible) {
-  var panel = document.getElementById('sr-video-recipe-help');
-  var btn = document.getElementById('btn-google-ai-mode');
-  if (btn) btn.style.display = visible ? 'inline-flex' : 'none';
-  if (panel) panel.style.display = visible ? 'block' : 'none';
-  if (visible) refreshGoogleAiModePromptTip();
+function refreshGoogleAiModeOnUrlChange() {
+  refreshGoogleAiModePromptTip();
 }
 
 function showVideoRecipeHelp() {
-  setGoogleAiModeUiVisible(true);
+  refreshGoogleAiModePromptTip();
 }
 
 function hideVideoRecipeHelp() {
-  setGoogleAiModeUiVisible(false);
+  refreshGoogleAiModePromptTip();
 }
 
 function openGoogleAiModeWithRecipePrompt(ev) {
@@ -6592,7 +6598,7 @@ function maybeShowVideoRecipeHelp(url, reason) {
   showVideoRecipeHelp();
   if (reason === 'video-only') {
     showImportStatus(
-      'Caption missing or too short — the recipe may only be in the video. Click Google AI Mode beside Import, then paste the result here and Parse Recipe.',
+      'Caption missing or too short — the recipe may only be in the video. Click Google AI Mode below, paste the result here, then Parse Recipe.',
       false
     );
   }
@@ -6620,8 +6626,8 @@ function detectUrlPaste(url) {
   if (url.includes('youtube.com'))    platform = 'YouTube';
   if (url.includes('pinterest.com'))  platform = 'Pinterest';
   if (isSocialMediaUrl(url)) {
-    showVideoRecipeHelp();
-    msgEl.textContent = '✓ ' + platform + ' link — Import pulls the caption (free). Recipe only in the video? Click Google AI Mode beside Import.';
+    refreshGoogleAiModeOnUrlChange();
+    msgEl.textContent = '✓ ' + platform + ' link — Import pulls the caption (free). Recipe only in the video? Click Google AI Mode under the paste box.';
     msgEl.style.color = 'var(--accent)';
     msgEl.style.display = 'block';
     return;
