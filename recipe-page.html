@@ -43,13 +43,16 @@
     .rp-img-label-layer {
       position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: visible;
     }
-    .recipe-hero-char {
-      position: absolute;
+    .recipe-hero-labels-svg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      overflow: visible; pointer-events: none;
+    }
+    .recipe-hero-label-text {
       font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
       font-style: italic; font-weight: 400; letter-spacing: 0.04em;
-      color: #2a1e14;
-      text-shadow: 0 0 2px rgba(255,255,255,0.95), 0 0 5px rgba(255,255,255,0.75);
-      white-space: pre; line-height: 1;
+      fill: #2a1e14;
+      stroke: none;
+      filter: drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 0 5px rgba(255,255,255,0.75));
     }
     .rp-hero-circle {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -376,7 +379,7 @@
   <script src="allergy-engine.js"></script>
   <script src="seo-schema.js"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
-  <script src="lib/recipe-hero-labels.js?v=20260607"></script>
+  <script src="lib/recipe-hero-labels.js?v=20260608"></script>
   <script src="nav-init.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -1686,26 +1689,13 @@ function sampleHeroBackdrop(img) {
 function applyWatermark(r) {
   var wrap = document.querySelector('.rp-hero-ring-wrap');
   if (!wrap || !window.RecipeHeroLabels) return;
-  window._heroRecipe = r;
-  function render() {
-    var recipe = window._heroRecipe;
-    if (!recipe) return;
-    var handle = '';
-    if (recipe.credit_handle && recipe.source_type !== 'Original') {
-      handle = '@' + String(recipe.credit_handle).replace(/^@/, '');
-    } else if (recipe.username) {
-      handle = '@' + String(recipe.username).replace(/^@/, '');
-    }
-    RecipeHeroLabels.render(wrap, {
-      handle: handle || undefined,
-      charClass: 'recipe-hero-char'
-    });
+  var handle = '';
+  if (r.credit_handle && r.source_type !== 'Original') {
+    handle = '@' + String(r.credit_handle).replace(/^@/, '');
+  } else if (r.username) {
+    handle = '@' + String(r.username).replace(/^@/, '');
   }
-  render();
-  if (!wrap._labelRO && typeof ResizeObserver !== 'undefined') {
-    wrap._labelRO = new ResizeObserver(render);
-    wrap._labelRO.observe(wrap);
-  }
+  RecipeHeroLabels.render(wrap, { handle: handle || undefined });
 }
 
 // ── TAGS ──────────────────────────────────────────────
