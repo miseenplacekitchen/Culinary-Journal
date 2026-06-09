@@ -1,0 +1,25 @@
+name: Recipe import tests
+
+on:
+  push:
+    paths:
+      - 'lib/recipe-import-*.js'
+      - 'api/fetch-recipe-url.js'
+      - 'tests/**'
+      - 'package.json'
+  pull_request:
+    paths:
+      - 'lib/recipe-import-*.js'
+      - 'api/fetch-recipe-url.js'
+      - 'tests/**'
+      - 'package.json'
+
+jobs:
+  import-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm run test:import

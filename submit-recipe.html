@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Submit your recipe to The Culinary Journal community — share family favourites and regional dishes.">
   <link rel="canonical" href="https://theculinaryjournal.site/submit-recipe.html">
-  <meta name="tcj-build" content="20260606-wave1-v5-core">
+  <meta name="tcj-build" content="20260609-wave2-extract">
   <title>Submit a Recipe — The Culinary Journal</title>
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
@@ -14,6 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
   <script src="lib/recipe-import-core.js"></script>
+  <script src="lib/recipe-import-extract.js"></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -2872,7 +2873,8 @@ function extractArticleHtmlFromPage(html) {
     /<div[^>]*class="[^"]*\bwp-block-post-content\b[^"]*"[^>]*>([\s\S]*)/i,
     /<div[^>]*class="[^"]*\bpost-content\b[^"]*"[^>]*>([\s\S]*)/i,
     /<article[^>]*>([\s\S]*?)<\/article>/i,
-    /<div[^>]*itemprop=["']articleBody["'][^>]*>([\s\S]*)/i
+    /<div[^>]*itemprop=["']articleBody["'][^>]*>([\s\S]*)/i,
+    /<main[^>]*>([\s\S]*?)<\/main>/i
   ];
   for (var p = 0; p < patterns.length; p++) {
     var m = html.match(patterns[p]);
@@ -2891,6 +2893,12 @@ function extractArticleHtmlFromPage(html) {
 }
 
 function extractArticleTextFromHtml(html) {
+  var ext = (typeof RecipeImportExtract !== 'undefined' ? RecipeImportExtract : null);
+  if (ext && ext.extractArticleTextFromHtml) {
+    var host = '';
+    try { host = new URL(document.getElementById('source-url-input').value.trim()).hostname; } catch (_) {}
+    return ext.extractArticleTextFromHtml(html, host);
+  }
   var fragment = extractArticleHtmlFromPage(html);
   var text = fragment ? htmlFragmentToText(fragment) : '';
   var trimmed = text.length > 150 ? trimBlogRecipeText(text) : trimBlogRecipeText(htmlFragmentToText(html.slice(0, 120000)));
@@ -2978,28 +2986,25 @@ async function importFromUrl() {
   var articleText = '';
   try {
     var apiRes = await fetch('/api/fetch-recipe-url?url=' + encodeURIComponent(url), { signal: AbortSignal.timeout(14000) });
-    if (apiRes.ok) {
-      var payload = await apiRes.json();
+    var payload = null;
+    try { payload = await apiRes.json(); } catch (_) {}
+    if (!apiRes.ok || (payload && payload.ok === false)) {
+      var errMsg = (payload && payload.error) ? payload.error : ('Import failed (HTTP ' + apiRes.status + ')');
+      if (payload && payload.fetchStatus === 'non-recipe-url') {
+        showImportStatus(errMsg, false);
+        return;
+      }
+      if (!isSocialMediaUrl(url)) {
+        showImportStatus(errMsg + ' — paste the recipe text manually or use photo scan.', false);
+        return;
+      }
+    }
+    if (apiRes.ok && payload && payload.ok !== false) {
       pageTitle = payload.pageTitle || '';
       articleText = payload.articleText || '';
       if (articleText.length <= 80 && payload.html) {
         articleText = extractArticleTextFromHtml(payload.html);
-      }
-      if (payload.recipe && recipeJsonLdHasIngredients(payload.recipe)) {
-        populateFromJsonLd(payload.recipe, url);
-        showImportStatus('Recipe imported via site fetch. Review all fields below before submitting.', true);
-        return;
-      }
-      if (articleText.length > 80) {
-        await applyUrlImportToPaste(articleText, pageTitle, ' from blog');
-        applyJsonLdMetaToForm(payload.recipe);
-        showImportStatus('Recipe imported from blog text' + (payload.recipe ? ' (schema had no ingredient list)' : '') + '. Review all fields below before submitting.', true);
-        return;
-      }
-      if (payload.recipe) {
-        populateFromJsonLd(payload.recipe, url);
-        showImportStatus('Recipe imported via schema (ingredients may be incomplete). Review and correct before submitting.', null);
-        return;
+        payload.articleText = articleText;
       }
       if (payload.social) {
         var caption = (payload.caption || '').trim();
@@ -3019,7 +3024,8 @@ async function importFromUrl() {
         showImportStatus('Could not read the ' + (payload.platform || 'social') + ' caption automatically. Paste the recipe from comments below, or enter the dish name and use Generate starter.', false);
         return;
       }
-      html = payload.html || '';
+      await applyServerImportPayload(payload, url);
+      return;
     } else if (isSocialMediaUrl(url)) {
       showImportStatus('Could not reach that social post. Paste the caption or recipe text below, or enter the dish name and use Generate starter.', false);
       return;
@@ -3027,6 +3033,7 @@ async function importFromUrl() {
   } catch(_) {}
   if (!html) {
     try {
+      showImportStatus('Primary fetch failed — trying fallback reader (may be incomplete)…', null);
       var proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
       var res = await fetch(proxyUrl, {signal: AbortSignal.timeout(12000)});
       if (!res.ok) throw new Error('Could not fetch the page.');
@@ -3043,13 +3050,22 @@ async function importFromUrl() {
     if (!pageTitle) pageTitle = extractPageTitleFromHtml(html);
   }
   recipe = html ? extractJsonLdRecipe(html) : null;
-  if (recipe && recipeJsonLdHasIngredients(recipe)) {
+  var ext = (typeof RecipeImportExtract !== 'undefined' ? RecipeImportExtract : null);
+  if (ext && ext.buildImportPayload && html) {
+    var host = '';
+    try { host = new URL(url).hostname; } catch (_) {}
+    var localPayload = ext.buildImportPayload({ html: html, host: host, url: url, recipe: recipe, pageTitle: pageTitle, fetchStatus: 'fallback' });
+    localPayload.warnings = (localPayload.warnings || []).concat(['Imported via browser fallback reader']);
+    await applyServerImportPayload(localPayload, url);
+    return;
+  }
+  if (recipe && recipeJsonLdIsTrustworthy(recipe)) {
     populateFromJsonLd(recipe, url);
     showImportStatus('Recipe imported! Review all fields below before submitting.', true);
     return;
   }
   if (articleText.length > 80) {
-    await applyUrlImportToPaste(articleText, pageTitle, ' from blog');
+    await applyUrlImportToPaste(articleText, pageTitle, ' from blog (fallback)');
     applyJsonLdMetaToForm(recipe);
     return;
   }
@@ -4433,21 +4449,89 @@ function recipeJsonLdHasIngredients(r) {
   if (!r || !r.recipeIngredient) return false;
   var ing = r.recipeIngredient;
   if (Array.isArray(ing)) {
-    return ing.some(function(i) { return String(i || '').trim().length > 1; });
+    return ing.filter(function(i) { return String(i || '').trim().length > 1; }).length >= 2;
   }
   return String(ing).trim().length > 1;
 }
 
+function recipeJsonLdHasInstructions(r) {
+  var ext = (typeof RecipeImportExtract !== 'undefined' ? RecipeImportExtract : null);
+  if (ext && ext.analyzeJsonLdRecipe) return ext.analyzeJsonLdRecipe(r).hasInstructions;
+  if (!r || !r.recipeInstructions) return false;
+  var steps = extractInstructions(r.recipeInstructions);
+  return steps.split('\n').filter(function(s) { return s.trim().length > 4; }).length >= 2;
+}
+
+function recipeJsonLdIsTrustworthy(r) {
+  var ext = (typeof RecipeImportExtract !== 'undefined' ? RecipeImportExtract : null);
+  if (ext && ext.analyzeJsonLdRecipe) return ext.analyzeJsonLdRecipe(r).isTrustworthy;
+  return recipeJsonLdHasIngredients(r) && recipeJsonLdHasInstructions(r);
+}
+
+function applyImportMetaFromPayload(payload) {
+  if (!payload) return;
+  if (payload.meta) {
+    if (payload.meta.prep) setFormNumberIfEmpty('prep-time', payload.meta.prep);
+    if (payload.meta.cook) setFormNumberIfEmpty('cook-time', payload.meta.cook);
+    if (payload.meta.servings) setFormNumberIfEmpty('servings', payload.meta.servings);
+  }
+  if (payload.recipe) applyJsonLdMetaToForm(payload.recipe);
+}
+
+function importStatusSuffixFromPayload(payload) {
+  if (!payload) return ' from blog';
+  if (payload.extractor === 'jsonld') return ' via schema';
+  if (payload.extractor === 'wprm') return ' via recipe plugin';
+  if (payload.mergeMode) return ' (merged schema + blog)';
+  if (payload.strategy === 'wp-raw') return ' from blog';
+  return ' from blog';
+}
+
+async function applyServerImportPayload(payload, url) {
+  var articleText = payload.articleText || '';
+  var suffix = importStatusSuffixFromPayload(payload);
+  var warn = (payload.warnings || []).join('; ');
+  if (recipeJsonLdIsTrustworthy(payload.recipe) && !payload.mergeMode && payload.extractor === 'jsonld') {
+    populateFromJsonLd(payload.recipe, url);
+    applyImportMetaFromPayload(payload);
+    showImportStatus('Recipe imported via schema. Review all fields below before submitting.' + (warn ? ' ' + warn : ''), true);
+    return;
+  }
+  if (articleText.length > 80) {
+    await applyUrlImportToPaste(articleText, payload.pageTitle || '', suffix);
+    applyImportMetaFromPayload(payload);
+    showImportStatus(
+      'Recipe imported' + suffix + (warn ? ' (' + warn + ')' : '') + '. Review all fields below before submitting.',
+      true
+    );
+    return;
+  }
+  if (payload.recipe) {
+    populateFromJsonLd(payload.recipe, url);
+    applyImportMetaFromPayload(payload);
+    showImportStatus('Recipe imported via partial schema — ingredients or steps may be incomplete. Review before submitting.', null);
+    return;
+  }
+  showImportStatus('No recipe content found on that page. Try pasting the text manually.', false);
+}
+
 function applyJsonLdMetaToForm(r) {
   if (!r) return;
+  var ext = (typeof RecipeImportExtract !== 'undefined' ? RecipeImportExtract : null);
   var prepEl = document.getElementById('prep-time');
   var cookEl = document.getElementById('cook-time');
-  if (prepEl && r.prepTime && !prepEl.value.trim()) prepEl.value = parseDuration(r.prepTime);
-  if (cookEl && r.cookTime && !cookEl.value.trim()) cookEl.value = parseDuration(r.cookTime);
+  if (prepEl && r.prepTime && !prepEl.value.trim()) {
+    var prepMin = ext ? ext.parseIsoDurationMinutes(r.prepTime) : null;
+    prepEl.value = prepMin || parseDuration(r.prepTime).replace(/\D/g, '') || prepEl.value;
+  }
+  if (cookEl && r.cookTime && !cookEl.value.trim()) {
+    var cookMin = ext ? ext.parseIsoDurationMinutes(r.cookTime) : null;
+    cookEl.value = cookMin || parseDuration(r.cookTime).replace(/\D/g, '') || cookEl.value;
+  }
   var servEl = document.getElementById('servings');
   if (servEl && r.recipeYield && !servEl.value.trim()) {
     var yld = typeof r.recipeYield === 'string' ? r.recipeYield : (r.recipeYield[0] || '');
-    var num = parseInt(yld, 10);
+    var num = parseInt(String(yld).replace(/[^\d]/g, ''), 10);
     if (!isNaN(num)) servEl.value = num;
   }
 }
@@ -4478,7 +4562,7 @@ function populateFromJsonLd(r, sourceUrl) {
 // ── AUTO-ENRICH PARSED RECIPE (local, no API) ───────────────────────────────
 var AUTO_REVIEW_MARKER = '--- Auto review on parse (remove when done) ---';
 var PARSER_VERSION = (typeof RecipeImportCore !== 'undefined' && RecipeImportCore.PARSER_VERSION)
-  ? RecipeImportCore.PARSER_VERSION : '1.2.0-wave1';
+  ? RecipeImportCore.PARSER_VERSION : '2.0.0-wave2';
 var PARSE_CONFIDENCE_ENRICH_MIN = 60;
 
 function isIngredientQtyOnlyLine(line) {

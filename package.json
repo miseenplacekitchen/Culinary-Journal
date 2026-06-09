@@ -1,0 +1,8 @@
+{
+  "name": "culinary-journal",
+  "private": true,
+  "description": "The Culinary Journal site",
+  "scripts": {
+    "test:import": "node tests/run-import-tests.mjs"
+  }
+}
