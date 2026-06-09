@@ -2989,6 +2989,7 @@ async function importFromUrl() {
   var pageTitle = '';
   var articleText = '';
   try {
+  try {
     var apiRes = await fetch('/api/fetch-recipe-url?url=' + encodeURIComponent(url), { signal: AbortSignal.timeout(14000) });
     var payload = null;
     try { payload = await apiRes.json(); } catch (_) {}
