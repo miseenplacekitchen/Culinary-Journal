@@ -318,6 +318,67 @@ async function openRecipeModal(id) {
       panel.appendChild(uBlock);
     }
 
+    // Suggested taxonomy — sub-categories / divisions not yet in the database
+    var taxSug = [];
+    try {
+      taxSug = Array.isArray(r.taxonomy_suggestions) ? r.taxonomy_suggestions
+        : (r.taxonomy_suggestions ? JSON.parse(r.taxonomy_suggestions) : []);
+    } catch(_) {}
+    if (taxSug.length) {
+      var tBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(212,160,23,0.05);border-left:3px solid #d4a017');
+      tBlock.appendChild(mk('div',"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#d4a017;margin-bottom:10px",'⚠ Suggested Taxonomy Not Yet in Database'));
+      tBlock.appendChild(mk('p',"font-size:12px;color:var(--text-mid);margin:0 0 12px;line-height:1.6",'The contributor typed sub-categories or divisions that are not in the master list. Review and add any that should be available site-wide.'));
+      taxSug.forEach(function(sug) {
+        var label = sug.field === 'sub_category'
+          ? 'Sub-category: ' + (sug.value || '') + ' · ' + (sug.category || '')
+          : 'Division: ' + (sug.value || '') + ' · ' + (sug.sub_category || '—') + ' · ' + (sug.category || '');
+        var row = mk('div','display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04)');
+        row.appendChild(mk('span',"font-size:13px;color:var(--text-high);flex:1", label));
+        var addBtn = mk('button',"padding:4px 14px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0",'+ Add to Taxonomy');
+        addBtn.addEventListener('click', (function(s) { return function() {
+          var btn = this;
+          btn.disabled = true;
+          btn.textContent = 'Adding…';
+          var p;
+          if (s.field === 'sub_category') {
+            p = rpc('admin_upsert_recipe_subcategory', { p_id: null, p_category: s.category, p_name: s.value, p_sort_order: 99 });
+          } else if (s.field === 'division') {
+            if (!s.sub_category) {
+              alert('Add the sub-category first (or use Sub-cats & Divisions tab), then add this division.');
+              btn.disabled = false;
+              btn.textContent = '+ Add to Taxonomy';
+              return;
+            }
+            p = rpc('admin_upsert_recipe_division', {
+              p_id: null, p_category: s.category, p_subcategory: s.sub_category, p_name: s.value,
+              p_emoji: '🍽', p_subtitle: '', p_description: null, p_tags: [], p_sort_order: 99
+            });
+          } else {
+            btn.disabled = false;
+            btn.textContent = '+ Add to Taxonomy';
+            return;
+          }
+          p.then(function() {
+            btn.textContent = '✓ Added';
+            btn.style.background = '#2d8a4e';
+          }).catch(function(e) {
+            alert(e.message || 'Could not add taxonomy entry');
+            btn.disabled = false;
+            btn.textContent = '+ Add to Taxonomy';
+          });
+        }; })(sug));
+        row.appendChild(addBtn);
+        tBlock.appendChild(row);
+      });
+      var manageBtn = mk('button',"margin-top:10px;padding:6px 14px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer",'Manage all taxonomy →');
+      manageBtn.addEventListener('click', function() {
+        closeRecipeModal();
+        switchRecipeTab('taxonomy');
+      });
+      tBlock.appendChild(manageBtn);
+      panel.appendChild(tBlock);
+    }
+
     // Edit before approving
     var editBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border)');
     editBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:12px",'Edit Before Approving'));

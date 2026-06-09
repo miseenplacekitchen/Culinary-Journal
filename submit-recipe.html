@@ -1345,21 +1345,27 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
             <div>
               <label class="sr-label">Sub-category <span style="font-weight:400;color:var(--text-mid)">(optional)</span></label>
-              <select class="sr-input" id="sr-subcategory" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high);font-family:'DM Sans',sans-serif;font-size:13px">
-                <option value="">— None —</option>
-              </select>
-              <input type="text" id="sr-subcategory-custom" class="sr-input" maxlength="80" placeholder="Suggest a sub-category (e.g. Mutton)" style="display:none;margin-top:8px;width:100%;box-sizing:border-box">
+              <div class="ing-name-wrap" style="position:relative">
+                <input class="sr-input ing-name-input" id="sr-subcategory-input" type="text" maxlength="80" placeholder="Search or type sub-category…" autocomplete="off"
+                  oninput="searchTaxonomySub(this)" onfocus="searchTaxonomySub(this)" onblur="hideAC(this)"
+                  style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high);font-family:'DM Sans',sans-serif;font-size:13px">
+                <div class="ing-autocomplete" id="sr-subcategory-ac"></div>
+                <span class="ing-unknown-badge" id="sr-subcategory-unknown" style="display:none">⚠ New sub-category — not in our database</span>
+              </div>
             </div>
             <div>
               <label class="sr-label">Division <span style="font-weight:400;color:var(--text-mid)">(optional)</span></label>
-              <select class="sr-input" id="sr-division" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high);font-family:'DM Sans',sans-serif;font-size:13px">
-                <option value="">— None —</option>
-              </select>
-              <input type="text" id="sr-division-custom" class="sr-input" maxlength="80" placeholder="Suggest a division (e.g. Mutton Biryani)" style="display:none;margin-top:8px;width:100%;box-sizing:border-box">
+              <div class="ing-name-wrap" style="position:relative">
+                <input class="sr-input ing-name-input" id="sr-division-input" type="text" maxlength="80" placeholder="Search or type division…" autocomplete="off"
+                  oninput="searchTaxonomyDiv(this)" onfocus="searchTaxonomyDiv(this)" onblur="hideAC(this)"
+                  style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high);font-family:'DM Sans',sans-serif;font-size:13px">
+                <div class="ing-autocomplete" id="sr-division-ac"></div>
+                <span class="ing-unknown-badge" id="sr-division-unknown" style="display:none">⚠ New division — not in our database</span>
+              </div>
             </div>
           </div>
           <div class="sr-hint" id="sr-category-taxonomy-tip" style="display:none;margin-top:8px"></div>
-          <div class="sr-hint" style="margin-top:8px"><span class="sr-i">i</span> Pick from the list or choose <strong>Other / suggest…</strong> to propose a new sub-category or division — admin will review on approval.</div>
+          <div class="sr-hint" style="margin-top:8px"><span class="sr-i">i</span> Search the list or type your own — like ingredients, new sub-categories and divisions are saved for admin review.</div>
           <div class="sr-hint" id="sr-taxonomy-suggest-badge" style="display:none;margin-top:6px;color:#e09955"><span class="sr-i">i</span> New taxonomy suggestion — saved with your recipe for admin review.</div>
         </div>
 
@@ -6852,13 +6858,12 @@ function showMsg(msg, type) {
 
 // ── RECIPE TAXONOMY (sub-category / division) ───────────────────────────────
 var _taxonomyCache = null;
-var TAXONOMY_OTHER = '__other__';
 
 var CATEGORY_TAXONOMY_HINTS = {
-  'Grains & Comfort': 'Biryanis, pilaf, pulao and layered rice dishes belong here. Choose Biryanis & Pilafs, then pick a protein division — or suggest your own.',
-  'Meat & Fire': 'Meat-forward mains and roasts. Mutton is goat meat; Lamb is sheep. Suggest a sub-category if yours is not listed.',
-  'Ocean & River': 'Fish and shellfish mains. Pick Fish or Shellfish, then a division — or suggest one.',
-  'Garden & Earth': 'Vegetable- and plant-forward dishes. Suggest a sub-category if needed.',
+  'Grains & Comfort': 'Biryanis, pilaf, pulao and layered rice dishes belong here. Search the list or type your own sub-category and division.',
+  'Meat & Fire': 'Meat-forward mains and roasts. Mutton is goat meat; Lamb is sheep. Type a sub-category if yours is not listed yet.',
+  'Ocean & River': 'Fish and shellfish mains. Search or suggest a sub-category and division.',
+  'Garden & Earth': 'Vegetable- and plant-forward dishes. Search or suggest a sub-category if needed.',
   'Breads & Bakes': 'Breads, flatbreads, batters and baked goods.',
   'Sweet Serenades': 'Desserts, sweets and confections.',
   'Slow & Soulful': 'Soups, stews and slow-cooked comfort food.'
@@ -6881,6 +6886,54 @@ async function fetchTaxonomy() {
   return _taxonomyCache || [];
 }
 
+function getSelectedCategory() {
+  var el = document.querySelector('input[name="category"]:checked');
+  return el ? el.value : '';
+}
+
+function taxonomySubsForCategory(category) {
+  var rows = _taxonomyCache || [];
+  var seen = {}, out = [];
+  rows.filter(function(r) { return r.subcategory_category === category; }).forEach(function(r) {
+    if (r.subcategory_name && !seen[r.subcategory_name]) {
+      seen[r.subcategory_name] = true;
+      out.push(r.subcategory_name);
+    }
+  });
+  return out;
+}
+
+function taxonomyDivsForCategory(category, subName) {
+  return (_taxonomyCache || []).filter(function(r) {
+    return r.subcategory_category === category && r.division_name &&
+      (!subName || r.subcategory_name === subName);
+  }).map(function(r) {
+    return { name: r.division_name, label: (r.division_emoji ? r.division_emoji + ' ' : '') + r.division_name };
+  });
+}
+
+function taxonomyExactMatchInPool(name, pool) {
+  var q = (name || '').trim().toLowerCase();
+  if (!q) return null;
+  return pool.find(function(s) { return String(s).toLowerCase() === q; }) || null;
+}
+
+function taxonomyDivExactMatchInPool(name, pool) {
+  var q = (name || '').trim().toLowerCase();
+  if (!q) return null;
+  return pool.find(function(d) { return String(d.name).toLowerCase() === q; }) || null;
+}
+
+function isKnownSubcategory(category, name) {
+  if (!name) return true;
+  return !!taxonomyExactMatchInPool(name, taxonomySubsForCategory(category));
+}
+
+function isKnownDivision(category, subName, name) {
+  if (!name) return true;
+  return !!taxonomyDivExactMatchInPool(name, taxonomyDivsForCategory(category, subName));
+}
+
 function updateCategoryTaxonomyTip(category) {
   var tip = document.getElementById('sr-category-taxonomy-tip');
   if (!tip) return;
@@ -6896,32 +6949,193 @@ function updateCategoryTaxonomyTip(category) {
   }
 }
 
-function toggleTaxonomyCustomField(selectId, customId, show) {
-  var sel = document.getElementById(selectId);
-  var custom = document.getElementById(customId);
-  if (!custom) return;
-  var isOther = show || (sel && sel.value === TAXONOMY_OTHER);
-  custom.style.display = isOther ? 'block' : 'none';
-  if (!isOther && custom) custom.value = '';
-  updateTaxonomySuggestBadge();
-}
-
 function updateTaxonomySuggestBadge() {
   var badge = document.getElementById('sr-taxonomy-suggest-badge');
   if (!badge) return;
-  var subOther = document.getElementById('sr-subcategory') && document.getElementById('sr-subcategory').value === TAXONOMY_OTHER;
-  var divOther = document.getElementById('sr-division') && document.getElementById('sr-division').value === TAXONOMY_OTHER;
-  var subCustom = document.getElementById('sr-subcategory-custom') && document.getElementById('sr-subcategory-custom').value.trim();
-  var divCustom = document.getElementById('sr-division-custom') && document.getElementById('sr-division-custom').value.trim();
-  badge.style.display = (subOther && subCustom) || (divOther && divCustom) ? 'block' : 'none';
+  var cat = getSelectedCategory();
+  var subIn = document.getElementById('sr-subcategory-input');
+  var divIn = document.getElementById('sr-division-input');
+  var sub = subIn ? subIn.value.trim() : '';
+  var div = divIn ? divIn.value.trim() : '';
+  var hasUnknown = (sub && cat && !isKnownSubcategory(cat, sub)) ||
+    (div && cat && !isKnownDivision(cat, sub, div));
+  badge.style.display = hasUnknown ? 'block' : 'none';
 }
 
-function getTaxonomyFieldValue(selectId, customId) {
-  var sel = document.getElementById(selectId);
-  var custom = document.getElementById(customId);
-  if (!sel) return '';
-  if (sel.value === TAXONOMY_OTHER) return custom ? custom.value.trim() : '';
-  return (sel.value || '').trim();
+function getTaxonomyInputValue(inputId) {
+  var el = document.getElementById(inputId);
+  return el ? el.value.trim() : '';
+}
+
+function validateTaxonomySubInput(input) {
+  if (!input) return;
+  var val = input.value.trim();
+  var badge = document.getElementById('sr-subcategory-unknown');
+  var cat = getSelectedCategory();
+  if (!val || !cat) {
+    if (badge) badge.style.display = 'none';
+    input.classList.remove('ing-unknown');
+    updateTaxonomySuggestBadge();
+    return;
+  }
+  if (!isKnownSubcategory(cat, val)) {
+    if (badge) badge.style.display = 'block';
+    input.classList.add('ing-unknown');
+  } else {
+    if (badge) badge.style.display = 'none';
+    input.classList.remove('ing-unknown');
+  }
+  validateTaxonomyDivInput(document.getElementById('sr-division-input'));
+  updateTaxonomySuggestBadge();
+}
+
+function validateTaxonomyDivInput(input) {
+  if (!input) return;
+  var val = input.value.trim();
+  var badge = document.getElementById('sr-division-unknown');
+  var cat = getSelectedCategory();
+  var sub = getTaxonomyInputValue('sr-subcategory-input');
+  if (!val || !cat) {
+    if (badge) badge.style.display = 'none';
+    input.classList.remove('ing-unknown');
+    updateTaxonomySuggestBadge();
+    return;
+  }
+  if (!isKnownDivision(cat, sub, val)) {
+    if (badge) badge.style.display = 'block';
+    input.classList.add('ing-unknown');
+  } else {
+    if (badge) badge.style.display = 'none';
+    input.classList.remove('ing-unknown');
+  }
+  updateTaxonomySuggestBadge();
+}
+
+function searchTaxonomySub(input) {
+  var typed = input.value.trim();
+  var query = typed.toLowerCase();
+  var ac = input.nextElementSibling;
+  var badge = ac && ac.nextElementSibling;
+  var cat = getSelectedCategory();
+  var pool = taxonomySubsForCategory(cat);
+  var matches;
+  if (query.length === 0) matches = pool;
+  else {
+    matches = pool.filter(function(s) { return s.toLowerCase().indexOf(query) >= 0; });
+  }
+  var exactMatch = query.length >= 1 ? taxonomyExactMatchInPool(typed, pool) : null;
+  if (matches.length === 0) {
+    if (ac) ac.style.display = 'none';
+    if (query.length >= 1 && badge) { badge.style.display = 'block'; input.classList.add('ing-unknown'); }
+    else if (badge) { badge.style.display = 'none'; input.classList.remove('ing-unknown'); }
+    updateTaxonomySuggestBadge();
+    return;
+  }
+  if (exactMatch) {
+    if (badge) badge.style.display = 'none';
+    input.classList.remove('ing-unknown');
+  } else if (query.length >= 1) {
+    if (badge) badge.style.display = 'block';
+    input.classList.add('ing-unknown');
+  } else if (badge) {
+    badge.style.display = 'none';
+    input.classList.remove('ing-unknown');
+  }
+  var html = '';
+  if (query.length >= 1 && !exactMatch) {
+    html += '<div class="ing-autocomplete-item ing-autocomplete-custom" data-value="' + escTaxOpt(typed) + '" onmousedown="selectTaxonomySubEl(this)">Use "' + escTaxOpt(typed) + '" as new sub-category</div>';
+  }
+  html += matches.map(function(s) {
+    return '<div class="ing-autocomplete-item" data-value="' + escTaxOpt(s) + '" onmousedown="selectTaxonomySubEl(this)">' + escTaxOpt(s) + '</div>';
+  }).join('');
+  if (ac) { ac.innerHTML = html; ac.style.display = 'block'; }
+  updateTaxonomySuggestBadge();
+}
+
+function searchTaxonomyDiv(input) {
+  var typed = input.value.trim();
+  var query = typed.toLowerCase();
+  var ac = input.nextElementSibling;
+  var badge = ac && ac.nextElementSibling;
+  var cat = getSelectedCategory();
+  var sub = getTaxonomyInputValue('sr-subcategory-input');
+  var pool = taxonomyDivsForCategory(cat, sub);
+  var matches;
+  if (query.length === 0) matches = pool;
+  else {
+    matches = pool.filter(function(d) {
+      return d.name.toLowerCase().indexOf(query) >= 0 || d.label.toLowerCase().indexOf(query) >= 0;
+    });
+  }
+  var exactMatch = query.length >= 1 ? taxonomyDivExactMatchInPool(typed, pool) : null;
+  if (matches.length === 0) {
+    if (ac) ac.style.display = 'none';
+    if (query.length >= 1 && badge) { badge.style.display = 'block'; input.classList.add('ing-unknown'); }
+    else if (badge) { badge.style.display = 'none'; input.classList.remove('ing-unknown'); }
+    updateTaxonomySuggestBadge();
+    return;
+  }
+  if (exactMatch) {
+    if (badge) badge.style.display = 'none';
+    input.classList.remove('ing-unknown');
+  } else if (query.length >= 1) {
+    if (badge) badge.style.display = 'block';
+    input.classList.add('ing-unknown');
+  } else if (badge) {
+    badge.style.display = 'none';
+    input.classList.remove('ing-unknown');
+  }
+  var html = '';
+  if (query.length >= 1 && !exactMatch) {
+    html += '<div class="ing-autocomplete-item ing-autocomplete-custom" data-value="' + escTaxOpt(typed) + '" onmousedown="selectTaxonomyDivEl(this)">Use "' + escTaxOpt(typed) + '" as new division</div>';
+  }
+  html += matches.map(function(d) {
+    return '<div class="ing-autocomplete-item" data-value="' + escTaxOpt(d.name) + '" onmousedown="selectTaxonomyDivEl(this)">' + escTaxOpt(d.label) + '</div>';
+  }).join('');
+  if (ac) { ac.innerHTML = html; ac.style.display = 'block'; }
+  updateTaxonomySuggestBadge();
+}
+
+function selectTaxonomySubEl(el) {
+  selectTaxonomySub(el, el.getAttribute('data-value') || '');
+}
+
+function selectTaxonomyDivEl(el) {
+  selectTaxonomyDiv(el, el.getAttribute('data-value') || '');
+}
+
+function selectTaxonomySub(item, name) {
+  var wrap = item.closest('.ing-name-wrap');
+  if (!wrap) return;
+  var input = wrap.querySelector('.ing-name-input');
+  input.value = name;
+  wrap.querySelector('.ing-autocomplete').style.display = 'none';
+  validateTaxonomySubInput(input);
+  var divIn = document.getElementById('sr-division-input');
+  if (divIn && divIn.value.trim()) searchTaxonomyDiv(divIn);
+}
+
+function selectTaxonomyDiv(item, name) {
+  var wrap = item.closest('.ing-name-wrap');
+  if (!wrap) return;
+  var input = wrap.querySelector('.ing-name-input');
+  input.value = name;
+  wrap.querySelector('.ing-autocomplete').style.display = 'none';
+  validateTaxonomyDivInput(input);
+}
+
+function collectTaxonomySuggestions() {
+  var cat = getSelectedCategory();
+  var sub = getTaxonomyInputValue('sr-subcategory-input');
+  var div = getTaxonomyInputValue('sr-division-input');
+  var out = [];
+  if (cat && sub && !isKnownSubcategory(cat, sub)) {
+    out.push({ field: 'sub_category', value: sub, category: cat });
+  }
+  if (cat && div && !isKnownDivision(cat, sub, div)) {
+    out.push({ field: 'division', value: div, category: cat, sub_category: sub || null });
+  }
+  return out;
 }
 
 function inferSubCategoryDivision(name, items, category) {
@@ -6952,92 +7166,29 @@ function inferSubCategoryDivision(name, items, category) {
 
 async function loadTaxonomyForCategory(category, selSub, selDiv) {
   const wrap = document.getElementById('sr-taxonomy-wrap');
-  const subEl = document.getElementById('sr-subcategory');
-  const divEl = document.getElementById('sr-division');
-  const subCustom = document.getElementById('sr-subcategory-custom');
-  const divCustom = document.getElementById('sr-division-custom');
-  if (!wrap || !subEl || !divEl) return;
+  const subIn = document.getElementById('sr-subcategory-input');
+  const divIn = document.getElementById('sr-division-input');
+  if (!wrap || !subIn || !divIn) return;
   if (!category) { wrap.style.display = 'none'; return; }
 
   updateCategoryTaxonomyTip(category);
-  const rows = await fetchTaxonomy();
-  const subs = [];
-  const seen = {};
-  rows.filter(function(r) { return r.subcategory_category === category; }).forEach(function(r) {
-    if (r.subcategory_name && !seen[r.subcategory_name]) {
-      seen[r.subcategory_name] = true;
-      subs.push(r.subcategory_name);
-    }
-  });
-
+  await fetchTaxonomy();
   wrap.style.display = 'block';
-  var subKnown = selSub && subs.indexOf(selSub) >= 0;
-  var subHtml = '<option value="">— None —</option>';
-  subs.forEach(function(s) {
-    subHtml += '<option value="' + escTaxOpt(s) + '"' + (s === selSub ? ' selected' : '') + '>' + escTaxOpt(s) + '</option>';
-  });
-  subHtml += '<option value="' + TAXONOMY_OTHER + '"' + (selSub && !subKnown ? ' selected' : '') + '>Other / suggest…</option>';
-  subEl.innerHTML = subHtml;
-
-  if (selSub && !subKnown && subCustom) {
-    subCustom.value = selSub;
-    toggleTaxonomyCustomField('sr-subcategory', 'sr-subcategory-custom', true);
-  } else {
-    toggleTaxonomyCustomField('sr-subcategory', 'sr-subcategory-custom', false);
-  }
-
-  function fillDivisions(subName) {
-    if (subName === TAXONOMY_OTHER) {
-      divEl.innerHTML = '<option value="">— None —</option><option value="' + TAXONOMY_OTHER + '">Other / suggest…</option>';
-      if (selDiv && divCustom && subs.indexOf(selSub) < 0) {
-        divEl.value = TAXONOMY_OTHER;
-        divCustom.value = selDiv;
-        toggleTaxonomyCustomField('sr-division', 'sr-division-custom', true);
-      }
-      return;
-    }
-    const divs = rows.filter(function(r) {
-      return r.subcategory_category === category && r.subcategory_name === subName && r.division_name;
-    });
-    var divKnown = selDiv && divs.some(function(r) { return r.division_name === selDiv; });
-    var divHtml = '<option value="">— None —</option>';
-    divs.forEach(function(r) {
-      const n = r.division_name;
-      const label = (r.division_emoji ? r.division_emoji + ' ' : '') + n;
-      divHtml += '<option value="' + escTaxOpt(n) + '"' + (n === selDiv ? ' selected' : '') + '>' + escTaxOpt(label) + '</option>';
-    });
-    divHtml += '<option value="' + TAXONOMY_OTHER + '"' + (selDiv && !divKnown ? ' selected' : '') + '>Other / suggest…</option>';
-    divEl.innerHTML = divHtml;
-    if (selDiv && !divKnown && divCustom) {
-      divCustom.value = selDiv;
-      toggleTaxonomyCustomField('sr-division', 'sr-division-custom', true);
-    } else {
-      toggleTaxonomyCustomField('sr-division', 'sr-division-custom', false);
-    }
-  }
-
-  fillDivisions(subKnown ? selSub : (subEl.value === TAXONOMY_OTHER ? TAXONOMY_OTHER : (subEl.value || selSub)));
-  subEl.onchange = function() {
-    toggleTaxonomyCustomField('sr-subcategory', 'sr-subcategory-custom');
-    if (subEl.value !== TAXONOMY_OTHER) fillDivisions(subEl.value);
-    else {
-      divEl.innerHTML = '<option value="">— None —</option><option value="' + TAXONOMY_OTHER + '">Other / suggest…</option>';
-      toggleTaxonomyCustomField('sr-division', 'sr-division-custom', false);
-    }
-    updateTaxonomySuggestBadge();
-  };
-  divEl.onchange = function() {
-    toggleTaxonomyCustomField('sr-division', 'sr-division-custom');
-    updateTaxonomySuggestBadge();
-  };
-  if (subCustom) subCustom.oninput = updateTaxonomySuggestBadge;
-  if (divCustom) divCustom.oninput = updateTaxonomySuggestBadge;
+  subIn.value = selSub || '';
+  divIn.value = selDiv || '';
+  validateTaxonomySubInput(subIn);
+  validateTaxonomyDivInput(divIn);
 }
 
 function initCategoryTaxonomy() {
   document.querySelectorAll('input[name="category"]').forEach(function(radio) {
     radio.addEventListener('change', function() {
-      if (radio.checked) loadTaxonomyForCategory(radio.value, '', '');
+      if (!radio.checked) return;
+      var subIn = document.getElementById('sr-subcategory-input');
+      var divIn = document.getElementById('sr-division-input');
+      if (subIn) subIn.value = '';
+      if (divIn) divIn.value = '';
+      loadTaxonomyForCategory(radio.value, '', '');
     });
   });
   var nameEl = document.getElementById('recipe-name');
@@ -7092,8 +7243,8 @@ function buildSubmitPrintSheet() {
     var csOpt = document.querySelector('#cooking-style option[value="' + csKey + '"]');
     csLabel = csOpt ? csOpt.textContent.trim() : csKey;
   }
-  var subcat = getTaxonomyFieldValue('sr-subcategory', 'sr-subcategory-custom');
-  var division = getTaxonomyFieldValue('sr-division', 'sr-division-custom');
+  var subcat = getTaxonomyInputValue('sr-subcategory-input');
+  var division = getTaxonomyInputValue('sr-division-input');
   var locality = (document.getElementById('origin-locality') && document.getElementById('origin-locality').value.trim()) || '';
   var originParts = [window.fContinent, window.fCountry, window.fState, locality].filter(Boolean);
 
@@ -7271,8 +7422,9 @@ function collectFormData() {
     recipe_name:          (document.getElementById('recipe-name')?.value       || '').trim(),
     native_title:         (document.getElementById('native-title')?.value      || '').trim(),
     category:             document.querySelector('input[name="category"]:checked')?.value  || '',
-    sub_category:         getTaxonomyFieldValue('sr-subcategory', 'sr-subcategory-custom') || null,
-    division:             getTaxonomyFieldValue('sr-division', 'sr-division-custom') || null,
+    sub_category:         getTaxonomyInputValue('sr-subcategory-input') || null,
+    division:             getTaxonomyInputValue('sr-division-input') || null,
+    taxonomy_suggestions: collectTaxonomySuggestions(),
     spice_level:          document.querySelector('input[name="spice"]:checked')?.value     || '',
     sweet_level:          document.querySelector('input[name="sweet"]:checked')?.value     || '',
     origin_continent:     window.fContinent || '',
@@ -8084,6 +8236,7 @@ async function submitRecipe() {
       unknownIngredients.push(nameInput.value.trim());
     }
   });
+  const taxonomySuggestions = collectTaxonomySuggestions();
 
   const btn = document.getElementById('btn-submit');
   btn.disabled = true;
@@ -8105,7 +8258,8 @@ async function submitRecipe() {
       user_id:             session.user?.id || session.id,
       status:              'pending',
       submitted_at:        new Date().toISOString(),
-      unknown_ingredients: unknownIngredients
+      unknown_ingredients: unknownIngredients,
+      taxonomy_suggestions: taxonomySuggestions
     };
 
     const isEdit    = !!window._editRecipeId;
