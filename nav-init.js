@@ -258,9 +258,19 @@ function buildSectionNav() {
 
   var ADMIN_EMAIL = 'miseenplacekitchen.official@gmail.com';
 
+  function sessionEmail(session) {
+    if (session && session.user && session.user.email) return session.user.email;
+    try {
+      var token = session && session.access_token;
+      if (!token) return '';
+      var payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return payload.email || '';
+    } catch (_) { return ''; }
+  }
+
   function isNavAdmin(profile, session) {
     if (profile && profile.is_admin === true) return true;
-    var email = (profile && profile.email) || (session && session.user && session.user.email) || '';
+    var email = (profile && profile.email) || sessionEmail(session) || '';
     return String(email).toLowerCase() === ADMIN_EMAIL.toLowerCase();
   }
 
@@ -455,6 +465,8 @@ function buildSectionNav() {
       if (typeof enrichProfile === 'function') {
         p = await enrichProfile(p, session);
       }
+      if (!p.email && sessionEmail(session)) p.email = sessionEmail(session);
+      if (p.is_admin !== true && isNavAdmin({}, session)) p.is_admin = true;
       localStorage.setItem('tcj_profile', JSON.stringify(p));
       if (p.username && p.username !== session.username) {
         session.username = p.username;
