@@ -400,7 +400,7 @@
   <!-- HERO — circular image with curved ring text (Issue 4.1) -->
   <div class="rp-hero-frame" id="rp-hero">
     <div class="rp-hero-ring-wrap">
-      <svg class="rp-hero-ring" id="hero-ring-svg" viewBox="0 0 420 420" aria-hidden="true">
+      <svg class="rp-hero-ring" id="hero-ring-svg" viewBox="0 0 420 420" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
         <circle class="rp-hero-ring-stroke" cx="210" cy="210" r="168"/>
       </svg>
       <div class="rp-hero-circle">
@@ -408,20 +408,20 @@
           <span class="rp-hero-placeholder-text">Loading recipe image...</span>
         </div>
         <img id="hero-img" class="rp-hero-img" style="display:none" alt="Recipe photo">
-        <svg class="rp-inner-labels" viewBox="0 0 420 420" aria-hidden="true" xmlns:xlink="http://www.w3.org/1999/xlink">
-          <defs>
-            <path id="rp-arc-brand" d="M 52,210 A 158,158 0 0 0 70.5,135.8" fill="none"/>
-            <path id="rp-arc-handle" d="M 210,368 A 158,158 0 0 1 286.9,346.8" fill="none"/>
-          </defs>
-          <text class="rp-ring-text" id="hero-ring-brand">
-            <textPath href="#rp-arc-brand" xlink:href="#rp-arc-brand" startOffset="0%" text-anchor="start">The Culinary Journal</textPath>
-          </text>
-          <text class="rp-ring-text" id="hero-ring-handle" style="display:none">
-            <textPath href="#rp-arc-handle" xlink:href="#rp-arc-handle" startOffset="0%" text-anchor="start"></textPath>
-          </text>
-        </svg>
         <div class="rp-hero-vignette" id="hero-overlay" style="display:none"></div>
       </div>
+      <svg class="rp-inner-labels" viewBox="0 0 420 420" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <path id="rp-arc-brand" d="M 52,210 A 158,158 0 0 0 98,98" fill="none"/>
+          <path id="rp-arc-handle" d="M 223,367 A 158,158 0 0 1 311,329" fill="none"/>
+        </defs>
+        <text class="rp-ring-text" id="hero-ring-brand">
+          <textPath href="#rp-arc-brand" startOffset="0%" text-anchor="start">The Culinary Journal</textPath>
+        </text>
+        <text class="rp-ring-text" id="hero-ring-handle" style="display:none">
+          <textPath href="#rp-arc-handle" startOffset="0%" text-anchor="start"></textPath>
+        </text>
+      </svg>
     </div>
   </div>
 
