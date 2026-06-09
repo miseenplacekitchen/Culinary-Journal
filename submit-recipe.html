@@ -105,6 +105,12 @@
     /* ── PASTE AREA ──────────────────────────── */
     .sr-paste-area { position: relative; }
     .sr-paste-textarea { min-height: 160px; font-family: "DM Sans", sans-serif; font-size: 13px; line-height: 1.7; }
+    .sr-ai-prompt-tip { margin-top: 8px; padding: 10px 12px; border-radius: 8px; border: 1px solid rgb(from var(--accent) r g b / 0.25); background: rgb(from var(--accent) r g b / 0.06); }
+    .sr-ai-prompt-tip-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--text-mid); margin-bottom: 8px; }
+    .sr-ai-prompt-copy-btn { font-family: "DM Sans", sans-serif; font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid rgb(from var(--accent) r g b / 0.4); background: transparent; color: var(--accent); cursor: pointer; }
+    .sr-ai-prompt-copy-btn:hover { border-color: var(--accent); }
+    .sr-ai-prompt-text { width: 100%; min-height: 148px; resize: vertical; font-family: "DM Sans", sans-serif; font-size: 11px; line-height: 1.55; color: var(--text-high); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; box-sizing: border-box; }
+    .sr-ai-prompt-toggle { font-family: inherit; font-size: inherit; color: var(--accent); background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; }
     .sr-parse-btn { margin-top: 12px; display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--accent); color: var(--bg); border: none; border-radius: 8px; font-family: "DM Sans", sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
     .sr-parse-btn:hover { opacity: 0.85; }
     .sr-parse-btn:disabled { opacity: 0.55; cursor: not-allowed; }
@@ -1130,7 +1136,18 @@
         <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.6">
           <strong style="color:var(--text-high)">Works best with:</strong>
           recipe websites (auto-detects structured data), ingredients listed one per line, steps clearly numbered or sectioned.<br>
-          <span style="opacity:0.7">Instagram and TikTok: paste the reel URL and click <strong>Import</strong> to pull the caption, then <strong>Parse Recipe</strong> (free, in-browser — any language). If the recipe is only in the video, paste the text from comments or type it here.</span>
+          <span style="opacity:0.7">Instagram and TikTok: paste the reel URL and click <strong>Import</strong> to pull the caption, then <strong>Parse Recipe</strong> (free, in-browser — any language).</span><br>
+          <span style="opacity:0.85">Recipe only in the video? In <a href="https://www.google.com/search?udm=50" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:underline">Google AI Mode</a>, ask for the full recipe, paste the result here, then <strong>Parse Recipe</strong>. If the prompt doesn&rsquo;t appear, <button type="button" class="sr-ai-prompt-toggle" onclick="toggleGoogleAiModePromptTip(event)">copy this prompt</button>.</span>
+          <div id="google-ai-prompt-tip" class="sr-ai-prompt-tip" style="display:none" role="region" aria-label="Google AI Mode recipe prompt">
+            <div class="sr-ai-prompt-tip-head">
+              <span>Paste into Google AI Mode</span>
+              <span style="display:flex;gap:6px;flex-wrap:wrap">
+                <button type="button" class="sr-ai-prompt-copy-btn" onclick="openGoogleAiModeWithRecipePrompt(event)">Open Google AI Mode</button>
+                <button type="button" class="sr-ai-prompt-copy-btn" onclick="copyGoogleAiModeRecipePrompt(event)">Copy prompt</button>
+              </span>
+            </div>
+            <textarea class="sr-ai-prompt-text" id="google-ai-prompt-text" readonly rows="10" onclick="this.select()"></textarea>
+          </div>
         </div>
         <textarea class="sr-input sr-paste-textarea" id="paste-input" maxlength="50000" placeholder="Paste a recipe here — full length, no word limit. Works best with ingredients one per line and numbered steps." oninput="updatePasteCounter()"></textarea>
         <div class="paste-counter" id="paste-counter"><span id="paste-chars">0</span> characters (up to 50,000 — not the 100-word Introduction below)</div>
@@ -3146,7 +3163,8 @@ async function importFromUrl() {
       await applyServerImportPayload(payload, url);
       return;
     } else if (isSocialMediaUrl(url)) {
-      showImportStatus('Could not reach that social post. Paste the caption or recipe text below, or enter the dish name and use Generate starter.', false);
+      maybeShowGoogleAiModePromptForSocialUrl(url, 'video-only');
+      showImportStatus('Could not reach that social post. Use the Google AI Mode prompt below, or paste caption / recipe text manually.', false);
       return;
     }
   } catch(_) {}
@@ -4651,7 +4669,7 @@ async function applySocialCaptionImport(opts) {
   var platform = opts.platform || 'Social';
   var caption = splitBundledCaption((opts.caption || '').trim());
   if (!caption) {
-    showImportStatus('Could not read the ' + platform + ' caption automatically. Paste the recipe from comments below, or enter the dish name and use Generate starter.', false);
+    maybeShowGoogleAiModePromptForSocialUrl(opts.url || '', 'video-only');
     return;
   }
   var cleaned = await cleanupOcrText(caption);
@@ -4677,8 +4695,9 @@ async function applySocialCaptionImport(opts) {
     );
     setTimeout(function() { parseRecipe(); }, 300);
   } else {
+    maybeShowGoogleAiModePromptForSocialUrl(opts.url || '', 'video-only');
     showImportStatus(
-      platform + ' caption is short or unstructured. Add Ingredients / Method headings in the paste box, use Generate starter, or paste the full recipe from comments.',
+      platform + ' caption is short or unstructured — recipe may be in the video. Use the Google AI Mode prompt below, or add headings / paste from comments.',
       false
     );
   }
@@ -6469,9 +6488,121 @@ function undoProcedureRewrite() {
   try { saveDraft(); } catch(_) {}
 }
 
+var GOOGLE_AI_MODE_RECIPE_PROMPT = [
+  'Give me the complete recipe from this {platform} link as a structured card. Always provide a full ingredient list with quantities and numbered steps — never summarise in a paragraph, never say "see the full recipe on Instagram," never leave it incomplete. Give your best complete version.',
+  'Format exactly:',
+  '🍽️ [Dish Name]',
+  '📋 Ingredients',
+  '- [ingredient] — [quantity]',
+  '🥣 Instructions',
+  '1. [step]',
+  'Link: {link}'
+].join('\n');
+
+function platformLabelForRecipeAiPrompt(url) {
+  if (!url) return 'social media';
+  if (/instagram\.com/i.test(url)) return 'Instagram';
+  if (/tiktok\.com/i.test(url)) return 'TikTok';
+  if (/youtube\.com/i.test(url)) return 'YouTube';
+  if (/facebook\.com/i.test(url)) return 'Facebook';
+  return 'video';
+}
+
+function buildGoogleAiModeRecipePrompt(linkUrl) {
+  var link = (linkUrl && String(linkUrl).trim()) || '[PASTE LINK HERE]';
+  var platform = platformLabelForRecipeAiPrompt(linkUrl);
+  return GOOGLE_AI_MODE_RECIPE_PROMPT
+    .replace('{platform}', platform)
+    .replace('{link}', link);
+}
+
+function refreshGoogleAiModePromptTip() {
+  var el = document.getElementById('google-ai-prompt-text');
+  if (!el) return;
+  var urlInput = document.getElementById('source-url-input');
+  var linkUrl = urlInput ? urlInput.value.trim() : '';
+  el.value = buildGoogleAiModeRecipePrompt(linkUrl);
+}
+
+function showGoogleAiModePromptTip() {
+  var panel = document.getElementById('google-ai-prompt-tip');
+  if (!panel) return;
+  panel.style.display = 'block';
+  refreshGoogleAiModePromptTip();
+}
+
+function hideGoogleAiModePromptTip() {
+  var panel = document.getElementById('google-ai-prompt-tip');
+  if (panel) panel.style.display = 'none';
+}
+
+function toggleGoogleAiModePromptTip(ev) {
+  if (ev && ev.preventDefault) ev.preventDefault();
+  var panel = document.getElementById('google-ai-prompt-tip');
+  if (!panel) return false;
+  if (panel.style.display === 'none') showGoogleAiModePromptTip();
+  else hideGoogleAiModePromptTip();
+  return false;
+}
+
+function openGoogleAiModeWithRecipePrompt(ev) {
+  if (ev && ev.preventDefault) ev.preventDefault();
+  refreshGoogleAiModePromptTip();
+  var urlInput = document.getElementById('source-url-input');
+  var linkUrl = urlInput ? urlInput.value.trim() : '';
+  var prompt = buildGoogleAiModeRecipePrompt(linkUrl);
+  var searchUrl = 'https://www.google.com/search?udm=50&aep=11&q=' + encodeURIComponent(prompt);
+  window.open(searchUrl, '_blank', 'noopener,noreferrer');
+  return false;
+}
+
+function maybeShowGoogleAiModePromptForSocialUrl(url, reason) {
+  if (!url || !isSocialMediaUrl(url)) return;
+  showGoogleAiModePromptTip();
+  if (reason === 'video-only') {
+    showImportStatus(
+      'Caption missing or too short — the recipe may only be in the video. Use the prompt below in Google AI Mode, then paste the result here and Parse Recipe.',
+      false
+    );
+  }
+}
+
+function copyGoogleAiModeRecipePrompt(ev) {
+  if (ev && ev.preventDefault) ev.preventDefault();
+  refreshGoogleAiModePromptTip();
+  var el = document.getElementById('google-ai-prompt-text');
+  var text = el ? el.value : buildGoogleAiModeRecipePrompt('');
+  var btn = ev && ev.currentTarget;
+  var done = function(msg) {
+    if (!btn) return;
+    var prev = btn.textContent;
+    btn.textContent = msg;
+    setTimeout(function() { btn.textContent = prev; }, 1800);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() { done('Copied!'); }).catch(function() {
+      if (el) { el.focus(); el.select(); }
+      done('Select & copy');
+    });
+  } else if (el) {
+    el.focus();
+    el.select();
+    done('Select & copy');
+  }
+  return false;
+}
+
 function detectUrlPaste(url) {
   const msgEl = document.getElementById('url-detect-msg');
-  if (!url || !url.startsWith('http')) { msgEl.style.display='none'; return; }
+  if (!url || !url.startsWith('http')) {
+    msgEl.style.display = 'none';
+    hideGoogleAiModePromptTip();
+    return;
+  }
+  if (isSocialMediaUrl(url)) showGoogleAiModePromptTip();
+  else if (document.getElementById('google-ai-prompt-tip') && document.getElementById('google-ai-prompt-tip').style.display !== 'none') {
+    refreshGoogleAiModePromptTip();
+  }
   // Auto-fill credit URL fields
   const creditUrl = document.getElementById('credit-url');
   if (creditUrl && !creditUrl.value) creditUrl.value = url;
@@ -6487,7 +6618,7 @@ function detectUrlPaste(url) {
   if (url.includes('youtube.com'))    platform = 'YouTube';
   if (url.includes('pinterest.com'))  platform = 'Pinterest';
   if (isSocialMediaUrl(url)) {
-    msgEl.textContent = '✓ ' + platform + ' link — click Import to pull the caption, then Parse Recipe (free), or paste text below.';
+    msgEl.textContent = '✓ ' + platform + ' link — click Import for the caption (free). If the recipe is only in the video, use the prompt below in Google AI Mode.';
     msgEl.style.color = 'var(--accent)';
     msgEl.style.display = 'block';
     return;
