@@ -8,13 +8,10 @@ const MAX_BYTES = 1_500_000;
 const TIMEOUT_MS = 14000;
 
 function looksLikeStructuredRecipe(text) {
-  if (!text || text.length < 40) return false;
-  const t = text.toLowerCase();
-  if (/\b(ingredients?|method|instructions?|directions?|serves|prep|cook)\b/.test(t)) return true;
-  const lines = text.split('\n').filter(l => l.trim());
-  const withQty = lines.filter(l => /^\s*[\d\u00BC-\u00BE\/]/.test(l) || /\b(tsp|tbsp|cup|g|ml|oz|lb)\b/i.test(l)).length;
-  const numbered = lines.filter(l => /^\s*\d+[\.\)]\s/.test(l)).length;
-  return withQty >= 3 || numbered >= 3;
+  if (RecipeImportCore && RecipeImportCore.looksLikeStructuredRecipe) {
+    return RecipeImportCore.looksLikeStructuredRecipe(text);
+  }
+  return false;
 }
 
 function extractSocialCaption(html, host) {

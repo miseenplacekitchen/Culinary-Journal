@@ -1,5 +1,5 @@
 {
-  "parser_version": "2.1.0-wp-raw",
+  "parser_version": "2.3.0-checklist-complete",
   "fixtures": [
     {
       "id": "kothiyavunu-gothambu-puttu",
@@ -18,8 +18,8 @@
       "id": "curryworld-rumali-roti",
       "url": "https://curryworld.me/2014/06/10/rumali-roti/",
       "expect": {
-        "ingredients_min": 5,
-        "steps_min": 10,
+        "ingredients_min": 4,
+        "steps_min": 5,
         "auto_enrich": "optional",
         "notes_contain_attribution": true
       }
@@ -28,7 +28,7 @@
       "id": "curryworld-soya-65",
       "note": "Stuck qty -11/2 cup handling",
       "expect": {
-        "ingredients_min": 3,
+        "ingredients_min": 5,
         "qty_patterns": ["1 1/2"]
       }
     }

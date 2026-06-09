@@ -16,6 +16,9 @@ ALTER TABLE public.submitted_recipes ADD COLUMN IF NOT EXISTS imported_at       
 ALTER TABLE public.submitted_recipes ADD COLUMN IF NOT EXISTS procedure_rewritten     boolean DEFAULT false;
 ALTER TABLE public.submitted_recipes ADD COLUMN IF NOT EXISTS import_merge_mode       boolean DEFAULT false;
 ALTER TABLE public.submitted_recipes ADD COLUMN IF NOT EXISTS import_source_url       text;
+ALTER TABLE public.submitted_recipes ADD COLUMN IF NOT EXISTS import_path             text;
+ALTER TABLE public.submitted_recipes ADD COLUMN IF NOT EXISTS import_attribution_notice text;
+ALTER TABLE public.submitted_recipes ADD COLUMN IF NOT EXISTS import_page_title       text;
 
 COMMENT ON COLUMN public.submitted_recipes.import_paste_snapshot IS 'Structured paste text immediately after extract/parse pipeline';
 COMMENT ON COLUMN public.submitted_recipes.import_raw_article_text IS 'Truncated raw article text from URL fetch (first ~8000 chars)';

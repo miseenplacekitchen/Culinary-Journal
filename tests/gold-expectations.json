@@ -1,0 +1,30 @@
+{
+  "version": "2.3.0-checklist-complete",
+  "fixtures": {
+    "kothiyavunu-puttu-blob.txt": {
+      "ingredients_exact": 4,
+      "steps_exact": 9,
+      "ingredient_contains": ["Wheat Flour", "Coconut", "Water", "Salt"],
+      "step_starts_with": ["Dry roast", "Add salt", "Wet the flour", "Pulse", "Optional", "Fill", "Layer", "Steam", "Serve"],
+      "junk_steps": 0,
+      "auto_enrich": false,
+      "category_must_be": "Breads & Bakes",
+      "category_must_not": ["Ocean & River"],
+      "dietary_must_not": ["Gluten Free", "tag-gf"]
+    },
+    "rumali-roti-blob.txt": {
+      "ingredients_exact": 4,
+      "steps_exact": 5,
+      "ingredient_contains": ["Wheat flour", "Salt", "Oil", "Water"],
+      "junk_steps": 0,
+      "auto_enrich": false
+    },
+    "soya-65-blob.txt": {
+      "ingredients_min": 5,
+      "steps_min": 3,
+      "qty_patterns": ["1 1/2", "1½"],
+      "ingredient_contains": ["Soya", "Corn flour", "Yogurt"],
+      "junk_steps": 0
+    }
+  }
+}

@@ -7,8 +7,11 @@ const require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const Core = require('../lib/recipe-import-core.js');
 const Extract = require('../lib/recipe-import-extract.js');
+const Validate = require('../lib/recipe-import-validate.js');
 
 const registry = JSON.parse(readFileSync(join(__dirname, 'site-registry.json'), 'utf8'));
+const gold = JSON.parse(readFileSync(join(__dirname, 'gold-expectations.json'), 'utf8'));
+const wave1 = JSON.parse(readFileSync(join(__dirname, 'wave1-import-fixtures.json'), 'utf8'));
 const fixturesDir = join(__dirname, 'fixtures');
 
 let passed = 0;
@@ -23,6 +26,18 @@ function loadFixture(name) {
   const p = join(fixturesDir, name);
   if (!existsSync(p)) return null;
   return readFileSync(p, 'utf8');
+}
+
+function runGoldFixture(file, expect) {
+  const blob = loadFixture(file);
+  if (!blob) { assert(file + ': file exists', false); return; }
+  const seg = Core.segmentRecipeImportText(blob);
+  const result = Core.evaluateStructuralGold(seg, expect);
+  assert(file + ': structural gold pass', result.pass);
+  if (!result.pass) {
+    result.issues.forEach(function (issue) { console.error('       -', issue); });
+  }
+  assert(file + ': structural score >= 99', result.score >= 99);
 }
 
 function runBlobFixture(name, expect) {
@@ -42,35 +57,45 @@ function runBlobFixture(name, expect) {
   }
 }
 
-console.log('Import pipeline tests — Wave 1 + 2 + 3\n');
+console.log('Import pipeline tests — checklist complete\n');
 
-// Core version
-assert('parser version wave2+', Core.PARSER_VERSION.startsWith('2.'));
+assert('parser version 2.3+', Core.PARSER_VERSION.startsWith('2.3'));
+assert('extractor version 2.3+', Extract.EXTRACTOR_VERSION.startsWith('2.3'));
 
-// Site registry phase 1 fixtures
-Object.entries(registry.expectations || {}).forEach(function ([file, expect]) {
-  if (file.endsWith('.html')) return;
-  runBlobFixture(file, expect);
+// Gold structural tests (99% accuracy bar)
+Object.entries(gold.fixtures || {}).forEach(function ([file, expect]) {
+  runGoldFixture(file, expect);
 });
 
-// WPRM HTML fixture
-const wprmHtml = loadFixture('wprm-sample.html');
-if (wprmHtml) {
-  const wprmText = Extract.wprmHtmlToStructuredText(wprmHtml);
+// Wave 1 fixture registry (wired)
+(wave1.fixtures || []).forEach(function (fx) {
+  const file = fx.id === 'kothiyavunu-gothambu-puttu' ? 'kothiyavunu-puttu-blob.txt'
+    : fx.id === 'curryworld-rumali-roti' ? 'rumali-roti-blob.txt'
+    : fx.id === 'curryworld-soya-65' ? 'soya-65-blob.txt' : null;
+  if (file && fx.expect) runBlobFixture(file, fx.expect);
+});
+
+function runHtmlFixture(name, host, url, expect) {
+  const html = loadFixture(name);
+  if (!html) { assert(name + ': file exists', false); return; }
   const payload = Extract.buildImportPayload({
-    html: '<div class="entry-content">' + wprmHtml + '</div>',
-    host: 'vegrecipesofindia.com',
-    url: 'https://vegrecipesofindia.com/test/',
-    recipe: null,
-    pageTitle: 'Test',
+    html: html,
+    host: host,
+    url: url,
+    recipe: Extract.extractJsonLdRecipe(html),
+    pageTitle: 'Fixture',
     fetchStatus: 'ok'
   });
-  assert('wprm: structured text', /INGREDIENTS[\s\S]*flour/i.test(wprmText));
-  assert('wprm: payload extractor family', payload.extractor === 'wprm' || payload.ingCount >= 3);
-  assert('wprm: raw article preserved', (payload.import_raw_article_text || '').length > 20);
+  if (expect.extractor) assert(name + ': extractor ' + expect.extractor, payload.extractor === expect.extractor);
+  if (expect.ingredients_min != null) assert(name + ': ingredients_min', payload.ingCount >= expect.ingredients_min);
+  if (expect.steps_min != null) assert(name + ': steps_min', payload.methCount >= expect.steps_min);
+  assert(name + ': importQuality', payload.importQuality && payload.importQuality.confidence_score != null);
+  assert(name + ': attribution', payload.attribution && payload.attribution.source_url);
 }
 
-// JSON-LD merge (Rumali-style)
+runHtmlFixture('wprm-modern-live.html', 'vegrecipesofindia.com', 'https://vegrecipesofindia.com/masala-dosa/', registry.expectations['wprm-modern-live.html'] || {});
+runHtmlFixture('jsonld-commercial-sample.html', 'allrecipes.com', 'https://www.allrecipes.com/recipe/test/', registry.expectations['jsonld-commercial-sample.html'] || {});
+
 const rumaliBlob = loadFixture('rumali-roti-blob.txt');
 if (rumaliBlob) {
   const partial = {
@@ -89,14 +114,12 @@ if (rumaliBlob) {
   assert('rumali merge: mode', merged.mergeMode === true);
 }
 
-// Host registry coverage
-const hosts = ['kothiyavunu.com', 'vegrecipesofindia.com', 'allrecipes.com'];
+const hosts = ['kothiyavunu.com', 'vegrecipesofindia.com', 'allrecipes.com', '10.com.au', 'philly.com.au'];
 hosts.forEach(function (h) {
   const s = Extract.resolveHostStrategy(h);
   assert('host strategy ' + h, !!s.strategy);
 });
 
-// Enrich threshold 70
 const kothi = loadFixture('kothiyavunu-puttu-blob.txt');
 if (kothi) {
   const seg = Core.segmentRecipeImportText(kothi);
@@ -105,7 +128,6 @@ if (kothi) {
   assert('enrich min 70: puttu blocked', conf.allowEnrich === false);
 }
 
-// WP-raw live HTML fixture (Kothiyavunu — family probe, not per-recipe tuning)
 const kothiLiveHtml = loadFixture('kothiyavunu-puttu-live.html');
 if (kothiLiveHtml) {
   const payload = Extract.buildImportPayload({
@@ -116,17 +138,33 @@ if (kothiLiveHtml) {
     pageTitle: 'Gothambu Puttu Recipe',
     fetchStatus: 'ok'
   });
-  const exp = registry.expectations['kothiyavunu-puttu-blob.txt'] || {};
   assert('kothi live html: extractor wp-raw', payload.extractor === 'wp-raw');
-  assert('kothi live html: version 2.1+', (payload.extractorVersion || '').startsWith('2.1'));
-  if (exp.ingredients_min != null) assert('kothi live html: ingredients_min', payload.ingCount >= exp.ingredients_min);
-  if (exp.steps_min != null) assert('kothi live html: steps_min', payload.methCount >= exp.steps_min);
-  if (exp.steps_max != null) assert('kothi live html: steps_max', payload.methCount <= exp.steps_max);
+  assert('kothi live html: version 2.3+', (payload.extractorVersion || '').startsWith('2.3'));
+  assert('kothi live html: importQuality', payload.importQuality && payload.importQuality.review_required === true);
+  assert('kothi live html: ingredients_min', payload.ingCount >= 4);
+  assert('kothi live html: steps_min', payload.methCount >= 8);
+  assert('kothi live html: steps_max', payload.methCount <= 10);
   assert('kothi live html: no triple METHOD', (payload.articleText.match(/\nMETHOD/g) || []).length <= 2);
   assert('kothi live html: attribution url', payload.attribution && payload.attribution.source_url.includes('kothiyavunu'));
   assert('kothi live html: raw audit trail', (payload.import_raw_article_text || '').length > 100);
-  const conf = Core.computeImportConfidence(payload.ingCount, Core.segmentRecipeImportText(payload.articleText).method);
-  if (exp.auto_enrich === false) assert('kothi live html: enrich gated', conf.allowEnrich === false);
+}
+
+// Social / structure checks
+assert('looksLikeStructuredRecipe needs ing+steps', Core.looksLikeStructuredRecipe('1 cup flour\n2 tsp salt\n3. Mix\n4. Bake') === true);
+assert('looksLikeStructuredRecipe rejects qty-only', Core.looksLikeStructuredRecipe('1 cup flour\n2 tsp salt\n3 tbsp oil') === false);
+assert('splitBundledCaption adds sections', /\nINGREDIENTS\n/.test(Core.splitBundledCaption('Ingredients: flour Method: 1. Mix 2. Bake')));
+
+// Validation helpers
+assert('dietary: GF+wheat blocked', Validate.dietaryContradictions(['Wheat flour', 'Salt'], ['tag-gf']).length === 1);
+assert('dietary: vegan+chicken blocked', Validate.dietaryContradictions(['Chicken'], ['tag-vegan']).length === 1);
+assert('category: puttu not ocean', Validate.categoryContradictsTitle('Ocean & River', 'Gothambu Puttu Recipe') !== null);
+
+// Category inference from core
+if (kothi) {
+  const seg = Core.segmentRecipeImportText(kothi);
+  const cat = Core.inferRecipeCategoryFromBlob(seg.title, seg.ingredients);
+  assert('puttu category Breads & Bakes', cat === 'Breads & Bakes');
+  assert('puttu not Ocean & River', cat !== 'Ocean & River');
 }
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');

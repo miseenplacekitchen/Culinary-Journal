@@ -1,24 +1,44 @@
 {
-  "version": "3.1.0-wp-raw-extract",
+  "version": "2.3.0-checklist-complete",
   "phases": {
     "phase1_wp_raw": {
       "label": "Kerala / South Indian WP raw",
       "sites": [
         { "id": "curryworld", "host": "curryworld.me", "strategy": "wp-raw", "fixture": "rumali-roti-blob.txt", "notes": "JSON-LD partial — merge mode" },
         { "id": "kothiyavunu", "host": "kothiyavunu.com", "strategy": "wp-raw", "fixture": "kothiyavunu-puttu-blob.txt", "notes": "Inline colon-blob" },
-        { "id": "malayali", "host": "malayali.me", "strategy": "wp-raw" },
-        { "id": "villagecookingkerala", "host": "villagecookingkerala.com", "strategy": "wp-raw" },
-        { "id": "sandhyahariharan", "host": "sandhyahariharan.co.uk", "strategy": "wp-raw" }
+        { "id": "malayali", "host": "malayali.me", "strategy": "wp-raw", "fallback": "paste" },
+        { "id": "villagecookingkerala", "host": "villagecookingkerala.com", "strategy": "wp-raw", "fallback": "paste" },
+        { "id": "sandhyahariharan", "host": "sandhyahariharan.co.uk", "strategy": "wp-raw", "fallback": "paste" }
       ]
     },
     "phase2_wprm": {
-      "label": "WP + recipe plugin",
+      "label": "WP + recipe plugin (WPRM / Tasty)",
       "sites": [
-        { "id": "vegrecipesofindia", "host": "vegrecipesofindia.com", "strategy": "wprm", "fixture": "wprm-sample.html" },
-        { "id": "yummytummyaarthi", "host": "yummytummyaarthi.com", "strategy": "wprm" },
-        { "id": "mariasmenu", "host": "mariasmenu.com", "strategy": "wprm" },
-        { "id": "saffrontrail", "host": "saffrontrail.com", "strategy": "wprm" },
-        { "id": "mykoreankitchen", "host": "mykoreankitchen.com", "strategy": "wprm" }
+        { "id": "vegrecipesofindia", "host": "vegrecipesofindia.com", "strategy": "wprm", "fixture": "wprm-modern-live.html", "fallback": "paste" },
+        { "id": "yummytummyaarthi", "host": "yummytummyaarthi.com", "strategy": "wprm", "fallback": "paste" },
+        { "id": "mariasmenu", "host": "mariasmenu.com", "strategy": "wprm", "fallback": "paste" },
+        { "id": "saffrontrail", "host": "saffrontrail.com", "strategy": "wprm", "fallback": "paste" },
+        { "id": "mykoreankitchen", "host": "mykoreankitchen.com", "strategy": "wprm", "fallback": "paste" }
+      ]
+    },
+    "phase3_jsonld": {
+      "label": "JSON-LD commercial / schema-first",
+      "sites": [
+        { "id": "allrecipes", "host": "allrecipes.com", "strategy": "jsonld-first", "fixture": "jsonld-commercial-sample.html", "notes": "Bot-blocked live fetch — paste fallback", "fallback": "paste" },
+        { "id": "taste", "host": "taste.com.au", "strategy": "jsonld-first", "fallback": "paste" },
+        { "id": "coles", "host": "coles.com.au", "strategy": "jsonld-first", "fallback": "paste" },
+        { "id": "woolworths", "host": "woolworths.com.au", "strategy": "jsonld-first", "fallback": "paste" },
+        { "id": "nilgiris", "host": "nilgiris.com.au", "strategy": "jsonld-first", "fallback": "paste" }
+      ]
+    },
+    "phase4_magazine": {
+      "label": "Magazine / mixed",
+      "sites": [
+        { "id": "kevinandamanda", "host": "kevinandamanda.com", "strategy": "jsonld-first", "fallback": "paste" },
+        { "id": "thewanderlustkitchen", "host": "thewanderlustkitchen.com", "strategy": "jsonld-first", "fallback": "paste" },
+        { "id": "masterchef", "host": "10.com.au", "strategy": "jsonld-first", "notes": "JS-heavy — often paste", "fallback": "paste" },
+        { "id": "philly", "host": "philly.com.au", "strategy": "jsonld-first", "fallback": "paste" },
+        { "id": "yummyntasty", "host": "yummyntasty.com", "strategy": "wp-raw", "fallback": "paste" }
       ]
     }
   },
@@ -32,8 +52,8 @@
       "dietary_must_not": ["Gluten Free"]
     },
     "rumali-roti-blob.txt": {
-      "ingredients_min": 3,
-      "steps_min": 3,
+      "ingredients_min": 4,
+      "steps_min": 5,
       "merge_mode": true
     },
     "wprm-sample.html": {
@@ -41,8 +61,18 @@
       "steps_min": 3,
       "extractor": "wprm"
     },
+    "wprm-modern-live.html": {
+      "ingredients_min": 4,
+      "steps_min": 5,
+      "extractor": "wprm"
+    },
+    "jsonld-commercial-sample.html": {
+      "ingredients_min": 6,
+      "steps_min": 5,
+      "extractor": "jsonld"
+    },
     "soya-65-blob.txt": {
-      "ingredients_min": 3,
+      "ingredients_min": 5,
       "qty_patterns": ["1 1/2", "1½"]
     }
   }
