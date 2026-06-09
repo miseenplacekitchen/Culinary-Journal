@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hero caption calibration — real JS + your theme</title>
+  <link rel="stylesheet" href="../style.css">
+  <script src="../theme-init.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: var(--bg); color: var(--text-high); }
+    h1 { font-size: 1.1rem; font-weight: 600; margin: 0 0 8px; }
+    p { font-size: 13px; color: var(--text-mid); max-width: 720px; line-height: 1.55; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 16px 0 20px; }
+    .toolbar label { font-size: 12px; display: flex; align-items: center; gap: 6px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+    .card h2 { font-size: 11px; font-weight: 600; margin: 10px 0 4px; word-break: break-all; }
+    .meta { font-size: 10px; color: var(--text-mid); line-height: 1.45; font-family: monospace; }
+    .sr-img-hero-frame { display: flex; justify-content: center; padding: 4px 0; }
+    .sr-img-hero-ring-wrap { position: relative; width: 200px; aspect-ratio: 1; }
+    .sr-img-hero-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
+    .sr-img-hero-ring-stroke { fill: none; stroke: var(--accent); stroke-width: 3; }
+    .sr-img-hero-ring .rh-ring-text { font-family: Cinzel, serif; font-size: 13px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.5px; }
+    .sr-img-hero-ring .rh-at { text-transform: none; font-family: Georgia, serif; }
+    .sr-img-hero-circle { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 80%; height: 80%; border-radius: 50%; overflow: hidden; z-index: 1; background: #fff; border: 3px solid var(--accent); }
+    .sr-img-hero-img { position: absolute; left: 50%; top: 50%; max-width: none; display: block; transform: translate(-50%,-50%); min-width: 100%; min-height: 100%; object-fit: cover; }
+  </style>
+</head>
+<body class="theme-dark-obsidian">
+  <h1>Hero caption calibration</h1>
+  <p>Uses the real <code>recipe-hero-labels.js</code> on your theme. Drop the same photos you uploaded — each card shows which theme-tinted colour was chosen for brand vs @username, and why (spread / median).</p>
+  <div class="toolbar">
+    <label>Theme
+      <select id="themePick">
+        <option value="theme-dark-obsidian" selected>Dark Obsidian</option>
+        <option value="theme-midnight-slate">Midnight Slate</option>
+        <option value="theme-spring-blossom">Spring Blossom</option>
+        <option value="theme-dark-forest">Dark Forest</option>
+      </select>
+    </label>
+    <label><input type="file" id="filePick" accept="image/*" multiple> Add photos</label>
+  </div>
+  <div class="grid" id="grid"></div>
+  <script src="../lib/recipe-hero-labels.js?v=cal"></script>
+  <script>
+    var THEMES = ['theme-dark-obsidian','theme-midnight-slate','theme-spring-blossom','theme-dark-forest'];
+    document.getElementById('themePick').onchange = function() {
+      THEMES.forEach(function(t){ document.body.classList.remove(t); });
+      document.body.classList.add(this.value);
+      document.querySelectorAll('.card').forEach(function(card) {
+        var wrap = card.querySelector('.sr-img-hero-ring-wrap');
+        if (wrap) RecipeHeroLabels.render(wrap, { handle: '@miseenplacekitchen' });
+        updateMeta(card, wrap);
+      });
+    };
+
+    function arcStats(wrap) {
+      var img = wrap.querySelector('.sr-img-hero-img');
+      if (!img || !img.naturalWidth) return null;
+      var colours = (function(){
+        var style = getComputedStyle(document.body);
+        return {
+          ring: style.getPropertyValue('--accent'),
+          onLight: style.getPropertyValue('--ring-caption-on-light'),
+          onDark: style.getPropertyValue('--ring-caption-on-dark')
+        };
+      })();
+      return { colours: colours };
+    }
+
+    function updateMeta(card, wrap) {
+      var meta = card.querySelector('.meta');
+      var brand = wrap.querySelector('.rh-ring-brand');
+      var handle = wrap.querySelector('.rh-ring-handle');
+      if (!meta || !brand) return;
+      meta.innerHTML =
+        'Brand fill: <span style="color:' + brand.getAttribute('fill') + '">' + (brand.getAttribute('fill') || '?') + '</span><br>' +
+        'User fill: <span style="color:' + (handle && handle.getAttribute('fill')) + '">' + ((handle && handle.getAttribute('fill')) || '?') + '</span><br>' +
+        'Ring: ' + (getComputedStyle(document.body).getPropertyValue('--accent') || '').trim();
+    }
+
+    function makeCard(file) {
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML =
+        '<div class="sr-img-hero-frame"><div class="sr-img-hero-ring-wrap">' +
+        '<svg class="sr-img-hero-ring" viewBox="0 0 420 420" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">' +
+        '<circle class="sr-img-hero-ring-stroke" cx="210" cy="210" r="168"/>' +
+        '<defs><path id="sr-ring-arc-brand" fill="none"/><path id="sr-ring-arc-handle" fill="none"/></defs>' +
+        '<text class="rh-ring-text rh-ring-brand"><textPath href="#sr-ring-arc-brand">THE CULINARY JOURNAL</textPath></text>' +
+        '<text class="rh-ring-text rh-ring-handle"><textPath href="#sr-ring-arc-handle">@MISEENPLACEKITCHEN</textPath></text>' +
+        '</svg>' +
+        '<div class="sr-img-hero-circle"><img class="sr-img-hero-img" alt=""></div></div></div>' +
+        '<h2>' + file.name + '</h2><div class="meta">Loading…</div>';
+      var grid = document.getElementById('grid');
+      grid.prepend(card);
+      var wrap = card.querySelector('.sr-img-hero-ring-wrap');
+      var img = card.querySelector('.sr-img-hero-img');
+      img.onload = function() {
+        RecipeHeroLabels.render(wrap, { handle: '@miseenplacekitchen' });
+        updateMeta(card, wrap);
+      };
+      img.src = URL.createObjectURL(file);
+    }
+
+    document.getElementById('filePick').onchange = function(e) {
+      Array.prototype.forEach.call(e.target.files || [], makeCard);
+      e.target.value = '';
+    };
+  </script>
+</body>
+</html>
