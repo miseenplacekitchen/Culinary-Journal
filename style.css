@@ -70,8 +70,8 @@ body {
   --success: #4caf76;  --success-bg: rgba(76, 175, 118, 0.12);
   --info:    #5B8FD4;
   /* Ring hero captions — on-theme dark/light variants (v7 principle) */
-  --ring-caption-on-light: hsl(from var(--accent) h s calc(l * 0.40));
-  --ring-caption-on-dark:  hsl(from var(--accent) h calc(s * 0.28) 93%);
+  --ring-caption-on-light: hsl(from var(--accent) h calc(s * 1.08) calc(l * 0.30));
+  --ring-caption-on-dark:  hsl(from var(--accent) h calc(s * 0.38) 96%);
 }
 
 /* Midnight Slate — default theme, also selectable explicitly */
