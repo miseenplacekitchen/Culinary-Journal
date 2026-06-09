@@ -1086,11 +1086,10 @@
     <div class="sr-msg" id="sr-msg"></div>
 
     <div class="sr-draft-prompt" id="draft-restore-prompt">
-      <span>Unsaved draft found: <strong id="draft-restore-name">Untitled</strong></span>
+      <span>Saved draft: <strong id="draft-restore-name">Untitled</strong></span>
       <div class="sr-draft-prompt-actions">
-        <button type="button" onclick="confirmRestoreDraft()">Continue draft</button>
-        <button type="button" onclick="recoverDraftBackup()">Recover backup</button>
-        <button type="button" onclick="discardDraftAndStartFresh()">Start fresh</button>
+        <button type="button" onclick="confirmRestoreDraft()">Continue editing</button>
+        <button type="button" onclick="dismissDraftOfferStartFresh()">Start a new recipe</button>
       </div>
     </div>
 
@@ -1959,8 +1958,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     const boot = await bootstrapDraftOnLoad();
     if (!boot.loaded) {
       addDefaultSubmitSections();
-    } else if (boot.name) {
-      showMsg('Draft restored: ' + boot.name, 'success');
+      await maybeOfferDraftRestore();
+    } else if (boot.fromNamedDraft && boot.name) {
+      showMsg('Draft loaded: ' + boot.name, 'success');
+      const prompt = document.getElementById('draft-restore-prompt');
+      if (prompt) prompt.style.display = 'none';
+    } else {
       const prompt = document.getElementById('draft-restore-prompt');
       if (prompt) prompt.style.display = 'none';
     }
@@ -1975,7 +1978,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   try { initRecipePhotoEditor(); } catch(e) { console.error(e); }
   try { updateImgRingHandle(); } catch(e) { console.error(e); }
   try { setupSourceToggle(); } catch(e) { console.error(e); }
-  try { setupAutoSave(); } catch(e) { console.error(e); }
   try { updatePasteCounter(); updateIntroCounter(); } catch(e) { console.error(e); }
   try {
     var urlInput = document.getElementById('source-url-input');
@@ -4901,24 +4903,25 @@ function clearImportUiState() {
   if (typeof TcjImportAudit !== 'undefined') TcjImportAudit.reset();
 }
 
-async function deleteDraftsFromDb() {
+async function deleteAutosaveDraftFromDb() {
   if (!session || !session.access_token || !session.user || !session.user.id) return;
   try {
-    await fetch(SUPABASE_URL + '/rest/v1/recipe_drafts?user_id=eq.' + encodeURIComponent(session.user.id), {
-      method: 'DELETE',
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token }
-    });
+    await fetch(
+      SUPABASE_URL + '/rest/v1/recipe_drafts?user_id=eq.' + encodeURIComponent(session.user.id) +
+      '&local_key=eq.' + encodeURIComponent(DRAFT_KEY),
+      { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token } }
+    );
   } catch(_) {}
   _draftDbId = null;
 }
 
 function performStartFresh() {
   _draftRestoring = true;
-  clearTimeout(_autoSaveTimer);
   clearTimeout(_draftSyncTimer);
   try { lsRemove(DRAFT_BACKUP_KEY); } catch(_) {}
-  clearDraftStorage();
-  deleteDraftsFromDb();
+  try { lsRemove(DRAFT_KEY); } catch(_) {}
+  deleteAutosaveDraftFromDb();
+  window._activeDraftId = null;
   hideVideoRecipeHelp();
   var draftPrompt = document.getElementById('draft-restore-prompt');
   if (draftPrompt) draftPrompt.style.display = 'none';
@@ -4929,7 +4932,7 @@ function performStartFresh() {
 }
 
 function startFreshImport() {
-  if (!confirm('Discard the saved draft and start with a blank form? This cannot be undone unless you still have a backup.')) return;
+  if (!confirm('Clear this form and start a new recipe? Your saved drafts in My Recipes & Drafts are not deleted.')) return;
   performStartFresh();
   showMsg('Form cleared — paste or import a new recipe.', 'info');
 }
@@ -6509,7 +6512,6 @@ function rewriteProcedure() {
   if (typeof TcjImportAudit !== 'undefined') TcjImportAudit.markProcedureRewritten();
   var procSec = document.getElementById('section-procedure');
   if (procSec) setTimeout(function() { procSec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300);
-  try { saveDraft(); } catch(_) {}
 }
 
 function undoProcedureRewrite() {
@@ -6523,7 +6525,6 @@ function undoProcedureRewrite() {
   if (undoBtn) undoBtn.style.display = 'none';
   if (typeof TcjImportAudit !== 'undefined') TcjImportAudit.clearProcedureRewritten();
   showRewriteResult('Restored procedure steps from before the rewrite.', true);
-  try { saveDraft(); } catch(_) {}
 }
 
 var GOOGLE_AI_MODE_RECIPE_PROMPT = [
@@ -6791,7 +6792,6 @@ function makeSortable(container, childSelector, onDrop) {
       dragEl = null;
     }
     if (onDrop) onDrop(container);
-    try { saveDraft(); } catch(_) {}
   });
 }
 
@@ -7707,18 +7707,6 @@ async function loadNamedDraftFromDbByLocalKey(localId) {
 async function restoreDraftById(draftId) {
   if (!draftId) return false;
   _draftRestoring = true;
-  if (draftId === 'autosave') {
-    const raw = lsGet(DRAFT_KEY);
-    if (raw) {
-      try {
-        if (draftHasContent(JSON.parse(raw))) {
-          restoreDraft(raw);
-          return true;
-        }
-      } catch(_) {}
-    }
-    return await loadLatestFromDb();
-  }
   const localKey = 'tcj_draft_' + draftId;
   const localRaw = lsGet(localKey);
   if (localRaw) {
@@ -7729,42 +7717,6 @@ async function restoreDraftById(draftId) {
   }
   if (await loadNamedDraftFromDbByLocalKey(draftId)) return true;
   return await loadFromDb(draftId);
-}
-
-async function restoreBestAvailableDraft() {
-  const raw = lsGet(DRAFT_KEY);
-  if (raw) {
-    try {
-      const d = JSON.parse(raw);
-      if (draftHasContent(d)) {
-        restoreDraft(raw);
-        return { name: d.recipe_name || 'Untitled' };
-      }
-    } catch(_) {}
-  }
-  const backup = lsGet(DRAFT_BACKUP_KEY);
-  if (backup) {
-    try {
-      const d = JSON.parse(backup);
-      if (draftHasContent(d)) {
-        restoreDraft(backup);
-        lsSet(DRAFT_KEY, backup);
-        return { name: (d.recipe_name || 'Untitled') + ' (from backup)' };
-      }
-    } catch(_) {}
-  }
-  if (session && session.access_token) {
-    const loaded = await loadLatestFromDb();
-    if (loaded) {
-      try {
-        const d = JSON.parse(lsGet(DRAFT_KEY) || 'null');
-        return { name: (d && d.recipe_name) || 'Untitled' };
-      } catch(_) {
-        return { name: 'Untitled' };
-      }
-    }
-  }
-  return null;
 }
 
 async function bootstrapDraftOnLoad() {
@@ -7780,18 +7732,17 @@ async function bootstrapDraftOnLoad() {
   }
   const draftId = urlParams.get('draft');
   if (draftId) {
+    window._activeDraftId = draftId;
     const ok = await restoreDraftById(draftId);
     if (ok) {
       try {
-        const d = JSON.parse(lsGet('tcj_draft_' + draftId) || lsGet(DRAFT_KEY) || 'null');
-        return { loaded: true, name: (d && d.recipe_name) || 'Untitled' };
+        const d = JSON.parse(lsGet('tcj_draft_' + draftId) || 'null');
+        return { loaded: true, name: (d && d.recipe_name) || 'Untitled', fromNamedDraft: true };
       } catch(_) {
-        return { loaded: true, name: 'Untitled' };
+        return { loaded: true, name: 'Untitled', fromNamedDraft: true };
       }
     }
   }
-  const restored = await restoreBestAvailableDraft();
-  if (restored) return { loaded: true, name: restored.name };
   return { loaded: false, name: '' };
 }
 
@@ -8008,43 +7959,27 @@ function restoreDraft(raw) {
 
 // ── DRAFT SAVE / LOAD (Supabase-backed) ─────────────────────────────────────
 //
-// Source of truth:  Supabase recipe_drafts table (survives code changes)
-// Fast local cache: localStorage DRAFT_KEY (instant saves, works offline)
-//
-// Auto-save writes localStorage immediately, then syncs to Supabase
-// every 30 seconds.  Page load checks Supabase first, falls back to
-// localStorage only if the DB has nothing for this user.
-// Auto-save is paused until after the restore is complete.
+// Drafts are saved only when the contributor clicks Save Draft (saveNamedDraft).
+// Nothing is written to storage while typing. Page load never auto-restores work;
+// named drafts load only via ?draft= or the continue-editing prompt.
 
-var _draftRestoring = false;   // blocks auto-save during restore
-var _draftDbId      = null;    // Supabase row id for the current draft
+var _draftRestoring = false;
+var _draftDbId      = null;
 var _draftSyncTimer = null;
+var _offeredDraftId = null;
 
-// ── Save ──────────────────────────────────────────────────────────────────────
+// ── Save (explicit only — called from saveNamedDraft) ─────────────────────────
 function saveDraft() {
-  if (_draftRestoring) return;   // never overwrite during restore
+  if (_draftRestoring) return;
   let data;
   try { data = collectFormData(); } catch(_) { return; }
-
-  var existing = null;
-  try { existing = JSON.parse(lsGet(DRAFT_KEY) || 'null'); } catch(_) {}
-  if (existing && draftHasContent(existing)) {
-    var newScore = draftRichnessScore(data);
-    var oldScore = draftRichnessScore(existing);
-    if (newScore < oldScore * 0.45 && oldScore >= 12) return;
-  }
+  data.explicit_save = true;
 
   backupDraftBeforeWrite(DRAFT_KEY);
   if (window._activeDraftId) backupDraftBeforeWrite('tcj_draft_' + window._activeDraftId);
 
-  // 1. Write to localStorage immediately (zero latency)
   lsSet(DRAFT_KEY, JSON.stringify(data));
   if (window._activeDraftId) lsSet('tcj_draft_' + window._activeDraftId, JSON.stringify(data));
-  updateAutoSaveMsg();
-
-  // 2. Sync to Supabase (debounced, every 30 s at most)
-  clearTimeout(_draftSyncTimer);
-  _draftSyncTimer = setTimeout(syncDraftToDb, 30000);
 }
 
 async function syncDraftToDb(force) {
@@ -8095,27 +8030,6 @@ async function syncDraftToDb(force) {
   } catch(_) {}   // silent — local save already done
 }
 
-function updateAutoSaveMsg() {
-  const el = document.getElementById('auto-save-msg');
-  if (el) el.textContent = 'Draft saved ' + new Date().toLocaleTimeString();
-}
-
-function setupAutoSave() {
-  // Attach to all fields AFTER page is ready
-  // (new ingredient/method rows attach via event delegation on their containers)
-  document.addEventListener('input',  onFormActivity);
-  document.addEventListener('change', onFormActivity);
-}
-
-var _autoSaveTimer = null;
-function onFormActivity(e) {
-  if (_draftRestoring) return;
-  const tag = e.target && e.target.tagName;
-  if (!tag || !['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
-  clearTimeout(_autoSaveTimer);
-  _autoSaveTimer = setTimeout(saveDraft, 2000);
-}
-
 function draftHasContent(d) {
   if (!d) return false;
   if (d.recipe_name && d.recipe_name.trim()) return true;
@@ -8141,64 +8055,72 @@ function clearDraftStorage() {
 
 async function maybeOfferDraftRestore() {
   const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('new') === '1') {
-    clearDraftStorage();
-    return;
-  }
+  if (urlParams.get('new') === '1' || urlParams.get('draft')) return;
+
+  _offeredDraftId = null;
   let draftName = '';
-  let hasDraft = false;
+
   try {
-    const raw = lsGet(DRAFT_KEY);
-    if (raw) {
-      const d = JSON.parse(raw);
-      if (draftHasContent(d)) {
-        hasDraft = true;
-        draftName = d.recipe_name || 'Untitled';
-      }
+    const index = JSON.parse(lsGet(DRAFTS_INDEX_KEY) || '[]');
+    if (index.length) {
+      _offeredDraftId = index[0].id;
+      draftName = index[0].recipe_name || 'Untitled';
     }
   } catch(_) {}
-  if (!hasDraft) {
-    try {
-      const backup = lsGet(DRAFT_BACKUP_KEY);
-      if (backup && draftHasContent(JSON.parse(backup))) {
-        hasDraft = true;
-        draftName = (JSON.parse(backup).recipe_name || 'Untitled') + ' (backup)';
-      }
-    } catch(_) {}
-  }
-  if (!hasDraft && session && session.access_token) {
+
+  if (!_offeredDraftId && session && session.access_token) {
     try {
       const res = await fetch(
-        SUPABASE_URL + '/rest/v1/recipe_drafts?select=id,draft_data&order=updated_at.desc&limit=1',
+        SUPABASE_URL + '/rest/v1/recipe_drafts?user_id=eq.' + encodeURIComponent(session.user.id) +
+        '&local_key=like.tcj_draft_*&order=updated_at.desc&limit=1&select=id,draft_data,local_key',
         { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token } }
       );
       if (res.ok) {
         const rows = await res.json();
         if (rows && rows[0] && draftHasContent(rows[0].draft_data)) {
-          hasDraft = true;
-          draftName = (rows[0].draft_data && rows[0].draft_data.recipe_name) || 'Untitled';
+          const key = rows[0].local_key || '';
+          const id = key.replace(/^tcj_draft_/, '');
+          if (id) {
+            _offeredDraftId = id;
+            draftName = (rows[0].draft_data && rows[0].draft_data.recipe_name) || 'Untitled';
+            lsSet('tcj_draft_' + id, JSON.stringify(rows[0].draft_data));
+            _draftDbId = rows[0].id;
+          }
         }
       }
     } catch(_) {}
   }
-  if (hasDraft) {
-    const el = document.getElementById('draft-restore-prompt');
-    const nameEl = document.getElementById('draft-restore-name');
-    if (nameEl) nameEl.textContent = draftName;
-    if (el) el.style.display = 'flex';
-    return;
+
+  if (!_offeredDraftId || !draftName) return;
+
+  const el = document.getElementById('draft-restore-prompt');
+  const nameEl = document.getElementById('draft-restore-name');
+  if (nameEl) nameEl.textContent = draftName;
+  if (el) el.style.display = 'flex';
+}
+
+async function confirmRestoreDraft() {
+  const el = document.getElementById('draft-restore-prompt');
+  if (el) el.style.display = 'none';
+  if (!_offeredDraftId) return;
+  window._activeDraftId = _offeredDraftId;
+  _draftRestoring = true;
+  const ok = await restoreDraftById(_offeredDraftId);
+  finishDraftRestoreWindow();
+  if (ok) {
+    const d = JSON.parse(lsGet('tcj_draft_' + _offeredDraftId) || 'null');
+    showMsg('Draft loaded: ' + ((d && d.recipe_name) || 'Untitled'), 'success');
+    const url = new URL(window.location.href);
+    url.searchParams.set('draft', _offeredDraftId);
+    window.history.replaceState({}, '', url.toString());
   }
 }
 
-function confirmRestoreDraft() {
+function dismissDraftOfferStartFresh() {
   const el = document.getElementById('draft-restore-prompt');
   if (el) el.style.display = 'none';
-  loadDraftSilent();
-}
-
-function discardDraftAndStartFresh() {
-  if (!confirm('Discard the saved draft and start with a blank form? This cannot be undone unless you still have a backup.')) return;
-  performStartFresh();
+  _offeredDraftId = null;
+  addDefaultSubmitSections();
 }
 
 function resetSubmitFormBasics() {
@@ -8229,31 +8151,6 @@ function resetSubmitFormBasics() {
 }
 
 // ── Load ──────────────────────────────────────────────────────────────────────
-async function loadDraftSilent() {
-  _draftRestoring = true;
-  try {
-    const urlParams = new URLSearchParams(window.location.search);
-    const draftId = urlParams.get('draft');
-    if (draftId) {
-      if (await restoreDraftById(draftId)) return;
-    }
-    if (session && session.access_token) {
-      const loaded = await loadLatestFromDb();
-      if (loaded) return;
-    }
-    const raw = lsGet(DRAFT_KEY);
-    if (raw) restoreDraft(raw);
-    else recoverDraftBackup(true);
-  } catch(e) {
-    try {
-      const raw = lsGet(DRAFT_KEY);
-      if (raw) restoreDraft(raw);
-      else recoverDraftBackup(true);
-    } catch(_) {}
-  } finally {
-    finishDraftRestoreWindow();
-  }
-}
 
 async function loadFromDb(draftId) {
   try {
@@ -8266,28 +8163,6 @@ async function loadFromDb(draftId) {
     if (!rows || !rows.length) return false;
     _draftDbId = rows[0].id;
     restoreDraft(JSON.stringify(rows[0].draft_data));
-    return true;
-  } catch(_) { return false; }
-}
-
-async function loadLatestFromDb() {
-  try {
-    const res = await fetch(
-      SUPABASE_URL + '/rest/v1/recipe_drafts?user_id=eq.' + session.user.id +
-      '&order=updated_at.desc&limit=1&select=id,draft_data,local_key',
-      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token } }
-    );
-    if (!res.ok) return false;
-    const rows = await res.json();
-    if (!rows || !rows.length || !draftHasContent(rows[0].draft_data)) return false;
-    _draftDbId = rows[0].id;
-    const payload = JSON.stringify(rows[0].draft_data);
-    restoreDraft(payload);
-    lsSet(DRAFT_KEY, payload);
-    if (rows[0].local_key && String(rows[0].local_key).indexOf('tcj_draft_') === 0) {
-      lsSet(rows[0].local_key, payload);
-      window._activeDraftId = rows[0].local_key.replace(/^tcj_draft_/, '');
-    }
     return true;
   } catch(_) { return false; }
 }
@@ -8308,8 +8183,6 @@ async function loadDbDraftId(localId) {
 }
 
 
-
-// setupAutoSave() — handled by event delegation above
 
 // ── SESSION REFRESH ───────────────────────────────────────────────────────────
 async function refreshSessionIfNeeded() {
@@ -8401,8 +8274,7 @@ async function submitRecipe() {
 
   const sessionOk = await refreshSessionIfNeeded();
   if (!sessionOk) {
-    showMsg('Your session has expired. Please sign out and sign in again — your draft has been saved.', 'error');
-    saveDraft();
+    showMsg('Your session has expired. Please sign out and sign in again, then click Save Draft to keep your work.', 'error');
     btn.disabled = false;
     btn.textContent = 'Submit for Review';
     return;
@@ -8469,8 +8341,7 @@ async function submitRecipe() {
       throw new Error(res.status + ': ' + errMsg);
     }
   } catch(e) {
-    showMsg('Unable to submit — ' + (e.message || 'unknown error') + '. Your draft has been saved.', 'error');
-    saveDraft();
+    showMsg('Unable to submit — ' + (e.message || 'unknown error') + '. Click Save Draft to keep your work.', 'error');
     btn.disabled = false;
     btn.textContent = 'Submit for Review';
   }
@@ -9052,6 +8923,7 @@ function toggleAllSections() {
 async function saveNamedDraft(showToast) {
   let data;
   try { data = collectFormData(); } catch(_) { return; }
+  data.explicit_save = true;
 
   // Generate an ID for this named draft if we don't have one
   if (!window._activeDraftId) {
@@ -9088,7 +8960,6 @@ async function saveNamedDraft(showToast) {
   url.searchParams.set('draft', draftId);
   window.history.replaceState({}, '', url.toString());
 
-  updateAutoSaveMsg();
   if (showToast) {
     showMsg('\u2713 Draft saved. Returning to your drafts…', 'success');
     setTimeout(function() { window.location.href = 'draft-recipes.html'; }, 1200);
@@ -9097,12 +8968,9 @@ async function saveNamedDraft(showToast) {
 
 // ── CANCEL SUBMISSION ──────────────────────────────────────────────────────
 async function cancelSubmission() {
-  const confirmed = confirm(
-    'Cancel this recipe?\n\n' +
-    'Your draft will be saved automatically so you can come back to it later.'
-  );
-  if (!confirmed) return;
-  try { await saveNamedDraft(false); } catch(_) {}
+  if (confirm('Save this recipe as a draft before leaving?')) {
+    try { await saveNamedDraft(false); } catch(_) {}
+  }
   window.location.href = 'draft-recipes.html';
 }
 
