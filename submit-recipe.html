@@ -18,7 +18,7 @@
   <script src="lib/import-audit.js"></script>
   <script src="lib/recipe-import-validate.js"></script>
   <script src="lib/recipe-import-paths.js"></script>
-  <script src="lib/recipe-hero-labels.js?v=20260613"></script>
+  <script src="lib/recipe-hero-labels.js?v=20260614"></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -695,8 +695,6 @@
       font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
       font-size: var(--rh-font, 15px);
       font-style: italic; font-weight: 400; letter-spacing: 0.03em;
-      stroke: rgba(255,255,255,0.92); stroke-width: 2.5px; paint-order: stroke fill;
-      filter: drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 1px 3px rgba(0,0,0,0.45));
     }
     .sr-img-hero-circle {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -707,7 +705,7 @@
     .sr-img-hero-img {
       position: absolute; left: 50%; top: 50%; max-width: none; display: block;
       user-select: none; pointer-events: none;
-      image-rendering: high-quality;
+      backface-visibility: hidden;
     }
     #img-drag-overlay {
       position: absolute; inset: 0; cursor: grab; z-index: 3; border-radius: 50%;
