@@ -1348,15 +1348,19 @@
               <select class="sr-input" id="sr-subcategory" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high);font-family:'DM Sans',sans-serif;font-size:13px">
                 <option value="">— None —</option>
               </select>
+              <input type="text" id="sr-subcategory-custom" class="sr-input" maxlength="80" placeholder="Suggest a sub-category (e.g. Mutton)" style="display:none;margin-top:8px;width:100%;box-sizing:border-box">
             </div>
             <div>
               <label class="sr-label">Division <span style="font-weight:400;color:var(--text-mid)">(optional)</span></label>
               <select class="sr-input" id="sr-division" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text-high);font-family:'DM Sans',sans-serif;font-size:13px">
                 <option value="">— None —</option>
               </select>
+              <input type="text" id="sr-division-custom" class="sr-input" maxlength="80" placeholder="Suggest a division (e.g. Mutton Biryani)" style="display:none;margin-top:8px;width:100%;box-sizing:border-box">
             </div>
           </div>
-          <div class="sr-hint" style="margin-top:8px"><span class="sr-i">i</span> Sub-categories and divisions help members browse within a category. Admin manages these under Recipe Management → Sub-cats &amp; Divisions.</div>
+          <div class="sr-hint" id="sr-category-taxonomy-tip" style="display:none;margin-top:8px"></div>
+          <div class="sr-hint" style="margin-top:8px"><span class="sr-i">i</span> Pick from the list or choose <strong>Other / suggest…</strong> to propose a new sub-category or division — admin will review on approval.</div>
+          <div class="sr-hint" id="sr-taxonomy-suggest-badge" style="display:none;margin-top:6px;color:#e09955"><span class="sr-i">i</span> New taxonomy suggestion — saved with your recipe for admin review.</div>
         </div>
 
       </div>
@@ -5334,6 +5338,8 @@ function enrichAndApplyParsedMetadata(ctx) {
   }
 
   ensureFormRadio('category', category);
+  var taxGuess = inferSubCategoryDivision(name, items, category);
+  loadTaxonomyForCategory(category, taxGuess.sub || '', taxGuess.div || '');
   ensureFormRadio('spice', levels.spice);
   ensureFormRadio('sweet', levels.sweet);
   setFormTextIfEmpty('introduction', intro);
@@ -6846,6 +6852,21 @@ function showMsg(msg, type) {
 
 // ── RECIPE TAXONOMY (sub-category / division) ───────────────────────────────
 var _taxonomyCache = null;
+var TAXONOMY_OTHER = '__other__';
+
+var CATEGORY_TAXONOMY_HINTS = {
+  'Grains & Comfort': 'Biryanis, pilaf, pulao and layered rice dishes belong here. Choose Biryanis & Pilafs, then pick a protein division — or suggest your own.',
+  'Meat & Fire': 'Meat-forward mains and roasts. Mutton is goat meat; Lamb is sheep. Suggest a sub-category if yours is not listed.',
+  'Ocean & River': 'Fish and shellfish mains. Pick Fish or Shellfish, then a division — or suggest one.',
+  'Garden & Earth': 'Vegetable- and plant-forward dishes. Suggest a sub-category if needed.',
+  'Breads & Bakes': 'Breads, flatbreads, batters and baked goods.',
+  'Sweet Serenades': 'Desserts, sweets and confections.',
+  'Slow & Soulful': 'Soups, stews and slow-cooked comfort food.'
+};
+
+function escTaxOpt(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
 
 async function fetchTaxonomy() {
   if (_taxonomyCache) return _taxonomyCache;
@@ -6860,12 +6881,85 @@ async function fetchTaxonomy() {
   return _taxonomyCache || [];
 }
 
+function updateCategoryTaxonomyTip(category) {
+  var tip = document.getElementById('sr-category-taxonomy-tip');
+  if (!tip) return;
+  var msg = CATEGORY_TAXONOMY_HINTS[category] || '';
+  if (/\b(biriyani|biryani|pilaf|pulao)\b/i.test((document.getElementById('recipe-name') || {}).value || '')) {
+    msg = 'This looks like a biryani or pilaf — category Grains & Comfort is usually right (not Meat & Fire). ' + (msg || '');
+  }
+  if (msg) {
+    tip.innerHTML = '<span class="sr-i">i</span> ' + msg;
+    tip.style.display = 'block';
+  } else {
+    tip.style.display = 'none';
+  }
+}
+
+function toggleTaxonomyCustomField(selectId, customId, show) {
+  var sel = document.getElementById(selectId);
+  var custom = document.getElementById(customId);
+  if (!custom) return;
+  var isOther = show || (sel && sel.value === TAXONOMY_OTHER);
+  custom.style.display = isOther ? 'block' : 'none';
+  if (!isOther && custom) custom.value = '';
+  updateTaxonomySuggestBadge();
+}
+
+function updateTaxonomySuggestBadge() {
+  var badge = document.getElementById('sr-taxonomy-suggest-badge');
+  if (!badge) return;
+  var subOther = document.getElementById('sr-subcategory') && document.getElementById('sr-subcategory').value === TAXONOMY_OTHER;
+  var divOther = document.getElementById('sr-division') && document.getElementById('sr-division').value === TAXONOMY_OTHER;
+  var subCustom = document.getElementById('sr-subcategory-custom') && document.getElementById('sr-subcategory-custom').value.trim();
+  var divCustom = document.getElementById('sr-division-custom') && document.getElementById('sr-division-custom').value.trim();
+  badge.style.display = (subOther && subCustom) || (divOther && divCustom) ? 'block' : 'none';
+}
+
+function getTaxonomyFieldValue(selectId, customId) {
+  var sel = document.getElementById(selectId);
+  var custom = document.getElementById(customId);
+  if (!sel) return '';
+  if (sel.value === TAXONOMY_OTHER) return custom ? custom.value.trim() : '';
+  return (sel.value || '').trim();
+}
+
+function inferSubCategoryDivision(name, items, category) {
+  var blob = (String(name || '') + ' ' + (items || []).map(function(i) {
+    return (i.name || i.ingredient || '') + ' ' + (i.note || '');
+  }).join(' ')).toLowerCase();
+  var out = { sub: '', div: '' };
+  if (!category || !blob) return out;
+
+  if (category === 'Grains & Comfort' && /\b(biriyani|biryani|pilaf|pulao)\b/.test(blob)) {
+    out.sub = 'Biryanis & Pilafs';
+    if (/\bmutton\b|\bgoat\b/.test(blob)) out.div = 'Mutton Biryani';
+    else if (/\blamb\b/.test(blob)) out.div = 'Lamb Biryani';
+    else if (/\bchicken\b|\bpoultry\b/.test(blob)) out.div = 'Chicken Biryani';
+    else if (/\b(prawn|shrimp|fish|seafood)\b/.test(blob)) out.div = 'Seafood Biryani';
+    else if (/\b(vegetable|veg|paneer|mushroom)\b/.test(blob)) out.div = 'Vegetable Biryani';
+    return out;
+  }
+  if (category === 'Meat & Fire') {
+    if (/\bmutton\b|\bgoat\b/.test(blob)) out.sub = 'Mutton';
+    else if (/\blamb\b/.test(blob)) out.sub = 'Lamb';
+    else if (/\bchicken\b|\bpoultry\b/.test(blob)) out.sub = 'Poultry';
+    else if (/\bbeef\b/.test(blob)) out.sub = 'Beef';
+    else if (/\bpork\b/.test(blob)) out.sub = 'Pork';
+  }
+  return out;
+}
+
 async function loadTaxonomyForCategory(category, selSub, selDiv) {
   const wrap = document.getElementById('sr-taxonomy-wrap');
   const subEl = document.getElementById('sr-subcategory');
   const divEl = document.getElementById('sr-division');
+  const subCustom = document.getElementById('sr-subcategory-custom');
+  const divCustom = document.getElementById('sr-division-custom');
   if (!wrap || !subEl || !divEl) return;
   if (!category) { wrap.style.display = 'none'; return; }
+
+  updateCategoryTaxonomyTip(category);
   const rows = await fetchTaxonomy();
   const subs = [];
   const seen = {};
@@ -6875,23 +6969,69 @@ async function loadTaxonomyForCategory(category, selSub, selDiv) {
       subs.push(r.subcategory_name);
     }
   });
-  if (!subs.length) { wrap.style.display = 'none'; return; }
+
   wrap.style.display = 'block';
-  subEl.innerHTML = '<option value="">— None —</option>' + subs.map(function(s) {
-    return '<option value="' + s.replace(/"/g, '&quot;') + '"' + (s === selSub ? ' selected' : '') + '>' + s + '</option>';
-  }).join('');
+  var subKnown = selSub && subs.indexOf(selSub) >= 0;
+  var subHtml = '<option value="">— None —</option>';
+  subs.forEach(function(s) {
+    subHtml += '<option value="' + escTaxOpt(s) + '"' + (s === selSub ? ' selected' : '') + '>' + escTaxOpt(s) + '</option>';
+  });
+  subHtml += '<option value="' + TAXONOMY_OTHER + '"' + (selSub && !subKnown ? ' selected' : '') + '>Other / suggest…</option>';
+  subEl.innerHTML = subHtml;
+
+  if (selSub && !subKnown && subCustom) {
+    subCustom.value = selSub;
+    toggleTaxonomyCustomField('sr-subcategory', 'sr-subcategory-custom', true);
+  } else {
+    toggleTaxonomyCustomField('sr-subcategory', 'sr-subcategory-custom', false);
+  }
+
   function fillDivisions(subName) {
+    if (subName === TAXONOMY_OTHER) {
+      divEl.innerHTML = '<option value="">— None —</option><option value="' + TAXONOMY_OTHER + '">Other / suggest…</option>';
+      if (selDiv && divCustom && subs.indexOf(selSub) < 0) {
+        divEl.value = TAXONOMY_OTHER;
+        divCustom.value = selDiv;
+        toggleTaxonomyCustomField('sr-division', 'sr-division-custom', true);
+      }
+      return;
+    }
     const divs = rows.filter(function(r) {
       return r.subcategory_category === category && r.subcategory_name === subName && r.division_name;
     });
-    divEl.innerHTML = '<option value="">— None —</option>' + divs.map(function(r) {
+    var divKnown = selDiv && divs.some(function(r) { return r.division_name === selDiv; });
+    var divHtml = '<option value="">— None —</option>';
+    divs.forEach(function(r) {
       const n = r.division_name;
       const label = (r.division_emoji ? r.division_emoji + ' ' : '') + n;
-      return '<option value="' + n.replace(/"/g, '&quot;') + '"' + (n === selDiv ? ' selected' : '') + '>' + label + '</option>';
-    }).join('');
+      divHtml += '<option value="' + escTaxOpt(n) + '"' + (n === selDiv ? ' selected' : '') + '>' + escTaxOpt(label) + '</option>';
+    });
+    divHtml += '<option value="' + TAXONOMY_OTHER + '"' + (selDiv && !divKnown ? ' selected' : '') + '>Other / suggest…</option>';
+    divEl.innerHTML = divHtml;
+    if (selDiv && !divKnown && divCustom) {
+      divCustom.value = selDiv;
+      toggleTaxonomyCustomField('sr-division', 'sr-division-custom', true);
+    } else {
+      toggleTaxonomyCustomField('sr-division', 'sr-division-custom', false);
+    }
   }
-  fillDivisions(selSub || subEl.value);
-  subEl.onchange = function() { fillDivisions(subEl.value); divEl.value = ''; };
+
+  fillDivisions(subKnown ? selSub : (subEl.value === TAXONOMY_OTHER ? TAXONOMY_OTHER : (subEl.value || selSub)));
+  subEl.onchange = function() {
+    toggleTaxonomyCustomField('sr-subcategory', 'sr-subcategory-custom');
+    if (subEl.value !== TAXONOMY_OTHER) fillDivisions(subEl.value);
+    else {
+      divEl.innerHTML = '<option value="">— None —</option><option value="' + TAXONOMY_OTHER + '">Other / suggest…</option>';
+      toggleTaxonomyCustomField('sr-division', 'sr-division-custom', false);
+    }
+    updateTaxonomySuggestBadge();
+  };
+  divEl.onchange = function() {
+    toggleTaxonomyCustomField('sr-division', 'sr-division-custom');
+    updateTaxonomySuggestBadge();
+  };
+  if (subCustom) subCustom.oninput = updateTaxonomySuggestBadge;
+  if (divCustom) divCustom.oninput = updateTaxonomySuggestBadge;
 }
 
 function initCategoryTaxonomy() {
@@ -6900,6 +7040,13 @@ function initCategoryTaxonomy() {
       if (radio.checked) loadTaxonomyForCategory(radio.value, '', '');
     });
   });
+  var nameEl = document.getElementById('recipe-name');
+  if (nameEl) {
+    nameEl.addEventListener('input', function() {
+      var cat = document.querySelector('input[name="category"]:checked');
+      if (cat) updateCategoryTaxonomyTip(cat.value);
+    });
+  }
 }
 
 // ── COLLECT FORM DATA ─────────────────────────────────────────────────────────
@@ -6945,8 +7092,8 @@ function buildSubmitPrintSheet() {
     var csOpt = document.querySelector('#cooking-style option[value="' + csKey + '"]');
     csLabel = csOpt ? csOpt.textContent.trim() : csKey;
   }
-  var subcat = (document.getElementById('sr-subcategory') && document.getElementById('sr-subcategory').value.trim()) || '';
-  var division = (document.getElementById('sr-division') && document.getElementById('sr-division').value.trim()) || '';
+  var subcat = getTaxonomyFieldValue('sr-subcategory', 'sr-subcategory-custom');
+  var division = getTaxonomyFieldValue('sr-division', 'sr-division-custom');
   var locality = (document.getElementById('origin-locality') && document.getElementById('origin-locality').value.trim()) || '';
   var originParts = [window.fContinent, window.fCountry, window.fState, locality].filter(Boolean);
 
@@ -7124,8 +7271,8 @@ function collectFormData() {
     recipe_name:          (document.getElementById('recipe-name')?.value       || '').trim(),
     native_title:         (document.getElementById('native-title')?.value      || '').trim(),
     category:             document.querySelector('input[name="category"]:checked')?.value  || '',
-    sub_category:         (document.getElementById('sr-subcategory')?.value || '').trim() || null,
-    division:             (document.getElementById('sr-division')?.value || '').trim() || null,
+    sub_category:         getTaxonomyFieldValue('sr-subcategory', 'sr-subcategory-custom') || null,
+    division:             getTaxonomyFieldValue('sr-division', 'sr-division-custom') || null,
     spice_level:          document.querySelector('input[name="spice"]:checked')?.value     || '',
     sweet_level:          document.querySelector('input[name="sweet"]:checked')?.value     || '',
     origin_continent:     window.fContinent || '',
