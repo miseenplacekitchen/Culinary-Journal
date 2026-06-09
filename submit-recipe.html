@@ -1130,7 +1130,7 @@
         <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.6">
           <strong style="color:var(--text-high)">Works best with:</strong>
           recipe websites (auto-detects structured data), ingredients listed one per line, steps clearly numbered or sectioned.<br>
-          <span style="opacity:0.7">Instagram and TikTok links try to pull the caption first. If there is no recipe structure, enter the dish name and use <strong>Generate starter</strong>.</span>
+          <span style="opacity:0.7">Instagram and TikTok: paste the reel URL above and click <strong>Import</strong> — AI structures ingredients, servings, steps, and notes in the <strong>same language as the source</strong> (Malayalam, Tamil, Hindi, Arabic, English, etc.). Verify everything before submitting.</span>
         </div>
         <textarea class="sr-input sr-paste-textarea" id="paste-input" maxlength="50000" placeholder="Paste a recipe here — full length, no word limit. Works best with ingredients one per line and numbered steps." oninput="updatePasteCounter()"></textarea>
         <div class="paste-counter" id="paste-counter"><span id="paste-chars">0</span> characters (up to 50,000 — not the 100-word Introduction below)</div>
@@ -3136,19 +3136,30 @@ async function importFromUrl() {
       }
       if (payload.social) {
         var caption = splitBundledCaption((payload.caption || '').trim());
+        var title = extractTitleFromCaption(caption);
+        var aiStructured = false;
         if (caption) {
           document.getElementById('paste-input').value = caption;
-          var title = extractTitleFromCaption(caption);
           var nameEl = document.getElementById('recipe-name');
           if (nameEl && title && !nameEl.value.trim()) nameEl.value = title;
+          aiStructured = await tryAiStructureSocialImport({
+            url: url,
+            caption: caption,
+            platform: payload.platform || 'Social',
+            pageTitle: title,
+            creditName: payload.creditName || ''
+          });
+        }
+        if (aiStructured) return;
+        if (caption) {
           if (typeof TcjImportAudit !== 'undefined') {
             TcjImportAudit.recordUrlImport({ url: url, pasteText: caption, extractor: 'social', path: 'social-caption', warnings: ['Social caption import — may be incomplete'] });
           }
           if (payload.hasRecipeStructure || looksLikeStructuredRecipe(caption)) {
-            showImportStatus((payload.platform || 'Social') + ' caption imported (may be incomplete) — parsing now. Review and correct anything that looks wrong.', true);
+            showImportStatus((payload.platform || 'Social') + ' caption imported — parsing now. Review and correct anything that looks wrong.', true);
             setTimeout(function() { parseRecipe(); }, 300);
           } else {
-            showImportStatus((payload.platform || 'Social') + ' caption found but no clear recipe structure (needs ingredients and steps). Enter the dish name above and click Generate starter, or paste the full recipe from comments.', false);
+            showImportStatus((payload.platform || 'Social') + ' caption found but no clear recipe structure. Enter the dish name and click Generate starter, or paste the full recipe from comments.', false);
           }
           return;
         }
@@ -4656,6 +4667,148 @@ async function applyServerImportPayload(payload, url) {
     return;
   }
   showImportStatus('No recipe content found on that page. Try pasting the text manually.', false);
+}
+
+async function tryAiStructureSocialImport(opts) {
+  opts = opts || {};
+  var sourceText = [opts.caption, opts.transcript, opts.extraText].filter(Boolean).join('\n\n');
+  if (!sourceText.trim()) return false;
+  showImportStatus('Structuring recipe with AI (ingredients, steps, servings, notes)…', null);
+  try {
+    var res = await fetch('/api/ai-structure-recipe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: opts.url || '',
+        platform: opts.platform || 'Social',
+        pageTitle: opts.pageTitle || '',
+        creditName: opts.creditName || '',
+        caption: opts.caption || '',
+        transcript: opts.transcript || '',
+        extraText: opts.extraText || ''
+      }),
+      signal: AbortSignal.timeout(90000)
+    });
+    var data = null;
+    try { data = await res.json(); } catch (_) {}
+    if (!res.ok || !data || !data.ok) {
+      if (data && data.fetchStatus === 'ai-not-configured') {
+        showImportStatus('AI structuring not configured yet — using caption parse fallback.', null);
+      }
+      return false;
+    }
+    applyAiStructuredRecipe(data, opts, sourceText);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function applyAiStructuredRecipe(aiPayload, opts, sourceText) {
+  var structured = aiPayload.structured || {};
+  var pasteEl = document.getElementById('paste-input');
+  if (pasteEl && sourceText) pasteEl.value = sourceText;
+
+  if (typeof TcjImportAudit !== 'undefined') {
+    TcjImportAudit.recordUrlImport({
+      url: opts.url || '',
+      pasteText: sourceText,
+      extractor: 'ai-social',
+      path: 'ai-structure-recipe',
+      warnings: (aiPayload.warnings || []).concat(aiPayload.inferred_fields || []),
+      parserVersion: aiPayload.structure_version || 'ai-1.0'
+    });
+  }
+
+  var nameEl = document.getElementById('recipe-name');
+  if (nameEl && structured.recipe_name) nameEl.value = structured.recipe_name;
+  setFormTextIfEmpty('native-title', structured.native_title || '');
+  setFormTextIfEmpty('introduction', structured.introduction || '');
+  if (structured.servings) setFormNumberIfEmpty('servings', structured.servings);
+  var suEl = document.getElementById('servings-unit');
+  if (suEl && structured.servings_unit) suEl.value = structured.servings_unit;
+  if (structured.prep_time_minutes != null) setFormNumberIfEmpty('prep-time', structured.prep_time_minutes);
+  if (structured.cook_time_minutes != null) setFormNumberIfEmpty('cook-time', structured.cook_time_minutes);
+  if (structured.additional_time_minutes != null) setFormNumberIfEmpty('additional-time', structured.additional_time_minutes);
+  if (structured.cooking_notes) {
+    var notesEl = document.getElementById('cooking-notes');
+    if (notesEl) notesEl.value = structured.cooking_notes;
+  }
+  if (structured.tips && structured.tips.length) {
+    populateAuxiliaryFromSections({ tips: structured.tips, notes: [], serves: [] });
+  }
+  if (structured.category_hint) ensureFormRadio('category', structured.category_hint);
+  if (structured.spice_level) ensureFormRadio('spice', structured.spice_level);
+
+  var creditUrl = document.getElementById('credit-url');
+  if (creditUrl && opts.url && !creditUrl.value) creditUrl.value = opts.url;
+  var creditName = document.getElementById('credit-name');
+  if (creditName && structured.credit_name && !creditName.value.trim()) creditName.value = structured.credit_name;
+  var srcEl = document.querySelector('input[name="source-type"][value="From Somewhere Else"]');
+  if (srcEl) srcEl.checked = true;
+
+  var ingSecs = (structured.ingredient_sections || []).map(function(sec) {
+    return {
+      name: sec.name || 'Ingredients',
+      items: (sec.items || []).map(function(it) {
+        return { qty: it.qty || '', unit: it.unit || '', name: it.name || '', note: it.note || '' };
+      }).filter(function(it) { return (it.name || '').trim(); })
+    };
+  }).filter(function(sec) { return (sec.items || []).length > 0; });
+
+  var methSecs = (structured.method_sections || []).map(function(sec) {
+    return {
+      name: String(sec.name || 'DIRECTIONS').toUpperCase(),
+      steps: (sec.steps || []).filter(Boolean)
+    };
+  }).filter(function(sec) { return (sec.steps || []).length > 0; });
+
+  var extraWarnings = (aiPayload.warnings || []).slice();
+  if (aiPayload.inferred_fields && aiPayload.inferred_fields.length) {
+    extraWarnings.push('AI inferred: ' + aiPayload.inferred_fields.join('; '));
+  }
+
+  if (aiPayload.importQuality) {
+    window._lastParseConfidence = {
+      score: aiPayload.importQuality.confidence_score || 50,
+      submitWarn: true,
+      allowEnrich: !!aiPayload.importQuality.enrich_allowed,
+      warnings: extraWarnings
+    };
+  }
+
+  window._lastImportMeta = window._lastImportMeta || {};
+  window._lastImportMeta.extractor = 'ai-social';
+  window._lastImportMeta.import_warnings = extraWarnings;
+
+  finalizeParsedRecipe({
+    ingSecs: ingSecs,
+    methSecs: methSecs,
+    text: sourceText,
+    titleCand: structured.recipe_name || opts.pageTitle || '',
+    extraWarnings: extraWarnings,
+    importIngredientLines: []
+  });
+
+  if (structured.category_hint) loadTaxonomyForCategory(structured.category_hint, '', '');
+
+  var langNote = structured.source_language
+    ? '\n\nDetected language: ' + structured.source_language + ' — recipe text kept in the source language.'
+    : '';
+  var inferredNote = (aiPayload.inferred_fields && aiPayload.inferred_fields.length)
+    ? '\n\nAI filled gaps in the source (measurements, steps, or timings). Verify against the original video before submitting.'
+    : '';
+  showParseReviewNote(
+    'AI-structured import — verify every ingredient, quantity, and step against the original.' + langNote + inferredNote,
+    { title: 'AI import review required' }
+  );
+
+  showImportStatus(
+    'AI structured ' + (aiPayload.ingCount || 0) + ' ingredients and ' + (aiPayload.stepCount || 0) +
+    ' steps from ' + (opts.platform || 'social') + '. Review and correct before submitting.',
+    true
+  );
+  expandPasteSection();
 }
 
 function applyJsonLdMetaToForm(r) {
@@ -6461,7 +6614,7 @@ function detectUrlPaste(url) {
   if (url.includes('youtube.com'))    platform = 'YouTube';
   if (url.includes('pinterest.com'))  platform = 'Pinterest';
   if (isSocialMediaUrl(url)) {
-    msgEl.textContent = '✓ ' + platform + ' link — click Import to try the caption, or paste recipe text below.';
+    msgEl.textContent = '✓ ' + platform + ' link — click Import to AI-structure the recipe (ingredients, steps, servings), or paste text below.';
     msgEl.style.color = 'var(--accent)';
     msgEl.style.display = 'block';
     return;
