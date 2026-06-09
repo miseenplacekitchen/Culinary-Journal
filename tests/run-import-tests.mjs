@@ -170,6 +170,10 @@ if (pineapple) {
   assert('pineapple annotated: tips captured', (seg.tips || []).length >= 3);
   assert('pineapple annotated: submitWarn on pollution', conf.submitWarn === true || conf.score < 70);
   assert('pineapple annotated: prep 75m', seg.meta && seg.meta.prep === '75');
+  assert('pineapple annotated: ingredient sections', (seg.ingredients || []).filter(function (l, i) {
+    return /:\s*$/.test(String(l || '')) || (Core.isIngredientGroupHeader && Core.isIngredientGroupHeader(l, seg.ingredients[i + 1]));
+  }).length >= 5);
+  assert('pineapple annotated: method sections', (seg.methodSections || []).length >= 4);
   runGoldFixture('pineapple-biryani-annotated.txt', gold.fixtures['pineapple-biryani-annotated.txt'] || {});
 }
 

@@ -3347,9 +3347,13 @@ function importAuxSectionsFromRawLines(rawLines) {
   populateAuxiliaryFromSections(aux);
 }
 
-function isMethodSectionHeader(line) {
+function isMethodSectionHeader(line, nextLine) {
+  var core = (typeof RecipeImportCore !== 'undefined' ? RecipeImportCore : null);
+  if (core && core.isMethodStageHeader && core.isMethodStageHeader(line, nextLine || '')) return true;
   var t = String(line || '').trim().replace(/\s*:?\s*$/, '');
-  if (!t || t.length > 55) return false;
+  if (!t || t.length > 65) return false;
+  if (/^\d+\.\s/.test(t)) return false;
+  if (nextLine && /^\d+\.\s+\S/.test(String(nextLine).trim())) return true;
   return /^(?:for\s+(?:the\s+)?|now\s+(?:the\s+)?)[a-z][\w\s]{2,40}$/i.test(t);
 }
 
@@ -5409,20 +5413,42 @@ function clearParseAutoMetadata() {
 }
 
 function buildIngSecsFromImportLines(lines) {
-  var ingSecs = [{ name: 'Ingredients', items: [] }];
+  var ingSecs = [];
+  var cur = null;
   (lines || []).forEach(function(line) {
     var p = splitIngredientLine(line);
     if (p && p.header) {
-      ingSecs.push({ name: p.name, items: [] });
+      cur = { name: p.name, items: [] };
+      ingSecs.push(cur);
     } else if (p && (p.name || p.qty || p.unit)) {
-      ingSecs[ingSecs.length - 1].items.push({
+      if (!cur) { cur = { name: 'Ingredients', items: [] }; ingSecs.push(cur); }
+      cur.items.push({
         qty: p.qty || '', unit: p.unit || '', name: p.name || '', note: p.note || ''
       });
     } else if (line && line.length > 1 && !/^ingredients?$/i.test(line)) {
-      ingSecs[ingSecs.length - 1].items.push({ qty: '', unit: '', name: line, note: '' });
+      if (!cur) { cur = { name: 'Ingredients', items: [] }; ingSecs.push(cur); }
+      cur.items.push({ qty: '', unit: '', name: line, note: '' });
     }
   });
+  if (!ingSecs.length) ingSecs.push({ name: 'Ingredients', items: [] });
   return ingSecs;
+}
+
+function normalizeSegmentStep(step) {
+  if (!step) return '';
+  return typeof step === 'string' ? step : (step.text || '');
+}
+
+function buildMethSecsFromSegment(seg) {
+  if (seg && seg.methodSections && seg.methodSections.length) {
+    return seg.methodSections.map(function(sec) {
+      return {
+        name: String(sec.name || 'DIRECTIONS').toUpperCase(),
+        steps: (sec.steps || []).map(normalizeSegmentStep).filter(Boolean)
+      };
+    }).filter(function(sec) { return (sec.steps || []).length > 0; });
+  }
+  return [{ name: 'DIRECTIONS', steps: (seg && seg.method ? seg.method.slice() : []) }];
 }
 
 function finalizeParsedRecipe(ctx) {
@@ -5562,9 +5588,10 @@ function parseRecipeViaSegment(seg, rawText) {
   populateAuxiliaryFromSections({ notes: seg.notes || [], tips: seg.tips || [], serves: seg.serves || [] });
   var ingSecs = buildIngSecsFromImportLines(seg.ingredients);
   ingSecs.forEach(function(sec) { sec.items = consolidateParsedItems(sec.items); });
+  ingSecs = ingSecs.filter(function(sec) { return (sec.items || []).length > 0; });
   finalizeParsedRecipe({
     ingSecs: ingSecs,
-    methSecs: [{ name: 'DIRECTIONS', steps: (seg.method || []).slice() }],
+    methSecs: buildMethSecsFromSegment(seg),
     text: seg.normalizedText || rawText,
     titleCand: titleCand,
     extraWarnings: (seg.warnings || []).slice(),
@@ -5808,7 +5835,7 @@ function parseRecipe() {
       absorbAux = true;
       continue;
     }
-    if (inMethod && isMethodSectionHeader(line)) {
+    if (inMethod && isMethodSectionHeader(line, rawLines[lineIdx + 1])) {
       flushPendingPartial();
       startMethSection(line.replace(/\s*:?\s*$/, ''));
       continue;

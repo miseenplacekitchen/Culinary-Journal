@@ -47,7 +47,9 @@
       "meta_prep_minutes": 75,
       "meta_cook_minutes": 75,
       "spice_label": "Very Hot",
-      "sweet_label": "Subtly Sweet"
+      "sweet_label": "Subtly Sweet",
+      "ing_sections_min": 5,
+      "method_sections_min": 4
     }
   }
 }
