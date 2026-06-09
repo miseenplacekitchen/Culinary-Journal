@@ -1,0 +1,36 @@
+{
+  "parser_version": "1.2.0-wave1",
+  "fixtures": [
+    {
+      "id": "kothiyavunu-gothambu-puttu",
+      "url": "https://www.kothiyavunu.com/2013/08/gothambu-puttu-recipe-wheat-puttu-recipe/",
+      "expect": {
+        "ingredients_min": 4,
+        "steps_min": 8,
+        "steps_max": 10,
+        "junk_steps": 0,
+        "auto_enrich": false,
+        "category_must_not": ["Ocean & River"],
+        "dietary_must_not": ["Gluten Free"]
+      }
+    },
+    {
+      "id": "curryworld-rumali-roti",
+      "url": "https://curryworld.me/2014/06/10/rumali-roti/",
+      "expect": {
+        "ingredients_min": 5,
+        "steps_min": 10,
+        "auto_enrich": "optional",
+        "notes_contain_attribution": true
+      }
+    },
+    {
+      "id": "curryworld-soya-65",
+      "note": "Stuck qty -11/2 cup handling",
+      "expect": {
+        "ingredients_min": 3,
+        "qty_patterns": ["1 1/2"]
+      }
+    }
+  ]
+}

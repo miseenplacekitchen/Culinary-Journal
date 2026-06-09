@@ -2,6 +2,7 @@
  * Vercel serverless — fetch recipe page HTML server-side (avoids browser CORS).
  * GET /api/fetch-recipe-url?url=https://...
  */
+const RecipeImportCore = require('../lib/recipe-import-core.js');
 const MAX_BYTES = 1_500_000;
 const TIMEOUT_MS = 14000;
 
@@ -145,7 +146,10 @@ const BLOG_STOP_LINES = [
   /^loading comments/i, /^write a comment/i, /^type your email/i, /^continue reading/i,
   /^author$/i, /^written by$/i, /^facebook$/i, /^instagram$/i, /^youtube$/i, /^search$/i,
   /^skip to content/i, /^about me$/i, /^recipe request$/i, /^copyright$/i, /^subscribe$/i,
-  /^happy cooking/i, /^with love$/i
+  /^happy cooking/i, /^with love$/i,
+  /food advertisements by/i, /^\(?\s*\d+\s*reviews?\s*\)?\.?$/i,
+  /^check here for more/i, /^sharing is caring/i, /^bon appetit/i,
+  /^related posts?/i, /^\d+\s+comments?$/i
 ];
 
 const BLOG_NAV_LINES = /^(beef|chicken|mutton|egg|rice|bread|breakfast|cakes|snacks|soups|drinks|sea food|pickles|sweets|useful tips|my cooking|post delivery|healthy salads|indian vegetable|kerala sadya|spice mixes|chutneys|curryworld menu|biriyani|chinese dishes)/i;
@@ -172,9 +176,9 @@ function trimBlogRecipeText(text) {
 function extractArticleText(html) {
   const fragment = extractArticleHtml(html);
   const text = fragment ? htmlFragmentToText(fragment) : '';
-  if (text.length > 150) return trimBlogRecipeText(text);
-  const fallback = htmlFragmentToText(html.slice(0, 120000));
-  return trimBlogRecipeText(fallback);
+  const trimmed = text.length > 150 ? trimBlogRecipeText(text) : trimBlogRecipeText(htmlFragmentToText(html.slice(0, 120000)));
+  const seg = RecipeImportCore.segmentRecipeImportText(trimmed);
+  return seg.normalizedText || RecipeImportCore.normalizeRecipeImportText(trimmed);
 }
 
 async function tryInstagramOembed(url) {
@@ -276,6 +280,7 @@ module.exports = async function handler(req, res) {
       recipe: recipe || null,
       hasRecipe: !!recipe,
       articleText: articleText || '',
+      parserVersion: RecipeImportCore.PARSER_VERSION,
       pageTitle: pageTitle || '',
       hasArticleText: articleText.length > 80
     });
