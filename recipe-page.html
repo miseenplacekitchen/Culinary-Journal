@@ -39,18 +39,18 @@
     }
     .rp-hero-ring-wrap { position: relative; width: min(440px, 82vw); height: min(440px, 82vw); }
     .rp-hero-ring { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
-    .rp-hero-ring-stroke { fill: none; stroke: #6d2832; stroke-width: 3; }
+    .rp-hero-ring-stroke { fill: none; stroke: var(--accent); stroke-width: 3; }
     .rp-ring-text {
       font-family: "Monotype Corsiva", "Apple Chancery", "Segoe Script", cursive;
-      font-size: 18px; font-style: italic; letter-spacing: 0.06em;
-      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.65));
+      font-size: 17px; font-style: italic; letter-spacing: 0.06em; fill: var(--accent);
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35));
     }
     .rp-hero-circle {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
       width: 80%; height: 80%; border-radius: 50%; overflow: hidden; z-index: 1;
-      background: #241816;
-      border: 3px solid #6d2832;
-      box-shadow: 0 0 0 1px rgba(109,40,50,0.55), 0 12px 36px rgba(0,0,0,0.45);
+      background: #fff;
+      border: 3px solid var(--accent);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.18);
     }
     .rp-hero-img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .rp-hero-vignette { display: none; }
@@ -396,15 +396,15 @@
     <div class="rp-hero-ring-wrap">
       <svg class="rp-hero-ring" id="hero-ring-svg" viewBox="0 0 420 420" aria-hidden="true">
         <defs>
-          <path id="rp-arc-top" d="M 48,210 A 162,162 0 0 1 372,210" fill="none"/>
-          <path id="rp-arc-bottom" d="M 372,210 A 162,162 0 0 1 48,210" fill="none"/>
+          <path id="rp-arc-brand" d="M 48,210 A 162,162 0 0 1 372,210" fill="none"/>
+          <path id="rp-arc-handle" d="M 210,372 A 162,162 0 0 0 372,210" fill="none"/>
         </defs>
         <circle class="rp-hero-ring-stroke" cx="210" cy="210" r="168"/>
-        <text class="rp-ring-text" id="hero-ring-brand" fill="#C4973B">
-          <textPath href="#rp-arc-top" startOffset="50%" text-anchor="middle">The Culinary Journal</textPath>
+        <text class="rp-ring-text" id="hero-ring-brand">
+          <textPath href="#rp-arc-brand" startOffset="0%" text-anchor="start">The Culinary Journal</textPath>
         </text>
-        <text class="rp-ring-text" id="hero-ring-handle" fill="#C4973B" style="display:none">
-          <textPath href="#rp-arc-bottom" startOffset="50%" text-anchor="middle"></textPath>
+        <text class="rp-ring-text" id="hero-ring-handle" style="display:none">
+          <textPath href="#rp-arc-handle" startOffset="0%" text-anchor="start"></textPath>
         </text>
       </svg>
       <div class="rp-hero-circle">
@@ -1654,6 +1654,7 @@ function renderHeroImage(r) {
   heroImg.onload = function () {
     heroImg.style.display = 'block';
     if (heroPh) heroPh.style.display = 'none';
+    sampleHeroBackdrop(heroImg);
   };
   heroImg.onerror = function () {
     showPlaceholder('Image could not be loaded');
@@ -1661,11 +1662,31 @@ function renderHeroImage(r) {
   heroImg.src = url;
 }
 
+function sampleHeroBackdrop(img) {
+  var circle = document.querySelector('.rp-hero-circle');
+  if (!img || !circle || !img.naturalWidth) return;
+  try {
+    var canvas = document.createElement('canvas');
+    var size = 24;
+    canvas.width = size;
+    canvas.height = size;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, size, size);
+    var pts = [[0, 0], [size - 1, 0], [0, size - 1], [size - 1, size - 1],
+               [size / 2, 0], [size / 2, size - 1], [0, size / 2], [size - 1, size / 2]];
+    var r = 0, g = 0, b = 0, n = 0;
+    pts.forEach(function(p) {
+      var d = ctx.getImageData(Math.floor(p[0]), Math.floor(p[1]), 1, 1).data;
+      r += d[0]; g += d[1]; b += d[2]; n++;
+    });
+    circle.style.background = 'rgb(' + Math.round(r / n) + ',' + Math.round(g / n) + ',' + Math.round(b / n) + ')';
+  } catch(_) {
+    circle.style.background = '#fff';
+  }
+}
+
 function applyWatermark(r) {
-  var accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#C4973B';
-  var brandEl = document.getElementById('hero-ring-brand');
   var handleEl = document.getElementById('hero-ring-handle');
-  if (brandEl) brandEl.setAttribute('fill', accentColor);
   if (!handleEl) return;
   var handlePath = handleEl.querySelector('textPath');
   var handle = '';
@@ -1676,7 +1697,6 @@ function applyWatermark(r) {
   }
   if (handle && handlePath) {
     handlePath.textContent = handle;
-    handleEl.setAttribute('fill', accentColor);
     handleEl.style.display = '';
   } else {
     handleEl.style.display = 'none';
