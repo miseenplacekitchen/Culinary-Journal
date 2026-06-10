@@ -13,6 +13,7 @@ ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS after_open_value         
 ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS after_open_unit          text DEFAULT 'weeks';
 ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS reviewer_id              uuid REFERENCES auth.users(id) ON DELETE SET NULL;
 ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS unknown_ingredients      text[];
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS unknown_utensils        text[];
 ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS taxonomy_suggestions     jsonb DEFAULT '[]'::jsonb;
 ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS cooking_style            text;
 ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS origin_locality          text;

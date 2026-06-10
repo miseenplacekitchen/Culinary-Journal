@@ -657,6 +657,13 @@ function initPage() {
   renderTypeFields();
   var id = params.get('id');
   if (id) { loadExisting(id); }
+  else {
+    var prefillName = params.get('name');
+    if (prefillName) {
+      var nameEl = document.getElementById('f-name');
+      if (nameEl) nameEl.value = prefillName;
+    }
+  }
 }
 
 </script>

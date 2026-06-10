@@ -372,6 +372,39 @@ async function openRecipeModal(id) {
       panel.appendChild(uBlock);
     }
 
+    // Unknown utensils — tools not yet in the Tools & Appliances library
+    var unknownTools = [];
+    try {
+      unknownTools = Array.isArray(r.unknown_utensils) ? r.unknown_utensils
+        : (r.unknown_utensils ? JSON.parse(r.unknown_utensils) : []);
+    } catch(_) {}
+    if (unknownTools.length) {
+      var tBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(212,160,23,0.05);border-left:3px solid #d4a017');
+      tBlock.appendChild(mk('div',"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#d4a017;margin-bottom:10px",'⚠ New Tools Not Yet in Library'));
+      tBlock.appendChild(mk('p',"font-size:12px;color:var(--text-mid);margin:0 0 12px;line-height:1.6",'These utensil names were flagged because they are not published in Tools & Appliances yet. Review and publish a profile, or ask the contributor to submit one.'));
+      unknownTools.forEach(function(name) {
+        var row = mk('div','display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);flex-wrap:wrap');
+        row.appendChild(mk('span',"font-size:13px;color:var(--text-high)", name));
+        var actions = mk('div','display:flex;gap:6px;flex-wrap:wrap');
+        var subBtn = mk('a',"padding:4px 14px;background:var(--accent);border:none;border-radius:6px;color:#1a1a1a;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none",'Submit tool profile');
+        subBtn.href = 'library-submit.html?type=tool&name=' + encodeURIComponent(name);
+        subBtn.target = '_blank';
+        actions.appendChild(subBtn);
+        var libBtn = mk('button',"padding:4px 14px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer",'Open Tools admin');
+        libBtn.addEventListener('click', function() {
+          closeRecipeModal();
+          switchView('library-mgmt');
+          setTimeout(function() {
+            try { switchLibTab('lm-tools'); } catch(_) {}
+          }, 300);
+        });
+        actions.appendChild(libBtn);
+        row.appendChild(actions);
+        tBlock.appendChild(row);
+      });
+      panel.appendChild(tBlock);
+    }
+
     // Suggested taxonomy — sub-categories / divisions not yet in the database
     var taxSug = [];
     try {

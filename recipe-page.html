@@ -93,11 +93,14 @@
     #rp-wrap.rp-font-md  { --rp-scale: 1; }
     #rp-wrap.rp-font-lg  { --rp-scale: 1.12; }
     #rp-wrap.rp-font-xl  { --rp-scale: 1.28; }
-    #rp-wrap .rp-ing-name, #rp-wrap .rp-proc-step-text, #rp-wrap .rp-proc-single { font-size: calc(14px * var(--rp-scale, 1)); }
+    #rp-wrap .rp-ing-name, #rp-wrap .rp-proc-step-text, #rp-wrap .rp-proc-single,
+    #rp-wrap .rp-notes-item, #rp-wrap .rp-personal-notes textarea,
+    #rp-wrap .rp-utensil-item { font-size: calc(14px * var(--rp-scale, 1)); }
     #rp-wrap .rp-ing-qty { font-size: calc(13px * var(--rp-scale, 1)); }
     #rp-wrap.rp-cook-high { background:#0a0a0a !important; }
     #rp-wrap.rp-cook-high .rp-title, #rp-wrap.rp-cook-high .rp-ing-name, #rp-wrap.rp-cook-high .rp-proc-step-text,
-    #rp-wrap.rp-cook-high .rp-proc-single, #rp-wrap.rp-cook-high .rp-section-title, #rp-wrap.rp-cook-high .rp-meta-item { color:#fff !important; }
+    #rp-wrap.rp-cook-high .rp-proc-single, #rp-wrap.rp-cook-high .rp-notes-item, #rp-wrap.rp-cook-high .rp-personal-notes textarea,
+    #rp-wrap.rp-cook-high .rp-utensil-item, #rp-wrap.rp-cook-high .rp-section-title, #rp-wrap.rp-cook-high .rp-meta-item { color:#fff !important; }
     #rp-wrap.rp-cook-high .rp-ing-qty, #rp-wrap.rp-cook-high .rp-proc-step-num { color:#f0d080 !important; }
     #rp-wrap.rp-cook-high .rp-tab-content, #rp-wrap.rp-cook-high #combined-view { border-color:#444 !important; }
     .rp-cook-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-family:"DM Sans",sans-serif; font-size:11px; color:var(--text-mid); cursor:pointer; }
@@ -181,7 +184,7 @@
     .rp-ing-section { margin-bottom: 28px; }
     .rp-ing-section-title { font-family: "DM Sans", sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
     .rp-ing-section-title::after { content: ""; flex: 1; height: 1px; background: var(--border); }
-    .rp-ing-row { display: grid; grid-template-columns: 28px 100px 1fr 28px 28px; gap: 0; align-items: center; padding: 9px 8px; border-radius: 6px; transition: background 0.15s; cursor: default; }
+    .rp-ing-row { display: grid; grid-template-columns: 28px 100px 1fr 28px 28px 28px; gap: 0; align-items: center; padding: 9px 8px; border-radius: 6px; transition: background 0.15s; cursor: default; }
     .rp-ing-row:hover { background: rgba(255,255,255,0.03); }
     .rp-ing-cb { width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; appearance: none; background: transparent; transition: all 0.15s; flex-shrink: 0; }
     .rp-ing-cb:checked { background: var(--accent); border-color: var(--accent); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 10 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 4l3 3 5-6' stroke='%231a1a1a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-size: 10px 8px; background-repeat: no-repeat; background-position: center; }
@@ -194,6 +197,13 @@
     .rp-ing-cart-btn { background: none; border: none; cursor: pointer; padding: 0; opacity: 0.35; transition: opacity 0.2s; color: var(--text-muted); }
     .rp-ing-cart-btn:hover { opacity: 1; color: var(--accent); }
     .rp-ing-cart-btn.added { opacity: 1; color: var(--accent); }
+    .rp-ing-lib-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; font-size: 15px; line-height: 1;
+      color: var(--accent); text-decoration: none; opacity: 0.75;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .rp-ing-lib-btn:hover { opacity: 1; transform: scale(1.08); }
 
     /* ── INFO POPUP ──────────────────────────── */
     .rp-info-popup { position: absolute; right: 0; top: 28px; background: var(--surface); border: 1px solid var(--accent); border-radius: 10px; padding: 14px 16px; width: 240px; z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: none; }
@@ -226,16 +236,16 @@
 
 
 
-    /* ── EQUIPMENT ───────────────────────────────── */
-    .rp-equip { padding:20px 0; border-top:1px solid var(--border); margin-top:8px; }
-    .rp-equip-title { font-family:"DM Sans",sans-serif; font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); margin-bottom:12px; }
-    .rp-equip-list  { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:14px; }
-    .rp-equip-item  { display:flex; align-items:center; gap:6px; font-family:"DM Sans",sans-serif; font-size:12px; color:var(--text-high); background:var(--text-ghost); border:1px solid var(--border); border-radius:7px; padding:5px 10px; }
-    .rp-method-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px; }
-    .rp-method-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:9px; padding:10px 12px; text-align:center; }
-    .rp-method-icon { font-size:22px; margin-bottom:4px; }
-    .rp-method-name { font-family:"DM Sans",sans-serif; font-size:11px; font-weight:600; color:var(--text-high); margin-bottom:2px; }
-    .rp-method-note { font-family:"DM Sans",sans-serif; font-size:10px; color:var(--text-mid); line-height:1.4; }
+    /* ── UTENSILS TAB ────────────────────────────── */
+    .rp-utensils-group { margin-bottom: 24px; }
+    .rp-utensils-group-title { font-family: "DM Sans", sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 0 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .rp-utensils-list { list-style: none; padding: 0; margin: 0; }
+    .rp-utensil-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); font-family: "DM Sans", sans-serif; font-size: 14px; color: var(--text); }
+    .rp-utensil-item:last-child { border-bottom: none; }
+    .rp-utensil-icon { font-size: 18px; line-height: 1; flex-shrink: 0; }
+    .rp-utensil-name { flex: 1; line-height: 1.45; }
+    .rp-utensil-link { color: var(--text); text-decoration: none; border-bottom: 1px solid rgb(from var(--accent) r g b / 0.35); transition: color 0.15s, border-color 0.15s; }
+    .rp-utensil-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
 
     /* ── QR + COLLECTION + DEADLINK ─────────────────────────────── */
     .rp-qr-modal{display:none;position:fixed;inset:0;background: var(--scrim);z-index:9999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
@@ -355,7 +365,7 @@
       .rp-ring-text { font-size: 14px; }
       .rp-nutrition-grid { grid-template-columns: repeat(2, 1fr); }
       .rp-combined.active { grid-template-columns: 1fr; }
-      .rp-ing-row { grid-template-columns: 28px 90px 1fr 28px 28px; }
+      .rp-ing-row { grid-template-columns: 28px 90px 1fr 28px 28px 28px; }
       .rp-tab-btn { padding: 12px 16px; font-size: 12px; }
       .rp-meta-row { gap: 12px; }
     }
@@ -559,6 +569,7 @@
     <div class="rp-tabs-header" id="rp-tabs-header" style="border-bottom:none; flex:1">
       <button class="rp-tab-btn active" data-tab="ingredients" onclick="switchTab('ingredients')">Ingredients</button>
       <button class="rp-tab-btn" data-tab="procedure" onclick="switchTab('procedure')">Procedure</button>
+      <button class="rp-tab-btn" data-tab="utensils" onclick="switchTab('utensils')">Utensils</button>
       <button class="rp-tab-btn" data-tab="nutrition" onclick="switchTab('nutrition')">Nutrition</button>
       <button class="rp-tab-btn" data-tab="notes" onclick="switchTab('notes')">Notes</button>
     </div>
@@ -592,6 +603,11 @@
     <!-- PROCEDURE TAB -->
     <div class="rp-tab-content" id="tab-procedure">
       <div id="procedure-content"></div>
+    </div>
+
+    <!-- UTENSILS TAB -->
+    <div class="rp-tab-content" id="tab-utensils">
+      <div id="utensils-content"></div>
     </div>
 
     <!-- NUTRITION TAB -->
@@ -918,54 +934,70 @@ async function renderFamilyAllergyWarnings(r) {
 }
 
 
-// ── EQUIPMENT & METHODS ──────────────────────────────────────────
-const COOKING_METHODS = {
-  'Air Fryer':       {icon:'🌀', note:'Reduce temp by 20°C, check at 75% of time'},
-  'Oven':            {icon:'🔥', note:'Preheat fully before use'},
-  'Microwave':       {icon:'📡', note:'Use 70% power to avoid uneven heating'},
-  'Pressure Cooker': {icon:'⚡', note:'Reduce liquid by 25%, cut cooking time by 70%'},
-  'Slow Cooker':     {icon:'🍲', note:'Low 6–8h or High 3–4h'},
-  'Stovetop':        {icon:'🍳', note:'Use medium heat unless stated otherwise'},
+// ── UTENSILS ─────────────────────────────────────────────────────
+const UTENSIL_ICONS = {
+  'stand mixer':'🥣','hand mixer':'🥄','food processor':'⚙','blender':'🫙','pressure cooker':'⚡',
+  'slow cooker':'🍲','cast iron':'🍳','wok':'🍳','baking tin':'🫙','cake tin':'🎂','muffin tin':'🧁',
+  'roasting tray':'🍗','springform pan':'⭕','piping bag':'🎂','thermometer':'🌡','whisk':'🥄',
+  'rolling pin':'🪄','mortar and pestle':'🫙','steamer':'♨','bbq':'🔥','knife':'🔪','pot':'🍲',
+  'pan':'🍳','skillet':'🍳','dutch oven':'🍲','grater':'🧀','spatula':'🥄','ladle':'🥄','tongs':'🥢',
+  'measuring cup':'📏','measuring spoon':'🥄','colander':'🫗','sieve':'🫗','mixing bowl':'🥣'
 };
 
-const CATEGORY_METHODS = {
-  'Meat & Fire':      ['Oven','Air Fryer','Slow Cooker'],
-  'Slow & Soulful':   ['Pressure Cooker','Slow Cooker','Stovetop'],
-  'Garden & Earth':   ['Air Fryer','Stovetop','Oven'],
-  'Grains & Comfort': ['Stovetop','Pressure Cooker'],
-  'Breads & Bakes':   ['Oven','Air Fryer'],
-  'Rise & Shine':     ['Stovetop','Microwave','Air Fryer'],
-  'Ocean & River':    ['Oven','Air Fryer','Stovetop'],
-};
-
-function renderEquipment(recipe) {
-  const equipment = recipe.equipment || [];
-  const section   = document.getElementById('rp-equipment');
-  const list      = document.getElementById('rp-equip-list');
-  const methodGrid = document.getElementById('rp-method-grid');
-  if (!section || !list || !methodGrid) return;
-
-  const EQUIP_ICONS = {'stand mixer':'🥣','hand mixer':'🥄','food processor':'⚙','blender':'🫙','pressure cooker':'⚡','slow cooker':'🍲','cast iron':'🍳','wok':'🍳','baking tin':'🫙','cake tin':'🎂','muffin tin':'🧁','roasting tray':'🍗','springform pan':'⭕','piping bag':'🎂','thermometer':'🌡','whisk':'🥄','rolling pin':'🪄','mortar and pestle':'🫙','steamer':'♨','bbq':'🔥'};
-
-  if (equipment.length) {
-    list.innerHTML = equipment.map(function(e) {
-      const name = typeof e === 'string' ? e : (e.name || String(e));
-      const icon = Object.entries(EQUIP_ICONS).find(function(kv){return name.toLowerCase().includes(kv[0]);});
-      return '<div class="rp-equip-item">' + (icon?icon[1]+' ':'🔧 ') + name + '</div>';
-    }).join('');
-  } else {
-    document.getElementById('rp-equip-list').closest('.rp-equip').querySelector('.rp-equip-title').style.display = 'none';
-    list.style.display = 'none';
+function normalizeUtensilsList(equipment) {
+  let list = equipment;
+  if (typeof list === 'string' && list.trim()) {
+    try { list = JSON.parse(list); } catch(_) { list = []; }
   }
+  if (!Array.isArray(list)) list = [];
+  return list.map(function(e) {
+    if (typeof e === 'string') return { name: e, purpose: '', slug: '' };
+    return {
+      name: (e && (e.name || e.utensil)) ? String(e.name || e.utensil) : '',
+      purpose: (e && e.purpose) ? String(e.purpose) : '',
+      slug: (e && e.slug) ? String(e.slug) : ''
+    };
+  }).filter(function(i) { return i.name && i.name.trim(); });
+}
 
-  const cat = recipe.category || '';
-  const methods = CATEGORY_METHODS[cat] || ['Stovetop','Oven'];
-  methodGrid.innerHTML = methods.map(function(m) {
-    const info = COOKING_METHODS[m] || {icon:'🍳',note:''};
-    return '<div class="rp-method-card"><div class="rp-method-icon">'+info.icon+'</div><div class="rp-method-name">'+m+'</div><div class="rp-method-note">'+info.note+'</div></div>';
-  }).join('');
+function utensilIcon(name) {
+  const lower = String(name || '').toLowerCase();
+  const hit = Object.keys(UTENSIL_ICONS).find(function(k) { return lower.includes(k); });
+  return hit ? UTENSIL_ICONS[hit] : '🔧';
+}
 
-  if (equipment.length || methods.length) section.style.display = 'block';
+function renderUtensilGroup(title, items) {
+  if (!items.length) return '';
+  return '<div class="rp-utensils-group">' +
+    '<div class="rp-utensils-group-title">' + escapeHtml(title) + '</div>' +
+    '<ul class="rp-utensils-list">' +
+    items.map(function(item) {
+      const nameHtml = item.slug
+        ? '<a href="library-profile.html?type=tool&amp;slug=' + escapeHtml(item.slug) + '" class="rp-utensil-name rp-utensil-link" title="View in Tools &amp; Appliances">' + escapeHtml(item.name) + '</a>'
+        : '<span class="rp-utensil-name">' + escapeHtml(item.name) + '</span>';
+      return '<li class="rp-utensil-item"><span class="rp-utensil-icon" aria-hidden="true">' + utensilIcon(item.name) + '</span>' + nameHtml + '</li>';
+    }).join('') +
+    '</ul></div>';
+}
+
+function renderUtensils(r) {
+  const container = document.getElementById('utensils-content');
+  if (!container) return;
+  const items = normalizeUtensilsList(r && r.equipment);
+  if (!items.length) {
+    container.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:14px;color:var(--text-muted);padding:12px 0">No utensils listed for this recipe yet. Contributors can add items from the <a href="library-directory.html?type=tool" style="color:var(--accent)">Tools &amp; Appliances</a> library when editing the recipe.</p>';
+    return;
+  }
+  const prep = items.filter(function(i) { return i.purpose === 'prep'; });
+  const cook = items.filter(function(i) { return i.purpose === 'cook'; });
+  const both = items.filter(function(i) { return i.purpose === 'both'; });
+  const other = items.filter(function(i) { return !i.purpose || !['prep','cook','both'].includes(i.purpose); });
+  let html = '';
+  if (prep.length) html += renderUtensilGroup('Prep', prep);
+  if (cook.length) html += renderUtensilGroup('Cooking', cook);
+  if (both.length) html += renderUtensilGroup('Prep & cook', both);
+  if (other.length) html += renderUtensilGroup('General', other);
+  container.innerHTML = html;
 }
 
 
@@ -1010,6 +1042,23 @@ async function loadRelatedRecipes(currentId, category) {
 // ── SUBSTITUTIONS ─────────────────────────────────────────────
 let substitutionsMap = {}; // { 'butter': [{substitute, ratio, notes, dietary_benefit}] }
 
+function dedupeSubstituteRows(rows) {
+  const seen = new Set();
+  return (rows || []).filter(function(row) {
+    const key = String(row.substitute || '').toLowerCase().trim();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function refreshIngredientSubstitutes() {
+  if (!recipe || !Array.isArray(recipe.ingredients)) return;
+  renderIngredients(recipe.ingredients);
+  if (currentView === 'combined') renderIngredients(recipe.ingredients, 'ingredients-combined');
+  if (currentServes !== baseServes) scaleIngredients(currentServes);
+}
+
 async function loadSubstitutions() {
   try {
     const res = await fetch(
@@ -1018,24 +1067,32 @@ async function loadSubstitutions() {
     );
     if (!res.ok) return;
     const rows = await res.json();
+    substitutionsMap = {};
     rows.forEach(row => {
       const key = row.original.toLowerCase().trim();
       if (!substitutionsMap[key]) substitutionsMap[key] = [];
+      const subKey = String(row.substitute || '').toLowerCase().trim();
+      if (!subKey) return;
+      if (substitutionsMap[key].some(s => String(s.substitute || '').toLowerCase().trim() === subKey)) return;
       substitutionsMap[key].push(row);
     });
+    refreshIngredientSubstitutes();
   } catch(_) {}
 }
 
 function getSubstitutes(ingredientName) {
   const name = ingredientName.toLowerCase().trim();
+  if (!name) return [];
   // Exact match first
-  if (substitutionsMap[name]) return substitutionsMap[name];
-  // Partial match — ingredient name contains a known original
-  for (const key of Object.keys(substitutionsMap)) {
-    if (name.includes(key) || key.includes(name.split(' ')[0])) {
-      return substitutionsMap[key];
-    }
-  }
+  if (substitutionsMap[name]) return dedupeSubstituteRows(substitutionsMap[name]);
+  // Longest whole-word / boundary match — avoids duplicate partial hits
+  const matches = Object.keys(substitutionsMap).filter(function(key) {
+    if (name === key) return true;
+    if (name.includes(key)) return true;
+    const first = name.split(/\s+/)[0];
+    return first && key.includes(first);
+  }).sort(function(a, b) { return b.length - a.length; });
+  if (matches.length) return dedupeSubstituteRows(substitutionsMap[matches[0]]);
   return [];
 }
 
@@ -1100,6 +1157,16 @@ function normalizeRecipe(r) {
   ['dietary_tags','health_tags','occasion_tags','style_tags','meal_type_tags','flavor_profile_tags'].forEach(k => {
     if (!Array.isArray(r[k])) r[k] = [];
   });
+
+  // Utensils / equipment
+  if (typeof r.equipment === 'string' && r.equipment.trim()) {
+    try {
+      const parsed = JSON.parse(r.equipment);
+      r.equipment = Array.isArray(parsed) ? parsed : [];
+    } catch(_) { r.equipment = []; }
+  } else if (!Array.isArray(r.equipment)) {
+    r.equipment = [];
+  }
 
   r.__normalized = true;
   return r;
@@ -1491,9 +1558,11 @@ function renderRecipe(r) {
   // Notes
   renderNotes(r);
 
-  // Related recipes, equipment, allergen detection, source-link check — best-effort, never break the page
+  // Utensils
+  renderUtensils(r);
+
+  // Related recipes, allergen detection, source-link check — best-effort, never break the page
   try { if (r.id && r.category) loadRelatedRecipes(r.id, r.category); } catch(_) {}
-  try { renderEquipment(r); } catch(_) {}
   try { detectAllergens(r); } catch(_) {}
   try { renderFamilyAllergyWarnings(r); } catch(_) {}
   try {
@@ -1811,6 +1880,16 @@ function validateServes(el) {
   scaleIngredients(cleaned);
 }
 
+function parseIngredientQty(qty) {
+  if (qty == null || String(qty).trim() === '') return null;
+  const s = String(qty).trim();
+  if (/^to\s+taste$/i.test(s)) return null;
+  if (!/[\d½⅓⅔¼¾⅛⅜⅝⅞\/]/.test(s)) return null;
+  const n = GroceryUtils.parseFraction(s);
+  if (n === 0 && !/^0(?:\.\d+)?$/.test(s)) return null;
+  return n;
+}
+
 function scaleIngredients(newServes) {
   const ratio = newServes / baseServes;
   document.querySelectorAll('.rp-ing-qty[data-base]').forEach(el => {
@@ -1869,10 +1948,10 @@ function renderIngRow(item, section, idx) {
     ? (pantryInfo.isStaple ? ' <span style="font-size:10px;color:var(--accent)">⭐ staple</span>'
       : pantryInfo.inPantry ? ' <span style="font-size:10px;color:#4caf76">🫙 in pantry</span>' : '')
     : '';
-  const baseNum = parseFloat(item.qty);
-  const qtyHtml = !isNaN(baseNum)
-    ? `<span class="rp-ing-qty" data-base="${baseNum}" data-unit="${item.unit || ''}">${item.qty}</span>`
-    : `<span class="rp-ing-qty">${item.qty}</span>`;
+  const baseNum = parseIngredientQty(item.qty);
+  const qtyHtml = baseNum != null
+    ? `<span class="rp-ing-qty" data-base="${baseNum}" data-unit="${item.unit || ''}">${item.qty}${item.unit ? ' ' + item.unit : ''}</span>`
+    : `<span class="rp-ing-qty">${item.qty}${item.unit ? ' ' + item.unit : ''}</span>`;
 
   const dbSubs = getSubstitutes(item.ingredient);
   const allSubs = dbSubs.length ? dbSubs : (item.substitute ? [{substitute:item.substitute,ratio:'',notes:'',dietary_benefit:''}] : []);
@@ -1880,10 +1959,10 @@ function renderIngRow(item, section, idx) {
 
   const meta = resolveIngredientMeta(item.ingredient);
   const libEntry = meta && _libLinksByIngId[String(meta.id)];
-  const libHtml = libEntry && libEntry.slug
-    ? ' <a href="library-profile.html?type=ingredient&amp;slug=' + escapeHtml(libEntry.slug) +
-      '" style="font-size:10px;color:var(--accent);text-decoration:none;white-space:nowrap" title="How this ingredient works in your favour">📚 Library</a>'
-    : '';
+  const libColHtml = libEntry && libEntry.slug
+    ? '<a href="library-profile.html?type=ingredient&amp;slug=' + escapeHtml(libEntry.slug) +
+      '" class="rp-ing-lib-btn" title="View in Library" aria-label="View ' + escapeHtml(item.ingredient) + ' in Library">📚</a>'
+    : '<span></span>';
 
   const subsHtml = allSubs.map(s => `
     <div class="rp-info-row" style="flex-direction:column;align-items:flex-start;gap:2px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)">
@@ -1900,7 +1979,8 @@ function renderIngRow(item, section, idx) {
     <div class="rp-ing-row">
       <input type="checkbox" class="rp-ing-cb" onchange="toggleIngredient(this)">
       ${qtyHtml}
-      <span class="rp-ing-name">${item.ingredient}${libHtml}${pantryNote}${item.note ? ' <span style="font-size:11px;color:var(--text-muted);font-style:italic">— ' + item.note + '</span>' : ''}</span>
+      <span class="rp-ing-name">${item.ingredient}${pantryNote}${item.note ? ' <span style="font-size:11px;color:var(--text-muted);font-style:italic">— ' + item.note + '</span>' : ''}</span>
+      ${libColHtml}
       ${hasAnyInfo ? `
         <button class="rp-ing-info-btn" onclick="toggleInfo(this)" title="Substitutes & chef tips">
           <div class="rp-ing-info-icon">i</div>
@@ -2411,7 +2491,7 @@ function setView(view, skipSave) {
 
 // ── SWIPE (MOBILE TABS) ───────────────────────────────
 function setupSwipe() {
-  const tabOrder = ['ingredients','procedure','nutrition','notes'];
+  const tabOrder = ['ingredients','procedure','utensils','nutrition','notes'];
   let startX = 0;
   const tabsView = document.getElementById('tabs-view');
   tabsView.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });

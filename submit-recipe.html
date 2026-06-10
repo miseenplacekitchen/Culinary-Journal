@@ -601,6 +601,16 @@
     .btn-add-section { display: flex; align-items: center; gap: 8px; background: none; border: 1px dashed var(--border); border-radius: 10px; padding: 14px 20px; font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high); cursor: pointer; width: 100%; transition: all 0.2s; justify-content: center; }
     .btn-add-section:hover { border-color: var(--accent); color: var(--accent); }
 
+    .utensil-col-headers { display: grid; grid-template-columns: 1fr 140px 28px; gap: 8px; margin-bottom: 6px; padding: 0 2px; }
+    .utensil-row { display: grid; grid-template-columns: 1fr 140px 28px; gap: 8px; align-items: start; margin-bottom: 8px; }
+    .tool-name-wrap { position: relative; min-width: 0; }
+    .utensil-purpose {
+      font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high);
+      background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px;
+      padding: 7px 10px; width: 100%; box-sizing: border-box; outline: none;
+    }
+    .utensil-purpose:focus { border-color: var(--accent); }
+
     /* ── SUBMIT BAR ──────────────────────────── */
     .sr-submit-bar { display: flex; flex-direction: column; gap: 16px; background: var(--text-ghost); border: 1px solid var(--border); border-radius: 12px; padding: 20px 28px; margin-top: 32px; }
     .sr-submit-info { font-family: "DM Sans", sans-serif; font-size: 13px; color: var(--text-high); }
@@ -942,6 +952,8 @@
       .sr-grid, .sr-grid-3, .origin-row { grid-template-columns: 1fr; }
       .sr-full { grid-column: 1; }
       .ing-row { grid-template-columns: 70px 100px 1fr 28px; }
+      .utensil-row { grid-template-columns: 1fr 28px; }
+      .utensil-purpose { grid-column: 1 / -1; }
       .ing-col-headers { display: none; }
       .ing-cat-select, .ing-row .ing-note-col { grid-column: 1 / -1; }
       .ing-note-col { display: none; }
@@ -1110,7 +1122,8 @@
         <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-details')"><em>2</em> Details</button>
         <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-ingredients')"><em>3</em> Ingredients</button>
         <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-procedure')"><em>4</em> Procedure</button>
-        <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-notes')"><em>5</em> Notes &amp; submit</button>
+        <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-utensils')"><em>5</em> Utensils</button>
+        <button type="button" class="sr-flow-step" onclick="scrollToFlowSection('section-notes')"><em>6</em> Notes &amp; submit</button>
       </div>
       <button type="button" class="sr-flow-collapse" onclick="startFreshImport()" title="Clear draft and reset import fields">Start fresh</button>
       <button type="button" id="btn-toggle-all" class="sr-flow-collapse" onclick="toggleAllSections()">Collapse All ▾</button>
@@ -1148,7 +1161,7 @@
           <span class="sr-i">i</span> Paste the complete recipe &mdash; ingredients on separate lines, steps numbered. Use the buttons below to structure it into the form.
         </div>
         <textarea class="sr-input sr-paste-textarea" id="paste-input" maxlength="50000" placeholder="Paste a recipe here — full length, no word limit. Works best with ingredients one per line and numbered steps." oninput="updatePasteCounter()"></textarea>
-        <div class="paste-counter" id="paste-counter"><span id="paste-chars">0</span> characters (up to 50,000 — not the 100-word Introduction below)</div>
+        <div class="paste-counter" id="paste-counter"><span id="paste-chars">0</span> / 50,000 characters</div>
       </div>
       <div class="sr-paste-actions">
         <button type="button" class="sr-parse-btn" onclick="parseRecipe()" title="Read the paste box and fill Ingredients + Procedure below">
@@ -1736,9 +1749,25 @@
       </div>
     </div>
 
-    <!-- 5. COOKING NOTES & TIPS — public, prints on the recipe card -->
+    <!-- 5. UTENSILS (Tools & Appliances library) -->
+    <div class="sr-section" id="section-utensils">
+      <div class="sr-section-title"><span class="sr-step-num">5</span> Utensils &amp; Equipment</div>
+      <div id="tool-db-status" class="sr-hint" style="display:none; margin: -16px 0 14px;"></div>
+      <div class="sr-hint" style="margin: -16px 0 16px;">
+        <span class="sr-i">i</span> Search the <a href="library-directory.html?type=tool" target="_blank" rel="noopener">Tools &amp; Appliances</a> library for each item. Missing something? <a href="library-submit.html?type=tool" target="_blank" rel="noopener">Submit a tool profile</a> for admin review, then add it here.
+      </div>
+      <div class="utensil-col-headers">
+        <span class="ing-col-hdr">Tool / appliance</span>
+        <span class="ing-col-hdr">Used for</span>
+        <span></span>
+      </div>
+      <div id="utensil-rows"></div>
+      <button type="button" class="btn-add-ing" onclick="addUtensilRow()" style="margin-top:4px">+ Add utensil</button>
+    </div>
+
+    <!-- 6. COOKING NOTES & TIPS — public, prints on the recipe card -->
     <div class="sr-section" id="section-notes">
-      <div class="sr-section-title"><span class="sr-step-num">5</span> Cooking Notes &amp; Tips</div>
+      <div class="sr-section-title"><span class="sr-step-num">6</span> Cooking Notes &amp; Tips</div>
       <div class="sr-field">
         <label class="sr-label">Tips, tricks, variations &amp; what to watch out for <span class="opt">optional</span></label>
         <div class="sr-hint" style="margin: -4px 0 8px">
@@ -1748,9 +1777,9 @@
       </div>
     </div>
 
-    <!-- 6. SOURCE & CREDITS -->
+    <!-- 7. SOURCE & CREDITS -->
     <div class="sr-section" id="section-credits">
-      <div class="sr-section-title"><span class="sr-step-num">6</span> Source &amp; Credits</div>
+      <div class="sr-section-title"><span class="sr-step-num">7</span> Source &amp; Credits</div>
 
       <!-- Source Type -->
       <div class="sr-field" style="margin-bottom:24px">
@@ -1846,6 +1875,7 @@ const DRAFT_RESTORE_SETTLE_MS = 2500;
 
 let session = null;
 let allIngredients = [];
+let allTools = [];
 let ingSectionCount = 0;
 let methodSectionCount = 0;
 
@@ -1919,8 +1949,10 @@ async function loadSubmissionForEdit(recipeId) {
     }
     const secWrap  = document.getElementById('ingredient-sections');
     const methWrap = document.getElementById('method-sections');
+    const utWrap   = document.getElementById('utensil-rows');
     if (secWrap)  { secWrap.innerHTML = '';  ingSectionCount = 0; }
     if (methWrap) { methWrap.innerHTML = ''; methodSectionCount = 0; }
+    if (utWrap)   { utWrap.innerHTML = ''; }
     window._editRecipeId = recipeId;
     restoreDraft(JSON.stringify(r));
     const submitBtn = document.getElementById('submit-btn') || document.querySelector('#main-form button[type="submit"]');
@@ -1961,6 +1993,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   } catch(e) { console.error(e); }
   try { await loadIngredients(); } catch(e) { console.error('Ingredient load error:', e); }
+  try { await loadTools(); } catch(e) { console.error('Tools load error:', e); }
   try { initSectionSorting(); } catch(e) { console.error('sort init', e); }
   try { initSrSectionCollapse(); } catch(e) { console.error('collapse init', e); }
   try { initCategoryTaxonomy(); } catch(e) { console.error(e); }
@@ -2041,6 +2074,45 @@ async function loadIngredients() {
   } catch(e) {
     if (status) {
       status.textContent = '⚠ Could not load ingredient database: ' + (e.message || e);
+      status.style.color = '#e09955';
+      status.style.display = 'block';
+    }
+  }
+}
+
+// ── LOAD TOOLS & APPLIANCES (library) ─────────────────
+async function loadTools() {
+  const status = document.getElementById('tool-db-status');
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_library_directory', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_type: 'tool', p_search: null, p_limit: 2000, p_offset: 0 })
+    });
+    if (!res.ok) {
+      if (status) {
+        status.innerHTML = '⚠ Could not load Tools &amp; Appliances library (HTTP ' + res.status + '). Utensils cannot be autocompleted until this is fixed.';
+        status.style.color = '#e09955';
+        status.style.display = 'block';
+      }
+      return;
+    }
+    const data = await res.json();
+    allTools = Array.isArray(data) ? data : [];
+    if (status) {
+      if (!allTools.length) {
+        status.textContent = '⚠ Tools & Appliances library is empty. Submit profiles via Library → Submit a Profile.';
+        status.style.color = '#e09955';
+        status.style.display = 'block';
+      } else {
+        status.style.display = 'none';
+        status.textContent = '';
+      }
+    }
+    try { validateAllToolRows(); } catch(_) {}
+  } catch (e) {
+    if (status) {
+      status.textContent = '⚠ Could not load Tools & Appliances library: ' + (e.message || e);
       status.style.color = '#e09955';
       status.style.display = 'block';
     }
@@ -2874,6 +2946,193 @@ function removeStep(btn) {
 
 function renumberSteps(container) {
   container.querySelectorAll('.step-number').forEach((n, i) => n.textContent = i + 1);
+}
+
+// ── UTENSILS (Tools & Appliances library) ─────────────
+function escUtensil(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+}
+
+function toolDbName(t) {
+  return ((t && t.name) || '').toString().trim();
+}
+
+function toolDbNorm(s) {
+  return String(s || '').toLowerCase().trim();
+}
+
+function findToolInDb(query) {
+  if (!query || !Array.isArray(allTools) || !allTools.length) return null;
+  var lc = toolDbNorm(query);
+  if (!lc) return null;
+  var exact = allTools.find(function(t) { return toolDbNorm(toolDbName(t)) === lc; });
+  if (exact) return exact;
+  return allTools.find(function(t) {
+    var aka = String(t.also_known_as || '').toLowerCase();
+    return aka.split(/[,;/]/).map(function(s) { return s.trim(); }).filter(Boolean)
+      .some(function(a) { return toolDbNorm(a) === lc; });
+  }) || null;
+}
+
+function applyToolDbMatch(row, tool) {
+  var input = row.querySelector('.tool-name-input');
+  var badge = row.querySelector('.tool-unknown-badge');
+  if (!input) return;
+  if (tool) {
+    input.value = toolDbName(tool);
+    input.dataset.slug = tool.slug || '';
+    if (badge) badge.style.display = 'none';
+    input.classList.remove('ing-unknown');
+  }
+}
+
+function validateTool(input) {
+  var row = input.closest('.utensil-row');
+  var badge = row && row.querySelector('.tool-unknown-badge');
+  var q = (input.value || '').trim();
+  if (!q) {
+    input.dataset.slug = '';
+    if (badge) badge.style.display = 'none';
+    input.classList.remove('ing-unknown');
+    return;
+  }
+  var match = findToolInDb(q);
+  if (match) {
+    applyToolDbMatch(row, match);
+    return;
+  }
+  input.dataset.slug = '';
+  if (badge) badge.style.display = 'block';
+  input.classList.add('ing-unknown');
+}
+
+function validateAllToolRows() {
+  document.querySelectorAll('.tool-name-input').forEach(function(input) {
+    try { validateTool(input); } catch(_) {}
+  });
+}
+
+function searchTools(input) {
+  var wrap = input.closest('.tool-name-wrap');
+  var ac = wrap.querySelector('.ing-autocomplete');
+  var query = input.value.trim().toLowerCase();
+  if (!Array.isArray(allTools) || !allTools.length) {
+    ac.style.display = 'none';
+    return;
+  }
+  var matches;
+  if (!query) {
+    matches = allTools.slice(0, 40);
+  } else {
+    matches = allTools.filter(function(t) {
+      var n = toolDbNorm(toolDbName(t));
+      var aka = String(t.also_known_as || '').toLowerCase();
+      return n.includes(query) || aka.includes(query);
+    });
+  }
+  var exact = query ? findToolInDb(input.value.trim()) : null;
+  var html = '';
+  if (query && !exact) {
+    html += '<div class="ing-autocomplete-item ing-autocomplete-custom" data-name="' + escUtensil(input.value.trim()) + '" onmousedown="selectToolEl(this)">Use "' + escUtensil(input.value.trim()) + '" (submit tool profile for review)</div>';
+  }
+  html += matches.slice(0, 30).map(function(t) {
+    var cat = t.type_extra || t.tool_category || '';
+    return '<div class="ing-autocomplete-item" data-slug="' + escUtensil(t.slug) + '" data-name="' + escUtensil(toolDbName(t)) + '" onmousedown="selectToolEl(this)">' +
+      escUtensil(toolDbName(t)) + (cat ? ' <span class="ing-autocomplete-cat">' + escUtensil(cat) + '</span>' : '') +
+    '</div>';
+  }).join('');
+  ac.innerHTML = html;
+  ac.style.display = html ? 'block' : 'none';
+  if (query) validateTool(input);
+}
+
+function selectToolEl(el) {
+  selectTool(el, el.getAttribute('data-name') || '', el.getAttribute('data-slug') || '');
+}
+
+function selectTool(item, name, slug) {
+  var wrap = item.closest('.tool-name-wrap');
+  var input = wrap.querySelector('.tool-name-input');
+  var ac = wrap.querySelector('.ing-autocomplete');
+  input.value = name;
+  if (slug) {
+    input.dataset.slug = slug;
+    input.classList.remove('ing-unknown');
+    var badge = wrap.querySelector('.tool-unknown-badge');
+    if (badge) badge.style.display = 'none';
+  } else {
+    validateTool(input);
+  }
+  ac.style.display = 'none';
+}
+
+function addUtensilRow(data) {
+  const container = document.getElementById('utensil-rows');
+  if (!container) return;
+  var item = data;
+  if (typeof item === 'string') item = { name: item, purpose: '', slug: '' };
+  if (!item || typeof item !== 'object') item = {};
+  const name = item.name || '';
+  const slug = item.slug || '';
+  const p = (item.purpose || '').toLowerCase();
+  const row = document.createElement('div');
+  row.className = 'utensil-row';
+  row.innerHTML =
+    '<div class="tool-name-wrap">' +
+      '<input class="ing-input tool-name-input" type="text" maxlength="120" placeholder="Search tools &amp; appliances…" value="' + escUtensil(name) + '" data-slug="' + escUtensil(slug) + '" autocomplete="off" oninput="searchTools(this)" onfocus="searchTools(this)" onclick="searchTools(this)" onblur="hideAC(this)">' +
+      '<div class="ing-autocomplete"></div>' +
+      '<span class="tool-unknown-badge ing-unknown-badge" style="display:none">⚠ Not in library — <a href="library-submit.html?type=tool" target="_blank" rel="noopener">submit a tool profile</a></span>' +
+    '</div>' +
+    '<select class="utensil-purpose">' +
+      '<option value=""' + (!p ? ' selected' : '') + '>Prep or cook</option>' +
+      '<option value="prep"' + (p === 'prep' ? ' selected' : '') + '>Prep</option>' +
+      '<option value="cook"' + (p === 'cook' ? ' selected' : '') + '>Cook</option>' +
+      '<option value="both"' + (p === 'both' ? ' selected' : '') + '>Prep &amp; cook</option>' +
+    '</select>' +
+    '<button type="button" class="btn-remove-row" onclick="this.closest(\'.utensil-row\').remove()">×</button>';
+  container.appendChild(row);
+  if (name) {
+    try { validateTool(row.querySelector('.tool-name-input')); } catch(_) {}
+  }
+}
+
+function collectUtensils() {
+  const items = [];
+  document.querySelectorAll('.utensil-row').forEach(function(row) {
+    const input = row.querySelector('.tool-name-input');
+    const name = (input?.value || '').trim();
+    const slug = (input?.dataset.slug || '').trim();
+    const purpose = (row.querySelector('.utensil-purpose')?.value || '').trim();
+    if (name) items.push({ name: name, slug: slug || null, purpose: purpose });
+  });
+  return items;
+}
+
+function collectUnknownUtensils() {
+  const unknown = [];
+  document.querySelectorAll('.utensil-row').forEach(function(row) {
+    const badge = row.querySelector('.tool-unknown-badge');
+    const input = row.querySelector('.tool-name-input');
+    if (badge && badge.style.display !== 'none' && input && input.value.trim()) {
+      unknown.push(input.value.trim());
+    }
+  });
+  return unknown.filter(function(v, i, arr) { return arr.indexOf(v) === i; });
+}
+
+function restoreUtensils(list) {
+  const container = document.getElementById('utensil-rows');
+  if (!container) return;
+  container.innerHTML = '';
+  const items = Array.isArray(list) ? list : [];
+  if (!items.length) {
+    addUtensilRow();
+    return;
+  }
+  items.forEach(function(item) {
+    if (typeof item === 'string') addUtensilRow({ name: item });
+    else addUtensilRow(item);
+  });
 }
 
 // ── PARSE RECIPE ──────────────────────────────────────
@@ -7510,6 +7769,19 @@ function buildSubmitPrintSheet() {
     html += '</ol>';
   });
 
+  var utensils = collectUtensils();
+  if (utensils.length) {
+    html += '<div class="sr-print-h2">Utensils &amp; Equipment</div><ul class="sr-print-steps">';
+    utensils.forEach(function(u) {
+      var line = u.name;
+      if (u.purpose === 'prep') line += ' (prep)';
+      else if (u.purpose === 'cook') line += ' (cook)';
+      else if (u.purpose === 'both') line += ' (prep & cook)';
+      html += '<li>' + escPrint(line) + '</li>';
+    });
+    html += '</ul>';
+  }
+
   var notes = (document.getElementById('cooking-notes') && document.getElementById('cooking-notes').value.trim()) || '';
   if (notes) {
     html += '<div class="sr-print-h2">Cooking Notes &amp; Tips</div><div class="sr-print-block">' + escPrint(notes) + '</div>';
@@ -7620,6 +7892,7 @@ function collectFormData() {
     difficulty:           document.querySelector('input[name="difficulty"]:checked')?.value || '',
     ingredients,
     method,
+    equipment:            collectUtensils(),
     cooking_notes:        (document.getElementById('cooking-notes')?.value     || '').trim(),
     source_type:          document.querySelector('input[name="source-type"]:checked')?.value || 'Original',
     credit_name:          (document.getElementById('credit-name')?.value       || '').trim(),
@@ -7655,11 +7928,13 @@ function collectFormData() {
 function addDefaultSubmitSections() {
   var ingHost = document.getElementById('ingredient-sections');
   var methHost = document.getElementById('method-sections');
+  var utHost = document.getElementById('utensil-rows');
   if (ingHost && !ingHost.children.length) addIngSection('Ingredients');
   if (methHost && !methHost.children.length) {
     addMethodSection('PREP WORK');
     addMethodSection('DIRECTIONS');
   }
+  if (utHost && !utHost.children.length) addUtensilRow();
 }
 
 function draftRichnessScore(d) {
@@ -7966,6 +8241,11 @@ function restoreDraft(raw) {
       document.querySelectorAll('.step-input').forEach(function(ta) { autoGrowStepTextarea(ta); });
     }, 400);
   }
+
+  // Utensils
+  setTimeout(function() {
+    try { restoreUtensils(d.equipment); } catch(e) { console.warn('Draft restore - utensils:', e); }
+  }, 400);
 }
 
 // ── DRAFT SAVE / LOAD (Supabase-backed) ─────────────────────────────────────
@@ -8277,6 +8557,7 @@ async function submitRecipe() {
       unknownIngredients.push(nameInput.value.trim());
     }
   });
+  const unknownUtensils = collectUnknownUtensils();
   const taxonomySuggestions = collectTaxonomySuggestions();
 
   const btn = document.getElementById('btn-submit');
@@ -8299,6 +8580,7 @@ async function submitRecipe() {
       status:              'pending',
       submitted_at:        new Date().toISOString(),
       unknown_ingredients: unknownIngredients,
+      unknown_utensils: unknownUtensils,
       taxonomy_suggestions: taxonomySuggestions
     };
 
