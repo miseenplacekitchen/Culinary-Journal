@@ -590,10 +590,7 @@
           <div class="theme-group-label">Inspired</div>
           <div class="theme-grid" id="theme-grid-inspired"></div>
         </div>
-        <div class="theme-group" id="theme-group-custom" style="display:none">
-          <div class="theme-group-label">Custom</div>
-          <div class="theme-grid" id="theme-grid-custom"></div>
-        </div>
+        <div id="theme-groups-extra"></div>
       </section>
 
     </div>
@@ -749,7 +746,11 @@ async function loadThemeCatalog() {
   THEMES.festive.forEach(refreshThemeAccess);
   THEMES.special.forEach(refreshThemeAccess);
   THEMES.inspired.forEach(refreshThemeAccess);
-  (THEMES.custom || []).forEach(refreshThemeAccess);
+  Object.keys(THEMES).forEach(function (id) {
+    if (['dark', 'light', 'seasonal', 'festive', 'special', 'inspired'].indexOf(id) === -1) {
+      (THEMES[id] || []).forEach(refreshThemeAccess);
+    }
+  });
 }
 
 function refreshThemeAccess(t) {
@@ -1377,20 +1378,41 @@ async function changePassword() {
 /* ═══════════════════════════════════════════════════
    THEME SELECTOR
 ═══════════════════════════════════════════════════ */
+var THEME_BUILTIN_IDS = ['dark', 'light', 'seasonal', 'festive', 'special', 'inspired'];
+
 function renderAllThemes() {
   if (!THEMES) return;
-  renderThemeGroup('theme-grid-dark',     THEMES.dark || []);
-  renderThemeGroup('theme-grid-light',    THEMES.light || []);
-  renderThemeGroup('theme-grid-seasonal', THEMES.seasonal || []);
-  renderThemeGroup('theme-grid-festive',  THEMES.festive || []);
-  renderThemeGroup('theme-grid-special',  THEMES.special || []);
-  renderThemeGroup('theme-grid-inspired', THEMES.inspired || []);
-  var customWrap = document.getElementById('theme-group-custom');
-  var custom = THEMES.custom || [];
-  if (customWrap) {
-    customWrap.style.display = custom.length ? '' : 'none';
-    renderThemeGroup('theme-grid-custom', custom);
-  }
+  THEME_BUILTIN_IDS.forEach(function (id) {
+    renderThemeGroup('theme-grid-' + id, THEMES[id] || []);
+    var grp = document.getElementById('theme-grid-' + id);
+    if (grp) {
+      var section = grp.closest('.theme-group');
+      if (section) section.style.display = (THEMES[id] && THEMES[id].length) ? '' : 'none';
+    }
+  });
+
+  var extraHost = document.getElementById('theme-groups-extra');
+  if (!extraHost) return;
+  extraHost.innerHTML = '';
+  Object.keys(THEMES).forEach(function (id) {
+    if (THEME_BUILTIN_IDS.indexOf(id) !== -1) return;
+    var items = THEMES[id] || [];
+    if (!items.length) return;
+    var label = (typeof TCJ_getCategoryLabel === 'function' && THEME_CATALOG)
+      ? TCJ_getCategoryLabel(THEME_CATALOG, id) : id;
+    var wrap = document.createElement('div');
+    wrap.className = 'theme-group';
+    var lbl = document.createElement('div');
+    lbl.className = 'theme-group-label';
+    lbl.textContent = label;
+    var grid = document.createElement('div');
+    grid.className = 'theme-grid';
+    grid.id = 'theme-grid-' + id;
+    wrap.appendChild(lbl);
+    wrap.appendChild(grid);
+    extraHost.appendChild(wrap);
+    renderThemeGroup(grid.id, items);
+  });
 }
 
 function renderThemeGroup(containerId, themes) {
