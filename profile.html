@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
+  <script src="lib/theme-catalog.js"></script>
   <script src="nav-init.js" defer></script>
   <script>
     // Apply saved theme as early as possible (prevents flash on subsequent loads).
@@ -589,6 +590,10 @@
           <div class="theme-group-label">Inspired</div>
           <div class="theme-grid" id="theme-grid-inspired"></div>
         </div>
+        <div class="theme-group" id="theme-group-custom" style="display:none">
+          <div class="theme-group-label">Custom</div>
+          <div class="theme-grid" id="theme-grid-custom"></div>
+        </div>
       </section>
 
     </div>
@@ -697,70 +702,59 @@
    PROFILE PAGE — uses RPCs for all profile reads/writes so it
    works regardless of how RLS is configured on the profiles table.
 ═══════════════════════════════════════════════════════════════ */
-const THEMES = {
-  dark: [
-    { key: 'midnight-slate',  name: 'Midnight Slate',  sub: 'Default',         swatches: ['#0a0a0a', '#C4973B', '#ffffff'], live: true },
-    { key: 'midnight-black',  name: 'Midnight Black',  sub: 'Pure dark',       swatches: ['#000000', '#C4973B', '#ffffff'], live: true },
-    { key: 'dark-forest',     name: 'Dark Forest',     sub: 'Deep green',      swatches: ['#0b1410', '#6b8e5a', '#ffffff'], live: true },
-    { key: 'dark-bordeaux',   name: 'Dark Bordeaux',   sub: 'Wine red',        swatches: ['#1a0a0e', '#a04050', '#ffffff'], live: true },
-    { key: 'dark-navy',       name: 'Dark Navy',       sub: 'Deep blue',       swatches: ['#08111e', '#5080b8', '#ffffff'], live: true },
-    { key: 'dark-chocolate',  name: 'Dark Chocolate',  sub: 'Cocoa brown',     swatches: ['#180e08', '#a07050', '#ffffff'], live: true },
-    { key: 'dark-obsidian',   name: 'Dark Obsidian',   sub: 'Volcanic glass',  swatches: ['#0a0a14', '#7868a0', '#ffffff'], live: true }
-  ],
-  light: [
-    { key: 'cream-gold',      name: 'Cream & Gold',    sub: 'Warm paper',      swatches: ['#fdf6e3', '#b8860b', '#281e12'], live: true },
-    { key: 'pure-white',      name: 'Pure White',      sub: 'Minimal',         swatches: ['#ffffff', '#9b7028', '#141414'], live: true },
-    { key: 'soft-linen',      name: 'Soft Linen',      sub: 'Natural texture', swatches: ['#f5f0e8', '#a08868', '#2a2418'], live: true },
-    { key: 'sage-cream',      name: 'Sage & Cream',    sub: 'Herb garden',     swatches: ['#f4f1e8', '#8a9d7a', '#2a2e22'], live: true },
-    { key: 'blush-rose',      name: 'Blush & Rose',    sub: 'Soft romance',    swatches: ['#fbeae5', '#c47b8f', '#3a2028'], live: true },
-    { key: 'silver-morning',  name: 'Silver Morning',  sub: 'Cool grey',       swatches: ['#f0f2f5', '#7a8898', '#1a2028'], live: true },
-    { key: 'lemon-fresh',     name: 'Lemon Fresh',     sub: 'Citrus light',    swatches: ['#fdfbe8', '#c8a838', '#2e2818'], live: true }
-  ],
-  seasonal: [
-    { key: 'spring-blossom',  name: 'Spring Blossom',  sub: 'Soft pinks',      swatches: ['#fdeef2', '#c47b8f', '#3c1e28'], live: true },
-    { key: 'summer-citrus',   name: 'Summer Citrus',   sub: 'Bright zest',     swatches: ['#fff8e0', '#e08820', '#3a2a10'], live: true },
-    { key: 'autumn-harvest',  name: 'Autumn Harvest',  sub: 'Burnt orange',    swatches: ['#1a0e08', '#d97c3c', '#ffffff'], live: true },
-    { key: 'winter-frost',    name: 'Winter Frost',    sub: 'Icy blue',        swatches: ['#e8f0f5', '#6890b0', '#1a2830'], live: true }
-  ],
-  festive: [
-    { key: 'christmas',       name: 'Christmas',       sub: 'Red & green',     swatches: ['#1a0a0a', '#c83838', '#3a8050'], live: true },
-    { key: 'diwali',          name: 'Diwali',          sub: 'Golden glow',     swatches: ['#1f0a05', '#e8a020', '#c84040'], live: true },
-    { key: 'ramadan',         name: 'Ramadan',         sub: 'Crescent moon',   swatches: ['#0a1418', '#80a8c0', '#d8b860'], live: true },
-    { key: 'new-year',        name: 'New Year',        sub: 'Midnight sparkle',swatches: ['#000814', '#d4af37', '#ffffff'], live: true },
-    { key: 'onam',            name: 'Onam',            sub: 'Floral feast',    swatches: ['#fff5e0', '#e08020', '#7a9050'], live: true },
-    { key: 'easter',          name: 'Easter',          sub: 'Pastel spring',   swatches: ['#fbf2e8', '#c8a0c0', '#a0c890'], live: true }
-  ],
-  special: [
-    { key: 'wedding-white',   name: 'Wedding White',   sub: 'Pure & elegant',  swatches: ['#ffffff', '#c0a060', '#1a1a1a'], live: true },
-    { key: 'birthday-cake',   name: 'Birthday Cake',   sub: 'Confetti joy',    swatches: ['#fff0f8', '#e878a8', '#5a3050'], live: true },
-    { key: 'baby-shower',     name: 'Baby Shower',     sub: 'Soft pastels',    swatches: ['#eef5f8', '#a0c8d8', '#3a4a58'], live: true },
-    { key: 'fine-dining',     name: 'Fine Dining',     sub: 'Black & gold',    swatches: ['#0a0a0a', '#d4af37', '#ffffff'], live: true },
-    { key: 'old-cookbook',    name: 'Old Cookbook',    sub: 'Vintage paper',   swatches: ['#f2e8d0', '#7a4828', '#2a1810'], live: true },
-    { key: 'world-kitchen',   name: 'World Kitchen',   sub: 'Global mosaic',   swatches: ['#1a1208', '#e08838', '#80a060'], live: true }
-  ],
-  inspired: [
-    { key: 'silk-whisper',     name: 'Silk & Whisper',  sub: 'Soft luxury',      swatches: ['#1a1418', '#c8a8b0', '#ffffff'], live: true },
-    { key: 'midnight-garden',  name: 'Midnight Garden', sub: 'Botanical dark',   swatches: ['#0a1410', '#7a9070', '#e0c890'], live: true },
-    { key: 'crystal-pearl',    name: 'Crystal & Pearl', sub: 'Iridescent',       swatches: ['#f8f4f8', '#b8a8c8', '#3a304a'], live: true },
-    { key: 'secret-garden',    name: 'The Secret Garden', sub: 'Hidden bloom',   swatches: ['#0e1a14', '#90b870', '#e8d8b0'], live: true },
-    { key: 'bridal-blush',     name: 'Bridal Blush',    sub: 'Veil & rose',      swatches: ['#fbf0ee', '#d8a8a0', '#4a302e'], live: true },
-    { key: 'pure-petals',      name: 'Pure Petals',     sub: 'White florals',    swatches: ['#fdfafa', '#e8c8c8', '#3a2828'], live: true },
-    { key: 'violet-storm',     name: 'Violet Storm',    sub: 'Electric purple',  swatches: ['#0a0814', '#9070d0', '#ffffff'], live: true },
-    { key: 'golden-hour',      name: 'Golden Hour',     sub: 'Sunset glow',      swatches: ['#1a1008', '#e8a040', '#ffd890'], live: true },
-    { key: 'forest-rain',      name: 'Forest Rain',     sub: 'Petrichor mist',   swatches: ['#0e1614', '#7a9088', '#d8d0c0'], live: true },
-    { key: 'enchanted-winter', name: 'Enchanted Winter', sub: 'Snow & silver',   swatches: ['#e8eef2', '#7088a0', '#1a2a3a'], live: true },
-    { key: 'emerald-night',    name: 'Emerald Night',   sub: 'Jewel green',      swatches: ['#040e0a', '#10a070', '#ffffff'], live: true },
-    { key: 'still-waters',     name: 'Still Waters',    sub: 'Calm lake',        swatches: ['#0a1418', '#5090a0', '#d0e0e8'], live: true },
-    { key: 'heavens-gate',     name: "Heaven's Gate",   sub: 'Celestial light',  swatches: ['#f0f0fa', '#a890d0', '#2a2848'], live: true },
-    { key: 'ocean-breeze',     name: 'Ocean Breeze',    sub: 'Salt & spray',     swatches: ['#e8f4f8', '#4090b0', '#1a3a48'], live: true },
-    { key: 'wildfire',         name: 'Wildfire',        sub: 'Untamed flame',    swatches: ['#1a0808', '#e04020', '#f8c060'], live: true },
-    { key: 'full-bloom',       name: 'Full Bloom',      sub: 'Garden in summer', swatches: ['#fbf4e8', '#d870a0', '#3a2030'], live: true },
-    { key: 'lunar-gold',       name: 'Lunar Gold',      sub: 'Moonlight metal',  swatches: ['#0a0a14', '#d4c068', '#ffffff'], live: true }
-  ]
-};
+let THEME_CATALOG = null;
+let THEMES = null;
+let THEME_CURRENCY = '$';
 
 let SESSION = null;
 let PROFILE = null;
+
+function memberCanUseTheme(t) {
+  if (!t || !t.enabled) return false;
+  if (t.pricing === 'free') return true;
+  var tier = (PROFILE && PROFILE.subscription_tier) || 'free';
+  var tierRank = { free: 0, daily: 1, weekly: 2, monthly: 3, yearly: 4, premium: 5, event: 5 };
+  var userRank = tierRank[tier] !== undefined ? tierRank[tier] : 0;
+  var needRank = tierRank[t.min_tier || 'free'] !== undefined ? tierRank[t.min_tier] : 0;
+  if (userRank < needRank) return false;
+  if (t.pricing === 'premium_bundle') return userRank >= 3;
+  if (t.pricing === 'paid') return false;
+  return true;
+}
+
+async function loadThemeCatalog() {
+  if (typeof TCJ_buildDefaultCatalog !== 'function') {
+    THEME_CATALOG = { themes: {}, custom: [] };
+    THEMES = { dark: [], light: [], seasonal: [], festive: [], special: [], inspired: [], custom: [] };
+    return;
+  }
+  THEME_CATALOG = TCJ_buildDefaultCatalog();
+  try {
+    var settings = await callRPC('get_theme_settings', {});
+    if (settings && typeof settings === 'object') {
+      if (settings.currency_symbol) THEME_CURRENCY = settings.currency_symbol;
+      var disabled = [];
+      try { disabled = JSON.parse(settings.disabled_themes || '[]'); } catch (_) {}
+      var stored = settings.theme_catalog;
+      if (typeof stored === 'string') {
+        try { stored = JSON.parse(stored); } catch (_) { stored = null; }
+      }
+      THEME_CATALOG = TCJ_mergeThemeCatalog(stored, disabled, settings.seasonal_default_theme || '');
+    }
+  } catch (_) {}
+  THEMES = TCJ_profileThemeGroups(THEME_CATALOG);
+  THEMES.dark.forEach(refreshThemeAccess);
+  THEMES.light.forEach(refreshThemeAccess);
+  THEMES.seasonal.forEach(refreshThemeAccess);
+  THEMES.festive.forEach(refreshThemeAccess);
+  THEMES.special.forEach(refreshThemeAccess);
+  THEMES.inspired.forEach(refreshThemeAccess);
+  (THEMES.custom || []).forEach(refreshThemeAccess);
+}
+
+function refreshThemeAccess(t) {
+  t.live = memberCanUseTheme(t);
+}
 
 /* ═══════════════════════════════════════════════════
    SESSION
@@ -1084,6 +1078,7 @@ async function init() {
       return;
     }
 
+    await loadThemeCatalog();
     hydrateUI();
   hydratePreferences();
     renderAllThemes();
@@ -1383,12 +1378,19 @@ async function changePassword() {
    THEME SELECTOR
 ═══════════════════════════════════════════════════ */
 function renderAllThemes() {
-  renderThemeGroup('theme-grid-dark',     THEMES.dark);
-  renderThemeGroup('theme-grid-light',    THEMES.light);
-  renderThemeGroup('theme-grid-seasonal', THEMES.seasonal);
-  renderThemeGroup('theme-grid-festive',  THEMES.festive);
-  renderThemeGroup('theme-grid-special',  THEMES.special);
-  renderThemeGroup('theme-grid-inspired', THEMES.inspired);
+  if (!THEMES) return;
+  renderThemeGroup('theme-grid-dark',     THEMES.dark || []);
+  renderThemeGroup('theme-grid-light',    THEMES.light || []);
+  renderThemeGroup('theme-grid-seasonal', THEMES.seasonal || []);
+  renderThemeGroup('theme-grid-festive',  THEMES.festive || []);
+  renderThemeGroup('theme-grid-special',  THEMES.special || []);
+  renderThemeGroup('theme-grid-inspired', THEMES.inspired || []);
+  var customWrap = document.getElementById('theme-group-custom');
+  var custom = THEMES.custom || [];
+  if (customWrap) {
+    customWrap.style.display = custom.length ? '' : 'none';
+    renderThemeGroup('theme-grid-custom', custom);
+  }
 }
 
 function renderThemeGroup(containerId, themes) {
@@ -1424,8 +1426,24 @@ function renderThemeGroup(containerId, themes) {
 
     const sub = document.createElement('div');
     sub.className = 'theme-sub';
-    sub.textContent = t.live ? t.sub : 'Coming soon';
+    if (t.live) {
+      sub.textContent = t.sub;
+    } else if (t.pricing === 'paid' && t.price > 0) {
+      sub.textContent = THEME_CURRENCY + Number(t.price).toFixed(2) + ' · ' + (t.sub || 'Premium theme');
+    } else if (t.pricing === 'premium_bundle') {
+      sub.textContent = 'Premium members · ' + (t.sub || '');
+    } else {
+      sub.textContent = 'Unavailable';
+    }
     card.appendChild(sub);
+
+    if (t.featured) {
+      const badge = document.createElement('div');
+      badge.style.cssText = 'position:absolute;top:8px;left:8px;font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;background:var(--accent-glow);color:var(--accent);border:1px solid var(--accent-border)';
+      badge.textContent = 'Featured';
+      card.style.position = 'relative';
+      card.appendChild(badge);
+    }
 
     if (t.live) {
       card.addEventListener('click', function () { selectTheme(t.key); });

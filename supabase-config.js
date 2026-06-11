@@ -110,6 +110,110 @@
     } catch (_) { return null; }
   };
 
+  var ANN_TYPE_STYLES = {
+    info:    { accent: '#5B8FD4', bg: 'rgba(91,143,212,0.12)',  border: 'rgba(91,143,212,0.35)' },
+    success: { accent: '#4caf76', bg: 'rgba(76,175,118,0.12)',  border: 'rgba(76,175,118,0.35)' },
+    warning: { accent: '#d4a017', bg: 'rgba(212,160,23,0.12)',  border: 'rgba(212,160,23,0.35)' },
+    error:   { accent: '#dc5050', bg: 'rgba(220,80,80,0.12)',   border: 'rgba(220,80,80,0.35)' }
+  };
+
+  window.loadTcjAnnouncements = function() {
+    if (window.__tcjAnnLoading) return;
+    window.__tcjAnnLoading = true;
+
+    var headers = { apikey: KEY, Accept: 'application/json' };
+    var sess = window.getSession();
+    if (sess && sess.access_token) headers.Authorization = 'Bearer ' + sess.access_token;
+
+    fetch(
+      URL + '/rest/v1/site_announcements?active=eq.true&select=id,text,type,link_url,link_label,expires_at&order=created_at.desc',
+      { headers: headers }
+    )
+      .then(function(res) { return res.ok ? res.json() : []; })
+      .then(function(rows) {
+        window.__tcjAnnLoading = false;
+        if (!Array.isArray(rows) || !rows.length) return;
+
+        var now = Date.now();
+        var dismissed = [];
+        try { dismissed = JSON.parse(localStorage.getItem('tcj_ann_dismissed') || '[]'); } catch (_) {}
+
+        var live = rows.filter(function(a) {
+          if (!a || !a.text) return false;
+          if (dismissed.indexOf(a.id) !== -1) return false;
+          if (a.expires_at && new Date(a.expires_at).getTime() < now) return false;
+          return true;
+        });
+        if (!live.length) return;
+
+        var existing = document.getElementById('tcj-ann-wrap');
+        if (existing) existing.remove();
+
+        var wrap = document.createElement('div');
+        wrap.id = 'tcj-ann-wrap';
+        wrap.setAttribute('role', 'region');
+        wrap.setAttribute('aria-label', 'Site announcements');
+
+        live.forEach(function(a) {
+          var style = ANN_TYPE_STYLES[a.type] || ANN_TYPE_STYLES.info;
+          var bar = document.createElement('div');
+          bar.className = 'tcj-ann-bar';
+          bar.style.cssText =
+            'display:flex;align-items:center;gap:12px;padding:10px 20px;' +
+            'background:' + style.bg + ';border-bottom:1px solid ' + style.border + ';' +
+            'font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high);';
+
+          var label = document.createElement('span');
+          label.style.cssText = 'font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:' + style.accent + ';flex-shrink:0';
+          label.textContent = (a.type || 'info').toUpperCase();
+
+          var text = document.createElement('span');
+          text.style.cssText = 'flex:1;line-height:1.45';
+          text.textContent = a.text;
+
+          if (a.link_url) {
+            var link = document.createElement('a');
+            link.href = a.link_url;
+            link.textContent = a.link_label || 'Learn more';
+            link.style.cssText = 'margin-left:8px;color:' + style.accent + ';font-weight:600;text-decoration:none';
+            text.appendChild(document.createTextNode(' '));
+            text.appendChild(link);
+          }
+
+          var close = document.createElement('button');
+          close.type = 'button';
+          close.setAttribute('aria-label', 'Dismiss announcement');
+          close.textContent = '\u00d7';
+          close.style.cssText = 'background:none;border:none;color:var(--text-mid);font-size:20px;line-height:1;cursor:pointer;padding:0 4px;flex-shrink:0';
+          close.addEventListener('click', function() {
+            bar.remove();
+            try {
+              var d = JSON.parse(localStorage.getItem('tcj_ann_dismissed') || '[]');
+              if (d.indexOf(a.id) === -1) d.push(a.id);
+              localStorage.setItem('tcj_ann_dismissed', JSON.stringify(d));
+            } catch (_) {}
+            if (!wrap.querySelector('.tcj-ann-bar')) wrap.remove();
+          });
+
+          bar.appendChild(label);
+          bar.appendChild(text);
+          bar.appendChild(close);
+          wrap.appendChild(bar);
+        });
+
+        var nav = document.querySelector('.nav');
+        var apMain = document.getElementById('screen-main') || document.querySelector('.ap-wrap');
+        if (nav && nav.parentNode) {
+          nav.parentNode.insertBefore(wrap, nav.nextSibling);
+        } else if (apMain) {
+          apMain.insertBefore(wrap, apMain.firstChild);
+        } else {
+          document.body.insertBefore(wrap, document.body.firstChild);
+        }
+      })
+      .catch(function() { window.__tcjAnnLoading = false; });
+  };
+
   window.purgeStaleProfileCache = function() {
     try {
       var s = window.getSession();

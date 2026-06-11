@@ -333,6 +333,7 @@ async function init() {
     document.querySelectorAll('[id^="v-"]').forEach(function(el){ el.style.display = 'none'; });
     try { switchView(_sv, _it); } catch(e) { switchView('dashboard'); }
     document.getElementById('screen-main').style.display = 'flex';
+    if (typeof window.loadTcjAnnouncements === 'function') window.loadTcjAnnouncements();
     rpc('admin_get_stats',{}).then(function(st){ if(st) setEl('badge-pending', st.pending||0); }).catch(function(){});
     rpc('admin_count_pending_users',{}).then(function(n){ setEl('badge-pending-users', n||0); }).catch(function(){});
     // Load unread feedback count
@@ -912,38 +913,7 @@ async function buildSMContent(container) {
   } catch(e){container.dataset.built='';container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>';}
 }
 
-async function buildSMThemes(container) {
-  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
-  try {
-    var res = await apiFetch(SUPABASE_URL+'/rest/v1/site_settings?select=key,value');
-    if (!res||!res.ok) throw new Error(res?res.status+': '+await res.text():'Session expired');
-    var rows = await res.json(); var S={};
-    if(Array.isArray(rows)) rows.forEach(function(r){S[r.key]=r.value;});
-    async function ssSave(k,v){var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_settings',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:k,value:v})});if(!r||!r.ok)throw new Error(r?r.status+': '+await r.text():'Session expired');}
-    container.innerHTML='';
-    function mk(tag,s,t){var e=document.createElement(tag);if(s)e.style.cssText=s;if(t!==undefined)e.textContent=t;return e;}
-    var ALL=['Midnight Slate','Midnight Black','Dark Forest','Dark Bordeaux','Dark Navy','Dark Chocolate','Dark Obsidian','Cream & Gold','Pure White','Soft Linen','Sage & Cream','Blush & Rose','Silver Morning','Lemon Fresh','Spring Blossom','Summer Citrus','Autumn Harvest','Winter Frost','Christmas','Diwali','Ramadan','New Year','Onam','Easter','Wedding White','Birthday Cake','Baby Shower','Fine Dining','Old Cookbook','World Kitchen'];
-    var disabled=[];try{disabled=JSON.parse(S.disabled_themes||'[]');}catch(_){}
-    var sec=mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px');
-    sec.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px",'Enable / Disable Themes'));
-    var grid=mk('div','display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px');
-    ALL.forEach(function(t){
-      var off=disabled.includes(t);
-      var card=mk('div','display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid '+(off?'var(--border)':'var(--accent)')+';border-radius:8px;opacity:'+(off?'0.5':'1'));
-      card.appendChild(mk('span','font-size:12px;color:var(--text-high)',t));
-      var cb=document.createElement('input');cb.type='checkbox';cb.checked=!off;cb.style.cssText='width:14px;height:14px;accent-color:var(--accent);cursor:pointer';
-      cb.addEventListener('change',(function(theme,c){return async function(){
-        var nowOff=!this.checked,prev=this.checked;
-        if(nowOff){if(!disabled.includes(theme))disabled.push(theme);}else{disabled=disabled.filter(function(d){return d!==theme;});}
-        try{await ssSave('disabled_themes',JSON.stringify(disabled));c.style.borderColor=nowOff?'var(--border)':'var(--accent)';c.style.opacity=nowOff?'0.5':'1';}
-        catch(e){this.checked=prev;alert(e.message);}
-      }})(t,card));
-      card.appendChild(cb);grid.appendChild(card);
-    });
-    sec.appendChild(grid);container.appendChild(sec);
-    container.dataset.built='1';
-  } catch(e){container.dataset.built='';container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>';}
-}
+// buildSMThemes() lives in lib/theme-admin-ui.js
 
 async function buildFiOverview(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
@@ -3814,6 +3784,15 @@ async function smSaveAll() {
     }
   }
 
+  // ── Save Themes tab ───────────────────────────────────────
+  var themesPanel = document.getElementById('upanel-sm-themes');
+  if (themesPanel && themesPanel.dataset.built === '1' && window._tcjThemeCatalogState && window._tcjThemeCatalogState.persist) {
+    try {
+      await window._tcjThemeCatalogState.persist();
+      saved++;
+    } catch (e) { errors.push('Themes: ' + e.message); }
+  }
+
   // ── Save Email Templates tab ────────────────────────────────
   var emailPanel = document.getElementById('upanel-sm-email');
   if (emailPanel && emailPanel.dataset.built === '1') {
@@ -3845,13 +3824,14 @@ async function smSaveAll() {
         btn.style.background = '';
         btn.disabled = false;
         // Reload loaded panels to confirm
-        ['sm-pages','sm-settings','sm-email'].forEach(function(tab) {
+        ['sm-pages','sm-settings','sm-email','sm-themes'].forEach(function(tab) {
           var c = document.getElementById('upanel-' + tab);
           if (c && c.dataset.built === '1') {
             c.dataset.built = '';
             if (tab === 'sm-pages')    buildSMPages(c);
             if (tab === 'sm-settings') buildSMSettings(c);
             if (tab === 'sm-email')    buildSMEmail(c);
+            if (tab === 'sm-themes')   buildSMThemes(c);
           }
         });
       }, 2000);

@@ -411,6 +411,10 @@ function buildSectionNav() {
     injectSkipLink();
     canonicalizeLogo();
     buildSectionNav();
+    if (typeof window.loadTcjAnnouncements === 'function') {
+      window.loadTcjAnnouncements();
+    }
+
     var host = document.getElementById('nav-btns') || document.querySelector('[data-nav-host]');
     if (!host) return;
     injectStyles();
