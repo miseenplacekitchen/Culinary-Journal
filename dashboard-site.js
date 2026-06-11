@@ -98,24 +98,75 @@ async function buildSMPages(container) {
     tbl.innerHTML = '<thead><tr style="border-bottom:1px solid var(--border)"><th class="ap-th">Page</th><th class="ap-th">Path</th><th class="ap-th">Visibility</th><th class="ap-th">Min Tier</th><th class="ap-th" style="text-align:center">Coming Soon</th><th class="ap-th">Save</th></tr></thead>';
     var tbody = document.createElement('tbody');
     pages.forEach(function(p) {
-      var tr = document.createElement('tr'); tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
-      var vis = '<select id="smv-'+esc(p.path||'')+'" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)">'+
+      var path = p.path || '';
+      var tr = document.createElement('tr');
+      tr.className = 'sm-page-row';
+      tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+      var vis = '<select id="smv-'+esc(path)+'" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)">'+
         [{v:'public',l:'Public — Everyone'},{v:'registered',l:'Registered Members'},{v:'paid',l:'Paid Members Only'},{v:'hidden',l:'Hidden'}].map(function(o){return '<option value="'+o.v+'"'+(p.visibility===o.v?' selected':'')+'>'+o.l+'</option>';}).join('')+'</select>';
       var minTier = p.min_tier || 'free';
-      var tierSel = '<select id="smt-'+esc(p.path||'')+'" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)">'+
+      var tierSel = '<select id="smt-'+esc(path)+'" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-high)">'+
         _SM_TIER_OPTS.map(function(o){return '<option value="'+o.v+'"'+(minTier===o.v?' selected':'')+'>'+o.l+'</option>';}).join('')+'</select>';
-      tr.innerHTML = '<td class="ap-td" style="font-size:13px;font-weight:500;color:var(--text-high)">'+esc(p.name||'')+'</td>'+
-        '<td class="ap-td" style="font-size:11px;color:var(--text-mid)">'+esc(p.path||'')+'</td>'+
-        '<td class="ap-td">'+vis+'</td>'+
-        '<td class="ap-td">'+tierSel+'</td>'+
-        '<td class="ap-td" style="text-align:center"><input type="checkbox" id="smcs-'+esc(p.path||'')+'"'+(p.coming_soon?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent)"></td>'+
-        '<td class="ap-td"></td>';
+      var nameCell = document.createElement('td');
+      nameCell.className = 'ap-td';
+      nameCell.style.cssText = 'font-size:13px;font-weight:500;color:var(--text-high)';
+      nameCell.appendChild(document.createTextNode(p.name || ''));
+      var seoBtn = document.createElement('button');
+      seoBtn.type = 'button';
+      seoBtn.textContent = 'SEO';
+      seoBtn.style.cssText = 'margin-left:8px;padding:2px 8px;background:none;border:1px solid var(--border);border-radius:5px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:10px;cursor:pointer';
+      seoBtn.addEventListener('click', (function(pagePath, btn) { return function() {
+        var row = document.getElementById('seo-row-' + pagePath);
+        if (!row) return;
+        var open = row.style.display !== 'none';
+        row.style.display = open ? 'none' : 'table-row';
+        btn.style.borderColor = open ? 'var(--border)' : 'var(--accent)';
+        btn.style.color = open ? 'var(--text-mid)' : 'var(--accent)';
+      };})(path, seoBtn));
+      nameCell.appendChild(seoBtn);
+      tr.appendChild(nameCell);
+      var pathTd = document.createElement('td');
+      pathTd.className = 'ap-td';
+      pathTd.style.cssText = 'font-size:11px;color:var(--text-mid)';
+      pathTd.textContent = path;
+      tr.appendChild(pathTd);
+      var visTd = document.createElement('td'); visTd.className = 'ap-td'; visTd.innerHTML = vis; tr.appendChild(visTd);
+      var tierTd = document.createElement('td'); tierTd.className = 'ap-td'; tierTd.innerHTML = tierSel; tr.appendChild(tierTd);
+      var csTd = document.createElement('td');
+      csTd.className = 'ap-td';
+      csTd.style.textAlign = 'center';
+      csTd.innerHTML = '<input type="checkbox" id="smcs-'+esc(path)+'"'+(p.coming_soon?' checked':'')+' style="width:15px;height:15px;accent-color:var(--accent)">';
+      tr.appendChild(csTd);
+      var saveTd = document.createElement('td'); saveTd.className = 'ap-td';
+      var btn = document.createElement('button'); btn.textContent = 'Save';
+      btn.style.cssText = "padding:5px 12px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";
+      btn.addEventListener('click', (function(pagePath, b) { return async function() {
+        b.disabled=true; b.textContent='\u2026';
+        try {
+          var mtEl = document.getElementById('seo-t-'+pagePath);
+          var mdEl = document.getElementById('seo-d-'+pagePath);
+          var body = {
+            visibility: document.getElementById('smv-'+pagePath).value,
+            coming_soon: document.getElementById('smcs-'+pagePath).checked,
+            min_tier: document.getElementById('smt-'+pagePath).value,
+            meta_title: mtEl ? (mtEl.value || null) : null,
+            meta_desc: mdEl ? (mdEl.value || null) : null
+          };
+          var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_pages?path=eq.'+encodeURIComponent(pagePath),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(body)});
+          var rBody = await r.json(); if(!Array.isArray(rBody)||!rBody.length) throw new Error('Row not found — no changes saved');
+          b.textContent='\u2713 Saved'; setTimeout(function(){var c=document.getElementById('upanel-sm-pages');if(c){c.dataset.built='';buildSMPages(c);}},1500);
+        } catch(e){b.textContent='Save';b.disabled=false;alert('Save failed: '+e.message);}
+      };})(path,btn));
+      saveTd.appendChild(btn);
+      tr.appendChild(saveTd);
+      tbody.appendChild(tr);
       var seoWrap = document.createElement('tr');
-      seoWrap.style.cssText = 'border-bottom:1px solid rgba(255,255,255,0.04)';
+      seoWrap.className = 'sm-page-seo-row';
+      seoWrap.id = 'seo-row-' + path;
+      seoWrap.style.cssText = 'border-bottom:1px solid rgba(255,255,255,0.04);display:none';
       var seoCel = document.createElement('td');
       seoCel.setAttribute('colspan','6');
-      seoCel.style.cssText = 'padding:0 8px 10px;display:none';
-      seoCel.id = 'seo-row-' + esc(p.path||'');
+      seoCel.style.cssText = 'padding:0 8px 10px';
       var seoGrid = document.createElement('div');
       seoGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 0';
       var seoMakeLabeledInput = function(labelText, inputId, inputValue) {
@@ -129,27 +180,11 @@ async function buildSMPages(container) {
         w.appendChild(lbl); w.appendChild(inp);
         return w;
       };
-      seoGrid.appendChild(seoMakeLabeledInput('Meta Title', 'seo-t-'+(p.path||''), S['seo_'+(p.path||'')+'_title']||''));
-      seoGrid.appendChild(seoMakeLabeledInput('Meta Description', 'seo-d-'+(p.path||''), S['seo_'+(p.path||'')+'_desc']||''));
+      seoGrid.appendChild(seoMakeLabeledInput('Meta Title', 'seo-t-'+path, p.meta_title || ''));
+      seoGrid.appendChild(seoMakeLabeledInput('Meta Description', 'seo-d-'+path, p.meta_desc || ''));
       seoCel.appendChild(seoGrid);
       seoWrap.appendChild(seoCel);
       tbody.appendChild(seoWrap);
-      var btn = document.createElement('button'); btn.textContent = 'Save';
-      btn.style.cssText = "padding:5px 12px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer";
-      btn.addEventListener('click', (function(path, b) { return async function() {
-        b.disabled=true; b.textContent='\u2026';
-        try {
-          var body = {
-            visibility: document.getElementById('smv-'+path).value,
-            coming_soon: document.getElementById('smcs-'+path).checked,
-            min_tier: document.getElementById('smt-'+path).value
-          };
-          var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_pages?path=eq.'+encodeURIComponent(path),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(body)});
-          var rBody = await r.json(); if(!Array.isArray(rBody)||!rBody.length) throw new Error('Row not found — no changes saved');
-          b.textContent='\u2713 Saved'; setTimeout(function(){var c=document.getElementById('upanel-sm-pages');if(c){c.dataset.built='';buildSMPages(c);}},1500);
-        } catch(e){b.textContent='Save';b.disabled=false;alert('Save failed: '+e.message);}
-      };})(p.path,btn));
-      tr.lastElementChild.appendChild(btn); tbody.appendChild(tr);
     });
     tbl.appendChild(tbody); wrap.appendChild(tbl); container.appendChild(wrap);
     container.dataset.built = '1';
@@ -159,45 +194,160 @@ async function buildSMPages(container) {
   }
 }
 
+function _smAnnToLocalInput(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  var pad = function(n) { return String(n).padStart(2, '0'); };
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
 async function buildSMAnnouncements(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
   try {
-    var res = await apiFetch(SUPABASE_URL+'/rest/v1/site_announcements?order=created_at.desc');
-    if (!res||!res.ok) throw new Error(res?res.status+': '+await res.text():'Session expired');
-    var anns = await res.json(); if(!Array.isArray(anns)) anns=[];
-    container.innerHTML='';
-    var form=document.createElement('div');form.style.cssText='background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px';
-    form.innerHTML='<div style="font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px">New Announcement</div>'+
-      '<div style="display:grid;grid-template-columns:1fr 100px;gap:10px;margin-bottom:10px">'+
-      '<input id="sm-ann-new-text" placeholder="Announcement text\u2026" style="padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)">'+
-      '<select id="sm-ann-new-type" style="padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)"><option value="info">Info</option><option value="success">Success</option><option value="warning">Warning</option><option value="error">Error</option></select></div>';
-    var addBtn=document.createElement('button');addBtn.className='ing-add-btn';addBtn.textContent='Add Announcement';
-    addBtn.addEventListener('click',async function(){
-      var text=(document.getElementById('sm-ann-new-text').value||'').trim();if(!text)return;addBtn.disabled=true;
-      try{var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_announcements',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({text:text,type:document.getElementById('sm-ann-new-type').value,active:true})});
-      if(!r||!r.ok)throw new Error(r?r.status+': '+await r.text():'Session expired');
-      var c=document.getElementById('upanel-sm-ann');if(c){c.dataset.built='';buildSMAnnouncements(c);}}
-      catch(e){addBtn.disabled=false;alert('Add failed: '+e.message);}
+    var anns = await rpc('admin_get_announcements', {}) || [];
+    if (!Array.isArray(anns)) anns = [];
+    container.innerHTML = '';
+    var form = document.createElement('div');
+    form.style.cssText = 'background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:16px';
+    form.innerHTML = '<div style="font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px">New Announcement</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 100px;gap:10px;margin-bottom:10px">' +
+      '<input id="sm-ann-new-text" placeholder="Announcement text\u2026" style="padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)">' +
+      '<select id="sm-ann-new-type" style="padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)"><option value="info">Info</option><option value="success">Success</option><option value="warning">Warning</option><option value="error">Error</option></select></div>' +
+      '<div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-bottom:10px">' +
+      '<div><label style="display:block;font-size:10px;text-transform:uppercase;color:var(--text-mid);margin-bottom:4px">Expires (optional)</label>' +
+      '<input id="sm-ann-new-exp" type="datetime-local" style="width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)"></div>' +
+      '<label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-high);margin-top:18px"><input type="checkbox" id="sm-ann-new-active" checked style="width:15px;height:15px;accent-color:var(--accent)"> Active on create</label></div>';
+    var addBtn = document.createElement('button');
+    addBtn.className = 'ing-add-btn';
+    addBtn.textContent = 'Add Announcement';
+    addBtn.addEventListener('click', async function() {
+      var text = (document.getElementById('sm-ann-new-text').value || '').trim();
+      if (!text) return;
+      addBtn.disabled = true;
+      try {
+        await rpc('admin_save_announcement', {
+          p_id: 0,
+          p_text: text,
+          p_type: document.getElementById('sm-ann-new-type').value,
+          p_active: document.getElementById('sm-ann-new-active').checked,
+          p_expires_at: document.getElementById('sm-ann-new-exp').value || null
+        });
+        var c = document.getElementById('upanel-sm-ann');
+        if (c) { c.dataset.built = ''; buildSMAnnouncements(c); }
+      } catch (e) { addBtn.disabled = false; alert('Add failed: ' + e.message); }
     });
-    form.appendChild(addBtn);container.appendChild(form);
-    if(!anns.length){var p=document.createElement('p');p.style.cssText='font-size:13px;color:var(--text-mid)';p.textContent='No announcements yet.';container.appendChild(p);}
-    else {
-      var TC={info:'#5B8FD4',success:'#4caf76',warning:'#d4a017',error:'#dc5050'};
-      anns.forEach(function(a){
-        var card=document.createElement('div');card.style.cssText='background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;gap:10px;justify-content:space-between';
-        var left=document.createElement('div');left.style.flex='1';
-        var annType = document.createElement('span'); annType.style.cssText = 'font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:rgba(0,0,0,0.3);color:'+(TC[a.type]||'var(--text-mid)'); annType.textContent = (a.type||'').toUpperCase(); var annText = document.createElement('div'); annText.style.cssText = 'font-size:13px;color:var(--text-high);margin-top:6px'; annText.textContent = a.text||''; left.appendChild(annType); left.appendChild(annText);
-        var dBtn=document.createElement('button');dBtn.style.cssText="padding:4px 10px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-size:11px;cursor:pointer;flex-shrink:0";dBtn.textContent='Delete';
-        dBtn.addEventListener('click',async function(){if(!confirm('Delete?'))return;
-          try{var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_announcements?id=eq.'+a.id,{method:'DELETE'});
-          if(!r||!r.ok)throw new Error(r?r.status:'Session expired');
-          var c=document.getElementById('upanel-sm-ann');if(c){c.dataset.built='';buildSMAnnouncements(c);}}
-          catch(e){alert('Delete failed: '+e.message);}});
-        card.appendChild(left);card.appendChild(dBtn);container.appendChild(card);
+    form.appendChild(addBtn);
+    container.appendChild(form);
+    if (!anns.length) {
+      var p = document.createElement('p');
+      p.style.cssText = 'font-size:13px;color:var(--text-mid)';
+      p.textContent = 'No announcements yet.';
+      container.appendChild(p);
+    } else {
+      var TC = { info: '#5B8FD4', success: '#4caf76', warning: '#d4a017', error: '#dc5050' };
+      anns.forEach(function(a) {
+        var card = document.createElement('div');
+        card.style.cssText = 'background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:8px';
+        var view = document.createElement('div');
+        view.style.cssText = 'display:flex;gap:10px;justify-content:space-between;align-items:flex-start';
+        var left = document.createElement('div');
+        left.style.flex = '1';
+        var annType = document.createElement('span');
+        annType.style.cssText = 'font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:rgba(0,0,0,0.3);color:' + (TC[a.type] || 'var(--text-mid)');
+        annType.textContent = (a.type || 'info').toUpperCase();
+        var annText = document.createElement('div');
+        annText.style.cssText = 'font-size:13px;color:var(--text-high);margin-top:6px';
+        annText.textContent = a.text || '';
+        left.appendChild(annType);
+        left.appendChild(annText);
+        if (!a.active) {
+          var inactive = document.createElement('div');
+          inactive.style.cssText = 'font-size:11px;color:var(--text-mid);margin-top:4px';
+          inactive.textContent = 'Inactive — not shown on site';
+          left.appendChild(inactive);
+        }
+        if (a.expires_at) {
+          var exp = document.createElement('div');
+          exp.style.cssText = 'font-size:11px;color:var(--text-mid);margin-top:2px';
+          exp.textContent = 'Expires: ' + new Date(a.expires_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          left.appendChild(exp);
+        }
+        var btns = document.createElement('div');
+        btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap';
+        var toggleBtn = document.createElement('button');
+        toggleBtn.style.cssText = 'padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-mid);font-size:11px;cursor:pointer';
+        toggleBtn.textContent = a.active ? 'Pause' : 'Activate';
+        toggleBtn.addEventListener('click', async function() {
+          try {
+            await rpc('admin_save_announcement', { p_id: a.id, p_text: a.text, p_type: a.type, p_active: !a.active, p_expires_at: a.expires_at || null });
+            var c = document.getElementById('upanel-sm-ann');
+            if (c) { c.dataset.built = ''; buildSMAnnouncements(c); }
+          } catch (e) { alert('Update failed: ' + e.message); }
+        });
+        var editBtn = document.createElement('button');
+        editBtn.style.cssText = 'padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-mid);font-size:11px;cursor:pointer';
+        editBtn.textContent = 'Edit';
+        editBtn.addEventListener('click', function() {
+          view.style.display = 'none';
+          editPanel.style.display = 'block';
+        });
+        var dBtn = document.createElement('button');
+        dBtn.style.cssText = 'padding:4px 10px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-size:11px;cursor:pointer';
+        dBtn.textContent = 'Delete';
+        dBtn.addEventListener('click', async function() {
+          if (!confirm('Delete this announcement?')) return;
+          try {
+            await rpc('admin_delete_announcement', { p_id: a.id });
+            var c = document.getElementById('upanel-sm-ann');
+            if (c) { c.dataset.built = ''; buildSMAnnouncements(c); }
+          } catch (e) { alert('Delete failed: ' + e.message); }
+        });
+        btns.appendChild(toggleBtn);
+        btns.appendChild(editBtn);
+        btns.appendChild(dBtn);
+        view.appendChild(left);
+        view.appendChild(btns);
+        var editPanel = document.createElement('div');
+        editPanel.style.display = 'none';
+        editPanel.innerHTML =
+          '<div style="display:grid;grid-template-columns:1fr 100px;gap:8px;margin-bottom:8px">' +
+          '<input id="sm-ann-edit-text-' + a.id + '" style="padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--text-high)">' +
+          '<select id="sm-ann-edit-type-' + a.id + '" style="padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--text-high)"><option value="info">Info</option><option value="success">Success</option><option value="warning">Warning</option><option value="error">Error</option></select></div>' +
+          '<div style="margin-bottom:8px"><label style="display:block;font-size:10px;text-transform:uppercase;color:var(--text-mid);margin-bottom:4px">Expires</label>' +
+          '<input id="sm-ann-edit-exp-' + a.id + '" type="datetime-local" style="width:100%;max-width:280px;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--text-high)"></div>' +
+          '<div style="display:flex;gap:8px"><button type="button" class="sm-ann-save-edit" style="padding:5px 12px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:11px;cursor:pointer">Save</button>' +
+          '<button type="button" class="sm-ann-cancel-edit" style="padding:5px 12px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-mid);font-size:11px;cursor:pointer">Cancel</button></div>';
+        card.appendChild(view);
+        card.appendChild(editPanel);
+        document.getElementById('sm-ann-edit-text-' + a.id).value = a.text || '';
+        document.getElementById('sm-ann-edit-type-' + a.id).value = a.type || 'info';
+        document.getElementById('sm-ann-edit-exp-' + a.id).value = _smAnnToLocalInput(a.expires_at);
+        editPanel.querySelector('.sm-ann-save-edit').addEventListener('click', async function() {
+          try {
+            await rpc('admin_save_announcement', {
+              p_id: a.id,
+              p_text: document.getElementById('sm-ann-edit-text-' + a.id).value.trim(),
+              p_type: document.getElementById('sm-ann-edit-type-' + a.id).value,
+              p_active: a.active,
+              p_expires_at: document.getElementById('sm-ann-edit-exp-' + a.id).value || null
+            });
+            var c = document.getElementById('upanel-sm-ann');
+            if (c) { c.dataset.built = ''; buildSMAnnouncements(c); }
+          } catch (e) { alert('Save failed: ' + e.message); }
+        });
+        editPanel.querySelector('.sm-ann-cancel-edit').addEventListener('click', function() {
+          editPanel.style.display = 'none';
+          view.style.display = 'flex';
+        });
+        container.appendChild(card);
       });
     }
-    container.dataset.built='1';
-  } catch(e){container.dataset.built='';container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>';}
+    container.dataset.built = '1';
+  } catch (e) {
+    container.dataset.built = '';
+    container.innerHTML = '<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> ' + String(e.message).replace(/</g, '&lt;') + '</div>';
+  }
 }
 
 async function buildSMEmail(container) {

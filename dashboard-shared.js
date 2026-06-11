@@ -909,6 +909,57 @@ async function buildSMContent(container) {
       row.appendChild(cb);sec.appendChild(row);
     });
     container.appendChild(sec);
+
+    var _SM_DEFAULT_CATS = ['Main Courses','Appetizers','Desserts','Soups','Salads','Breads','Beverages','Sides','Snacks','Little Ones'];
+    var cats = [];
+    try { cats = JSON.parse(S.homepage_categories_order || '[]'); } catch (_) {}
+    if (!cats.length) cats = _SM_DEFAULT_CATS.slice();
+
+    var catSec = mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');
+    catSec.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:4px",'Category Display Order'));
+    catSec.appendChild(mk('p','font-size:12px;color:var(--text-mid);margin-bottom:14px;line-height:1.5','Reorder recipe categories for browse pages. Rename labels inline; changes save immediately.'));
+    var catList = mk('div','');
+    function renderCats() {
+      catList.innerHTML = '';
+      cats.forEach(function(cat, i) {
+        var row = mk('div','display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;margin-bottom:6px');
+        row.appendChild(mk('span','font-size:10px;color:var(--text-mid);width:22px;text-align:center',String(i + 1)));
+        var nameInp = document.createElement('input');
+        nameInp.value = cat;
+        nameInp.style.cssText = 'flex:1;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high)';
+        nameInp.addEventListener('change', (function(idx, prev) { return async function() {
+          var next = (this.value || '').trim();
+          if (!next) { this.value = prev; return; }
+          cats[idx] = next;
+          try { await ssSave('homepage_categories_order', JSON.stringify(cats)); }
+          catch (e) { cats[idx] = prev; this.value = prev; alert(e.message); }
+        };})(i, cat));
+        row.appendChild(nameInp);
+        function moveCat(dir) {
+          return async function() {
+            var j = i + dir;
+            if (j < 0 || j >= cats.length) return;
+            var tmp = cats[i];
+            cats[i] = cats[j];
+            cats[j] = tmp;
+            renderCats();
+            try { await ssSave('homepage_categories_order', JSON.stringify(cats)); }
+            catch (e) { alert(e.message); }
+          };
+        }
+        var up = mk('button','padding:3px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-mid);font-size:11px;cursor:pointer','\u25b2');
+        up.addEventListener('click', moveCat(-1));
+        var dn = mk('button','padding:3px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-mid);font-size:11px;cursor:pointer','\u25bc');
+        dn.addEventListener('click', moveCat(1));
+        row.appendChild(up);
+        row.appendChild(dn);
+        catList.appendChild(row);
+      });
+    }
+    renderCats();
+    catSec.appendChild(catList);
+    container.appendChild(catSec);
+
     container.dataset.built='1';
   } catch(e){container.dataset.built='';container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>';}
 }
@@ -3721,7 +3772,7 @@ async function smSaveAll() {
   // ── Save Pages tab ──────────────────────────────────────────
   var pagesPanel = document.getElementById('upanel-sm-pages');
   if (pagesPanel && pagesPanel.dataset.built === '1') {
-    var rows = pagesPanel.querySelectorAll('tbody tr');
+    var rows = pagesPanel.querySelectorAll('tbody tr.sm-page-row');
     for (var i = 0; i < rows.length; i++) {
       var tr = rows[i];
       var pathEl = tr.querySelector('td:nth-child(2)');
@@ -3729,12 +3780,21 @@ async function smSaveAll() {
       var path = pathEl.textContent.trim();
       var visEl  = document.getElementById('smv-' + path);
       var csEl   = document.getElementById('smcs-' + path);
+      var tierEl = document.getElementById('smt-' + path);
+      var mtEl   = document.getElementById('seo-t-' + path);
+      var mdEl   = document.getElementById('seo-d-' + path);
       if (!visEl) continue;
       try {
         var r = await apiFetch(SUPABASE_URL + '/rest/v1/site_pages?path=eq.' + encodeURIComponent(path), {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-          body: JSON.stringify({ visibility: visEl.value, coming_soon: csEl ? csEl.checked : false })
+          body: JSON.stringify({
+            visibility: visEl.value,
+            coming_soon: csEl ? csEl.checked : false,
+            min_tier: tierEl ? tierEl.value : 'free',
+            meta_title: mtEl ? (mtEl.value || null) : null,
+            meta_desc: mdEl ? (mdEl.value || null) : null
+          })
         });
         if (!r || !r.ok) throw new Error('Pages PATCH failed: ' + (r ? r.status : 'no response'));
         var updated = await r.json();
