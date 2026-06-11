@@ -16,7 +16,7 @@
 <script src="library-mise.js"></script>
 <script src="lib/recipe-hero-labels.js?v=20260629"></script>
 <script src="lib/circular-hero-editor.js?v=20260629"></script>
-<script src="lib/library-admin-fields.js?v=20260613"></script>
+<script src="lib/library-admin-fields.js?v=20260614"></script>
 <style>
 *, *::before, *::after { box-sizing:border-box; }
 body { background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--text-high); margin:0; }
@@ -281,7 +281,7 @@ function buildVoicePanel() {
   var r3 = document.createElement('div'); r3.className = 'ls-row';
   r3.innerHTML = '<label class="ls-label" for="f-dyk">Did you know?</label><textarea class="ls-textarea" id="f-dyk" style="min-height:72px"></textarea>';
   nodes.push(r3);
-  return makeLsPanel('ls-panel-voice', 'Betty\'s voice', 'Professional notes, brand pick, and one surprising fact', nodes, false);
+  return makeLsPanel('ls-panel-voice', 'From the Journal', 'Kitchen notes, brand pick, and one surprising fact', nodes, false);
 }
 
 function buildPublishPanel() {

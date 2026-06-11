@@ -2409,7 +2409,7 @@ async function submitPublicNote() {
       })
     });
     if (res.ok || res.status === 201) {
-      showToast('Submitted for review — Betty will approve it shortly 🔔');
+      showToast('Submitted for review — the editorial team will approve it shortly 🔔');
       document.querySelector('.rp-btn-publish-note').disabled = true;
       document.querySelector('.rp-btn-publish-note').textContent = '✓ Submitted';
     } else {

@@ -5,6 +5,17 @@ var _detailUser = null; // Stores current user detail — action buttons read fr
 
 var _UM_OPS_TABS = ['deactivated','reports','requests','feedback','chefs','family-refs','invites','analytics','audit'];
 
+function formatBadgeLabel(badge) {
+  return badge === "Betty's Pick" ? 'Journal Pick' : badge;
+}
+
+function userHasBadge(badges, badgeName) {
+  if (!badges || !badgeName) return false;
+  if (badges.indexOf(badgeName) !== -1) return true;
+  if (badgeName === 'Journal Pick' && badges.indexOf("Betty's Pick") !== -1) return true;
+  return false;
+}
+
 function switchUserTab(tab) {
   localStorage.setItem('tcj_active_user_tab', tab);
   _currentUserTab = tab;
@@ -144,7 +155,7 @@ function renderMemberRow(u) {
     'Active':'#4caf76','Administrator':'var(--accent)','Flagged':'#E86D4A',
     'Temporarily Deactivated':'#d4a017','Permanently Deactivated':'#dc5050','Deactivated':'#dc5050'
   }[u.account_status] || 'var(--text-mid)';
-  var badges = (u.badges||[]).map(function(b){ return '<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(255,255,255,0.08);color:var(--accent);margin-right:3px">'+esc(b)+'</span>'; }).join('');
+  var badges = (u.badges||[]).map(function(b){ return '<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(255,255,255,0.08);color:var(--accent);margin-right:3px">'+esc(formatBadgeLabel(b))+'</span>'; }).join('');
   var planBadge = u.plan === 'premium'
     ? '<span style="font-size:9px;padding:2px 7px;border-radius:10px;background:var(--accent);color:#fff;font-weight:700">PREMIUM</span>'
     : '<span style="font-size:9px;padding:2px 7px;border-radius:10px;background:rgba(255,255,255,0.06);color:var(--text-mid)">FREE</span>';
@@ -327,7 +338,7 @@ async function openUserDetail(uid) {
     var ini  = ((p.full_name||p.username||'?').split(' ').map(function(w){return w[0]||'';})).join('').toUpperCase().slice(0,2);
     var statusColor = {'Active':'#4caf76','Administrator':'var(--accent)','Flagged':'#E86D4A','Temporarily Deactivated':'#d4a017','Permanently Deactivated':'#dc5050','Deactivated':'#dc5050'}[p.account_status]||'var(--text-mid)';
     var badges = p.badges || [];
-    var allBadges = ['Trusted Contributor','Guest Chef','100 Recipes','50 Recipes','Early Member','Betty\'s Pick'];
+    var allBadges = ['Trusted Contributor','Guest Chef','100 Recipes','50 Recipes','Early Member','Journal Pick'];
     var loginMethodLabel = p.login_method === 'google' ? '\uD83D\uDD35 Google OAuth' : '\uD83D\uDCE7 Email / Password';
 
     panel.innerHTML =
@@ -363,11 +374,11 @@ async function openUserDetail(uid) {
       '<div style="padding:14px 20px;border-bottom:1px solid var(--border)">' +
         '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:10px">Badges</div>' +
         '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">' +
-          (badges.length?badges.map(function(b){return '<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:12px;background:rgba(255,255,255,0.08);color:var(--accent);font-size:11px">'+esc(b)+'<button data-action="remove-badge" data-uid="'+esc(uid)+'" data-badge="'+esc(b)+'" style="background:none;border:none;color:var(--text-mid);cursor:pointer;font-size:12px;padding:0;line-height:1">\u2715</button></span>';}).join(''):
+          (badges.length?badges.map(function(b){return '<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:12px;background:rgba(255,255,255,0.08);color:var(--accent);font-size:11px">'+esc(formatBadgeLabel(b))+'<button data-action="remove-badge" data-uid="'+esc(uid)+'" data-badge="'+esc(b)+'" style="background:none;border:none;color:var(--text-mid);cursor:pointer;font-size:12px;padding:0;line-height:1">\u2715</button></span>';}).join(''):
             '<span style="font-size:12px;color:var(--text-mid)">No badges yet</span>') +
         '</div>' +
         '<div style="display:flex;gap:5px;flex-wrap:wrap">' +
-          allBadges.filter(function(b){return !badges.includes(b);}).map(function(b){
+          allBadges.filter(function(b){return !userHasBadge(badges, b);}).map(function(b){
             return '<button data-action="award-badge" data-uid="'+esc(uid)+'" data-badge="'+esc(b)+'" style="padding:3px 9px;background:none;border:1px solid var(--border);border-radius:9px;color:var(--text-mid);font-size:10px;cursor:pointer">+ '+esc(b)+'</button>';
           }).join('') +
         '</div>' +
@@ -761,7 +772,7 @@ async function doExportUserData(uid, username) {
 async function bulkAwardBadge() {
   var ids = Object.keys(_selectedUsers);
   if (!ids.length) return;
-  var badge = prompt('Award badge to '+ids.length+' selected users.\n\nChoose badge:\n1. Trusted Contributor\n2. Guest Chef\n3. 100 Recipes\n4. 50 Recipes\n5. Early Member\n6. Betty\'s Pick\n\nType the badge name exactly:');
+  var badge = prompt('Award badge to '+ids.length+' selected users.\n\nChoose badge:\n1. Trusted Contributor\n2. Guest Chef\n3. 100 Recipes\n4. 50 Recipes\n5. Early Member\n6. Journal Pick\n\nType the badge name exactly:');
   if (!badge || !badge.trim()) return;
   try {
     var n = await rpc('admin_bulk_award_badge', {p_user_ids: ids, p_badge: badge.trim()});
