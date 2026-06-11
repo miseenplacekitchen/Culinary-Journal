@@ -70,47 +70,61 @@ Deno.serve(async (req) => {
 
     let sent = 0, failed = 0;
 
+    const distinctKeys = [...new Set(queue.map((q) => q.template_key))];
+    const templateMap = new Map<string, { subject: string; body: string }>();
+    for (const key of distinctKeys) {
+      const { data: tmpl } = await supabase
+        .from('email_templates')
+        .select('subject, body')
+        .eq('key', key)
+        .maybeSingle();
+      if (tmpl) templateMap.set(key, tmpl);
+    }
+
+    function escText(str: unknown) {
+      return String(str || '').replace(/[\r\n\t]/g,' ').replace(/\s+/g,' ').trim().slice(0,200);
+    }
+    function escHtml(str: unknown) {
+      return String(str || '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;');
+    }
+    function escUrl(str: unknown) {
+      const s = String(str || '');
+      return s.startsWith('https://www.theculinaryjournal.site/') ? s : '#';
+    }
+    function renderTemplate(tmpl: { subject: string; body: string }, vars: Record<string, unknown>) {
+      let subject = tmpl.subject;
+      let body    = tmpl.body;
+      for (const [k, v] of Object.entries(vars)) {
+        const re = new RegExp('{{' + k + '}}', 'g');
+        const isUrl = k.endsWith('_url') || k.endsWith('_link');
+        subject = subject.replace(re, escText(v));
+        body    = body.replace(re, isUrl ? escUrl(v) : escHtml(v));
+      }
+      subject = subject.replace(/\{\{[^}]+\}\}/g, '');
+      body    = body.replace(/\{\{[^}]+\}\}/g, '');
+      return { subject, body };
+    }
+
     for (const item of queue) {
       try {
         await supabase.from('email_queue').update({ status: 'sending', attempts: (item.attempts || 0) + 1, last_attempt_at: new Date().toISOString() }).eq('id', item.id);
 
-        const { data: tmpl } = await supabase
-          .from('email_templates')
-          .select('subject, body')
-          .eq('key', item.template_key)
-          .maybeSingle();
-
+        const tmpl = templateMap.get(item.template_key);
         if (!tmpl) {
-          await supabase.from('email_queue').update({ status: 'failed', error_msg: 'Template not found' }).eq('id', item.id);
+          await supabase.from('email_queue').update({ status: 'failed', error_msg: 'Template not found: ' + item.template_key }).eq('id', item.id);
           failed++;
           continue;
         }
 
-        const vars = item.variables || {};
+        const vars: Record<string, unknown> = { ...(item.variables || {}) };
         vars.name     = vars.name    || item.to_name || 'Member';
         vars.site_url = 'https://www.theculinaryjournal.site';
 
-        function escText(str) {
-          return String(str || '').replace(/[\r\n\t]/g,' ').replace(/\s+/g,' ').trim().slice(0,200);
-        }
-        function escHtml(str) {
-          return String(str || '')
-            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-            .replace(/"/g,'&quot;');
-        }
-        function escUrl(str) {
-          const s = String(str || '');
-          return s.startsWith('https://www.theculinaryjournal.site/') ? s : '#';
-        }
-
-        let subject = tmpl.subject;
-        let body    = tmpl.body;
-        for (const [k, v] of Object.entries(vars)) {
-          const re = new RegExp('{{' + k + '}}', 'g');
-          const isUrl = k.endsWith('_url') || k.endsWith('_link');
-          subject = subject.replace(re, escText(v));
-          body    = body.replace(re, isUrl ? escUrl(v) : escHtml(v));
-        }
+        const rendered = renderTemplate(tmpl, vars);
+        const subject = rendered.subject;
+        const body    = rendered.body;
 
         const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
@@ -128,7 +142,11 @@ ${body}
 
         const res = await fetch(RESEND_API, {
           method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + RESEND_KEY, 'Content-Type': 'application/json' },
+          headers: {
+            'Authorization': 'Bearer ' + RESEND_KEY,
+            'Content-Type': 'application/json',
+            'Idempotency-Key': String(item.id),
+          },
           body: JSON.stringify({ from: FROM, to: [item.to_email], subject, html })
         });
 

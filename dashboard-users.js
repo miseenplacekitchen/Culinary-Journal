@@ -786,7 +786,7 @@ function doSendEmailToUser(uid, email, name) {
         p_template_key: 'custom',
         p_to_email:     email,
         p_to_name:      name,
-        p_variables:    { name: name, subject: subject, body: body }
+        p_variables:    { name: name, subject: subject, message: body }
       });
       showToast('Email queued for ' + name);
       auditLog('User Management', 'Email Sent', name, uid, subject, null);

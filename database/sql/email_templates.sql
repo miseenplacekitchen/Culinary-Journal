@@ -21,13 +21,6 @@ CREATE POLICY "Anon cannot read email templates" ON public.email_templates
 -- and creates the email_queue table + queue_email RPC
 -- ══════════════════════════════════════════════════════════════════════
 
--- RLS on existing table
-ALTER TABLE email_templates ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "admin manages email templates" ON email_templates;
-CREATE POLICY "admin manages email templates"
-  ON email_templates FOR ALL TO authenticated
-  USING (is_admin()) WITH CHECK (is_admin());
-
 -- Insert/update templates using actual columns: key, name, subject, body
 INSERT INTO email_templates (key, name, subject, body, updated_at) VALUES
 
@@ -59,6 +52,24 @@ INSERT INTO email_templates (key, name, subject, body, updated_at) VALUES
  'Recipe Request Fulfilled',
  'Your recipe request has been fulfilled ✓',
  '<h2 style="font-family:Cormorant Garamond,serif;color:#C4973B">Request fulfilled 🍽</h2><p>Hi {{name}}, the recipe you requested — <strong>{{recipe_name}}</strong> — is now live. <a href="{{recipe_url}}">View it →</a></p>',
+ NOW()),
+
+('note_approved',
+ 'Cooking Tip Approved',
+ 'Your cooking tip has been published',
+ '<h2 style="font-family:Cormorant Garamond,serif;color:#C4973B">Your tip is live</h2><p>Hi {{name}}, your cooking tip for <strong>{{recipe_name}}</strong> has been approved.</p>',
+ NOW()),
+
+('follow_new_recipe',
+ 'Follow — New Recipe',
+ '{{author}} published a new recipe',
+ '<h2 style="font-family:Cormorant Garamond,serif;color:#C4973B">New from {{author}}</h2><p>Hi {{name}}, <strong>{{recipe_name}}</strong> is now live. <a href="{{recipe_url}}">View recipe →</a></p>',
+ NOW()),
+
+('custom',
+ 'Admin Custom Message',
+ '{{subject}}',
+ '<p>Hi {{name}},</p><div style="white-space:pre-wrap">{{message}}</div>',
  NOW())
 
 ON CONFLICT (key) DO UPDATE SET
@@ -134,9 +145,6 @@ $$;
 REVOKE ALL ON FUNCTION public.queue_email(text, text, text, jsonb) FROM PUBLIC;
 GRANT  EXECUTE ON FUNCTION public.queue_email(text, text, text, jsonb) TO authenticated;
 
-SELECT 'Email system ready — ' || COUNT(*) || ' templates' AS status
-FROM email_templates;
-
 -- ── Add missing columns to email_queue ────────────────────────────────
 ALTER TABLE public.email_queue ADD COLUMN IF NOT EXISTS status     text        NOT NULL DEFAULT 'pending';
 ALTER TABLE public.email_queue ADD COLUMN IF NOT EXISTS sent_at    timestamptz;
@@ -150,41 +158,11 @@ ALTER TABLE public.email_queue ADD CONSTRAINT email_queue_status_check
 -- Index for efficient queue polling
 CREATE INDEX IF NOT EXISTS idx_email_queue_status ON public.email_queue(status, created_at);
 
--- ── Email templates for all key events ────────────────────────────────
-INSERT INTO email_templates (key, name, subject, body) VALUES
-
-('recipe_approved',
- 'Recipe Approved',
- 'Your recipe has been published! 🎉',
- '<h2>Your recipe is live!</h2><p>Hi {{name}},</p><p><strong>{{recipe_name}}</strong> has been approved and is now published on The Culinary Journal.</p><p><a href="{{site_url}}/recipe-page.html?id={{recipe_id}}">View your recipe →</a></p>')
-
-ON CONFLICT (key) DO NOTHING;
-
-INSERT INTO email_templates (key, name, subject, body) VALUES
-
-('recipe_rejected',
- 'Recipe Not Approved',
- 'Update on your recipe submission',
- '<h2>Recipe update</h2><p>Hi {{name}},</p><p>Your recipe <strong>{{recipe_name}}</strong> was not approved at this time.</p><p><em>{{reviewer_notes}}</em></p><p>You can edit and resubmit from your <a href="{{site_url}}/my-dashboard.html">dashboard</a>.</p>')
-
-ON CONFLICT (key) DO NOTHING;
-
-INSERT INTO email_templates (key, name, subject, body) VALUES
-
-('note_approved',
- 'Cooking Tip Approved',
- 'Your cooking tip has been published',
- '<h2>Your tip is live!</h2><p>Hi {{name}},</p><p>Your cooking tip for <strong>{{recipe_name}}</strong> has been approved and is now visible to other members.</p>')
-
-ON CONFLICT (key) DO NOTHING;
-
-SELECT 'Email templates updated' AS status;
-
--- Status constraint enforced above, immediately after ADD COLUMN.
-
 -- ── Add retry tracking columns ─────────────────────────────────────────
 ALTER TABLE public.email_queue ADD COLUMN IF NOT EXISTS attempts        integer     NOT NULL DEFAULT 0;
 ALTER TABLE public.email_queue ADD COLUMN IF NOT EXISTS last_attempt_at timestamptz;
 
+SELECT 'Email system ready — ' || COUNT(*) || ' templates' AS status
+FROM email_templates;
 
 SELECT pg_notify('pgrst', 'reload schema');

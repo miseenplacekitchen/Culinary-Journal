@@ -5,6 +5,72 @@
 var TCJ_REFUND_BANNER = 'No refunds on completed purchases. Core features stay free. Billing error or access fault? Email us within 7 days.';
 var TCJ_REFUND_POLICY = 'Most of The Culinary Journal is free to use with a free account. If you choose a paid extra (such as a theme, optional plan, or subscription), that purchase is final once completed — we do not offer change-of-mind refunds.\n\nExceptions: If a payment was charged in error, duplicated, or you could not access what you paid for due to a technical fault on our side, contact us within 7 days at miseenplacekitchen.official@gmail.com and we will review it fairly.\n\nSubscriptions: You may cancel anytime; access continues until the end of the paid period. Cancelling does not refund the current period.\n\nBy completing a purchase you agree to this policy. See subscription-terms.html for full subscription terms.';
 var TCJ_BILLING_EMAIL_KEYS = { purchase_confirmation: 1, subscription_confirmation: 1 };
+var TCJ_EMAIL_PLACEHOLDERS = {
+  welcome: ['name', 'site_url', 'recipes_url'],
+  recipe_approved: ['name', 'recipe_name', 'recipe_id', 'recipe_url', 'site_url'],
+  recipe_rejected: ['name', 'recipe_name', 'rejection_reason', 'site_url'],
+  account_deactivated: ['name', 'reason'],
+  request_fulfilled: ['name', 'recipe_name', 'recipe_url', 'site_url'],
+  note_approved: ['name', 'recipe_name'],
+  follow_new_recipe: ['name', 'author', 'recipe_name', 'recipe_url', 'site_url'],
+  custom: ['name', 'subject', 'message'],
+  purchase_confirmation: ['name', 'product_name', 'tier_label', 'amount_line', 'site_url'],
+  subscription_confirmation: ['name', 'product_name', 'tier_label', 'amount_line', 'site_url']
+};
+var TCJ_EMAIL_SITE_URL = 'https://www.theculinaryjournal.site';
+
+function tcjEmailSampleVars(key) {
+  var base = {
+    name: 'Alex Member',
+    site_url: TCJ_EMAIL_SITE_URL,
+    recipes_url: TCJ_EMAIL_SITE_URL + '/recipes.html',
+    recipe_name: 'Kerala Beef Curry',
+    recipe_id: '00000000-0000-0000-0000-000000000001',
+    recipe_url: TCJ_EMAIL_SITE_URL + '/recipe-page.html?id=00000000-0000-0000-0000-000000000001',
+    rejection_reason: 'Photo quality needs improvement before we can publish.',
+    reason: 'Policy violation',
+    author: 'Chef Maria',
+    product_name: 'Premium theme',
+    tier_label: 'Premium',
+    amount_line: '$4.99/month',
+    subject: 'A note from The Culinary Journal',
+    message: 'Thanks for being part of our community.'
+  };
+  return base;
+}
+
+function tcjRenderEmailPreview(subject, body, vars) {
+  vars = vars || {};
+  vars.name = vars.name || 'Member';
+  vars.site_url = vars.site_url || TCJ_EMAIL_SITE_URL;
+  function escText(s) { return String(s || '').replace(/[\r\n\t]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200); }
+  function escHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function escUrl(s) {
+    s = String(s || '');
+    return s.indexOf(TCJ_EMAIL_SITE_URL) === 0 ? s : '#';
+  }
+  var sub = subject || '';
+  var html = body || '';
+  Object.keys(vars).forEach(function(k) {
+    var re = new RegExp('{{' + k + '}}', 'g');
+    var isUrl = k.slice(-4) === '_url' || k.slice(-5) === '_link';
+    sub = sub.replace(re, escText(vars[k]));
+    html = html.replace(re, isUrl ? escUrl(vars[k]) : escHtml(vars[k]));
+  });
+  sub = sub.replace(/\{\{[^}]+\}\}/g, '');
+  html = html.replace(/\{\{[^}]+\}\}/g, '');
+  return { subject: sub, body: html };
+}
+
+async function tcjGetAdminEmail() {
+  try {
+    var rows = await rpc('get_my_profile', {});
+    var p = Array.isArray(rows) && rows[0] ? rows[0] : null;
+    return (p && p.email) ? String(p.email).trim() : '';
+  } catch (_) { return ''; }
+}
 
 function switchSMTab(tab) {
   try {
@@ -350,32 +416,73 @@ async function buildSMAnnouncements(container) {
   }
 }
 
+function tcjAppendQueueRows(parent, rows, showError) {
+  if (!rows.length) return;
+  var ul = document.createElement('ul');
+  ul.style.cssText = 'margin:0 0 10px;padding-left:18px;font-size:11px;color:var(--text-high);list-style:disc';
+  rows.forEach(function(q) {
+    var li = document.createElement('li');
+    li.style.marginBottom = '6px';
+    var line = (q.template_key || '?') + ' \u2192 ' + (q.to_email || '');
+    if (q.attempts) line += ' (' + q.attempts + ' attempts)';
+    li.appendChild(document.createTextNode(line));
+    if (showError && q.error_msg) {
+      var err = document.createElement('div');
+      err.style.cssText = 'color:#dc5050;font-size:10px;margin-top:2px;word-break:break-word';
+      err.textContent = q.error_msg;
+      li.appendChild(err);
+    }
+    var rowBtns = document.createElement('span');
+    rowBtns.style.cssText = 'display:inline-flex;gap:6px;margin-left:8px';
+    var delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.textContent = 'Delete';
+    delBtn.style.cssText = 'padding:2px 8px;font-size:10px;background:none;border:1px solid var(--border);border-radius:5px;color:var(--text-mid);cursor:pointer';
+    delBtn.addEventListener('click', async function() {
+      if (!confirm('Remove this queue item?')) return;
+      try {
+        await rpc('admin_delete_email_queue', { p_id: q.id });
+        var c = document.getElementById('upanel-sm-email');
+        if (c) { c.dataset.built = ''; buildSMEmail(c); }
+      } catch (e) { alert(e.message); }
+    });
+    rowBtns.appendChild(delBtn);
+    li.appendChild(rowBtns);
+    ul.appendChild(li);
+  });
+  parent.appendChild(ul);
+}
+
 async function buildSMEmail(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
   try {
     var queueBox = document.createElement('div');
     queueBox.style.cssText = 'background:rgba(91,143,212,0.08);border:1px solid rgba(91,143,212,0.25);border-radius:12px;padding:16px 20px;margin-bottom:20px';
     try {
-      var pending = await rpc('admin_get_email_queue', { p_status: 'pending', p_limit: 5 }) || [];
-      var failed  = await rpc('admin_get_email_queue', { p_status: 'failed', p_limit: 5 }) || [];
-      var sent    = await rpc('admin_get_email_queue', { p_status: 'sent', p_limit: 3 }) || [];
+      var pending = await rpc('admin_get_email_queue', { p_status: 'pending', p_limit: 10 }) || [];
+      var failed  = await rpc('admin_get_email_queue', { p_status: 'failed', p_limit: 10 }) || [];
+      var sent    = await rpc('admin_get_email_queue', { p_status: 'sent', p_limit: 5 }) || [];
       queueBox.innerHTML = '<div style="font-family:Cormorant Garamond,serif;font-size:1.1rem;font-weight:700;color:#5B8FD4;margin-bottom:8px">Email Queue</div>' +
         '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);line-height:1.6;margin-bottom:10px">' +
-        '<strong>' + pending.length + '</strong> pending (showing up to 5) · <strong>' + failed.length + '</strong> failed · <strong>' + sent.length + '</strong> recent sent</div>' +
-        '<div style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid);margin-bottom:12px">Sending uses the Supabase Edge Function <code>send-queued-emails</code> + Resend (see send-queued-emails.js). Schedule via pg_cron every 5 minutes.</div>';
+        '<strong>' + pending.length + '</strong> pending · <strong style="color:#dc5050">' + failed.length + '</strong> failed · <strong>' + sent.length + '</strong> recent sent</div>' +
+        '<div style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid);margin-bottom:12px;line-height:1.5">Worker: <code>send-queued-emails</code> + Resend. Password reset &amp; email confirmation use <strong>Supabase Auth</strong> templates — not editable here.</div>';
       if (pending.length) {
-        var ul = document.createElement('ul');
-        ul.style.cssText = 'margin:0 0 12px;padding-left:18px;font-size:11px;color:var(--text-high)';
-        pending.forEach(function(q) {
-          var li = document.createElement('li');
-          li.textContent = (q.template_key || '?') + ' → ' + (q.to_email || '');
-          ul.appendChild(li);
-        });
-        queueBox.appendChild(ul);
+        var pLbl = document.createElement('div');
+        pLbl.style.cssText = 'font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-mid);margin-bottom:4px';
+        pLbl.textContent = 'Pending';
+        queueBox.appendChild(pLbl);
+        tcjAppendQueueRows(queueBox, pending, false);
+      }
+      if (failed.length) {
+        var fLbl = document.createElement('div');
+        fLbl.style.cssText = 'font-size:10px;font-weight:700;text-transform:uppercase;color:#dc5050;margin:8px 0 4px';
+        fLbl.textContent = 'Failed (with error)';
+        queueBox.appendChild(fLbl);
+        tcjAppendQueueRows(queueBox, failed, true);
       }
       var retryBtn = document.createElement('button');
       retryBtn.className = 'ing-add-btn';
-      retryBtn.textContent = 'Retry failed emails';
+      retryBtn.textContent = 'Retry all failed';
       retryBtn.addEventListener('click', async function() {
         retryBtn.disabled = true;
         try {
@@ -401,30 +508,37 @@ async function buildSMEmail(container) {
       });
       queueBox.appendChild(sendNowBtn);
     } catch (qe) {
-      queueBox.innerHTML = '<div style="font-size:12px;color:var(--text-mid)">Email queue unavailable — run fix-phase6-batch.sql</div>';
+      queueBox.innerHTML = '<div style="font-size:12px;color:var(--text-mid)">Email queue unavailable — run fix-phase6-batch.sql and fix-email-system.sql</div>';
     }
 
     var res = await apiFetch(SUPABASE_URL+'/rest/v1/email_templates?order=key');
     if (!res||!res.ok) throw new Error(res?res.status+': '+await res.text():'Session expired');
     var templates = await res.json();
-    if(!Array.isArray(templates)||!templates.length){container.dataset.built='';container.innerHTML='<div style="padding:16px;font-size:13px;color:var(--text-mid)">No email templates. Run seed_settings.sql in Supabase.</div>';return;}
+    if(!Array.isArray(templates)||!templates.length){container.dataset.built='';container.innerHTML='<div style="padding:16px;font-size:13px;color:var(--text-mid)">No email templates. Run email_templates.sql and fix-email-system.sql in Supabase.</div>';return;}
     container.innerHTML='';
     container.appendChild(queueBox);
     var tplNote = document.createElement('p');
     tplNote.style.cssText = 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.55';
-    tplNote.innerHTML = 'Placeholders: <code>{{name}}</code>, <code>{{recipe_name}}</code>, <code>{{product_name}}</code>, <code>{{tier_label}}</code>, <code>{{amount_line}}</code>. Billing templates include refund wording — keep them aligned with <strong>Settings → Billing &amp; Refund Policy</strong>.';
+    tplNote.innerHTML = 'Each template lists its own placeholders below. Lifecycle emails queue automatically when you approve recipes, complete onboarding, deactivate accounts, fulfil requests, and approve cooking tips — after running <code>fix-email-system.sql</code>. Billing templates should match <strong>Settings → Billing &amp; Refund Policy</strong>.';
     container.appendChild(tplNote);
+
+    var adminEmail = await tcjGetAdminEmail();
 
     function appendEmailTemplateBlock(t) {
       var sec=document.createElement('div');sec.style.cssText='background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:14px';
       var secTitle = document.createElement('div');
-      secTitle.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:12px';
-      secTitle.textContent = t.name || t.key || '';
+      secTitle.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:4px';
+      secTitle.textContent = (t.name || t.key || '') + ' (' + t.key + ')';
       sec.appendChild(secTitle);
+      var phList = TCJ_EMAIL_PLACEHOLDERS[t.key] || ['name', 'site_url'];
+      var phNote = document.createElement('p');
+      phNote.style.cssText = 'font-size:10px;color:var(--text-mid);margin:0 0 10px;line-height:1.45';
+      phNote.textContent = 'Placeholders: ' + phList.map(function(p){ return '{{' + p + '}}'; }).join(', ');
+      sec.appendChild(phNote);
       if (TCJ_BILLING_EMAIL_KEYS[t.key]) {
         var billHint = document.createElement('p');
-        billHint.style.cssText = 'font-size:11px;color:var(--text-mid);margin:-6px 0 10px;line-height:1.5';
-        billHint.textContent = 'Sent after a purchase or tier upgrade. Refund section should match Site Management → Settings.';
+        billHint.style.cssText = 'font-size:11px;color:var(--text-mid);margin:-4px 0 10px;line-height:1.5';
+        billHint.textContent = 'Sent after a purchase or tier upgrade.';
         sec.appendChild(billHint);
       }
       var subWrap = document.createElement('div'); subWrap.style.marginBottom = '8px';
@@ -433,11 +547,17 @@ async function buildSMEmail(container) {
       subInp.style.cssText = 'width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--text-high)';
       subWrap.appendChild(subLbl); subWrap.appendChild(subInp); sec.appendChild(subWrap);
       var bodyWrap = document.createElement('div'); bodyWrap.style.marginBottom = '10px';
-      var bodyLbl = document.createElement('label'); bodyLbl.style.cssText = 'display:block;font-size:10px;color:var(--text-mid);margin-bottom:3px'; bodyLbl.textContent = 'Body';
+      var bodyLbl = document.createElement('label'); bodyLbl.style.cssText = 'display:block;font-size:10px;color:var(--text-mid);margin-bottom:3px'; bodyLbl.textContent = 'Body (inner HTML — outer shell is fixed in the worker)';
       var ta = document.createElement('textarea'); ta.id = 'em-b-'+t.key; ta.rows = TCJ_BILLING_EMAIL_KEYS[t.key] ? 8 : 4;
       ta.style.cssText = 'width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px;color:var(--text-high);resize:vertical';
       ta.value = t.body || '';
       bodyWrap.appendChild(bodyLbl); bodyWrap.appendChild(ta); sec.appendChild(bodyWrap);
+      var previewBox = document.createElement('div');
+      previewBox.id = 'em-preview-' + t.key;
+      previewBox.style.cssText = 'display:none;margin-bottom:10px;padding:12px;background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:8px;font-size:12px;line-height:1.5';
+      sec.appendChild(previewBox);
+      var btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px';
       var btn=document.createElement('button');btn.className='ing-add-btn';btn.textContent='Save';
       btn.addEventListener('click',(function(key,b){return async function(){b.disabled=true;b.textContent='Saving\u2026';
         try{var r=await apiFetch(SUPABASE_URL+'/rest/v1/email_templates',{method:'POST',headers:{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({key:key,name:key.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();}),subject:document.getElementById('em-s-'+key).value,body:document.getElementById('em-b-'+key).value})});
@@ -445,7 +565,51 @@ async function buildSMEmail(container) {
         b.textContent='\u2713 Saved';setTimeout(function(){var c=document.getElementById('upanel-sm-email');if(c){c.dataset.built='';buildSMEmail(c);}},1500);}
         catch(e){b.textContent='Save';b.disabled=false;alert('Save failed: '+e.message);}
       }})(t.key,btn));
-      sec.appendChild(btn); container.appendChild(sec);
+      btnRow.appendChild(btn);
+      var prevBtn = document.createElement('button');
+      prevBtn.type = 'button';
+      prevBtn.className = 'ing-add-btn';
+      prevBtn.style.background = 'none';
+      prevBtn.style.border = '1px solid var(--border)';
+      prevBtn.style.color = 'var(--text-mid)';
+      prevBtn.textContent = 'Preview';
+      prevBtn.addEventListener('click', (function(key, box) {
+        return function() {
+          var subj = document.getElementById('em-s-' + key);
+          var bodyEl = document.getElementById('em-b-' + key);
+          var rendered = tcjRenderEmailPreview(subj ? subj.value : '', bodyEl ? bodyEl.value : '', tcjEmailSampleVars(key));
+          box.style.display = 'block';
+          box.innerHTML = '<div style="font-weight:600;margin-bottom:6px">Subject: ' + rendered.subject.replace(/</g, '&lt;') + '</div>' + rendered.body;
+        };
+      })(t.key, previewBox));
+      btnRow.appendChild(prevBtn);
+      var testBtn = document.createElement('button');
+      testBtn.type = 'button';
+      testBtn.className = 'ing-add-btn';
+      testBtn.style.background = 'none';
+      testBtn.style.border = '1px solid var(--border)';
+      testBtn.style.color = 'var(--text-mid)';
+      testBtn.textContent = 'Send test to me';
+      testBtn.addEventListener('click', (function(key, tmplKey) {
+        return async function() {
+          if (!adminEmail) { alert('No admin email on your profile.'); return; }
+          if (!confirm('Queue a test "' + tmplKey + '" email to ' + adminEmail + '?')) return;
+          testBtn.disabled = true;
+          try {
+            await rpc('queue_email', {
+              p_template_key: tmplKey,
+              p_to_email: adminEmail,
+              p_to_name: 'Admin test',
+              p_variables: tcjEmailSampleVars(tmplKey)
+            });
+            alert('Test email queued. Click "Send pending now" to deliver.');
+          } catch (e) { alert(e.message); }
+          testBtn.disabled = false;
+        };
+      })(t.key, t.key));
+      btnRow.appendChild(testBtn);
+      sec.appendChild(btnRow);
+      container.appendChild(sec);
     }
 
     var billingTpl = templates.filter(function(t){ return TCJ_BILLING_EMAIL_KEYS[t.key]; });
