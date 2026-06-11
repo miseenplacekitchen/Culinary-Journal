@@ -13,7 +13,6 @@
 <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
 <script src="page-guard.js"></script>
-<script src="library-chrome.js"></script>
 <script src="library-mise.js"></script>
 <script src="lib/recipe-hero-labels.js?v=20260629"></script>
 <script src="lib/circular-hero-editor.js?v=20260629"></script>
@@ -21,18 +20,21 @@
 <style>
 *, *::before, *::after { box-sizing:border-box; }
 body { background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--text-high); margin:0; }
-.lib-shell-submit .lib-hero-submit { padding-bottom: 8px; }
-.lib-submit-back { display:inline-block; font-size:12px; color:var(--text-mid); text-decoration:none; margin-bottom:12px; }
-.lib-submit-back:hover { color:var(--accent); }
-.ls-wrap { max-width:900px; margin:0 auto; padding:0; }
-.ls-type-strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:0 0 28px; }
+.ls-page { max-width:900px; margin:0 auto; padding:32px 24px 80px; }
+.ls-header { text-align:center; margin-bottom:36px; }
+.ls-back { display:inline-block; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); text-decoration:none; margin-bottom:20px; }
+.ls-back:hover { color:var(--accent); }
+.ls-header h1 { font-family:'Cormorant Garamond',serif; font-size:clamp(2rem,5vw,2.75rem); font-weight:500; color:var(--text-high); margin:0 0 10px; letter-spacing:0.02em; line-height:1.15; }
+.ls-header-desc { font-family:'DM Sans',sans-serif; font-size:15px; color:var(--text-mid); margin:0 auto; max-width:520px; line-height:1.6; }
+.ls-header-desc em { font-style:italic; color:var(--text-high); }
+.ls-type-strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:0 0 24px; }
+.ls-type-strip-label { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted); margin:0 0 10px; text-align:center; }
 .ls-type-card { text-align:left; padding:14px 16px; border-radius:12px; border:1px solid var(--border); background:rgba(255,255,255,0.02); cursor:pointer; transition:border-color .15s,background .15s; font-family:'DM Sans',sans-serif; }
 .ls-type-card:hover { border-color:var(--accent); background:rgba(255,255,255,0.04); }
 .ls-type-card.active { border-color:var(--accent); background:rgb(from var(--accent) r g b / 0.12); box-shadow:0 0 0 1px rgb(from var(--accent) r g b / 0.35); }
 .ls-type-card-emoji { font-size:22px; display:block; margin-bottom:6px; }
 .ls-type-card-label { font-size:13px; font-weight:600; color:var(--text-high); display:block; }
 .ls-type-card-hint { font-size:10px; color:var(--text-muted); margin-top:4px; line-height:1.4; display:block; }
-.ls-type-tagline { font-size:13px; color:var(--text-mid); line-height:1.55; margin:0 0 20px; padding:12px 16px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px solid var(--border); }
 .ls-panel-toolbar { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
 .ls-panel-toolbar-btn { font-family:'DM Sans',sans-serif; font-size:11px; padding:6px 12px; border-radius:7px; border:1px solid var(--border); background:none; color:var(--text-mid); cursor:pointer; }
 .ls-panel-toolbar-btn:hover { border-color:var(--accent); color:var(--accent); }
@@ -73,13 +75,17 @@ body { background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--text-
 </head>
 <body class="page-bg cj-body">
 <div data-nav-host></div>
-<div id="lib-chrome"></div>
-<div class="lib-content">
-<div class="ls-wrap">
+<div class="ls-page">
+  <header class="ls-header">
+    <a class="ls-back" id="ls-back" href="library-directory.html?type=ingredient">← Library directory</a>
+    <h1 id="ls-page-title">Submit a Profile</h1>
+    <p class="ls-header-desc" id="ls-page-desc">Contribute to The Library — choose a profile type below, then complete every required section.</p>
+  </header>
+
   <div id="ls-msg" class="ls-msg"></div>
 
+  <p class="ls-type-strip-label">Profile type</p>
   <div class="ls-type-strip" id="ls-types" role="tablist" aria-label="Profile type"></div>
-  <p class="ls-type-tagline" id="ls-type-tagline"></p>
 
   <div class="ls-panel-toolbar">
     <button type="button" class="ls-panel-toolbar-btn" onclick="lsExpandPanels(true)">Expand all</button>
@@ -111,10 +117,12 @@ window._lsIsAdmin = false;
     });
     window._lsIsAdmin = !!(await res.json());
     if (!window._lsIsAdmin) {
-      var subEl = document.getElementById('lib-chrome-desc');
-      if (subEl) subEl.textContent =
-        'Members: submit a draft for admin review. Published profiles appear in the Library after approval.';
+      var subEl = document.getElementById('ls-page-desc');
+      if (subEl) subEl.innerHTML =
+        '<em>Members:</em> submit a draft for admin review. Published profiles appear in the Library after approval.';
       applyMemberUi();
+    } else {
+      applyTypeMeta();
     }
   } catch(e) { console.warn('library submit access', e); }
 })();
@@ -299,8 +307,15 @@ function buildTypePanels() {
 function applyTypeMeta() {
   var meta = TCJ_LIB_TYPE_META[currentType] || {};
   var ex = meta.ex || {};
-  var tag = document.getElementById('ls-type-tagline');
-  if (tag) tag.textContent = meta.tagline || '';
+  var isEdit = !!params.get('id');
+  var titleEl = document.getElementById('ls-page-title');
+  if (titleEl) titleEl.textContent = isEdit ? ('Edit ' + (meta.short || 'Profile')) : 'Submit a Profile';
+  var descEl = document.getElementById('ls-page-desc');
+  if (descEl && window._lsIsAdmin) {
+    descEl.innerHTML = meta.tagline
+      ? ('<em>' + meta.short + '.</em> ' + meta.tagline)
+      : 'Contribute to The Library — complete every required section before publishing.';
+  }
   var name = document.getElementById('f-name');
   var aka = document.getElementById('f-aka');
   var local = document.getElementById('f-local');
@@ -320,7 +335,7 @@ function applyTypeMeta() {
   var miseHint = document.getElementById('ls-mise-hint');
   if (miseHint) miseHint.textContent = 'Optional circular prep-board photo — same ring editor as recipes.';
   document.title = (params.get('id') ? 'Edit ' : 'Submit ') + (meta.short || 'Profile') + ' — The Culinary Journal';
-  var back = document.querySelector('.lib-submit-back');
+  var back = document.getElementById('ls-back');
   if (back) back.href = 'library-directory.html?type=' + currentType;
 }
 
@@ -687,8 +702,6 @@ async function loadExisting(id) {
       showMiseEditor(true);
       if (_libMiseEditor) _libMiseEditor.loadFromUrl(p.mise_image_url);
     }
-    var chromeTitle = document.getElementById('lib-chrome-title');
-    if (chromeTitle && window.LibraryChrome) chromeTitle.innerHTML = LibraryChrome.titleHtml('Edit Profile');
     applyTypeMeta();
   } catch(_) {}
 }
@@ -715,12 +728,7 @@ function initPage() {
 }
 
 </script>
-</div>
-</div>
 <script src="nav-init.js"></script>
-<script>
-LibraryChrome.render({ root: 'lib-chrome', active: 'submit', submitOnly: true });
-initPage();
-</script>
+<script>initPage();</script>
 </body>
 </html>
