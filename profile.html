@@ -736,7 +736,12 @@ async function loadThemeCatalog() {
       if (typeof stored === 'string') {
         try { stored = JSON.parse(stored); } catch (_) { stored = null; }
       }
-      THEME_CATALOG = TCJ_mergeThemeCatalog(stored, disabled, settings.seasonal_default_theme || '');
+      THEME_CATALOG = TCJ_mergeThemeCatalog(
+        stored,
+        disabled,
+        settings.seasonal_default_theme || '',
+        settings.default_theme || ''
+      );
     }
   } catch (_) {}
   THEMES = TCJ_profileThemeGroups(THEME_CATALOG);

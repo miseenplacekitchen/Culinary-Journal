@@ -36,8 +36,50 @@
 })();
 
 (function () {
+  function applyBodyTheme(key) {
+    if (!key || key === 'midnight-slate') return;
+    function applyTheme() {
+      if (document.body && !document.body.classList.contains('theme-' + key)) {
+        document.body.classList.add('theme-' + key);
+      }
+    }
+    if (document.body) applyTheme();
+    else document.addEventListener('DOMContentLoaded', applyTheme);
+  }
+
+  function normalizeThemeKey(v) {
+    if (!v) return '';
+    if (typeof window.TCJ_nameOrKeyToThemeKey === 'function') return window.TCJ_nameOrKeyToThemeKey(v);
+    if (String(v).indexOf('-') >= 0) return String(v);
+    return String(v).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  function resolveEffectiveThemeKey(settings) {
+    if (!settings || typeof settings !== 'object') return 'midnight-slate';
+    var catalog = settings.theme_catalog;
+    if (typeof catalog === 'string') {
+      try { catalog = JSON.parse(catalog); } catch (_) { catalog = null; }
+    }
+    var def = normalizeThemeKey(settings.default_theme || (catalog && catalog.default_theme) || 'midnight-slate');
+    var seasonal = normalizeThemeKey(settings.seasonal_default_theme || (catalog && catalog.seasonal_default) || '');
+    return seasonal || def || 'midnight-slate';
+  }
+
+  function fetchPublicSiteTheme(cb) {
+    var url = window.SUPA_URL || window.SUPABASE_URL;
+    var key = window.SUPA_KEY || window.SUPABASE_KEY;
+    if (!url || !key) return cb(null);
+    fetch(url + '/rest/v1/rpc/get_public_theme_default', {
+      method: 'POST',
+      headers: { 'apikey': key, 'Content-Type': 'application/json' },
+      body: '{}'
+    })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) { cb(resolveEffectiveThemeKey(data)); })
+      .catch(function () { cb(null); });
+  }
+
   try {
-    // Only honour a saved theme for a signed-in user.
     var session = null;
     try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
     var loggedIn = !!(session && session.access_token);
@@ -54,17 +96,20 @@
           }
         } catch (_) {}
       }
+      if (t) applyBodyTheme(t);
+      return;
     }
 
-    if (!t || t === 'midnight-slate') return;
-
-    function applyTheme() {
-      if (document.body && !document.body.classList.contains('theme-' + t)) {
-        document.body.classList.add('theme-' + t);
-      }
+    function bootAnonTheme() {
+      fetchPublicSiteTheme(function (siteKey) {
+        if (siteKey) applyBodyTheme(siteKey);
+      });
     }
-    if (document.body) applyTheme();
-    else document.addEventListener('DOMContentLoaded', applyTheme);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bootAnonTheme);
+    } else {
+      bootAnonTheme();
+    }
   } catch (_) {}
 })();
 

@@ -870,6 +870,62 @@
     .sr-subsection-title::after { content: '▾'; font-size: 18px; color: var(--accent); transition: transform 0.2s; }
     .sr-subsection.collapsed .sr-subsection-title { margin-bottom: 0; }
     .sr-subsection.collapsed .sr-subsection-title::after { transform: rotate(-90deg); }
+
+    /* ── COLLAPSIBLE PANELS (theme-admin style) ── */
+    .sr-detail-toolbar {
+      display: flex; gap: 8px; flex-wrap: wrap; margin: -8px 0 14px;
+    }
+    .sr-panel-toolbar-btn {
+      padding: 8px 12px; background: none; border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text-mid); font-family: "DM Sans", sans-serif; font-size: 12px; cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .sr-panel-toolbar-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(255,255,255,0.04); }
+    .sr-panel {
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+      background: rgba(255,255,255,0.02); margin-bottom: 12px;
+    }
+    .sr-panel-head {
+      width: 100%; display: flex; align-items: center; gap: 10px; min-width: 0;
+      padding: 10px 12px 10px 10px; background: rgba(255,255,255,0.04);
+      border: none; cursor: pointer; text-align: left;
+      font-family: "DM Sans", sans-serif;
+    }
+    .sr-panel-head:hover { background: rgba(255,255,255,0.06); }
+    .sr-panel-chevron {
+      font-size: 14px; color: var(--accent); line-height: 1; flex-shrink: 0; width: 14px;
+      transition: transform 0.2s ease;
+    }
+    .sr-panel.collapsed .sr-panel-chevron { transform: rotate(-90deg); }
+    .sr-panel-titles { min-width: 0; flex: 1; }
+    .sr-panel-title {
+      display: block; font-family: "Cormorant Garamond", serif; font-size: 1.05rem;
+      font-weight: 700; color: var(--text-high);
+    }
+    .sr-panel-desc {
+      display: block; font-size: 11px; color: var(--text-mid); margin-top: 2px; line-height: 1.4;
+    }
+    .sr-panel-body { padding: 16px 18px 18px; }
+    .sr-panel.collapsed .sr-panel-body { display: none; }
+    .sr-panel-body .sr-field:last-child { margin-bottom: 0; }
+    .sr-panel-nested { margin-top: 10px; margin-bottom: 0; }
+    .sr-panel-nested .sr-panel-head { padding: 8px 10px; background: rgba(255,255,255,0.03); }
+    .sr-panel-nested .sr-panel-title { font-size: 0.95rem; }
+    .sr-panel-nested .sr-panel-body { padding: 12px 14px 14px; }
+    .ing-section.collapsed .ing-col-headers,
+    .ing-section.collapsed .ing-rows,
+    .ing-section.collapsed .btn-add-ing { display: none !important; }
+    .ing-section.collapsed .ing-section-header { margin-bottom: 0; border-bottom: none; }
+    .method-section.collapsed .step-rows,
+    .method-section.collapsed .btn-add-ing { display: none !important; }
+    .method-section.collapsed .method-section-header { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+    .ing-section-toggle, .method-section-toggle {
+      padding: 2px 8px; background: none; border: 1px solid var(--border); border-radius: 5px;
+      color: var(--text-mid); font-size: 11px; cursor: pointer; flex-shrink: 0;
+    }
+    .ing-section.collapsed .ing-section-toggle,
+    .method-section.collapsed .method-section-toggle { color: var(--accent); border-color: var(--accent); }
+
     .sr-draft-prompt {
       display: none; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
       padding: 14px 18px; margin-bottom: 16px; border-radius: 12px;
@@ -1202,14 +1258,14 @@
 
       <div class="sr-grid">
         <!-- Recipe Name -->
-        <div class="sr-field sr-full" style="margin-bottom: 24px">
+        <div class="sr-field sr-full" data-sr-group="identity" style="margin-bottom: 24px">
           <label class="sr-label">Recipe Name <span class="req">*</span></label>
           <input class="sr-input" type="text" id="recipe-name" maxlength="200" placeholder="e.g. Kerala Beef Curry" onblur="checkDuplicateName()">
           <div id="dup-name-info" class="sr-hint" style="margin-top:6px; display:none;"></div>
         </div>
 
         <!-- Native Title — optional, the dish's name in its language of origin -->
-        <div class="sr-field sr-full" style="margin-bottom: 24px">
+        <div class="sr-field sr-full" data-sr-group="identity" style="margin-bottom: 24px">
           <label class="sr-label">Native Title <span class="opt">optional</span></label>
           <div class="sr-hint" style="margin: -4px 0 8px">
             <span class="sr-i">i</span> The dish name in its original language or script, such as &ldquo;നെയ്ച്ചോറ്&rdquo; or &ldquo;Neychoru&rdquo; for Ghee Rice, to be displayed alongside the recipe name.
@@ -1218,7 +1274,7 @@
         </div>
 
         <!-- Introduction — short blurb, 100 words max, shown on the recipe page below the title -->
-        <div class="sr-field sr-full">
+        <div class="sr-field sr-full" data-sr-group="identity">
           <label class="sr-label">Introduction <span class="opt">optional</span></label>
           <div class="sr-hint" style="margin: -4px 0 8px">
             <span class="sr-i">i</span> Describe the dish itself in no more than 100 words. Include details such as its origin, flavour profile, typical serving style, and any distinctive characteristics. Please don&rsquo;t include personal stories or memories in this section. Personal experiences can be placed under &ldquo;Personal Notes&rdquo; below.
@@ -1231,7 +1287,7 @@
 
         <!-- Origin (continent / country / region) — placed right after Introduction
              since the dish's origin is closely tied to how the user thinks about it. -->
-        <div class="sr-field sr-full" style="margin-bottom: 8px">
+        <div class="sr-field sr-full" data-sr-group="origin" style="margin-bottom: 8px">
           <label class="sr-label">Origin <span class="req">*</span></label>
           <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
             <div class="xf" id="xf-A">
@@ -1282,7 +1338,7 @@
         </div>
 
         <!-- Recipe Image — optional but strongly nudged (admin rejects without one) -->
-        <div class="sr-field sr-full" style="margin-bottom: 28px">
+        <div class="sr-field sr-full" data-sr-group="photo" style="margin-bottom: 28px">
           <label class="sr-label">Recipe Photo <span class="req">*</span></label>
           <input type="file" id="recipe-image-input" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handleImageUpload(this)">
           <div class="img-upload-box" id="img-upload-box"
@@ -1344,7 +1400,7 @@
         </div>
 
         <!-- Category — pill grid -->
-        <div class="sr-field sr-full">
+        <div class="sr-field sr-full" data-sr-group="category">
           <label class="sr-label">Category <span class="req">*</span></label>
           <div class="cat-grid" id="cat-grid">
             <input class="cat-opt" type="radio" name="category" id="cat-rise"      value="Rise & Shine">
@@ -1378,7 +1434,7 @@
           </div>
         </div>
 
-        <div class="sr-field sr-full" id="sr-taxonomy-wrap" style="display:none;margin-top:16px">
+        <div class="sr-field sr-full" data-sr-group="category" id="sr-taxonomy-wrap" style="display:none;margin-top:16px">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
             <div>
               <label class="sr-label">Sub-category <span style="font-weight:400;color:var(--text-mid)">(optional)</span></label>
@@ -1412,7 +1468,7 @@
         <div class="sr-subsection-title">Levels, times &amp; tags <span style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">expand when ready</span></div>
 
         <!-- Recipe characteristics: Spice + Sweet + Difficulty -->
-        <div class="sr-field sr-full levels-grid">
+        <div class="sr-field sr-full levels-grid" data-sr-subpanel="levels" data-sr-subpanel-title="Spice, sweet &amp; difficulty" data-sr-subpanel-desc="Required level pickers">
           <!-- Spice Level — inline SVG chillies with hardcoded colours -->
           <div class="level-col">
             <label class="sr-label">Spice Level <span class="req">*</span></label>
@@ -1472,7 +1528,7 @@
 
       <!-- Times & Servings — all times in minutes -->
       <!-- ── COOKING STYLE ── -->
-      <div class="sr-field sr-full" style="margin-bottom:16px">
+      <div class="sr-field sr-full" data-sr-subpanel="times" data-sr-subpanel-title="Times &amp; servings" data-sr-subpanel-desc="Cooking style, prep, cook, passive time, shelf life" style="margin-bottom:16px">
         <label class="sr-label">Cooking Style <span class="opt">optional</span></label>
         <select class="sr-input" id="cooking-style" onchange="applyCookingStyle(this.value)">
           <option value="">— General Cooking (default) —</option>
@@ -1515,7 +1571,7 @@
       </div>
 
       <!-- ── TIME + SERVINGS ROW ── -->
-      <div class="sr-grid-3">
+      <div class="sr-grid-3" data-sr-subpanel-part="times">
         <div class="sr-field">
           <label class="sr-label" id="lbl-prep-time">Prep Time <span class="req">*</span> <span class="sr-unit-badge">(minutes)</span></label>
           <input class="sr-input" type="number" id="prep-time" placeholder="e.g. 15" min="0" oninput="updateTotalTime()">
@@ -1550,7 +1606,7 @@
       </div>
 
       <!-- ── EXTRA / PASSIVE TIME ROW ── (shown for relevant cooking styles) -->
-      <div class="sr-grid" style="margin-top:14px" id="row-extra-time">
+      <div class="sr-grid" data-sr-subpanel-part="times" style="margin-top:14px" id="row-extra-time">
         <div class="sr-field">
           <label class="sr-label" id="lbl-extra-time">Passive Time <span class="opt">optional</span> <span class="sr-unit-badge" id="unit-extra-time">(minutes)</span></label>
           <input class="sr-input" type="number" id="additional-time" placeholder="e.g. 480" min="0" oninput="updateTotalTime()">
@@ -1564,7 +1620,7 @@
       </div>
 
       <!-- ── SHELF LIFE (preservation styles only) ── -->
-      <div id="shelf-life-block" style="display:none;margin-top:14px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:16px 18px">
+      <div id="shelf-life-block" data-sr-subpanel-part="times" style="display:none;margin-top:14px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:16px 18px">
         <div style="font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:14px">Shelf Life</div>
         <div class="sr-grid-3" style="margin-bottom:12px">
           <div class="sr-field">
@@ -1608,11 +1664,11 @@
 
       <hr class="sr-divider">
 
-      <div class="sr-section-subtitle" style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600;color:var(--accent);margin:0 0 4px;letter-spacing:0.4px">Tags</div>
-      <div class="sr-hint" style="margin:0 0 18px"><span class="sr-i">i</span> Select all applicable tags to help users discover your recipe more easily through search results and category filters.</div>
+      <div class="sr-section-subtitle" data-sr-tags-intro style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600;color:var(--accent);margin:0 0 4px;letter-spacing:0.4px">Tags</div>
+      <div class="sr-hint" data-sr-tags-intro style="margin:0 0 18px"><span class="sr-i">i</span> Select all applicable tags to help users discover your recipe more easily through search results and category filters.</div>
 
       <!-- Meal Type Tags -->
-      <div class="sr-field">
+      <div class="sr-field" data-sr-tag-panel>
         <label class="sr-label">Meal Type</label>
         <div class="tag-grid">
           <input class="tag-cb" type="checkbox" id="tag-mt-breakfast"   value="Breakfast"><label for="tag-mt-breakfast">&#127859; Breakfast</label>
@@ -1634,7 +1690,7 @@
         </div>
       </div>
       <!-- Occasion Tags -->
-      <div class="sr-field" style="margin-top:16px">
+      <div class="sr-field" data-sr-tag-panel style="margin-top:16px">
         <label class="sr-label">Occasion</label>
         <div class="tag-grid">
           <input class="tag-cb" type="checkbox" id="tag-everyday" value="Everyday"><label for="tag-everyday">🍽 Everyday</label>
@@ -1655,7 +1711,7 @@
         </div>
       </div>
       <!-- Style Tags -->
-      <div class="sr-field" style="margin-top:16px">
+      <div class="sr-field" data-sr-tag-panel style="margin-top:16px">
         <label class="sr-label">Style</label>
         <div class="tag-grid">
           <input class="tag-cb" type="checkbox" id="tag-trad" value="Traditional"><label for="tag-trad">⭐ Traditional</label>
@@ -1667,7 +1723,7 @@
         </div>
       </div>
       <!-- Flavour Profile Tags -->
-      <div class="sr-field" style="margin-top:16px">
+      <div class="sr-field" data-sr-tag-panel style="margin-top:16px">
         <label class="sr-label">Flavour Profile</label>
         <div class="tag-grid">
           <input class="tag-cb" type="checkbox" id="tag-fp-spicy"    value="Spicy"><label for="tag-fp-spicy">&#128293; Spicy</label>
@@ -1689,7 +1745,7 @@
         </div>
       </div>
       <!-- Dietary Tags -->
-      <div class="sr-field" style="margin-top:16px">
+      <div class="sr-field" data-sr-tag-panel style="margin-top:16px">
         <label class="sr-label">Dietary</label>
         <div class="tag-grid">
           <input class="tag-cb" type="checkbox" id="tag-vegan" value="Vegan"><label for="tag-vegan">🌱 Vegan</label>
@@ -1704,7 +1760,7 @@
         </div>
       </div>
       <!-- Health Tags -->
-      <div class="sr-field" style="margin-top:16px">
+      <div class="sr-field" data-sr-tag-panel style="margin-top:16px">
         <label class="sr-label">Health</label>
         <div class="tag-grid">
           <input class="tag-cb" type="checkbox" id="tag-hp" value="High Protein"><label for="tag-hp">💪 High Protein</label>
@@ -2686,6 +2742,7 @@ function addIngSection(name = '') {
   `;
   document.getElementById('ingredient-sections').appendChild(div);
   addIngRow(div.querySelector('.ing-rows'));
+  enhanceIngMethodSection(div, 'ing');
   // Enable drag-to-reorder for rows within this section
   makeSortable(div.querySelector('.ing-rows'), '.ing-row', null);
 }
@@ -2888,6 +2945,7 @@ function addMethodSection(name = '') {
     <button class="btn-add-step" onclick="addStep(this.previousElementSibling)">+ Add step</button>
   `;
   document.getElementById('method-sections').appendChild(div);
+  enhanceIngMethodSection(div, 'method');
   addStep(div.querySelector('.step-rows'));
   // Enable drag-to-reorder for steps within this section
   makeSortable(div.querySelector('.step-rows'), '.step-row', function(c) { renumberSteps(c); });
@@ -5635,7 +5693,12 @@ function setFormNumberIfEmpty(id, value) {
 
 function expandLevelsTagsSection() {
   var sub = document.getElementById('subsection-levels-tags');
-  if (sub) sub.classList.remove('collapsed');
+  if (!sub) return;
+  sub.classList.remove('collapsed');
+  var head = sub.querySelector(':scope > .sr-panel-head');
+  if (head) head.setAttribute('aria-expanded', 'true');
+  var details = document.getElementById('section-details');
+  if (details) details.classList.remove('collapsed');
 }
 
 function stripAutoReviewFromNotes(text) {
@@ -9176,10 +9239,203 @@ function scrollToFlowSection(sectionId) {
   var sec = document.getElementById(sectionId);
   if (!sec) return;
   sec.classList.remove('collapsed');
+  if (sectionId === 'section-details') {
+    document.querySelectorAll('#section-details .sr-panel').forEach(function(p) {
+      if (p.id === 'panel-identity') p.classList.remove('collapsed');
+    });
+  }
   sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function makeSrPanel(id, title, desc, childNodes, open, nested) {
+  var panel = document.createElement('div');
+  panel.className = 'sr-panel' + (open ? '' : ' collapsed');
+  if (id) panel.id = id;
+  if (nested) panel.classList.add('sr-panel-nested');
+  panel.dataset.srPanel = '1';
+
+  var head = document.createElement('button');
+  head.type = 'button';
+  head.className = 'sr-panel-head';
+  head.setAttribute('aria-expanded', open ? 'true' : 'false');
+  var chev = document.createElement('span');
+  chev.className = 'sr-panel-chevron';
+  chev.setAttribute('aria-hidden', 'true');
+  chev.textContent = '\u25BE';
+  var titles = document.createElement('span');
+  titles.className = 'sr-panel-titles';
+  var tTitle = document.createElement('span');
+  tTitle.className = 'sr-panel-title';
+  tTitle.textContent = title;
+  var tDesc = document.createElement('span');
+  tDesc.className = 'sr-panel-desc';
+  tDesc.textContent = desc || '';
+  titles.appendChild(tTitle);
+  titles.appendChild(tDesc);
+  head.appendChild(chev);
+  head.appendChild(titles);
+  head.addEventListener('click', function() {
+    var collapsed = panel.classList.toggle('collapsed');
+    head.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  });
+
+  var body = document.createElement('div');
+  body.className = 'sr-panel-body';
+  (childNodes || []).forEach(function(n) { if (n) body.appendChild(n); });
+
+  panel.appendChild(head);
+  panel.appendChild(body);
+  return panel;
+}
+
+function buildSrDetailPanels() {
+  var section = document.getElementById('section-details');
+  if (!section || section.dataset.srPanelsBuilt === '1') return;
+  var grid = section.querySelector('.sr-grid');
+  if (!grid) return;
+
+  var toolbar = document.createElement('div');
+  toolbar.className = 'sr-detail-toolbar';
+  var expandBtn = document.createElement('button');
+  expandBtn.type = 'button';
+  expandBtn.className = 'sr-panel-toolbar-btn';
+  expandBtn.textContent = 'Expand all';
+  expandBtn.addEventListener('click', function() { srExpandDetailPanels(true); });
+  var collapseBtn = document.createElement('button');
+  collapseBtn.type = 'button';
+  collapseBtn.className = 'sr-panel-toolbar-btn';
+  collapseBtn.textContent = 'Collapse all';
+  collapseBtn.addEventListener('click', function() { srExpandDetailPanels(false); });
+  toolbar.appendChild(expandBtn);
+  toolbar.appendChild(collapseBtn);
+
+  var panelsHost = document.createElement('div');
+  panelsHost.className = 'sr-detail-panels';
+
+  var specs = [
+    { id: 'panel-identity', group: 'identity', title: 'Recipe identity', desc: 'Name, native title, and introduction', open: true },
+    { id: 'panel-origin', group: 'origin', title: 'Origin', desc: 'Continent, country, region, and locality', open: false },
+    { id: 'panel-photo', group: 'photo', title: 'Recipe photo', desc: 'Upload or drag your completed dish photo', open: false },
+    { id: 'panel-category', group: 'category', title: 'Category', desc: 'Browse category and optional taxonomy', open: false }
+  ];
+
+  specs.forEach(function(spec) {
+    var nodes = Array.from(grid.querySelectorAll('[data-sr-group="' + spec.group + '"]'));
+    if (!nodes.length) return;
+    panelsHost.appendChild(makeSrPanel(spec.id, spec.title, spec.desc, nodes, spec.open, false));
+  });
+
+  if (!panelsHost.children.length) return;
+
+  section.insertBefore(toolbar, grid);
+  section.insertBefore(panelsHost, grid);
+  if (!grid.children.length) grid.remove();
+
+  section.dataset.srPanelsBuilt = '1';
+}
+
+function buildSrLevelsTagsPanel() {
+  var sub = document.getElementById('subsection-levels-tags');
+  if (!sub || sub.dataset.srPanelConverted === '1') return;
+
+  var titleEl = sub.querySelector('.sr-subsection-title');
+  var mainTitle = titleEl ? titleEl.textContent.replace(/expand when ready/i, '').trim() : 'Levels, times & tags';
+  var bodyNodes = [];
+  Array.from(sub.children).forEach(function(ch) {
+    if (ch === titleEl) return;
+    bodyNodes.push(ch);
+  });
+
+  var body = document.createElement('div');
+  body.className = 'sr-panel-body';
+  bodyNodes.forEach(function(n) { body.appendChild(n); });
+
+  var levelsEl = body.querySelector('[data-sr-subpanel="levels"]');
+  if (levelsEl) {
+    var levelsNext = levelsEl.nextSibling;
+    var levelsPanel = makeSrPanel('', 'Spice, sweet & difficulty', 'Required level pickers', [levelsEl], false, true);
+    body.insertBefore(levelsPanel, levelsNext);
+  }
+
+  var timesNodes = Array.from(body.querySelectorAll('[data-sr-subpanel="times"], [data-sr-subpanel-part="times"]'));
+  if (timesNodes.length) {
+    var timesNext = timesNodes[0].nextSibling;
+    var timesPanel = makeSrPanel('', 'Times & servings', 'Cooking style, prep, cook, passive time, shelf life', timesNodes, false, true);
+    body.insertBefore(timesPanel, timesNext);
+  }
+
+  body.querySelectorAll('[data-sr-tag-panel]').forEach(function(field) {
+    var label = field.querySelector('.sr-label');
+    var title = label ? label.textContent.trim() : 'Tags';
+    var count = field.querySelectorAll('.tag-cb').length;
+    var tagNext = field.nextSibling;
+    var tagPanel = makeSrPanel('', title, count + ' option' + (count === 1 ? '' : 's'), [field], false, true);
+    body.insertBefore(tagPanel, tagNext);
+  });
+
+  var panel = document.createElement('div');
+  panel.className = 'sr-panel collapsed';
+  panel.id = 'subsection-levels-tags';
+  panel.dataset.srPanel = '1';
+  panel.dataset.srPanelConverted = '1';
+
+  var head = document.createElement('button');
+  head.type = 'button';
+  head.className = 'sr-panel-head';
+  head.setAttribute('aria-expanded', 'false');
+  head.innerHTML = '<span class="sr-panel-chevron" aria-hidden="true">\u25BE</span><span class="sr-panel-titles"><span class="sr-panel-title"></span><span class="sr-panel-desc">Levels, times, and discovery tags</span></span>';
+  head.querySelector('.sr-panel-title').textContent = mainTitle;
+  head.addEventListener('click', function() {
+    var collapsed = panel.classList.toggle('collapsed');
+    head.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  });
+
+  panel.appendChild(head);
+  panel.appendChild(body);
+  sub.replaceWith(panel);
+}
+
+function srExpandDetailPanels(expand) {
+  document.querySelectorAll('#section-details .sr-panel').forEach(function(p) {
+    p.classList.toggle('collapsed', !expand);
+    var head = p.querySelector(':scope > .sr-panel-head');
+    if (head) head.setAttribute('aria-expanded', expand ? 'true' : 'false');
+    p.querySelectorAll(':scope > .sr-panel-body > .sr-panel-nested').forEach(function(n) {
+      n.classList.toggle('collapsed', !expand);
+      var nh = n.querySelector(':scope > .sr-panel-head');
+      if (nh) nh.setAttribute('aria-expanded', expand ? 'true' : 'false');
+    });
+  });
+}
+
+function enhanceIngMethodSection(sec, type) {
+  var header = sec.querySelector(type === 'ing' ? '.ing-section-header' : '.method-section-header');
+  if (!header || header.dataset.collapseReady === '1') return;
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = type === 'ing' ? 'ing-section-toggle' : 'method-section-toggle';
+  btn.textContent = 'Collapse';
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    sec.classList.toggle('collapsed');
+    btn.textContent = sec.classList.contains('collapsed') ? 'Expand' : 'Collapse';
+  });
+  var removeBtn = header.querySelector('.btn-remove-section');
+  if (removeBtn) header.insertBefore(btn, removeBtn);
+  else header.appendChild(btn);
+  header.dataset.collapseReady = '1';
+}
+
+function initIngMethodCollapse() {
+  document.querySelectorAll('.ing-section').forEach(function(sec) { enhanceIngMethodSection(sec, 'ing'); });
+  document.querySelectorAll('.method-section').forEach(function(sec) { enhanceIngMethodSection(sec, 'method'); });
+}
+
 function initSrSectionCollapse() {
+  buildSrDetailPanels();
+  buildSrLevelsTagsPanel();
+  initIngMethodCollapse();
+
   document.querySelectorAll('.sr-section > .sr-section-title').forEach(function(title) {
     title.addEventListener('click', function(e) {
       if (e.target.closest('button,a,input,label,select')) return;
@@ -9205,9 +9461,19 @@ function toggleAllSections() {
   document.querySelectorAll('.sr-subsection').forEach(function(sub) {
     sub.classList.toggle('collapsed', _allCollapsed);
   });
+  document.querySelectorAll('#section-details .sr-panel').forEach(function(p) {
+    if (_allCollapsed) {
+      p.classList.add('collapsed');
+    } else if (p.id === 'panel-identity') {
+      p.classList.remove('collapsed');
+    }
+    var head = p.querySelector(':scope > .sr-panel-head');
+    if (head) head.setAttribute('aria-expanded', p.classList.contains('collapsed') ? 'false' : 'true');
+  });
   document.querySelectorAll('.ing-section, .method-section').forEach(function(sec) {
-    const body = sec.querySelector('.ing-rows, .step-rows');
-    if (body) body.style.display = _allCollapsed ? 'none' : '';
+    sec.classList.toggle('collapsed', _allCollapsed);
+    var tgl = sec.querySelector('.ing-section-toggle, .method-section-toggle');
+    if (tgl) tgl.textContent = _allCollapsed ? 'Expand' : 'Collapse';
   });
   if (btn) btn.textContent = _allCollapsed ? 'Expand All ▴' : 'Collapse All ▾';
 }
