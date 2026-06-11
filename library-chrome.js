@@ -82,6 +82,20 @@
     var desc = opts.desc != null ? opts.desc : meta.desc;
     var extra = opts.extraHtml || '';
 
+    if (opts.submitOnly) {
+      root.innerHTML =
+        '<div class="lib-shell lib-shell-submit">' +
+          '<header class="lib-hero lib-hero-submit">' +
+            '<a class="lib-submit-back" href="library-directory.html?type=ingredient">← Library directory</a>' +
+            '<div class="lib-eyebrow">The Library</div>' +
+            '<h1 class="lib-title" id="lib-chrome-title">' + title + '</h1>' +
+            '<p class="lib-desc ls-subtitle" id="lib-chrome-desc">' + esc(desc) + '</p>' +
+            extra +
+          '</header>' +
+        '</div>';
+      return;
+    }
+
     if (compact) {
       root.innerHTML = '<div class="lib-shell lib-shell-compact"><div class="lib-tabs" role="navigation" aria-label="Library sections">' + buildTabs(active) + '</div></div>';
       return;
