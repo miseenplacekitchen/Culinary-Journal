@@ -51,6 +51,65 @@
   };
 
   // ── Profile / avatar cache helpers ───────────────────────────────────
+  var ADMIN_EMAIL = 'miseenplacekitchen.official@gmail.com';
+
+  window.TCJ_ADMIN_EMAIL = ADMIN_EMAIL;
+
+  window.sessionEmail = function(session) {
+    if (session && session.user && session.user.email) return session.user.email;
+    try {
+      var token = session && session.access_token;
+      if (!token) return '';
+      var payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return payload.email || '';
+    } catch (_) { return ''; }
+  };
+
+  window.isTcjAdmin = function(profile, session) {
+    if (profile && profile.is_admin === true) return true;
+    var admin = ADMIN_EMAIL.toLowerCase();
+    var emails = [];
+    if (profile && profile.email) emails.push(String(profile.email).toLowerCase());
+    var se = window.sessionEmail(session);
+    if (se) emails.push(String(se).toLowerCase());
+    return emails.some(function(e) { return e === admin; });
+  };
+
+  window.normalizeTcjProfile = function(profile, session) {
+    profile = profile || {};
+    session = session || window.getSession();
+    if (!profile.email && window.sessionEmail(session)) profile.email = window.sessionEmail(session);
+    if (profile.is_admin !== true && window.isTcjAdmin(profile, session)) profile.is_admin = true;
+    return profile;
+  };
+
+  window.saveTcjProfile = function(profile, session) {
+    profile = window.normalizeTcjProfile(profile, session);
+    try { localStorage.setItem('tcj_profile', JSON.stringify(profile)); } catch (_) {}
+    try {
+      window.dispatchEvent(new CustomEvent('tcj-profile-updated', { detail: profile }));
+    } catch (_) {}
+    return profile;
+  };
+
+  window.fetchTcjIsAdmin = async function(session) {
+    session = session || window.getSession();
+    if (!session || !session.access_token) return null;
+    try {
+      var res = await fetch(URL + '/rest/v1/rpc/is_admin', {
+        method: 'POST',
+        headers: {
+          apikey: KEY,
+          Authorization: 'Bearer ' + session.access_token,
+          'Content-Type': 'application/json'
+        },
+        body: '{}'
+      });
+      if (!res.ok) return null;
+      return (await res.json()) === true;
+    } catch (_) { return null; }
+  };
+
   window.purgeStaleProfileCache = function() {
     try {
       var s = window.getSession();

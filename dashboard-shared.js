@@ -291,14 +291,22 @@ async function init() {
       var rows = await rpc('get_my_profile', {});
       var pr = Array.isArray(rows) ? rows[0] : rows;
       if (pr) {
-        isAdmin = !!pr.is_admin;
-        adminName = pr.full_name || pr.username || 'miseenplacekitchen';
         if (typeof enrichProfile === 'function') pr = await enrichProfile(pr, sess);
+        if (typeof fetchTcjIsAdmin === 'function') {
+          var rpcAdmin = await fetchTcjIsAdmin(sess);
+          if (rpcAdmin === true) pr.is_admin = true;
+        }
+        if (typeof normalizeTcjProfile === 'function') pr = normalizeTcjProfile(pr, sess);
+        isAdmin = !!(pr.is_admin || (typeof isTcjAdmin === 'function' && isTcjAdmin(pr, sess)));
+        adminName = pr.full_name || pr.username || 'miseenplacekitchen';
         if (pr.avatar_url && typeof avatarBust === 'function') {
           pr.avatar_url = avatarBust(pr.avatar_url, pr.id, pr.last_seen);
         }
-        // Update cache after server confirms
-        localStorage.setItem('tcj_profile', JSON.stringify(pr));
+        if (typeof saveTcjProfile === 'function') {
+          saveTcjProfile(pr, sess);
+        } else {
+          localStorage.setItem('tcj_profile', JSON.stringify(pr));
+        }
       }
     } catch(e) {
       if (String(e.message).indexOf('401') !== -1) {

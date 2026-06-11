@@ -865,7 +865,11 @@ async function handleAvatarSelect(e) {
     if (avatarEl) {
       avatarEl.innerHTML = '<img src="' + (typeof avatarBust === 'function' ? avatarBust(publicUrl, SESSION.user_id, Date.now()) : publicUrl) + '" alt="Profile photo">';
     }
-    localStorage.setItem('tcj_profile', JSON.stringify(PROFILE));
+    if (typeof saveTcjProfile === 'function') {
+      PROFILE = saveTcjProfile(PROFILE, SESSION);
+    } else {
+      localStorage.setItem('tcj_profile', JSON.stringify(PROFILE));
+    }
 
   } catch(err) {
     // Storage upload failed — show error to user
@@ -1065,8 +1069,12 @@ async function init() {
     } else {
       localStorage.removeItem('tcj_theme');
     }
-    // Also keep profile cache fresh
-    localStorage.setItem('tcj_profile', JSON.stringify(PROFILE));
+    // Also keep profile cache fresh (normalize is_admin so nav dropdown stays correct)
+    if (typeof saveTcjProfile === 'function') {
+      PROFILE = saveTcjProfile(PROFILE, SESSION);
+    } else {
+      localStorage.setItem('tcj_profile', JSON.stringify(PROFILE));
+    }
 
     if (PROFILE.is_active === false) {
       showFatalError('Account deactivated',

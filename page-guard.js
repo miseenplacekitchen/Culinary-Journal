@@ -1,8 +1,11 @@
 /**
  * page-guard.js — The Culinary Journal
- * Include in <head> of every public page.
+ * Include in <head> after theme-init.js on gated pages.
  * Never include in: login.html, dashboard.html, coming-soon.html,
  *                   members-only.html, paid-members-only.html, 404.html
+ *
+ * Site-wide sign-in is enforced by theme-init.js (TCJ_SITE_PRIVATE).
+ * This file only applies per-page visibility / tier rules for signed-in users.
  *
  * Visibility levels:
  *   public     → everyone (unless min_tier gate on registered/paid)
@@ -31,8 +34,9 @@
   var path = raw.split('/').pop() || 'index.html';
   if (!path || raw === '/') path = 'index.html';
 
-  var exempt = ['index.html','login.html','onboarding.html','coming-soon.html','members-only.html',
-                'paid-members-only.html','404.html','reset-password.html','dashboard.html'];
+  var exempt = ['login.html','onboarding.html','coming-soon.html','members-only.html',
+                'paid-members-only.html','404.html','reset-password.html','dashboard.html',
+                'email-confirm.html','email-reset.html'];
   if (exempt.indexOf(path) !== -1) return;
 
   var accessToken = null;
@@ -48,10 +52,13 @@
     }
     var prof = JSON.parse(localStorage.getItem('tcj_profile') || 'null');
     if (prof) {
-      isAdmin  = !!prof.is_admin;
+      isAdmin  = !!(prof.is_admin || (typeof isTcjAdmin === 'function' && isTcjAdmin(prof, sess)));
       userTier = prof.subscription_tier || 'free';
     }
   } catch(e) {}
+
+  // theme-init.js already sent anonymous visitors to login.html
+  if (window.TCJ_SITE_PRIVATE && !isLoggedIn) return;
 
   if (isAdmin) return;
 

@@ -256,22 +256,27 @@ function buildSectionNav() {
     return '<a class="cj-menu-item" role="menuitem" href="' + href + '">' + icon + '<span>' + label + '</span></a>';
   }
 
-  var ADMIN_EMAIL = 'miseenplacekitchen.official@gmail.com';
-
   function sessionEmail(session) {
+    if (typeof window.sessionEmail === 'function') return window.sessionEmail(session);
     if (session && session.user && session.user.email) return session.user.email;
-    try {
-      var token = session && session.access_token;
-      if (!token) return '';
-      var payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-      return payload.email || '';
-    } catch (_) { return ''; }
+    return '';
   }
 
   function isNavAdmin(profile, session) {
-    if (profile && profile.is_admin === true) return true;
-    var email = (profile && profile.email) || sessionEmail(session) || '';
-    return String(email).toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    if (typeof window.isTcjAdmin === 'function') return window.isTcjAdmin(profile, session);
+    return !!(profile && profile.is_admin === true);
+  }
+
+  function normalizeNavProfile(profile, session) {
+    if (typeof window.normalizeTcjProfile === 'function') return window.normalizeTcjProfile(profile, session);
+    return profile || {};
+  }
+
+  function rebuildLoggedInNav(host, profile, session) {
+    if (!host) return;
+    host.innerHTML = buildLoggedInNavHtml(profile, session);
+    wire(host);
+    if (typeof loadNotifCount === 'function') loadNotifCount();
   }
 
   function buildLoggedInUserMenuHtml(profile, session) {
@@ -355,7 +360,11 @@ function buildSectionNav() {
         }
         stored.username = p.username || stored.username || '';
         localStorage.setItem('tcj_session', JSON.stringify(stored));
-        localStorage.setItem('tcj_profile', JSON.stringify(p));
+        if (typeof window.saveTcjProfile === 'function') {
+          window.saveTcjProfile(p, stored);
+        } else {
+          localStorage.setItem('tcj_profile', JSON.stringify(normalizeNavProfile(p, stored)));
+        }
       }).catch(function(){});
     } catch(e) { console.error('OAuth callback error:', e); }
   }
@@ -427,6 +436,7 @@ function buildSectionNav() {
 
     var html;
     if (loggedIn) {
+      profile = normalizeNavProfile(profile, session);
       html = buildLoggedInNavHtml(profile, session);
     } else {
       html =
@@ -450,7 +460,7 @@ function buildSectionNav() {
   }
 
   function refreshNavProfile(session, host) {
-    fetch(window.SUPA_URL + '/rest/v1/rpc/get_my_profile', {
+    var profileReq = fetch(window.SUPA_URL + '/rest/v1/rpc/get_my_profile', {
       method: 'POST',
       headers: {
         'apikey':        window.SUPA_KEY,
@@ -458,26 +468,46 @@ function buildSectionNav() {
         'Content-Type':  'application/json'
       },
       body: JSON.stringify({})
-    }).then(function(r){ return r.ok ? r.json() : null; }).then(async function(d){
+    }).then(function(r){ return r.ok ? r.json() : null; });
+
+    var adminReq = (typeof window.fetchTcjIsAdmin === 'function')
+      ? window.fetchTcjIsAdmin(session)
+      : Promise.resolve(null);
+
+    Promise.all([profileReq, adminReq]).then(async function(results){
+      var d = results[0];
+      var rpcAdmin = results[1];
       if (!d) return;
       var p = Array.isArray(d) ? d[0] : d;
       if (!p) return;
       if (typeof enrichProfile === 'function') {
         p = await enrichProfile(p, session);
       }
-      if (!p.email && sessionEmail(session)) p.email = sessionEmail(session);
-      if (p.is_admin !== true && isNavAdmin({}, session)) p.is_admin = true;
-      localStorage.setItem('tcj_profile', JSON.stringify(p));
+      if (rpcAdmin === true) p.is_admin = true;
+      p = normalizeNavProfile(p, session);
+      if (typeof window.saveTcjProfile === 'function') {
+        window.saveTcjProfile(p, session);
+      } else {
+        localStorage.setItem('tcj_profile', JSON.stringify(p));
+      }
       if (p.username && p.username !== session.username) {
         session.username = p.username;
         localStorage.setItem('tcj_session', JSON.stringify(session));
       }
-      // Rebuild dropdown so Admin Panel reflects fresh server-side is_admin
-      host.innerHTML = buildLoggedInNavHtml(p, session);
-      wire(host);
-      if (typeof loadNotifCount === 'function') loadNotifCount();
+      rebuildLoggedInNav(host, p, session);
     }).catch(function(){});
   }
+
+  window.addEventListener('tcj-profile-updated', function() {
+    var host = document.getElementById('nav-btns') || document.querySelector('[data-nav-host]');
+    if (!host) return;
+    var session = null, profile = {};
+    try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
+    try { profile = JSON.parse(localStorage.getItem('tcj_profile') || '{}') || {}; } catch (_) {}
+    if (!(session && session.access_token)) return;
+    profile = normalizeNavProfile(profile, session);
+    rebuildLoggedInNav(host, profile, session);
+  });
 
   function wire(host) {
     var wraps = host.querySelectorAll('.cj-menu-wrap');
