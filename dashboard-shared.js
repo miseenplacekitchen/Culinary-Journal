@@ -275,6 +275,13 @@ async function loadDashboard() {
       attEl.innerHTML = html;
     }
   } catch(e) { console.warn('dash inbox', e); }
+
+  try {
+    var healthEl = document.getElementById('dash-system-health');
+    if (healthEl && typeof loadDataIntegrityPanel === 'function') {
+      loadDataIntegrityPanel(healthEl);
+    }
+  } catch(e) { console.warn('dash system health', e); }
 }
 
 async function init() {
@@ -1474,7 +1481,6 @@ function loadIMInterface(){
   // ── Top-level tab bar ────────────────────────────────────────
   var TAB_DEFS=[
     {key:'refdata',    label:'Ingredient Data Management'},
-    {key:'health',     label:'🩺 System Health'},
     {key:'duplicates', label:'🔍 Find Duplicates'},
     {key:'analytics',  label:'📊 Analytics'},
     {key:'audit',      label:'Audit Trail'},
@@ -1485,6 +1491,10 @@ function loadIMInterface(){
   topBar.style.cssText='display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px';
   var topPanels={};
   var activeTop=localStorage.getItem('tcj_active_im_tab')||'refdata';
+  if(activeTop==='health'){
+    activeTop='refdata';
+    localStorage.setItem('tcj_active_im_tab','refdata');
+  }
 
   TAB_DEFS.forEach(function(td){
     var btn=document.createElement('button');
@@ -1497,7 +1507,6 @@ function loadIMInterface(){
       Object.keys(topPanels).forEach(function(k){ topPanels[k].style.display=k===td.key?'block':'none'; });
       if(td.key==='recycle')    loadIngRecycleBinInto(topPanels['recycle']);
       if(td.key==='duplicates') loadIngDuplicates(topPanels['duplicates']);
-      if(td.key==='health')     loadDataIntegrityPanel(topPanels['health']);
       if(td.key==='audit')   loadAuditTrail(topPanels['audit']);
       if(td.key==='analytics') loadIngAnalytics(topPanels['analytics']);
     });
@@ -1522,8 +1531,6 @@ function loadIMInterface(){
   topPanels['recycle'].innerHTML='<div style="'+_imS.label+';padding:8px 0">Loading\u2026</div>';
   if(activeTop==='recycle')    loadIngRecycleBinInto(topPanels['recycle']);
   if(activeTop==='duplicates') loadIngDuplicates(topPanels['duplicates']);
-  if(activeTop==='health')     loadDataIntegrityPanel(topPanels['health']);
-
   // ── Trigger load for restored active tab ─────────────────────
   if(activeTop==='audit')    loadAuditTrail(topPanels['audit']);
   if(activeTop==='analytics') loadIngAnalytics(topPanels['analytics']);
