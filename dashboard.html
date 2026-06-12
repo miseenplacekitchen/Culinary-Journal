@@ -855,26 +855,36 @@
         <button class="ap-inner-tab active" id="gtab-gminterface" onclick="switchGardenTab('gminterface')">&#9881; GM Interface</button>
       </div>
       <div id="gpanel-all" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0">
-          <span id="gm-species-count" style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)"></span>
+        <div class="ing-toolbar" style="margin:12px 0">
+          <span id="gm-species-count" class="ing-count"></span>
+          <input type="text" class="ap-search" id="gm-species-search" placeholder="Search species…" oninput="gmFilterSpeciesTable(false)" style="max-width:220px">
+          <div style="display:flex;gap:8px;margin-left:auto;flex-wrap:wrap">
+            <button type="button" class="ing-add-btn" onclick="loadGardenSpeciesTable(false)">↻ Refresh</button>
+            <button type="button" class="ing-add-btn" onclick="switchGardenTab('gminterface')">⚙ GM Interface</button>
+            <a href="garden-directory.html" target="_blank" rel="noopener" class="ing-add-btn" style="text-decoration:none;display:inline-block">Directory ↗</a>
+          </div>
         </div>
         <div class="ap-table-wrap">
           <table class="ap-table">
             <thead><tr>
-              <th>ID</th><th>Slug</th><th>Common name</th><th>Botanical</th><th>Status</th><th>Updated</th><th></th>
+              <th>ID</th><th>Slug</th><th>Common name</th><th>Botanical</th><th>Status</th><th>Updated</th><th>Actions</th><th></th>
             </tr></thead>
-            <tbody id="gm-species-tbody"><tr><td colspan="7" class="ap-empty-row">Loading…</td></tr></tbody>
+            <tbody id="gm-species-tbody"><tr><td colspan="8" class="ap-empty-row">Loading…</td></tr></tbody>
           </table>
         </div>
       </div>
       <div id="gpanel-draft" style="display:none">
-        <span id="gm-draft-count" style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)"></span>
-        <div class="ap-table-wrap" style="margin-top:12px">
+        <div class="ing-toolbar" style="margin:12px 0">
+          <span id="gm-draft-count" class="ing-count"></span>
+          <input type="text" class="ap-search" id="gm-draft-search" placeholder="Search drafts…" oninput="gmFilterSpeciesTable(true)" style="max-width:220px">
+          <button type="button" class="ing-add-btn" style="margin-left:auto" onclick="loadGardenSpeciesTable(true)">↻ Refresh</button>
+        </div>
+        <div class="ap-table-wrap">
           <table class="ap-table">
             <thead><tr>
-              <th>ID</th><th>Slug</th><th>Common name</th><th>Botanical</th><th>Status</th><th>Updated</th><th></th>
+              <th>ID</th><th>Slug</th><th>Common name</th><th>Botanical</th><th>Status</th><th>Updated</th><th>Actions</th><th></th>
             </tr></thead>
-            <tbody id="gm-draft-tbody"><tr><td colspan="7" class="ap-empty-row">Loading…</td></tr></tbody>
+            <tbody id="gm-draft-tbody"><tr><td colspan="8" class="ap-empty-row">Loading…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1149,8 +1159,8 @@
   <script src="dashboard-users.js?v=20260707"></script>
   <script src="dashboard-ingredients.js?v=20260630"></script>
   <script src="lib/dashboard-im-interface.js?v=20260713"></script>
-  <script src="lib/dashboard-garden.js?v=20260715"></script>
-  <script src="lib/dashboard-gm-interface.js?v=20260715"></script>
+  <script src="lib/dashboard-garden.js?v=20260716"></script>
+  <script src="lib/dashboard-gm-interface.js?v=20260716"></script>
   <script src="library-mise.js"></script>
   <script src="lib/recipe-hero-labels.js?v=20260629"></script>
   <script src="lib/circular-hero-editor.js?v=20260629"></script>
