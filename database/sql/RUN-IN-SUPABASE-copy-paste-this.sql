@@ -3564,10 +3564,23 @@ FROM library_profiles lp
 LEFT JOIN ingredients gi ON gi."ID" = lp.governed_ingredient_id
 WHERE lp.profile_type = 'ingredient'
   AND lp.slug IN (
-    'salt','onion','butter','rice','tomato','ginger','egg','flour',
-    'potato','coconut','milk','capsicum','olive-oil'
+    'garlic','onion','butter','rice','tomato','chicken-breast','salt',
+    'ginger','egg','flour','potato','coconut','milk','capsicum','olive-oil'
   )
 ORDER BY lp.slug;
+
+-- garlic
+UPDATE library_profiles lp SET governed_ingredient_id = sub.ing_id, name = sub.ing_name, updated_at = now()
+FROM (
+  SELECT "ID" AS ing_id, "Ingredient Name" AS ing_name FROM ingredients
+  WHERE lower(btrim("Ingredient Name")) = 'garlic'
+     OR lower("Ingredient Name") LIKE 'garlic,%'
+  ORDER BY
+    CASE WHEN lower(btrim("Ingredient Name")) = 'garlic' THEN 0 ELSE 1 END,
+    "ID"
+  LIMIT 1
+) sub
+WHERE lp.profile_type = 'ingredient' AND lp.slug = 'garlic';
 
 -- butter
 UPDATE library_profiles lp SET governed_ingredient_id = sub.ing_id, name = sub.ing_name, updated_at = now()
@@ -3664,6 +3677,21 @@ FROM (
   LIMIT 1
 ) sub
 WHERE lp.profile_type = 'ingredient' AND lp.slug = 'tomato';
+
+-- chicken-breast
+UPDATE library_profiles lp SET governed_ingredient_id = sub.ing_id, name = sub.ing_name, updated_at = now()
+FROM (
+  SELECT "ID" AS ing_id, "Ingredient Name" AS ing_name FROM ingredients
+  WHERE lower("Ingredient Name") LIKE '%chicken%'
+    AND lower("Ingredient Name") LIKE '%breast%'
+    AND lower("Ingredient Name") NOT LIKE '%ground%'
+    AND lower("Ingredient Name") NOT LIKE '%mince%'
+  ORDER BY
+    CASE WHEN lower(btrim("Ingredient Name")) LIKE '%chicken breast%' THEN 0 ELSE 1 END,
+    length("Ingredient Name"), "ID"
+  LIMIT 1
+) sub
+WHERE lp.profile_type = 'ingredient' AND lp.slug = 'chicken-breast';
 
 -- ginger
 UPDATE library_profiles lp SET governed_ingredient_id = sub.ing_id, name = sub.ing_name, updated_at = now()
@@ -3810,12 +3838,37 @@ FROM library_profiles lp
 LEFT JOIN ingredients gi ON gi."ID" = lp.governed_ingredient_id
 WHERE lp.profile_type = 'ingredient'
   AND lp.slug IN (
-    'salt','onion','butter','rice','tomato','ginger','egg','flour',
-    'potato','coconut','milk','capsicum','olive-oil'
+    'garlic','onion','butter','rice','tomato','chicken-breast','salt',
+    'ginger','egg','flour','potato','coconut','milk','capsicum','olive-oil'
   )
 ORDER BY lp.slug;
 
-SELECT 'fix-library-governed-links ready' AS status;
+-- Single summary (Supabase often shows only the last result)
+SELECT jsonb_build_object(
+  'status', 'fix-library-governed-links ready',
+  'profiles_checked', count(*),
+  'all_ok', count(*) FILTER (WHERE link_status = 'ok'),
+  'problems', COALESCE(jsonb_agg(jsonb_build_object(
+    'slug', slug, 'governed_name', governed_name, 'link_status', link_status
+  )) FILTER (WHERE link_status <> 'ok'), '[]'::jsonb)
+) AS library_link_summary
+FROM (
+  SELECT lp.slug,
+         gi."Ingredient Name" AS governed_name,
+         CASE
+           WHEN lp.governed_ingredient_id IS NULL THEN 'MISSING LINK'
+           WHEN lower(gi."Ingredient Name") LIKE '%buttermilk%' AND lp.slug = 'butter' THEN 'WRONG LINK'
+           WHEN lower(gi."Ingredient Name") LIKE '%peanut butter%' AND lp.slug = 'butter' THEN 'WRONG LINK'
+           ELSE 'ok'
+         END AS link_status
+  FROM library_profiles lp
+  LEFT JOIN ingredients gi ON gi."ID" = lp.governed_ingredient_id
+  WHERE lp.profile_type = 'ingredient'
+    AND lp.slug IN (
+      'garlic','onion','butter','rice','tomato','chicken-breast','salt',
+      'ginger','egg','flour','potato','coconut','milk','capsicum','olive-oil'
+    )
+) v;
 -- ########## END: fix-library-governed-links.sql ##########
 
 SELECT pg_notify('pgrst', 'reload schema');

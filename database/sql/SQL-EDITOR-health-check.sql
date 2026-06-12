@@ -32,6 +32,20 @@ SELECT jsonb_build_object(
         GROUP BY 1 HAVING count(*) > 1
       ) d
     ),
+    'starter_library_wrong_links', (
+      SELECT count(*)::int
+      FROM public.library_profiles lp
+      JOIN public.ingredients gi ON gi."ID" = lp.governed_ingredient_id
+      WHERE lp.profile_type = 'ingredient'
+        AND (
+          (lp.slug = 'butter' AND (
+            lower(gi."Ingredient Name") LIKE '%buttermilk%'
+            OR lower(gi."Ingredient Name") LIKE '%peanut butter%'
+          ))
+          OR (lp.slug = 'rice' AND lower(gi."Ingredient Name") LIKE '%rice paper%')
+          OR (lp.slug = 'milk' AND lower(gi."Ingredient Name") LIKE '%buttermilk%')
+        )
+    ),
     'orphan_recipe_ingredient_names', (
       SELECT count(DISTINCT x.ing_name)::int
       FROM (
