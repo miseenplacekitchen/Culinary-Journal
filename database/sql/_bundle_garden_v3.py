@@ -14,7 +14,8 @@ files = [
 out = base / "RUN-GARDEN-V3.sql"
 header = """-- =============================================================================
 -- THE CULINARY JOURNAL — GARDEN v3 (Platform Data Model v3)
--- Paste entire file in Supabase SQL Editor after code deploy.
+-- Paste THE ENTIRE FILE in Supabase SQL Editor (Ctrl+A here, then Run).
+-- Do not run garden-v3-07-seed-slice1.sql by itself — foundation must run first.
 -- Additive only. Safe to re-run.
 -- =============================================================================
 

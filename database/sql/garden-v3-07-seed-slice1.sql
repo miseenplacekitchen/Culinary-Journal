@@ -1,5 +1,13 @@
 -- garden-v3-07-seed-slice1.sql
 -- One plant end-to-end: Tomato — lookups, profile, hinge, calendar, lesson. Safe to re-run.
+-- REQUIRES garden-v3-01 … garden-v3-06 first. Do NOT run this file alone — use RUN-GARDEN-V3.sql from the top.
+
+DO $$
+BEGIN
+  IF to_regclass('public.cat_high_level') IS NULL THEN
+    RAISE EXCEPTION 'Garden foundation tables missing. Paste and run the entire RUN-GARDEN-V3.sql from line 1 (not seed-only).';
+  END IF;
+END $$;
 
 -- Lookups
 INSERT INTO public.cat_high_level (slug, name, definition) VALUES
