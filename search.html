@@ -104,6 +104,7 @@
   <div id="sr-results" style="display:none"></div>
 </div>
 
+<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -207,9 +208,7 @@ async function fetchRecipePage(q, reset) {
     else allResults.recipes = allResults.recipes.concat(list);
     recipeHasMore = list.length >= SR_RECIPE_PAGE;
     recipeOffset = offset + list.length;
-  } catch(_) {
-    if (reset) allResults.recipes = [];
-  }
+  } catch (_) { TcjErr.warn('search.html:210', _); }
 }
 
 async function fetchIngredientPage(q, reset) {

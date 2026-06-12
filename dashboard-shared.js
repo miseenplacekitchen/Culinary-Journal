@@ -6,6 +6,14 @@
 // SUPABASE_URL and SUPABASE_KEY are provided by supabase-config.js
 let session = null;
 
+function dashSectionError(elId, msg) {
+  var el = document.getElementById(elId);
+  if (!el) return;
+  el.innerHTML = '<div style="padding:16px 18px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--danger,#dc5050)">' +
+    esc(msg) + '</div>';
+  if (typeof TcjErr !== 'undefined') TcjErr.warn(elId, msg);
+}
+
 function showSessionExpired() {
   var existing = document.getElementById('session-expired-banner');
   if (existing) return;
@@ -28,7 +36,7 @@ async function rpc(fn, params) {
   var res = await attempt(session.access_token);
   if (res.status === 401) {
     var refreshed = false;
-    try { refreshed = await tryRefreshToken(); } catch(_) {}
+    try { refreshed = await tryRefreshToken(); } catch (_) { TcjErr.warn('tryRefreshToken', _); }
     if (refreshed) {
       res = await attempt(session.access_token);
     } else {
@@ -47,7 +55,7 @@ async function apiFetch(url, opts) {
   var res = await fetch(url, opts);
   if (res.status === 401) {
     var refreshed = false;
-    try { refreshed = await tryRefreshToken(); } catch(_) {}
+    try { refreshed = await tryRefreshToken(); } catch (_) { TcjErr.warn('tryRefreshToken', _); }
     if (refreshed) {
       opts.headers['Authorization'] = 'Bearer ' + session.access_token;
       res = await fetch(url, opts);
@@ -77,7 +85,7 @@ async function tryRefreshToken() {
     const updated = Object.assign({}, s, { access_token: data.access_token, refresh_token: data.refresh_token || s.refresh_token });
     localStorage.setItem('tcj_session', JSON.stringify(updated));
     session = updated; return true;
-  } catch(e) { return false; }
+  } catch (e) { TcjErr.warn('degrade', e); }
 }
 
 async function loadDashboard() {
@@ -87,7 +95,7 @@ async function loadDashboard() {
       rpc('admin_get_stats', {}),
       rpc('admin_count_users', {}),
       rpc('admin_count_ingredients', {}),
-      rpc('admin_get_tier_stats', {}).catch(function(){ return null; })
+      rpc('admin_get_tier_stats', {}).catch(function(e){ return TcjErr.rpcFallback('dashboard-shared.js', e, null); })
     ]);
     var stats = results[0]; var userCount = results[1];
     var ingCount = results[2]; var tierStats = results[3];
@@ -113,7 +121,7 @@ async function loadDashboard() {
           var mrr = (parseFloat(S.price_premium_monthly||'4')*(tierStats.premium||0)) +
                     (parseFloat(S.price_event_monthly||'12')*(tierStats.event||0));
           setEl('dash-mrr', (S.currency_symbol||'$')+mrr.toFixed(2));
-        }).catch(function(){});
+        }).catch(function(e){ TcjErr.warn('dashboard-shared.js', e); });
     }
   } catch(e) {
     console.warn('dash stats', e);
@@ -147,7 +155,9 @@ async function loadDashboard() {
         rEl.innerHTML = '<div style="padding:20px 18px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);text-align:center">No submissions yet</div>';
       }
     }
-  } catch(e) { console.warn('dash recipes', e); }
+  } catch (e) {
+    dashSectionError('dash-recent-recipes', 'Recent submissions could not load — ' + (e.message || 'try refreshing'));
+  }
 
   // ── Recent Members ───────────────────────────────────────
   try {
@@ -173,7 +183,9 @@ async function loadDashboard() {
         uEl.innerHTML = '<div style="padding:20px 18px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);text-align:center">No members yet</div>';
       }
     }
-  } catch(e) { console.warn('dash users', e); }
+  } catch (e) {
+    dashSectionError('dash-recent-users', 'Recent members could not load — ' + (e.message || 'try refreshing'));
+  }
 
   // ── Recipe of the Week ───────────────────────────────────
   try {
@@ -197,7 +209,9 @@ async function loadDashboard() {
           '<button onclick="switchView(&quot;recipe-mgmt&quot;);switchRecipeTab(&quot;rotw&quot;)" style="padding:7px 16px;background:rgba(91,143,212,0.1);border:1px solid rgba(91,143,212,0.3);border-radius:7px;color:#5B8FD4;font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer">Choose from Approved Recipes &#8594;</button>';
       }
     }
-  } catch(e) { console.warn('dash rotw', e); }
+  } catch (e) {
+    dashSectionError('dash-rotw', 'Recipe of the Week could not load — ' + (e.message || 'try refreshing'));
+  }
 
   // ── Admin Inbox ─────────────────────────────────────────
   try {
@@ -209,14 +223,22 @@ async function loadDashboard() {
         return [];
       }
       var pending = parseInt((document.getElementById('dash-pending')||{}).textContent)||0;
+      var inboxFails = [];
+      function inboxRpc(name, fn, params, fallback) {
+        return rpc(fn, params).catch(function(e) {
+          inboxFails.push(name);
+          TcjErr.warn('inbox:' + name, e);
+          return fallback;
+        });
+      }
       var inbox = await Promise.all([
-        rpc('admin_get_appeals', {}).catch(function(){ return []; }),
-        rpc('admin_get_reports', {p_status:'pending', p_limit:200, p_offset:0}).catch(function(){ return []; }),
-        rpc('admin_get_pending_notes', {}).catch(function(){ return []; }),
-        rpc('admin_get_pending_ingredients', {}).catch(function(){ return []; }),
-        rpc('admin_get_library_submissions', {p_status:'pending', p_limit:50}).catch(function(){ return []; }),
-        rpc('admin_count_pending_users', {}).catch(function(){ return 0; }),
-        rpc('admin_get_audit_log', {p_limit:5, p_offset:0}).catch(function(){ return []; })
+        inboxRpc('appeals', 'admin_get_appeals', {}, []),
+        inboxRpc('reports', 'admin_get_reports', {p_status:'pending', p_limit:200, p_offset:0}, []),
+        inboxRpc('notes', 'admin_get_pending_notes', {}, []),
+        inboxRpc('ingredients', 'admin_get_pending_ingredients', {}, []),
+        inboxRpc('library', 'admin_get_library_submissions', {p_status:'pending', p_limit:50}, []),
+        inboxRpc('pending-users', 'admin_count_pending_users', {}, 0),
+        inboxRpc('audit', 'admin_get_audit_log', {p_limit:5, p_offset:0}, [])
       ]);
       var appealCount = asList(inbox[0]).filter(function(a){ return a.status === 'pending'; }).length;
       var reportCount = asList(inbox[1]).length;
@@ -247,6 +269,8 @@ async function loadDashboard() {
         items.push({icon:'&#127942;',color:'#5B8FD4',text:'Recipe of the Week is not set',action:"switchView('recipe-mgmt');switchRecipeTab('rotw')",label:'Set Now'});
       if (!items.length)
         items.push({icon:'&#10003;',color:'#4caf76',text:'Inbox clear — no pending actions.',action:null,label:null});
+      if (inboxFails.length)
+        items.unshift({icon:'&#9888;',color:'#dc5050',text:'Some inbox data failed to load (' + inboxFails.join(', ') + ') — counts may be incomplete.',action:null,label:null});
       var html = items.map(function(item){
         return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,0.04)">' +
           '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:14px">'+item.icon+'</span>' +
@@ -265,7 +289,9 @@ async function loadDashboard() {
       }
       attEl.innerHTML = html;
     }
-  } catch(e) { console.warn('dash inbox', e); }
+  } catch (e) {
+    dashSectionError('dash-attention', 'Admin inbox could not load — ' + (e.message || 'try refreshing'));
+  }
 }
 
 async function init() {
@@ -276,14 +302,14 @@ async function init() {
   }
   try {
     var sess = null;
-    try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(e) {}
+    try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(e) { TcjErr.ignore(e); }
     if (!sess || !sess.access_token) {
       window.location.href = 'login.html';
       return;
     }
     session = sess;
     // Try to refresh token silently — don't block if it fails
-    try { await tryRefreshToken(); } catch(_) {}
+    try { await tryRefreshToken(); } catch (_) { TcjErr.warn('tryRefreshToken', _); }
     var isAdmin = false;
     var adminName = 'miseenplacekitchen';
     try {
@@ -331,11 +357,11 @@ async function init() {
     }
     var _it = localStorage.getItem('tcj_active_ing_tab') || 'all';
     document.querySelectorAll('[id^="v-"]').forEach(function(el){ el.style.display = 'none'; });
-    try { switchView(_sv, _it); } catch(e) { switchView('dashboard'); }
+    try { switchView(_sv, _it); } catch (e) { TcjErr.warn('degrade', e); }
     document.getElementById('screen-main').style.display = 'flex';
     if (typeof window.loadTcjAnnouncements === 'function') window.loadTcjAnnouncements();
-    rpc('admin_get_stats',{}).then(function(st){ if(st) setEl('badge-pending', st.pending||0); }).catch(function(){});
-    rpc('admin_count_pending_users',{}).then(function(n){ setEl('badge-pending-users', n||0); }).catch(function(){});
+    rpc('admin_get_stats',{}).then(function(st){ if(st) setEl('badge-pending', st.pending||0); }).catch(function(e){ TcjErr.warn('dashboard-shared.js', e); });
+    rpc('admin_count_pending_users',{}).then(function(n){ setEl('badge-pending-users', n||0); }).catch(function(e){ TcjErr.warn('dashboard-shared.js', e); });
     // Load unread feedback count
     rpc('admin_get_feedback',{p_status:'new'}).then(function(rows){
       var n = Array.isArray(rows) ? rows.length : 0;
@@ -343,10 +369,8 @@ async function init() {
       if (el) { el.textContent = n||''; el.style.display = n ? 'inline-block' : 'none'; }
       var vocEl = document.getElementById('badge-voc');
       if (vocEl) { vocEl.textContent = n||''; vocEl.style.display = n ? 'inline-block' : 'none'; }
-    }).catch(function(){});
-  } catch(e) {
-    showFatalError('Dashboard error: ' + e.message);
-  }
+    }).catch(function(e){ TcjErr.warn('dashboard-shared.js', e); });
+  } catch (e) { TcjErr.warn('dashboard-shared.js:347', e); }
 }
 
 function showFatalError(msg) {
@@ -456,7 +480,7 @@ async function openCollectionForm(c, container) {
       await rpc('admin_save_collection', {p_id:isEdit?c.id:0, p_name:name, p_description:desc||null, p_recipe_ids:isEdit?(c.recipe_ids||[]):[], p_published:pub});
       auditLog('Recipe Management > Collections', isEdit?'Collection Updated':'Collection Created', name, null, name, null);
       form.remove(); loadRMCollections(container);
-    } catch(e) { saveBtn.disabled=false; saveBtn.textContent='Save'; alert('Error: '+e.message); }
+    } catch (e) { TcjErr.warn('dashboard-shared.js:459', e); }
   });
   btnRow.appendChild(saveBtn); btnRow.appendChild(cancelBtn); btnRow.appendChild(saveMsg);
   form.appendChild(btnRow);
@@ -618,7 +642,7 @@ async function loadUMReports(container) {
         if(a.status==='pending'){
           var btns=mk('div','display:flex;gap:6px');
           var apBtn=mk('button','padding:4px 12px;background:none;border:1px solid #4caf76;border-radius:6px;color:#4caf76;font-family:DM Sans,sans-serif;font-size:11px;cursor:pointer','Approve & Reactivate');
-          apBtn.addEventListener('click',(function(id,b){return async function(){b.disabled=true;try{await rpc('admin_review_appeal',{p_id:id,p_status:'approved',p_notes:null});auditLog('User Management > Reports','Appeal Approved',null,String(id),'approved',null);loadUMReports(container);}catch(e){b.disabled=false;alert('Error: '+e.message);}};})(a.id,apBtn));
+          apBtn.addEventListener('click',(function(id,b){return async function(){b.disabled=true;try{await rpc('admin_review_appeal',{p_id:id,p_status:'approved',p_notes:null});auditLog('User Management > Reports','Appeal Approved',null,String(id),'approved',null);loadUMReports(container);}catch (e) { TcjErr.warn('admin_review_appeal', e); }};})(a.id,apBtn));
           var rjBtn=mk('button','padding:4px 12px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-family:DM Sans,sans-serif;font-size:11px;cursor:pointer','Reject Appeal');
           rjBtn.addEventListener('click',(function(id,b){return async function(){var notes=prompt('Reason for rejecting this appeal (shown to user):');if(notes===null)return;b.disabled=true;try{await rpc('admin_review_appeal',{p_id:id,p_status:'rejected',p_notes:notes||null});auditLog('User Management > Reports','Appeal Rejected',null,String(id),'rejected',notes||null);loadUMReports(container);}catch(e){b.disabled=false;alert('Error: '+e.message);}};})(a.id,rjBtn));
           btns.appendChild(apBtn);btns.appendChild(rjBtn);row.appendChild(btns);
@@ -830,7 +854,7 @@ async function sendInvite() {
 }
 
 function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(function(){ alert('Link copied!'); }).catch(function(){ alert(text); });
+  navigator.clipboard.writeText(text).then(function(){ alert('Link copied!'); }).catch(function(e){ TcjErr.warn('dashboard-shared.js', e); });
 }
 
 // UM Analytics
@@ -912,7 +936,7 @@ async function buildSMContent(container) {
 
     var _SM_DEFAULT_CATS = ['Main Courses','Appetizers','Desserts','Soups','Salads','Breads','Beverages','Sides','Snacks','Little Ones'];
     var cats = [];
-    try { cats = JSON.parse(S.homepage_categories_order || '[]'); } catch (_) {}
+    try { cats = JSON.parse(S.homepage_categories_order || '[]'); } catch(_) { TcjErr.warn('dashboard-shared.js', _); }
     if (!cats.length) cats = _SM_DEFAULT_CATS.slice();
 
     var catSec = mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');
@@ -932,7 +956,7 @@ async function buildSMContent(container) {
           if (!next) { this.value = prev; return; }
           cats[idx] = next;
           try { await ssSave('homepage_categories_order', JSON.stringify(cats)); }
-          catch (e) { cats[idx] = prev; this.value = prev; alert(e.message); }
+          catch (e) { TcjErr.warn('dashboard-shared.js:935', e); }
         };})(i, cat));
         row.appendChild(nameInp);
         function moveCat(dir) {
@@ -1348,8 +1372,8 @@ function auditLog(tab,action,target,oldVal,newVal,details){
       p_old_value: oldVal!=null?String(oldVal):null,
       p_new_value: newVal!=null?String(newVal):null,
       p_details: details||null
-    }).catch(function(){});
-  }catch(e){}
+    }).catch(function(e){ TcjErr.warn('dashboard-shared.js', e); });
+  }catch(e) { TcjErr.warn('dashboard-shared.js', e); }
 }
 
 function _tipOn(el, text){
@@ -1819,7 +1843,7 @@ function buildCategoriesTab(container, _dirty){
         // Propagate rename across ingredients in DB
         rpc('admin_rename_reference_value',{p_table:'ingredients',p_column:'Category',p_old:oldName,p_new:newName}).then(function(n){
           auditLog('IM Interface > Reference Data','Category Renamed',oldName,oldName,newName,'Updated '+n+' ingredients');
-        }).catch(function(){});
+        }).catch(function(e){ TcjErr.warn('dashboard-shared.js', e); });
         if(meta[oldName]){meta[newName]=meta[oldName];delete meta[oldName];}
         cats[i]=newName;
         _dirty.categories=true;
@@ -1843,7 +1867,7 @@ function buildCategoriesTab(container, _dirty){
         rpc('admin_clear_ingredient_category',{p_category:cat}).then(function(n){
           if(n>0) alert('ℹ '+n+' ingredient'+(n===1?' has':' have')+' had their Category cleared from "'+cat+'". Please update them in All Ingredients.');
           auditLog('IM Interface > Reference Data','Category Deleted',cat,cat,null,'Cleared from '+n+' ingredients');
-        }).catch(function(e){console.error('Category cascade failed:',e);});
+        }).catch(function(e){ TcjErr.warn('dashboard-shared.js', e); });
       });
       grid.appendChild(idDiv);grid.appendChild(ni);grid.appendChild(reqSel);grid.appendChild(actSel);grid.appendChild(del);
     });
@@ -1979,7 +2003,7 @@ function buildUnitsTab(container, _dirty){
         // Propagate rename
         rpc('admin_rename_reference_value',{p_table:'ingredients',p_column:'Unit',p_old:oldU,p_new:units[i]}).then(function(n){
           auditLog('IM Interface > Reference Data','Unit Renamed',oldU,oldU,units[i],'Updated '+n+' ingredients');
-        }).catch(function(){});
+        }).catch(function(e){ TcjErr.warn('dashboard-shared.js', e); });
         _dirty.units=true;
       });
       var mSel=document.createElement('select');mSel.style.cssText=_imS.sel;
@@ -2006,7 +2030,7 @@ function buildUnitsTab(container, _dirty){
         rpc('admin_rename_reference_value',{p_table:'ingredients',p_column:'Unit',p_old:unit,p_new:''}).then(function(n){
           if(n>0) alert('ℹ '+n+' ingredient'+(n===1?' has':' have')+' had their Unit cleared from "'+unit+'". Please update them in All Ingredients.');
           auditLog('IM Interface > Reference Data','Unit Deleted',unit,unit,null,'Cleared from '+n+' ingredients');
-        }).catch(function(e){console.error('Unit cascade failed:',e);});});
+        }).catch(function(e){ TcjErr.warn('dashboard-shared.js', e); });});
       var descF=document.createElement('input');descF.type='text';descF.value=m.description||'';descF.placeholder='e.g. Metric cup (250ml)';descF.style.cssText=_imS.inp;
       descF.addEventListener('change',function(){if(!meta[unit])meta[unit]={};meta[unit].description=this.value.trim();_dirty.units=true;});
       grid.appendChild(idDiv);grid.appendChild(ni);grid.appendChild(mSel);grid.appendChild(minF);grid.appendChild(maxF);grid.appendChild(decF);grid.appendChild(reqSel);grid.appendChild(actSel);grid.appendChild(descF);grid.appendChild(del);
@@ -2136,7 +2160,7 @@ function loadIngRecycleBinInto(container){
       });
     });
     container.appendChild(tableWrap);
-  }).catch(function(e){container.innerHTML='<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:12px">Error: '+esc(e.message)+'</div>';});
+  }).catch(function(e){ TcjErr.warn('dashboard-shared.js', e); });
 }
 
 // ── Audit Trail Tab ──────────────────────────────────────────────
@@ -2201,9 +2225,7 @@ function loadAuditTrail(container){
 
     tableWrap.appendChild(inner);
     container.appendChild(tableWrap);
-  }).catch(function(e){
-    container.innerHTML='<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:12px;padding:8px 0">Error loading audit trail: '+escT(e.message)+'</div>';
-  });
+  }).catch(function(e){ TcjErr.warn('dashboard-shared.js', e); });
 }
 
 function exportAuditCSV(rows){
@@ -2732,7 +2754,7 @@ function getColOrder() {
       const allKeys = STD_COLS.map(function(c){return c.key;}).concat(_extraColKeys.map(function(k){return 'extra:'+k;}));
       allKeys.forEach(function(k){if(!order.includes(k))order.push(k);});
       return order.filter(function(k){return allKeys.includes(k)||STD_COLS.find(function(c){return c.key===k;})||_extraColKeys.includes(k.replace('extra:',''));});
-    } catch(_){}
+    } catch(_) { TcjErr.warn('dashboard-shared.js', _); }
   }
   return STD_COLS.map(function(c){return c.key;}).concat(_extraColKeys.map(function(k){return 'extra:'+k;}));
 }
@@ -3406,7 +3428,7 @@ function showIngMsg(text,ok){const el=document.getElementById('ing-msg');if(!el)
 // ── CUSTOM FIELDS ────────────────────────────────────────────────
 
 async function loadUnitsAutocomplete(){
-  try{const units=await rpc('admin_get_ingredient_units',{});const dl=document.getElementById('ing-units-list');if(dl&&units.length)dl.innerHTML=units.map(function(u){return '<option value="'+u.unit+'">';}).join('');}catch(_){}
+  try{const units=await rpc('admin_get_ingredient_units',{});const dl=document.getElementById('ing-units-list');if(dl&&units.length)dl.innerHTML=units.map(function(u){return '<option value="'+u.unit+'">';}).join('');}catch(_) { TcjErr.warn('dashboard-shared.js', _); }
 }
 
 // ── CSV IMPORT ───────────────────────────────────────────────────
@@ -3772,7 +3794,7 @@ async function exportCsv(){
     const csv=[allCols.join(',')].concat(rows.map(function(r){return allCols.map(function(c){return stdCols.includes(c)?esc(r[c]):esc(r.extra_fields?(r.extra_fields[c]||''):'');}).join(',');})).join('\n');
     const blob=new Blob([csv],{type:'text/csv'}),url=URL.createObjectURL(blob),a=document.createElement('a');
     a.href=url;a.download='ingredients-'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(url);
-  }catch(e){alert('Export failed: '+e.message);}
+  }catch (e) { TcjErr.warn('degrade', e); }
   finally{if(btn){btn.textContent='⬇ Export CSV';btn.disabled=false;}}
 }
 
@@ -3818,7 +3840,7 @@ async function smSaveAll() {
         var updated = await r.json();
         if (!updated || !updated.length) throw new Error('Page not found: ' + path);
         saved++;
-      } catch(e) { errors.push(e.message); }
+      } catch (e) { TcjErr.warn('dashboard-shared.js:3821', e); }
     }
   }
 
@@ -3858,7 +3880,7 @@ async function smSaveAll() {
         });
         if (!r2 || !r2.ok) throw new Error('Setting save failed: ' + key);
         saved++;
-      } catch(e) { errors.push(e.message); }
+      } catch (e) { TcjErr.warn('dashboard-shared.js:3861', e); }
     }
   }
 
@@ -3888,7 +3910,7 @@ async function smSaveAll() {
         });
         if (!r3 || !r3.ok) throw new Error('Email template save failed: ' + tkey);
         saved++;
-      } catch(e) { errors.push(e.message); }
+      } catch (e) { TcjErr.warn('dashboard-shared.js:3891', e); }
     }
   }
 

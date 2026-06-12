@@ -6,7 +6,8 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Subscription Active — The Culinary Journal</title>
   <script src="theme-init.js"></script>
-  <script src="supabase-config.js"></script>
+  <script src="lib/tcj-errors.js"></script>
+<script src="supabase-config.js"></script>
   <script src="page-guard.js"></script>
   <link rel="stylesheet" href="style.css">
   <style>
@@ -36,7 +37,7 @@
         try {
           var prof = JSON.parse(localStorage.getItem('tcj_profile') || 'null');
           if (prof) { prof.subscription_tier = prof.subscription_tier || 'monthly'; localStorage.setItem('tcj_profile', JSON.stringify(prof)); }
-        } catch(_) {}
+        } catch (_) { TcjErr.warn('degrade', _); }
       }, 2500);
     })();
   </script>

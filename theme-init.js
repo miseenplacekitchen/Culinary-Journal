@@ -27,7 +27,7 @@
   try {
     var s = JSON.parse(localStorage.getItem('tcj_session') || 'null');
     loggedIn = !!(s && s.access_token);
-  } catch (_) {}
+  } catch (_) { TcjErr.warn('degrade', _); }
   if (loggedIn) return;
 
   var returnTo = path;
@@ -58,7 +58,7 @@
     if (!settings || typeof settings !== 'object') return 'midnight-slate';
     var catalog = settings.theme_catalog;
     if (typeof catalog === 'string') {
-      try { catalog = JSON.parse(catalog); } catch (_) { catalog = null; }
+      try { catalog = JSON.parse(catalog); } catch (_) { TcjErr.warn('theme-init.js:61', _); }
     }
     var def = normalizeThemeKey(settings.default_theme || (catalog && catalog.default_theme) || 'midnight-slate');
     var seasonal = normalizeThemeKey(settings.seasonal_default_theme || (catalog && catalog.seasonal_default) || '');
@@ -76,12 +76,12 @@
     })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) { cb(resolveEffectiveThemeKey(data)); })
-      .catch(function () { cb(null); });
+      .catch(function(e){ TcjErr.warn('theme-init.js', e); });
   }
 
   try {
     var session = null;
-    try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
+    try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(_) { TcjErr.ignore(_); }
     var loggedIn = !!(session && session.access_token);
 
     var t = null;
@@ -94,7 +94,7 @@
             t = prof.theme_preference;
             localStorage.setItem('tcj_theme', t);
           }
-        } catch (_) {}
+        } catch (_) { TcjErr.warn('degrade', _); }
       }
       if (t) applyBodyTheme(t);
       return;
@@ -110,7 +110,7 @@
     } else {
       bootAnonTheme();
     }
-  } catch (_) {}
+  } catch(_) { TcjErr.warn('theme-init.js', _); }
 })();
 
 // ── FONT SIZE ─────────────────────────────────────────────────────
@@ -125,5 +125,5 @@
     }
     if (document.body) applyFontSize();
     else document.addEventListener('DOMContentLoaded', applyFontSize);
-  } catch (_) {}
+  } catch(_) { TcjErr.warn('theme-init.js', _); }
 })();

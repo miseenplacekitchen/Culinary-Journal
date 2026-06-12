@@ -314,12 +314,13 @@
   </div>
 </div>
 
+<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 let session = null, starRating = 0, cookHistory = [], cookOffset = 0;
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-function getSession() { try { return JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch(_){ return null; } }
+function getSession() { try { return JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch (_) { TcjErr.warn('degrade', _); } }
 
 async function rpc(fn, params) {
   const s = getSession();
@@ -332,7 +333,7 @@ async function rpc(fn, params) {
   if (!r.ok) {
     const txt = await r.text().catch(()=> '');
     let msg = 'Error ' + r.status;
-    try { const e = JSON.parse(txt); msg = e.message || e.error || msg; } catch(_){ if(txt) msg = txt; }
+    try { const e = JSON.parse(txt); msg = e.message || e.error || msg; } catch (_) { TcjErr.warn('culinary-life.html:335', _); }
     throw new Error(msg);
   }
   const t = await r.text();
@@ -403,9 +404,7 @@ async function logCook() {
     btn.textContent = '✓ Saved to your culinary life!';
     setTimeout(function(){ btn.textContent='Save to my culinary life'; btn.disabled=false; }, 2000);
     loadAll();
-  } catch(e) {
-    btn.textContent = 'Error — try again'; btn.disabled = false;
-  }
+  } catch (e) { TcjErr.warn('culinary-life.html:406', e); }
 }
 
 // ── LOAD ALL DATA ────────────────────────────────────────────────
@@ -418,7 +417,7 @@ async function loadAll() {
   // Each section loads independently — one failing RPC must not blank
   // the others (Recent History carries the delete buttons).
   const safe = function (fn, label) {
-    return fn().catch(function (e) { console.warn('culinary-life ' + label + ':', e.message); });
+    return fn().catch(function(e){ TcjErr.warn('culinary-life.html', e); });
   };
   await Promise.all([
     safe(loadStats, 'stats'), safe(loadFavourites, 'favourites'),
@@ -625,9 +624,7 @@ async function saveCookFromModal() {
     });
     closeCookModal();
     await refreshAfterTimelineChange();
-  } catch (e) {
-    alert('Could not save: ' + (e.message || e));
-  }
+  } catch (e) { TcjErr.warn('culinary-life.html:628', e); }
 }
 
 async function deleteCookFromModal() {
@@ -644,9 +641,9 @@ async function deleteCookFromModal() {
 
 async function refreshAfterTimelineChange() {
   // Timeline, Cooking History and the stat cards share the same data
-  try { await loadTimeline(); } catch(_) {}
-  try { await loadHistory(); }  catch(_) {}
-  try { await loadStats(); }    catch(_) {}
+  try { await loadTimeline(); } catch(_) { TcjErr.warn('culinary-life.html', _); }
+  try { await loadHistory(); }  catch(_) { TcjErr.warn('culinary-life.html', _); }
+  try { await loadStats(); }    catch(_) { TcjErr.warn('culinary-life.html', _); }
 }
 
 // ── YEAR IN REVIEW ───────────────────────────────────────────────
@@ -728,7 +725,7 @@ function esc(s) {
       localStorage.removeItem('tcj_log_prefill');
       document.getElementById('log-name').scrollIntoView({behavior:'smooth',block:'center'});
     }
-  } catch(_) {}
+  } catch (_) { TcjErr.warn('degrade', _); }
 })();
 
 // ── INIT ─────────────────────────────────────────────────────────

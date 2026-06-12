@@ -36,9 +36,7 @@
       _cache = res.ok ? await res.json() : [];
       if (!Array.isArray(_cache)) _cache = [];
       _cacheTs = Date.now();
-    } catch (_) {
-      _cache = [];
-    }
+    } catch (_) { TcjErr.warn('regional-hints.js:39', _); }
     return _cache;
   }
 

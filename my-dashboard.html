@@ -151,6 +151,7 @@
   <a href="login.html" style="padding:10px 24px;background:var(--accent);color:#fff;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;text-decoration:none">Sign In</a>
 </div>
 
+<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 let currentFilter = null;
@@ -163,7 +164,7 @@ let session = null, allRecipes = [], currentTab = 'all';
 
 
 async function init() {
-  try { session = JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch(_){}
+  try { session = JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch (_) { TcjErr.warn('degrade', _); }
   if (!session?.access_token) {
     document.getElementById('ud-login').style.display = 'flex';
     return;
@@ -180,9 +181,7 @@ async function loadRecipes() {
     allRecipes = await rpc('get_my_submissions', {});
     updateStats();
     renderCards('all');
-  } catch(e) {
-    document.getElementById('ud-grid').innerHTML = '<div class="ud-empty"><div class="ud-empty-title">Could not load recipes</div><div class="ud-empty-sub">'+e.message+'</div></div>';
-  }
+  } catch (e) { TcjErr.warn('get_my_submissions', e); }
 }
 
 function updateStats() {
@@ -291,7 +290,7 @@ document.addEventListener('DOMContentLoaded', init);
 // ── USER ANALYTICS ─────────────────────────────────────────────
 var VIEWED_KEY = 'tcj_viewed';
 function getRecentlyViewed() {
-  try { return JSON.parse(localStorage.getItem(VIEWED_KEY)||'[]'); } catch(_) { return []; }
+  try { return JSON.parse(localStorage.getItem(VIEWED_KEY)||'[]'); } catch (_) { TcjErr.warn('degrade', _); }
 }
 function renderAnalytics() {
   var panel = document.getElementById('analytics-panel');
@@ -327,13 +326,13 @@ function renderAnalytics() {
     (recent.length ? '<div class="an-sec-title" style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:12px">Recently Viewed</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">'+recentCards+'</div>' : '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Visit some recipes and they will appear here as recently viewed.</div>');
 
   var tried = 0;
-  try { for (var i = 0; i < localStorage.length; i++) { if (localStorage.key(i).indexOf('tcj_tried_') === 0) tried++; } } catch(_) {}
+  try { for (var i = 0; i < localStorage.length; i++) { if (localStorage.key(i).indexOf('tcj_tried_') === 0) tried++; } } catch (_) { TcjErr.warn('degrade', _); }
   var grocery = 0;
   try {
     var g = JSON.parse(localStorage.getItem('tcj_grocery') || '{}');
     (g.recipes || []).forEach(function(r){ grocery += (r.ingredients || []).length; });
     grocery += (g.items || []).length;
-  } catch(_) {}
+  } catch (_) { TcjErr.warn('degrade', _); }
   var planned = 0, cooked = 0;
   try {
     Object.keys(localStorage).filter(function(k){ return k.indexOf('tcj_meal_') === 0; }).forEach(function(k){
@@ -345,7 +344,7 @@ function renderAnalytics() {
         });
       });
     });
-  } catch(_) {}
+  } catch (_) { TcjErr.warn('degrade', _); }
 
   panel.innerHTML += '<div class="an-sec-title" style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin:24px 0 12px">Kitchen activity</div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">'+

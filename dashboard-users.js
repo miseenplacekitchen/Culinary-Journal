@@ -142,7 +142,7 @@ async function loadMembers(page) {
     }
     tbody.innerHTML = list.map(function(u){ return renderMemberRow(u); }).join('');
     buildUserPagination(_userTotal);
-  } catch(e) { tbody.innerHTML = '<tr><td colspan="8" class="ap-empty-row">Error: ' + esc(e.message) + '</td></tr>'; }
+  } catch (e) { TcjErr.warn('dashboard-users.js:145', e); }
 }
 
 function renderMemberRow(u) {
@@ -243,7 +243,7 @@ async function bulkDeactivateUsers() {
     _selectedUsers = {};
     auditLog('User Management','Bulk Deactivation',null,null,ids.length+' users',reason.trim());
     loadMembers(_userPage);
-  } catch(e) { alert('Error: '+e.message); }
+  } catch (e) { TcjErr.warn('dashboard-users.js:246', e); }
 }
 
 // ── DEACTIVATION MODAL ────────────────────────────────────────────
@@ -318,7 +318,7 @@ async function confirmDeactivation() {
     closeDeactivateModal();
     loadMembers(_userPage);
     if (_userDetailOpen) { openUserDetail(_deactUserId); }
-  } catch(e) { if(confirmBtn){confirmBtn.disabled=false;confirmBtn.textContent='Deactivate';} alert('Error: '+e.message); }
+  } catch (e) { TcjErr.warn('dashboard-users.js:321', e); } alert('Error: '+e.message); }
 }
 
 async function openUserDetail(uid) {
@@ -418,9 +418,7 @@ async function openUserDetail(uid) {
           '<button onclick="doExportUserData_current()" style="padding:8px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;text-align:left">\uD83D\uDCC4 Export Data (GDPR)</button>' +
         '</div>' +
       '</div>';
-  } catch(e) {
-    panel.innerHTML = '<div style="padding:24px;color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: '+esc(e.message)+'</div>';
-  }
+  } catch (e) { TcjErr.warn('dashboard-users.js:421', e); }
 }
 
 function _uStat(label, val) {
@@ -478,7 +476,7 @@ async function loadPendingUsers() {
           '<button data-action="reactivate-user" data-uid=""+esc(u.id)+"" style="padding:5px 10px;background:none;border:1px solid #4caf76;border-radius:6px;color:#4caf76;font-family:\'DM Sans\',sans-serif;font-size:11px;cursor:pointer">Reactivate</button>' +
         '</td></tr>';
     }).join('');
-  } catch(e) { tbody.innerHTML = '<tr><td colspan="5" class="ap-empty-row">Error: '+esc(e.message)+'</td></tr>'; }
+  } catch (e) { TcjErr.warn('dashboard-users.js:481', e); }
 }
 
 // ── UM INTERFACE ──────────────────────────────────────────────────
@@ -511,7 +509,7 @@ async function loadUMDeactivated(container) {
         '</tr>';
       }).join('') + '</tbody></table>';
     container.appendChild(tbl);
-  } catch(e) { container.innerHTML = '<div style="color:#dc5050;font-family:\'DM Sans\',sans-serif;font-size:13px">Error: '+esc(e.message)+'</div>'; }
+  } catch (e) { TcjErr.warn('dashboard-users.js:514', e); }
 }
 
 // Chef Directory
@@ -556,7 +554,7 @@ async function loadUMChefs(container) {
       var clearBtn = mk('button', 'margin-bottom:14px;padding:6px 14px;background:none;border:1px solid #dc5050;border-radius:7px;color:#dc5050;font-family:DM Sans,sans-serif;font-size:11px;cursor:pointer', 'Clear Chef of the Month');
       clearBtn.addEventListener('click', async function () {
         if (!confirm('Clear Chef of the Month?')) return;
-        try { await rpc('admin_set_chef_of_month', { p_user_id: null }); loadUMChefs(container); } catch (e) { alert(e.message); }
+        try { await rpc('admin_set_chef_of_month', { p_user_id: null }); loadUMChefs(container); } catch (e) { TcjErr.warn('admin_set_chef_of_month', e); }
       });
       comCard.appendChild(clearBtn);
     }
@@ -643,7 +641,7 @@ async function loadUMFamilyRefs(container) {
         try {
           await rpc('admin_upsert_family_reference', {p_id: null, p_category: cat.key, p_value: v, p_sort_order: items.length + 1});
           loadUMFamilyRefs(container);
-        } catch (e) { alert(e.message); }
+        } catch (e) { TcjErr.warn('admin_upsert_family_reference', e); }
       });
       addRow.appendChild(inp);
       addRow.appendChild(btn);
@@ -711,7 +709,7 @@ async function buildFiMembers(container) {
           var badge = row.querySelector('td:nth-child(3) span');
           if(badge){badge.textContent=newTier;badge.style.color=TIER_COLOR[newTier]||'var(--text-mid)';}
           b.textContent='\u2713';setTimeout(function(){b.textContent='Save';b.disabled=false;},2000);
-        } catch(e){b.textContent='Save';b.disabled=false;alert('Error: '+e.message);}
+        } catch (e) { TcjErr.warn('dashboard-users.js:714', e); }
       };})(m.id,btn,tr));
       tr.lastElementChild.appendChild(btn);
       tbody.appendChild(tr);

@@ -14,7 +14,8 @@
   <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
   <script src="lib/theme-catalog.js"></script>
-  <script src="nav-init.js" defer></script>
+  <script src="lib/tcj-errors.js"></script>
+<script src="nav-init.js" defer></script>
   <script>
     // Apply saved theme as early as possible (prevents flash on subsequent loads).
     (function(){
@@ -25,7 +26,7 @@
             document.body.classList.add('theme-' + t);
           });
         }
-      } catch(_) {}
+      } catch (_) { TcjErr.ignore(_); }
     })();
   </script>
   <style>
@@ -731,10 +732,10 @@ async function loadThemeCatalog() {
     if (settings && typeof settings === 'object') {
       if (settings.currency_symbol) THEME_CURRENCY = settings.currency_symbol;
       var disabled = [];
-      try { disabled = JSON.parse(settings.disabled_themes || '[]'); } catch (_) {}
+      try { disabled = JSON.parse(settings.disabled_themes || '[]'); } catch (_) { TcjErr.warn('profile.html:734', _); }
       var stored = settings.theme_catalog;
       if (typeof stored === 'string') {
-        try { stored = JSON.parse(stored); } catch (_) { stored = null; }
+        try { stored = JSON.parse(stored); } catch (_) { TcjErr.ignore(_); }
       }
       THEME_CATALOG = TCJ_mergeThemeCatalog(
         stored,
@@ -743,7 +744,7 @@ async function loadThemeCatalog() {
         settings.default_theme || ''
       );
     }
-  } catch (_) {}
+  } catch(_) { TcjErr.warn('profile.html', _); }
   THEMES = TCJ_profileThemeGroups(THEME_CATALOG);
   THEMES.dark.forEach(refreshThemeAccess);
   THEMES.light.forEach(refreshThemeAccess);
@@ -793,7 +794,7 @@ function loadSession() {
       }
     }
     return null;
-  } catch (_) { return null; }
+  } catch (_) { TcjErr.warn('degrade', _); }
 }
 
 // ── AVATAR UPLOAD ───────────────────────────────────────────────
@@ -894,9 +895,9 @@ function signOut() {
       fetch(SUPA_URL + '/auth/v1/logout', {
         method: 'POST',
         headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + SESSION.access_token }
-      }).catch(() => {});
+      }).catch(function(e){ TcjErr.warn('profile.html', e); });
     }
-  } catch (_) {}
+  } catch (_) { TcjErr.ignore(_); }
   localStorage.removeItem('tcj_session');
   localStorage.removeItem('tcj_profile');
   localStorage.removeItem('tcj_theme');
@@ -947,7 +948,7 @@ async function callRPC(fnName, args) {
   });
   const text = await res.text();
   let parsed = null;
-  try { parsed = text ? JSON.parse(text) : null; } catch (_) { parsed = text; }
+  try { parsed = text ? JSON.parse(text) : null; } catch (_) { TcjErr.warn('profile.html:950', _); }
 
   if (!res.ok) {
     const msg = (parsed && (parsed.message || parsed.error_description || parsed.hint)) || ('HTTP ' + res.status);
@@ -1024,7 +1025,7 @@ async function refreshSession() {
     localStorage.setItem('tcj_session', JSON.stringify(updated));
     SESSION = updated;
     return true;
-  } catch(_) { return false; }
+  } catch (_) { TcjErr.ignore(_); }
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1113,7 +1114,7 @@ async function init() {
             document.getElementById('profile-content').style.display = 'block';
             return;
           }
-        } catch(_) {}
+        } catch (_) { TcjErr.ignore(_); }
       }
       // Refresh failed — send to login and come straight back
       window.location.href = 'login.html?return_to=profile.html';
@@ -1533,7 +1534,7 @@ async function saveTheme() {
     const newKey = (typeof returned === 'string') ? returned : preview;
     PROFILE.theme_preference = newKey;
     PROFILE.preview_theme = newKey;
-    try { localStorage.setItem('tcj_theme', newKey); } catch (_) {}
+    try { localStorage.setItem('tcj_theme', newKey); } catch(_) { TcjErr.ignore(_); }
     updateThemeActions();
     setMsg('theme-msg', 'Theme saved. It will apply across the whole site.', 'success');
   } catch (e) {

@@ -128,7 +128,7 @@ window.AllergyEngine = (function () {
       body: '{}'
     }).then(function (res) { return res.ok ? res.json() : {}; })
       .then(function (data) { setSubstitutionsLookup(data || {}); })
-      .catch(function () {});
+      .catch(function(e){ TcjErr.warn('allergy-engine.js', e); });
   }
 
   function dbSubsForIngredient(name) {

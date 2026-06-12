@@ -3,7 +3,7 @@
 // Requires: supabase-config.js to be loaded first
 
 function _imGet(key, def) {
-  try { var v=localStorage.getItem(key); return v?JSON.parse(v):def; } catch(e){return def;}
+  try { var v=localStorage.getItem(key); return v?JSON.parse(v):def; } catch (e) { TcjErr.warn('degrade', e); }
 }
 
 function _imSet(key,val){
@@ -43,7 +43,7 @@ function makeColumnsResizable(table){
 }
 
 function loadImSettings(){
-  try{ _imSettings=JSON.parse(localStorage.getItem('tcj_im_settings')||'{}'); }catch(e){_imSettings={};}
+  try{ _imSettings=JSON.parse(localStorage.getItem('tcj_im_settings')||'{}'); }catch (e) { TcjErr.warn('degrade', e); };}
   STD_COLS.forEach(function(col){
     var s=_imSettings.cols&&_imSettings.cols[col.key];
     if(s){ if(s.label)col.label=s.label; if(s.type)col.type=s.type; if(typeof s.visible!=='undefined')_colVis[col.key]=s.visible; }
@@ -227,12 +227,7 @@ function buildColumnSettingsTab(container){
         sb.style.background='var(--accent)';
         sb.disabled=false;
       },2500);
-    }catch(e){
-      sb.textContent='Save Column Settings';
-      sb.style.background='var(--accent)';
-      sb.disabled=false;
-      alert('Save failed: '+e.message);
-    }
+    }catch (e) { TcjErr.warn('dashboard-ingredients.js:230', e); }
   });
   var rb=document.createElement('button');rb.textContent='Reset to Defaults';rb.style.cssText=_imS.btn+';background:none;border:1px solid var(--border);color:var(--text-mid);padding:10px 18px';
   rb.addEventListener('click',function(){if(!confirm('Reset all column settings to defaults?'))return;localStorage.removeItem('tcj_im_settings');location.reload();});
@@ -400,9 +395,7 @@ async function loadBrandsTable(tbody){
       tr.appendChild(actionTd);
       tbody.appendChild(tr);
     });
-  }catch(e){
-    tbody.innerHTML='<tr><td colspan="8" style="padding:20px;text-align:center;color:#dc5050">'+escT(e.message||'Failed to load brand mappings.')+'</td></tr>';
-  }
+  }catch (e) { TcjErr.warn('dashboard-ingredients.js:403', e); }
 }
 
 function openBrandForm(r){
@@ -506,7 +499,7 @@ function openBrandForm(r){
       if(tbody)await loadBrandsTable(tbody);
       if(typeof loadIngredients==='function') await loadIngredients(ingPage||1);
       auditLog('IM Interface > Reference Data','Brand Mapping '+(isEdit?'Updated':'Added'),null,isEdit?r.brand_name:null,brand,generic);
-    }catch(e){alert('Save failed: '+e.message);saveBtn.disabled=false;saveBtn.textContent=isEdit?'Save Changes':'Add Mapping';}
+    }catch (e) { TcjErr.warn('dashboard-ingredients.js:509', e); }
   });
 
   btnRow.appendChild(saveBtn);btnRow.appendChild(cancelBtn);
@@ -684,7 +677,7 @@ async function syncRefDataFromIngredients(types, onDone){
     var summary = msgs.length>0 ? '✓ Added: '+msgs.join(', ') : '✓ Already up to date — nothing new to add.';
     if(onDone) onDone(summary);
     loadIMInterface();
-  }catch(e){ alert('Sync failed: '+e.message); }
+  }catch (e) { TcjErr.warn('dashboard-ingredients.js:687', e); }
 }
 
 async function loadIngredients(page) {
@@ -881,9 +874,7 @@ async function deleteExtraColumn(name) {
       colType:      _extraColTypes[name] || 'text'
     };
     localStorage.setItem('tcj_deleted_meta', JSON.stringify(meta));
-  } catch(e) {
-    alert('Could not rename column data: ' + e.message + '\nColumn removed from table but data may not be in Recycle Bin.');
-  }
+  } catch (e) { TcjErr.warn('degrade', e); }
 
   // Update local data immediately
   _ingAllData.forEach(function(r) {
@@ -1017,7 +1008,7 @@ async function saveIngredient(){
     if(result&&result.recipes_updated>0)msg+=' '+result.recipes_updated+' recipe(s) updated.';
     showIngMsg(msg,true);
     setTimeout(function(){closeIngModal();loadIngredients(ingPage);},900);
-  }catch(e){showIngMsg('Error: '+e.message,false);}
+  }catch (e) { TcjErr.warn('dashboard-ingredients.js:1020', e); }
   finally{saveBtn.disabled=false;saveBtn.textContent='Save Ingredient';}
 }
 
@@ -1033,7 +1024,7 @@ async function deleteIngredient(){
     if(typeof TcjIngredientLookup!=='undefined')TcjIngredientLookup.clearCache();
     closeIngModal();loadIngredients(ingPage);
   }
-  catch(e){showIngMsg('Error: '+e.message,false);}
+  catch (e) { TcjErr.warn('admin_delete_ingredient', e); }
 }
 
 function renderCustomFieldsList(){
@@ -1297,7 +1288,7 @@ async function buildFiInterface(container) {
           auditLog('Finance Management','Manual Payment Recorded',null,null,tier,log);
           var hist=document.getElementById('upanel-fi-history');
           if(hist&&hist.dataset.built==='1'){hist.dataset.built='';buildFiHistory(hist);}
-        }catch(e){sb.textContent='Record Payment';sb.disabled=false;sm.textContent='';alert('Error: '+e.message);}
+        }catch (e) { TcjErr.warn('dashboard-ingredients.js:1300', e); }
       });
       var br=mk('div','display:flex;align-items:center');br.appendChild(sb);br.appendChild(sm);c.appendChild(br);p.appendChild(c);
     })(panels['manual']);
@@ -1399,7 +1390,7 @@ async function buildFiInterface(container) {
           var db=mk('button','padding:4px 10px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-size:11px;cursor:pointer','Delete');
           db.addEventListener('click',function(){
             if(!confirm('Delete promo '+pp.code+'?'))return;
-            rpc('admin_delete_promo_code',{p_code:pp.code}).then(function(){loadPromos();}).catch(function(e){alert(e.message||e);});
+            rpc('admin_delete_promo_code',{p_code:pp.code}).then(function(){loadPromos();}).catch(function(e){ TcjErr.warn('dashboard-ingredients.js', e); });
           });
           tr.lastElementChild.appendChild(db);tbody.appendChild(tr);
         });
@@ -1409,9 +1400,7 @@ async function buildFiInterface(container) {
         rpc('admin_get_promo_codes',{}).then(function(rows){
           _promos=Array.isArray(rows)?rows:[];
           renderPromos();
-        }).catch(function(e){
-          listDiv.innerHTML='<div style="font-size:12px;color:#dc5050">'+esc(e.message||e)+'</div>';
-        });
+        }).catch(function(e){ TcjErr.warn('dashboard-ingredients.js', e); });
       }
       loadPromos();
       var addBtn=mk('button','padding:10px 24px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer','+ Add Promo Code');
@@ -1434,16 +1423,13 @@ async function buildFiInterface(container) {
           loadPromos();
           document.getElementById('fmi-promo-code').value='';document.getElementById('fmi-promo-value').value='';
           auditLog('Finance Management','Promo Code Created',code,null,null,code);
-        }).catch(function(e){alert(e.message||e);});
+        }).catch(function(e){ TcjErr.warn('dashboard-ingredients.js', e); });
       });
       c.appendChild(addBtn);c.appendChild(listDiv);p.appendChild(c);
     })(panels['promo']);
 
     container.dataset.built='1';
-  } catch(e){
-    container.dataset.built='';
-    container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>';
-  }
+  } catch (e) { TcjErr.warn('dashboard-ingredients.js:1443', e); }
 }
 
 // ── Send Email to User ──────────────────────────────────────────────────────

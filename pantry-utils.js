@@ -2,7 +2,7 @@
 (function (global) {
   function loadPantry() {
     try { return JSON.parse(localStorage.getItem('tcj_pantry') || '[]'); }
-    catch (_) { return []; }
+    catch (_) { TcjErr.warn('degrade', _); }
   }
 
   var _pantrySyncTimer = null;
@@ -29,7 +29,7 @@
           body: JSON.stringify({ p_pantry_data: list })
         });
         localStorage.setItem('tcj_pantry_ts', String(Date.now()));
-      } catch (_) {}
+      } catch (_) { TcjErr.ignore(_); }
     }, 1500);
   }
 

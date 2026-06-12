@@ -75,16 +75,16 @@
   function loadGrocery() {
     try {
       return normalizeGroceryList(JSON.parse(localStorage.getItem('tcj_grocery') || '{}'));
-    } catch (_) {
-      return { recipes: [], items: [], version: 2 };
+    } catch (_) { TcjErr.ignore(_); };
     }
   }
 
   var _grocerySyncTimer = null;
 
   function getGroceryChecked() {
-    try { return JSON.parse(localStorage.getItem('tcj_grocery_checked') || '[]'); }
-    catch (_) { return []; }
+    var raw = (typeof TcjErr !== 'undefined' ? TcjErr.lsGet('tcj_grocery_checked') : localStorage.getItem('tcj_grocery_checked')) || '[]';
+    if (typeof TcjErr !== 'undefined') return TcjErr.parseJson(raw, [], 'tcj_grocery_checked');
+    try { return JSON.parse(raw); } catch (e) { console.warn('[TCJ:tcj_grocery_checked]', e); return []; }
   }
 
   /** Debounced Supabase sync — works from recipe page, meal planner, pantry, grocery */
@@ -143,7 +143,7 @@
           localStorage.setItem('tcj_grocery_ts', String(Date.now()));
           if (parsed.updated_at && g.SharedSyncUtils) g.SharedSyncUtils.storeServerTs('tcj_grocery_server_ts', parsed.updated_at);
         }
-      } catch (_) {}
+      } catch (_) { TcjErr.ignore(_); }
     }, 1500);
   }
 
@@ -251,7 +251,7 @@
           headers: { 'Content-Type': 'application/json', 'apikey': key, 'Authorization': 'Bearer ' + sess.access_token },
           body: JSON.stringify({ p_list_data: list, p_checked: checked, p_client_updated_at: serverTs })
         });
-      } catch (_) {}
+      } catch (_) { TcjErr.warn('grocery-utils.js:254', _); }
     })();
   }
 

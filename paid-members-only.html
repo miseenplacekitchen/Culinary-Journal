@@ -8,7 +8,8 @@
   <meta name="robots" content="noindex, nofollow">
   <title>Premium Members Only — The Culinary Journal</title>
   <script src="theme-init.js"></script>
-  <script src="supabase-config.js"></script>
+  <script src="lib/tcj-errors.js"></script>
+<script src="supabase-config.js"></script>
   <script src="page-guard.js"></script>
   <script src="checkout-utils.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -177,13 +178,7 @@
         });
       }
     })
-    .catch(function(){
-      document.getElementById('price-daily').textContent   = '$0.99';
-      document.getElementById('price-weekly').textContent  = '$2.99';
-      document.getElementById('price-monthly').textContent = '$4.00';
-      document.getElementById('price-yearly').textContent  = '$40.00';
-      document.getElementById('saving-label').textContent  = 'Save 17%';
-    });
+    .catch(function(e){ TcjErr.warn('paid-members-only.html', e); });
   </script>
 </body>
 </html>

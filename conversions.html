@@ -298,6 +298,7 @@
 </div>
 </div>
 
+<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 LibraryChrome.render({ root: 'lib-chrome', active: 'conversions' });
@@ -509,7 +510,7 @@ function applyRegion(region) {
   const r = REGIONS[region];
   if (!r) return;
 
-  try { localStorage.setItem('tcj_conv_region', region); } catch (_) {}
+  try { localStorage.setItem('tcj_conv_region', region); } catch (_) { TcjErr.warn('degrade', _); }
 
   document.querySelectorAll('.cv-region-btn').forEach(function(btn) {
     btn.classList.toggle('active', btn.dataset.region === region);
@@ -645,7 +646,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   buildRegionBar();
   let saved = 'metric';
-  try { saved = localStorage.getItem('tcj_conv_region') || 'metric'; } catch (_) {}
+  try { saved = localStorage.getItem('tcj_conv_region') || 'metric'; } catch (_) { TcjErr.warn('degrade', _); }
   if (!REGIONS[saved]) saved = 'metric';
   applyRegion(saved);
 

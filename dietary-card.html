@@ -71,7 +71,8 @@
     .dc-state-sub   { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); line-height:1.6; }
   </style>
   <script src="page-guard.js"></script>
-  <script src="nav-init.js"></script>
+  <script src="lib/tcj-errors.js"></script>
+<script src="nav-init.js"></script>
 </head>
 <body class="page-bg">
 
@@ -325,7 +326,7 @@ async function loadCard() {
     }
 
     show('dc-form');
-  } catch(e) { show('dc-error'); }
+  } catch (e) { TcjErr.warn('dietary-card.html:328', e); }
 }
 
 async function submitCard() {
@@ -363,7 +364,7 @@ async function submitCard() {
     });
     if (!res.ok) { alert('Something went wrong. Please try again.'); return; }
     show('dc-success');
-  } catch(e) { alert('Error submitting. Please try again.'); }
+  } catch (e) { TcjErr.warn('dietary-card.html:366', e); }
 }
 
 document.addEventListener('DOMContentLoaded', loadCard);

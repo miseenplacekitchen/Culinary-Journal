@@ -892,13 +892,11 @@
       }
       return;
     });
-  }).catch(function() {
-    // If anything fails, clean hash and continue as normal
-    history.replaceState(null, '', window.location.pathname);
-  });
+  }).catch(function(e){ TcjErr.warn('index.html', e); });
 })();
 </script>
 
+<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 // Issue A-1: session-aware CTA — logged-in users go straight to My Diary, never re-prompted to sign in
@@ -907,7 +905,7 @@
     var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
     if (sess && sess.access_token) {
       var prof = null;
-      try { prof = JSON.parse(localStorage.getItem('tcj_profile') || 'null'); } catch(_) {}
+      try { prof = JSON.parse(localStorage.getItem('tcj_profile') || 'null'); } catch (_) { TcjErr.warn('degrade', _); }
       var dest = (prof && prof.is_admin) ? 'dashboard.html' : 'diary.html';
       var label = (prof && prof.is_admin) ? 'Open admin panel' : 'Open your journal';
       document.querySelectorAll('a.home-cta-primary[href="login.html"]').forEach(function(a){
@@ -915,7 +913,7 @@
         a.textContent = label;
       });
     }
-  } catch(e) {}
+  } catch (e) { TcjErr.warn('index.html:918', e); }
 })();
 </script>
 <script>
@@ -933,10 +931,7 @@
     setNum('trust-countries', (s.countries || 0).toLocaleString());
     setNum('trust-contributors', (s.contributors || 0).toLocaleString());
     setNum('trust-collections', (s.collections || 0).toLocaleString());
-  }).catch(function(){
-    setNum('trust-recipes','0'); setNum('trust-countries','0');
-    setNum('trust-contributors','0'); setNum('trust-collections','0');
-  });
+  }).catch(function(e){ TcjErr.warn('index.html', e); });
 })();
 </script>
 
@@ -966,7 +961,7 @@
       isAdmin = !!prof.is_admin;
       isPaid  = prof.subscription_tier === 'premium' || prof.subscription_tier === 'event';
     }
-  } catch(e) {}
+  } catch (e) { TcjErr.warn('degrade', e); }
 
   // Admins see everything — no changes to nav
   if (isAdmin) return;
@@ -1034,7 +1029,7 @@
       });
     });
   })
-  .catch(function(){});
+  .catch(function(e){ TcjErr.warn('index.html', e); });
 })();
 </script>
 
@@ -1071,7 +1066,7 @@
         '</div>';
       section.style.display = '';
     })
-    .catch(function(){});
+    .catch(function(e){ TcjErr.warn('index.html', e); });
   })();
 
   // ── CHEF OF THE MONTH ─────────────────────────────────────────
@@ -1101,7 +1096,7 @@
         '</div>';
       section.style.display = '';
     })
-    .catch(function(){});
+    .catch(function(e){ TcjErr.warn('index.html', e); });
   })();
 
 </script>

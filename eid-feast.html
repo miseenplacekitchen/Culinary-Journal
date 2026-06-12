@@ -41,13 +41,14 @@
 </div>
 <script src="grocery-utils.js"></script>
 <script src="event-planner-utils.js"></script>
+<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 var KEY='tcj_eid_feast';
 var GKEY='tcj_eid_guests';
 function getGuests(){ return parseInt(document.getElementById('ef-guests').value,10)||12; }
 function saveGuestCount(){ localStorage.setItem(GKEY, String(getGuests())); }
-function load(){ try{return JSON.parse(localStorage.getItem(KEY)||'{"mains":["Biryani"],"sides":["Raita","Naan"],"sweets":["Sheer khurma"]}');}catch(_){return{mains:[''],sides:[''],sweets:['']};}}
+function load(){ try{return JSON.parse(localStorage.getItem(KEY)||'{"mains":["Biryani"],"sides":["Raita","Naan"],"sweets":["Sheer khurma"]}');}catch (_) { TcjErr.warn('degrade', _); };}}
 function save(d){ localStorage.setItem(KEY, JSON.stringify(d)); }
 function allDishNames(){
   var d=load(), names=[];

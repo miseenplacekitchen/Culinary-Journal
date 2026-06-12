@@ -75,9 +75,7 @@ async function loadFestOverview(container) {
         fmBtn('Edit', 'switchFestTab(\'fm-interface\');fmEditFest(\'' + f.slug + '\')', false);
       list.appendChild(card);
     });
-  } catch (e) {
-    container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
-  }
+  } catch (e) { TcjErr.warn('dashboard-platform.js:78', e); }
 }
 
 function fmShowNewFest() {
@@ -110,7 +108,7 @@ async function fmSaveNewFest() {
     });
     auditLog('Festival Management', 'Created festival', null, null, null, null);
     loadFestOverview(document.getElementById('fest-panel'));
-  } catch (e) { alert('Error: ' + e.message); }
+  } catch (e) { TcjErr.warn('dashboard-platform.js:113', e); }
 }
 
 async function fmToggleActive(id, on) {
@@ -143,9 +141,7 @@ async function loadFestInterface(container) {
     });
     if (_fmEditSlug) sel.value = _fmEditSlug;
     fmEditFest(sel.value || (rows[0] && rows[0].slug));
-  } catch (e) {
-    container.innerHTML = '<div style="color:#dc5050">Error: ' + esc(e.message) + '</div>';
-  }
+  } catch (e) { TcjErr.warn('dashboard-platform.js:146', e); }
 }
 
 async function fmEditFest(slug) {
@@ -157,7 +153,7 @@ async function fmEditFest(slug) {
   var all = await rpc('admin_get_festivals') || [];
   var fest = all.find(function(f) { return f.slug === slug; });
   if (!fest) { editor.textContent = 'Festival not found.'; return; }
-  var detail = await rpc('admin_get_festival_detail', { p_slug: slug }).catch(function() { return { dishes: [] }; });
+  var detail = await rpc('admin_get_festival_detail', { p_slug: slug }).catch(function(e) { return TcjErr.rpcFallback('admin_get_festival_detail', e, { dishes: [] }); });
   if (!detail) detail = fest;
   detail.dishes = detail.dishes || [];
   editor.innerHTML =
@@ -235,7 +231,7 @@ async function fmSaveFest(id) {
     });
     auditLog('Festival Management', 'Updated festival', null, id, null, null);
     fmEditFest(document.getElementById('fm-ef-slug').value.trim());
-  } catch (e) { alert('Error: ' + e.message); }
+  } catch (e) { TcjErr.warn('dashboard-platform.js:238', e); }
 }
 
 async function fmAddDish(festivalId) {
@@ -247,7 +243,7 @@ async function fmAddDish(festivalId) {
       p_sort_order: parseInt(document.getElementById('fm-ad-ord').value, 10) || 0
     });
     fmEditFest(_fmEditSlug);
-  } catch (e) { alert('Error: ' + e.message); }
+  } catch (e) { TcjErr.warn('dashboard-platform.js:250', e); }
 }
 
 async function fmSaveDish(id) {
@@ -259,7 +255,7 @@ async function fmSaveDish(id) {
       p_sort_order: parseInt(document.getElementById('fm-do-' + id).value, 10) || 0
     });
     fmEditFest(_fmEditSlug);
-  } catch (e) { alert('Error: ' + e.message); }
+  } catch (e) { TcjErr.warn('dashboard-platform.js:262', e); }
 }
 
 async function fmDelDish(id) {
@@ -285,7 +281,7 @@ async function fmSearchRecipes(dishId) {
       html += '<div style="font-size:10px;color:var(--text-mid);margin-top:6px">Showing first 48 — narrow your search for more.</div>';
     }
     box.innerHTML = html;
-  } catch (e) { box.innerHTML = '<div style="color:#dc5050;font-size:11px">' + esc(e.message) + '</div>'; }
+  } catch (e) { TcjErr.warn('dashboard-platform.js:288', e); }
 }
 
 async function fmLinkRecipe(dishId, recipeId) {
@@ -297,7 +293,7 @@ async function fmLinkRecipe(dishId, recipeId) {
       p_is_featured: false
     });
     fmEditFest(_fmEditSlug);
-  } catch (e) { alert('Error: ' + e.message); }
+  } catch (e) { TcjErr.warn('admin_link_festival_recipe', e); }
 }
 
 async function fmUnlinkRecipe(linkId, slug) {
@@ -410,7 +406,7 @@ async function loadVocInbox(container, filters) {
             });
             auditLog('Voice of Customer', 'Feedback ' + b.s, null, String(r.id), b.s, null);
             loadVocInbox(container, filters);
-          } catch (e) { btn.disabled = false; alert('Error: ' + e.message); }
+          } catch (e) { TcjErr.warn('dashboard-platform.js:413', e); }
         });
         row.appendChild(btn);
       });

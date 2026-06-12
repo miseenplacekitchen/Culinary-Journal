@@ -295,6 +295,7 @@
 <script src="grocery-utils.js"></script>
 <script src="pantry-utils.js"></script>
 <script src="allergy-engine.js"></script>
+<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -362,7 +363,7 @@ async function buildHierarchyFilters() {
         if (r.division_name) divs[r.division_name] = 1;
       });
     }
-  } catch (_) {}
+  } catch (_) { TcjErr.warn('meal-planner.html:365', _); }
   var subKeys = Object.keys(subs).sort();
   var divKeys = Object.keys(divs).sort();
   if (!subKeys.length && !divKeys.length) { bar.innerHTML = ''; return; }
@@ -449,7 +450,7 @@ function dayKeyForDateStr(dateStr) {
 
 function getPlanByKey(weekKey) {
   try { return JSON.parse(localStorage.getItem(weekKey) || '{}'); }
-  catch (_) { return {}; }
+  catch (_) { TcjErr.warn('degrade', _); }; }
 }
 
 function getWeekDates(offset) {
@@ -471,7 +472,7 @@ function getWeekKey(offset) {
 
 function getPlan() {
   try { return JSON.parse(localStorage.getItem(getWeekKey(currentWeekOffset)) || '{}'); }
-  catch(_) { return {}; }
+  catch (_) { TcjErr.warn('degrade', _); }; }
 }
 
 var _mpHouseholdShared = false;
@@ -487,7 +488,7 @@ function updateMealHouseholdBar(data) {
     _mpHouseholdShared = true;
   } else {
     var sess = null;
-    try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
+    try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) { TcjErr.warn('degrade', _); }
     bar.style.display = sess ? 'flex' : 'none';
     if (sess) {
       bar.innerHTML = '<span>Personal meal plan</span><a href="household.html">Link partner for shared planning →</a>';
@@ -533,7 +534,7 @@ function savePlan(plan) {
       } else if (parsed.ok && parsed.updated_at && window.SharedSyncUtils) {
         SharedSyncUtils.storeServerTs('tcj_meal_server_ts_' + key, parsed.updated_at);
       }
-    } catch(_) {}
+    } catch (_) { TcjErr.warn('meal-planner.html:536', _); }
   }, 1200);
 }
 
@@ -565,7 +566,7 @@ async function syncMealPlanFromCloud(force) {
       if (remote.updated_at && window.SharedSyncUtils) SharedSyncUtils.storeServerTs('tcj_meal_server_ts_' + key, remote.updated_at);
       renderCalendar();
     }
-  } catch(_) {}
+  } catch (_) { TcjErr.warn('degrade', _); }
 }
 
 async function loadPlanFromSupabase() {
@@ -767,7 +768,7 @@ async function clearWeek() {
         body: JSON.stringify({ p_week_key: key, p_plan_data: {} })
       });
     }
-  } catch (_) {}
+  } catch (_) { TcjErr.warn('meal-planner.html:770', _); }
   renderCalendar();
 }
 
@@ -1079,7 +1080,7 @@ async function loadFamilyProfiles() {
     renderGroupFilterBar();
     renderMemberFilterBar();
     updateConflictSummary();
-  } catch(_) {}
+  } catch (_) { TcjErr.warn('meal-planner.html:1082', _); }
 }
 
 function renderFamilyFlags() {
@@ -1126,7 +1127,7 @@ function updateConflictSummary() {
 // ── PANTRY-AWARE GROCERY (override from recipe-page) ─────────────
 function getPantryItems() {
   try { return JSON.parse(localStorage.getItem('tcj_pantry')||'[]'); }
-  catch(_) { return []; }
+  catch (_) { TcjErr.warn('degrade', _); }
 }
 function isInPantry(name) {
   var n = name.toLowerCase().trim();
@@ -1173,7 +1174,7 @@ async function promptPantryUseUp(slot) {
     if (!confirm('Use up pantry items for this meal?\n\n' + names)) return;
     matched.forEach(function(p) { p.qty = Math.max(0, (parseFloat(p.qty) || 0) - 1); });
     savePantryLocal(pantry);
-  } catch(_) {}
+  } catch (_) { TcjErr.warn('meal-planner.html:1176', _); }
 }
 
 async function promptLeftoversToFridge(day, meal, slot, options) {
@@ -1216,7 +1217,7 @@ async function prefetchPantryFromCloud() {
     if (!Array.isArray(items)) return;
     localStorage.setItem('tcj_pantry', JSON.stringify(items));
     if (data.updated_at) localStorage.setItem('tcj_pantry_ts', String(new Date(data.updated_at).getTime()));
-  } catch (_) {}
+  } catch (_) { TcjErr.warn('degrade', _); }
 }
 
 async function markMealCooked(day, meal, e) {
@@ -1247,7 +1248,7 @@ async function markMealCooked(day, meal, e) {
         })
       });
     }
-  } catch(_) {}
+  } catch (_) { TcjErr.warn('meal-planner.html:1250', _); }
   setSlot(day, meal, Object.assign({}, slot, { status: 'cooked', cooked_at: cookedDate }));
   await promptPantryUseUp(slot);
   if (confirm('Any leftovers to save to the fridge?')) {
@@ -1265,7 +1266,7 @@ function mpRecipeHeaders() {
   try {
     var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
     if (sess && sess.access_token) h.Authorization = 'Bearer ' + sess.access_token;
-  } catch (_) {}
+  } catch(_) { TcjErr.warn('meal-planner.html', _); }
   return h;
 }
 
@@ -1427,7 +1428,7 @@ async function assignRecipeFromPicker(r) {
         var full = await res.json();
         if (full) recipe = Object.assign({}, recipe, full, { name: full.recipe_name || recipe.name });
       }
-    } catch(_) {}
+    } catch (_) { TcjErr.warn('meal-planner.html:1430', _); }
     var warnings = checkRecipeConflicts(recipe);
     if (warnings.length && typeof AllergyEngine !== 'undefined') {
       if (!confirm('Allergy / dietary warning\n\n' + AllergyEngine.formatConfirmList(warnings, recipe, familyProfiles) + '\n\nAssign this meal anyway?')) return;
@@ -1517,7 +1518,7 @@ async function addSlotToGroceryData(data, slot, day, meal, weekKey, stats) {
       ingredients: ingredients
     });
     stats.added++;
-  } catch (_) {}
+  } catch (_) { TcjErr.warn('meal-planner.html:1520', _); }
 }
 
 async function exportMealsToGrocery(slots, emptyMsg) {
@@ -1646,7 +1647,7 @@ async function loadAllergySettings() {
       var data = await res.json();
       hideUnsafeRecipes = !!(data && data.hide_unsafe_recipes);
     }
-  } catch (_) {}
+  } catch (_) { TcjErr.warn('meal-planner.html:1649', _); }
 }
 
 document.addEventListener('DOMContentLoaded', function() {

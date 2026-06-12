@@ -69,7 +69,7 @@ async function tcjGetAdminEmail() {
     var rows = await rpc('get_my_profile', {});
     var p = Array.isArray(rows) && rows[0] ? rows[0] : null;
     return (p && p.email) ? String(p.email).trim() : '';
-  } catch (_) { return ''; }
+  } catch (_) { TcjErr.warn('get_my_profile', _); }
 }
 
 function switchSMTab(tab) {
@@ -96,9 +96,7 @@ function switchSMTab(tab) {
     else if (tab === 'sm-themes')    buildSMThemes(container);
     else if (tab === 'sm-email')     buildSMEmail(container);
     else if (tab === 'sm-settings')  buildSMSettings(container);
-  } catch(e) {
-    alert('Site Management tab error: ' + e.message);
-  }
+  } catch (e) { TcjErr.warn('dashboard-site.js:99', e); }
 }
 
 
@@ -149,7 +147,7 @@ async function buildSMPages(container) {
         alert('Soft launch preset applied.');
         container.dataset.built = '';
         buildSMPages(container);
-      } catch (e) { alert(e.message); launchBtn.disabled = false; }
+      } catch (e) { TcjErr.warn('dashboard-site.js:152', e); }
     });
     launchCard.appendChild(launchBtn);
     container.appendChild(launchCard);
@@ -221,7 +219,7 @@ async function buildSMPages(container) {
           var r=await apiFetch(SUPABASE_URL+'/rest/v1/site_pages?path=eq.'+encodeURIComponent(pagePath),{method:'PATCH',headers:{'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(body)});
           var rBody = await r.json(); if(!Array.isArray(rBody)||!rBody.length) throw new Error('Row not found — no changes saved');
           b.textContent='\u2713 Saved'; setTimeout(function(){var c=document.getElementById('upanel-sm-pages');if(c){c.dataset.built='';buildSMPages(c);}},1500);
-        } catch(e){b.textContent='Save';b.disabled=false;alert('Save failed: '+e.message);}
+        } catch (e) { TcjErr.warn('dashboard-site.js:224', e); }
       };})(path,btn));
       saveTd.appendChild(btn);
       tr.appendChild(saveTd);
@@ -400,7 +398,7 @@ async function buildSMAnnouncements(container) {
             });
             var c = document.getElementById('upanel-sm-ann');
             if (c) { c.dataset.built = ''; buildSMAnnouncements(c); }
-          } catch (e) { alert('Save failed: ' + e.message); }
+          } catch (e) { TcjErr.warn('dashboard-site.js:403', e); }
         });
         editPanel.querySelector('.sm-ann-cancel-edit').addEventListener('click', function() {
           editPanel.style.display = 'none';
@@ -603,7 +601,7 @@ async function buildSMEmail(container) {
               p_variables: tcjEmailSampleVars(tmplKey)
             });
             alert('Test email queued. Click "Send pending now" to deliver.');
-          } catch (e) { alert(e.message); }
+          } catch (e) { TcjErr.warn('dashboard-site.js:606', e); }
           testBtn.disabled = false;
         };
       })(t.key, t.key));

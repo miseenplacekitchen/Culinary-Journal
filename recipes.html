@@ -407,11 +407,7 @@ async function loadCategories() {
       });
     });
 
-  } catch(e) {
-    console.error('loadCategories error:', e.message);
-    // Fallback to hardcoded categories if Supabase fails
-    const fallback = [
-      {id:'rise-shine',name:'Rise & Shine',emoji:'🌅',description:'All breakfast dishes'},
+  } catch (e) { TcjErr.warn('recipes.html:410', e); },
       {id:'evening-table',name:'The Evening Table',emoji:'🕓',description:'Tea time snacks & bites'},
       {id:'garden-earth',name:'Garden & Earth',emoji:'🥬',description:'Vegetarian stir fries & dry dishes'},
       {id:'meat-fire',name:'Meat & Fire',emoji:'🍖',description:'Non-veg dry, fry & roasts'},
@@ -479,10 +475,7 @@ async function openCat(id, name) {
       card.addEventListener('click', function() { openDish(this.dataset.id, dishes); });
     });
 
-  } catch(e) {
-    console.error(e);
-    g.innerHTML = '<div class="loading">Could not load dishes. Please refresh.</div>';
-  }
+  } catch (e) { TcjErr.warn('recipes.html:482', e); }
 }
 
 // Load recipes for a dish
@@ -524,10 +517,7 @@ async function openDish(id, dishes) {
       '</div>'
     ).join('');
 
-  } catch(e) {
-    console.error(e);
-    g.innerHTML = '<div class="loading">Could not load recipes. Please refresh.</div>';
-  }
+  } catch (e) { TcjErr.warn('recipes.html:527', e); }
 
   // Load submitted community recipes for this dish/category below the style cards
   loadDishRecipes(dish.name, curCatName);
@@ -624,9 +614,7 @@ async function loadDishRecipes(dishName, categoryName) {
       card.appendChild(info);
       cardsEl.appendChild(card);
     });
-  } catch(e) {
-    var c = document.getElementById('dish-recipe-cards');
-    if (c) { c.innerHTML = ''; var err = document.createElement('div'); err.style.cssText='font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)'; err.textContent='Could not load community recipes.'; c.appendChild(err); }
+  } catch (e) { TcjErr.warn('recipes.html:627', e); }
   }
 }
 
@@ -677,9 +665,7 @@ async function handleSearch(v) {
       '</div>'
     ).join('');
 
-  } catch(e) {
-    g.innerHTML = '<div class="loading">Search failed. Please try again.</div>';
-  }
+  } catch (e) { TcjErr.warn('recipes.html:680', e); }
 }
 
 function clearSearch() {
@@ -726,6 +712,7 @@ loadCategories();
 </script>
 <script src="allergy-engine.js"></script>
 <script src="seo-schema.js"></script>
+<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════
@@ -773,7 +760,7 @@ async function loadBrowseFamilyProfiles() {
       var pol = await polRes.json();
       hideUnsafeRecipes = !!(pol && pol.hide_unsafe_recipes);
     }
-  } catch(_) {}
+  } catch (_) { TcjErr.warn('recipes.html:776', _); }
   if (banner) {
     if (browseFamilyProfiles.length) {
       var names = browseFamilyProfiles.map(function (p) { return p.name; }).join(', ');
@@ -808,7 +795,7 @@ async function loadBrowseTaxonomy() {
       body:JSON.stringify({p_category:null})
     });
     browseTaxonomy = res.ok ? await res.json() : [];
-  } catch(_) { browseTaxonomy = []; }
+  } catch (_) { TcjErr.warn('recipes.html:811', _); }
 }
 
 function buildBrowseTaxonomyFilters(categoryName) {
@@ -957,9 +944,7 @@ async function fetchCommunityRecipes(reset) {
     buildChefFilter();
     renderCommunityRecipes();
     if (moreWrap) moreWrap.style.display = communityHasMore ? 'block' : 'none';
-  } catch(_) {
-    if (reset && grid) grid.innerHTML = '<div class="cr-empty">Could not load community recipes.</div>';
-  }
+  } catch (_) { TcjErr.warn('recipes.html:960', _); }
   communityLoading = false;
 }
 

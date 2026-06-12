@@ -16,6 +16,7 @@
 <script src="library-chrome.js"></script>
 <script src="library-mise.js"></script>
 <script src="lib/recipe-hero-labels.js?v=20260629"></script>
+<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 </head>
 <body class="lib-page cj-body">
@@ -115,9 +116,7 @@ async function loadProfiles(search, reset) {
         };
       }));
     }
-  } catch(e) {
-    if (reset !== false) grid.innerHTML = '<div class="lib-empty">Could not load profiles — please try again.</div>';
-  }
+  } catch (e) { TcjErr.warn('library-directory.html:118', e); }
   libLoading = false;
 }
 

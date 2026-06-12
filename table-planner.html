@@ -470,6 +470,7 @@
 </div>
 
 <script src="allergy-engine.js"></script>
+<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 const DIETS = ['Vegan','Vegetarian','Gluten Free','Dairy Free','Nut Free','Halal','Kosher','Shellfish Free','Egg Free','Soy Free'];
@@ -533,9 +534,7 @@ async function loadEvents() {
   try {
     const events = await rpc('get_my_events',{});
     renderEventsList(events);
-  } catch(e) {
-    el.innerHTML = '<div class="tp-empty"><div class="tp-empty-icon">⚠</div><div class="tp-empty-title">Could not load events</div><div class="tp-empty-sub">' + escHtml(e.message) + '</div></div>';
-  }
+  } catch (e) { TcjErr.warn('get_my_events', e); }
 }
 
 function renderEventsList(events) {
@@ -756,7 +755,7 @@ function removeTable(tableId) {
   currentGuests.forEach(function(g) {
     if (g.seat_assignment && g.seat_assignment.startsWith(tableId+':')) {
       g.seat_assignment = null;
-      rpc('assign_seat',{p_guest_id:g.id, p_seat:null}).catch(function(){});
+      rpc('assign_seat',{p_guest_id:g.id, p_seat:null}).catch(function(e){ TcjErr.warn('table-planner.html', e); });
     }
   });
   const el = document.querySelector('[data-table-id="' + tableId + '"]');
@@ -871,7 +870,7 @@ async function saveLayout() {
     const msg = document.getElementById('layout-save-msg');
     msg.style.display = 'inline';
     setTimeout(function(){ msg.style.display='none'; }, 2000);
-  } catch(e) { alert('Save failed: ' + e.message); }
+  } catch (e) { TcjErr.warn('table-planner.html:874', e); }
 }
 
 // ── GUESTS ───────────────────────────────────────────────────────
@@ -987,7 +986,7 @@ async function saveGuest() {
     });
     closeModal('guest-modal');
     await loadGuests();
-  } catch(e) { alert('Error saving guest: ' + e.message); }
+  } catch (e) { TcjErr.warn('table-planner.html:990', e); }
 }
 
 async function deleteGuest(id) {
@@ -1019,7 +1018,7 @@ function importGuestsCSV() {
       try {
         await rpc('upsert_guest',{p_id:null, p_event_id:currentEvent.id, p_name:name, p_dietary_requirements:dietary, p_rsvp_status:rsvp, p_group_name:group, p_plus_one:false, p_plus_one_name:'', p_notes:''});
         added++;
-      } catch(_) {}
+      } catch (_) { TcjErr.warn('upsert_guest', _); }
     }
     alert(added + ' guest(s) imported.');
     await loadGuests();
@@ -1321,7 +1320,7 @@ async function suggestSeating() {
       var seatKey = asgn.seat.key;
       await rpc('assign_seat', {p_guest_id: asgn.guest.id, p_seat: seatKey});
       asgn.guest.seat_assignment = seatKey;
-    } catch(_) { errors++; }
+    } catch (_) { TcjErr.warn('assign_seat', _); }
   }
 
   renderSeating();
@@ -1339,7 +1338,7 @@ async function clearAllSeating() {
     try {
       await rpc('assign_seat', {p_guest_id: g.id, p_seat: null});
       g.seat_assignment = null;
-    } catch(_) {}
+    } catch(_) { TcjErr.warn('table-planner.html', _); }
   }
   renderSeating();
   renderLayout();
@@ -1483,7 +1482,7 @@ function setDiningStyle(style, btn) {
   if (currentEvent) {
     const layout = currentLayout;
     layout.dining_style = style;
-    rpc('save_event_layout',{p_id:currentEvent.id,p_layout:layout}).catch(function(){});
+    rpc('save_event_layout',{p_id:currentEvent.id,p_layout:layout}).catch(function(e){ TcjErr.warn('table-planner.html', e); });
   }
   if (document.getElementById('tab-dishes').style.display !== 'none') renderDishPlacement();
   // Buffet style without a serving table → nudge (one per session)

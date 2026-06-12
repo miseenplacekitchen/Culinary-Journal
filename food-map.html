@@ -99,6 +99,7 @@
   </div>
 </div>
 <script src="lib/recipe-browse-utils.js?v=20260701"></script>
+<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 var state = { level:'continent', continent:'', country:'', state:'', counts:[], useRpc:true };
@@ -138,11 +139,7 @@ async function loadCounts(level, parent){
   if (!state.useRpc) return fallbackCounts(level, parent);
   try {
     return await rpc('get_recipe_origin_counts', { p_level: level, p_parent: parent || null }) || [];
-  } catch(e) {
-    state.useRpc = false;
-    document.getElementById('fm-fallback-note').style.display = 'block';
-    return fallbackCounts(level, parent);
-  }
+  } catch (e) { TcjErr.warn('get_recipe_origin_counts', e); }
 }
 
 function renderCrumb(){
@@ -270,9 +267,7 @@ function wireMap(){
     svg.querySelectorAll('path[data-continent]').forEach(function(p){
       p.addEventListener('click', function(){ selectContinent(p.getAttribute('data-continent')); });
     });
-  }).catch(function(){
-    host.innerHTML = '<div class="fm-empty">Map could not load.</div>';
-  });
+  }).catch(function(e){ TcjErr.warn('food-map.html', e); });
 }
 
 async function init(){
@@ -287,7 +282,7 @@ async function init(){
       });
       fallbackRecipes = res.ok ? await res.json() : [];
     }
-  } catch(_) { fallbackRecipes = []; }
+  } catch (_) { TcjErr.warn('food-map.html:290', _); }
   wireMap();
   await goLevel('continent');
   if (typeof SeoSchema !== 'undefined') {

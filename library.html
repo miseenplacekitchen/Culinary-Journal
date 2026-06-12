@@ -114,6 +114,7 @@
 </div>
 
 <script src="page-guard.js"></script>
+<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -350,9 +351,7 @@ async function loadPreservedRecipes(){
           <div class="lib-recipe-meta">${esc(r.origin_country||'')}</div>
         </div>
       </a>`).join('');
-  } catch(e){
-    if(loading) loading.textContent = 'Could not load recipes.';
-  }
+  } catch (e) { TcjErr.warn('library.html:353', e); }
 }
 
 document.addEventListener('DOMContentLoaded', function(){

@@ -28,9 +28,7 @@ window.RecipeProcedure = (function () {
           steps: steps
         };
       });
-    } catch (_) {
-      return [];
-    }
+    } catch (_) { TcjErr.warn('recipe-procedure.js:31', _); }
   }
 
   function stepLines(steps) {

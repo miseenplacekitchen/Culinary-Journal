@@ -55,7 +55,7 @@
       isAdmin  = !!(prof.is_admin || (typeof isTcjAdmin === 'function' && isTcjAdmin(prof, sess)));
       userTier = prof.subscription_tier || 'free';
     }
-  } catch(e) {}
+  } catch (e) { TcjErr.warn('degrade', e); }
 
   // theme-init.js already sent anonymous visitors to login.html
   if (window.TCJ_SITE_PRIVATE && !isLoggedIn) return;
@@ -105,5 +105,5 @@
         break;
     }
   })
-  .catch(function() {});
+  .catch(function(e){ TcjErr.warn('page-guard.js', e); });
 })();

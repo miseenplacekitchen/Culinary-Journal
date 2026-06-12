@@ -126,6 +126,7 @@
 </div>
 
 <script src="seo-schema.js"></script>
+<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -159,7 +160,7 @@ async function loadMostSaved() {
           '<div class="ch-recipe-body"><div class="ch-recipe-name">' + esc(r.recipe_name) + '</div>' +
           '<div class="ch-recipe-cat">' + (r.save_count || 0) + ' save' + ((r.save_count || 0) === 1 ? '' : 's') + '</div></div></a>';
       }).join('') + '</div>';
-  } catch (_) {}
+  } catch (_) { TcjErr.warn('chefs.html:162', _); }
 }
 
 async function load() {
@@ -184,7 +185,7 @@ async function load() {
       };
     });
     allRecipes = [];
-  } catch(_) { allChefs = []; allRecipes = []; }
+  } catch (_) { TcjErr.warn('chefs.html:187', _); }
   var countries = {};
   var specialties = {};
   allChefs.forEach(function(c) {
@@ -310,7 +311,7 @@ async function openChef(chef) {
       });
       chef.recipes = res.ok ? await res.json() : [];
       if (!Array.isArray(chef.recipes)) chef.recipes = [];
-    } catch(_) { chef.recipes = []; }
+    } catch (_) { TcjErr.warn('chefs.html:313', _); }
   }
   document.getElementById('cd-recipe-label').textContent = chef.recipes.length + ' recipe' + (chef.recipes.length===1?'':'s') + ' by ' + chef.name;
   recipeGrid.innerHTML = '';

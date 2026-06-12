@@ -12,7 +12,7 @@ function getRejectReasons() {
   try {
     var s = localStorage.getItem('tcj_rm_reject_reasons');
     if (s) { var a = JSON.parse(s); if (Array.isArray(a) && a.length) return a; }
-  } catch(_) {}
+  } catch (_) { TcjErr.warn('degrade', _); }
   return ['Incomplete ingredients','Unclear method','Duplicate recipe','Inappropriate content','Missing source credit','Poor formatting','Other'];
 }
 
@@ -141,9 +141,7 @@ async function loadRecipeMgmt(tab) {
       thead.appendChild(th);
     }
     renderRmPagination();
-  } catch(e) {
-    tbody.innerHTML = '<tr><td colspan="8" class="ap-empty-row">Error: ' + esc(e.message) + '</td></tr>';
-  }
+  } catch (e) { TcjErr.warn('dashboard-recipes.js:144', e); }
 }
 
 async function openRecipeModal(id) {
@@ -284,7 +282,7 @@ async function openRecipeModal(id) {
             });
           });
         }
-      } catch(_) { ingBlock.appendChild(mk('div',"font-size:12px;color:var(--text-mid)",'Ingredients present')); }
+      } catch (_) { TcjErr.warn('dashboard-recipes.js:287', _); }
       panel.appendChild(ingBlock);
     }
 
@@ -311,7 +309,7 @@ async function openRecipeModal(id) {
           });
         }
         if (!stepNum) methScroll.appendChild(mk('div',"font-size:12px;color:var(--text-mid)",'No procedure steps listed'));
-      } catch(_) { methScroll.appendChild(mk('div',"font-size:12px;color:var(--text-mid)",'Method present')); }
+      } catch (_) { TcjErr.warn('dashboard-recipes.js:314', _); }
       methBlock.appendChild(methScroll);
       panel.appendChild(methBlock);
     }
@@ -346,7 +344,7 @@ async function openRecipeModal(id) {
       var warns = [];
       try {
         warns = Array.isArray(r.import_warnings) ? r.import_warnings : (r.import_warnings ? JSON.parse(r.import_warnings) : []);
-      } catch(_) {}
+      } catch(_) { TcjErr.warn('dashboard-recipes.js', _); }
       if (warns.length) {
         var wEl = mk('div',"font-size:12px;color:var(--text-mid);margin-top:8px;line-height:1.6");
         wEl.textContent = 'Warnings: ' + warns.join(' · ');
@@ -376,7 +374,7 @@ async function openRecipeModal(id) {
     try {
       unknowns = Array.isArray(r.unknown_ingredients) ? r.unknown_ingredients
                  : (r.unknown_ingredients ? JSON.parse(r.unknown_ingredients) : []);
-    } catch(_) {}
+    } catch(_) { TcjErr.warn('dashboard-recipes.js', _); }
     if (unknowns.length) {
       var uBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(212,160,23,0.05);border-left:3px solid #d4a017');
       uBlock.appendChild(mk('div',"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#d4a017;margin-bottom:10px",'⚠ New Ingredients Not Yet in Database'));
@@ -402,7 +400,7 @@ async function openRecipeModal(id) {
     try {
       unknownTools = Array.isArray(r.unknown_utensils) ? r.unknown_utensils
         : (r.unknown_utensils ? JSON.parse(r.unknown_utensils) : []);
-    } catch(_) {}
+    } catch (_) { TcjErr.warn('dashboard-recipes.js:405', _); }
     if (unknownTools.length) {
       var tBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(212,160,23,0.05);border-left:3px solid #d4a017');
       tBlock.appendChild(mk('div',"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#d4a017;margin-bottom:10px",'⚠ New Tools Not Yet in Library'));
@@ -420,7 +418,7 @@ async function openRecipeModal(id) {
           closeRecipeModal();
           switchView('library-mgmt');
           setTimeout(function() {
-            try { switchLibTab('lm-tools'); } catch(_) {}
+            try { switchLibTab('lm-tools'); } catch (_) { TcjErr.warn('dashboard-recipes.js:423', _); }
           }, 300);
         });
         actions.appendChild(libBtn);
@@ -435,7 +433,7 @@ async function openRecipeModal(id) {
     try {
       taxSug = Array.isArray(r.taxonomy_suggestions) ? r.taxonomy_suggestions
         : (r.taxonomy_suggestions ? JSON.parse(r.taxonomy_suggestions) : []);
-    } catch(_) {}
+    } catch(_) { TcjErr.warn('dashboard-recipes.js', _); }
     if (taxSug.length) {
       var tBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(212,160,23,0.05);border-left:3px solid #d4a017');
       tBlock.appendChild(mk('div',"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#d4a017;margin-bottom:10px",'⚠ Suggested Taxonomy Not Yet in Database'));
@@ -473,11 +471,7 @@ async function openRecipeModal(id) {
           p.then(function() {
             btn.textContent = '✓ Added';
             btn.style.background = '#2d8a4e';
-          }).catch(function(e) {
-            alert(e.message || 'Could not add taxonomy entry');
-            btn.disabled = false;
-            btn.textContent = '+ Add to Taxonomy';
-          });
+          }).catch(function(e){ TcjErr.warn('dashboard-recipes.js', e); });
         }; })(sug));
         row.appendChild(addBtn);
         tBlock.appendChild(row);
@@ -588,9 +582,7 @@ async function openRecipeModal(id) {
     reviewBlock.appendChild(btnRow);
     panel.appendChild(reviewBlock);
 
-  } catch(e) {
-    panel.innerHTML = '<div style="padding:24px;color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
-  }
+  } catch (e) { TcjErr.warn('dashboard-recipes.js:591', e); }
 }
 
 async function reviewRecipe(newStatus) { doReviewRecipe(currentRecipe && currentRecipe.id, newStatus); }
@@ -629,8 +621,7 @@ async function doReviewRecipe(id, status) {
       closeRecipeModal();
       loadRecipeMgmt(_currentRecipeTab);
     }, 1000);
-  } catch(e) {
-    document.querySelectorAll('#rm-detail-panel button').forEach(function(b){ b.disabled = false; });
+  } catch (e) { TcjErr.warn('dashboard-recipes.js:632', e); });
     if (msg) { msg.textContent = 'Error: ' + e.message; msg.style.color = '#dc5050'; }
   }
 }
@@ -686,8 +677,7 @@ async function saveRecipeImage(id) {
     if (msg) { msg.textContent = '\u2713 Image updated'; msg.style.color = '#4caf76'; }
     auditLog('Recipe Management', 'Recipe Image Updated', null, id, url, null);
     if (currentRecipe) currentRecipe.image_url = url;
-  } catch(e) {
-    if (msg) { msg.textContent = 'Error: ' + e.message; msg.style.color = '#dc5050'; }
+  } catch (e) { TcjErr.warn('dashboard-recipes.js:689', e); }
     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Image'; }
   }
 }
@@ -711,8 +701,7 @@ async function saveRecipeEdits(id) {
     });
     auditLog('Recipe Management', 'Recipe Edited', name, id, name, 'Before approval');
     if (msg) { msg.textContent = '\u2713 Saved'; msg.style.color = '#4caf76'; setTimeout(function(){ if (msg) msg.textContent = ''; }, 3000); }
-  } catch(e) {
-    if (msg) { msg.textContent = 'Error: ' + e.message; msg.style.color = '#dc5050'; }
+  } catch (e) { TcjErr.warn('dashboard-recipes.js:714', e); }
   }
 }
 
@@ -816,7 +805,7 @@ async function renderOwnerAnalyticsExtras(host, data) {
 async function loadRMAnalytics(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
   try {
-    var ownerRaw = await rpc('admin_get_owner_analytics', {}).catch(function() { return null; });
+    var ownerRaw = await rpc('admin_get_owner_analytics', {}).catch(function(e){ return TcjErr.rpcFallback('dashboard-recipes.js', e, null); });
     var owner = ownerRaw && typeof ownerRaw === 'object' ? ownerRaw : null;
     var stats   = (owner && owner.recipes) ? owner.recipes : (await rpc('admin_get_stats', {}) || {});
     var allRecs = [];
@@ -898,7 +887,7 @@ async function loadRMAnalytics(container) {
       }
       await renderOwnerAnalyticsExtras(container, owner);
     }
-  } catch(e) { container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>'; }
+  } catch (e) { TcjErr.warn('dashboard-recipes.js:901', e); }
 }
 
 async function loadRMCollections(container) {
@@ -928,7 +917,7 @@ async function loadRMCollections(container) {
       delBtn.addEventListener('click', (function(col){ return async function(){
         if (!confirm('Delete "' + col.name + '"?')) return;
         try { await rpc('admin_delete_collection', {p_id: col.id}); loadRMCollections(container); }
-        catch(e){ alert('Error: '+e.message); }
+        catch (e) { TcjErr.warn('admin_delete_collection', e); }
       }; })(c));
       btns.appendChild(editBtn); btns.appendChild(delBtn);
       row.appendChild(info); row.appendChild(btns);
@@ -993,7 +982,7 @@ async function loadRMFeatured(container) {
       });
     }
     container.appendChild(featCard);
-  } catch(e) { container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>'; }
+  } catch (e) { TcjErr.warn('dashboard-recipes.js:996', e); }
 }
 
 async function loadRMPrintQueue(container) {
@@ -1037,9 +1026,7 @@ async function loadRMPrintQueue(container) {
     tbl.appendChild(tbody);
     wrap.appendChild(tbl);
     container.appendChild(wrap);
-  } catch (e) {
-    container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
-  }
+  } catch (e) { TcjErr.warn('dashboard-recipes.js:1040', e); }
 }
 
 async function loadRMNutritionQueue(container) {
@@ -1076,9 +1063,7 @@ async function loadRMNutritionQueue(container) {
     tbl.appendChild(tbody);
     wrap.appendChild(tbl);
     container.appendChild(wrap);
-  } catch (e) {
-    container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
-  }
+  } catch (e) { TcjErr.warn('dashboard-recipes.js:1079', e); }
 }
 
 async function loadRMSourceLinks(container) {
@@ -1095,14 +1080,14 @@ async function loadRMSourceLinks(container) {
       runBtn.disabled = true;
       rpc('admin_invoke_edge_function', { p_function: 'check-dead-links' })
         .then(function() { alert('Link check triggered. Refresh in ~15 seconds.'); loadRMSourceLinks(container); })
-        .catch(function(e) { alert(e.message); })
+        .catch(function(e){ TcjErr.warn('dashboard-recipes.js', e); })
         .finally(function() { runBtn.disabled = false; });
     });
     var queueBtn = mk('button', 'padding:8px 14px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Queue all for re-check');
     queueBtn.addEventListener('click', function() {
       rpc('admin_queue_all_link_rechecks', {})
         .then(function(n) { alert('Queued ' + (n || 0) + ' recipe(s) for next check.'); loadRMSourceLinks(container); })
-        .catch(function(e) { alert(e.message); });
+        .catch(function(e){ TcjErr.warn('dashboard-recipes.js', e); });
     });
     btnRow.appendChild(runBtn);
     btnRow.appendChild(queueBtn);
@@ -1151,7 +1136,7 @@ async function loadRMSourceLinks(container) {
           reBtn.disabled = true;
           rpc('admin_reset_source_link_check', { p_recipe_id: r.id })
             .then(function() { alert('Queued for re-check.'); loadRMSourceLinks(container); })
-            .catch(function(e) { alert(e.message); })
+            .catch(function(e){ TcjErr.warn('dashboard-recipes.js', e); })
             .finally(function() { reBtn.disabled = false; });
         });
         actTd.appendChild(reBtn);
@@ -1164,9 +1149,7 @@ async function loadRMSourceLinks(container) {
     tbl.appendChild(tbody);
     wrap.appendChild(tbl);
     container.appendChild(wrap);
-  } catch (e) {
-    container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
-  }
+  } catch (e) { TcjErr.warn('dashboard-recipes.js:1167', e); }
 }
 
 async function loadRMDuplicates(host) {
@@ -1199,12 +1182,7 @@ async function loadRMDuplicates(host) {
       box.appendChild(card);
     });
     host.appendChild(box);
-  } catch (e) {
-    var err = document.createElement('div');
-    err.style.cssText = 'font-size:12px;color:var(--text-mid);margin-bottom:16px';
-    err.textContent = 'Duplicate scan unavailable — run fix-phase34-batch.sql';
-    host.appendChild(err);
-  }
+  } catch (e) { TcjErr.warn('dashboard-recipes.js:1202', e); }
 }
 
 async function loadRMAudit(container) {
@@ -1239,7 +1217,7 @@ async function loadRMAudit(container) {
       inner.appendChild(row);
     });
     wrap.appendChild(inner); container.appendChild(wrap);
-  } catch(e) { container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>'; }
+  } catch (e) { TcjErr.warn('dashboard-recipes.js:1242', e); }
 }
 
 
@@ -1286,7 +1264,7 @@ async function buildSMFeatures(container) {
               body: JSON.stringify({ min_tier: sel.value })
             });
             if (!r || !r.ok) throw new Error(r ? r.status + ': ' + await r.text() : 'Session expired');
-          } catch (e) { sel.value = prev; alert('Tier save failed: ' + e.message); }
+          } catch (e) { TcjErr.warn('dashboard-recipes.js:1289', e); }
         }; })(f.key, tierSel));
         right.appendChild(tierSel);
       }
@@ -1338,7 +1316,7 @@ function showImportPreview(title, summary, onMerge, onReplace){
 
 async function loadRecipeAnalytics() {
   try {
-    var owner = await rpc('admin_get_owner_analytics', {}).catch(function() { return null; });
+    var owner = await rpc('admin_get_owner_analytics', {}).catch(function(e){ return TcjErr.rpcFallback('dashboard-recipes.js', e, null); });
     var ownerHost = document.getElementById('ra-owner-extras');
     if (ownerHost) {
       ownerHost.innerHTML = '';
@@ -1527,7 +1505,7 @@ async function loadRMTaxonomy(container) {
   try {
     var rows = await rpc('get_recipe_taxonomy', { p_category: null }) || [];
     var missing = [];
-    try { missing = await rpc('admin_list_recipes_missing_taxonomy', { p_limit: 50 }) || []; } catch(_) {}
+    try { missing = await rpc('admin_list_recipes_missing_taxonomy', { p_limit: 50 }) || []; } catch(_) { TcjErr.warn('dashboard-recipes.js', _); }
     container.innerHTML = '';
     function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
@@ -1603,7 +1581,7 @@ async function loadRMTaxonomy(container) {
         if (!sub && !div) { alert('Choose a sub-category and/or division.'); return; }
         rpc('admin_bulk_set_recipe_taxonomy', { p_recipe_ids: ids, p_sub_category: sub || null, p_division: div || null })
           .then(function(n) { alert('Updated ' + (n || 0) + ' recipe(s).'); loadRMTaxonomy(container); })
-          .catch(function(e) { alert(e.message); });
+          .catch(function(e){ TcjErr.warn('dashboard-recipes.js', e); });
       });
       bulkRow.appendChild(catSel);
       bulkRow.appendChild(subSel);
@@ -1645,14 +1623,14 @@ async function loadRMTaxonomy(container) {
                 p_id: d.division_id, p_category: cat, p_subcategory: sc.name, p_name: name.trim(),
                 p_emoji: emoji, p_subtitle: subtitle, p_description: d.division_description || null,
                 p_tags: d.division_tags || [], p_sort_order: d.division_sort_order || 0
-              }).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
+              }).then(function() { loadRMTaxonomy(container); }).catch(function(e){ TcjErr.warn('dashboard-recipes.js', e); });
             });
             var delD = mk('button', 'padding:2px 8px;font-size:10px;border:1px solid #dc5050;border-radius:5px;background:none;color:#dc5050;cursor:pointer', 'Remove');
             delD.addEventListener('click', function() {
               if (!confirm('Deactivate division "' + (d.division_name || '') + '"?')) return;
               rpc('admin_delete_recipe_division', { p_id: d.division_id })
                 .then(function() { loadRMTaxonomy(container); })
-                .catch(function(e) { alert(e.message); });
+                .catch(function(e){ TcjErr.warn('dashboard-recipes.js', e); });
             });
             dActs.appendChild(editD);
             dActs.appendChild(delD);
@@ -1669,7 +1647,7 @@ async function loadRMTaxonomy(container) {
             rpc('admin_upsert_recipe_division', {
               p_id: null, p_category: cat, p_subcategory: sc.name, p_name: name.trim(),
               p_emoji: emoji, p_subtitle: subtitle, p_description: null, p_tags: [], p_sort_order: (sc.divisions || []).length + 1
-            }).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
+            }).then(function() { loadRMTaxonomy(container); }).catch(function(e){ TcjErr.warn('dashboard-recipes.js', e); });
           });
           scRow.appendChild(addDiv);
           box.appendChild(scRow);
@@ -1685,14 +1663,12 @@ async function loadRMTaxonomy(container) {
         if (!v) return;
         rpc('admin_upsert_recipe_subcategory', { p_id: null, p_category: cat, p_name: v, p_sort_order: subList.length + 1 })
           .then(function() { loadRMTaxonomy(container); })
-          .catch(function(e) { alert(e.message); });
+          .catch(function(e){ TcjErr.warn('dashboard-recipes.js', e); });
       });
       addRow.appendChild(inp);
       addRow.appendChild(btn);
       box.appendChild(addRow);
       container.appendChild(box);
     });
-  } catch (e) {
-    container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
-  }
+  } catch (e) { TcjErr.warn('dashboard-recipes.js:1695', e); }
 }
