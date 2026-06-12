@@ -377,7 +377,7 @@ function signOut() {
   window.location.href = 'login.html';
 }
 
-const ALL_VIEWS = ['dashboard','recipe-mgmt','user-mgmt','ingredients','lane2','theme-sweep','site-mgmt','finance','library-mgmt','festival-mgmt','voc-mgmt'];
+const ALL_VIEWS = ['dashboard','recipe-mgmt','user-mgmt','ingredients','garden','lane2','theme-sweep','site-mgmt','finance','library-mgmt','festival-mgmt','voc-mgmt'];
 
 function loadAdminEmbedFrame(frameId, url) {
   var f = document.getElementById(frameId);
@@ -410,8 +410,8 @@ function switchView(view, ingTab) {
   const nb = document.getElementById('nav-' + view);
   if (nb) nb.classList.add('active');
   ALL_VIEWS.forEach(function(v) { const el = document.getElementById('v-' + v); if (el) el.style.display = (v===view)?'block':'none'; });
-  const titles = { 'dashboard':'Dashboard', 'recipe-mgmt':'Recipe Management', 'user-mgmt':'User Management', 'ingredients':'Ingredients Management', 'lane2':'Lane 2 Spot-Check', 'theme-sweep':'Theme Sweep', 'site-mgmt':'Site Management', 'finance':'Finance Management', 'library-mgmt':'Library Management', 'festival-mgmt':'Festival Management', 'voc-mgmt':'Voice of the Customer' };
-  const subs   = { 'dashboard':'Overview of site activity.', 'recipe-mgmt':'Review, approve and manage all submitted recipes.', 'user-mgmt':'Manage member registrations and accounts.', 'ingredients':'Browse, add and edit the ingredient database.', 'lane2':'Live verification checklist — core journeys A–F on production.', 'theme-sweep':'Review all 47 themes on key pages; mark pass or issue.', 'site-mgmt':'Control pages, features, announcements, themes, email templates and site settings.', 'finance':'Manage membership tiers, subscriptions, pricing and revenue.', 'library-mgmt':'Manage ingredient, spice, tool, cut and preservation profiles.', 'festival-mgmt':'Festivals, dish slots and recipe variants for occasion planners.', 'voc-mgmt':'Categorised member feedback — signals, noise and actionable items.' };
+  const titles = { 'dashboard':'Dashboard', 'recipe-mgmt':'Recipe Management', 'user-mgmt':'User Management', 'ingredients':'Ingredients Management', 'garden':'Garden', 'lane2':'Lane 2 Spot-Check', 'theme-sweep':'Theme Sweep', 'site-mgmt':'Site Management', 'finance':'Finance Management', 'library-mgmt':'Library Management', 'festival-mgmt':'Festival Management', 'voc-mgmt':'Voice of the Customer' };
+  const subs   = { 'dashboard':'Overview of site activity.', 'recipe-mgmt':'Review, approve and manage all submitted recipes.', 'user-mgmt':'Manage member registrations and accounts.', 'ingredients':'Browse, add and edit the ingredient database.', 'garden':'Plant directory and My Garden — staging preview embedded from live pages.', 'lane2':'Live verification checklist — core journeys A–F on production.', 'theme-sweep':'Review all 47 themes on key pages; mark pass or issue.', 'site-mgmt':'Control pages, features, announcements, themes, email templates and site settings.', 'finance':'Manage membership tiers, subscriptions, pricing and revenue.', 'library-mgmt':'Manage ingredient, spice, tool, cut and preservation profiles.', 'festival-mgmt':'Festivals, dish slots and recipe variants for occasion planners.', 'voc-mgmt':'Categorised member feedback — signals, noise and actionable items.' };
   setEl('page-title', titles[view] || view);
   setEl('page-sub',   subs[view]   || '');
   var mobileTitle = document.querySelector('.ap-mobile-title');
@@ -424,6 +424,7 @@ function switchView(view, ingTab) {
   var _savedUserTab=localStorage.getItem('tcj_active_user_tab')||'members';
   if (view === 'user-mgmt')   switchUserTab(_savedUserTab);
   if (view === 'ingredients') { loadImSettings(); switchIngTab(ingTab||'all'); }
+  if (view === 'garden')      loadAdminEmbedFrame('frame-garden', 'garden-directory.html?embed=1');
   if (view === 'lane2')       loadAdminEmbedFrame('frame-lane2', 'lane2-spot-check.html?embed=1');
   if (view === 'theme-sweep') loadAdminEmbedFrame('frame-theme-sweep', 'theme-sweep.html?embed=1');
   if (view === 'site-mgmt')   { var _smt=localStorage.getItem('tcj_active_sm_tab')||'sm-pages'; switchSMTab(_smt); }
