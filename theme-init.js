@@ -3,21 +3,6 @@
    Site auth gate + theme/font prefs. Include in <head> on every page.
    Set TCJ_SITE_PRIVATE = false below to reopen public browsing.
 ═══════════════════════════════════════════════════════════════ */
-if (typeof window.TcjErr === 'undefined') {
-  window.TcjErr = {
-    warn: function (c, e) { console.warn('[TCJ:' + c + ']', e); },
-    ignore: function () {},
-    rpcFallback: function (c, e, f) { console.warn('[TCJ:' + c + ']', e); return f; },
-    lsGet: function (k) { try { return localStorage.getItem(k); } catch (x) { return null; } },
-    lsSet: function (k, v) { try { localStorage.setItem(k, v); return true; } catch (x) { return false; } },
-    lsRemove: function (k) { try { localStorage.removeItem(k); return true; } catch (x) { return false; } },
-    parseJson: function (r, f) { try { return JSON.parse(r); } catch (x) { return f; } },
-    toast: function (m) { console.warn('[TCJ:toast]', m); },
-    bannerOnce: function (id, m) { console.warn('[TCJ:' + id + ']', m); },
-    sectionError: function (id, m) { console.warn('[TCJ:' + id + ']', m); }
-  };
-}
-
 (function () {
   if (window.__tcjAuthGateRan) return;
   window.__tcjAuthGateRan = true;
