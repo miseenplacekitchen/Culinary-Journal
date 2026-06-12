@@ -18,8 +18,8 @@
 <script src="page-guard.js"></script>
 <script src="library-mise.js"></script>
 <script src="lib/garden-chrome.js"></script>
-<script src="lib/garden-api.js?v=20260716"></script>
-<script src="lib/garden-ui.js?v=20260716"></script>
+<script src="lib/garden-api.js?v=20260717"></script>
+<script src="lib/garden-ui.js?v=20260717"></script>
 <script src="nav-init.js"></script>
 </head>
 <body class="lib-page cj-body">
@@ -53,52 +53,47 @@ async function loadWhatNow(nowEl, climateLabel) {
         nextList.map(function (n) { return GardenUI.renderTaskCard(n); }).join('');
       return;
     }
-    nowEl.innerHTML = '<div class="gj-empty" style="padding:20px 0;text-align:left">' +
-      'Add plants from the <a href="garden-directory.html">directory</a> and set your growing climate below for seasonal tasks.</div>';
+    nowEl.innerHTML = '<div class="gj-empty" style="padding:20px 0;text-align:left">Add plants (and optional cultivars) from the <a href="garden-directory.html">directory</a>, then set your growing climate below.</div>';
   } catch (e) {
     console.warn('what now failed', e);
-    nowEl.innerHTML = '<div class="gj-empty" style="padding:20px 0;text-align:left">Could not load seasonal tasks.</div>';
+    nowEl.innerHTML = '<div class="gj-empty" style="padding:20px 0;text-align:left">Could not load seasonal tasks — run RUN-GARDEN-V4.sql if this persists.</div>';
   }
 }
 
 async function renderSignedIn() {
-  var regions = [], saved = null;
-  try { regions = await GardenApi.listRegions(); } catch (e) { console.warn('regions failed', e); }
-  try { saved = await GardenApi.getMyRegion(); } catch (e) { console.warn('saved region failed', e); }
+  var climates = [], saved = null;
+  try { climates = await GardenApi.listClimateZones(); } catch (e) { console.warn('climates failed', e); }
+  try { saved = await GardenApi.getMyRegion(); } catch (e) { console.warn('saved climate failed', e); }
 
   document.getElementById('mg-root').innerHTML =
     '<div class="gj-wrap">' +
     '<div class="gj-climate-bar">' +
     '<label><span style="font-weight:500;color:var(--text-high)">Your growing climate</span>' +
-    '<select id="mg-region" aria-label="Growing climate">' +
-    '<option value="">— Select climate / region —</option>' +
-    regions.map(function (r) {
-      var sel = saved && saved.region_id === r.id ? ' selected' : '';
-      var label = r.name + (r.climate_name ? ' · ' + r.climate_name : '');
-      return '<option value="' + r.id + '"' + sel + '>' + GardenApi.esc(label) + '</option>';
+    '<select id="mg-climate" aria-label="Growing climate"><option value="">— Select —</option>' +
+    climates.map(function (c) {
+      var sel = saved && (saved.climate_zone_id === c.id || saved.climate_slug === c.slug) ? ' selected' : '';
+      return '<option value="' + c.id + '" data-slug="' + GardenApi.esc(c.slug) + '"' + sel + '>' + GardenApi.esc(c.name) + '</option>';
     }).join('') +
     '</select></label>' +
-    (saved && saved.climate_zone ? '<p style="margin:10px 0 0;font-size:12px;color:var(--text-muted)">Calendar and care filtered for <strong style="color:var(--accent)">' + GardenApi.esc(saved.climate_zone) + '</strong></p>' : '') +
+    (saved && saved.climate_zone ? '<p style="margin:10px 0 0;font-size:12px;color:var(--text-muted)">Calendar and cultivars use <strong style="color:var(--accent)">' + GardenApi.esc(saved.climate_zone) + '</strong></p>' : '') +
     '</div>' +
     '<div class="gj-section"><h2>What to do now</h2><div id="mg-now"></div></div>' +
     '<div class="gj-section"><h2>My plants</h2><div id="mg-plants"></div></div>' +
-    '<div class="gj-section"><h2>Kitchen bridge</h2>' +
-    '<p class="gj-section-lead">Each species links to governed ingredients today; each <strong>variety</strong> will get its own match when cultivar profiles launch.</p>' +
-    '<p style="font-family:DM Sans,sans-serif;font-size:14px;margin:0"><a href="garden-directory.html" style="color:var(--accent)">Browse the directory →</a> to open profiles and kitchen links.</p></div>' +
     '</div>';
 
   var nowEl = document.getElementById('mg-now');
   var plantsEl = document.getElementById('mg-plants');
   var climateLabel = saved && saved.climate_zone ? saved.climate_zone : null;
 
-  document.getElementById('mg-region').addEventListener('change', async function (e) {
+  document.getElementById('mg-climate').addEventListener('change', async function (e) {
     if (!e.target.value) return;
+    var opt = e.target.options[e.target.selectedIndex];
     try {
-      await GardenApi.setRegion(e.target.value);
-      var opt = e.target.options[e.target.selectedIndex];
-      climateLabel = opt ? opt.text.split(' · ').pop() : null;
+      await GardenApi.setClimate(e.target.value);
+      if (opt && opt.dataset.slug) GardenApi.saveClimatePref(opt.dataset.slug);
+      climateLabel = opt ? opt.textContent : null;
       await loadWhatNow(nowEl, climateLabel);
-    } catch (err) { console.warn('set region failed', err); }
+    } catch (err) { console.warn('set climate failed', err); }
   });
 
   await loadWhatNow(nowEl, climateLabel);
@@ -107,7 +102,7 @@ async function renderSignedIn() {
     var mine = await GardenApi.getMyGarden();
     var list = Array.isArray(mine) ? mine : [];
     plantsEl.innerHTML = list.length ? list.map(function (p) { return GardenUI.renderMyPlantCard(p); }).join('') :
-      '<div class="gj-empty" style="padding:16px 0;text-align:left">No plants yet — <a href="garden-directory.html">browse the directory</a> and tap <strong>Add to My Garden</strong> on any profile.</div>';
+      '<div class="gj-empty" style="padding:16px 0;text-align:left">No plants yet — pick a species and cultivar in the <a href="garden-directory.html">directory</a>.</div>';
   } catch (e) {
     console.warn('my garden failed', e);
     plantsEl.innerHTML = '<div class="gj-empty" style="padding:16px 0;text-align:left">Could not load your plants.</div>';
@@ -118,9 +113,8 @@ function renderGuest() {
   document.getElementById('mg-root').innerHTML =
     '<div class="gj-wrap" style="text-align:center;padding-top:40px">' +
     '<h1 class="lib-hero-title">My Garden</h1>' +
-    '<p class="lib-hero-desc" style="max-width:480px;margin:12px auto 24px">Track what you grow, set your climate, and see what to sow or harvest this month — linked to your kitchen.</p>' +
-    '<p><a href="login.html?redirect=' + encodeURIComponent(location.href) + '" class="gj-btn gj-btn-filled" style="display:inline-block;width:auto;padding:12px 28px">Sign in →</a></p>' +
-    '<p style="margin-top:20px;font-size:13px"><a href="garden-directory.html" style="color:var(--accent)">Browse plant directory</a></p></div>';
+    '<p class="lib-hero-desc" style="max-width:480px;margin:12px auto 24px">Track species and cultivars, set your climate, and see what to sow or harvest — linked to your kitchen.</p>' +
+    '<p><a href="login.html?redirect=' + encodeURIComponent(location.href) + '" class="gj-btn gj-btn-filled" style="display:inline-block;width:auto;padding:12px 28px">Sign in →</a></p></div>';
 }
 
 if (!getSession()) renderGuest();

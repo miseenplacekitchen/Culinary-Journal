@@ -18,8 +18,8 @@
 <script src="page-guard.js"></script>
 <script src="library-mise.js"></script>
 <script src="lib/garden-chrome.js"></script>
-<script src="lib/garden-api.js?v=20260716"></script>
-<script src="lib/garden-ui.js?v=20260716"></script>
+<script src="lib/garden-api.js?v=20260717"></script>
+<script src="lib/garden-ui.js?v=20260717"></script>
 <script src="nav-init.js"></script>
 </head>
 <body class="lib-page cj-body">
@@ -32,19 +32,33 @@
 <div id="gp-root"><div class="gj-wrap gj-empty"><div class="lib-spinner"></div></div></div>
 
 <script>
-var slug = new URLSearchParams(window.location.search).get('slug') || '';
+var params = new URLSearchParams(window.location.search);
+var slug = params.get('slug') || '';
+var varietySlug = params.get('variety') || '';
+var _plantData = null;
+var _climateSlug = GardenApi.loadClimatePref();
+
 GardenChrome.render({ root: 'garden-chrome', active: 'directory', showSearch: false });
 
-function wireAddButton(plantId) {
+function findVarietyId(data, vSlug) {
+  if (!data || !vSlug || !data.varieties) return null;
+  for (var i = 0; i < data.varieties.length; i++) {
+    if (data.varieties[i].slug === vSlug) return data.varieties[i].id;
+  }
+  return null;
+}
+
+function wireAddButton(data, vSlug) {
   var btn = document.getElementById('gp-add');
-  if (!btn || !plantId) return;
+  if (!btn || !data || !data.plant) return;
+  var varietyId = findVarietyId(data, vSlug);
   btn.addEventListener('click', async function () {
     if (!getSession()) {
       window.location.href = 'login.html?redirect=' + encodeURIComponent(location.href);
       return;
     }
     try {
-      await GardenApi.addToGarden(plantId, 'planned', null);
+      await GardenApi.addToGarden(data.plant.id, 'planned', null, varietyId);
       btn.textContent = 'Added to My Garden ✓';
       btn.disabled = true;
     } catch (e) {
@@ -54,33 +68,78 @@ function wireAddButton(plantId) {
   });
 }
 
-async function init() {
+async function buildClimateBar(climates, saved) {
+  if (!climates.length) return '';
+  var opts = climates.map(function (c) {
+    var sel = (saved && c.slug === saved) || (!saved && c.slug === 'humid-subtropical') ? ' selected' : '';
+    return '<option value="' + GardenApi.esc(c.slug) + '"' + sel + '>' + GardenApi.esc(c.name) + '</option>';
+  }).join('');
+  return '<div class="gj-wrap gj-climate-pick"><div class="gj-climate-bar"><label>' +
+    '<span style="font-weight:500;color:var(--text-high)">Growing climate</span>' +
+    '<select id="gp-climate" aria-label="Growing climate">' + opts + '</select></label>' +
+    '<p style="margin:10px 0 0;font-size:12px;color:var(--text-muted)">Care, calendar, and cultivars filter to your climate — not your city name.</p></div></div>';
+}
+
+async function renderPage() {
   if (!slug) {
     document.getElementById('gp-root').innerHTML = '<div class="gj-wrap gj-error">No plant specified.</div>';
     return;
   }
+  var climates = [];
+  try { climates = await GardenApi.listClimateZones(); } catch (_) {}
+
+  if (getSession()) {
+    try {
+      var saved = await GardenApi.getMyRegion();
+      if (saved && saved.climate_slug) _climateSlug = saved.climate_slug;
+    } catch (_) {}
+  }
+  if (!_climateSlug && climates.length) {
+    _climateSlug = climates[0].slug;
+  }
+
   try {
-    var climateName = null;
-    if (getSession()) {
-      try {
-        var saved = await GardenApi.getMyRegion();
-        if (saved && saved.climate_zone) climateName = saved.climate_zone;
-      } catch (_) {}
-    }
-    var data = await GardenApi.getPlant(slug);
+    var data = await GardenApi.getPlant(slug, _climateSlug);
+    _plantData = data;
     if (!data || !data.plant) {
       document.getElementById('gp-root').innerHTML = '<div class="gj-wrap gj-error">Plant not found or not published.</div>';
       return;
     }
     document.title = (data.plant.common_name || 'Plant') + ' — The Garden';
-    document.getElementById('gp-root').innerHTML = GardenUI.renderPlantProfile(data, { climateName: climateName });
-    wireAddButton(data.plant.id);
+    var climateName = '';
+    climates.forEach(function (c) { if (c.slug === _climateSlug) climateName = c.name; });
+
+    document.getElementById('gp-root').innerHTML =
+      await buildClimateBar(climates, _climateSlug) +
+      GardenUI.renderPlantProfile(data, {
+        climateName: climateName,
+        selectedVarietySlug: varietySlug
+      });
+
+    var sel = document.getElementById('gp-climate');
+    if (sel) {
+      sel.addEventListener('change', async function (e) {
+        _climateSlug = e.target.value;
+        GardenApi.saveClimatePref(_climateSlug);
+        if (getSession()) {
+          var cz = climates.find(function (c) { return c.slug === _climateSlug; });
+          if (cz) try { await GardenApi.setClimate(cz.id); } catch (err) { console.warn(err); }
+        }
+        varietySlug = '';
+        var url = new URL(location.href);
+        url.searchParams.delete('variety');
+        history.replaceState(null, '', url.pathname + url.search);
+        await renderPage();
+      });
+    }
+    wireAddButton(data, varietySlug);
   } catch (e) {
     console.warn('garden-plant load failed', e);
-    document.getElementById('gp-root').innerHTML = '<div class="gj-wrap gj-error">Could not load plant — run RUN-GARDEN-V3-POLISH.sql then hard-refresh.</div>';
+    document.getElementById('gp-root').innerHTML = '<div class="gj-wrap gj-error">Could not load plant — run RUN-GARDEN-V4.sql on Supabase, then hard-refresh.</div>';
   }
 }
-init();
+
+renderPage();
 </script>
 </body>
 </html>

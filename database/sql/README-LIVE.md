@@ -2,6 +2,12 @@
 
 Use this order on **production** after deploying site code from GitHub.
 
+## Garden v4 (varieties + climate-first)
+
+| Step | File | Expect |
+|------|------|--------|
+| 1 | `RUN-GARDEN-V4.sql` | After v3 — status `garden-v4-07-seed-tomato-varieties ready — N varieties`; Tomato shows cultivars on site |
+
 ## Quick path (recommended)
 
 | Step | File | Expect |

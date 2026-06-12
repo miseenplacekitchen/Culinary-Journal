@@ -18,8 +18,8 @@
 <script src="page-guard.js"></script>
 <script src="library-mise.js"></script>
 <script src="lib/garden-chrome.js"></script>
-<script src="lib/garden-api.js?v=20260716"></script>
-<script src="lib/garden-ui.js?v=20260716"></script>
+<script src="lib/garden-api.js?v=20260717"></script>
+<script src="lib/garden-ui.js?v=20260717"></script>
 <script src="nav-init.js"></script>
 </head>
 <body class="lib-page cj-body">
@@ -55,8 +55,8 @@ function renderList(items) {
   stats.style.display = 'flex';
   stats.innerHTML =
     '<div class="gj-dir-stat"><strong>' + items.length + '</strong> species published</div>' +
-    '<div class="gj-dir-stat">Climate-aware care &amp; calendars</div>' +
-    '<div class="gj-dir-stat">Linked to governed kitchen ingredients</div>';
+    '<div class="gj-dir-stat">Cultivars per climate</div>' +
+    '<div class="gj-dir-stat">Species + variety → kitchen links</div>';
   grid.innerHTML = items.map(function (p) { return GardenUI.renderDirectoryCard(p); }).join('');
 }
 
