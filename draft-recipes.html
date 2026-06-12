@@ -16,8 +16,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
   <script src="supabase-config.js"></script>
-  <script src="lib/tcj-errors.js"></script>
-<script src="nav-init.js" defer></script>
+  <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
@@ -188,8 +187,8 @@ const DRAFTS_INDEX_KEY = 'tcj_drafts_index';
 let pendingDeleteId = null;
 let session = null;
 
-function lsGet(k) { return TcjErr.lsGet(k); }
-function lsRemove(k) { try { localStorage.removeItem(k); } catch(_) { TcjErr.ignore(_); } }
+function lsGet(k) { try { return localStorage.getItem(k); } catch(_) { return null; } }
+function lsRemove(k) { try { localStorage.removeItem(k); } catch(_) {} }
 
 function formatDate(iso) {
   if (!iso) return '';
@@ -208,7 +207,7 @@ function formatDate(iso) {
 
 function loadDrafts() {
   let index = [];
-  try { index = JSON.parse(lsGet(DRAFTS_INDEX_KEY) || '[]'); } catch (_) { TcjErr.warn('draft-recipes.html:210', _); }
+  try { index = JSON.parse(lsGet(DRAFTS_INDEX_KEY) || '[]'); } catch(_) {}
 
   // Also pick up the auto-save draft if it exists and isn't in the index
   const autoSave = lsGet('tcj_recipe_draft');
@@ -220,7 +219,7 @@ function loadDrafts() {
       if (!index.find(x => x.id === autoId)) {
         index.unshift({ id: autoId, recipe_name: name, category: d.category || '', image_url: d.image_url || '', saved_at: new Date().toISOString() });
       }
-    } catch (_) { TcjErr.warn('draft-recipes.html:222', _); }
+    } catch(_) {}
   }
 
   const grid = document.getElementById('dr-grid');
@@ -279,7 +278,7 @@ function confirmDelete() {
   if (pendingDeleteId === 'autosave') lsRemove('tcj_recipe_draft');
   // Remove from index
   let index = [];
-  try { index = JSON.parse(lsGet(DRAFTS_INDEX_KEY) || '[]'); } catch(_) { TcjErr.ignore(_); }
+  try { index = JSON.parse(lsGet(DRAFTS_INDEX_KEY) || '[]'); } catch(_) {}
   index = index.filter(d => d.id !== pendingDeleteId);
   localStorage.setItem(DRAFTS_INDEX_KEY, JSON.stringify(index));
   closeConfirm();
@@ -287,7 +286,7 @@ function confirmDelete() {
 }
 
 // Auth check
-try { session = JSON.parse(lsGet('tcj_session') || 'null'); } catch(_) { TcjErr.ignore(_); }
+try { session = JSON.parse(lsGet('tcj_session') || 'null'); } catch(_) {}
 if (!session || !session.access_token) {
   document.getElementById('auth-guard').style.display = 'block';
 } else {

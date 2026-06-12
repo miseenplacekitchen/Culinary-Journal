@@ -224,7 +224,6 @@
 <script src="grocery-utils.js"></script>
 <script src="regional-hints.js"></script>
 <script src="lib/ingredient-lookup.js?v=20260630"></script>
-<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -244,7 +243,7 @@ function normalizePantryItem(item) {
 
 function getPantry() {
   try { return JSON.parse(localStorage.getItem('tcj_pantry') || '[]'); }
-  catch (_) { TcjErr.warn('degrade', _); }
+  catch(_) { return []; }
 }
 
 function savePantry(list) {
@@ -283,7 +282,7 @@ function savePantry(list) {
       } else if (parsed.ok && parsed.updated_at && window.SharedSyncUtils) {
         SharedSyncUtils.storeServerTs('tcj_pantry_server_ts', parsed.updated_at);
       }
-    } catch (_) { TcjErr.warn('pantry.html:285', _); }
+    } catch(_) {}
   }, 1500);
 }
 
@@ -331,7 +330,7 @@ async function loadPantryFromSupabase(force) {
       }
     }
     if (window.RegionalHints) RegionalHints.refreshBanner('pt-regional-bar', getPantry());
-  } catch (_) { TcjErr.warn('pantry.html:333', _); }
+  } catch(_) {}
 }
 
 function getStatus(item) {
@@ -693,7 +692,9 @@ async function submitUnknownIngredient() {
     });
     alert('Submitted for review. You will be notified when it is added to the database.');
     document.getElementById('pt-unknown-actions').style.display = 'none';
-  } catch (e) { TcjErr.warn('pantry.html:695', e); }
+  } catch (e) {
+    alert(e.message || 'Submission failed.');
+  }
 }
 
 async function submitUnknownUnit() {
@@ -709,7 +710,9 @@ async function submitUnknownUnit() {
     });
     alert('Unit submitted for review.');
     document.getElementById('pt-unit-unknown').style.display = 'none';
-  } catch (e) { TcjErr.warn('pantry.html:713', e); }
+  } catch (e) {
+    alert(e.message || 'Submission failed.');
+  }
 }
 
 function pantryNamesForUseItUp() {
@@ -750,7 +753,9 @@ async function loadUseItUpSuggestions() {
         '<div class="pt-useitup-meta">' + esc(r.category || '') +
         (matched ? ' · uses ' + esc(matched) : '') + '</div></a>';
     }).join('');
-  } catch (_) { TcjErr.warn('pantry.html:756', _); }
+  } catch (_) {
+    panel.style.display = 'none';
+  }
 }
 
 // Load governed ingredients for autocomplete (PF-01)
@@ -767,7 +772,7 @@ async function loadIngredientNames() {
         return '<option value="' + n.replace(/"/g,'&quot;') + '">';
       }).join('');
     }
-  } catch (_) { TcjErr.warn('pantry.html:775', _); }
+  } catch(_) {}
 }
 
 document.addEventListener('DOMContentLoaded', function() {

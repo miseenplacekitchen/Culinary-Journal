@@ -11,8 +11,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
   <script src="supabase-config.js"></script>
-  <script src="lib/tcj-errors.js"></script>
-<script src="nav-init.js" defer></script>
+  <script src="nav-init.js" defer></script>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     .nt-wrap { max-width: 720px; margin: 0 auto; padding: 48px 20px 80px; }
@@ -84,7 +83,7 @@ function renderList(notifs) {
   el.querySelectorAll('.nt-item[data-id]').forEach(function(a) {
     a.addEventListener('click', async function(e) {
       var id = a.getAttribute('data-id');
-      if (id) try { await rpc('mark_notification_read', { p_id: id }); } catch (_) { TcjErr.warn('mark_notification_read', _); }
+      if (id) try { await rpc('mark_notification_read', { p_id: id }); } catch(_) {}
     });
   });
 }

@@ -388,8 +388,7 @@
   <script src="seo-schema.js"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
   <script src="lib/recipe-hero-labels.js?v=20260629"></script>
-  <script src="lib/tcj-errors.js"></script>
-<script src="nav-init.js"></script>
+  <script src="nav-init.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body class="cj-body">
@@ -664,7 +663,7 @@ function showQrCode() {
   canvas.innerHTML = '';
   try {
     new QRCode(canvas, {text:url, width:200, height:200, colorDark:'#1a1a1a', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.H});
-  } catch (_) { TcjErr.warn('recipe-page.html:666', _); }
+  } catch(_) { canvas.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)">QR library loading — try again in a moment</div>'; }
   modal.classList.add('open');
 }
 function closeQr() { document.getElementById('rp-qr-modal').classList.remove('open'); }
@@ -695,7 +694,7 @@ async function checkSourceUrl(url) {
       sessionStorage.setItem('dlcheck_' + url, 'ok');
       if (recipe && recipe.id) persistSourceLinkStatus('ok');
     }
-  } catch (_) { TcjErr.warn('recipe-page.html:697', _); } // Network error — don't flag as dead
+  } catch(_) {} // Network error — don't flag as dead
 }
 async function persistSourceLinkStatus(status) {
   try {
@@ -710,7 +709,7 @@ async function persistSourceLinkStatus(status) {
       },
       body: JSON.stringify({ p_recipe_id: recipe.id, p_status: status })
     });
-  } catch (_) { TcjErr.warn('recipe-page.html:712', _); }
+  } catch(_) {}
 }
 function showDeadLink(url) {
   var existing = document.querySelector('.rp-deadlink');
@@ -759,7 +758,7 @@ async function openCollectionPicker() {
       row.addEventListener('click', function() { toggleCollection(c.id, c.name, has, row); });
       list.appendChild(row);
     });
-  } catch (e) { TcjErr.warn('recipe-page.html:761', e); }
+  } catch(e) { list.innerHTML = '<div style="padding:16px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--danger)">Error: '+e.message+'</div>'; }
 }
 
 async function toggleCollection(collectionId, collName, currentlyIn, rowEl) {
@@ -811,7 +810,7 @@ async function loadAllergenMap() {
       const allergen = (index.allergenNames[name] || '').trim();
       if (allergen) ingredientAllergenMap.set(name, allergen);
     });
-  } catch (_) { TcjErr.warn('recipe-page.html:813', _); }
+  } catch(_) {}
   return ingredientAllergenMap;
 }
 
@@ -860,13 +859,7 @@ async function loadRpIngredientIndex() {
     if (typeof TcjIngredientLookup === 'undefined') return;
     const index = await TcjIngredientLookup.fetchIndex();
     rpIngIndex = index.byName || {};
-    if (!Object.keys(rpIngIndex).length) {
-      TcjErr.bannerOnce('tcj-rp-ing-fail', 'Ingredient details could not load — allergen info may be incomplete.');
-    }
-  } catch (e) {
-    TcjErr.warn('loadRpIngredientIndex', e);
-    TcjErr.bannerOnce('tcj-rp-ing-fail', 'Ingredient details could not load — allergen info may be incomplete.');
-  }
+  } catch (_) {}
 }
 
 function resolveIngredientMeta(name) {
@@ -897,7 +890,7 @@ async function loadLibraryLinks(r) {
     renderIngredients(r.ingredients);
     if (currentView === 'combined') renderIngredients(r.ingredients, 'ingredients-combined');
     if (currentServes !== baseServes) scaleIngredients(currentServes);
-  } catch (_) { TcjErr.warn('recipe-page.html:893', _); }
+  } catch (_) {}
 }
 
 async function renderFamilyAllergyWarnings(r) {
@@ -924,7 +917,7 @@ async function renderFamilyAllergyWarnings(r) {
       return '<div style="margin-bottom:4px">' + escapeHtml(w) + '</div>';
     }).join('');
     banner.style.display = 'flex';
-  } catch (_) { TcjErr.warn('recipe-page.html:920', _); }
+  } catch (_) {}
 }
 
 
@@ -1029,7 +1022,7 @@ async function loadRelatedRecipes(currentId, category) {
       grid.appendChild(card);
     });
     section.style.display = 'block';
-  } catch (_) { TcjErr.warn('recipe-page.html:1025', _); }
+  } catch(_) {}
 }
 
 
@@ -1071,7 +1064,7 @@ async function loadSubstitutions() {
       substitutionsMap[key].push(row);
     });
     refreshIngredientSubstitutes();
-  } catch (_) { TcjErr.warn('recipe-page.html:1067', _); }
+  } catch(_) {}
 }
 
 function getSubstitutes(ingredientName) {
@@ -1101,7 +1094,7 @@ function parseJsonArray(val, fallback) {
     try {
       const parsed = JSON.parse(val);
       return Array.isArray(parsed) ? parsed : fallback;
-    } catch (_) { TcjErr.warn('recipe-page.html:1097', _); }
+    } catch(_) {}
   }
   return fallback;
 }
@@ -1175,11 +1168,15 @@ let groceryList = [];
 
 // Safe localStorage helpers — degrade gracefully in privacy modes
 function lsGet(key, fallback) {
-  var v = TcjErr.lsGet(key);
-  return v != null ? v : (fallback != null ? fallback : null);
+  try { return localStorage.getItem(key); } catch(_) { return null; }
+  finally {}
 }
-function lsSet(key, value) { TcjErr.lsSet(key, value); }
-function lsRemove(key) { TcjErr.lsRemove(key); }
+function lsSet(key, value) {
+  try { localStorage.setItem(key, value); } catch(_) {}
+}
+function lsRemove(key) {
+  try { localStorage.removeItem(key); } catch(_) {}
+}
 
 function getGroceryData() { return GroceryUtils.loadGrocery(); }
 function saveGroceryData(data) { GroceryUtils.saveGrocery(data); }
@@ -1227,10 +1224,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   try {
     const openTab = params.get('tab');
     if (openTab && document.getElementById('tab-' + openTab)) switchTab(openTab);
-  } catch(_) { TcjErr.warn('recipe-page.html', _); }
+  } catch(_) {}
 
-  try { setupSwipe(); } catch(_) { TcjErr.warn('recipe-page.html', _); }
-  try { initRecipeFontSize(); } catch(_) { TcjErr.warn('recipe-page.html', _); }
+  try { setupSwipe(); } catch(_) {}
+  try { initRecipeFontSize(); } catch(_) {}
 });
 
 function updateNav() {
@@ -1293,7 +1290,7 @@ async function loadRecipe(id) {
       showRecipeUnavailable('This recipe may be private, under review, or no longer available.');
       return;
     }
-  } catch (e) { TcjErr.warn('recipe-page.html:1293', e); }
+  } catch(e) { console.error('Recipe load error:', e); }
   showRecipeNotFound();
 }
 
@@ -1348,7 +1345,7 @@ async function enrichIngredientInfo(r) {
       if (currentView === 'combined') renderIngredients(r.ingredients, 'ingredients-combined');
       if (currentServes !== baseServes) scaleIngredients(currentServes);
     }
-  } catch (_) { TcjErr.ignore(_); }
+  } catch (_) { /* best-effort — never break the page */ }
 }
 
 // ── DEMO RECIPE ───────────────────────────────────────
@@ -1524,7 +1521,7 @@ function renderRecipe(r) {
   renderKeeping(r);
 
   // Contextual safety notes (baby / preservation / health / alcohol)
-  try { renderDisclaimers(r); } catch (_) { TcjErr.warn('recipe-page.html:1524', _); }
+  try { renderDisclaimers(r); } catch(_) {}
 
   // Tags
   renderTags(r);
@@ -1548,21 +1545,21 @@ function renderRecipe(r) {
   renderUtensils(r);
 
   // Related recipes, allergen detection, source-link check — best-effort, never break the page
-  try { if (r.id && r.category) loadRelatedRecipes(r.id, r.category); } catch(_) { TcjErr.warn('recipe-page.html', _); }
-  try { detectAllergens(r); } catch(_) { TcjErr.warn('recipe-page.html', _); }
-  try { renderFamilyAllergyWarnings(r); } catch(_) { TcjErr.warn('recipe-page.html', _); }
+  try { if (r.id && r.category) loadRelatedRecipes(r.id, r.category); } catch(_) {}
+  try { detectAllergens(r); } catch(_) {}
+  try { renderFamilyAllergyWarnings(r); } catch(_) {}
   try {
     if (r.credit_url) {
       if (r.source_link_status === 'dead') showDeadLink(r.credit_url);
       else checkSourceUrl(r.credit_url);
     }
-  } catch (_) { TcjErr.warn('recipe-page.html:1556', _); }
-  try { initTriedIt(); } catch(_) { TcjErr.warn('recipe-page.html', _); }
-  try { showCookHistoryBridge(); } catch(_) { TcjErr.warn('recipe-page.html', _); }
+  } catch(_) {}
+  try { initTriedIt(); } catch(_) {}
+  try { showCookHistoryBridge(); } catch(_) {}
   try {
     var savedView = lsGet('tcj_recipe_view');
     if (savedView === 'combined') setView('combined', true);
-  } catch(_) { TcjErr.warn('recipe-page.html', _); }
+  } catch(_) {}
 }
 
 function formatTime(mins) {
@@ -1717,7 +1714,7 @@ function renderHeroImage(r) {
     heroImg.style.display = 'block';
     if (heroPh) heroPh.style.display = 'none';
     sampleHeroBackdrop(heroImg);
-    try { applyWatermark(r); } catch(_) { TcjErr.warn('recipe-page.html', _); }
+    try { applyWatermark(r); } catch(_) {}
   }
   heroImg.onload = onHeroReady;
   heroImg.onerror = function () {
@@ -1747,7 +1744,9 @@ function sampleHeroBackdrop(img) {
       r += d[0]; g += d[1]; b += d[2]; n++;
     });
     circle.style.background = 'rgb(' + Math.round(r / n) + ',' + Math.round(g / n) + ',' + Math.round(b / n) + ')';
-  } catch (_) { TcjErr.warn('recipe-page.html:1747', _); }
+  } catch(_) {
+    circle.style.background = '#fff';
+  }
 }
 
 function applyWatermark(r) {
@@ -2049,11 +2048,11 @@ async function prefetchPantryFromCloud() {
     if (!Array.isArray(items)) return;
     localStorage.setItem('tcj_pantry', JSON.stringify(items));
     if (data.updated_at) localStorage.setItem('tcj_pantry_ts', String(new Date(data.updated_at).getTime()));
-  } catch (_) { TcjErr.warn('degrade', _); }
+  } catch (_) {}
 }
 
 function getPantryItems() {
-  return TcjErr.parseJson(TcjErr.lsGet('tcj_pantry') || '[]', [], 'tcj_pantry');
+  try { return JSON.parse(localStorage.getItem('tcj_pantry')||'[]'); } catch(_) { return []; }
 }
 
 function getPantryInfo(ingredientName) {
@@ -2203,14 +2202,14 @@ const UNIT_TO_G = {
 
 // CJ-013: cache persists across visits — repeat opens of the Nutrition tab are instant
 const OFP_CACHE = (function(){
-  try { return JSON.parse(lsGet('tcj_off_cache') || '{}') || {}; } catch (_) { TcjErr.warn('recipe-page.html:2205', _); }; }
+  try { return JSON.parse(lsGet('tcj_off_cache') || '{}') || {}; } catch(_) { return {}; }
 })();
 function persistOFPCache() {
   try {
     const keys = Object.keys(OFP_CACHE);
     if (keys.length > 400) keys.slice(0, keys.length - 400).forEach(k => delete OFP_CACHE[k]);
     lsSet('tcj_off_cache', JSON.stringify(OFP_CACHE));
-  } catch (_) { TcjErr.warn('recipe-page.html:2212', _); }
+  } catch(_) {}
 }
 
 async function fetchNutrition(ingredientName) {
@@ -2238,7 +2237,7 @@ async function fetchNutrition(ingredientName) {
       OFP_CACHE[key] = result;
       return result;
     }
-  } catch (_) { TcjErr.warn('recipe-page.html:2240', _); }
+  } catch(_) {}
   return null;
 }
 
@@ -2366,7 +2365,7 @@ async function savePersonalNote() {
           updated_at: new Date().toISOString()
         })
       });
-    } catch (_) { TcjErr.warn('recipe-page.html:2368', _); }
+    } catch(_) {}
   }
   showToast('Personal note saved ✓');
 }
@@ -2400,7 +2399,9 @@ async function submitPublicNote() {
       const err = await res.json().catch(() => ({}));
       showToast('Could not submit: ' + (err.message || res.status));
     }
-  } catch (e) { TcjErr.warn('recipe-page.html:2402', e); }
+  } catch(e) {
+    showToast('Could not submit — please try again.');
+  }
 }
 
 // ── TABS ──────────────────────────────────────────────
@@ -2428,7 +2429,7 @@ function setRecipeFontSize(size, btn) {
   wrap.classList.add('rp-font-' + (size || 'md'));
   document.querySelectorAll('.rp-font-btn').forEach(function(b){ b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
-  try { lsSet('tcj_recipe_font', size || 'md'); } catch (_) { TcjErr.warn('recipe-page.html:2432', _); }
+  try { lsSet('tcj_recipe_font', size || 'md'); } catch(_) {}
 }
 
 function initRecipeFontSize() {
@@ -2449,7 +2450,7 @@ function toggleCookHigh() {
   if (!wrap) return;
   var on = wrap.classList.toggle('rp-cook-high');
   if (btn) btn.classList.toggle('active', on);
-  try { lsSet('tcj_recipe_cook_high', on ? '1' : '0'); } catch (_) { TcjErr.warn('recipe-page.html:2453', _); }
+  try { lsSet('tcj_recipe_cook_high', on ? '1' : '0'); } catch(_) {}
 }
 
 function setView(view, skipSave) {
@@ -2468,7 +2469,7 @@ function setView(view, skipSave) {
   } else {
     combined.classList.remove('active');
   }
-  if (!skipSave) try { lsSet('tcj_recipe_view', view); } catch (_) { TcjErr.warn('recipe-page.html:2472', _); }
+  if (!skipSave) try { lsSet('tcj_recipe_view', view); } catch(_) {}
 }
 
 // ── SWIPE (MOBILE TABS) ───────────────────────────────
@@ -2533,7 +2534,7 @@ function markTriedIt() {
         } else {
           showToast('Added to your made list! 👨‍🍳');
         }
-      }).catch(function(e){ TcjErr.warn('recipe-page.html', e); });
+      }).catch(function(){ showToast('Added to your made list! 👨‍🍳'); });
     } else {
       showToast('Added to your made list! 👨‍🍳' + (session ? '' : ' Sign in to keep it in your Culinary Life history.'));
     }
@@ -2565,7 +2566,7 @@ function showToast(msg, linkHref, linkText) {
 // ── BRIDGE: SHOW COOK HISTORY FOR THIS RECIPE (4.4) ─────────────
 function showCookHistoryBridge() {
   if (!recipe || !recipe.id) return;
-  var s; try { s = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) { TcjErr.warn('degrade', _); }
+  var s; try { s = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(_) {}
   if (!s || !s.access_token) return;
 
   fetch(SUPABASE_URL + '/rest/v1/cooking_events?recipe_id=eq.' + recipe.id + '&select=id,cooked_at,rating&order=cooked_at.desc', {
@@ -2599,7 +2600,7 @@ function showCookHistoryBridge() {
     if (backLink && backLink.parentNode) {
       backLink.parentNode.insertAdjacentElement('afterend', banner);
     }
-  }).catch(function(e){ TcjErr.warn('recipe-page.html', e); });
+  }).catch(function () {});
 }
 
 // ── Step Timer ────────────────────────────────────────────────────────

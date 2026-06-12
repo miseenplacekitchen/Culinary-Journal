@@ -124,7 +124,7 @@ window._lsIsAdmin = false;
     } else {
       applyTypeMeta();
     }
-  } catch (e) { TcjErr.warn('library-submit.html:127', e); }
+  } catch(e) { console.warn('library submit access', e); }
 })();
 
 var _lsFormValues = {};
@@ -370,7 +370,7 @@ function setType(type, btn) {
     var u = new URL(window.location.href);
     u.searchParams.set('type', type);
     window.history.replaceState({}, '', u.pathname + u.search);
-  } catch (_) { TcjErr.warn('degrade', _); }
+  } catch (_) {}
   renderAllPanels();
   lsRestoreFormValues();
   applyTypeMeta();
@@ -447,7 +447,12 @@ async function uploadLibraryImage(file, pathPrefix, previewId, urlFieldId) {
       err2.textContent = 'Upload failed — paste a URL below instead';
       preview.after(err2);
     }
-  } catch (e) { TcjErr.warn('library-submit.html:450', e); }
+  } catch (e) {
+    var err3 = document.createElement('div');
+    err3.style.cssText = 'font-size:11px;color:var(--danger);margin-top:4px';
+    err3.textContent = 'Upload failed — paste a URL below instead';
+    preview.after(err3);
+  }
 }
 
 var _libMiseEditor = null;
@@ -519,7 +524,9 @@ async function uploadMiseImage(dataUrl) {
     });
     if (!res.ok) return '';
     return window.SUPA_URL + '/storage/v1/object/public/library-images/' + path;
-  } catch (_) { TcjErr.warn('library-submit.html:527', _); }
+  } catch (_) {
+    return '';
+  }
 }
 
 async function previewImage(input) {
@@ -561,7 +568,9 @@ async function previewImage(input) {
       var errData = await res.json().catch(() => ({}));
       var err2 = document.createElement('div'); err2.style.cssText = 'font-size:11px;color:var(--danger);margin-top:4px'; err2.textContent = 'Upload failed — paste a URL below instead'; preview.after(err2);
     }
-  } catch (e) { TcjErr.warn('library-submit.html:571', e); }
+  } catch(e) {
+    var err2 = document.createElement('div'); err2.style.cssText = 'font-size:11px;color:var(--danger);margin-top:4px'; err2.textContent = 'Upload failed — paste a URL below instead'; preview.after(err2);
+  }
 }
 
 function showMsg(msg, type) {
@@ -646,7 +655,10 @@ async function submitProfile() {
       showMsg('Error: ' + (err.message || res.status), 'error');
       btn.disabled = false; btn.textContent = 'Save Profile';
     }
-  } catch (e) { TcjErr.warn('library-submit.html:658', e); }
+  } catch(e) {
+    showMsg('Could not save — please try again.', 'error');
+    btn.disabled = false; btn.textContent = 'Save Profile';
+  }
 }
 
 async function loadExisting(id) {
@@ -691,7 +703,7 @@ async function loadExisting(id) {
       if (_libMiseEditor) _libMiseEditor.loadFromUrl(p.mise_image_url);
     }
     applyTypeMeta();
-  } catch (_) { TcjErr.warn('library-submit.html:706', _); }
+  } catch(_) {}
 }
 
 function initPage() {
@@ -716,7 +728,6 @@ function initPage() {
 }
 
 </script>
-<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>initPage();</script>
 </body>

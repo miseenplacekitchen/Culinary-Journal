@@ -3,7 +3,7 @@
   async function startStripeCheckout(tier, opts) {
     opts = opts || {};
     var sess = null;
-    try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) { TcjErr.warn('degrade', _); }
+    try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
     if (!sess || !sess.access_token) {
       var next = opts.next || (typeof window !== 'undefined' ? window.location.pathname.split('/').pop() : '');
       window.location.href = 'login.html?next=' + encodeURIComponent(next) + '#upgrade';

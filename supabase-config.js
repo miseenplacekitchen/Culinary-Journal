@@ -5,23 +5,6 @@
 // Usage: window.SUPA_URL, window.SUPA_KEY, window.supaFetch(), window.rpc()
 // ══════════════════════════════════════════════════════════════════════
 
-(function () {
-  if (typeof window.TcjErr === 'undefined') {
-    window.TcjErr = {
-      warn: function (ctx, err) { console.warn('[TCJ:' + ctx + ']', err); },
-      ignore: function () {},
-      lsGet: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-      lsSet: function (k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } },
-      lsRemove: function (k) { try { localStorage.removeItem(k); return true; } catch (e) { return false; } },
-      parseJson: function (r, f) { try { return JSON.parse(r); } catch (e) { return f; } },
-      rpcFallback: function (ctx, err, fb) { console.warn('[TCJ:' + ctx + ']', err); return fb; },
-      toast: function (m) { console.warn('[TCJ:toast]', m); },
-      bannerOnce: function (id, m) { console.warn('[TCJ:' + id + ']', m); },
-      sectionError: function (id, m) { console.warn('[TCJ:' + id + ']', m); }
-    };
-  }
-})();
-
 (function() {
   var URL = 'https://kzywmodvfbyexqgipcjt.supabase.co';
   var KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
@@ -35,7 +18,7 @@
   // ── Session helpers ──────────────────────────────────────────────────
   window.getSession = function() {
     try { return JSON.parse(localStorage.getItem('tcj_session') || 'null'); }
-    catch (_) { TcjErr.warn('getSession', _); return null; }
+    catch(_) { return null; }
   };
 
   window.getAuthHeaders = function() {
@@ -60,7 +43,7 @@
       body:    JSON.stringify(params || {})
     });
     if (!res.ok) {
-      var err = await res.text().catch(function(e){ TcjErr.warn('supabase-config.js', e); });
+      var err = await res.text().catch(function() { return String(res.status); });
       throw new Error(err);
     }
     var text = await res.text();
@@ -79,7 +62,7 @@
       if (!token) return '';
       var payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
       return payload.email || '';
-    } catch (_) { TcjErr.warn('supabase-config.js:65', _); }
+    } catch (_) { return ''; }
   };
 
   window.isTcjAdmin = function(profile, session) {
@@ -102,10 +85,10 @@
 
   window.saveTcjProfile = function(profile, session) {
     profile = window.normalizeTcjProfile(profile, session);
-    try { localStorage.setItem('tcj_profile', JSON.stringify(profile)); } catch(_) { TcjErr.ignore(_); }
+    try { localStorage.setItem('tcj_profile', JSON.stringify(profile)); } catch (_) {}
     try {
       window.dispatchEvent(new CustomEvent('tcj-profile-updated', { detail: profile }));
-    } catch(_) { TcjErr.warn('supabase-config.js', _); }
+    } catch (_) {}
     return profile;
   };
 
@@ -124,7 +107,7 @@
       });
       if (!res.ok) return null;
       return (await res.json()) === true;
-    } catch (_) { TcjErr.warn('supabase-config.js:110', _); }
+    } catch (_) { return null; }
   };
 
   var ANN_TYPE_STYLES = {
@@ -153,7 +136,7 @@
 
         var now = Date.now();
         var dismissed = [];
-        try { dismissed = JSON.parse(localStorage.getItem('tcj_ann_dismissed') || '[]'); } catch(_) { TcjErr.ignore(_); }
+        try { dismissed = JSON.parse(localStorage.getItem('tcj_ann_dismissed') || '[]'); } catch (_) {}
 
         var live = rows.filter(function(a) {
           if (!a || !a.text) return false;
@@ -208,7 +191,7 @@
               var d = JSON.parse(localStorage.getItem('tcj_ann_dismissed') || '[]');
               if (d.indexOf(a.id) === -1) d.push(a.id);
               localStorage.setItem('tcj_ann_dismissed', JSON.stringify(d));
-            } catch (_) { TcjErr.warn('degrade', _); }
+            } catch (_) {}
             if (!wrap.querySelector('.tcj-ann-bar')) wrap.remove();
           });
 
@@ -228,7 +211,7 @@
           document.body.insertBefore(wrap, document.body.firstChild);
         }
       })
-      .catch(function(e){ TcjErr.warn('supabase-config.js', e); });
+      .catch(function() { window.__tcjAnnLoading = false; });
   };
 
   window.purgeStaleProfileCache = function() {
@@ -243,7 +226,7 @@
         localStorage.removeItem('tcj_profile');
       }
     } catch (_) {
-      try { localStorage.removeItem('tcj_profile'); } catch(e) { TcjErr.ignore(e); }
+      try { localStorage.removeItem('tcj_profile'); } catch (e) {}
     }
   };
 
@@ -286,7 +269,7 @@
           if (rows[0].last_seen) profile.last_seen = rows[0].last_seen;
         }
       }
-    } catch(_) { TcjErr.warn('supabase-config.js', _); }
+    } catch (_) {}
     return profile;
   };
 

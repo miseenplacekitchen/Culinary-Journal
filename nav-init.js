@@ -1,7 +1,3 @@
-if (typeof window.TcjErr === 'undefined') {
-  window.TcjErr = { warn: function(c,e){console.warn('[TCJ:'+c+']',e);}, ignore: function(){}, rpcFallback: function(c,e,f){console.warn('[TCJ:'+c+']',e);return f;} };
-}
-
 // ══════════════════════════════════════════════════════
 // THE CULINARY JOURNAL — Navigation
 // CJ_SECTIONS is the single source of truth for all navigation.
@@ -120,7 +116,7 @@ function buildSectionNav() {
     // AP-05: member-personal sections render only for signed-in users
     if (section.signedInOnly) {
       var _s = null;
-      try { _s = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) { TcjErr.warn('degrade', _); }
+      try { _s = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
       if (!_s || !_s.access_token) return;
     }
     var isActive = activeSection === section.id;
@@ -369,8 +365,8 @@ function buildSectionNav() {
         } else {
           localStorage.setItem('tcj_profile', JSON.stringify(normalizeNavProfile(p, stored)));
         }
-      }).catch(function(e){ TcjErr.warn('nav-init.js', e); });
-    } catch (e) { TcjErr.warn('degrade', e); }
+      }).catch(function(){});
+    } catch(e) { console.error('OAuth callback error:', e); }
   }
   handleOAuthCallback();
 
@@ -438,8 +434,8 @@ function buildSectionNav() {
     }
 
     var session = null, profile = {};
-    try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(_) { TcjErr.ignore(_); }
-    try { profile = JSON.parse(localStorage.getItem('tcj_profile') || '{}') || {}; } catch(_) { TcjErr.ignore(_); }
+    try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
+    try { profile = JSON.parse(localStorage.getItem('tcj_profile') || '{}') || {}; } catch (_) {}
     var loggedIn = !!(session && session.access_token);
 
     var html;
@@ -503,15 +499,15 @@ function buildSectionNav() {
         localStorage.setItem('tcj_session', JSON.stringify(session));
       }
       rebuildLoggedInNav(host, p, session);
-    }).catch(function(e){ TcjErr.warn('nav-init.js', e); });
+    }).catch(function(){});
   }
 
   window.addEventListener('tcj-profile-updated', function() {
     var host = document.getElementById('nav-btns') || document.querySelector('[data-nav-host]');
     if (!host) return;
     var session = null, profile = {};
-    try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) { TcjErr.warn('degrade', _); }
-    try { profile = JSON.parse(localStorage.getItem('tcj_profile') || '{}') || {}; } catch(_) { TcjErr.ignore(_); }
+    try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
+    try { profile = JSON.parse(localStorage.getItem('tcj_profile') || '{}') || {}; } catch (_) {}
     if (!(session && session.access_token)) return;
     profile = normalizeNavProfile(profile, session);
     rebuildLoggedInNav(host, profile, session);
@@ -566,9 +562,9 @@ function buildSectionNav() {
     var signout = host.querySelector('#cj-signout');
     if (signout) {
       signout.addEventListener('click', function () {
-        try { localStorage.removeItem('tcj_session'); } catch (_) { TcjErr.ignore(_); }
-        try { localStorage.removeItem('tcj_profile'); } catch(_) { TcjErr.ignore(_); }
-        try { localStorage.removeItem('tcj_theme');   } catch(_) { TcjErr.ignore(_); }
+        try { localStorage.removeItem('tcj_session'); } catch (_) {}
+        try { localStorage.removeItem('tcj_profile'); } catch (_) {}
+        try { localStorage.removeItem('tcj_theme');   } catch (_) {}
         window.location.href = 'index.html';
       });
     }
@@ -612,15 +608,9 @@ async function notifRpc(fn, params) {
       headers:{'apikey':SUPA_KEY_N,'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
       body:JSON.stringify(params||{})
     });
-    if (!res.ok) {
-      if (typeof TcjErr !== 'undefined') TcjErr.warn('notifRpc:' + fn, res.status + ' ' + res.statusText);
-      return null;
-    }
+    if (!res.ok) return null;   // 404 = RPC not built yet, 401 = not authorised — both silent
     return res.json();
-  } catch(e) {
-    if (typeof TcjErr !== 'undefined') TcjErr.warn('notifRpc:' + fn, e);
-    return null;
-  }
+  } catch(_) { return null; }
 }
 
 async function loadNotifCount() {
@@ -631,7 +621,7 @@ async function loadNotifCount() {
     var badge = document.getElementById('nav-notif-badge');
     var n = parseInt(count)||0;
     if (badge) { badge.textContent = n>9?'9+':n; badge.style.display = n>0?'inline':'none'; }
-  } catch(_) { TcjErr.warn('nav-init.js', _); }
+  } catch(_) {}
 }
 
 async function toggleNotifPanel() {
@@ -697,7 +687,7 @@ function renderNotifPanel(notifs) {
     item.appendChild(inner);
     item.addEventListener('click', async function(e) {
       e.preventDefault();
-      try { await notifRpc('mark_notification_read', {p_id: n.id}); } catch(_) { TcjErr.warn('nav-init.js', _); }
+      try { await notifRpc('mark_notification_read', {p_id: n.id}); } catch(_) {}
       loadNotifCount();
       var dest = n.recipe_id ? 'recipe-page.html?id=' + n.recipe_id : null;
       if (dest) window.location.href = dest;
@@ -798,8 +788,8 @@ setTimeout(function() { if(typeof loadNotifCount === "function") loadNotifCount(
 
   btn.addEventListener('click', function() {
     var prof = null, sess = null;
-    try { prof = JSON.parse(localStorage.getItem('tcj_profile')||'null'); } catch(_) { TcjErr.ignore(_); }
-    try { sess = JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch(_) { TcjErr.ignore(_); }
+    try { prof = JSON.parse(localStorage.getItem('tcj_profile')||'null'); } catch(_){}
+    try { sess = JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch(_){}
 
     var selectedType = 'general';
 
@@ -946,7 +936,12 @@ setTimeout(function() { if(typeof loadNotifCount === "function") loadNotifCount(
           setTimeout(function(){ ov.remove(); }, 2000);
         } else { throw new Error('Error '+res.status); }
       })
-      .catch(function(e){ TcjErr.warn('nav-init.js', e); });
+      .catch(function(){
+        msgEl.style.color='#e05555';
+        msgEl.textContent='Couldn\u2019t send right now. Please try again.';
+        sendBtn.disabled=false;
+        sendBtn.textContent='Send Feedback';
+      });
     });
   });
 })();
@@ -965,13 +960,13 @@ setTimeout(function() { if(typeof loadNotifCount === "function") loadNotifCount(
 (function () {
   function tcjGetSession() {
     try { return JSON.parse(localStorage.getItem('tcj_session') || 'null'); }
-    catch (_) { TcjErr.warn('degrade', _); }
+    catch (_) { return null; }
   }
   function tcjJwtExp(token) {
     try {
       var p = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
       return (JSON.parse(atob(p)).exp || 0) * 1000;
-    } catch (_) { TcjErr.warn('degrade', _); }
+    } catch (_) { return 0; }
   }
   async function tcjRefreshSession() {
     // SUPA_URL / SUPA_KEY are page globals; static pages don't define them.
@@ -993,7 +988,7 @@ setTimeout(function() { if(typeof loadNotifCount === "function") loadNotifCount(
       });
       localStorage.setItem('tcj_session', JSON.stringify(updated));
       return true;
-    } catch (_) { TcjErr.warn('degrade', _); }
+    } catch (_) { return false; }
   }
   async function tcjKeepAlive() {
     var s = tcjGetSession();

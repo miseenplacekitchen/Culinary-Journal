@@ -86,7 +86,6 @@
     </div>
   </div>
 </div>
-<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 var step = 0;
@@ -107,7 +106,7 @@ async function rpc(fn, params) {
     body: JSON.stringify(params||{})
   });
   if (!res.ok) throw new Error(await res.text());
-  return res.json().catch(function(e){ return TcjErr.rpcFallback('onboarding.html', e, null); });
+  return res.json().catch(function(){ return null; });
 }
 
 function showStep(n) {
@@ -140,7 +139,11 @@ async function loadRefs() {
     buildChecks('ob-dietary', pick('dietary_needs'));
     buildChecks('ob-allergies', pick('allergies'));
     buildChecks('ob-health', pick('health_conditions'));
-  } catch (_) { TcjErr.warn('onboarding.html:142', _); }
+  } catch(_) {
+    buildChecks('ob-dietary', REF_FALLBACK.dietary_needs);
+    buildChecks('ob-allergies', REF_FALLBACK.allergies);
+    buildChecks('ob-health', REF_FALLBACK.health_conditions);
+  }
 }
 
 async function saveOnboarding() {
@@ -157,7 +160,7 @@ async function saveOnboarding() {
     prof.allergies = getChecked('ob-allergies');
     prof.health_conditions = getChecked('ob-health');
     localStorage.setItem('tcj_profile', JSON.stringify(prof));
-  } catch(_) { TcjErr.warn('onboarding.html', _); }
+  } catch(_) {}
 }
 
 async function finish() {
@@ -185,7 +188,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     var p = Array.isArray(rows) ? rows[0] : rows;
     if (p && p.onboarding_completed) { window.location.href = 'diary.html'; return; }
     if (p) localStorage.setItem('tcj_profile', JSON.stringify(p));
-  } catch(_) { TcjErr.warn('onboarding.html', _); }
+  } catch(_) {}
   loadRefs();
 });
 </script>

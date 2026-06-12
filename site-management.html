@@ -8,7 +8,7 @@
   <link rel="canonical" href="https://theculinaryjournal.site/site-management.html">
   <meta name="robots" content="noindex, nofollow">
   <title>Site Management — The Culinary Journal</title>
-  <script>try{localStorage.setItem('tcj_active_view','site-mgmt');}catch (e) { TcjErr.warn('degrade', e); }location.replace('dashboard.html');</script>
+  <script>try{localStorage.setItem('tcj_active_view','site-mgmt');}catch(e){}location.replace('dashboard.html');</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="theme-init.js"></script>
@@ -17,7 +17,7 @@
     // Apply admin theme immediately — reads from same keys as dashboard
     (function(){
       var theme = localStorage.getItem('tcj_theme') || 
-                  (function(){ try { var p=JSON.parse(localStorage.getItem('tcj_profile')||'null'); return p&&p.theme_preference||''; } catch (e) { TcjErr.warn('degrade', e); } })() ||
+                  (function(){ try { var p=JSON.parse(localStorage.getItem('tcj_profile')||'null'); return p&&p.theme_preference||''; } catch(e){return '';} })() ||
                   'Midnight Slate';
       document.documentElement.setAttribute('data-theme', theme);
     })();
@@ -75,8 +75,7 @@
     .denied { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 12px; }
     .denied p { font-size: 14px; color: var(--text-mid); }
   </style>
-  <script src="lib/tcj-errors.js"></script>
-<script src="nav-init.js"></script>
+  <script src="nav-init.js"></script>
 </head>
 <body>
 <p style="font-family:DM Sans,sans-serif;padding:24px;text-align:center;color:var(--text-mid)">Redirecting to <a href="dashboard.html">Admin Panel → Site Management</a>…</p>
@@ -159,7 +158,7 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 
 async function init() {
   let sess;
-  try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(e) { TcjErr.ignore(e); }
+  try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(e) {}
   if (!sess || !sess.access_token) { window.location.href = 'login.html'; return; }
   session = sess;
   let isAdmin = false;
@@ -171,7 +170,7 @@ async function init() {
       const pr = Array.isArray(rows) ? rows[0] : rows;
       if (pr) { isAdmin = !!pr.is_admin; localStorage.setItem('tcj_profile', JSON.stringify(pr)); }
     }
-  } catch (e) { TcjErr.warn('get_my_profile', e); }
+  } catch(e) {}
   if (!isAdmin) { document.getElementById('screen-denied').style.display='flex'; return; }
   document.getElementById('screen-main').style.display = 'flex';
   const saved = localStorage.getItem('tcj_sm_panel') || 'pages';
@@ -257,7 +256,7 @@ async function loadPages() {
             p_coming_soon: document.getElementById('cs-'+path).checked
           });
           btn.textContent = '✓'; setTimeout(function(){btn.textContent='Save';btn.disabled=false;}, 2000);
-        } catch (e) { TcjErr.warn('site-management.html:259', e); }
+        } catch(e) { btn.textContent = 'Save'; btn.disabled = false; alert('Error: '+e.message); }
       };})(p.path, saveBtn));
       tr.lastElementChild.appendChild(saveBtn);
       tbody.appendChild(tr);
@@ -398,7 +397,7 @@ async function loadContent() {
     const sec2 = document.createElement('div'); sec2.className = 'sm-section';
     sec2.innerHTML = '<div class="sm-section-title">Category Display Order</div><div class="sm-section-desc">Reorder categories using the arrows. Changes save immediately.</div>';
     let cats = [];
-    try { cats = JSON.parse(settings.homepage_categories_order||'[]'); } catch(_) { TcjErr.warn('site-management.html', _); }
+    try { cats = JSON.parse(settings.homepage_categories_order||'[]'); } catch(_) {}
     const catList = document.createElement('div');
     function renderCats() {
       catList.innerHTML = '';
@@ -430,7 +429,7 @@ async function loadThemes() {
     const el = document.getElementById('themes-content');
     el.innerHTML = '';
     let disabled = [];
-    try { disabled = JSON.parse(settings.disabled_themes||'[]'); } catch(_) { TcjErr.warn('site-management.html', _); }
+    try { disabled = JSON.parse(settings.disabled_themes||'[]'); } catch(_) {}
 
     // Seasonal default
     const sec1 = document.createElement('div'); sec1.className = 'sm-section';
@@ -565,7 +564,7 @@ async function loadSettings() {
     // Footer
     const foot = sec('Footer');
     foot.appendChild(field('footer_copyright','Copyright Text',settings.footer_copyright));
-    let soc={}; try{soc=JSON.parse(settings.footer_social||'{}');}catch(_) { TcjErr.warn('site-management.html', _); }
+    let soc={}; try{soc=JSON.parse(settings.footer_social||'{}');}catch(_){}
     const sg = document.createElement('div'); sg.className='sm-grid-3';
     sg.innerHTML='<div><label class="sm-label">Instagram</label><input id="ss-soc-instagram" class="sm-input" value="'+esc(soc.instagram||'')+'" placeholder="@handle"></div><div><label class="sm-label">Facebook</label><input id="ss-soc-facebook" class="sm-input" value="'+esc(soc.facebook||'')+'" placeholder="@handle"></div><div><label class="sm-label">Pinterest</label><input id="ss-soc-pinterest" class="sm-input" value="'+esc(soc.pinterest||'')+'" placeholder="@handle"></div>';
     foot.appendChild(sg);

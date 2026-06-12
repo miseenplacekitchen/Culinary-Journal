@@ -224,7 +224,6 @@
   </div>
 </div>
 
-<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -234,7 +233,7 @@ const SETTINGS_KEY = 'tcj_site_settings';
 
 function getSettings() {
   try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'); }
-  catch (_) { TcjErr.warn('degrade', _); }; }
+  catch(_) { return {}; }
 }
 async function loadSettingsFromDB() {
   try {
@@ -253,12 +252,12 @@ async function loadSettingsFromDB() {
       try {
         var parsed = JSON.parse(v);
         if (Array.isArray(parsed) || (parsed !== null && typeof parsed === 'object')) v = parsed;
-      } catch (_) { TcjErr.warn('site-settings.html:255', _); }
+      } catch(_) {}
       s[r.key] = v;
     });
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
     hydrateForm(s);
-  } catch(_) { TcjErr.warn('site-settings.html', _); }
+  } catch(_) {}
 }
 async function saveSettings(s) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
@@ -278,7 +277,7 @@ async function saveSettings(s) {
         body: JSON.stringify({ key: key, value: (Array.isArray(value) || (value !== null && typeof value === 'object')) ? JSON.stringify(value) : String(value) })
       });
     }
-  } catch (_) { TcjErr.warn('site-settings.html:280', _); }
+  } catch(_) {}
 }
 
 function showMsg(id, text, ok) {
@@ -502,10 +501,10 @@ async function savePageVisibility() {
         body:JSON.stringify({p_page_id:page.id, p_visibility:visEl.value, p_message:msgEl?msgEl.value.trim():''})
       });
       if (!res.ok) errors++;
-    } catch (_) { TcjErr.warn('site-settings.html:504', _); }
+    } catch(_) { errors++; }
   }
   // Invalidate cache
-  try { sessionStorage.removeItem('tcj_page_vis'); } catch(_) { TcjErr.warn('site-settings.html', _); }
+  try { sessionStorage.removeItem('tcj_page_vis'); } catch(_) {}
   var msgEl = document.getElementById('pv-msg');
   if (errors) {
     msgEl.textContent = errors + ' error(s) saving. Try again.';

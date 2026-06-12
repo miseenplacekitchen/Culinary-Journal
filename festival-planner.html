@@ -70,7 +70,6 @@
     <div id="fp-dishes"></div>
   </div>
 </div>
-<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 var FESTIVALS_FALLBACK = [
@@ -113,7 +112,7 @@ async function showFestival(slug){
   renderGrid();
   var fest = festivals.find(function(f){ return f.slug === slug; });
   if (!fest) return;
-  var detail = await rpc('get_festival_detail', { p_slug: slug }).catch(function(e){ return TcjErr.rpcFallback('festival-planner.html', e, null); });
+  var detail = await rpc('get_festival_detail', { p_slug: slug }).catch(function(){ return null; });
   if (!detail) {
     detail = Object.assign({}, fest, { dishes: [] });
     if (slug === 'onam') {
@@ -161,7 +160,9 @@ async function showFestival(slug){
 async function init(){
   try {
     festivals = await rpc('get_public_festivals') || [];
-  } catch (_) { TcjErr.warn('get_public_festivals', _); }
+  } catch(_) {
+    festivals = FESTIVALS_FALLBACK;
+  }
   if (!festivals.length) festivals = FESTIVALS_FALLBACK;
   renderGrid();
   showFestival(festivals[0].slug);

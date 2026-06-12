@@ -43,7 +43,6 @@
     <a href="terms.html">Terms of Use</a><a href="privacy.html">Privacy</a><a href="index.html">Home</a>
   </div>
 </div>
-<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 (function() {
@@ -59,7 +58,9 @@
   }).then(function(r) { return r.ok ? r.json() : {}; }).then(function(data) {
     var text = (data && data.refund_policy) ? data.refund_policy : '';
     el.textContent = text || 'Completed purchases are final. Contact miseenplacekitchen.official@gmail.com within 7 days for billing errors or technical access issues.';
-  }).catch(function(e){ TcjErr.warn('subscription-terms.html', e); });
+  }).catch(function() {
+    el.textContent = 'Completed purchases are final. Contact miseenplacekitchen.official@gmail.com within 7 days for billing errors or technical access issues.';
+  });
 })();
 </script>
 </body>

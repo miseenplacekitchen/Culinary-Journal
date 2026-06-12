@@ -235,8 +235,7 @@
     .pwd-toggle-btn:focus{outline:none;color:#C4973B}
   </style>
   <script src="page-guard.js"></script>
-  <script src="lib/tcj-errors.js"></script>
-<script src="nav-init.js"></script>
+  <script src="nav-init.js"></script>
 </head>
 <body>
 <div class="page-bg"><div class="page-overlay">
@@ -555,7 +554,7 @@ async function supaRPC(fnName, args) {
   });
   if (!res.ok) {
     let errMsg = 'Database call failed';
-    try { const d = await res.json(); errMsg = d.message || d.error || errMsg; } catch (_) { TcjErr.warn('login.html:557', _); }
+    try { const d = await res.json(); errMsg = d.message || d.error || errMsg; } catch(_) {}
     throw new Error(errMsg);
   }
   return res.json();
@@ -646,14 +645,14 @@ async function doLogin() {
           }
         }
       }
-    } catch (_) { TcjErr.warn('degrade', _); }
+    } catch(_) {}
 
     showMsg('Welcome back, ' + username + '! Redirecting...', 'success');
     setTimeout(() => {
       const params = new URLSearchParams(window.location.search);
       const returnTo = params.get('return_to');
       let profile = null;
-      try { profile = JSON.parse(localStorage.getItem('tcj_profile') || 'null'); } catch(_) { TcjErr.ignore(_); }
+      try { profile = JSON.parse(localStorage.getItem('tcj_profile') || 'null'); } catch(_) {}
       if (returnTo && /^[a-z0-9_\-]+\.html$/i.test(returnTo)) {
         window.location.href = returnTo;
       } else if (isAdmin) {
@@ -665,7 +664,10 @@ async function doLogin() {
       }
     }, 1000);
 
-  } catch (e) { TcjErr.warn('login.html:667', e); }
+  } catch(e) {
+    showMsg(e.message, 'error');
+    btn.disabled = false; btn.textContent = 'Sign In';
+  }
 }
 
 // ── SIGNUP ────────────────────────────────────────────────
@@ -724,7 +726,10 @@ async function doSignup() {
 
     btn.disabled = false; btn.textContent = 'Create Account';
 
-  } catch (e) { TcjErr.warn('login.html:729', e); }
+  } catch(e) {
+    showMsg(e.message, 'error');
+    btn.disabled = false; btn.textContent = 'Create Account';
+  }
 }
 
 // ── FORGOT PASSWORD ───────────────────────────────────────
@@ -752,7 +757,7 @@ async function doSendReset() {
     });
     if (!res.ok) {
       let errMsg = 'Could not send reset email. Please try again.';
-      try { const d = await res.json(); errMsg = d.error_description || d.msg || errMsg; } catch (_) { TcjErr.warn('login.html:760', _); }
+      try { const d = await res.json(); errMsg = d.error_description || d.msg || errMsg; } catch(_) {}
       throw new Error(errMsg);
     }
     showMsg('If an account exists for that email, a reset link has been sent. Check your inbox (and spam folder).', 'success');
@@ -896,7 +901,7 @@ function oauthLogin(provider) {
       note.textContent = 'Stripe is not enabled yet — contact admin for manual tier upgrade.';
       tiers.parentNode.appendChild(note);
     }
-  }).catch(function(e){ TcjErr.warn('login.html', e); });
+  }).catch(function() {});
 })();
 </script>
 </body>

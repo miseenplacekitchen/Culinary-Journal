@@ -64,7 +64,9 @@
         if (slot && slot.name) names.push({ meal: meal, name: slot.name, status: slot.status || 'planned' });
       });
       return names;
-    } catch (_) { TcjErr.warn('calendar-utils.js:67', _); }
+    } catch (_) {
+      return [];
+    }
   }
 
   global.CalendarUtils = {

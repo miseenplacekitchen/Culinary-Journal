@@ -201,7 +201,6 @@
 <script src="regional-hints.js"></script>
 <script src="pantry-utils.js"></script>
 <script src="lib/ingredient-lookup.js?v=20260630"></script>
-<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 
@@ -209,7 +208,7 @@ let _syncTimer = null;
 let glIngIndex = {};
 
 function getSession(){
-  try{ return JSON.parse(localStorage.getItem('tcj_session')||'null'); }catch (_) { TcjErr.warn('degrade', _); }
+  try{ return JSON.parse(localStorage.getItem('tcj_session')||'null'); }catch(_){return null;}
 }
 
 async function callRPC(fn, params){
@@ -261,7 +260,7 @@ async function syncFromSupabase(force){
       render();
     }
     refreshRegionalBanner();
-  } catch (_) { TcjErr.warn('degrade', _); }
+  } catch(_) {}
 }
 
 function refreshRegionalBanner(){
@@ -310,7 +309,7 @@ function getPantryIndex(){
       if (p.name) idx[p.name.toLowerCase().trim()] = p;
     });
     return idx;
-  } catch (_) { TcjErr.warn('degrade', _); }; }
+  } catch(_) { return {}; }
 }
 
 function pantryInfoFor(name){
@@ -350,13 +349,13 @@ let glStoreFilter = 'all';
 let glTrolleyOpen = false;
 
 function getLastStore(){ try{return localStorage.getItem('tcj_grocery_last_store')||'';}catch(_){return'';} }
-function setLastStore(s){ try{if(s)localStorage.setItem('tcj_grocery_last_store',s);}catch(_) { TcjErr.ignore(_); } }
+function setLastStore(s){ try{if(s)localStorage.setItem('tcj_grocery_last_store',s);}catch(_){} }
 
 function getStoreProfiles(){
   try {
     var p = JSON.parse(localStorage.getItem('tcj_store_profiles')||'[]');
     return Array.isArray(p) ? p : [];
-  } catch(e) { return TcjErr.rpcFallback('getStoreProfiles', e, []); }
+  } catch(_) { return []; }
 }
 function saveStoreProfiles(profiles){ localStorage.setItem('tcj_store_profiles', JSON.stringify(profiles)); }
 
@@ -477,7 +476,9 @@ async function submitUnknownGroceryIngredient() {
     if (res === null) throw new Error('Submission failed');
     alert('Submitted for review. Check Notifications when an admin approves it.');
     document.getElementById('gl-submit-unknown').style.display = 'none';
-  } catch (e) { TcjErr.warn('grocery.html:479', e); }
+  } catch (e) {
+    alert(e.message || 'Submission failed.');
+  }
 }
 
 async function loadGlIngredients() {
@@ -493,7 +494,7 @@ async function loadGlIngredients() {
         return '<option value="' + n.replace(/"/g, '&quot;') + '">';
       }).join('');
     }
-  } catch (_) { TcjErr.warn('grocery.html:497', _); }
+  } catch(_) {}
 }
 
 function submitAddItem(){
@@ -746,7 +747,7 @@ function exportPlainText() {
   var text = lines.join('\n');
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function() { alert('Shopping list copied to clipboard.'); })
-      .catch(function(e){ TcjErr.warn('grocery.html', e); });
+      .catch(function() { prompt('Copy this list:', text); });
   } else {
     prompt('Copy this list:', text);
   }

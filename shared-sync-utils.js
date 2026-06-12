@@ -52,13 +52,13 @@
       if (j && j.conflict) return { ok: false, conflict: true, data: j };
       if (j && j.ok === false && j.conflict) return { ok: false, conflict: true, data: j };
       if (j && (j.ok === true || j.updated_at)) return { ok: true, updated_at: j.updated_at };
-    } catch (_) { TcjErr.warn('shared-sync-utils.js:55', _); }
+    } catch (_) {}
     return { ok: res.ok };
   }
 
   function storeServerTs(key, updatedAt) {
     if (!updatedAt) return;
-    try { localStorage.setItem(key, String(new Date(updatedAt).getTime())); } catch(_) { TcjErr.ignore(_); }
+    try { localStorage.setItem(key, String(new Date(updatedAt).getTime())); } catch (_) {}
   }
 
   function getServerTs(key) {
@@ -67,11 +67,7 @@
       if (!v) return null;
       var n = parseInt(v, 10);
       return isNaN(n) ? null : new Date(n).toISOString();
-    } catch (e) {
-      if (typeof TcjErr !== 'undefined') return TcjErr.rpcFallback('getServerTs', e, null);
-      console.warn('[TCJ:getServerTs]', e);
-      return null;
-    }
+    } catch (_) { return null; }
   }
 
   global.SharedSyncUtils = {

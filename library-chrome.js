@@ -52,7 +52,7 @@
         if (sess && sess.access_token) {
           html += '<a class="lib-tab" href="' + PAGES.submit.href + '">' + PAGES.submit.emoji + ' ' + esc(PAGES.submit.label) + '</a>';
         }
-      } catch (_) { TcjErr.warn('degrade', _); }
+      } catch (_) {}
     }
 
     if (active === 'encyclopedia') {

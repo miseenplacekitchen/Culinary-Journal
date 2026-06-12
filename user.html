@@ -86,7 +86,6 @@
     </div>
   </div>
 </div>
-<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -124,7 +123,9 @@ async function fetchUserRecipes(username, reset) {
     else _userRecipes = _userRecipes.concat(rows);
     _userRecipeHasMore = rows.length >= USER_RECIPE_PAGE;
     _userRecipeOffset += rows.length;
-  } catch (_) { TcjErr.warn('user.html:126', _); }
+  } catch (_) {
+    if (reset) _userRecipes = [];
+  }
   _userRecipeLoading = false;
 }
 
@@ -193,7 +194,7 @@ function renderRecipeGrid(recipes) {
 async function loadFollowState(){
   var btn=document.getElementById('up-follow-btn');
   if(!btn||!_profileUsername) return;
-  var sess=null; try{sess=JSON.parse(localStorage.getItem('tcj_session')||'null');}catch(_) { TcjErr.ignore(_); }
+  var sess=null; try{sess=JSON.parse(localStorage.getItem('tcj_session')||'null');}catch(_){}
   var me=(JSON.parse(localStorage.getItem('tcj_profile')||'{}').username||'').toLowerCase();
   if(!sess||!sess.access_token||me===_profileUsername.toLowerCase()){ btn.style.display='none'; return; }
   btn.style.display='inline-block';

@@ -190,6 +190,7 @@ ${body}
 
     return new Response(JSON.stringify({ sent, failed }), { headers: { 'Content-Type': 'application/json' } });
 
-  } catch (e) { TcjErr.warn('send-queued-emails.js:193', e); }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 });

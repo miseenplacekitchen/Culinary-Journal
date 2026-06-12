@@ -15,7 +15,6 @@
 <script src="library-chrome.js"></script>
 <script src="library-mise.js"></script>
 <script src="lib/recipe-hero-labels.js?v=20260629"></script>
-<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <style>
 .lp-page { min-height:100vh; background:var(--bg); }
@@ -299,7 +298,7 @@ async function loadLinkedRecipes(profile) {
         </a>`).join('')}
       </div>
     </div>`;
-  } catch (_) { TcjErr.warn('library-profile.html:301', _); }
+  } catch(_) { return ''; }
 }
 
 async function init() {
@@ -350,7 +349,9 @@ async function init() {
       </div>
     `;
     LibraryMise.mountRings(document.getElementById('lp-content'));
-  } catch (e) { TcjErr.warn('library-profile.html:352', e); }
+  } catch(e) {
+    showError('Could not load this profile.');
+  }
 }
 
 function showError(msg) {

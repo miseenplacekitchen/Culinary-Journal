@@ -20,8 +20,7 @@
   <script src="lib/recipe-import-paths.js"></script>
   <script src="lib/recipe-hero-labels.js?v=20260629"></script>
   <script src="lib/ingredient-lookup.js?v=20260630"></script>
-  <script src="lib/tcj-errors.js"></script>
-<script src="nav-init.js" defer></script>
+  <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
@@ -1983,9 +1982,9 @@ window.fState = null;
 
 
 // Safe localStorage helpers — degrade gracefully in privacy modes
-function lsGet(key) { return TcjErr.lsGet(key); }
-function lsSet(key, value) { TcjErr.lsSet(key, value); }
-function lsRemove(key) { TcjErr.lsRemove(key); }
+function lsGet(key) { try { return localStorage.getItem(key); } catch(_) { return null; } }
+function lsSet(key, value) { try { localStorage.setItem(key, value); } catch(_) {} }
+function lsRemove(key) { try { localStorage.removeItem(key); } catch(_) {} }
 
 // ── LOAD REJECTED/PENDING SUBMISSION FOR EDIT (?id=) ──
 async function loadSubmissionForEdit(recipeId) {
@@ -2019,12 +2018,16 @@ async function loadSubmissionForEdit(recipeId) {
       showMsg('Reviewer feedback: ' + r.reviewer_notes, 'error');
     }
     return true;
-  } catch (e) { TcjErr.warn('submit-recipe.html:2021', e); }
+  } catch(e) {
+    console.error('Edit load error:', e);
+    showMsg('Could not load that recipe for editing.', 'error');
+    return false;
+  }
 }
 
 // ── INIT ─────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
-  session = TcjErr.parseJson(lsGet('tcj_session') || 'null', null, 'tcj_session');
+  try { session = JSON.parse(lsGet('tcj_session') || 'null'); } catch(_) { session = null; }
 
   const guard = document.getElementById('auth-guard');
   const form  = document.getElementById('main-form');
@@ -2045,7 +2048,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         `<option value="${u}">`
       ).join('');
     }
-  } catch (e) { TcjErr.warn('submit-recipe.html:2051', e); }
+  } catch(e) { console.error(e); }
   try { await loadIngredients(); } catch(e) { console.error('Ingredient load error:', e); }
   try { await loadTools(); } catch(e) { console.error('Tools load error:', e); }
   try { initSectionSorting(); } catch(e) { console.error('sort init', e); }
@@ -2065,7 +2068,11 @@ window.addEventListener('DOMContentLoaded', async () => {
       const prompt = document.getElementById('draft-restore-prompt');
       if (prompt) prompt.style.display = 'none';
     }
-  } catch (e) { TcjErr.warn('submit-recipe.html:2071', e); } finally {
+  } catch(e) {
+    console.error('Draft load error:', e);
+    addDefaultSubmitSections();
+    await maybeOfferDraftRestore();
+  } finally {
     finishDraftRestoreWindow();
   }
   try { cleanupPersonalNotesField(); } catch(e) { console.error(e); }
@@ -2103,7 +2110,7 @@ async function loadIngredients() {
       });
       if (!res.ok) {
         let detail = res.statusText;
-        try { const j = await res.json(); detail = j.message || j.hint || JSON.stringify(j); } catch (_) { TcjErr.warn('submit-recipe.html:2113', _); }
+        try { const j = await res.json(); detail = j.message || j.hint || JSON.stringify(j); } catch(_) {}
         if (status) {
           status.innerHTML = '⚠ Could not load ingredient database (HTTP ' + res.status + '): ' + detail +
             '. Ingredients can\u2019t be autocompleted or validated. Run <code>enable-ingredients-rls-read.sql</code> in Supabase to fix.';
@@ -2115,7 +2122,7 @@ async function loadIngredients() {
       allIngredients = await res.json();
     }
     // Categories are derived from the live data — fill any category dropdowns now.
-    try { populateCategorySelects(); } catch (_) { TcjErr.warn('populateCategorySelects', _); }
+    try { populateCategorySelects(); } catch(_) {}
     if (status) {
       if (allIngredients.length === 0) {
         // Edge case: bucket loaded but empty (probably a setup issue). Worth flagging.
@@ -2130,7 +2137,7 @@ async function loadIngredients() {
       }
     }
     // Re-validate any rows the parser may have populated before the DB arrived
-    try { validateAllIngredientRows(); } catch (_) { TcjErr.warn('validateAllIngredientRows', _); }
+    try { validateAllIngredientRows(); } catch(_) {}
   } catch(e) {
     if (status) {
       status.textContent = '⚠ Could not load ingredient database: ' + (e.message || e);
@@ -2169,7 +2176,7 @@ async function loadTools() {
         status.textContent = '';
       }
     }
-    try { validateAllToolRows(); } catch (_) { TcjErr.warn('validateAllToolRows', _); }
+    try { validateAllToolRows(); } catch(_) {}
   } catch (e) {
     if (status) {
       status.textContent = '⚠ Could not load Tools & Appliances library: ' + (e.message || e);
@@ -2301,7 +2308,7 @@ function setUnitValue(row, unit) {
     if (picker) picker.style.display = 'none';
     custom.style.display = '';
     custom.value = normalized;
-    try { validateUnit(custom); } catch (_) { TcjErr.warn('validateUnit', _); }
+    try { validateUnit(custom); } catch(_) {}
   }
 }
 
@@ -2337,7 +2344,7 @@ function applyIngredientDbMatch(row, opts) {
       try {
         var custom = row.querySelector('.ing-unit-custom');
         if (custom && custom.style.display !== 'none') validateUnit(custom);
-      } catch (_) { TcjErr.warn('validateUnit', _); }
+      } catch(_) {}
     }
   }
 
@@ -2709,7 +2716,7 @@ function enforceIngredientSectionCaps(input) {
   if (!input) return;
   var pos = input.selectionStart;
   input.value = input.value.toUpperCase();
-  try { input.setSelectionRange(pos, pos); } catch (_) { TcjErr.warn('degrade', _); }
+  try { input.setSelectionRange(pos, pos); } catch(_) {}
 }
 
 function autoGrowStepTextarea(ta) {
@@ -2796,13 +2803,13 @@ function addIngRow(container, qty='', unit='', name='', note='', cat='') {
   // against the DB right away so unknown ones show the orange badge.
   if (name) {
     const input = row.querySelector('.ing-name-input');
-    try { applyIngredientDbMatch(row, { parsedNote: note || '', allowFuzzy: true }); } catch (_) { TcjErr.warn('applyIngredientDbMatch', _); }
-    try { if (!findIngredientInDbExact(input.value)) validateIngredient(input); } catch(_) { TcjErr.warn('validateIngredient', _); }
+    try { applyIngredientDbMatch(row, { parsedNote: note || '', allowFuzzy: true }); } catch(_) {}
+    try { if (!findIngredientInDbExact(input.value)) validateIngredient(input); } catch(_) {}
   }
   if (unit) {
     const custom = row.querySelector('.ing-unit-custom');
     if (custom && custom.style.display !== 'none') {
-      try { validateUnit(custom); } catch (_) { TcjErr.warn('validateIngredient', _); }
+      try { validateUnit(custom); } catch(_) {}
     }
   }
 }
@@ -2927,7 +2934,7 @@ function selectIngredient(item, name) {
     }
     const form = document.getElementById('main-form');
     if (form) form.dispatchEvent(new Event('input', { bubbles: true }));
-  } catch(_) { TcjErr.warn('submit-recipe.html', _); }
+  } catch(_) {}
 }
 
 function hideAC(input) {
@@ -3070,7 +3077,7 @@ function validateTool(input) {
 
 function validateAllToolRows() {
   document.querySelectorAll('.tool-name-input').forEach(function(input) {
-    try { validateTool(input); } catch(_) { TcjErr.warn('validateTool', _); }
+    try { validateTool(input); } catch(_) {}
   });
 }
 
@@ -3154,7 +3161,7 @@ function addUtensilRow(data) {
     '<button type="button" class="btn-remove-row" onclick="this.closest(\'.utensil-row\').remove()">×</button>';
   container.appendChild(row);
   if (name) {
-    try { validateTool(row.querySelector('.tool-name-input')); } catch(_) { TcjErr.warn('validateTool', _); }
+    try { validateTool(row.querySelector('.tool-name-input')); } catch(_) {}
   }
 }
 
@@ -3376,7 +3383,7 @@ function extractArticleTextFromHtml(html) {
   var ext = (typeof RecipeImportExtract !== 'undefined' ? RecipeImportExtract : null);
   if (ext && ext.extractArticleTextFromHtml) {
     var host = '';
-    try { host = new URL(document.getElementById('source-url-input').value.trim()).hostname; } catch (_) { TcjErr.warn('degrade', _); }
+    try { host = new URL(document.getElementById('source-url-input').value.trim()).hostname; } catch (_) {}
     return ext.extractArticleTextFromHtml(html, host);
   }
   var fragment = extractArticleHtmlFromPage(html);
@@ -3399,7 +3406,7 @@ function extractPageTitleFromHtml(html) {
 }
 
 async function applyUrlImportToPaste(articleText, pageTitle, statusSuffix) {
-  try { clearDraftStorage(); } catch(_) { TcjErr.ignore(_); }
+  try { clearDraftStorage(); } catch(_) {}
   var draftPrompt = document.getElementById('draft-restore-prompt');
   if (draftPrompt) draftPrompt.style.display = 'none';
   var pasteEl = document.getElementById('paste-input');
@@ -3419,7 +3426,7 @@ async function applyUrlImportToPaste(articleText, pageTitle, statusSuffix) {
   applyBlogMetaToForm(parseBlogMetaFromLines(articleText.split('\n')));
   if (nameEl && pageTitle && !nameEl.value.trim()) {
     nameEl.value = normalizeImportPageTitle(pageTitle);
-    try { clearDraftStorage(); } catch(_) { TcjErr.ignore(_); }
+    try { clearDraftStorage(); } catch(_) {}
     var draftPrompt = document.getElementById('draft-restore-prompt');
     if (draftPrompt) draftPrompt.style.display = 'none';
   } else if (nameEl) {
@@ -3468,7 +3475,7 @@ async function importFromUrl() {
   try {
     var apiRes = await fetch('/api/fetch-recipe-url?url=' + encodeURIComponent(url), { signal: AbortSignal.timeout(14000) });
     var payload = null;
-    try { payload = await apiRes.json(); } catch (_) { TcjErr.warn('submit-recipe.html:3478', _); }
+    try { payload = await apiRes.json(); } catch (_) {}
     if (!apiRes.ok || (payload && payload.ok === false)) {
       var errMsg = (payload && payload.error) ? payload.error : ('Import failed (HTTP ' + apiRes.status + ')');
       if (payload && payload.fetchStatus === 'non-recipe-url') {
@@ -3503,10 +3510,7 @@ async function importFromUrl() {
       showImportStatus('Could not reach that social post. Use the Google AI Mode prompt below, or paste caption / recipe text manually.', false);
       return;
     }
-  } catch (e) {
-    TcjErr.warn('url-import:primary', e);
-    showImportStatus('Import request failed — trying fallback reader…', null);
-  }
+  } catch(_) {}
   if (!html) {
     try {
       showImportStatus('Primary fetch failed — trying fallback reader (may be incomplete)…', null);
@@ -3515,7 +3519,10 @@ async function importFromUrl() {
       if (!res.ok) throw new Error('Could not fetch the page.');
       var data = await res.json();
       html = data.contents || '';
-    } catch (e) { TcjErr.warn('submit-recipe.html:3522', e); }
+    } catch(e) {
+      showImportStatus((e.message || 'Import failed') + ' — paste the recipe text manually instead.', false);
+      return;
+    }
   }
   if (!html && !articleText) { showImportStatus('Empty response — paste the recipe text manually.', false); return; }
   if (!articleText && html) {
@@ -3526,7 +3533,7 @@ async function importFromUrl() {
   var ext = (typeof RecipeImportExtract !== 'undefined' ? RecipeImportExtract : null);
   if (ext && ext.buildImportPayload && html) {
     var host = '';
-    try { host = new URL(url).hostname; } catch(_) { TcjErr.ignore(_); }
+    try { host = new URL(url).hostname; } catch (_) {}
     var localPayload = ext.buildImportPayload({ html: html, host: host, url: url, recipe: recipe, pageTitle: pageTitle, fetchStatus: 'fallback' });
     localPayload.warnings = (localPayload.warnings || []).concat(['Imported via browser fallback reader']);
     await applyServerImportPayload(localPayload, url);
@@ -3564,7 +3571,7 @@ function showScanStatus(msg, ok) {
 async function cleanupOcrText(raw) {
   try {
     var sess = null;
-    try { sess = JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch(_) { TcjErr.ignore(_); }
+    try { sess = JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch(_) {}
     var auth = (sess&&sess.access_token) ? 'Bearer '+sess.access_token : 'Bearer '+SUPA_KEY;
     var res = await fetch(SUPA_URL+'/rest/v1/rpc/cleanup_recipe_ocr', {
       method:'POST',
@@ -3575,7 +3582,7 @@ async function cleanupOcrText(raw) {
       var data = await res.json();
       if (data && data.cleaned) return data.cleaned;
     }
-  } catch(_) { TcjErr.warn('submit-recipe.html', _); }
+  } catch(_) {}
   return raw.replace(/[ \t]{2,}/g,' ').replace(/\n{3,}/g,'\n\n').trim();
 }
 
@@ -4852,7 +4859,9 @@ async function scanRecipePhoto() {
     var raw = await ocrFromSource(file, 'Reading photo');
     if (!raw) { showScanStatus('No text detected — try a clearer, flatter photo.', false); return; }
     await applyScanResult(raw);
-  } catch (e) { TcjErr.warn('submit-recipe.html:4862', e); }
+  } catch(e) {
+    showScanStatus((e.message || 'Scan failed') + ' — paste text manually.', false);
+  }
 }
 
 function showImportStatus(msg, ok) {
@@ -4874,7 +4883,7 @@ function extractJsonLdRecipe(html) {
         var t = candidates[i]['@type'];
         if (t === 'Recipe' || (Array.isArray(t) && t.indexOf('Recipe') > -1)) return candidates[i];
       }
-    } catch (_) { TcjErr.warn('submit-recipe.html:4886', _); }
+    } catch(_) {}
   }
   return null;
 }
@@ -5241,15 +5250,15 @@ async function deleteAutosaveDraftFromDb() {
       '&local_key=eq.' + encodeURIComponent(DRAFT_KEY),
       { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token } }
     );
-  } catch (_) { TcjErr.warn('submit-recipe.html:5253', _); }
+  } catch(_) {}
   _draftDbId = null;
 }
 
 function performStartFresh() {
   _draftRestoring = true;
   clearTimeout(_draftSyncTimer);
-  try { lsRemove(DRAFT_BACKUP_KEY); } catch(_) { TcjErr.ignore(_); }
-  try { lsRemove(DRAFT_KEY); } catch(_) { TcjErr.ignore(_); }
+  try { lsRemove(DRAFT_BACKUP_KEY); } catch(_) {}
+  try { lsRemove(DRAFT_KEY); } catch(_) {}
   deleteAutosaveDraftFromDb();
   window._activeDraftId = null;
   hideVideoRecipeHelp();
@@ -5258,7 +5267,7 @@ function performStartFresh() {
   resetSubmitFormBasics();
   clearImportUiState();
   expandPasteSection();
-  try { window.history.replaceState({}, document.title, window.location.pathname); } catch(_) { TcjErr.ignore(_); }
+  try { window.history.replaceState({}, document.title, window.location.pathname); } catch(_) {}
 }
 
 function startFreshImport() {
@@ -6046,7 +6055,7 @@ function finalizeParsedRecipe(ctx) {
           return;
         }
         addIngRow(c, item.qty, item.unit, item.name, item.note || '', '');
-        try { applyIngredientDbMatch(c.lastElementChild, { parsedNote: item.note || '', allowFuzzy: true }); } catch (_) { TcjErr.ignore(_); }
+        try { applyIngredientDbMatch(c.lastElementChild, { parsedNote: item.note || '', allowFuzzy: true }); } catch(_) {}
         ingCount++;
       });
     });
@@ -7376,7 +7385,7 @@ async function fetchTaxonomy() {
       body: JSON.stringify({ p_category: null })
     });
     if (res.ok) _taxonomyCache = await res.json() || [];
-  } catch (_) { TcjErr.warn('submit-recipe.html:7388', _); }
+  } catch(_) { _taxonomyCache = []; }
   return _taxonomyCache || [];
 }
 
@@ -8028,7 +8037,7 @@ function backupDraftBeforeWrite(key) {
   try {
     var parsed = JSON.parse(current);
     if (!draftHasContent(parsed)) return;
-  } catch (_) { TcjErr.warn('submit-recipe.html:8040', _); }
+  } catch(_) { return; }
   lsSet(DRAFT_BACKUP_KEY, current);
 }
 
@@ -8052,7 +8061,7 @@ async function loadNamedDraftFromDbByLocalKey(localId) {
     lsSet('tcj_draft_' + localId, JSON.stringify(rows[0].draft_data));
     restoreDraft(JSON.stringify(rows[0].draft_data));
     return true;
-  } catch(e) { TcjErr.warn('restoreDraftFromCloud', e); return false; }
+  } catch(_) { return false; }
 }
 
 async function restoreDraftById(draftId) {
@@ -8089,7 +8098,8 @@ async function bootstrapDraftOnLoad() {
       try {
         const d = JSON.parse(lsGet('tcj_draft_' + draftId) || 'null');
         return { loaded: true, name: (d && d.recipe_name) || 'Untitled', fromNamedDraft: true };
-      } catch (_) { TcjErr.warn('submit-recipe.html:8101', _); };
+      } catch(_) {
+        return { loaded: true, name: 'Untitled', fromNamedDraft: true };
       }
     }
   }
@@ -8199,13 +8209,13 @@ function restoreDraft(raw) {
             if (d.origin_country && typeof pickCountry === 'function') {
               pickCountry(d.origin_country);
               setTimeout(function() {
-                try { if (d.origin_state && typeof pickState === 'function') pickState(d.origin_state); } catch (_) { TcjErr.warn('submit-recipe.html:8212', _); }
+                try { if (d.origin_state && typeof pickState === 'function') pickState(d.origin_state); } catch(_) {}
               }, 150);
             }
-          } catch(_) { TcjErr.warn('submit-recipe.html', _); }
+          } catch(_) {}
         }, 150);
       }
-    } catch(_) { TcjErr.warn('submit-recipe.html', _); }
+    } catch(_) {}
   }, 300);
 
   // Tags
@@ -8233,7 +8243,7 @@ function restoreDraft(raw) {
           });
         });
       }
-    } catch(_) { TcjErr.warn('submit-recipe.html', _); }
+    } catch(_) {}
   } else if (d.image_url) {
     window.uploadedImageUrl = d.image_url;
   }
@@ -8276,7 +8286,7 @@ function restoreDraft(raw) {
             if (rows && !rows.querySelector('.ing-row')) addIngRow(rows);
           });
         }
-      } catch (e) { TcjErr.warn('submit-recipe.html:8289', e); }
+      } catch(e) { console.warn('Draft restore - ingredients:', e); }
     }, 400);
   } else if (draftHasContent(d)) {
     setTimeout(function() { addDefaultSubmitSections(); }, 400);
@@ -8301,7 +8311,7 @@ function restoreDraft(raw) {
             }
           });
         }
-      } catch (e) { TcjErr.warn('submit-recipe.html:8314', e); }
+      } catch(e) { console.warn('Draft restore - method:', e); }
       document.querySelectorAll('.step-input').forEach(function(ta) { autoGrowStepTextarea(ta); });
     }, 400);
   }
@@ -8382,7 +8392,7 @@ async function syncDraftToDb(force) {
         if (rows && rows[0]) _draftDbId = rows[0].id;
       }
     }
-  } catch (_) { TcjErr.warn('submit-recipe.html:8395', _); }   // silent — local save already done
+  } catch(_) {}   // silent — local save already done
 }
 
 function draftHasContent(d) {
@@ -8402,7 +8412,7 @@ function draftHasContent(d) {
 }
 
 function clearDraftStorage() {
-  try { lsRemove(DRAFT_KEY); } catch (_) { TcjErr.warn('clearDraftStorage', _); }
+  try { lsRemove(DRAFT_KEY); } catch(_) {}
   _draftDbId = null;
   window._activeDraftId = null;
   if (typeof TcjImportAudit !== 'undefined') TcjImportAudit.reset();
@@ -8421,7 +8431,7 @@ async function maybeOfferDraftRestore() {
       _offeredDraftId = index[0].id;
       draftName = index[0].recipe_name || 'Untitled';
     }
-  } catch (_) { TcjErr.warn('submit-recipe.html:8434', _); }
+  } catch(_) {}
 
   if (!_offeredDraftId && session && session.access_token) {
     try {
@@ -8443,7 +8453,7 @@ async function maybeOfferDraftRestore() {
           }
         }
       }
-    } catch (_) { TcjErr.warn('submit-recipe.html:8456', _); }
+    } catch(_) {}
   }
 
   if (!_offeredDraftId || !draftName) return;
@@ -8501,7 +8511,7 @@ function resetSubmitFormBasics() {
     if (pasteSec) pasteSec.classList.remove('collapsed');
     hideVideoRecipeHelp();
     clearImportUiState();
-  } catch(_) { TcjErr.warn('submit-recipe.html', _); }
+  } catch(_) {}
   setTimeout(function() { _draftRestoring = false; }, 600);
 }
 
@@ -8519,7 +8529,7 @@ async function loadFromDb(draftId) {
     _draftDbId = rows[0].id;
     restoreDraft(JSON.stringify(rows[0].draft_data));
     return true;
-  } catch(e) { TcjErr.warn('restoreDraftById:cloud', e); return false; }
+  } catch(_) { return false; }
 }
 
 async function loadDbDraftId(localId) {
@@ -8534,7 +8544,7 @@ async function loadDbDraftId(localId) {
       const rows = await res.json();
       if (rows && rows[0]) _draftDbId = rows[0].id;
     }
-  } catch(_) { TcjErr.warn('submit-recipe.html', _); }
+  } catch(_) {}
 }
 
 
@@ -8555,7 +8565,7 @@ async function refreshSessionIfNeeded() {
     session = data;
     lsSet('tcj_session', JSON.stringify(session));
     return true;
-  } catch(e) { TcjErr.warn('refreshSessionIfNeeded', e); return false; }
+  } catch(_) { return true; }
 }
 
 // ── SUBMIT RECIPE ─────────────────────────────────────────────────────────────
@@ -8674,7 +8684,7 @@ async function submitRecipe() {
           let index = JSON.parse(lsGet(DRAFTS_INDEX_KEY) || '[]');
           index = index.filter(function(d) { return d.id !== window._activeDraftId; });
           lsSet(DRAFTS_INDEX_KEY, JSON.stringify(index));
-        } catch (_) { TcjErr.warn('submit-recipe.html:8687', _); }
+        } catch(_) {}
         // Delete from Supabase recipe_drafts
         if (_draftDbId && session && session.access_token) {
           fetch(SUPABASE_URL + '/rest/v1/recipe_drafts?id=eq.' + _draftDbId, {
@@ -8683,7 +8693,7 @@ async function submitRecipe() {
               'apikey': SUPABASE_KEY,
               'Authorization': 'Bearer ' + session.access_token
             }
-          }).catch(function(e){ TcjErr.warn('submit-recipe.html', e); });
+          }).catch(function(){});
         }
         window._activeDraftId = null;
         _draftDbId = null;
@@ -8694,7 +8704,7 @@ async function submitRecipe() {
     } else {
       const errText = await res.text().catch(() => '');
       let errMsg = 'Submission failed';
-      try { errMsg = JSON.parse(errText).message || errMsg; } catch (_) { TcjErr.warn('submit-recipe.html:8707', _); }
+      try { errMsg = JSON.parse(errText).message || errMsg; } catch(_) {}
       throw new Error(res.status + ': ' + errMsg);
     }
   } catch(e) {
@@ -8780,7 +8790,7 @@ function getImgRingHandleText() {
   var sourceType = document.querySelector('input[name="source-type"]:checked');
   var credit = (document.getElementById('credit-handle') && document.getElementById('credit-handle').value.trim()) || '';
   var profile = null;
-  try { profile = JSON.parse(lsGet('tcj_profile') || 'null'); } catch(_) { TcjErr.ignore(_); }
+  try { profile = JSON.parse(lsGet('tcj_profile') || 'null'); } catch(_) {}
   if (credit && sourceType && sourceType.value !== 'Original') {
     return '@' + credit.replace(/^@/, '');
   }
@@ -8872,7 +8882,7 @@ function reviveImgBlobUrl(sourceUrl) {
   return fetch(sourceUrl).then(function(res) { return res.blob(); }).then(function(blob) {
     window._imgBlobUrl = URL.createObjectURL(blob);
     return window._imgBlobUrl;
-  }).catch(function(e){ TcjErr.warn('submit-recipe.html', e); });
+  }).catch(function() { return ''; });
 }
 
 function showImagePreview(url, opts) {
@@ -8905,7 +8915,10 @@ function showImagePreview(url, opts) {
       img.decode().then(function() {
         layoutPreviewImage();
         updateImgRingHandle();
-      }).catch(function(e){ TcjErr.warn('submit-recipe.html', e); });
+      }).catch(function() {
+        layoutPreviewImage();
+        updateImgRingHandle();
+      });
     } else {
       layoutPreviewImage();
       updateImgRingHandle();
@@ -8931,7 +8944,7 @@ function handleImageUpload(input) {
   if (!file.type.startsWith('image/')) { showMsg('Please upload an image file.', 'error'); return; }
   if (file.size > 10 * 1024 * 1024) { showMsg('Image must be under 10 MB.', 'error'); return; }
   if (window._imgBlobUrl) {
-    try { URL.revokeObjectURL(window._imgBlobUrl); } catch (_) { TcjErr.warn('degrade', _); }
+    try { URL.revokeObjectURL(window._imgBlobUrl); } catch(_) {}
   }
   window._imgNativeFile = file;
   window._imgBlobUrl = URL.createObjectURL(file);
@@ -8959,7 +8972,7 @@ function removeImage() {
   window._imgSourceDataUrl = '';
   window._imgNativeFile = null;
   if (window._imgBlobUrl) {
-    try { URL.revokeObjectURL(window._imgBlobUrl); } catch(_) { TcjErr.ignore(_); }
+    try { URL.revokeObjectURL(window._imgBlobUrl); } catch(_) {}
     window._imgBlobUrl = '';
   }
   resetImgCrop();
@@ -9019,7 +9032,9 @@ function bakeRecipeImageCrop() {
       try {
         ctx.drawImage(drawable, drawX, drawY, drawW, drawH);
         resolve(canvas.toDataURL('image/jpeg', 0.97));
-      } catch (_) { TcjErr.warn('submit-recipe.html:9035', _); }
+      } catch(_) {
+        resolve(window.uploadedImageUrl || '');
+      }
     }
     function bakeFromPreviewImg() {
       var img = document.getElementById('img-preview-img');
@@ -9142,7 +9157,7 @@ function checkDuplicateName() {
         const rows = await res.json();
         warn.style.display = rows && rows.length ? 'block' : 'none';
       }
-    } catch(_) { TcjErr.warn('submit-recipe.html', _); }
+    } catch(_) {}
   }, 800);
 }
 
@@ -9505,22 +9520,17 @@ async function saveNamedDraft(showToast) {
     if (existing > -1) index[existing] = entry;
     else index.unshift(entry);
     lsSet(DRAFTS_INDEX_KEY, JSON.stringify(index));
-  } catch(_) { TcjErr.warn('submit-recipe.html', _); }
+  } catch(_) {}
 
   // Sync to Supabase — awaited so draft is saved before redirect
-  var cloudOk = true;
-  try { await syncDraftToDb(true); } catch(e) {
-    cloudOk = false;
-    TcjErr.warn('saveNamedDraft:sync', e);
-    showMsg('Draft saved locally but cloud sync failed — open Drafts to retry.', 'warn');
-  }
+  try { await syncDraftToDb(true); } catch(_) {}
 
   // Update URL to include draft ID (so refresh loads the right draft)
   const url = new URL(window.location.href);
   url.searchParams.set('draft', draftId);
   window.history.replaceState({}, '', url.toString());
 
-  if (showToast && cloudOk) {
+  if (showToast) {
     showMsg('\u2713 Draft saved. Returning to your drafts…', 'success');
     setTimeout(function() { window.location.href = 'draft-recipes.html'; }, 1200);
   }
@@ -9529,7 +9539,7 @@ async function saveNamedDraft(showToast) {
 // ── CANCEL SUBMISSION ──────────────────────────────────────────────────────
 async function cancelSubmission() {
   if (confirm('Save this recipe as a draft before leaving?')) {
-    try { await saveNamedDraft(false); } catch(_) { TcjErr.warn('submit-recipe.html', _); }
+    try { await saveNamedDraft(false); } catch(_) {}
   }
   window.location.href = 'draft-recipes.html';
 }

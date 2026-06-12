@@ -257,7 +257,6 @@
 </div>
 </div>
 
-<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 LibraryChrome.render({ root: 'lib-chrome', active: 'baby' });
@@ -297,7 +296,9 @@ async function loadBabyRecipes(reset) {
     babyHasMore = list.length >= BABY_PAGE;
     babyOffset += list.length;
     filterAge(currentAgeFilter);
-  } catch (_) { TcjErr.warn('baby.html:299', _); }
+  } catch(_) {
+    if (reset) renderBabyRecipes([]);
+  }
   babyLoading = false;
   updateBabyLoadMore();
 }

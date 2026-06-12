@@ -114,7 +114,7 @@ async function loadUMAnalytics(container) {
       });
       tbl.appendChild(tbody);tblWrap.appendChild(tbl);inactCard.appendChild(tblWrap);container.appendChild(inactCard);
     }
-  }catch (e) { TcjErr.warn('dashboard-analytics.js:117', e); }
+  }catch(e){container.innerHTML='<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: '+esc(e.message)+'</div>';}
 }
 
 // UM Audit Trail
@@ -137,7 +137,7 @@ function switchFinanceTab(tab) {
     else if (tab === 'fi-pricing')  buildFiPricing(container);
     else if (tab === 'fi-history')    buildFiHistory(container);
     else if (tab === 'fi-interface') buildFiInterface(container);
-  } catch (e) { TcjErr.warn('dashboard-analytics.js:140', e); }
+  } catch(e) { alert('Finance tab error: ' + e.message); }
 }
 
 function renderBarChart(containerId, data, colorVar) {

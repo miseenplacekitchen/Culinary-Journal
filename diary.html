@@ -416,7 +416,6 @@
 </div>
 
 <script src="calendar-utils.js"></script>
-<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -442,7 +441,7 @@ const MP_MINI_DOW = ['M','T','W','T','F','S','S'];
 const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // ── Helpers ─────────────────────────────────────────────────────
-function getSession(){ try{return JSON.parse(localStorage.getItem('tcj_session')||'null');}catch (_) { TcjErr.warn('degrade', _); } }
+function getSession(){ try{return JSON.parse(localStorage.getItem('tcj_session')||'null');}catch(_){return null;} }
 async function rpc(fn,params){
   const s = getSession();
   const h = {'apikey':SUPA_KEY,'Content-Type':'application/json'};
@@ -451,7 +450,7 @@ async function rpc(fn,params){
   if(!r.ok){
     const txt = await r.text().catch(()=> '');
     let msg = String(r.status);
-    try { const e = JSON.parse(txt); msg = e.message || e.error || msg; } catch (_) { TcjErr.warn('diary.html:453', _); }
+    try { const e = JSON.parse(txt); msg = e.message || e.error || msg; } catch(_){ if(txt) msg = txt; }
     throw new Error(msg);
   }
   const t = await r.text();
@@ -672,7 +671,7 @@ function entriesByDateMap() {
 
 function setDiaryView(mode) {
   diaryView = mode === 'month' ? 'month' : 'list';
-  try { localStorage.setItem('tcj_diary_view', diaryView); } catch (_) { TcjErr.warn('degrade', _); }
+  try { localStorage.setItem('tcj_diary_view', diaryView); } catch (_) {}
   document.getElementById('dj-list-view').classList.toggle('hidden', diaryView === 'month');
   document.getElementById('dj-month-view').classList.toggle('active', diaryView === 'month');
   document.getElementById('dj-btn-list').classList.toggle('active', diaryView === 'list');
@@ -848,7 +847,10 @@ async function loadEntries(){
       const target = allEntries.find(function(e){ return String(e.id) === editId; });
       if (target) { viewingEntry = target; editFromView(); }
     }
-  }catch (e) { TcjErr.warn('diary.html:850', e); }
+  }catch(e){
+    renderEntries([]);
+    if (diaryView === 'month') buildMonthPlanner();
+  }
 }
 
 // ── Filter & render ──────────────────────────────────────────────
@@ -865,7 +867,7 @@ function handleSearch(q){
     buildCalendar();
     buildMonthPlanner();
     applyFilters();
-  }).catch(function(e){ TcjErr.warn('diary.html', e); });
+  }).catch(()=>{});
 }
 function applyFilters(){
   filteredEntries = allEntries.filter(e=>{
@@ -1020,7 +1022,7 @@ async function deleteViewingEntry(){
   try {
     var saved = localStorage.getItem('tcj_diary_view');
     if (saved === 'month' || saved === 'list') diaryView = saved;
-  } catch(_) { TcjErr.warn('diary.html', _); }
+  } catch (_) {}
   buildMoodPicker();
   setDiaryView(diaryView);
   loadEntries();

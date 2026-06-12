@@ -35,7 +35,7 @@
     opts = opts || {};
     var weekKey = opts.weekKey || currentWeekKey();
     var plan = {};
-    try { plan = JSON.parse(localStorage.getItem(weekKey) || '{}'); } catch (_) { TcjErr.warn('degrade', _); }
+    try { plan = JSON.parse(localStorage.getItem(weekKey) || '{}'); } catch (_) {}
     var meal = opts.meal || 'dinner';
     var startDay = opts.startDay || 'Sat';
     var startIdx = DAY_ORDER.indexOf(startDay);
@@ -87,7 +87,7 @@
           })
         });
       }
-    } catch (_) { TcjErr.warn('event-planner-utils.js:90', _); }
+    } catch (_) {}
 
     return added;
   }

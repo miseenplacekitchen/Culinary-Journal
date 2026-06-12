@@ -523,7 +523,6 @@
 </div>
 </div>
 
-<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script src="allergy-engine.js"></script>
 <script>
@@ -570,7 +569,7 @@ async function psLoadPremiumGate() {
         ? 'Premium theme selected — included free during soft launch (toggle in Site Management → Features).'
         : 'Premium layouts require a paid plan when gating is enabled in Site Management.';
     }
-  } catch (_) { TcjErr.warn('print-studio.html:572', _); }
+  } catch (_) {}
 }
 
 function setLayout(layout, btn) {
@@ -581,7 +580,7 @@ function setLayout(layout, btn) {
   currentLayout = layout;
   document.querySelectorAll('.ps-opt-btn[data-layout]').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  try { localStorage.setItem('tcj_print_layout', layout); } catch(_) { TcjErr.ignore(_); }
+  try { localStorage.setItem('tcj_print_layout', layout); } catch(_){}
   var note = document.getElementById('ps-premium-note');
   if (note) note.style.display = PS_PREMIUM_LAYOUTS[layout] ? 'block' : 'none';
   buildCards();
@@ -591,7 +590,7 @@ function setSize(size, btn) {
   currentSize = size;
   document.querySelectorAll('.ps-opt-btn[data-size]').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  try { localStorage.setItem('tcj_print_card_size', size); } catch(_) { TcjErr.ignore(_); }
+  try { localStorage.setItem('tcj_print_card_size', size); } catch(_){}
   buildCards();
 }
 
@@ -637,7 +636,7 @@ function setCardView(mode, btn) {
   var bookletBtn = document.getElementById('ps-view-booklet');
   if (bookletBtn) bookletBtn.classList.toggle('active', mode === 'booklet');
   document.body.classList.toggle('ps-print-booklet', mode === 'booklet');
-  try { localStorage.setItem('tcj_print_card_view', mode); } catch(_) { TcjErr.ignore(_); }
+  try { localStorage.setItem('tcj_print_card_view', mode); } catch(_) {}
   updateSwipeBar();
   if (currentRecipe || currentRecipes.length) applyBookletLayout();
 }
@@ -799,7 +798,8 @@ async function psPrefetchMiseLinks(recipes) {
     });
     const data = await res.json();
     psMiseLinks = (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
-  } catch (_) { TcjErr.warn('print-studio.html:801', _); };
+  } catch (_) {
+    psMiseLinks = {};
   }
 }
 
@@ -936,7 +936,7 @@ function renderPrintQRCodes(recipe, showQr) {
     el.innerHTML = '';
     try {
       new QRCode(el, { text: url, width: 52, height: 52, colorDark: '#1a1a1a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
-    } catch (_) { TcjErr.warn('print-studio.html:939', _); }
+    } catch(_){}
   });
 }
 
@@ -1203,7 +1203,7 @@ function onPsCustomBgFile(input) {
   var reader = new FileReader();
   reader.onload = function() {
     psCustomBg = reader.result;
-    try { localStorage.setItem('tcj_print_custom_bg', psCustomBg); } catch (_) { TcjErr.warn('degrade', _); }
+    try { localStorage.setItem('tcj_print_custom_bg', psCustomBg); } catch (_) { alert('Image too large for browser storage — try a smaller file.'); return; }
     applyPsCustomBg();
   };
   reader.readAsDataURL(file);
@@ -1211,7 +1211,7 @@ function onPsCustomBgFile(input) {
 
 function clearPsCustomBg() {
   psCustomBg = '';
-  try { localStorage.removeItem('tcj_print_custom_bg'); } catch(_) { TcjErr.ignore(_); }
+  try { localStorage.removeItem('tcj_print_custom_bg'); } catch (_) {}
   var fi = document.getElementById('ps-custom-bg-file');
   if (fi) fi.value = '';
   applyPsCustomBg();
@@ -1221,14 +1221,14 @@ function loadRecipe(recipe) {
   currentRecipe = recipe;
   currentRecipes = recipe ? [recipe] : [];
   updateRecipeLabel();
-  buildCards().catch(function(e){ TcjErr.warn('print-studio.html', e); });
+  buildCards().catch(function () {});
 }
 
 function loadRecipeBatch(recipes) {
   currentRecipes = (recipes || []).filter(Boolean);
   currentRecipe = currentRecipes[0] || null;
   updateRecipeLabel();
-  buildCards().catch(function(e){ TcjErr.warn('print-studio.html', e); });
+  buildCards().catch(function () {});
 }
 
 function updateRecipeLabel() {
@@ -1251,7 +1251,7 @@ function toggleKitchenMode() {
   document.body.classList.toggle('ps-kitchen-mode');
   var btn = document.getElementById('ps-kitchen-btn');
   if (btn) btn.classList.toggle('active', document.body.classList.contains('ps-kitchen-mode'));
-  try { localStorage.setItem('tcj_print_kitchen', document.body.classList.contains('ps-kitchen-mode') ? '1' : '0'); } catch(_) { TcjErr.ignore(_); }
+  try { localStorage.setItem('tcj_print_kitchen', document.body.classList.contains('ps-kitchen-mode') ? '1' : '0'); } catch(_){}
   buildCards();
 }
 
@@ -1293,7 +1293,7 @@ function copyPrintText() {
   });
   var text = lines.join('\n\n');
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(function(){ alert('Copied ' + psLastCardDefs.length + ' cards to clipboard.'); }).catch(function(e){ TcjErr.warn('print-studio.html', e); });
+    navigator.clipboard.writeText(text).then(function(){ alert('Copied ' + psLastCardDefs.length + ' cards to clipboard.'); }).catch(function(){ prompt('Copy:', text); });
   } else {
     prompt('Copy:', text);
   }
@@ -1308,7 +1308,7 @@ function savePrintProfile() {
   try {
     localStorage.setItem('tcj_print_profile', JSON.stringify(profile));
     alert('Print setup saved on this device.');
-  } catch (e) { TcjErr.warn('degrade', e); }
+  } catch(e) { alert('Could not save: ' + e.message); }
 }
 
 function restorePrintProfile() {
@@ -1336,7 +1336,7 @@ function restorePrintProfile() {
     }
     buildCards();
     alert('Restored your saved print setup.');
-  } catch (e) { TcjErr.warn('print-studio.html:1339', e); }
+  } catch(e) { alert('Could not restore: ' + e.message); }
 }
 
 async function psLoadFamilyProfiles() {
@@ -1353,7 +1353,7 @@ async function psLoadFamilyProfiles() {
     if (!res.ok) return;
     var data = await res.json();
     if (Array.isArray(data)) psFamilyProfiles = data;
-  } catch (_) { TcjErr.warn('print-studio.html:1356', _); }
+  } catch(_){}
 }
 
 async function psFetchRecipesByIds(ids) {
@@ -1395,7 +1395,7 @@ function restorePrintPrefs() {
       var kb = document.getElementById('ps-kitchen-btn');
       if (kb) kb.classList.add('active');
     }
-  } catch (_) { TcjErr.warn('degrade', _); }
+  } catch(_){}
 }
 
 // Load recipe from URL params or sessionStorage
@@ -1416,11 +1416,11 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       var parsed = JSON.parse(storedBatch);
       if (Array.isArray(parsed) && parsed.length) { loadRecipeBatch(parsed); return; }
-    } catch (_) { TcjErr.warn('print-studio.html:1419', _); }
+    } catch(_){}
   }
   var stored = sessionStorage.getItem('tcj_print_recipe');
   if (stored) {
-    try { loadRecipe(JSON.parse(stored)); return; } catch(_) { TcjErr.warn('print-studio.html', _); }
+    try { loadRecipe(JSON.parse(stored)); return; } catch(_){}
   }
   if (batch) {
     var ids = batch.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
@@ -1432,7 +1432,7 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch(window.SUPA_URL + '/rest/v1/submitted_recipes?id=eq.'+id+'&select=*',
       {headers:{'apikey':KEY}})
       .then(r=>r.json()).then(data=>{ if(data[0]) loadRecipe(data[0]); })
-      .catch(function(e){ TcjErr.warn('print-studio.html', e); });
+      .catch(()=>{});
   }
   document.addEventListener('keydown', function(e) {
     if (currentCardView !== 'swipe') return;
@@ -1533,7 +1533,7 @@ async function submitOrder() {
     var queue = JSON.parse(localStorage.getItem('tcj_print_order_queue') || '[]');
     queue.push({ ts: Date.now(), payload: payload });
     localStorage.setItem('tcj_print_order_queue', JSON.stringify(queue.slice(-30)));
-  } catch(_) { TcjErr.warn('print-studio.html', _); }
+  } catch(_){}
   try {
     var stored = localStorage.getItem('tcj_session');
     if (stored) {
@@ -1546,7 +1546,7 @@ async function submitOrder() {
         });
       }
     }
-  } catch (_) { TcjErr.warn('print-studio.html:1549', _); }
+  } catch(_){}
   var form = document.getElementById('po-form-wrap');
   var conf = document.getElementById('po-confirm');
   if (form) form.style.display = 'none';

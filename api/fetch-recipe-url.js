@@ -72,7 +72,7 @@ async function tryInstagramOembed(url) {
       return { caption: title, platform: 'Instagram', hasRecipeStructure: looksLikeStructuredRecipe(title) };
     }
     if (author) return { caption: 'Post by ' + author, platform: 'Instagram', hasRecipeStructure: false };
-  } catch (_) { TcjErr.ignore(_); }
+  } catch (_) { /* oembed optional */ }
   return null;
 }
 

@@ -13,8 +13,7 @@
   <script src="theme-init.js"></script>
   <script src="supabase-config.js"></script>
   <script src="page-guard.js"></script>
-  <script src="lib/tcj-errors.js"></script>
-<script src="nav-init.js"></script>
+  <script src="nav-init.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); }
     .hh-wrap { max-width:720px; margin:0 auto; padding:32px 20px 80px; }
@@ -58,7 +57,7 @@
 
 <script>
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function getSession(){ try{ return JSON.parse(localStorage.getItem('tcj_session')||'null'); }catch (_) { TcjErr.warn('degrade', _); } }
+function getSession(){ try{ return JSON.parse(localStorage.getItem('tcj_session')||'null'); }catch(_){ return null; } }
 
 async function callRPC(fn, params){
   var sess = getSession();
@@ -105,7 +104,7 @@ async function loadHousehold(){
         acc.addEventListener('click', async function(){
           acc.disabled = true;
           try { await callRPC('accept_household_invite',{p_invite_id:inv.id}); loadHousehold(); }
-          catch (e) { TcjErr.warn('household.html:107', e); }
+          catch(e){ alert(e.message); acc.disabled=false; }
         });
         var dec = document.createElement('button');
         dec.className = 'hh-btn hh-btn-ghost'; dec.textContent = 'Decline';

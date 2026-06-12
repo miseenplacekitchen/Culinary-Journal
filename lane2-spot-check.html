@@ -70,7 +70,7 @@
 </div>
 <script>
 var KEY = 'tcj_lane2_spotcheck';
-function loadState() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (_) { TcjErr.warn('degrade', _); }; } }
+function loadState() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (_) { return {}; } }
 function saveState(s) { localStorage.setItem(KEY, JSON.stringify(s)); }
 function render() {
   var state = loadState();
@@ -89,7 +89,6 @@ function render() {
 }
 render();
 </script>
-<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 </body>
 </html>
