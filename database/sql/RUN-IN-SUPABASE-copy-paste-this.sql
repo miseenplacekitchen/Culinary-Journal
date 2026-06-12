@@ -788,42 +788,7 @@ END;
 $$;
 GRANT EXECUTE ON FUNCTION public.admin_get_stats() TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.admin_review_recipe(
-  p_id uuid, p_status text, p_notes text DEFAULT ''
-)
-RETURNS void
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-DECLARE
-  v_user_id uuid;
-  v_name    text;
-  v_msg     text;
-BEGIN
-  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
-  IF p_status NOT IN ('approved','rejected','pending') THEN
-    RAISE EXCEPTION 'Invalid status: %', p_status;
-  END IF;
-  SELECT user_id, recipe_name INTO v_user_id, v_name
-    FROM public.submitted_recipes WHERE id = p_id;
-  UPDATE public.submitted_recipes
-     SET status = p_status, reviewer_notes = p_notes, reviewed_at = now()
-   WHERE id = p_id;
-  IF v_user_id IS NOT NULL AND p_status IN ('approved', 'rejected') THEN
-    v_msg := CASE p_status
-      WHEN 'approved' THEN 'Your recipe "' || COALESCE(v_name, 'submission') || '" was approved and is now live!'
-      ELSE 'Your recipe "' || COALESCE(v_name, 'submission') || '" needs updates.'
-           || CASE WHEN COALESCE(p_notes, '') <> '' THEN ' ' || p_notes ELSE '' END
-    END;
-    INSERT INTO public.notifications (user_id, type, recipe_id, recipe_name, message)
-    VALUES (
-      v_user_id,
-      CASE WHEN p_status = 'approved' THEN 'recipe_approved' ELSE 'recipe_rejected' END,
-      p_id, v_name, v_msg
-    );
-  END IF;
-END;
-$$;
-GRANT EXECUTE ON FUNCTION public.admin_review_recipe(uuid, text, text) TO authenticated;
+-- admin_review_recipe: single definition in fix-phase2-batch above (deduped 13 Jun 2026)
 
 CREATE OR REPLACE FUNCTION public.admin_bulk_update_field(
   p_ids int[], p_field text, p_value text
@@ -3020,17 +2985,21 @@ BEGIN
 
   SELECT count(DISTINCT x.ing_name)::int INTO v_orphan_recipe_names
   FROM (
-    SELECT lower(btrim(item->>'ingredient')) AS ing_name
+    SELECT lower(btrim(COALESCE(item->>'ingredient', item->>'name', ''))) AS ing_name
     FROM submitted_recipes sr,
          jsonb_array_elements(COALESCE(sr.ingredients, '[]'::jsonb)) sec,
          jsonb_array_elements(COALESCE(sec->'items', '[]'::jsonb)) item
     WHERE sr.status = 'approved'
-      AND btrim(COALESCE(item->>'ingredient', '')) <> ''
+      AND btrim(COALESCE(item->>'ingredient', item->>'name', '')) <> ''
   ) x
   WHERE NOT EXISTS (
     SELECT 1 FROM ingredients i
     WHERE lower(btrim(i."Ingredient Name")) = x.ing_name
-       OR lower(btrim(COALESCE(i."Also Known As", ''))) = x.ing_name
+       OR EXISTS (
+         SELECT 1
+         FROM unnest(string_to_array(lower(COALESCE(i."Also Known As", '')), ',')) aka(part)
+         WHERE btrim(aka.part) = x.ing_name
+       )
   );
 
   RETURN jsonb_build_object(
@@ -3119,17 +3088,21 @@ BEGIN
 
   SELECT count(DISTINCT x.ing_name)::int INTO v_orphan_recipe_names
   FROM (
-    SELECT lower(btrim(item->>'ingredient')) AS ing_name
+    SELECT lower(btrim(COALESCE(item->>'ingredient', item->>'name', ''))) AS ing_name
     FROM submitted_recipes sr,
          jsonb_array_elements(COALESCE(sr.ingredients, '[]'::jsonb)) sec,
          jsonb_array_elements(COALESCE(sec->'items', '[]'::jsonb)) item
     WHERE sr.status = 'approved'
-      AND btrim(COALESCE(item->>'ingredient', '')) <> ''
+      AND btrim(COALESCE(item->>'ingredient', item->>'name', '')) <> ''
   ) x
   WHERE NOT EXISTS (
     SELECT 1 FROM ingredients i
     WHERE lower(btrim(i."Ingredient Name")) = x.ing_name
-       OR lower(btrim(COALESCE(i."Also Known As", ''))) = x.ing_name
+       OR EXISTS (
+         SELECT 1
+         FROM unnest(string_to_array(lower(COALESCE(i."Also Known As", '')), ',')) aka(part)
+         WHERE btrim(aka.part) = x.ing_name
+       )
   );
 
   RETURN jsonb_build_object(
@@ -3948,17 +3921,21 @@ BEGIN
 
   SELECT count(DISTINCT x.ing_name)::int INTO v_orphan_recipe_names
   FROM (
-    SELECT lower(btrim(item->>'ingredient')) AS ing_name
+    SELECT lower(btrim(COALESCE(item->>'ingredient', item->>'name', ''))) AS ing_name
     FROM submitted_recipes sr,
          jsonb_array_elements(COALESCE(sr.ingredients, '[]'::jsonb)) sec,
          jsonb_array_elements(COALESCE(sec->'items', '[]'::jsonb)) item
     WHERE sr.status = 'approved'
-      AND btrim(COALESCE(item->>'ingredient', '')) <> ''
+      AND btrim(COALESCE(item->>'ingredient', item->>'name', '')) <> ''
   ) x
   WHERE NOT EXISTS (
     SELECT 1 FROM ingredients i
     WHERE lower(btrim(i."Ingredient Name")) = x.ing_name
-       OR lower(btrim(COALESCE(i."Also Known As", ''))) = x.ing_name
+       OR EXISTS (
+         SELECT 1
+         FROM unnest(string_to_array(lower(COALESCE(i."Also Known As", '')), ',')) aka(part)
+         WHERE btrim(aka.part) = x.ing_name
+       )
   );
 
   RETURN jsonb_build_object(
@@ -4043,17 +4020,21 @@ BEGIN
 
   SELECT count(DISTINCT x.ing_name)::int INTO v_orphan_recipe_names
   FROM (
-    SELECT lower(btrim(item->>'ingredient')) AS ing_name
+    SELECT lower(btrim(COALESCE(item->>'ingredient', item->>'name', ''))) AS ing_name
     FROM submitted_recipes sr,
          jsonb_array_elements(COALESCE(sr.ingredients, '[]'::jsonb)) sec,
          jsonb_array_elements(COALESCE(sec->'items', '[]'::jsonb)) item
     WHERE sr.status = 'approved'
-      AND btrim(COALESCE(item->>'ingredient', '')) <> ''
+      AND btrim(COALESCE(item->>'ingredient', item->>'name', '')) <> ''
   ) x
   WHERE NOT EXISTS (
     SELECT 1 FROM ingredients i
     WHERE lower(btrim(i."Ingredient Name")) = x.ing_name
-       OR lower(btrim(COALESCE(i."Also Known As", ''))) = x.ing_name
+       OR EXISTS (
+         SELECT 1
+         FROM unnest(string_to_array(lower(COALESCE(i."Also Known As", '')), ',')) aka(part)
+         WHERE btrim(aka.part) = x.ing_name
+       )
   );
 
   RETURN jsonb_build_object(
@@ -4444,17 +4425,21 @@ SELECT jsonb_build_object(
     'orphan_recipe_ingredient_names', (
       SELECT count(DISTINCT x.ing_name)::int
       FROM (
-        SELECT lower(btrim(item->>'ingredient')) AS ing_name
+        SELECT lower(btrim(COALESCE(item->>'ingredient', item->>'name', ''))) AS ing_name
         FROM public.submitted_recipes sr,
              jsonb_array_elements(COALESCE(sr.ingredients, '[]'::jsonb)) sec,
              jsonb_array_elements(COALESCE(sec->'items', '[]'::jsonb)) item
         WHERE sr.status = 'approved'
-          AND btrim(COALESCE(item->>'ingredient', '')) <> ''
+          AND btrim(COALESCE(item->>'ingredient', item->>'name', '')) <> ''
       ) x
       WHERE NOT EXISTS (
         SELECT 1 FROM public.ingredients i
         WHERE lower(btrim(i."Ingredient Name")) = x.ing_name
-           OR lower(btrim(COALESCE(i."Also Known As", ''))) = x.ing_name
+           OR EXISTS (
+             SELECT 1
+             FROM unnest(string_to_array(lower(COALESCE(i."Also Known As", '')), ',')) aka(part)
+             WHERE btrim(aka.part) = x.ing_name
+           )
       )
     )
   ),
@@ -4485,16 +4470,21 @@ SELECT jsonb_build_object(
     ) = 0
     AND (SELECT count(DISTINCT x.ing_name)::int
       FROM (
-        SELECT lower(btrim(item->>'ingredient')) AS ing_name
+        SELECT lower(btrim(COALESCE(item->>'ingredient', item->>'name', ''))) AS ing_name
         FROM public.submitted_recipes sr,
              jsonb_array_elements(COALESCE(sr.ingredients, '[]'::jsonb)) sec,
              jsonb_array_elements(COALESCE(sec->'items', '[]'::jsonb)) item
-        WHERE sr.status = 'approved' AND btrim(COALESCE(item->>'ingredient', '')) <> ''
+        WHERE sr.status = 'approved'
+          AND btrim(COALESCE(item->>'ingredient', item->>'name', '')) <> ''
       ) x
       WHERE NOT EXISTS (
         SELECT 1 FROM public.ingredients i
         WHERE lower(btrim(i."Ingredient Name")) = x.ing_name
-           OR lower(btrim(COALESCE(i."Also Known As", ''))) = x.ing_name
+           OR EXISTS (
+             SELECT 1
+             FROM unnest(string_to_array(lower(COALESCE(i."Also Known As", '')), ',')) aka(part)
+             WHERE btrim(aka.part) = x.ing_name
+           )
       )
     ) = 0
   )

@@ -44,6 +44,7 @@
     "admin_count_users": "user_management.sql",
     "admin_get_recipes": "recipe_management.sql",
     "admin_review_recipe": "recipe_management.sql",
+    "admin_get_stats": "02-functions.sql",
     "get_my_collections": "setup-collections.sql",
     "upsert_collection": "setup-collections.sql",
     "get_my_family_profiles": "setup-family-profiles.sql",
