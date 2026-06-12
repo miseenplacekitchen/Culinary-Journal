@@ -40,6 +40,7 @@ async function rpc(fn, params) {
   const t = await res.text();
   return t ? JSON.parse(t) : null;
 }
+window.tcjAdminRpc = rpc;
 
 async function apiFetch(url, opts) {
   opts = opts || {};

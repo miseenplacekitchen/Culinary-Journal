@@ -741,7 +741,6 @@ var hideUnsafeRecipes = false;
 var activeDietFilter = '';
 var activeChefFilter = '';
 var chefDirectory = [];
-var chefFilterBuilt = false;
 var activeSpiceFilter = '';
 var activeSubFilter = '';
 var activeDivFilter = '';
@@ -956,7 +955,6 @@ async function fetchCommunityRecipes(reset) {
     else allCommunityRecipes = allCommunityRecipes.concat(rows);
     communityHasMore = rows.length >= COMMUNITY_PAGE_SIZE;
     communityOffset += rows.length;
-    if (!chefFilterBuilt) buildChefFilter();
     renderCommunityRecipes();
     if (moreWrap) moreWrap.style.display = communityHasMore ? 'block' : 'none';
   } catch (e) {
@@ -983,8 +981,8 @@ async function loadCommunityRecipes() {
   await loadBrowseTaxonomy();
   await loadChefDirectory();
   buildCommunityTaxonomyFilters();
-  buildChefFilter();
   await fetchCommunityRecipes(true);
+  buildChefFilter();
 }
 
 async function loadMoreCommunityRecipes() {
@@ -1009,7 +1007,6 @@ function buildChefFilter() {
     chefNames = Object.entries(chefs).sort(function(a,b){return b[1]-a[1];}).slice(0,8).map(function(e){return e[0];});
   }
   if (!chefNames.length) return;
-  chefFilterBuilt = true;
   var row = document.getElementById('cr-chef-row');
   var filterEl = document.getElementById('cr-chef-filters');
   if (!row || !filterEl) return;

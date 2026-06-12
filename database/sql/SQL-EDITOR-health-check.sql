@@ -6,6 +6,7 @@
 SELECT jsonb_build_object(
   'totals', jsonb_build_object(
     'recipes', (SELECT count(*)::int FROM public.submitted_recipes),
+    'approved_recipes', (SELECT count(*)::int FROM public.submitted_recipes WHERE status = 'approved'),
     'ingredients', (SELECT count(*)::int FROM public.ingredients)
   ),
   'issues', jsonb_build_object(
