@@ -17,7 +17,7 @@ Use this order on **production** after deploying site code from GitHub.
 |------|----------|
 | `RUN-IN-SUPABASE-copy-paste-this.sql` | Fresh project or full rebuild (large — ~200KB) |
 | `RUN-LIVE-CLEANUP.sql` | Library links + phase43 health RPCs + verify |
-| `RUN-ALL-REMAINING.sql` | Phase 44–46 library + phase 45 site fill + verify |
+| `RUN-ALL-REMAINING.sql` | Phase 44–47 library + phase 45 site fill + verify |
 | `SQL-EDITOR-health-check.sql` | Health check only |
 | `fix-phaseNN-*.sql` | Single patch only |
 

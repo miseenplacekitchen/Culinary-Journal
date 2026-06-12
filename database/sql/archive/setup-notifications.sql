@@ -1,6 +1,3 @@
--- DEPRECATED � DO NOT RUN
--- Moved to sql/archive/. See database/manifest.json archived list.
-
 -- ═══════════════════════════════════════════════════════════════
 -- THE CULINARY JOURNAL — Notifications + Equipment + Font Size
 -- Run in Supabase → SQL Editor

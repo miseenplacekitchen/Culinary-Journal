@@ -30,9 +30,9 @@
   ],
   "archived": [
     { "file": "00-drop-functions.sql", "reason": "Maintenance only — bulk DROP. Never run in setup." },
-    { "file": "admin_rpcs.sql", "reason": "Retired admin bundle — functions owned by feature modules." },
-    { "file": "setup-notifications.sql", "reason": "Duplicate of notification_rpcs.sql + 02-functions.sql." },
-    { "file": "setup-user-features.sql", "reason": "Substitutions already in 01-schema.sql + 03-seed.sql." },
+    { "file": "archive/admin_rpcs.sql", "reason": "Retired admin bundle — functions owned by feature modules." },
+    { "file": "archive/setup-notifications.sql", "reason": "Duplicate of notification_rpcs.sql + 02-functions.sql." },
+    { "file": "archive/setup-user-features.sql", "reason": "Substitutions already in 01-schema.sql + 03-seed.sql." },
     { "file": "deactivate_account.sql", "reason": "Deactivation RPCs owned by 02-functions.sql + user_management.sql." },
     { "file": "archive/RUN-IN-SUPABASE-phases-39-40-ONLY.sql", "reason": "Partial snapshot — superseded by RUN-IN-SUPABASE and RUN-LIVE-CLEANUP." }
   ],
@@ -59,7 +59,7 @@
   },
   "live_cleanup_order": [
     { "file": "RUN-LIVE-CLEANUP.sql", "note": "Single paste: library links + health RPCs + verification" },
-    { "file": "RUN-ALL-REMAINING.sql", "note": "Phase 44–45 content + health verify" },
+    { "file": "RUN-ALL-REMAINING.sql", "note": "Phase 44–47 content + health verify" },
     { "file": "fix-library-governed-links.sql", "note": "Step 1 only — re-link ingredient library profiles" },
     { "file": "fix-phase43-starter-library-health.sql", "note": "Step 2 only — dashboard System Health RPCs" },
     { "file": "SQL-EDITOR-health-check.sql", "note": "Step 3 only — expect healthy: true" }
@@ -76,8 +76,9 @@
     { "file": "RUN-LIVE-CLEANUP.sql", "note": "Ordered live cleanup bundle (library + health + verify)" },
     { "file": "fix-phase44-library-profiles.sql", "note": "Library batch: carrot, celery, honey, spinach, coriander" },
     { "file": "fix-phase45-site-fill.sql", "note": "Festival dishes, approve pending recipes, free-limit settings" },
-    { "file": "RUN-ALL-REMAINING.sql", "note": "Phase 44–46 + 45 + health check in one paste" },
-    { "file": "fix-phase46-library-profiles.sql", "note": "Library batch: zucchini, eggplant, yogurt, basil, green beans" }
+    { "file": "RUN-ALL-REMAINING.sql", "note": "Phase 44–47 + 45 + health check in one paste" },
+    { "file": "fix-phase46-library-profiles.sql", "note": "Library batch: zucchini, eggplant, yogurt, basil, green beans" },
+    { "file": "fix-phase47-library-profiles.sql", "note": "Library batch: apple, banana, pasta, red wine vinegar, thyme" }
   ],
   "live_cleanup_order_note": "After RUN-LIVE-CLEANUP, run RUN-ALL-REMAINING.sql for latest content fill"
 }

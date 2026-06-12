@@ -52,9 +52,9 @@ Single reference for schema, features, and where each RPC lives.
 Moved to `sql/archive/` — see `manifest.json` → `archived`:
 
 - `00-drop-functions.sql` — bulk DROP maintenance only
-- `admin_rpcs.sql` — retired duplicate admin bundle
-- `setup-notifications.sql` — superseded by `notification_rpcs.sql`
-- `setup-user-features.sql` — superseded by schema + seed
+- `archive/admin_rpcs.sql` — retired duplicate admin bundle
+- `archive/setup-notifications.sql` — superseded by `notification_rpcs.sql`
+- `archive/setup-user-features.sql` — superseded by schema + seed
 - `deactivate_account.sql` — superseded by `02-functions.sql` + `user_management.sql`
 
 ---

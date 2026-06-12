@@ -101,7 +101,8 @@ RUN-LIVE-CLEANUP.sql                | Ordered live cleanup (library + health + v
 fix-phase44-library-profiles.sql    | Carrot, celery, honey, spinach, coriander              | In RUN-ALL-REMAINING.sql → pending Betty
 fix-phase45-site-fill.sql           | Festival dishes, approve pending, free-limit settings  | In RUN-ALL-REMAINING.sql → pending Betty
 fix-phase46-library-profiles.sql    | Zucchini, eggplant, yogurt, basil, green beans         | In RUN-ALL-REMAINING.sql → pending Betty
-RUN-ALL-REMAINING.sql               | Phase 44–46 + 45 + health check                        | Run in Supabase → pending Betty
+fix-phase47-library-profiles.sql    | Apple, banana, pasta, red wine vinegar, thyme          | In RUN-ALL-REMAINING.sql → pending Betty
+RUN-ALL-REMAINING.sql               | Phase 44–47 + 45 + health check                        | Run in Supabase → pending Betty
 
 ══════════════════════════════════════════════════════════════════════
 OPS NOTES (owner)
@@ -109,6 +110,7 @@ OPS NOTES (owner)
 • TCJ_SITE_PRIVATE = true in theme-init.js — browsing requires login. Set false to reopen public site.
 • Supabase backup: Dashboard → Project → Database → Backups (confirm PITR or daily snapshots).
 • After code deploy: hard-refresh admin; System Health should match SQL-EDITOR-health-check.sql.
+• Code: submit validation extracted to lib/submit-recipe-validate.js; duplicate SQL moved to database/sql/archive/.
 • Only 1 approved recipe in DB — approve or import more for browse/chef filters to populate.
 
 ══════════════════════════════════════════════════════════════════════

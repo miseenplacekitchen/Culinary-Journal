@@ -5,13 +5,14 @@ files = [
     "fix-phase44-library-profiles.sql",
     "fix-phase45-site-fill.sql",
     "fix-phase46-library-profiles.sql",
+    "fix-phase47-library-profiles.sql",
     "SQL-EDITOR-health-check.sql",
 ]
 out = base / "RUN-ALL-REMAINING.sql"
 header = """-- =============================================================================
 -- THE CULINARY JOURNAL — RUN ALL REMAINING LIVE STEPS
 -- Paste entire file in Supabase SQL Editor after site code deploy.
--- Order: library 44 → site fill 45 → library 46 → health verification.
+-- Order: library 44 → site fill 45 → library 46 → library 47 → health verification.
 -- =============================================================================
 
 """
