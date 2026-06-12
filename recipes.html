@@ -24,6 +24,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
   <link rel="stylesheet" href="style.css">
+  <script src="lib/tcj-errors.js"></script>
   <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
   <style>
@@ -407,7 +408,9 @@ async function loadCategories() {
       });
     });
 
-  } catch (e) { TcjErr.warn('recipes.html:410', e); },
+  } catch (e) {
+    TcjErr.warn('loadCategories', e);
+    const fallback = [
       {id:'evening-table',name:'The Evening Table',emoji:'🕓',description:'Tea time snacks & bites'},
       {id:'garden-earth',name:'Garden & Earth',emoji:'🥬',description:'Vegetarian stir fries & dry dishes'},
       {id:'meat-fire',name:'Meat & Fire',emoji:'🍖',description:'Non-veg dry, fry & roasts'},
@@ -712,7 +715,6 @@ loadCategories();
 </script>
 <script src="allergy-engine.js"></script>
 <script src="seo-schema.js"></script>
-<script src="lib/tcj-errors.js"></script>
 <script src="nav-init.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════
@@ -944,7 +946,11 @@ async function fetchCommunityRecipes(reset) {
     buildChefFilter();
     renderCommunityRecipes();
     if (moreWrap) moreWrap.style.display = communityHasMore ? 'block' : 'none';
-  } catch (_) { TcjErr.warn('recipes.html:960', _); }
+  } catch (e) {
+    TcjErr.warn('fetchCommunityRecipes', e);
+    if (grid) grid.innerHTML = '<div class="cr-empty">Could not load recipes — try refreshing.</div>';
+    if (moreWrap) moreWrap.style.display = 'none';
+  }
   communityLoading = false;
 }
 
