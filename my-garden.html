@@ -12,81 +12,102 @@
 <link rel="stylesheet" href="style.css">
 <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
+<script src="library-mise.js"></script>
+<script src="lib/garden-chrome.js"></script>
 <script src="lib/garden-api.js"></script>
 <script src="nav-init.js"></script>
 <style>
-.mg-wrap { max-width:900px; margin:0 auto; padding:32px 24px 80px; }
-.mg-title { font-family:'Cormorant Garamond',serif; font-size:2.4rem; font-weight:700; margin-bottom:8px; }
-.mg-sub { font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-mid); margin-bottom:24px; }
-.mg-region { margin-bottom:28px; }
-.mg-region select { padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text-high); font-family:'DM Sans',sans-serif; }
+.mg-body { max-width:900px; margin:0 auto; padding:24px 24px 80px; }
+.mg-region { margin-bottom:24px; font-family:'DM Sans',sans-serif; font-size:14px; }
+.mg-region select { margin-left:8px; padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text-high); }
+.mg-section { margin-bottom:28px; }
 .mg-section h2 { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:12px; }
 .mg-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:12px; }
 .mg-card a { color:var(--text-high); text-decoration:none; font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:600; }
 .mg-card a:hover { color:var(--accent); }
 .mg-meta { font-size:12px; color:var(--text-muted); margin-top:6px; font-family:'DM Sans',sans-serif; }
 .mg-now { border-left:3px solid var(--accent); padding-left:14px; margin-bottom:10px; font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-mid); }
-.mg-empty { color:var(--text-muted); font-family:'DM Sans',sans-serif; padding:24px 0; }
+.mg-next { opacity:.85; font-size:13px; }
+.mg-empty { color:var(--text-muted); font-family:'DM Sans',sans-serif; padding:12px 0; }
 .mg-guest { text-align:center; padding:60px 24px; }
-.mg-guest a { color:var(--accent); }
 </style>
 </head>
-<body class="cj-body">
+<body class="lib-page cj-body">
 <nav class="nav">
-  <a class="nav-logo" href="index.html"><span>🍽</span><span class="nav-logo-text">The Culinary Journal</span><span class="nav-logo-badge">Est. 2025</span></a>
+  <a class="nav-logo" href="index.html"><span class="nav-logo-text">The Culinary Journal</span></a>
   <div class="nav-btns" id="nav-btns"></div>
 </nav>
 <div class="tab-nav"></div>
-<div id="mg-root"><div class="mg-empty">Loading…</div></div>
+<div id="garden-chrome"></div>
+<div id="mg-root"><div class="lib-loading"><div class="lib-spinner"></div></div></div>
 
 <script>
+GardenChrome.render({ root: 'garden-chrome', active: 'my-garden', showSearch: false });
+
 function monthLabel(m) {
   var names = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return names[m] || String(m);
 }
 
-async function saveRegion(id) {
-  try { await GardenApi.setRegion(id); } catch (e) { console.warn('set region failed', e); }
-}
-
-async function renderSignedIn() {
-  var regions = [];
-  try { regions = await GardenApi.listRegions(); } catch (e) { console.warn('regions failed', e); }
-
-  var regionHtml = '<div class="mg-region"><label>Your region </label><select id="mg-region">' +
-    '<option value="">— select —</option>' +
-    regions.map(function (r) {
-      return '<option value="' + r.id + '">' + GardenApi.esc(r.name) + '</option>';
-    }).join('') + '</select></div>';
-
-  document.getElementById('mg-root').innerHTML =
-    '<div class="mg-wrap">' +
-    '<h1 class="mg-title">🌿 My Garden</h1>' +
-    '<p class="mg-sub">Plants you are growing and seasonal tasks for this month.</p>' +
-    regionHtml +
-    '<div class="mg-section"><h2>What now</h2><div id="mg-now"></div></div>' +
-    '<div class="mg-section"><h2>My plants</h2><div id="mg-plants"></div></div>' +
-    '<p><a href="garden-directory.html">Browse Garden Directory →</a></p>' +
-    '</div>';
-
-  document.getElementById('mg-region').addEventListener('change', function (e) {
-    if (e.target.value) saveRegion(e.target.value);
-  });
-
-  var nowEl = document.getElementById('mg-now');
-  var plantsEl = document.getElementById('mg-plants');
+async function loadWhatNow(nowEl) {
+  nowEl.innerHTML = '<div class="mg-empty">Loading tasks…</div>';
   try {
     var now = await GardenApi.whatNow();
     var nowList = Array.isArray(now) ? now : [];
-    nowEl.innerHTML = nowList.length ? nowList.map(function (n) {
-      return '<div class="mg-now"><strong>' + GardenApi.esc(n.plant_name) + '</strong> — ' +
-        GardenApi.esc(n.activity) + ' (' + monthLabel(n.month_start) + '–' + monthLabel(n.month_end) + ')' +
-        (n.notes ? '<br>' + GardenApi.esc(n.notes) : '') + '</div>';
-    }).join('') : '<div class="mg-empty">Nothing scheduled this month — add plants from the directory.</div>';
+    if (nowList.length) {
+      nowEl.innerHTML = nowList.map(function (n) {
+        return '<div class="mg-now"><strong>' + GardenApi.esc(n.plant_name) + '</strong> — ' +
+          GardenApi.esc(n.activity) + ' (' + monthLabel(n.month_start) + '–' + monthLabel(n.month_end) + ')' +
+          (n.notes ? '<br>' + GardenApi.esc(n.notes) : '') + '</div>';
+      }).join('');
+      return;
+    }
+    var next = await GardenApi.whatNext();
+    var nextList = Array.isArray(next) ? next : [];
+    if (nextList.length) {
+      nowEl.innerHTML = '<div class="mg-empty">Nothing due this month.</div>' + nextList.map(function (n) {
+        return '<div class="mg-now mg-next"><strong>' + GardenApi.esc(n.plant_name) + '</strong> — ' +
+          GardenApi.esc(n.activity) + ' in ~' + GardenApi.esc(n.months_away) + ' mo (' +
+          monthLabel(n.month_start) + '–' + monthLabel(n.month_end) + ')</div>';
+      }).join('');
+      return;
+    }
+    nowEl.innerHTML = '<div class="mg-empty">Add plants from the <a href="garden-directory.html">directory</a> and set your region for seasonal tasks.</div>';
   } catch (e) {
     console.warn('what now failed', e);
     nowEl.innerHTML = '<div class="mg-empty">Could not load seasonal tasks.</div>';
   }
+}
+
+async function renderSignedIn() {
+  var regions = [], saved = null;
+  try { regions = await GardenApi.listRegions(); } catch (e) { console.warn('regions failed', e); }
+  try { saved = await GardenApi.getMyRegion(); } catch (e) { console.warn('saved region failed', e); }
+
+  document.getElementById('mg-root').innerHTML =
+    '<div class="mg-body">' +
+    '<div class="mg-region"><label>Your region<select id="mg-region"><option value="">— select —</option>' +
+    regions.map(function (r) {
+      var sel = saved && saved.region_id === r.id ? ' selected' : '';
+      return '<option value="' + r.id + '"' + sel + '>' + GardenApi.esc(r.name) + '</option>';
+    }).join('') +
+    '</select></label>' +
+    (saved && saved.climate_zone ? '<span style="margin-left:12px;color:var(--text-muted);font-size:12px">Climate: ' + GardenApi.esc(saved.climate_zone) + '</span>' : '') +
+    '</div>' +
+    '<div class="mg-section"><h2>What now</h2><div id="mg-now"></div></div>' +
+    '<div class="mg-section"><h2>My plants</h2><div id="mg-plants"></div></div>' +
+    '</div>';
+
+  var nowEl = document.getElementById('mg-now');
+  var plantsEl = document.getElementById('mg-plants');
+
+  document.getElementById('mg-region').addEventListener('change', async function (e) {
+    if (!e.target.value) return;
+    try { await GardenApi.setRegion(e.target.value); await loadWhatNow(nowEl); }
+    catch (err) { console.warn('set region failed', err); }
+  });
+
+  await loadWhatNow(nowEl);
 
   try {
     var mine = await GardenApi.getMyGarden();
@@ -105,11 +126,9 @@ async function renderSignedIn() {
 
 function renderGuest() {
   document.getElementById('mg-root').innerHTML =
-    '<div class="mg-guest mg-wrap">' +
-    '<h1 class="mg-title">My Garden</h1>' +
-    '<p class="mg-sub">Sign in to track plants and see seasonal tasks for your region.</p>' +
-    '<p><a href="login.html?redirect=' + encodeURIComponent(window.location.href) + '">Sign in →</a></p>' +
-    '</div>';
+    '<div class="mg-guest mg-body"><h1 class="lib-hero-title">My Garden</h1>' +
+    '<p class="lib-hero-desc">Sign in to track plants and see seasonal tasks for your region.</p>' +
+    '<p><a href="login.html?redirect=' + encodeURIComponent(location.href) + '">Sign in →</a></p></div>';
 }
 
 if (!getSession()) renderGuest();

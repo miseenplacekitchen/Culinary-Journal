@@ -10,7 +10,8 @@ LIVE CHECKLIST (Betty — tick when done)
 [x] 1. RUN-LIVE-CLEANUP.sql in Supabase → healthy: true
 [x] 2. RUN-ALL-REMAINING.sql + phase48 orphans → healthy: true (superseded by Phase 52)
 [x] 2b. RUN-LIVE-PHASE52.sql → healthy: true (5 approved, 613 ingredients, 0 orphans) ✅ Betty
-[ ] 2c. RUN-GARDEN-V3.sql in Supabase → tomato seed + garden pages registered (hidden)
+[x] 2c. RUN-GARDEN-V3.sql in Supabase → tomato seed + garden pages registered (hidden) ✅ Betty
+[ ] 2d. RUN-GARDEN-V3-POLISH.sql → RPC fixes + kitchen hinge (after code deploy)
 [x] 3. RUN-LIVE-FOLLOWUP.sql → phases 49–51 (library, categories, soft-launch pages) — healthy: true
 [ ] 4. Hard-refresh admin → Dashboard home System Health matches SQL
 [ ] 5. Admin → Lane 2 Spot-Check journeys A–F all ticked

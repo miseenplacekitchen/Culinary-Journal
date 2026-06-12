@@ -165,16 +165,20 @@ WHERE p.slug = 'tomato'
       AND pc.month_start = v.m_start AND pc.month_end = v.m_end
   );
 
--- Hinge → governed Tomato ingredient
+-- Hinge → governed Tomato ingredient (library profile first, then ingredients fallback)
 INSERT INTO public.plant_ingredients (plant_id, ingredient_id, part, is_primary)
 SELECT p.id, sub.ing_id, 'fruit', true
 FROM public.plants p
 CROSS JOIN LATERAL (
-  SELECT "ID" AS ing_id FROM public.ingredients
-  WHERE lower(btrim("Ingredient Name")) IN ('tomato', 'tomatoes')
-     OR lower("Ingredient Name") LIKE '%tomato%'
-  ORDER BY CASE WHEN lower(btrim("Ingredient Name")) IN ('tomato','tomatoes') THEN 0 ELSE 1 END, "ID"
-  LIMIT 1
+  SELECT ing_id FROM (
+    SELECT lp.governed_ingredient_id AS ing_id, 0 AS pri
+    FROM public.library_profiles lp
+    WHERE lp.profile_type = 'ingredient' AND lp.slug = 'tomato' AND lp.governed_ingredient_id IS NOT NULL
+    UNION ALL
+    SELECT i."ID" AS ing_id, 1 AS pri FROM public.ingredients i
+    WHERE lower(btrim(i."Ingredient Name")) IN ('tomato', 'tomatoes')
+       OR lower(i."Ingredient Name") LIKE '%tomato%'
+  ) picks ORDER BY pri LIMIT 1
 ) sub
 WHERE p.slug = 'tomato' AND sub.ing_id IS NOT NULL
 ON CONFLICT (plant_id, ingredient_id, part) DO NOTHING;

@@ -12,80 +12,58 @@
 <link rel="stylesheet" href="style.css">
 <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
+<script src="library-mise.js"></script>
+<script src="lib/garden-chrome.js"></script>
 <script src="lib/garden-api.js"></script>
 <script src="nav-init.js"></script>
-<style>
-.gd-hero { max-width:900px; margin:32px auto 24px; padding:0 24px; }
-.gd-title { font-family:'Cormorant Garamond',serif; font-size:clamp(2rem,4vw,2.8rem); font-weight:700; margin-bottom:8px; }
-.gd-sub { font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-mid); margin-bottom:20px; }
-.gd-search { width:100%; max-width:420px; padding:10px 14px; border:1px solid var(--border); border-radius:24px; background:var(--surface); color:var(--text-high); font-family:'DM Sans',sans-serif; }
-.gd-grid { max-width:900px; margin:0 auto 60px; padding:0 24px; display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
-.gd-card { display:block; text-decoration:none; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; transition:border-color .15s; }
-.gd-card:hover { border-color:var(--accent); }
-.gd-name { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:600; color:var(--text-high); margin-bottom:4px; }
-.gd-botanical { font-size:12px; font-style:italic; color:var(--accent); margin-bottom:10px; }
-.gd-summary { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); line-height:1.6; }
-.gd-meta { font-size:11px; color:var(--text-muted); margin-top:10px; }
-.gd-empty, .gd-loading { text-align:center; padding:60px 24px; font-family:'DM Sans',sans-serif; color:var(--text-muted); }
-.gd-links { display:flex; gap:12px; flex-wrap:wrap; margin-top:12px; }
-.gd-links a { font-size:12px; color:var(--accent); text-decoration:none; }
-</style>
 </head>
-<body class="cj-body">
+<body class="lib-page cj-body">
 <nav class="nav">
-  <a class="nav-logo" href="index.html"><span>🍽</span><span class="nav-logo-text">The Culinary Journal</span><span class="nav-logo-badge">Est. 2025</span></a>
+  <a class="nav-logo" href="index.html"><span class="nav-logo-text">The Culinary Journal</span></a>
   <div class="nav-btns" id="nav-btns"></div>
 </nav>
 <div class="tab-nav"></div>
-
-<div class="gd-hero">
-  <div class="gd-title">🌱 The Garden</div>
-  <p class="gd-sub">Plant profiles that connect your patch to the kitchen — seasonal timing, care, and ingredient links.</p>
-  <input type="search" id="gd-search" class="gd-search" placeholder="Search plants…" aria-label="Search plants">
-  <div class="gd-links">
-    <a href="my-garden.html">My Garden →</a>
-    <a href="library-directory.html?type=ingredient">Ingredient Library →</a>
-  </div>
+<div id="garden-chrome"></div>
+<div class="lib-grid lib-grid-mise" id="gd-grid">
+  <div class="lib-loading"><div class="lib-spinner"></div></div>
 </div>
-
-<div id="gd-grid" class="gd-grid"><div class="gd-loading">Loading plants…</div></div>
 
 <script>
 var searchTimer = null;
 
+GardenChrome.render({ root: 'garden-chrome', active: 'directory', showSearch: true, searchId: 'gd-search' });
+document.getElementById('gd-search').addEventListener('input', function (e) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(function () { loadPlants(e.target.value); }, 350);
+});
+
 function renderList(items) {
   var grid = document.getElementById('gd-grid');
   if (!items || !items.length) {
-    grid.innerHTML = '<div class="gd-empty">No published plants yet. Check back after the Garden wave is live.</div>';
+    grid.innerHTML = '<div class="lib-empty">No published plants yet. After SQL is applied you should see Tomato here.</div>';
     return;
   }
   grid.innerHTML = items.map(function (p) {
-    return '<a class="gd-card" href="garden-plant.html?slug=' + encodeURIComponent(p.slug || '') + '">' +
-      '<div class="gd-name">' + GardenApi.esc(p.common_name) + '</div>' +
-      (p.botanical_name ? '<div class="gd-botanical">' + GardenApi.esc(p.botanical_name) + '</div>' : '') +
-      '<div class="gd-summary">' + GardenApi.esc(p.care_summary || '') + '</div>' +
-      (p.ease_rating ? '<div class="gd-meta">Ease: ' + GardenApi.esc(p.ease_rating) + '</div>' : '') +
-      '</a>';
+    return '<a class="lib-card lib-card-mise" href="garden-plant.html?slug=' + encodeURIComponent(p.slug || '') + '">' +
+      '<div class="lib-card-body"><div class="lib-card-name">' + GardenApi.esc(p.common_name) + '</div>' +
+      (p.botanical_name ? '<div class="lib-card-aka">' + GardenApi.esc(p.botanical_name) + '</div>' : '') +
+      '<div class="lib-card-desc">' + GardenApi.esc(p.care_summary || '') + '</div>' +
+      (p.ease_rating ? '<div class="lib-card-tag">Ease: ' + GardenApi.esc(p.ease_rating) + '</div>' : '') +
+      '</div></a>';
   }).join('');
 }
 
 async function loadPlants(q) {
   var grid = document.getElementById('gd-grid');
-  grid.innerHTML = '<div class="gd-loading">Loading plants…</div>';
+  grid.innerHTML = '<div class="lib-loading"><div class="lib-spinner"></div></div>';
   try {
     var items = await GardenApi.listPlants(q, 50, 0);
     renderList(Array.isArray(items) ? items : []);
   } catch (e) {
     console.warn('garden-directory load failed', e);
-    grid.innerHTML = '<div class="gd-empty">Could not load plants — please try again.</div>';
+    grid.innerHTML = '<div class="lib-empty">Could not load plants — run RUN-GARDEN-V3-POLISH.sql on Supabase, then hard-refresh.</div>';
   }
 }
-
-document.getElementById('gd-search').addEventListener('input', function (e) {
-  clearTimeout(searchTimer);
-  var v = e.target.value;
-  searchTimer = setTimeout(function () { loadPlants(v); }, 350);
-});
 
 loadPlants('');
 </script>

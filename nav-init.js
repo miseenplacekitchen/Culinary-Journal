@@ -39,8 +39,10 @@ var CJ_SECTIONS = [
   },
   {
     id:'library', label:'The Library', emoji:'📚', primaryPage:'library-directory.html',
-    pages:['library-directory.html','library-profile.html','library-submit.html','preservation.html','conversions.html','baby.html'],
+    pages:['library-directory.html','library-profile.html','library-submit.html','preservation.html','conversions.html','baby.html','garden-directory.html','garden-plant.html','my-garden.html'],
     links:[
+      {href:'garden-directory.html', emoji:'🌱', label:'The Garden'},
+      {href:'my-garden.html', emoji:'🌿', label:'My Garden', signedInOnly:true},
       {href:'library-directory.html?type=ingredient', emoji:'🌿', label:'Ingredients'},
       {href:'library-directory.html?type=spice',      emoji:'🌶', label:'Spice Directory'},
       {href:'library-directory.html?type=tool',       emoji:'🔪', label:'Tools & Appliances'},

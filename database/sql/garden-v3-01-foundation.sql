@@ -3,6 +3,15 @@
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+-- Prerequisite for updated_at triggers (also in library-profiles.sql)
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
 -- Controlled vocabularies
 CREATE TABLE IF NOT EXISTS public.cat_high_level (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
