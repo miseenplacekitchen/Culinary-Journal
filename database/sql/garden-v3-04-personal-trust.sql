@@ -14,12 +14,6 @@ CREATE TABLE IF NOT EXISTS public.user_plants (
   UNIQUE (user_id, plant_id)
 );
 
-DO $$ BEGIN
-  ALTER TABLE public.user_plants
-    ADD CONSTRAINT user_plants_user_plant_unique UNIQUE (user_id, plant_id);
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
-
 DROP TRIGGER IF EXISTS user_plants_updated_at ON public.user_plants;
 CREATE TRIGGER user_plants_updated_at
   BEFORE UPDATE ON public.user_plants
