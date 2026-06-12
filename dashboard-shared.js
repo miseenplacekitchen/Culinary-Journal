@@ -1454,6 +1454,7 @@ function loadIMInterface(){
   // ── Top-level tab bar ────────────────────────────────────────
   var TAB_DEFS=[
     {key:'refdata',    label:'Ingredient Data Management'},
+    {key:'health',     label:'🩺 System Health'},
     {key:'duplicates', label:'🔍 Find Duplicates'},
     {key:'analytics',  label:'📊 Analytics'},
     {key:'audit',      label:'Audit Trail'},
@@ -1476,6 +1477,7 @@ function loadIMInterface(){
       Object.keys(topPanels).forEach(function(k){ topPanels[k].style.display=k===td.key?'block':'none'; });
       if(td.key==='recycle')    loadIngRecycleBinInto(topPanels['recycle']);
       if(td.key==='duplicates') loadIngDuplicates(topPanels['duplicates']);
+      if(td.key==='health')     loadDataIntegrityPanel(topPanels['health']);
       if(td.key==='audit')   loadAuditTrail(topPanels['audit']);
       if(td.key==='analytics') loadIngAnalytics(topPanels['analytics']);
     });
@@ -1500,6 +1502,7 @@ function loadIMInterface(){
   topPanels['recycle'].innerHTML='<div style="'+_imS.label+';padding:8px 0">Loading\u2026</div>';
   if(activeTop==='recycle')    loadIngRecycleBinInto(topPanels['recycle']);
   if(activeTop==='duplicates') loadIngDuplicates(topPanels['duplicates']);
+  if(activeTop==='health')     loadDataIntegrityPanel(topPanels['health']);
 
   // ── Trigger load for restored active tab ─────────────────────
   if(activeTop==='audit')    loadAuditTrail(topPanels['audit']);
@@ -3303,7 +3306,20 @@ async function applyBulkEdit(){
 
 async function deleteSelected(){
   if(selectedIds.size===0)return;if(!confirm('Delete '+selectedIds.size+' ingredient(s)?'))return;
-  try{await Promise.all(Array.from(selectedIds).map(function(id){return rpc('admin_delete_ingredient',{p_id:id});}));clearSelection();await loadIngredients(ingPage);}
+  try{
+    var toForce=[];
+    for(var id of selectedIds){
+      var res=await rpc('admin_delete_ingredient',{p_id:id,p_force:false});
+      if(res&&res.blocked)toForce.push({id:id,name:res.ingredient_name,recipes:res.recipes_using});
+    }
+    if(toForce.length){
+      var msg=toForce.map(function(b){return b.name+' ('+b.recipes+' recipes)';}).join('\n');
+      if(!confirm(toForce.length+' ingredient(s) are in use:\n'+msg+'\n\nForce delete anyway?')){clearSelection();await loadIngredients(ingPage);return;}
+      await Promise.all(toForce.map(function(b){return rpc('admin_delete_ingredient',{p_id:b.id,p_force:true});}));
+    }
+    if(typeof TcjIngredientLookup!=='undefined')TcjIngredientLookup.clearCache();
+    clearSelection();await loadIngredients(ingPage);
+  }
   catch(e){alert('Error: '+e.message);}
 }
 
@@ -3317,6 +3333,7 @@ function openIngModal(ing){
     document.getElementById('ing-modal-title').textContent='Edit Ingredient';
     document.getElementById('ing-id').value       =String(ing['ID']||'');
     document.getElementById('ing-name').value     =ing['Ingredient Name']||'';
+    document.getElementById('ing-name').dataset.originalName=ing['Ingredient Name']||'';
     document.getElementById('ing-aka').value      =ing['Also Known As']||'';
     // Rebuild Category options from managed list
     var _catSel=document.getElementById('ing-category');
@@ -3372,6 +3389,7 @@ function openIngModal(ing){
   }else{
     document.getElementById('ing-modal-title').textContent='Add Ingredient';
     ['ing-id','ing-name','ing-aka','ing-subcat','ing-qty','ing-weight','ing-unit','ing-brand','ing-allergen','ing-notes'].forEach(function(id){const el=document.getElementById(id);if(el)el.value='';});
+    var nameEl=document.getElementById('ing-name');if(nameEl)delete nameEl.dataset.originalName;
     document.getElementById('ing-category').value='';document.getElementById('ing-liquid').value='No';
     document.getElementById('ing-vegan').value='Yes';document.getElementById('ing-veg').value='Yes';
     _customFields={};_customFieldTypes={};if(delBtn)delBtn.style.display='none';

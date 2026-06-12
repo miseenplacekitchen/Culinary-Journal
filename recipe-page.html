@@ -384,6 +384,7 @@
   <script src="page-guard.js"></script>
   <script src="grocery-utils.js"></script>
   <script src="allergy-engine.js"></script>
+  <script src="lib/ingredient-lookup.js?v=20260630"></script>
   <script src="seo-schema.js"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
   <script src="lib/recipe-hero-labels.js?v=20260629"></script>
@@ -802,20 +803,12 @@ let _libLinksByIngId = {};
 async function loadAllergenMap() {
   if (ingredientAllergenMap) return ingredientAllergenMap;
   try {
-    const res = await fetch(
-      SUPABASE_URL + '/rest/v1/ingredients?select=' + encodeURIComponent('"Ingredient Name","Also Known As",Allergen') + '&Allergen=neq.&limit=500',
-      {headers: {'apikey': SUPABASE_KEY}}
-    );
-    if (!res.ok) return null;
-    const rows = await res.json();
+    if (typeof TcjIngredientLookup === 'undefined') return null;
+    const index = await TcjIngredientLookup.fetchIndex();
     ingredientAllergenMap = new Map();
-    rows.forEach(function(r) {
-      const allergen = (r['Allergen']||'').trim();
-      if (!allergen) return;
-      const name = (r['Ingredient Name']||'').toLowerCase().trim();
-      const aka  = (r['Also Known As']||'').toLowerCase().trim();
-      if (name) ingredientAllergenMap.set(name, allergen);
-      if (aka)  ingredientAllergenMap.set(aka, allergen);
+    Object.keys(index.allergenNames || {}).forEach(function(name) {
+      const allergen = (index.allergenNames[name] || '').trim();
+      if (allergen) ingredientAllergenMap.set(name, allergen);
     });
   } catch(_) {}
   return ingredientAllergenMap;
@@ -863,22 +856,16 @@ async function detectAllergens(recipe) {
 
 async function loadRpIngredientIndex() {
   try {
-    const res = await fetch(
-      SUPABASE_URL + '/rest/v1/ingredients?select=' + encodeURIComponent('"ID","Ingredient Name",Category,Unit') +
-      '&order=' + encodeURIComponent('"Ingredient Name"') + '&limit=500',
-      { headers: { apikey: SUPABASE_KEY } }
-    );
-    if (!res.ok) return;
-    const rows = await res.json();
-    rpIngIndex = {};
-    (rows || []).forEach(function(r) {
-      const n = (r['Ingredient Name'] || '').toLowerCase().trim();
-      if (n) rpIngIndex[n] = { id: r.ID, category: r.Category || '', unit: r.Unit || '' };
-    });
+    if (typeof TcjIngredientLookup === 'undefined') return;
+    const index = await TcjIngredientLookup.fetchIndex();
+    rpIngIndex = index.byName || {};
   } catch (_) {}
 }
 
 function resolveIngredientMeta(name) {
+  if (typeof TcjIngredientLookup !== 'undefined' && TcjIngredientLookup.resolveByName) {
+    return TcjIngredientLookup.resolveByName(name, null) || null;
+  }
   return rpIngIndex[(name || '').toLowerCase().trim()] || null;
 }
 
@@ -1333,20 +1320,16 @@ async function enrichIngredientInfo(r) {
   try {
     if (!r || !Array.isArray(r.ingredients) || !r.ingredients.length) return;
 
-    if (!_ingredientCache) {
-      const headers = { 'apikey': SUPABASE_KEY };
-      if (session) headers['Authorization'] = 'Bearer ' + session.access_token;
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/ingredients?select=${encodeURIComponent('"Ingredient Name","CJ Recommended Brand"')}`, { headers });
-      if (!res.ok) return;
-      _ingredientCache = await res.json();
+    if (!_ingredientCache && typeof TcjIngredientLookup !== 'undefined') {
+      const index = await TcjIngredientLookup.fetchIndex();
+      _ingredientCache = index.rows || [];
     }
     if (!Array.isArray(_ingredientCache) || !_ingredientCache.length) return;
 
-    // Build a lower-cased name → recommended brand map (tolerant of column naming)
     const brandMap = {};
     _ingredientCache.forEach(row => {
-      const name  = row['Ingredient Name'] || row.ingredient_name || row.name;
-      const brand = row['CJ Recommended Brand'] || row.cj_recommended_brand || row.recommended_brand;
+      const name  = row.name || row['Ingredient Name'] || row.ingredient_name;
+      const brand = row.brand || row['CJ Recommended Brand'] || row.cj_recommended_brand;
       if (name && brand && String(brand).trim()) brandMap[String(name).toLowerCase()] = String(brand).trim();
     });
     if (!Object.keys(brandMap).length) return;

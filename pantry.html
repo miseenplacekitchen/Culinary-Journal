@@ -223,6 +223,7 @@
 <script src="shared-sync-utils.js"></script>
 <script src="grocery-utils.js"></script>
 <script src="regional-hints.js"></script>
+<script src="lib/ingredient-lookup.js?v=20260630"></script>
 <script src="nav-init.js"></script>
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -760,18 +761,14 @@ async function loadUseItUpSuggestions() {
 // Load governed ingredients for autocomplete (PF-01)
 async function loadIngredientNames() {
   try {
-    const res = await fetch(
-      SUPA_URL + '/rest/v1/ingredients?select=' + encodeURIComponent('"ID","Ingredient Name",Category,Unit') +
-      '&order=' + encodeURIComponent('"Ingredient Name"') + '&limit=500',
-      { headers: { 'apikey': SUPA_KEY } }
-    );
-    const rows = await res.json();
+    if (typeof TcjIngredientLookup === 'undefined') return;
+    const index = await TcjIngredientLookup.fetchIndex();
+    const rows = index.rows || [];
     const dl = document.getElementById('pt-ingredients-list');
-    pantryIngIndex = {};
+    pantryIngIndex = index.byName || {};
     if (dl && rows.length) {
       dl.innerHTML = rows.map(function(r) {
-        var n = r['Ingredient Name'] || '';
-        if (n) pantryIngIndex[n.toLowerCase()] = { id: r.ID, name: n, category: r.Category || '', unit: r.Unit || '' };
+        var n = r.name || r['Ingredient Name'] || '';
         return '<option value="' + n.replace(/"/g,'&quot;') + '">';
       }).join('');
     }

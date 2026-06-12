@@ -568,7 +568,7 @@
           <div class="ap-stat rejected"><div class="ap-stat-num" id="rmgmt-rejected">&#8212;</div><div class="ap-stat-label">Rejected</div></div>
         </div>
         <div class="ap-filters" style="margin-bottom:16px">
-          <input type="text" class="ap-search" id="rmgmt-search" placeholder="Search recipes&#8230;" oninput="loadRecipeMgmt(_currentRecipeTab)">
+          <input type="text" class="ap-search" id="rmgmt-search" placeholder="Search recipes&#8230;" oninput="_rmPage=1;loadRecipeMgmt(_currentRecipeTab)">
         </div>
         <div class="ap-table-wrap">
           <table class="ap-table">
@@ -576,6 +576,7 @@
             <tbody id="rmgmt-tbody"><tr><td colspan="7" class="ap-empty-row">Loading&#8230;</td></tr></tbody>
           </table>
         </div>
+        <div id="rmgmt-pagination" style="display:none;align-items:center;justify-content:center;gap:8px;margin-top:14px"></div>
       </div>
       <div id="rmgmt-analytics-panel" style="display:none">
         <div class="ap-stats" style="margin-bottom:24px">
@@ -1086,15 +1087,17 @@
   <script src="lib/theme-catalog.js"></script>
   <script src="lib/library-admin-fields.js?v=20260614"></script>
   <script src="lib/theme-admin-ui.js"></script>
-  <script src="dashboard-shared.js?v=20260609"></script>
+  <script src="dashboard-shared.js?v=20260630"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
-  <script src="dashboard-recipes.js?v=20260609"></script>
+  <script src="dashboard-recipes.js?v=20260630"></script>
   <script src="dashboard-users.js?v=20260610"></script>
-  <script src="dashboard-ingredients.js?v=20260608"></script>
+  <script src="dashboard-ingredients.js?v=20260630"></script>
   <script src="library-mise.js"></script>
   <script src="lib/recipe-hero-labels.js?v=20260629"></script>
   <script src="lib/circular-hero-editor.js?v=20260629"></script>
   <script src="lib/lm-interface.js?v=20260615"></script>
+  <script src="lib/ingredient-lookup.js?v=20260630"></script>
+  <script src="lib/data-integrity.js?v=20260630"></script>
   <script src="dashboard-site.js?v=20260615"></script>
   <script src="dashboard-platform.js?v=20260610"></script>
   <script src="dashboard-analytics.js?v=20260608"></script>

@@ -984,7 +984,14 @@ async function saveIngredient(){
   if(!cat){showIngMsg('Category is required.',false);return;}
   saveBtn.disabled=true;saveBtn.textContent='Saving...';
   try{
-    await rpc('admin_upsert_ingredient',{
+    var oldName=document.getElementById('ing-name').dataset.originalName||'';
+    if(id&&oldName&&oldName.toLowerCase().trim()!==name.toLowerCase().trim()){
+      var preview=await rpc('admin_preview_ingredient_amend',{p_id:parseInt(id),p_new_name:name});
+      if(preview&&preview.name_will_change&&preview.recipes_affected>0){
+        if(!confirm('Renaming "'+oldName+'" to "'+name+'" will update '+preview.recipes_affected+' recipe(s) and '+preview.library_profiles_linked+' library profile(s). Continue?')){saveBtn.disabled=false;saveBtn.textContent='Save Ingredient';return;}
+      }
+    }
+    var result=await rpc('admin_upsert_ingredient',{
       p_id:id?parseInt(id):null,p_ingredient_name:name,
       p_also_known_as:document.getElementById('ing-aka').value.trim(),
       p_category:cat,p_sub_category:document.getElementById('ing-subcat').value.trim(),
@@ -999,14 +1006,16 @@ async function saveIngredient(){
       p_notes:document.getElementById('ing-notes').value.trim(),
       p_extra_fields:(function(){
         var ef=Object.assign({},_customFields);
-        // Store field types as _t_ metadata keys
         Object.keys(_customFieldTypes).forEach(function(k){
           if(ef.hasOwnProperty(k)&&_customFieldTypes[k]!=='text')ef['_t_'+k]=_customFieldTypes[k];
         });
         return Object.keys(ef).length?ef:null;
       })()
     });
-    showIngMsg(id?'✓ Saved!':'✓ Added!',true);
+    if(typeof TcjIngredientLookup!=='undefined')TcjIngredientLookup.clearCache();
+    var msg=id?'✓ Saved!':'✓ Added!';
+    if(result&&result.recipes_updated>0)msg+=' '+result.recipes_updated+' recipe(s) updated.';
+    showIngMsg(msg,true);
     setTimeout(function(){closeIngModal();loadIngredients(ingPage);},900);
   }catch(e){showIngMsg('Error: '+e.message,false);}
   finally{saveBtn.disabled=false;saveBtn.textContent='Save Ingredient';}
@@ -1015,7 +1024,15 @@ async function saveIngredient(){
 async function deleteIngredient(){
   const id=document.getElementById('ing-id').value,name=document.getElementById('ing-name').value;
   if(!id||!confirm('Delete "'+name+'"?'))return;
-  try{await rpc('admin_delete_ingredient',{p_id:parseInt(id)});closeIngModal();loadIngredients(ingPage);}
+  try{
+    var res=await rpc('admin_delete_ingredient',{p_id:parseInt(id),p_force:false});
+    if(res&&res.blocked){
+      if(!confirm(res.message+'\n\nRecipes using it: '+res.recipes_using+'. Library profiles: '+res.library_profiles_linked+'. Force delete?'))return;
+      res=await rpc('admin_delete_ingredient',{p_id:parseInt(id),p_force:true});
+    }
+    if(typeof TcjIngredientLookup!=='undefined')TcjIngredientLookup.clearCache();
+    closeIngModal();loadIngredients(ingPage);
+  }
   catch(e){showIngMsg('Error: '+e.message,false);}
 }
 

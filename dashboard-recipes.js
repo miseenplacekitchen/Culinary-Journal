@@ -4,6 +4,9 @@
 
 var _RM_LIST_TABS = ['all','pending','approved','rejected'];
 var _RM_OPS_TABS  = ['taxonomy','sourcelinks','nutrition','printqueue','collections','featured','audit'];
+var _rmPage = 1;
+var _RM_PAGE_SIZE = 50;
+var _rmListTotal = 0;
 
 function getRejectReasons() {
   try {
@@ -14,6 +17,7 @@ function getRejectReasons() {
 }
 
 function switchRecipeTab(tab) {
+  if (_currentRecipeTab !== tab) _rmPage = 1;
   _currentRecipeTab = tab;
   localStorage.setItem('tcj_active_recipe_tab', tab);
   document.querySelectorAll('#v-recipe-mgmt .ap-inner-tab').forEach(function(t) {
@@ -41,6 +45,24 @@ function switchRecipeTab(tab) {
   loadRecipeMgmt(tab);
 }
 
+function renderRmPagination() {
+  var el = document.getElementById('rmgmt-pagination');
+  if (!el) return;
+  var totalPages = Math.max(1, Math.ceil(_rmListTotal / _RM_PAGE_SIZE));
+  if (_rmListTotal <= _RM_PAGE_SIZE) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.innerHTML =
+    '<button type="button" class="ap-pg-btn" ' + (_rmPage <= 1 ? 'disabled' : '') + ' data-rm-pg="prev">Prev</button>' +
+    '<span style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);padding:0 12px">Page ' + _rmPage + ' of ' + totalPages + ' (' + _rmListTotal + ' recipes)</span>' +
+    '<button type="button" class="ap-pg-btn" ' + (_rmPage >= totalPages ? 'disabled' : '') + ' data-rm-pg="next">Next</button>';
+  el.querySelectorAll('[data-rm-pg]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (btn.dataset.rmPg === 'prev' && _rmPage > 1) { _rmPage--; loadRecipeMgmt(_currentRecipeTab); }
+      if (btn.dataset.rmPg === 'next' && _rmPage < totalPages) { _rmPage++; loadRecipeMgmt(_currentRecipeTab); }
+    });
+  });
+}
+
 async function loadRecipeMgmt(tab) {
   var status = (tab === 'all') ? null : tab;
   var tbody  = document.getElementById('rmgmt-tbody');
@@ -50,17 +72,19 @@ async function loadRecipeMgmt(tab) {
   try {
     var search   = (document.getElementById('rmgmt-search')   || {}).value || '';
     var catFilter = (document.getElementById('rmgmt-cat-filter') || {}).value || '';
-    var results = await Promise.all([
-      rpc('admin_get_recipes', {
-        p_status:   status,
-        p_search:   search   || null,
-        p_category: catFilter || null,
-        p_limit: 200, p_offset: 0
-      }),
-      rpc('admin_get_stats', {})
-    ]);
-    var rows  = Array.isArray(results[0]) ? results[0] : [];
-    var stats = results[1] || {};
+    var stats = await rpc('admin_get_stats', {});
+    _rmListTotal = (status === 'pending') ? (stats.pending || 0)
+      : (status === 'approved') ? (stats.approved || 0)
+      : (status === 'rejected') ? (stats.rejected || 0)
+      : (stats.total || 0);
+    var results = await rpc('admin_get_recipes', {
+      p_status:   status,
+      p_search:   search   || null,
+      p_category: catFilter || null,
+      p_limit: _RM_PAGE_SIZE,
+      p_offset: (_rmPage - 1) * _RM_PAGE_SIZE
+    });
+    var rows  = Array.isArray(results) ? results : [];
     setEl('rmgmt-total',    stats.total    || 0);
     setEl('rmgmt-pending',  stats.pending  || 0);
     setEl('rmgmt-approved', stats.approved || 0);
@@ -116,6 +140,7 @@ async function loadRecipeMgmt(tab) {
       var th = document.createElement('th');
       thead.appendChild(th);
     }
+    renderRmPagination();
   } catch(e) {
     tbody.innerHTML = '<tr><td colspan="8" class="ap-empty-row">Error: ' + esc(e.message) + '</td></tr>';
   }

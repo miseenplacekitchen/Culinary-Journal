@@ -257,7 +257,7 @@
       <button class="mp-modal-close" onclick="closePicker()">&#215;</button>
     </div>
     <div class="mp-modal-search">
-      <input type="text" id="mp-search" placeholder="Search recipes..." oninput="applyRecipeFilters()" autocomplete="off">
+      <input type="text" id="mp-search" placeholder="Search all recipes by name, native title, or also known as…" oninput="applyRecipeFilters()" autocomplete="off">
     </div>
     <div class="mp-filter-bar" id="mp-cat-filters" style="margin-bottom:8px"></div>
     <div class="mp-filter-bar" id="mp-hierarchy-filters" style="margin-bottom:8px;flex-wrap:wrap"></div>
@@ -305,7 +305,12 @@ const CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Ear
 
 let currentWeekOffset = 0;
 let pickerTarget = null; // {day, meal}
-let allRecipes = [];
+let pickerRecipes = [];
+let pickerOffset = 0;
+let pickerHasMore = false;
+let pickerLoading = false;
+let pickerSearchTimer = null;
+const PICKER_PAGE_SIZE = 60;
 let prepFilterMax = null;
 let catFilter = '';
 let subFilter = '';
@@ -321,9 +326,7 @@ var MP_FAMILY_GROUPS = {
 function buildCategoryFilters() {
   var bar = document.getElementById('mp-cat-filters');
   if (!bar) return;
-  var cats = {};
-  allRecipes.forEach(function (r) { if (r.category) cats[r.category] = 1; });
-  var keys = Object.keys(cats).sort();
+  var keys = Object.keys(CAT_EMOJI).sort();
   bar.innerHTML = '<span style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:600;color:var(--text-mid);align-self:center">Category:</span>' +
     '<button type="button" class="mp-filter-chip active" data-cat="" onclick="setCatFilter(\'\',this)">All</button>' +
     keys.map(function (c) {
@@ -333,19 +336,32 @@ function buildCategoryFilters() {
 
 function setCatFilter(cat, btn) {
   catFilter = cat || '';
+  subFilter = '';
+  divFilter = '';
   document.querySelectorAll('#mp-cat-filters .mp-filter-chip').forEach(function (b) { b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
+  buildHierarchyFilters();
   applyRecipeFilters();
 }
 
-function buildHierarchyFilters() {
+async function buildHierarchyFilters() {
   var bar = document.getElementById('mp-hierarchy-filters');
   if (!bar) return;
+  if (!catFilter) { bar.innerHTML = ''; return; }
   var subs = {}, divs = {};
-  allRecipes.forEach(function (r) {
-    if (r.sub_category) subs[r.sub_category] = 1;
-    if (r.division) divs[r.division] = 1;
-  });
+  try {
+    var res = await fetch(SUPA_URL + '/rest/v1/rpc/get_approved_recipes', {
+      method: 'POST', headers: mpRecipeHeaders(),
+      body: JSON.stringify({ p_category: catFilter, p_limit: 200, p_offset: 0 })
+    });
+    if (res.ok) {
+      var rows = await res.json();
+      (Array.isArray(rows) ? rows : []).forEach(function (r) {
+        if (r.sub_category) subs[r.sub_category] = 1;
+        if (r.division) divs[r.division] = 1;
+      });
+    }
+  } catch (_) {}
   var subKeys = Object.keys(subs).sort();
   var divKeys = Object.keys(divs).sort();
   if (!subKeys.length && !divKeys.length) { bar.innerHTML = ''; return; }
@@ -375,7 +391,6 @@ function setSubFilter(sub) {
 
 function setDivFilter(div) {
   divFilter = div || '';
-  buildHierarchyFilters();
   applyRecipeFilters();
 }
 
@@ -1244,16 +1259,79 @@ async function markMealCooked(day, meal, e) {
 }
 
 // ── RECIPE PICKER ────────────────────────────────────────────────
+function mpRecipeHeaders() {
+  var h = { apikey: SUPA_KEY, 'Content-Type': 'application/json' };
+  try {
+    var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    if (sess && sess.access_token) h.Authorization = 'Bearer ' + sess.access_token;
+  } catch (_) {}
+  return h;
+}
+
+function normalizePickerRecipe(r) {
+  return Object.assign({}, r, { name: r.recipe_name || r.name || '' });
+}
+
+async function fetchPickerRecipes(reset) {
+  if (pickerLoading) return;
+  pickerLoading = true;
+  var el = document.getElementById('mp-results');
+  if (reset) {
+    pickerOffset = 0;
+    pickerRecipes = [];
+    pickerHasMore = false;
+    if (el) el.innerHTML = '<div class="mp-result-empty">Loading recipes…</div>';
+  }
+  var q = (document.getElementById('mp-search').value || '').trim();
+  try {
+    var res = await fetch(SUPA_URL + '/rest/v1/rpc/get_approved_recipes', {
+      method: 'POST',
+      headers: mpRecipeHeaders(),
+      body: JSON.stringify({
+        p_category: catFilter || null,
+        p_sub_category: subFilter || null,
+        p_division: divFilter || null,
+        p_search: q || null,
+        p_limit: PICKER_PAGE_SIZE,
+        p_offset: pickerOffset
+      })
+    });
+    if (!res.ok) throw new Error('fetch failed');
+    var rows = (await res.json());
+    rows = (Array.isArray(rows) ? rows : []).map(normalizePickerRecipe);
+    if (reset) pickerRecipes = rows;
+    else pickerRecipes = pickerRecipes.concat(rows);
+    pickerHasMore = rows.length >= PICKER_PAGE_SIZE;
+    pickerOffset += rows.length;
+    renderPickerResults();
+  } catch (_) {
+    if (reset && el) {
+      el.innerHTML = '<div class="mp-result-empty">Could not load recipes. Check your connection and try again.</div>';
+    }
+  }
+  pickerLoading = false;
+}
+
+function loadMorePickerRecipes() {
+  if (!pickerHasMore || pickerLoading) return;
+  fetchPickerRecipes(false);
+}
+
 function openPicker(day, meal) {
   pickerTarget = {day, meal};
   document.getElementById('mp-modal-title').textContent = 'Choose ' + meal + ' for ' + day;
   document.getElementById('mp-search').value = '';
+  catFilter = '';
+  subFilter = '';
+  divFilter = '';
   prepFilterMax = null;
-  document.querySelectorAll('.mp-filter-chip').forEach(function (b) {
+  document.querySelectorAll('#mp-prep-filters .mp-filter-chip').forEach(function (b) {
     b.classList.toggle('active', b.dataset.prep === 'all');
   });
+  buildCategoryFilters();
+  buildHierarchyFilters();
   document.getElementById('mp-modal').classList.add('open');
-  renderResults(allRecipes);
+  fetchPickerRecipes(true);
   setTimeout(function() { document.getElementById('mp-search').focus(); }, 100);
 }
 
@@ -1264,18 +1342,23 @@ function closePicker() {
 
 function setPrepFilter(max, btn) {
   prepFilterMax = max === 'all' ? null : parseInt(max, 10);
-  document.querySelectorAll('.mp-filter-chip').forEach(function (b) { b.classList.remove('active'); });
+  document.querySelectorAll('#mp-prep-filters .mp-filter-chip').forEach(function (b) { b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
-  applyRecipeFilters();
+  renderPickerResults();
 }
 
 function applyRecipeFilters() {
-  var q = (document.getElementById('mp-search').value || '').trim().toLowerCase();
-  var filtered = allRecipes.filter(function (r) {
-    if (catFilter && r.category !== catFilter) return false;
-    if (subFilter && (r.sub_category || '') !== subFilter) return false;
-    if (divFilter && (r.division || '') !== divFilter) return false;
-    if (q && r.name.toLowerCase().indexOf(q) < 0 && (r.category || '').toLowerCase().indexOf(q) < 0) return false;
+  clearTimeout(pickerSearchTimer);
+  pickerSearchTimer = setTimeout(function () { fetchPickerRecipes(true); }, 280);
+}
+
+function searchRecipes(q) { applyRecipeFilters(); }
+
+function renderPickerResults() {
+  var el = document.getElementById('mp-results');
+  if (!el) return;
+  var q = (document.getElementById('mp-search').value || '').trim();
+  var filtered = pickerRecipes.filter(function (r) {
     if (prepFilterMax != null) {
       var total = recipeTotalMinutes(r);
       if (!total || total > prepFilterMax) return false;
@@ -1285,30 +1368,47 @@ function applyRecipeFilters() {
     }
     return true;
   });
-  renderResults(filtered);
-}
 
-function searchRecipes(q) { applyRecipeFilters(); }
-
-function renderResults(recipes) {
-  const el = document.getElementById('mp-results');
-  if (!recipes.length) {
-    el.innerHTML = '<div class="mp-result-empty">No recipes found. Add some via Submit Recipe!</div>';
+  if (!filtered.length && !pickerLoading) {
+    el.innerHTML = '<div class="mp-result-empty">' +
+      (q ? 'No recipes match “' + esc(q) + '”. Try a shorter name or check spelling.' :
+        'No recipes in this category. Try another filter or search by name.') +
+      '</div>';
     return;
   }
+
   el.innerHTML = '';
-  recipes.slice(0, 40).forEach(function(r) {
-    const item = document.createElement('div');
+  if (!q && !catFilter) {
+    var hint = document.createElement('div');
+    hint.style.cssText = 'font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid);padding:4px 8px 10px;line-height:1.5';
+    hint.textContent = 'Showing recent recipes. Type to search the full library — every approved recipe is searchable.';
+    el.appendChild(hint);
+  }
+
+  filtered.forEach(function (r) {
+    var item = document.createElement('div');
     item.className = 'mp-result-item';
-    const emoji = CAT_EMOJI[r.category] || '🍽';
+    var emoji = CAT_EMOJI[r.category] || '🍽';
     var quickWarn = checkRecipeConflicts(r);
     var mins = recipeTotalMinutes(r);
     var timeNote = mins ? ' · ⏱ ' + mins + ' min' : '';
-    item.innerHTML = '<div class="mp-result-emoji">' + emoji + '</div><div style="flex:1"><div class="mp-result-name">' + esc(r.name||'') + '</div><div class="mp-result-cat">' + esc(r.category||'') + (r.origin_country?' · '+esc(r.origin_country):'') + timeNote + '</div>' +
+    var aka = r.also_known_as ? ' <span style="font-size:11px;color:var(--text-mid)">(' + esc(r.also_known_as) + ')</span>' : '';
+    item.innerHTML = '<div class="mp-result-emoji">' + emoji + '</div><div style="flex:1"><div class="mp-result-name">' + esc(r.name || '') + aka + '</div><div class="mp-result-cat">' + esc(r.category || '') + (r.origin_country ? ' · ' + esc(r.origin_country) : '') + timeNote + '</div>' +
       (quickWarn.length ? '<div class="mp-result-warn">' + esc(quickWarn[0]) + '</div>' : '') + '</div>';
-    item.addEventListener('click', function() { assignRecipeFromPicker(r); });
+    item.addEventListener('click', function () { assignRecipeFromPicker(r); });
     el.appendChild(item);
   });
+
+  if (pickerHasMore) {
+    var more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'mp-btn mp-btn-ghost';
+    more.style.cssText = 'width:100%;margin-top:8px';
+    more.textContent = pickerLoading ? 'Loading…' : 'Load more recipes';
+    more.disabled = pickerLoading;
+    more.addEventListener('click', loadMorePickerRecipes);
+    el.appendChild(more);
+  }
 }
 
 async function assignRecipeFromPicker(r) {
@@ -1521,23 +1621,10 @@ function printWeek() {
   window.print();
 }
 
-// ── LOAD RECIPES ─────────────────────────────────────────────────
-async function loadRecipes() {
-  try {
-    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_approved_recipes', {
-      method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
-      body:JSON.stringify({p_limit:100})
-    });
-    if (res.ok) {
-      var rows = await res.json();
-      allRecipes = (Array.isArray(rows) ? rows : []).map(function(r) {
-        return Object.assign({}, r, { name: r.recipe_name || r.name || '' });
-      });
-    }
-  } catch(_) {}
+// ── PICKER SETUP (no bulk preload — search hits full library) ───
+function initPickerFilters() {
   buildCategoryFilters();
   buildHierarchyFilters();
-  renderResults(allRecipes);
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
@@ -1563,7 +1650,7 @@ async function loadAllergySettings() {
 
 document.addEventListener('DOMContentLoaded', function() {
   renderCalendar();
-  loadRecipes();
+  initPickerFilters();
   loadFamilyProfiles();
   loadAllergySettings();
   loadPlanFromSupabase();
