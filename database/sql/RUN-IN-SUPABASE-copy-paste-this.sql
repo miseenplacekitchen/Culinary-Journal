@@ -4,6 +4,7 @@
 -- 2. Ctrl+A (select all) → Ctrl+C (copy)
 -- 3. Supabase → SQL Editor → New query → Ctrl+V → Run
 -- Safe to re-run.
+-- After site deploy, also run RUN-LIVE-CLEANUP.sql for library links + health RPC refresh.
 -- =============================================================================
 
 
@@ -3074,6 +3075,8 @@ SELECT 'fix-phase39-data-integrity ready' AS status;
 -- fix-phase39b-sql-editor-admin.sql
 -- Lets you run integrity + normalise from Supabase SQL Editor (postgres role).
 -- Safe to re-run. Run AFTER fix-phase39.
+-- SUPERSEDED on live DB: fix-phase43-starter-library-health.sql or RUN-LIVE-CLEANUP.sql
+-- (adds starter_library_wrong_links, approved_recipes, stricter healthy flag).
 
 CREATE OR REPLACE FUNCTION public.admin_data_integrity_report_sql()
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
@@ -3555,7 +3558,7 @@ SELECT 'fix-phase42-scale-mitigation ready' AS status;
 -- fix-library-governed-links.sql
 -- Re-link starter library profiles to the best governed ingredient match per slug.
 -- Uses fuzzy rules (like fix-phase25-library-links-patch), not hardcoded display names.
--- Run in Supabase SQL Editor, then: SQL-EDITOR-health-check.sql
+-- Prefer RUN-LIVE-CLEANUP.sql (library links + phase43 health RPCs + verification).
 
 -- Preview current links
 SELECT lp.slug, lp.name AS profile_name, lp.governed_ingredient_id,
@@ -3564,7 +3567,7 @@ FROM library_profiles lp
 LEFT JOIN ingredients gi ON gi."ID" = lp.governed_ingredient_id
 WHERE lp.profile_type = 'ingredient'
   AND lp.slug IN (
-    'garlic','onion','butter','rice','tomato','chicken-breast','salt',
+    'garlic','onion','butter','rice','tomato','chicken-breast','salt','lemon',
     'ginger','egg','flour','potato','coconut','milk','capsicum','olive-oil'
   )
 ORDER BY lp.slug;
@@ -3692,6 +3695,21 @@ FROM (
   LIMIT 1
 ) sub
 WHERE lp.profile_type = 'ingredient' AND lp.slug = 'chicken-breast';
+
+-- lemon
+UPDATE library_profiles lp SET governed_ingredient_id = sub.ing_id, name = sub.ing_name, updated_at = now()
+FROM (
+  SELECT "ID" AS ing_id, "Ingredient Name" AS ing_name FROM ingredients
+  WHERE lower("Ingredient Name") LIKE '%lemon%'
+    AND lower("Ingredient Name") NOT LIKE '%juice%'
+    AND lower("Ingredient Name") NOT LIKE '%zest%'
+    AND lower("Ingredient Name") NOT LIKE '%grass%'
+  ORDER BY
+    CASE WHEN lower(btrim("Ingredient Name")) IN ('lemon', 'lemons') THEN 0 ELSE 1 END,
+    length("Ingredient Name"), "ID"
+  LIMIT 1
+) sub
+WHERE lp.profile_type = 'ingredient' AND lp.slug = 'lemon';
 
 -- ginger
 UPDATE library_profiles lp SET governed_ingredient_id = sub.ing_id, name = sub.ing_name, updated_at = now()
@@ -3825,22 +3843,22 @@ FROM (
 ) sub
 WHERE lp.profile_type = 'ingredient' AND lp.slug = 'olive-oil';
 
--- Verify: NULL governed_id or still pointing at buttermilk etc. is a problem
+-- Verify all ingredient library profiles (not just starter slugs)
 SELECT lp.slug, lp.name AS profile_name, lp.governed_ingredient_id,
        gi."Ingredient Name" AS governed_name,
        CASE
          WHEN lp.governed_ingredient_id IS NULL THEN 'MISSING LINK'
+         WHEN gi."Ingredient Name" IS NULL THEN 'MISSING LINK'
+         WHEN lower(btrim(lp.name)) <> lower(btrim(gi."Ingredient Name")) THEN 'NAME MISMATCH'
          WHEN lower(gi."Ingredient Name") LIKE '%buttermilk%' AND lp.slug = 'butter' THEN 'WRONG LINK'
          WHEN lower(gi."Ingredient Name") LIKE '%peanut butter%' AND lp.slug = 'butter' THEN 'WRONG LINK'
+         WHEN lower(gi."Ingredient Name") LIKE '%rice paper%' AND lp.slug = 'rice' THEN 'WRONG LINK'
+         WHEN lower(gi."Ingredient Name") LIKE '%buttermilk%' AND lp.slug = 'milk' THEN 'WRONG LINK'
          ELSE 'ok'
        END AS link_status
 FROM library_profiles lp
 LEFT JOIN ingredients gi ON gi."ID" = lp.governed_ingredient_id
 WHERE lp.profile_type = 'ingredient'
-  AND lp.slug IN (
-    'garlic','onion','butter','rice','tomato','chicken-breast','salt',
-    'ginger','egg','flour','potato','coconut','milk','capsicum','olive-oil'
-  )
 ORDER BY lp.slug;
 
 -- Single summary (Supabase often shows only the last result)
@@ -3849,25 +3867,25 @@ SELECT jsonb_build_object(
   'profiles_checked', count(*),
   'all_ok', count(*) FILTER (WHERE link_status = 'ok'),
   'problems', COALESCE(jsonb_agg(jsonb_build_object(
-    'slug', slug, 'governed_name', governed_name, 'link_status', link_status
-  )) FILTER (WHERE link_status <> 'ok'), '[]'::jsonb)
+    'slug', slug, 'profile_name', profile_name, 'governed_name', governed_name, 'link_status', link_status
+  ) ORDER BY slug) FILTER (WHERE link_status <> 'ok'), '[]'::jsonb)
 ) AS library_link_summary
 FROM (
-  SELECT lp.slug,
+  SELECT lp.slug, lp.name AS profile_name,
          gi."Ingredient Name" AS governed_name,
          CASE
            WHEN lp.governed_ingredient_id IS NULL THEN 'MISSING LINK'
+           WHEN gi."Ingredient Name" IS NULL THEN 'MISSING LINK'
+           WHEN lower(btrim(lp.name)) <> lower(btrim(gi."Ingredient Name")) THEN 'NAME MISMATCH'
            WHEN lower(gi."Ingredient Name") LIKE '%buttermilk%' AND lp.slug = 'butter' THEN 'WRONG LINK'
            WHEN lower(gi."Ingredient Name") LIKE '%peanut butter%' AND lp.slug = 'butter' THEN 'WRONG LINK'
+           WHEN lower(gi."Ingredient Name") LIKE '%rice paper%' AND lp.slug = 'rice' THEN 'WRONG LINK'
+           WHEN lower(gi."Ingredient Name") LIKE '%buttermilk%' AND lp.slug = 'milk' THEN 'WRONG LINK'
            ELSE 'ok'
          END AS link_status
   FROM library_profiles lp
   LEFT JOIN ingredients gi ON gi."ID" = lp.governed_ingredient_id
   WHERE lp.profile_type = 'ingredient'
-    AND lp.slug IN (
-      'garlic','onion','butter','rice','tomato','chicken-breast','salt',
-      'ginger','egg','flour','potato','coconut','milk','capsicum','olive-oil'
-    )
 ) v;
 -- ########## END: fix-library-governed-links.sql ##########
 
@@ -4065,6 +4083,116 @@ GRANT EXECUTE ON FUNCTION public.admin_data_integrity_report_sql() TO postgres, 
 
 SELECT 'fix-phase43-starter-library-health ready' AS status;
 -- ########## END: fix-phase43-starter-library-health.sql ##########
+
+-- ########## BEGIN: SQL-EDITOR-health-check.sql ##########
+-- =============================================================================
+-- RUN IN SUPABASE SQL EDITOR (no login required)
+-- Copy all → paste → Run. Turn OFF "limit 100" if Supabase shows that option.
+-- Or run RUN-LIVE-CLEANUP.sql for the full live sequence.
+-- =============================================================================
+
+SELECT jsonb_build_object(
+  'totals', jsonb_build_object(
+    'recipes', (SELECT count(*)::int FROM public.submitted_recipes),
+    'approved_recipes', (SELECT count(*)::int FROM public.submitted_recipes WHERE status = 'approved'),
+    'ingredients', (SELECT count(*)::int FROM public.ingredients)
+  ),
+  'issues', jsonb_build_object(
+    'invalid_governed_links', (
+      SELECT count(*)::int FROM public.library_profiles lp
+      WHERE lp.profile_type = 'ingredient'
+        AND lp.governed_ingredient_id IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM public.ingredients i WHERE i."ID" = lp.governed_ingredient_id
+        )
+    ),
+    'library_name_mismatches', (
+      SELECT count(*)::int FROM public.library_profiles lp
+      JOIN public.ingredients i ON i."ID" = lp.governed_ingredient_id
+      WHERE lp.profile_type = 'ingredient'
+        AND lower(btrim(lp.name)) <> lower(btrim(i."Ingredient Name"))
+    ),
+    'duplicate_ingredient_names', (
+      SELECT count(*)::int FROM (
+        SELECT lower(btrim("Ingredient Name")) AS n
+        FROM public.ingredients
+        WHERE "Ingredient Name" IS NOT NULL AND btrim("Ingredient Name") <> ''
+        GROUP BY 1 HAVING count(*) > 1
+      ) d
+    ),
+    'starter_library_wrong_links', (
+      SELECT count(*)::int
+      FROM public.library_profiles lp
+      JOIN public.ingredients gi ON gi."ID" = lp.governed_ingredient_id
+      WHERE lp.profile_type = 'ingredient'
+        AND (
+          (lp.slug = 'butter' AND (
+            lower(gi."Ingredient Name") LIKE '%buttermilk%'
+            OR lower(gi."Ingredient Name") LIKE '%peanut butter%'
+          ))
+          OR (lp.slug = 'rice' AND lower(gi."Ingredient Name") LIKE '%rice paper%')
+          OR (lp.slug = 'milk' AND lower(gi."Ingredient Name") LIKE '%buttermilk%')
+        )
+    ),
+    'orphan_recipe_ingredient_names', (
+      SELECT count(DISTINCT x.ing_name)::int
+      FROM (
+        SELECT lower(btrim(item->>'ingredient')) AS ing_name
+        FROM public.submitted_recipes sr,
+             jsonb_array_elements(COALESCE(sr.ingredients, '[]'::jsonb)) sec,
+             jsonb_array_elements(COALESCE(sec->'items', '[]'::jsonb)) item
+        WHERE sr.status = 'approved'
+          AND btrim(COALESCE(item->>'ingredient', '')) <> ''
+      ) x
+      WHERE NOT EXISTS (
+        SELECT 1 FROM public.ingredients i
+        WHERE lower(btrim(i."Ingredient Name")) = x.ing_name
+           OR lower(btrim(COALESCE(i."Also Known As", ''))) = x.ing_name
+      )
+    )
+  ),
+  'healthy', (
+    (SELECT count(*)::int FROM public.library_profiles lp
+      WHERE lp.profile_type = 'ingredient'
+        AND lp.governed_ingredient_id IS NOT NULL
+        AND NOT EXISTS (SELECT 1 FROM public.ingredients i WHERE i."ID" = lp.governed_ingredient_id)
+    ) = 0
+    AND (SELECT count(*)::int FROM public.library_profiles lp
+      JOIN public.ingredients i ON i."ID" = lp.governed_ingredient_id
+      WHERE lp.profile_type = 'ingredient'
+        AND lower(btrim(lp.name)) <> lower(btrim(i."Ingredient Name"))
+    ) = 0
+    AND (SELECT count(*)::int FROM (
+      SELECT lower(btrim("Ingredient Name")) AS n FROM public.ingredients
+      WHERE "Ingredient Name" IS NOT NULL AND btrim("Ingredient Name") <> ''
+      GROUP BY 1 HAVING count(*) > 1
+    ) d) = 0
+    AND (SELECT count(*)::int FROM public.library_profiles lp
+      JOIN public.ingredients gi ON gi."ID" = lp.governed_ingredient_id
+      WHERE lp.profile_type = 'ingredient'
+        AND (
+          (lp.slug = 'butter' AND (lower(gi."Ingredient Name") LIKE '%buttermilk%' OR lower(gi."Ingredient Name") LIKE '%peanut butter%'))
+          OR (lp.slug = 'rice' AND lower(gi."Ingredient Name") LIKE '%rice paper%')
+          OR (lp.slug = 'milk' AND lower(gi."Ingredient Name") LIKE '%buttermilk%')
+        )
+    ) = 0
+    AND (SELECT count(DISTINCT x.ing_name)::int
+      FROM (
+        SELECT lower(btrim(item->>'ingredient')) AS ing_name
+        FROM public.submitted_recipes sr,
+             jsonb_array_elements(COALESCE(sr.ingredients, '[]'::jsonb)) sec,
+             jsonb_array_elements(COALESCE(sec->'items', '[]'::jsonb)) item
+        WHERE sr.status = 'approved' AND btrim(COALESCE(item->>'ingredient', '')) <> ''
+      ) x
+      WHERE NOT EXISTS (
+        SELECT 1 FROM public.ingredients i
+        WHERE lower(btrim(i."Ingredient Name")) = x.ing_name
+           OR lower(btrim(COALESCE(i."Also Known As", ''))) = x.ing_name
+      )
+    ) = 0
+  )
+) AS health_report;
+-- ########## END: SQL-EDITOR-health-check.sql ##########
 
 SELECT pg_notify('pgrst', 'reload schema');
 SELECT 'ALL PRODUCTION PATCHES COMPLETE' AS status;

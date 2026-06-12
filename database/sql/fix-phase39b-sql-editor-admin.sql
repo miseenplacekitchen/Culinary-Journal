@@ -1,6 +1,8 @@
 -- fix-phase39b-sql-editor-admin.sql
 -- Lets you run integrity + normalise from Supabase SQL Editor (postgres role).
 -- Safe to re-run. Run AFTER fix-phase39.
+-- SUPERSEDED on live DB: fix-phase43-starter-library-health.sql or RUN-LIVE-CLEANUP.sql
+-- (adds starter_library_wrong_links, approved_recipes, stricter healthy flag).
 
 CREATE OR REPLACE FUNCTION public.admin_data_integrity_report_sql()
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$

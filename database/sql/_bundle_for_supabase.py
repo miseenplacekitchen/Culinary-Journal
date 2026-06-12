@@ -16,6 +16,7 @@ files = [
     "fix-phase42-scale-mitigation.sql",
     "fix-library-governed-links.sql",
     "fix-phase43-starter-library-health.sql",
+    "SQL-EDITOR-health-check.sql",
 ]
 out = base / "RUN-IN-SUPABASE-copy-paste-this.sql"
 header = """-- =============================================================================
@@ -24,6 +25,7 @@ header = """-- =================================================================
 -- 2. Ctrl+A (select all) → Ctrl+C (copy)
 -- 3. Supabase → SQL Editor → New query → Ctrl+V → Run
 -- Safe to re-run.
+-- After site deploy, also run RUN-LIVE-CLEANUP.sql for library links + health RPC refresh.
 -- =============================================================================
 
 """

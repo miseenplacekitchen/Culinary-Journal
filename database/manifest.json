@@ -56,6 +56,12 @@
     "save_my_pantry": "pantry.sql",
     "get_my_grocery_list": "grocery_list.sql"
   },
+  "live_cleanup_order": [
+    { "file": "RUN-LIVE-CLEANUP.sql", "note": "Single paste: library links + health RPCs + verification" },
+    { "file": "fix-library-governed-links.sql", "note": "Step 1 only — re-link ingredient library profiles" },
+    { "file": "fix-phase43-starter-library-health.sql", "note": "Step 2 only — dashboard System Health RPCs" },
+    { "file": "SQL-EDITOR-health-check.sql", "note": "Step 3 only — expect healthy: true" }
+  ],
   "production_patches": [
     { "file": "fix-phase39-data-integrity.sql", "note": "Data integrity RPCs and health checks" },
     { "file": "fix-phase39b-sql-editor-admin.sql", "note": "SQL editor admin tooling" },
@@ -64,6 +70,7 @@
     { "file": "fix-phase42-scale-mitigation.sql", "note": "Scale caps and pagination helpers" },
     { "file": "fix-library-governed-links.sql", "note": "Re-link starter library slugs to correct governed ingredients" },
     { "file": "SQL-EDITOR-health-check.sql", "note": "Run after data fixes; expect all zeros" },
-    { "file": "fix-phase43-starter-library-health.sql", "note": "Dashboard health RPC: starter wrong-link detection" }
+    { "file": "fix-phase43-starter-library-health.sql", "note": "Dashboard health RPC: starter wrong-link detection" },
+    { "file": "RUN-LIVE-CLEANUP.sql", "note": "Ordered live cleanup bundle (library + health + verify)" }
   ]
 }
