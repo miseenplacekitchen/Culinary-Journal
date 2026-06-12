@@ -6,6 +6,15 @@ const RecipeImportCore = require('../lib/recipe-import-core.js');
 const RecipeImportExtract = require('../lib/recipe-import-extract.js');
 const MAX_BYTES = 1_500_000;
 const TIMEOUT_MS = 14000;
+const PASTE_HINT = 'Copy the recipe text from the site into the paste box, then click Parse Recipe. Photo scan also works.';
+
+function jsonError(res, status, body) {
+  return res.status(status).json(Object.assign({
+    ok: false,
+    pasteHint: PASTE_HINT,
+    fallbackSuggested: true
+  }, body));
+}
 
 function looksLikeStructuredRecipe(text) {
   if (RecipeImportCore && RecipeImportCore.looksLikeStructuredRecipe) {
@@ -84,26 +93,39 @@ module.exports = async function handler(req, res) {
 
   const url = (req.query && req.query.url) ? String(req.query.url).trim() : '';
   if (!url || !/^https?:\/\//i.test(url)) {
-    return res.status(400).json({ ok: false, error: 'Valid http(s) url required', fetchStatus: 'invalid-url' });
+    return jsonError(res, 400, {
+      error: 'Valid http(s) url required',
+      fetchStatus: 'invalid-url',
+      fallbackSuggested: false
+    });
   }
 
   let host;
   try { host = new URL(url).hostname; } catch (_) {
-    return res.status(400).json({ ok: false, error: 'Invalid URL', fetchStatus: 'invalid-url' });
+    return jsonError(res, 400, {
+      error: 'Invalid URL',
+      fetchStatus: 'invalid-url',
+      fallbackSuggested: false
+    });
   }
 
   if (RecipeImportExtract.isLikelyNonRecipeUrl(url)) {
-    return res.status(400).json({
-      ok: false,
+    return jsonError(res, 400, {
       error: 'That URL looks like a homepage or category page, not a single recipe. Paste a direct recipe link.',
       fetchStatus: 'non-recipe-url',
-      host: RecipeImportExtract.resolveHostStrategy(host).host
+      host: RecipeImportExtract.resolveHostStrategy(host).host,
+      fallbackSuggested: false,
+      pasteHint: 'Open the recipe page in your browser, copy the ingredients and method, then paste here.'
     });
   }
 
   const blocked = ['localhost', '127.0.0.1', '0.0.0.0'];
   if (blocked.some(b => host === b || host.endsWith('.' + b))) {
-    return res.status(403).json({ ok: false, error: 'URL not allowed', fetchStatus: 'blocked' });
+    return jsonError(res, 403, {
+      error: 'URL not allowed',
+      fetchStatus: 'blocked',
+      fallbackSuggested: false
+    });
   }
 
   const hostInfo = RecipeImportExtract.resolveHostStrategy(host);
@@ -131,28 +153,36 @@ module.exports = async function handler(req, res) {
           return res.status(200).json({ ok: true, url, social: true, ...oembed, html: '', recipe: null, fetchStatus: 'ok' });
         }
       }
-      return res.status(502).json({
-        ok: false,
+      const botBlocked = upstream.status === 403 || upstream.status === 402 || upstream.status === 451;
+      return jsonError(res, 502, {
         error: RecipeImportExtract.getFetchErrorMessage(upstream.status, host),
-        fetchStatus: upstream.status === 403 || upstream.status === 402 ? 'bot-blocked' : 'http-error',
+        fetchStatus: botBlocked ? 'bot-blocked' : 'http-error',
         httpStatus: upstream.status,
         host: hostInfo.host,
-        strategy: hostInfo.strategy
+        strategy: hostInfo.strategy,
+        fallbackSuggested: botBlocked,
+        pasteHint: botBlocked
+          ? 'This site blocks automated fetch. Paste the recipe text, or wait — we will try a browser fallback reader next.'
+          : PASTE_HINT
       });
     }
 
     const buf = await upstream.arrayBuffer();
     if (buf.byteLength > MAX_BYTES) {
-      return res.status(413).json({ ok: false, error: 'Page too large to import', fetchStatus: 'too-large' });
+      return jsonError(res, 413, {
+        error: 'Page too large to import',
+        fetchStatus: 'too-large',
+        pasteHint: 'Paste the recipe text manually — large pages cannot be imported automatically.'
+      });
     }
 
     const html = new TextDecoder('utf-8', { fatal: false }).decode(buf);
     if (!html || html.length < 200) {
-      return res.status(502).json({
-        ok: false,
-        error: 'Empty response from recipe site. Paste the recipe text manually.',
+      return jsonError(res, 502, {
+        error: 'Empty response from recipe site.',
         fetchStatus: 'empty-body',
-        host: hostInfo.host
+        host: hostInfo.host,
+        pasteHint: PASTE_HINT
       });
     }
 
@@ -207,12 +237,16 @@ module.exports = async function handler(req, res) {
       }
     }
     const timedOut = e && e.name === 'AbortError';
-    return res.status(502).json({
-      ok: false,
-      error: timedOut ? 'Request timed out — try again or paste the recipe manually.' : 'Fetch failed — paste the recipe text manually.',
+    return jsonError(res, 502, {
+      error: timedOut
+        ? 'Request timed out — try again or paste the recipe manually.'
+        : 'Fetch failed — paste the recipe text manually.',
       fetchStatus: timedOut ? 'timeout' : 'fetch-failed',
       host: hostInfo.host,
-      strategy: hostInfo.strategy
+      strategy: hostInfo.strategy,
+      pasteHint: timedOut
+        ? 'Slow site or network — paste the recipe text, or retry in a moment.'
+        : PASTE_HINT
     });
   }
 };

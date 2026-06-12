@@ -106,6 +106,9 @@ fix-phase50-ingredient-categories.sql | Categorise phase48 Uncategorised rows   
 fix-phase51-soft-launch-pages.sql   | Register core pages for soft launch                  | Ran ✅ Betty
 RUN-ALL-REMAINING.sql               | Full remaining bundle (44–51)                        | Superseded by incremental runs ✅
 RUN-LIVE-FOLLOWUP.sql               | Phases 49–51 + health verify                         | Ran ✅ Betty — healthy: true
+fix-phase52-library-profiles.sql    | Cumin, turmeric, chickpea, lentil, lime, avocado     | SQL ready — RUN-LIVE-PHASE52.sql
+fix-phase52-lane2-recipes.sql       | Lemon Herb Rice, Quick Chickpea Curry, Avocado Toast | SQL ready — needs Betty run
+RUN-LIVE-PHASE52.sql                | Phase 52 library + recipes + health                  | Paste on Supabase after deploy
 
 ══════════════════════════════════════════════════════════════════════
 OPS NOTES (owner)
@@ -114,7 +117,7 @@ OPS NOTES (owner)
 • Supabase backup: Dashboard → Project → Database → Backups (confirm PITR or daily snapshots).
 • After code deploy: hard-refresh admin; System Health should match SQL-EDITOR-health-check.sql.
 • Code: submit validation extracted to lib/submit-recipe-validate.js; duplicate SQL moved to database/sql/archive/.
-• 2 approved recipes in DB — import or approve more for browse/chef filters to feel full.
+• Phase 52 seeds 3 approved recipes (verify account) — run RUN-LIVE-PHASE52.sql on Supabase.
 • Admin UX: System Health on dashboard home; Lane 2 + Theme Sweep in admin nav (not new tabs).
 • OG share image: og-image.svg deployed (was missing og-image.png).
 

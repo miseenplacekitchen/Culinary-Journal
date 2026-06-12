@@ -116,7 +116,7 @@ function buildSectionNav() {
     // AP-05: member-personal sections render only for signed-in users
     if (section.signedInOnly) {
       var _s = null;
-      try { _s = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
+      try { _s = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(e) { console.warn('nav-init', e); }
       if (!_s || !_s.access_token) return;
     }
     var isActive = activeSection === section.id;
@@ -434,8 +434,8 @@ function buildSectionNav() {
     }
 
     var session = null, profile = {};
-    try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
-    try { profile = JSON.parse(localStorage.getItem('tcj_profile') || '{}') || {}; } catch (_) {}
+    try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(e) { console.warn('session', e); }
+    try { profile = JSON.parse(localStorage.getItem('tcj_profile') || '{}') || {}; } catch(e) { console.warn('json', e); }
     var loggedIn = !!(session && session.access_token);
 
     var html;
@@ -506,8 +506,8 @@ function buildSectionNav() {
     var host = document.getElementById('nav-btns') || document.querySelector('[data-nav-host]');
     if (!host) return;
     var session = null, profile = {};
-    try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch (_) {}
-    try { profile = JSON.parse(localStorage.getItem('tcj_profile') || '{}') || {}; } catch (_) {}
+    try { session = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(e) { console.warn('session', e); }
+    try { profile = JSON.parse(localStorage.getItem('tcj_profile') || '{}') || {}; } catch(e) { console.warn('json', e); }
     if (!(session && session.access_token)) return;
     profile = normalizeNavProfile(profile, session);
     rebuildLoggedInNav(host, profile, session);
@@ -562,9 +562,9 @@ function buildSectionNav() {
     var signout = host.querySelector('#cj-signout');
     if (signout) {
       signout.addEventListener('click', function () {
-        try { localStorage.removeItem('tcj_session'); } catch (_) {}
-        try { localStorage.removeItem('tcj_profile'); } catch (_) {}
-        try { localStorage.removeItem('tcj_theme');   } catch (_) {}
+        try { localStorage.removeItem('tcj_session'); } catch(e) { console.warn('nav-init', e); }
+        try { localStorage.removeItem('tcj_profile'); } catch(e) { console.warn('storage', e); }
+        try { localStorage.removeItem('tcj_theme');   } catch(e) { console.warn('storage', e); }
         window.location.href = 'index.html';
       });
     }
@@ -621,7 +621,7 @@ async function loadNotifCount() {
     var badge = document.getElementById('nav-notif-badge');
     var n = parseInt(count)||0;
     if (badge) { badge.textContent = n>9?'9+':n; badge.style.display = n>0?'inline':'none'; }
-  } catch(_) {}
+  } catch(e) { console.warn('nav-init', e); }
 }
 
 async function toggleNotifPanel() {
@@ -687,7 +687,7 @@ function renderNotifPanel(notifs) {
     item.appendChild(inner);
     item.addEventListener('click', async function(e) {
       e.preventDefault();
-      try { await notifRpc('mark_notification_read', {p_id: n.id}); } catch(_) {}
+      try { await notifRpc('mark_notification_read', {p_id: n.id}); } catch(e) { console.warn('nav-init', e); }
       loadNotifCount();
       var dest = n.recipe_id ? 'recipe-page.html?id=' + n.recipe_id : null;
       if (dest) window.location.href = dest;
@@ -788,8 +788,8 @@ setTimeout(function() { if(typeof loadNotifCount === "function") loadNotifCount(
 
   btn.addEventListener('click', function() {
     var prof = null, sess = null;
-    try { prof = JSON.parse(localStorage.getItem('tcj_profile')||'null'); } catch(_){}
-    try { sess = JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch(_){}
+    try { prof = JSON.parse(localStorage.getItem('tcj_profile')||'null'); } catch(e) { console.warn('nav-init', e); }
+    try { sess = JSON.parse(localStorage.getItem('tcj_session')||'null'); } catch(e) { console.warn('json', e); }
 
     var selectedType = 'general';
 

@@ -695,7 +695,7 @@ async function checkSourceUrl(url) {
       sessionStorage.setItem('dlcheck_' + url, 'ok');
       if (recipe && recipe.id) persistSourceLinkStatus('ok');
     }
-  } catch(_) {} // Network error — don't flag as dead
+  } catch(e) { console.warn('recipe-page', e); } // Network error — don't flag as dead
 }
 async function persistSourceLinkStatus(status) {
   try {
@@ -710,7 +710,7 @@ async function persistSourceLinkStatus(status) {
       },
       body: JSON.stringify({ p_recipe_id: recipe.id, p_status: status })
     });
-  } catch(_) {}
+  } catch(e) { console.warn('recipe-page', e); }
 }
 function showDeadLink(url) {
   var existing = document.querySelector('.rp-deadlink');
@@ -811,7 +811,7 @@ async function loadAllergenMap() {
       const allergen = (index.allergenNames[name] || '').trim();
       if (allergen) ingredientAllergenMap.set(name, allergen);
     });
-  } catch(_) {}
+  } catch(e) { console.warn('recipe-page', e); }
   return ingredientAllergenMap;
 }
 
@@ -860,7 +860,7 @@ async function loadRpIngredientIndex() {
     if (typeof TcjIngredientLookup === 'undefined') return;
     const index = await TcjIngredientLookup.fetchIndex();
     rpIngIndex = index.byName || {};
-  } catch (_) {}
+  } catch(e) { console.warn('recipe-page', e); }
 }
 
 function resolveIngredientMeta(name) {
@@ -891,7 +891,7 @@ async function loadLibraryLinks(r) {
     renderIngredients(r.ingredients);
     if (currentView === 'combined') renderIngredients(r.ingredients, 'ingredients-combined');
     if (currentServes !== baseServes) scaleIngredients(currentServes);
-  } catch (_) {}
+  } catch(e) { console.warn('recipe-page', e); }
 }
 
 async function renderFamilyAllergyWarnings(r) {
@@ -918,7 +918,7 @@ async function renderFamilyAllergyWarnings(r) {
       return '<div style="margin-bottom:4px">' + escapeHtml(w) + '</div>';
     }).join('');
     banner.style.display = 'flex';
-  } catch (_) {}
+  } catch(e) { console.warn('recipe-page', e); }
 }
 
 
@@ -1023,7 +1023,7 @@ async function loadRelatedRecipes(currentId, category) {
       grid.appendChild(card);
     });
     section.style.display = 'block';
-  } catch(_) {}
+  } catch(e) { console.warn('recipe-page', e); }
 }
 
 
@@ -1065,7 +1065,7 @@ async function loadSubstitutions() {
       substitutionsMap[key].push(row);
     });
     refreshIngredientSubstitutes();
-  } catch(_) {}
+  } catch(e) { console.warn('recipe-page', e); }
 }
 
 function getSubstitutes(ingredientName) {
@@ -1095,7 +1095,7 @@ function parseJsonArray(val, fallback) {
     try {
       const parsed = JSON.parse(val);
       return Array.isArray(parsed) ? parsed : fallback;
-    } catch(_) {}
+    } catch(e) { console.warn('recipe-page', e); }
   }
   return fallback;
 }
@@ -1225,10 +1225,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   try {
     const openTab = params.get('tab');
     if (openTab && document.getElementById('tab-' + openTab)) switchTab(openTab);
-  } catch(_) {}
+  } catch(e) { console.warn('recipe-page', e); }
 
-  try { setupSwipe(); } catch(_) {}
-  try { initRecipeFontSize(); } catch(_) {}
+  try { setupSwipe(); } catch(e) { console.warn('recipe-page', e); }
+  try { initRecipeFontSize(); } catch(e) { console.warn('recipe-page', e); }
 });
 
 function updateNav() {
@@ -1522,7 +1522,7 @@ function renderRecipe(r) {
   renderKeeping(r);
 
   // Contextual safety notes (baby / preservation / health / alcohol)
-  try { renderDisclaimers(r); } catch(_) {}
+  try { renderDisclaimers(r); } catch(e) { console.warn('recipe-page', e); }
 
   // Tags
   renderTags(r);
@@ -1546,21 +1546,21 @@ function renderRecipe(r) {
   renderUtensils(r);
 
   // Related recipes, allergen detection, source-link check — best-effort, never break the page
-  try { if (r.id && r.category) loadRelatedRecipes(r.id, r.category); } catch(_) {}
-  try { detectAllergens(r); } catch(_) {}
-  try { renderFamilyAllergyWarnings(r); } catch(_) {}
+  try { if (r.id && r.category) loadRelatedRecipes(r.id, r.category); } catch(e) { console.warn('recipe', e); }
+  try { detectAllergens(r); } catch(e) { console.warn('recipe-page', e); }
+  try { renderFamilyAllergyWarnings(r); } catch(e) { console.warn('recipe-page', e); }
   try {
     if (r.credit_url) {
       if (r.source_link_status === 'dead') showDeadLink(r.credit_url);
       else checkSourceUrl(r.credit_url);
     }
-  } catch(_) {}
-  try { initTriedIt(); } catch(_) {}
-  try { showCookHistoryBridge(); } catch(_) {}
+  } catch(e) { console.warn('recipe-page', e); }
+  try { initTriedIt(); } catch(e) { console.warn('recipe-page', e); }
+  try { showCookHistoryBridge(); } catch(e) { console.warn('recipe-page', e); }
   try {
     var savedView = lsGet('tcj_recipe_view');
     if (savedView === 'combined') setView('combined', true);
-  } catch(_) {}
+  } catch(e) { console.warn('recipe-page', e); }
 }
 
 function formatTime(mins) {
@@ -1715,7 +1715,7 @@ function renderHeroImage(r) {
     heroImg.style.display = 'block';
     if (heroPh) heroPh.style.display = 'none';
     sampleHeroBackdrop(heroImg);
-    try { applyWatermark(r); } catch(_) {}
+    try { applyWatermark(r); } catch(e) { console.warn('recipe-page', e); }
   }
   heroImg.onload = onHeroReady;
   heroImg.onerror = function () {
@@ -2049,7 +2049,7 @@ async function prefetchPantryFromCloud() {
     if (!Array.isArray(items)) return;
     localStorage.setItem('tcj_pantry', JSON.stringify(items));
     if (data.updated_at) localStorage.setItem('tcj_pantry_ts', String(new Date(data.updated_at).getTime()));
-  } catch (_) {}
+  } catch(e) { console.warn('storage', e); }
 }
 
 function getPantryItems() {
@@ -2260,7 +2260,7 @@ async function savePersonalNote() {
           updated_at: new Date().toISOString()
         })
       });
-    } catch(_) {}
+    } catch(e) { console.warn('recipe-page', e); }
   }
   showToast('Personal note saved ✓');
 }
@@ -2461,7 +2461,7 @@ function showToast(msg, linkHref, linkText) {
 // ── BRIDGE: SHOW COOK HISTORY FOR THIS RECIPE (4.4) ─────────────
 function showCookHistoryBridge() {
   if (!recipe || !recipe.id) return;
-  var s; try { s = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(_) {}
+  var s; try { s = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(e) { console.warn('recipe', e); }
   if (!s || !s.access_token) return;
 
   fetch(SUPABASE_URL + '/rest/v1/cooking_events?recipe_id=eq.' + recipe.id + '&select=id,cooked_at,rating&order=cooked_at.desc', {
