@@ -4260,8 +4260,7 @@ WHERE f.slug = d.slug
 -- ── Approve all pending recipes (increases public browse content) ─────
 UPDATE public.submitted_recipes
 SET status = 'approved',
-    approved_at = COALESCE(approved_at, now()),
-    updated_at = now()
+    reviewed_at = COALESCE(reviewed_at, now())
 WHERE status = 'pending';
 
 -- ── Free-tier limit settings (disabled until admin enables) ───────────
