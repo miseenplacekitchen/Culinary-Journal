@@ -98,6 +98,7 @@
     </div>
   </div>
 </div>
+<script src="lib/recipe-browse-utils.js?v=20260701"></script>
 <script src="nav-init.js"></script>
 <script>
 var state = { level:'continent', continent:'', country:'', state:'', counts:[], useRpc:true };
@@ -276,12 +277,16 @@ function wireMap(){
 
 async function init(){
   try {
-    var res = await fetch(SUPA_URL+'/rest/v1/rpc/get_approved_recipes', {
-      method:'POST',
-      headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
-      body: JSON.stringify({p_limit:400})
-    });
-    fallbackRecipes = res.ok ? await res.json() : [];
+    if (typeof TcjRecipeBrowse !== 'undefined') {
+      fallbackRecipes = await TcjRecipeBrowse.fetchAllApproved({ params: {} });
+    } else {
+      var res = await fetch(SUPA_URL+'/rest/v1/rpc/get_approved_recipes', {
+        method:'POST',
+        headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+        body: JSON.stringify({p_limit:100,p_offset:0})
+      });
+      fallbackRecipes = res.ok ? await res.json() : [];
+    }
   } catch(_) { fallbackRecipes = []; }
   wireMap();
   await goLevel('continent');

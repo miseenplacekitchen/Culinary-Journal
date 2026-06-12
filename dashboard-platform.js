@@ -275,12 +275,16 @@ async function fmSearchRecipes(dishId) {
   var box = document.getElementById('fm-rs-' + dishId);
   box.innerHTML = 'Searching…';
   try {
-    var rows = await rpc('admin_search_recipes', { p_query: q, p_limit: 12 }) || [];
+    var rows = await rpc('admin_search_recipes', { p_query: q, p_limit: 48, p_offset: 0 }) || [];
     if (!rows.length) { box.innerHTML = '<div style="font-size:11px;color:var(--text-mid);margin-top:6px">No approved recipes found.</div>'; return; }
-    box.innerHTML = rows.map(function(r) {
+    var html = rows.map(function(r) {
       return '<button type="button" onclick="fmLinkRecipe(\'' + dishId + '\',\'' + r.id + '\')" style="display:block;width:100%;text-align:left;margin-top:4px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-high);font-family:DM Sans,sans-serif;font-size:11px;cursor:pointer">' +
         esc(r.recipe_name) + ' <span style="color:var(--text-mid)">· ' + esc(r.category || '') + '</span></button>';
     }).join('');
+    if (rows.length >= 48) {
+      html += '<div style="font-size:10px;color:var(--text-mid);margin-top:6px">Showing first 48 — narrow your search for more.</div>';
+    }
+    box.innerHTML = html;
   } catch (e) { box.innerHTML = '<div style="color:#dc5050;font-size:11px">' + esc(e.message) + '</div>'; }
 }
 

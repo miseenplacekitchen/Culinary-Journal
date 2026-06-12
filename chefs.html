@@ -165,38 +165,26 @@ async function loadMostSaved() {
 async function load() {
   await loadMostSaved();
   try {
-    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_approved_recipes', {
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_chef_directory', {
       method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
-      body:JSON.stringify({p_limit:200})
+      body:'{}'
     });
-    allRecipes = res.ok ? await res.json() : [];
-  } catch(_) { allRecipes = []; }
-
-  // Build chef map
-  const chefMap = {};
-  allRecipes.forEach(function(r) {
-    const name = (r.credit_name||'').trim();
-    if (!name) return;
-    if (!chefMap[name]) {
-      chefMap[name] = {
-        name,
-        handle: r.credit_handle||'',
-        url:    r.credit_url||'',
-        countries: new Set(),
-        categories: new Set(),
-        recipes: []
+    const rows = res.ok ? await res.json() : [];
+    allChefs = (Array.isArray(rows) ? rows : []).map(function(c) {
+      return {
+        name: c.chef_name,
+        handle: c.credit_handle || '',
+        url: '',
+        countries: new Set(c.countries || []),
+        categories: new Set(c.categories || []),
+        recipes: [],
+        recipe_count: parseInt(c.recipe_count, 10) || 0,
+        is_cj_original: !!c.is_cj_original,
+        specialties: c.categories || []
       };
-    }
-    chefMap[name].recipes.push(r);
-    if (r.origin_country) chefMap[name].countries.add(r.origin_country);
-    if (r.category)       chefMap[name].categories.add(r.category);
-  });
-
-  allChefs = Object.values(chefMap).map(function(c) {
-    c.is_cj_original = c.recipes.some(function(r) { return r.source_type === 'Original'; });
-    c.specialties = Array.from(c.categories);
-    return c;
-  }).sort(function(a,b){return b.recipes.length - a.recipes.length;});
+    });
+    allRecipes = [];
+  } catch(_) { allChefs = []; allRecipes = []; }
   var countries = {};
   var specialties = {};
   allChefs.forEach(function(c) {
@@ -243,19 +231,20 @@ function filterChefs() {
     function chefSaves(c) {
       return (c.recipes || []).reduce(function(n, r) { return n + (saveCountByRecipe[r.id] || 0); }, 0);
     }
-    return chefSaves(b) - chefSaves(a) || b.recipes.length - a.recipes.length;
+    return chefSaves(b) - chefSaves(a) || (b.recipe_count || b.recipes.length) - (a.recipe_count || a.recipes.length);
   });
-  else filtered.sort(function(a,b) { return b.recipes.length - a.recipes.length; });
+  else filtered.sort(function(a,b) { return (b.recipe_count || b.recipes.length) - (a.recipe_count || a.recipes.length); });
   renderChefGrid(filtered);
 }
 
 function renderChefGrid(chefs) {
   const grid  = document.getElementById('ch-grid');
   const count = document.getElementById('ch-count-bar');
-  count.textContent = chefs.length + ' chef' + (chefs.length===1?'':'s') + ' · ' + allRecipes.filter(function(r){return r.credit_name;}).length + ' credited recipes';
+  var totalRecipes = chefs.reduce(function(n,c){ return n + (c.recipe_count || c.recipes.length || 0); }, 0);
+  count.textContent = chefs.length + ' chef' + (chefs.length===1?'':'s') + ' · ' + totalRecipes + ' credited recipes';
 
   if (!chefs.length) {
-    if (!allRecipes.length) {
+    if (!allChefs.length) {
       grid.innerHTML = '<div class="ch-empty"><div class="ch-empty-icon">👨‍🍳</div><div class="ch-empty-title">No recipes yet</div><div class="ch-empty-sub">The directory will populate as community recipes are submitted and approved.</div></div>';
     } else {
       grid.innerHTML = '<div class="ch-empty"><div class="ch-empty-icon">🔍</div><div class="ch-empty-title">No chefs found</div><div class="ch-empty-sub">Try a different search.</div></div>';
@@ -277,7 +266,7 @@ function renderChefGrid(chefs) {
       (countries  ? '<div class="ch-meta">' + countries + '</div>' : '') +
       (cats       ? '<div class="ch-meta">' + cats + '</div>' : '') +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">' +
-        '<div class="ch-count"><strong>' + chef.recipes.length + '</strong> recipe' + (chef.recipes.length===1?'':'s') + '</div>' +
+        '<div class="ch-count"><strong>' + (chef.recipe_count || chef.recipes.length) + '</strong> recipe' + ((chef.recipe_count || chef.recipes.length)===1?'':'s') + '</div>' +
         (profileHandle ? '<a href="user.html?u=' + profileHandle + '" onclick="event.stopPropagation()" style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--accent);text-decoration:none">View profile →</a>' : '') +
       '</div>';
     card.addEventListener('click', function() { openChef(chef); });
@@ -285,7 +274,7 @@ function renderChefGrid(chefs) {
   });
 }
 
-function openChef(chef) {
+async function openChef(chef) {
   document.getElementById('ch-dir').style.display = 'none';
   const det = document.getElementById('ch-detail');
   det.style.display = 'block';
@@ -311,8 +300,19 @@ function openChef(chef) {
     if (h) { profLinkEl.href='user.html?u='+h; profLinkEl.style.display='inline-block'; }
     else { profLinkEl.style.display='none'; }
   }
-  document.getElementById('cd-recipe-label').textContent = chef.recipes.length + ' recipe' + (chef.recipes.length===1?'':'s') + ' by ' + chef.name;
   const recipeGrid = document.getElementById('cd-recipes');
+  recipeGrid.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);padding:12px 0">Loading recipes…</div>';
+  if (!chef.recipes || !chef.recipes.length) {
+    try {
+      var res = await fetch(SUPA_URL + '/rest/v1/rpc/get_approved_recipes', {
+        method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+        body: JSON.stringify({ p_credit_name: chef.name, p_limit: 100, p_offset: 0 })
+      });
+      chef.recipes = res.ok ? await res.json() : [];
+      if (!Array.isArray(chef.recipes)) chef.recipes = [];
+    } catch(_) { chef.recipes = []; }
+  }
+  document.getElementById('cd-recipe-label').textContent = chef.recipes.length + ' recipe' + (chef.recipes.length===1?'':'s') + ' by ' + chef.name;
   recipeGrid.innerHTML = '';
   chef.recipes.forEach(function(r) {
     const a = document.createElement('a');

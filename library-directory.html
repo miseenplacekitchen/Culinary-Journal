@@ -32,6 +32,9 @@
 <div class="lib-grid lib-grid-mise" id="lib-grid">
   <div class="lib-loading"><div class="lib-spinner"></div></div>
 </div>
+<div style="text-align:center;margin:20px 0 40px">
+  <button type="button" id="lib-load-more" style="display:none;padding:8px 22px;border:1px solid var(--border);border-radius:20px;background:none;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);cursor:pointer" onclick="loadMoreProfiles()">Load more profiles</button>
+</div>
 
 <script>
 const params  = new URLSearchParams(window.location.search);
@@ -63,28 +66,45 @@ function switchType(type) {
   url.searchParams.set('type', type);
   window.history.replaceState({}, '', url);
   mountChrome();
-  loadProfiles();
+  loadProfiles('', true);
 }
+
+const LIB_PAGE = 48;
+let libOffset = 0, libHasMore = false, libLoading = false, libItems = [], libSearch = '';
 
 function debounceSearch(val) {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => loadProfiles(val), 350);
+  searchTimer = setTimeout(() => loadProfiles(val, true), 350);
 }
 
-async function loadProfiles(search) {
+async function loadProfiles(search, reset) {
+  if (libLoading) return;
+  libLoading = true;
+  if (reset !== false) {
+    libSearch = search || '';
+    libOffset = 0;
+    libItems = [];
+    libHasMore = false;
+  }
   const grid = document.getElementById('lib-grid');
-  grid.innerHTML = '<div class="lib-loading"><div class="lib-spinner"></div></div>';
+  if (reset !== false) grid.innerHTML = '<div class="lib-loading"><div class="lib-spinner"></div></div>';
   try {
     const sess = JSON.parse(localStorage.getItem('tcj_session')||'null');
     const headers = { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' };
     if (sess?.access_token) headers['Authorization'] = 'Bearer ' + sess.access_token;
     const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_library_directory', {
       method: 'POST', headers,
-      body: JSON.stringify({ p_type: currentType, p_search: search || null, p_limit: 48, p_offset: 0 })
+      body: JSON.stringify({ p_type: currentType, p_search: libSearch || null, p_limit: LIB_PAGE, p_offset: libOffset })
     });
     const items = await res.json();
     var list = Array.isArray(items) ? items : [];
-    renderGrid(list);
+    if (reset !== false) libItems = list;
+    else libItems = libItems.concat(list);
+    libHasMore = list.length >= LIB_PAGE;
+    libOffset += list.length;
+    renderGrid(libItems);
+    var more = document.getElementById('lib-load-more');
+    if (more) more.style.display = libHasMore ? 'block' : 'none';
     if (typeof SeoSchema !== 'undefined') {
       var t = LibraryChrome.TYPES[currentType];
       SeoSchema.webPage(t.label + ' — The Library', t.desc, 'https://www.theculinaryjournal.site/library-directory.html?type=' + currentType);
@@ -96,8 +116,14 @@ async function loadProfiles(search) {
       }));
     }
   } catch(e) {
-    grid.innerHTML = '<div class="lib-empty">Could not load profiles — please try again.</div>';
+    if (reset !== false) grid.innerHTML = '<div class="lib-empty">Could not load profiles — please try again.</div>';
   }
+  libLoading = false;
+}
+
+async function loadMoreProfiles() {
+  if (!libHasMore || libLoading) return;
+  await loadProfiles(libSearch, false);
 }
 
 function renderGrid(items) {
@@ -123,7 +149,7 @@ function renderGrid(items) {
 }
 
 mountChrome();
-loadProfiles();
+  loadProfiles('', true);
 </script>
 </body>
 </html>

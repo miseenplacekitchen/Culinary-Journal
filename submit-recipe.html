@@ -19,6 +19,7 @@
   <script src="lib/recipe-import-validate.js"></script>
   <script src="lib/recipe-import-paths.js"></script>
   <script src="lib/recipe-hero-labels.js?v=20260629"></script>
+  <script src="lib/ingredient-lookup.js?v=20260630"></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -2092,24 +2093,34 @@ window.addEventListener('DOMContentLoaded', async () => {
 async function loadIngredients() {
   const status = document.getElementById('ing-db-status');
   try {
-    // No Authorization header — ingredients are public reference data.
-    // This means expired JWTs don't break autocomplete. The RLS policy
-    // in enable-ingredients-rls-read.sql allows anon SELECT.
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/ingredients?select=${encodeURIComponent('"Ingredient Name","Also Known As","Category","Unit","Notes"')}&limit=2000`, {
-      headers: { 'apikey': SUPABASE_KEY }
-    });
-    if (!res.ok) {
-      let detail = res.statusText;
-      try { const j = await res.json(); detail = j.message || j.hint || JSON.stringify(j); } catch(_) {}
-      if (status) {
-        status.innerHTML = '⚠ Could not load ingredient database (HTTP ' + res.status + '): ' + detail +
-          '. Ingredients can\u2019t be autocompleted or validated. Run <code>enable-ingredients-rls-read.sql</code> in Supabase to fix.';
-        status.style.color = '#e09955';
-        status.style.display = 'block';
+    if (typeof TcjIngredientLookup !== 'undefined') {
+      const index = await TcjIngredientLookup.fetchIndex();
+      allIngredients = (index.rows || []).map(function (r) {
+        return {
+          'Ingredient Name': r.name || r['Ingredient Name'] || '',
+          'Also Known As': r.aka || r['Also Known As'] || '',
+          'Category': r.category || r.Category || '',
+          'Unit': r.unit || r.Unit || '',
+          'Notes': r.notes || r.Notes || ''
+        };
+      });
+    } else {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/ingredients?select=${encodeURIComponent('"Ingredient Name","Also Known As","Category","Unit","Notes"')}&limit=2000`, {
+        headers: { 'apikey': SUPABASE_KEY }
+      });
+      if (!res.ok) {
+        let detail = res.statusText;
+        try { const j = await res.json(); detail = j.message || j.hint || JSON.stringify(j); } catch(_) {}
+        if (status) {
+          status.innerHTML = '⚠ Could not load ingredient database (HTTP ' + res.status + '): ' + detail +
+            '. Ingredients can\u2019t be autocompleted or validated. Run <code>enable-ingredients-rls-read.sql</code> in Supabase to fix.';
+          status.style.color = '#e09955';
+          status.style.display = 'block';
+        }
+        return;
       }
-      return;
+      allIngredients = await res.json();
     }
-    allIngredients = await res.json();
     // Categories are derived from the live data — fill any category dropdowns now.
     try { populateCategorySelects(); } catch(_) {}
     if (status) {

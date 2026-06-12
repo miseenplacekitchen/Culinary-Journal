@@ -819,7 +819,12 @@ async function loadRMAnalytics(container) {
     var ownerRaw = await rpc('admin_get_owner_analytics', {}).catch(function() { return null; });
     var owner = ownerRaw && typeof ownerRaw === 'object' ? ownerRaw : null;
     var stats   = (owner && owner.recipes) ? owner.recipes : (await rpc('admin_get_stats', {}) || {});
-    var allRecs = await rpc('admin_get_recipes', {p_status:null,p_search:null,p_category:null,p_limit:500,p_offset:0}) || [];
+    var allRecs = [];
+    if (typeof TcjAdminRecipes !== 'undefined') {
+      allRecs = await TcjAdminRecipes.fetchAll({ p_status: null, p_search: null, p_category: null });
+    } else {
+      allRecs = await rpc('admin_get_recipes', {p_status:null,p_search:null,p_category:null,p_limit:500,p_offset:0}) || [];
+    }
     if (!Array.isArray(allRecs)) allRecs = [];
     var total = parseInt(stats.total) || 0;
     var pend  = parseInt(stats.pending)  || 0;
@@ -837,9 +842,15 @@ async function loadRMAnalytics(container) {
       cards.appendChild(card);
     });
     container.appendChild(cards);
-    // By category
+    // By category — prefer server aggregates (no row cap)
     var catCounts = {};
-    allRecs.forEach(function(r){ if (r.category) catCounts[r.category] = (catCounts[r.category]||0) + 1; });
+    if (owner && owner.recipes && Array.isArray(owner.recipes.by_category)) {
+      owner.recipes.by_category.forEach(function(c) {
+        if (c && c.category) catCounts[c.category] = parseInt(c.count, 10) || 0;
+      });
+    } else {
+      allRecs.forEach(function(r){ if (r.category) catCounts[r.category] = (catCounts[r.category]||0) + 1; });
+    }
     var catKeys = Object.keys(catCounts).sort(function(a,b){ return catCounts[b]-catCounts[a]; }).slice(0,14);
     if (catKeys.length) {
       var catCard = mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');
@@ -929,7 +940,12 @@ async function loadRMCollections(container) {
 async function loadRMFeatured(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
   try {
-    var rows = await rpc('admin_get_recipes', {p_status:'approved',p_search:null,p_category:null,p_limit:500,p_offset:0}) || [];
+    var rows = [];
+    if (typeof TcjAdminRecipes !== 'undefined') {
+      rows = await TcjAdminRecipes.fetchAll({ p_status: 'approved', p_search: null, p_category: null });
+    } else {
+      rows = await rpc('admin_get_recipes', {p_status:'approved',p_search:null,p_category:null,p_limit:500,p_offset:0}) || [];
+    }
     if (!Array.isArray(rows)) rows = [];
     var featured = rows.filter(function(r){ return r.featured; });
     var rotw     = rows.find(function(r){ return r.recipe_of_week; });

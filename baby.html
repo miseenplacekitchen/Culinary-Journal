@@ -250,6 +250,9 @@
     <div class="bt-recipe-grid" id="bt-recipe-grid">
       <div class="bt-empty"><div class="bt-empty-icon">👶</div><div class="bt-empty-title">Loading recipes...</div></div>
     </div>
+    <div style="text-align:center;margin-top:16px">
+      <button type="button" id="bt-load-more" style="display:none;padding:8px 20px;border:1px solid var(--border);border-radius:20px;background:none;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);cursor:pointer" onclick="loadMoreBabyRecipes()">Load more baby recipes</button>
+    </div>
   </div>
 </div>
 </div>
@@ -265,27 +268,50 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 const DANGER_INGREDIENTS = ['honey','salt','nut','nuts','peanut','shellfish','raw fish','raw egg','caffeine','alcohol'];
 const ALLERGEN_FLAGS = {'Gluten':'Gluten','Dairy':'Dairy','Eggs':'Eggs','Tree Nuts':'Nuts','Peanuts':'Peanuts','Shellfish':'Shellfish','Fish':'Fish','Soy':'Soy','Sesame':'Sesame'};
 
+const BABY_PAGE = 48;
 let allBabyRecipes = [], currentAgeFilter = '';
+let babyOffset = 0, babyHasMore = false, babyLoading = false;
 
 function showStage(id, btn) {
   document.querySelectorAll('.bt-stage-content').forEach(function(el){el.classList.remove('active');});
   document.querySelectorAll('.bt-stage').forEach(function(b){b.classList.remove('active');});
   document.getElementById('stage-' + id).classList.add('active');
   btn.classList.add('active');
-  if (id === 'recipes' && !allBabyRecipes.length) loadBabyRecipes();
+  if (id === 'recipes' && !allBabyRecipes.length) loadBabyRecipes(true);
 }
 
-async function loadBabyRecipes() {
+async function loadBabyRecipes(reset) {
+  if (babyLoading) return;
+  babyLoading = true;
+  if (reset) { babyOffset = 0; allBabyRecipes = []; babyHasMore = false; }
   try {
-    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_approved_recipes', {
+    const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_baby_browse_recipes', {
       method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
-      body:JSON.stringify({p_category:'Little Ones', p_limit:40})
+      body:JSON.stringify({p_limit:BABY_PAGE, p_offset:babyOffset})
     });
-    allBabyRecipes = res.ok ? await res.json() : [];
-    renderBabyRecipes(allBabyRecipes);
+    const rows = res.ok ? await res.json() : [];
+    const list = Array.isArray(rows) ? rows : [];
+    if (reset) allBabyRecipes = list;
+    else allBabyRecipes = allBabyRecipes.concat(list);
+    babyHasMore = list.length >= BABY_PAGE;
+    babyOffset += list.length;
+    filterAge(currentAgeFilter);
   } catch(_) {
-    renderBabyRecipes([]);
+    if (reset) renderBabyRecipes([]);
   }
+  babyLoading = false;
+  updateBabyLoadMore();
+}
+
+function updateBabyLoadMore() {
+  var btn = document.getElementById('bt-load-more');
+  if (!btn) return;
+  btn.style.display = babyHasMore ? 'inline-block' : 'none';
+}
+
+async function loadMoreBabyRecipes() {
+  if (!babyHasMore || babyLoading) return;
+  await loadBabyRecipes(false);
 }
 
 function filterAge(age) {
