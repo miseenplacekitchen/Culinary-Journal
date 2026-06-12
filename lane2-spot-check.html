@@ -9,6 +9,9 @@
   <script src="theme-init.js"></script>
   <script src="supabase-config.js"></script>
   <style>
+    html.l2-embed [data-nav-host] { display: none !important; }
+    html.l2-embed .l2-wrap { max-width: none; padding: 8px 4px 32px; }
+    html.l2-embed body.page-bg { background: transparent; }
     .l2-wrap { max-width: 820px; margin: 0 auto; padding: 28px 20px 60px; }
     .l2-title { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 700; color: var(--text-high); }
     .l2-sub { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-mid); margin: 8px 0 24px; line-height: 1.55; }
@@ -22,6 +25,7 @@
     .l2-progress { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 20px; }
     .l2-note { font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text-mid); margin-top: 20px; padding: 12px; border-radius: 8px; border: 1px dashed var(--border); }
   </style>
+  <script>if (new URLSearchParams(location.search).get('embed') === '1') document.documentElement.classList.add('l2-embed');</script>
 </head>
 <body class="page-bg cj-body">
 <div data-nav-host></div>
@@ -121,6 +125,6 @@ function render() {
 }
 render();
 </script>
-<script src="nav-init.js"></script>
+<script>if (!document.documentElement.classList.contains('l2-embed')) { var s=document.createElement('script'); s.src='nav-init.js'; document.body.appendChild(s); }</script>
 </body>
 </html>

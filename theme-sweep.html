@@ -9,6 +9,9 @@
   <script src="theme-init.js"></script>
   <script src="supabase-config.js"></script>
   <style>
+    html.ts-embed [data-nav-host] { display: none !important; }
+    html.ts-embed .ts-wrap { max-width: none; padding: 8px 4px 32px; }
+    html.ts-embed body.page-bg { background: transparent; }
     .ts-wrap { max-width:1100px; margin:0 auto; padding:28px 20px 60px; }
     .ts-title { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:700; color:var(--text-high); }
     .ts-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin:8px 0 20px; line-height:1.5; }
@@ -26,6 +29,7 @@
     .ts-btn-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
     .ts-progress { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--accent); font-weight:600; margin-bottom:16px; }
   </style>
+  <script>if (new URLSearchParams(location.search).get('embed') === '1') document.documentElement.classList.add('ts-embed');</script>
 </head>
 <body class="page-bg cj-body">
 <div data-nav-host></div>
@@ -97,6 +101,6 @@ function render(){
 }
 document.addEventListener('DOMContentLoaded', render);
 </script>
-<script src="nav-init.js"></script>
+<script>if (!document.documentElement.classList.contains('ts-embed')) { var s=document.createElement('script'); s.src='nav-init.js'; document.body.appendChild(s); }</script>
 </body>
 </html>

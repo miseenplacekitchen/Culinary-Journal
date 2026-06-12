@@ -448,6 +448,8 @@
       <button class="ap-nav-item" id="nav-user-mgmt" onclick="switchView('user-mgmt')">&#128101; User Management <span class="ap-nav-badge" id="badge-pending-users">0</span></button>
       <button class="ap-nav-item" id="nav-ingredients" onclick="switchView('ingredients')">&#129365; Ingredient Management</button>
       <div class="ap-nav-label">Platform</div>
+      <button class="ap-nav-item" id="nav-lane2" onclick="switchView('lane2')">&#9989; Lane 2 Spot-Check</button>
+      <button class="ap-nav-item" id="nav-theme-sweep" onclick="switchView('theme-sweep')">&#127912; Theme Sweep</button>
       <button class="ap-nav-item" id="nav-site-mgmt" onclick="switchView('site-mgmt')">&#9881;&#65039; Site Management</button>
       <button class="ap-nav-item" id="nav-finance" onclick="switchView('finance')">&#128176; Finance Management</button>
       <button class="ap-nav-item" id="nav-library-mgmt" onclick="switchView('library-mgmt')">📚 Library Management</button>
@@ -484,8 +486,8 @@
         <button type="button" class="ap-quick-btn accent" onclick="switchView('finance');switchFinanceTab('fi-members')">&#128176; Manage Member Tiers</button>
         <button type="button" class="ap-quick-btn" onclick="switchView('site-mgmt')">&#9881;&#65039; Site Management</button>
         <button type="button" class="ap-quick-btn" onclick="switchView('user-mgmt')">&#128101; User Management</button>
-        <button type="button" class="ap-quick-btn" onclick="window.open('lane2-spot-check.html','_blank')">&#9989; Lane 2 Spot-Check</button>
-        <button type="button" class="ap-quick-btn" onclick="window.open('theme-sweep.html','_blank')">&#127912; Theme Sweep (47)</button>
+        <button type="button" class="ap-quick-btn" onclick="switchView('lane2')">&#9989; Lane 2 Spot-Check</button>
+        <button type="button" class="ap-quick-btn" onclick="switchView('theme-sweep')">&#127912; Theme Sweep (47)</button>
       </div>
 
       <!-- STATS ROW 1 — Recipes & Members -->
@@ -885,6 +887,13 @@
         </div>
         <div id="voc-panel" style="margin-top:16px"><div class="ap-loading">Loading…</div></div>
       </div>
+
+      <div id="v-lane2" style="display:none">
+        <iframe id="frame-lane2" title="Lane 2 Spot-Check" style="width:100%;min-height:calc(100vh - 140px);border:none;border-radius:12px;background:transparent"></iframe>
+      </div>
+      <div id="v-theme-sweep" style="display:none">
+        <iframe id="frame-theme-sweep" title="Theme Sweep" style="width:100%;min-height:calc(100vh - 140px);border:none;border-radius:12px;background:transparent"></iframe>
+      </div>
     </main>
   </div>
 </div>
@@ -1092,7 +1101,7 @@
   <script src="lib/theme-catalog.js"></script>
   <script src="lib/library-admin-fields.js?v=20260614"></script>
   <script src="lib/theme-admin-ui.js"></script>
-  <script src="dashboard-shared.js?v=20260710"></script>
+  <script src="dashboard-shared.js?v=20260711"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
   <script src="lib/admin-recipe-utils.js?v=20260705"></script>
   <script src="dashboard-recipes.js?v=20260706"></script>
