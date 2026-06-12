@@ -1414,10 +1414,15 @@ async function loadROTW() {
   if (!panel) return;
   panel.innerHTML = '<div class="ap-loading">Loading…</div>';
   try {
-    // Load currently set recipe of the week
-    var rows = await rpc('admin_get_recipes', { p_status: 'approved', p_limit: 200, p_offset: 0 });
-    var recipes = Array.isArray(rows) ? rows : [];
-    var current = recipes.find(function(r){ return r.is_recipe_of_week; });
+    var recipes = [];
+    if (typeof TcjAdminRecipes !== 'undefined') {
+      recipes = await TcjAdminRecipes.fetchAll({ p_status: 'approved', p_search: null, p_category: null });
+    } else {
+      var rows = await rpc('admin_get_recipes', { p_status: 'approved', p_limit: 200, p_offset: 0 });
+      recipes = Array.isArray(rows) ? rows : [];
+    }
+    function isRotw(r) { return !!(r && (r.recipe_of_week || r.is_recipe_of_week)); }
+    var current = recipes.find(isRotw);
 
     var html = '<div style="font-family:DM Sans,sans-serif">' +
       '<div style="margin-bottom:24px;padding:20px;background:rgba(196,151,59,.06);border:1px solid rgba(196,151,59,.2);border-radius:12px">' +
@@ -1446,10 +1451,10 @@ async function loadROTW() {
         '</div>' +
         '<button onclick="setROTW(\'' + esc(r.id) + '\')" ' +
         'style="font-family:DM Sans,sans-serif;font-size:11px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid ' +
-        (r.is_recipe_of_week?'var(--accent)':'var(--border)') + ';background:' +
-        (r.is_recipe_of_week?'var(--accent)':'none') + ';color:' +
-        (r.is_recipe_of_week?'#0C0702':'var(--text-mid)') + ';cursor:pointer">' +
-        (r.is_recipe_of_week?'⭐ Current':'Set as ROTW') + '</button>' +
+        (isRotw(r)?'var(--accent)':'var(--border)') + ';background:' +
+        (isRotw(r)?'var(--accent)':'none') + ';color:' +
+        (isRotw(r)?'#0C0702':'var(--text-mid)') + ';cursor:pointer">' +
+        (isRotw(r)?'⭐ Current':'Set as ROTW') + '</button>' +
         '</div>';
     });
 
