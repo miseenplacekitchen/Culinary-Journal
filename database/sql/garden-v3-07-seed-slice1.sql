@@ -31,7 +31,7 @@ INSERT INTO public.seed_saving_groups (grp, name, notes) VALUES
 ON CONFLICT (grp) DO NOTHING;
 
 INSERT INTO public.climate_zones (slug, name) VALUES
-  ('warm-temperate', 'Warm temperate', 'Mild winters, long frost-free growing season.')
+  ('warm-temperate', 'Warm temperate')
 ON CONFLICT (slug) DO NOTHING;
 
 INSERT INTO public.regions (slug, name, climate_zone_id, is_active) VALUES
