@@ -80,7 +80,7 @@ function switchSMTab(tab) {
       t.classList.toggle('active', t.dataset.tab === tab);
     });
     // Show/hide panels
-    ['sm-pages','sm-features','sm-ann','sm-content','sm-themes','sm-email','sm-settings'].forEach(function(p){
+    ['sm-pages','sm-features','sm-ann','sm-content','sm-themes','sm-email','sm-settings','sm-lane2','sm-theme-sweep'].forEach(function(p){
       var el = document.getElementById('upanel-' + p);
       if (el) el.style.display = p === tab ? 'block' : 'none';
     });
@@ -96,6 +96,18 @@ function switchSMTab(tab) {
     else if (tab === 'sm-themes')    buildSMThemes(container);
     else if (tab === 'sm-email')     buildSMEmail(container);
     else if (tab === 'sm-settings')  buildSMSettings(container);
+    else if (tab === 'sm-lane2') {
+      container.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:12px">Core journey verification (A–F) on production. Progress saves in this browser.</p>' +
+        '<iframe id="frame-lane2-sm" title="Lane 2 Spot-Check" style="width:100%;min-height:calc(100vh - 220px);border:none;border-radius:12px;background:transparent"></iframe>';
+      if (typeof loadAdminEmbedFrame === 'function') loadAdminEmbedFrame('frame-lane2-sm', 'lane2-spot-check.html?embed=1');
+      container.dataset.built = '1';
+    }
+    else if (tab === 'sm-theme-sweep') {
+      container.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:12px">Review all 47 themes on key pages; mark pass or issue.</p>' +
+        '<iframe id="frame-theme-sweep-sm" title="Theme Sweep" style="width:100%;min-height:calc(100vh - 220px);border:none;border-radius:12px;background:transparent"></iframe>';
+      if (typeof loadAdminEmbedFrame === 'function') loadAdminEmbedFrame('frame-theme-sweep-sm', 'theme-sweep.html?embed=1');
+      container.dataset.built = '1';
+    }
   } catch(e) {
     alert('Site Management tab error: ' + e.message);
   }

@@ -447,10 +447,8 @@
       <button class="ap-nav-item" id="nav-recipe-mgmt" onclick="switchView('recipe-mgmt')">&#128214; Recipe Management <span class="ap-nav-badge" id="badge-pending-recipes" style="display:none">0</span></button>
       <button class="ap-nav-item" id="nav-user-mgmt" onclick="switchView('user-mgmt')">&#128101; User Management <span class="ap-nav-badge" id="badge-pending-users">0</span></button>
       <button class="ap-nav-item" id="nav-ingredients" onclick="switchView('ingredients')">&#129365; Ingredient Management</button>
+      <button class="ap-nav-item" id="nav-garden-mgmt" onclick="switchView('garden-mgmt')">&#127793; Garden Management</button>
       <div class="ap-nav-label">Platform</div>
-      <button class="ap-nav-item" id="nav-garden" onclick="switchView('garden')">&#127793; Garden</button>
-      <button class="ap-nav-item" id="nav-lane2" onclick="switchView('lane2')">&#9989; Lane 2 Spot-Check</button>
-      <button class="ap-nav-item" id="nav-theme-sweep" onclick="switchView('theme-sweep')">&#127912; Theme Sweep</button>
       <button class="ap-nav-item" id="nav-site-mgmt" onclick="switchView('site-mgmt')">&#9881;&#65039; Site Management</button>
       <button class="ap-nav-item" id="nav-finance" onclick="switchView('finance')">&#128176; Finance Management</button>
       <button class="ap-nav-item" id="nav-library-mgmt" onclick="switchView('library-mgmt')">📚 Library Management</button>
@@ -487,9 +485,7 @@
         <button type="button" class="ap-quick-btn accent" onclick="switchView('finance');switchFinanceTab('fi-members')">&#128176; Manage Member Tiers</button>
         <button type="button" class="ap-quick-btn" onclick="switchView('site-mgmt')">&#9881;&#65039; Site Management</button>
         <button type="button" class="ap-quick-btn" onclick="switchView('user-mgmt')">&#128101; User Management</button>
-        <button type="button" class="ap-quick-btn" onclick="switchView('lane2')">&#9989; Lane 2 Spot-Check</button>
-        <button type="button" class="ap-quick-btn" onclick="switchView('theme-sweep')">&#127912; Theme Sweep (47)</button>
-        <button type="button" class="ap-quick-btn accent" onclick="switchView('garden')">&#127793; Garden</button>
+        <button type="button" class="ap-quick-btn" onclick="switchView('garden-mgmt')">&#127793; Garden Management</button>
       </div>
 
       <!-- STATS ROW 1 — Recipes & Members -->
@@ -830,6 +826,8 @@
         <button class="ap-inner-tab"        data-tab="sm-themes"    onclick="switchSMTab('sm-themes')">Themes</button>
         <button class="ap-inner-tab"        data-tab="sm-email"     onclick="switchSMTab('sm-email')">Email Templates</button>
         <button class="ap-inner-tab"        data-tab="sm-settings"  onclick="switchSMTab('sm-settings')">Settings</button>
+        <button class="ap-inner-tab"        data-tab="sm-lane2"       onclick="switchSMTab('sm-lane2')">&#9989; Lane 2 QA</button>
+        <button class="ap-inner-tab"        data-tab="sm-theme-sweep" onclick="switchSMTab('sm-theme-sweep')">&#127912; Theme Sweep</button>
       </div>
       <div id="upanel-sm-pages"    data-panel="sm-pages"    style="padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
       <div id="upanel-sm-features" data-panel="sm-features" style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
@@ -838,6 +836,52 @@
       <div id="upanel-sm-themes"   data-panel="sm-themes"   style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
       <div id="upanel-sm-email"    data-panel="sm-email"    style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
       <div id="upanel-sm-settings" data-panel="sm-settings" style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
+      <div id="upanel-sm-lane2" data-panel="sm-lane2" style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
+      <div id="upanel-sm-theme-sweep" data-panel="sm-theme-sweep" style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
+    </div>
+
+    <!-- GARDEN MANAGEMENT -->
+    <div id="v-garden-mgmt" style="display:none">
+      <div class="ap-stats" style="margin-bottom:16px">
+        <div class="ap-stat"><div class="ap-stat-num" id="gm-stat-total">—</div><div class="ap-stat-label">Species (total)</div></div>
+        <div class="ap-stat approved"><div class="ap-stat-num" id="gm-stat-published">—</div><div class="ap-stat-label">Published</div></div>
+        <div class="ap-stat pending"><div class="ap-stat-num" id="gm-stat-draft">—</div><div class="ap-stat-label">Draft</div></div>
+        <div class="ap-stat"><div class="ap-stat-num" id="gm-stat-climates">—</div><div class="ap-stat-label">Climates</div></div>
+      </div>
+      <div class="ap-inner-tabs">
+        <button class="ap-inner-tab" id="gtab-all" onclick="switchGardenTab('all')">All Species</button>
+        <button class="ap-inner-tab" id="gtab-draft" onclick="switchGardenTab('draft')">Draft</button>
+        <button class="ap-inner-tab" id="gtab-preview" onclick="switchGardenTab('preview')">Member Preview</button>
+        <button class="ap-inner-tab active" id="gtab-gminterface" onclick="switchGardenTab('gminterface')">&#9881; GM Interface</button>
+      </div>
+      <div id="gpanel-all" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:12px 0">
+          <span id="gm-species-count" style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)"></span>
+        </div>
+        <div class="ap-table-wrap">
+          <table class="ap-table">
+            <thead><tr>
+              <th>ID</th><th>Slug</th><th>Common name</th><th>Botanical</th><th>Status</th><th>Updated</th><th></th>
+            </tr></thead>
+            <tbody id="gm-species-tbody"><tr><td colspan="7" class="ap-empty-row">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="gpanel-draft" style="display:none">
+        <span id="gm-draft-count" style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)"></span>
+        <div class="ap-table-wrap" style="margin-top:12px">
+          <table class="ap-table">
+            <thead><tr>
+              <th>ID</th><th>Slug</th><th>Common name</th><th>Botanical</th><th>Status</th><th>Updated</th><th></th>
+            </tr></thead>
+            <tbody id="gm-draft-tbody"><tr><td colspan="7" class="ap-empty-row">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="gpanel-preview" style="display:none"></div>
+      <div id="gpanel-gminterface">
+        <div id="gm-interface-content"><div class="ap-loading" style="padding:20px 0">Loading…</div></div>
+      </div>
     </div>
 
     <!-- ANALYTICS -->
@@ -890,15 +934,6 @@
         <div id="voc-panel" style="margin-top:16px"><div class="ap-loading">Loading…</div></div>
       </div>
 
-      <div id="v-garden" style="display:none">
-        <iframe id="frame-garden" title="Garden" style="width:100%;min-height:calc(100vh - 140px);border:none;border-radius:12px;background:transparent"></iframe>
-      </div>
-      <div id="v-lane2" style="display:none">
-        <iframe id="frame-lane2" title="Lane 2 Spot-Check" style="width:100%;min-height:calc(100vh - 140px);border:none;border-radius:12px;background:transparent"></iframe>
-      </div>
-      <div id="v-theme-sweep" style="display:none">
-        <iframe id="frame-theme-sweep" title="Theme Sweep" style="width:100%;min-height:calc(100vh - 140px);border:none;border-radius:12px;background:transparent"></iframe>
-      </div>
     </main>
   </div>
 </div>
@@ -1106,7 +1141,7 @@
   <script src="lib/theme-catalog.js"></script>
   <script src="lib/library-admin-fields.js?v=20260614"></script>
   <script src="lib/theme-admin-ui.js"></script>
-  <script src="dashboard-shared.js?v=20260714"></script>
+  <script src="dashboard-shared.js?v=20260715"></script>
   <script src="lib/dashboard-um-ops.js?v=20260714"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
   <script src="lib/admin-recipe-utils.js?v=20260705"></script>
@@ -1114,13 +1149,15 @@
   <script src="dashboard-users.js?v=20260707"></script>
   <script src="dashboard-ingredients.js?v=20260630"></script>
   <script src="lib/dashboard-im-interface.js?v=20260713"></script>
+  <script src="lib/dashboard-garden.js?v=20260715"></script>
+  <script src="lib/dashboard-gm-interface.js?v=20260715"></script>
   <script src="library-mise.js"></script>
   <script src="lib/recipe-hero-labels.js?v=20260629"></script>
   <script src="lib/circular-hero-editor.js?v=20260629"></script>
   <script src="lib/lm-interface.js?v=20260615"></script>
   <script src="lib/ingredient-lookup.js?v=20260630"></script>
   <script src="lib/data-integrity.js?v=20260710"></script>
-  <script src="dashboard-site.js?v=20260706"></script>
+  <script src="dashboard-site.js?v=20260715"></script>
   <script src="dashboard-platform.js?v=20260610"></script>
   <script src="dashboard-analytics.js?v=20260608"></script>
 </body>
