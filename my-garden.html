@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="lib/garden-public.css">
 <script src="theme-init.js"></script>
 <script>if (new URLSearchParams(location.search).get('embed') === '1') document.documentElement.classList.add('gd-embed');</script>
 <style>html.gd-embed .nav, html.gd-embed .tab-nav { display:none !important; }</style>
@@ -17,23 +18,9 @@
 <script src="page-guard.js"></script>
 <script src="library-mise.js"></script>
 <script src="lib/garden-chrome.js"></script>
-<script src="lib/garden-api.js"></script>
+<script src="lib/garden-api.js?v=20260716"></script>
+<script src="lib/garden-ui.js?v=20260716"></script>
 <script src="nav-init.js"></script>
-<style>
-.mg-body { max-width:900px; margin:0 auto; padding:24px 24px 80px; }
-.mg-region { margin-bottom:24px; font-family:'DM Sans',sans-serif; font-size:14px; }
-.mg-region select { margin-left:8px; padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text-high); }
-.mg-section { margin-bottom:28px; }
-.mg-section h2 { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:12px; }
-.mg-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:12px; }
-.mg-card a { color:var(--text-high); text-decoration:none; font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:600; }
-.mg-card a:hover { color:var(--accent); }
-.mg-meta { font-size:12px; color:var(--text-muted); margin-top:6px; font-family:'DM Sans',sans-serif; }
-.mg-now { border-left:3px solid var(--accent); padding-left:14px; margin-bottom:10px; font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-mid); }
-.mg-next { opacity:.85; font-size:13px; }
-.mg-empty { color:var(--text-muted); font-family:'DM Sans',sans-serif; padding:12px 0; }
-.mg-guest { text-align:center; padding:60px 24px; }
-</style>
 </head>
 <body class="lib-page cj-body">
 <nav class="nav">
@@ -47,38 +34,30 @@
 <script>
 GardenChrome.render({ root: 'garden-chrome', active: 'my-garden', showSearch: false });
 
-function monthLabel(m) {
-  var names = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return names[m] || String(m);
-}
-
-async function loadWhatNow(nowEl) {
-  nowEl.innerHTML = '<div class="mg-empty">Loading tasks…</div>';
+async function loadWhatNow(nowEl, climateLabel) {
+  nowEl.innerHTML = '<div class="gj-empty" style="padding:20px 0">Loading tasks…</div>';
   try {
     var now = await GardenApi.whatNow();
     var nowList = Array.isArray(now) ? now : [];
     if (nowList.length) {
-      nowEl.innerHTML = nowList.map(function (n) {
-        return '<div class="mg-now"><strong>' + GardenApi.esc(n.plant_name) + '</strong> — ' +
-          GardenApi.esc(n.activity) + ' (' + monthLabel(n.month_start) + '–' + monthLabel(n.month_end) + ')' +
-          (n.notes ? '<br>' + GardenApi.esc(n.notes) : '') + '</div>';
-      }).join('');
+      nowEl.innerHTML = (climateLabel ? '<p style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-muted);margin:0 0 12px">Tasks for <strong style="color:var(--accent)">' + GardenApi.esc(climateLabel) + '</strong> this month</p>' : '') +
+        nowList.map(function (n) { return GardenUI.renderTaskCard(n); }).join('');
       return;
     }
     var next = await GardenApi.whatNext();
     var nextList = Array.isArray(next) ? next : [];
     if (nextList.length) {
-      nowEl.innerHTML = '<div class="mg-empty">Nothing due this month.</div>' + nextList.map(function (n) {
-        return '<div class="mg-now mg-next"><strong>' + GardenApi.esc(n.plant_name) + '</strong> — ' +
-          GardenApi.esc(n.activity) + ' in ~' + GardenApi.esc(n.months_away) + ' mo (' +
-          monthLabel(n.month_start) + '–' + monthLabel(n.month_end) + ')</div>';
-      }).join('');
+      nowEl.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-muted);margin:0 0 12px">Nothing due this month' +
+        (climateLabel ? ' in <strong style="color:var(--accent)">' + GardenApi.esc(climateLabel) + '</strong>' : '') + '.</p>' +
+        '<p style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin:0 0 10px">Coming up</p>' +
+        nextList.map(function (n) { return GardenUI.renderTaskCard(n); }).join('');
       return;
     }
-    nowEl.innerHTML = '<div class="mg-empty">Add plants from the <a href="garden-directory.html">directory</a> and set your region for seasonal tasks.</div>';
+    nowEl.innerHTML = '<div class="gj-empty" style="padding:20px 0;text-align:left">' +
+      'Add plants from the <a href="garden-directory.html">directory</a> and set your growing climate below for seasonal tasks.</div>';
   } catch (e) {
     console.warn('what now failed', e);
-    nowEl.innerHTML = '<div class="mg-empty">Could not load seasonal tasks.</div>';
+    nowEl.innerHTML = '<div class="gj-empty" style="padding:20px 0;text-align:left">Could not load seasonal tasks.</div>';
   }
 }
 
@@ -88,50 +67,60 @@ async function renderSignedIn() {
   try { saved = await GardenApi.getMyRegion(); } catch (e) { console.warn('saved region failed', e); }
 
   document.getElementById('mg-root').innerHTML =
-    '<div class="mg-body">' +
-    '<div class="mg-region"><label>Your region<select id="mg-region"><option value="">— select —</option>' +
+    '<div class="gj-wrap">' +
+    '<div class="gj-climate-bar">' +
+    '<label><span style="font-weight:500;color:var(--text-high)">Your growing climate</span>' +
+    '<select id="mg-region" aria-label="Growing climate">' +
+    '<option value="">— Select climate / region —</option>' +
     regions.map(function (r) {
       var sel = saved && saved.region_id === r.id ? ' selected' : '';
-      return '<option value="' + r.id + '"' + sel + '>' + GardenApi.esc(r.name) + '</option>';
+      var label = r.name + (r.climate_name ? ' · ' + r.climate_name : '');
+      return '<option value="' + r.id + '"' + sel + '>' + GardenApi.esc(label) + '</option>';
     }).join('') +
     '</select></label>' +
-    (saved && saved.climate_zone ? '<span style="margin-left:12px;color:var(--text-muted);font-size:12px">Climate: ' + GardenApi.esc(saved.climate_zone) + '</span>' : '') +
+    (saved && saved.climate_zone ? '<p style="margin:10px 0 0;font-size:12px;color:var(--text-muted)">Calendar and care filtered for <strong style="color:var(--accent)">' + GardenApi.esc(saved.climate_zone) + '</strong></p>' : '') +
     '</div>' +
-    '<div class="mg-section"><h2>What now</h2><div id="mg-now"></div></div>' +
-    '<div class="mg-section"><h2>My plants</h2><div id="mg-plants"></div></div>' +
+    '<div class="gj-section"><h2>What to do now</h2><div id="mg-now"></div></div>' +
+    '<div class="gj-section"><h2>My plants</h2><div id="mg-plants"></div></div>' +
+    '<div class="gj-section"><h2>Kitchen bridge</h2>' +
+    '<p class="gj-section-lead">Each species links to governed ingredients today; each <strong>variety</strong> will get its own match when cultivar profiles launch.</p>' +
+    '<p style="font-family:DM Sans,sans-serif;font-size:14px;margin:0"><a href="garden-directory.html" style="color:var(--accent)">Browse the directory →</a> to open profiles and kitchen links.</p></div>' +
     '</div>';
 
   var nowEl = document.getElementById('mg-now');
   var plantsEl = document.getElementById('mg-plants');
+  var climateLabel = saved && saved.climate_zone ? saved.climate_zone : null;
 
   document.getElementById('mg-region').addEventListener('change', async function (e) {
     if (!e.target.value) return;
-    try { await GardenApi.setRegion(e.target.value); await loadWhatNow(nowEl); }
-    catch (err) { console.warn('set region failed', err); }
+    try {
+      await GardenApi.setRegion(e.target.value);
+      var opt = e.target.options[e.target.selectedIndex];
+      climateLabel = opt ? opt.text.split(' · ').pop() : null;
+      await loadWhatNow(nowEl, climateLabel);
+    } catch (err) { console.warn('set region failed', err); }
   });
 
-  await loadWhatNow(nowEl);
+  await loadWhatNow(nowEl, climateLabel);
 
   try {
     var mine = await GardenApi.getMyGarden();
     var list = Array.isArray(mine) ? mine : [];
-    plantsEl.innerHTML = list.length ? list.map(function (p) {
-      return '<div class="mg-card"><a href="garden-plant.html?slug=' + encodeURIComponent(p.plant_slug || '') + '">' +
-        GardenApi.esc(p.plant_name) + '</a>' +
-        '<div class="mg-meta">Status: ' + GardenApi.esc(p.status) +
-        (p.bed_label ? ' · Bed: ' + GardenApi.esc(p.bed_label) : '') + '</div></div>';
-    }).join('') : '<div class="mg-empty">No plants yet — <a href="garden-directory.html">browse the directory</a>.</div>';
+    plantsEl.innerHTML = list.length ? list.map(function (p) { return GardenUI.renderMyPlantCard(p); }).join('') :
+      '<div class="gj-empty" style="padding:16px 0;text-align:left">No plants yet — <a href="garden-directory.html">browse the directory</a> and tap <strong>Add to My Garden</strong> on any profile.</div>';
   } catch (e) {
     console.warn('my garden failed', e);
-    plantsEl.innerHTML = '<div class="mg-empty">Could not load your plants.</div>';
+    plantsEl.innerHTML = '<div class="gj-empty" style="padding:16px 0;text-align:left">Could not load your plants.</div>';
   }
 }
 
 function renderGuest() {
   document.getElementById('mg-root').innerHTML =
-    '<div class="mg-guest mg-body"><h1 class="lib-hero-title">My Garden</h1>' +
-    '<p class="lib-hero-desc">Sign in to track plants and see seasonal tasks for your region.</p>' +
-    '<p><a href="login.html?redirect=' + encodeURIComponent(location.href) + '">Sign in →</a></p></div>';
+    '<div class="gj-wrap" style="text-align:center;padding-top:40px">' +
+    '<h1 class="lib-hero-title">My Garden</h1>' +
+    '<p class="lib-hero-desc" style="max-width:480px;margin:12px auto 24px">Track what you grow, set your climate, and see what to sow or harvest this month — linked to your kitchen.</p>' +
+    '<p><a href="login.html?redirect=' + encodeURIComponent(location.href) + '" class="gj-btn gj-btn-filled" style="display:inline-block;width:auto;padding:12px 28px">Sign in →</a></p>' +
+    '<p style="margin-top:20px;font-size:13px"><a href="garden-directory.html" style="color:var(--accent)">Browse plant directory</a></p></div>';
 }
 
 if (!getSession()) renderGuest();

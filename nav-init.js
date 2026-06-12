@@ -43,7 +43,7 @@ var CJ_SECTIONS = [
     links:[
       {href:'garden-directory.html', emoji:'🌱', label:'Plant Directory'},
       {href:'my-garden.html', emoji:'🌿', label:'My Garden', signedInOnly:true},
-      {href:'garden-plant.html?slug=tomato', emoji:'🍅', label:'Tomato (sample)'},
+      {href:'garden-plant.html?slug=tomato', emoji:'🍅', label:'Tomato'},
     ]
   },
   {

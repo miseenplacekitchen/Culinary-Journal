@@ -10,14 +10,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="lib/garden-public.css">
 <script src="theme-init.js"></script>
 <script>if (new URLSearchParams(location.search).get('embed') === '1') document.documentElement.classList.add('gd-embed');</script>
-<style>html.gd-embed .nav, html.gd-embed .tab-nav { display:none !important; }</style>
+<style>html.gd-embed .nav, html.gd-embed .tab-nav, html.gd-embed .gj-dir-stats { display:none !important; }</style>
 <script src="supabase-config.js"></script>
 <script src="page-guard.js"></script>
 <script src="library-mise.js"></script>
 <script src="lib/garden-chrome.js"></script>
-<script src="lib/garden-api.js"></script>
+<script src="lib/garden-api.js?v=20260716"></script>
+<script src="lib/garden-ui.js?v=20260716"></script>
 <script src="nav-init.js"></script>
 </head>
 <body class="lib-page cj-body">
@@ -27,12 +29,14 @@
 </nav>
 <div class="tab-nav"></div>
 <div id="garden-chrome"></div>
+<div class="gj-dir-stats" id="gd-stats" style="display:none"></div>
 <div class="lib-grid lib-grid-mise" id="gd-grid">
   <div class="lib-loading"><div class="lib-spinner"></div></div>
 </div>
 
 <script>
 var searchTimer = null;
+var allPlants = [];
 
 GardenChrome.render({ root: 'garden-chrome', active: 'directory', showSearch: true, searchId: 'gd-search' });
 document.getElementById('gd-search').addEventListener('input', function (e) {
@@ -42,29 +46,30 @@ document.getElementById('gd-search').addEventListener('input', function (e) {
 
 function renderList(items) {
   var grid = document.getElementById('gd-grid');
+  var stats = document.getElementById('gd-stats');
   if (!items || !items.length) {
-    grid.innerHTML = '<div class="lib-empty">No published plants yet. After SQL is applied you should see Tomato here.</div>';
+    stats.style.display = 'none';
+    grid.innerHTML = '<div class="lib-empty" style="grid-column:1/-1">No published plants yet. After Garden SQL is applied you should see species profiles here — starting with Tomato.</div>';
     return;
   }
-  grid.innerHTML = items.map(function (p) {
-    return '<a class="lib-card lib-card-mise" href="garden-plant.html?slug=' + encodeURIComponent(p.slug || '') + '">' +
-      '<div class="lib-card-body"><div class="lib-card-name">' + GardenApi.esc(p.common_name) + '</div>' +
-      (p.botanical_name ? '<div class="lib-card-aka">' + GardenApi.esc(p.botanical_name) + '</div>' : '') +
-      '<div class="lib-card-desc">' + GardenApi.esc(p.care_summary || '') + '</div>' +
-      (p.ease_rating ? '<div class="lib-card-tag">Ease: ' + GardenApi.esc(p.ease_rating) + '</div>' : '') +
-      '</div></a>';
-  }).join('');
+  stats.style.display = 'flex';
+  stats.innerHTML =
+    '<div class="gj-dir-stat"><strong>' + items.length + '</strong> species published</div>' +
+    '<div class="gj-dir-stat">Climate-aware care &amp; calendars</div>' +
+    '<div class="gj-dir-stat">Linked to governed kitchen ingredients</div>';
+  grid.innerHTML = items.map(function (p) { return GardenUI.renderDirectoryCard(p); }).join('');
 }
 
 async function loadPlants(q) {
   var grid = document.getElementById('gd-grid');
-  grid.innerHTML = '<div class="lib-loading"><div class="lib-spinner"></div></div>';
+  grid.innerHTML = '<div class="lib-loading" style="grid-column:1/-1"><div class="lib-spinner"></div></div>';
   try {
     var items = await GardenApi.listPlants(q, 50, 0);
-    renderList(Array.isArray(items) ? items : []);
+    allPlants = Array.isArray(items) ? items : [];
+    renderList(allPlants);
   } catch (e) {
     console.warn('garden-directory load failed', e);
-    grid.innerHTML = '<div class="lib-empty">Could not load plants — run RUN-GARDEN-V3-POLISH.sql on Supabase, then hard-refresh.</div>';
+    grid.innerHTML = '<div class="lib-empty" style="grid-column:1/-1">Could not load plants — run RUN-GARDEN-V3-POLISH.sql on Supabase, then hard-refresh.</div>';
   }
 }
 

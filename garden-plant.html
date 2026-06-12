@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="lib/garden-public.css">
 <script src="theme-init.js"></script>
 <script>if (new URLSearchParams(location.search).get('embed') === '1') document.documentElement.classList.add('gd-embed');</script>
 <style>html.gd-embed .nav, html.gd-embed .tab-nav { display:none !important; }</style>
@@ -17,30 +18,9 @@
 <script src="page-guard.js"></script>
 <script src="library-mise.js"></script>
 <script src="lib/garden-chrome.js"></script>
-<script src="lib/garden-api.js"></script>
+<script src="lib/garden-api.js?v=20260716"></script>
+<script src="lib/garden-ui.js?v=20260716"></script>
 <script src="nav-init.js"></script>
-<style>
-.gp-body { max-width:900px; margin:0 auto; padding:24px 24px 80px; }
-.gp-back { font-size:12px; color:var(--text-mid); text-decoration:none; display:inline-block; margin-bottom:20px; }
-.gp-back:hover { color:var(--accent); }
-.gp-name { font-family:'Cormorant Garamond',serif; font-size:clamp(2.2rem,5vw,3.2rem); font-weight:700; margin-bottom:6px; }
-.gp-botanical { font-style:italic; color:var(--accent); margin-bottom:12px; }
-.gp-grid { display:grid; grid-template-columns:2fr 1fr; gap:32px; }
-.gp-section { margin-bottom:28px; }
-.gp-section h2 { font-family:'DM Sans',sans-serif; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--border); }
-.gp-text { font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-mid); line-height:1.75; }
-.gp-list { font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-mid); line-height:1.7; padding-left:18px; }
-.gp-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:12px; }
-.gp-card-label { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px; }
-.gp-card-value { font-size:13px; color:var(--text-high); }
-.gp-flag { display:inline-block; font-size:11px; padding:4px 10px; border-radius:20px; border:1px solid rgba(220,120,80,.4); color:#e8a080; margin:4px 6px 4px 0; }
-.gp-care { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px; margin-bottom:24px; }
-.gp-btn { padding:10px 20px; border-radius:24px; border:1px solid var(--accent); background:transparent; color:var(--accent); font-family:'DM Sans',sans-serif; cursor:pointer; }
-.gp-care-row { margin-bottom:12px; }
-.gp-care-key { font-weight:600; color:var(--text-high); text-transform:capitalize; }
-.gp-loading, .gp-error { text-align:center; padding:80px 24px; color:var(--text-muted); }
-@media(max-width:768px){ .gp-grid { grid-template-columns:1fr; } }
-</style>
 </head>
 <body class="lib-page cj-body">
 <nav class="nav">
@@ -49,129 +29,24 @@
 </nav>
 <div class="tab-nav"></div>
 <div id="garden-chrome"></div>
-<div id="gp-root"><div class="gp-loading"><div class="lib-spinner"></div></div></div>
+<div id="gp-root"><div class="gj-wrap gj-empty"><div class="lib-spinner"></div></div></div>
 
 <script>
 var slug = new URLSearchParams(window.location.search).get('slug') || '';
 GardenChrome.render({ root: 'garden-chrome', active: 'directory', showSearch: false });
 
-function monthLabel(m) {
-  var names = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return names[m] || String(m);
-}
-
-function section(title, html) {
-  if (!html) return '';
-  return '<div class="gp-section"><h2>' + title + '</h2>' + html + '</div>';
-}
-
-function textBlock(s) {
-  if (!s) return '';
-  return '<div class="gp-text">' + GardenApi.esc(s) + '</div>';
-}
-
-function sidebarCard(label, val) {
-  if (!val) return '';
-  return '<div class="gp-card"><div class="gp-card-label">' + GardenApi.esc(label) + '</div><div class="gp-card-value">' + GardenApi.esc(val) + '</div></div>';
-}
-
-function render(data) {
-  if (!data || !data.plant) {
-    document.getElementById('gp-root').innerHTML = '<div class="gp-error">Plant not found or not published.</div>';
-    return;
-  }
-  var p = data.plant;
-  document.title = (p.common_name || 'Plant') + ' — The Garden';
-
-  var flags = (data.safety_flags || []).map(function (f) {
-    return '<span class="gp-flag" title="' + GardenApi.esc(f.message) + '">' + GardenApi.esc(f.flag) + '</span>';
-  }).join('');
-
-  var cal = (data.calendar || []).map(function (c) {
-    return '<li><strong>' + GardenApi.esc(c.activity) + '</strong> — ' +
-      monthLabel(c.month_start) + '–' + monthLabel(c.month_end) +
-      (c.climate_zone ? ' (' + GardenApi.esc(c.climate_zone) + ')' : '') +
-      (c.notes ? ' · ' + GardenApi.esc(c.notes) : '') + '</li>';
-  }).join('');
-
-  var ings = (data.ingredients || []).map(function (i) {
-    var libSlug = i.library_slug || 'tomato';
-    return '<li><a href="library-profile.html?type=ingredient&slug=' + encodeURIComponent(libSlug) + '">' +
-      GardenApi.esc(i.ingredient_name) + '</a>' +
-      (i.part ? ' (' + GardenApi.esc(i.part) + ')' : '') + '</li>';
-  }).join('');
-
-  var parts = (data.parts || []).map(function (pt) {
-    return '<li>' + GardenApi.esc(pt.part) + ' — <em>' + GardenApi.esc(pt.role) + '</em>' +
-      (pt.notes ? ' · ' + GardenApi.esc(pt.notes) : '') + '</li>';
-  }).join('');
-
-  var climate = (data.climate_care || []).map(function (c) {
-    return '<div class="gp-care-row"><span class="gp-care-key">' + GardenApi.esc(c.field_key) + '</span>: ' +
-      GardenApi.esc(c.core) +
-      (c.risk ? '<br><span style="color:var(--warn,#c97)">Risk:</span> ' + GardenApi.esc(c.risk) : '') +
-      (c.fix ? '<br><span style="color:var(--accent)">Fix:</span> ' + GardenApi.esc(c.fix) : '') +
-      '</div>';
-  }).join('');
-
-  var pests = (data.organisms || []).map(function (o) {
-    return '<li>' + GardenApi.esc(o.name) +
-      (o.scientific_name ? ' <em>(' + GardenApi.esc(o.scientific_name) + ')</em>' : '') +
-      ' — ' + GardenApi.esc(o.relationship) +
-      (o.notes ? ' · ' + GardenApi.esc(o.notes) : '') + '</li>';
-  }).join('');
-
-  var lessons = (data.lessons || []).map(function (l) {
-    return '<div class="gp-card"><div class="gp-card-label">' + GardenApi.esc(l.difficulty || 'lesson') + '</div>' +
-      '<div class="gp-card-value" style="font-weight:600;margin-bottom:6px">' + GardenApi.esc(l.title) + '</div>' +
-      '<div class="gp-text" style="font-size:13px">' + GardenApi.esc(l.body) + '</div></div>';
-  }).join('');
-
-  var harvest = [
-    p.harvest_season && ['Season', p.harvest_season],
-    p.harvesting_method && ['Method', p.harvesting_method],
-    p.yield_per_plant && ['Yield', p.yield_per_plant],
-    p.storage_methods && ['Storage', p.storage_methods],
-    p.time_to_harvest && ['Time to harvest', p.time_to_harvest]
-  ].filter(Boolean).map(function (r) { return sidebarCard(r[0], r[1]); }).join('');
-
-  var identity = [
-    p.plant_family && ['Family', p.plant_family],
-    p.plant_type && ['Type', p.plant_type],
-    p.lifecycle && ['Lifecycle', p.lifecycle],
-    p.growth_habit && ['Habit', p.growth_habit],
-    p.ease_rating && ['Ease', p.ease_rating],
-    p.origin && ['Origin', p.origin],
-    p.size_height && ['Height', p.size_height],
-    p.size_spread && ['Spread', p.size_spread]
-  ].filter(Boolean).map(function (r) { return sidebarCard(r[0], r[1]); }).join('');
-
-  var main =
-    (p.care_summary ? '<div class="gp-care">' + textBlock(p.care_summary) + '</div>' : '') +
-    section('Climate & care', climate ? '<div class="gp-text">' + climate + '</div>' : '') +
-    section('Propagation', textBlock([p.propagation_methods, p.germination_time, p.planting_windows].filter(Boolean).join(' · '))) +
-    section('Edible & kitchen', textBlock([p.edible_parts, p.culinary_applications].filter(Boolean).join('\n\n'))) +
-    section('Toxicity note', textBlock(p.toxic_parts)) +
-    section('Plant parts', parts ? '<ul class="gp-list">' + parts + '</ul>' : '') +
-    section('Seasonal calendar', cal ? '<ul class="gp-list">' + cal + '</ul>' : '') +
-    section('Pests & companions', pests ? '<ul class="gp-list">' + pests + '</ul>' : '') +
-    section('Kitchen link', ings ? '<ul class="gp-list">' + ings + '</ul>' : textBlock('No ingredient hinge yet — run RUN-GARDEN-V3-POLISH.sql')) +
-    section('Lessons', lessons);
-
-  document.getElementById('gp-root').innerHTML =
-    '<div class="gp-body">' +
-    '<a class="gp-back" href="garden-directory.html">← Plant Directory</a>' +
-    '<h1 class="gp-name">' + GardenApi.esc(p.common_name) + '</h1>' +
-    (p.botanical_name ? '<div class="gp-botanical">' + GardenApi.esc(p.botanical_name) + '</div>' : '') +
-    (flags ? '<div style="margin-bottom:16px">' + flags + '</div>' : '') +
-    '<div class="gp-grid"><div>' + main + '</div><div>' + identity + harvest +
-    '<button type="button" class="gp-btn" id="gp-add" style="width:100%;margin-top:8px">Add to My Garden</button></div></div></div>';
-
-  document.getElementById('gp-add').addEventListener('click', async function () {
-    if (!getSession()) { window.location.href = 'login.html?redirect=' + encodeURIComponent(location.href); return; }
+function wireAddButton(plantId) {
+  var btn = document.getElementById('gp-add');
+  if (!btn || !plantId) return;
+  btn.addEventListener('click', async function () {
+    if (!getSession()) {
+      window.location.href = 'login.html?redirect=' + encodeURIComponent(location.href);
+      return;
+    }
     try {
-      await GardenApi.addToGarden(p.id, 'planned', null);
-      alert('Added to My Garden.');
+      await GardenApi.addToGarden(plantId, 'planned', null);
+      btn.textContent = 'Added to My Garden ✓';
+      btn.disabled = true;
     } catch (e) {
       console.warn('add to garden failed', e);
       alert('Could not add — sign in and try again.');
@@ -181,15 +56,28 @@ function render(data) {
 
 async function init() {
   if (!slug) {
-    document.getElementById('gp-root').innerHTML = '<div class="gp-error">No plant specified.</div>';
+    document.getElementById('gp-root').innerHTML = '<div class="gj-wrap gj-error">No plant specified.</div>';
     return;
   }
   try {
+    var climateName = null;
+    if (getSession()) {
+      try {
+        var saved = await GardenApi.getMyRegion();
+        if (saved && saved.climate_zone) climateName = saved.climate_zone;
+      } catch (_) {}
+    }
     var data = await GardenApi.getPlant(slug);
-    render(data);
+    if (!data || !data.plant) {
+      document.getElementById('gp-root').innerHTML = '<div class="gj-wrap gj-error">Plant not found or not published.</div>';
+      return;
+    }
+    document.title = (data.plant.common_name || 'Plant') + ' — The Garden';
+    document.getElementById('gp-root').innerHTML = GardenUI.renderPlantProfile(data, { climateName: climateName });
+    wireAddButton(data.plant.id);
   } catch (e) {
     console.warn('garden-plant load failed', e);
-    document.getElementById('gp-root').innerHTML = '<div class="gp-error">Could not load plant — run RUN-GARDEN-V3-POLISH.sql then hard-refresh.</div>';
+    document.getElementById('gp-root').innerHTML = '<div class="gj-wrap gj-error">Could not load plant — run RUN-GARDEN-V3-POLISH.sql then hard-refresh.</div>';
   }
 }
 init();

@@ -1,0 +1,78 @@
+/* Garden public pages — directory, plant profile, my garden */
+.gj-wrap { max-width: 960px; margin: 0 auto; padding: 0 24px 80px; }
+.gj-back { font-size: 12px; color: var(--text-mid); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; margin: 20px 0; }
+.gj-back:hover { color: var(--accent); }
+
+.gj-hero-plant { margin-bottom: 28px; }
+.gj-plant-name { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 700; line-height: 1.1; margin: 0 0 8px; }
+.gj-botanical { font-style: italic; color: var(--accent); font-size: 1.15rem; margin-bottom: 14px; }
+.gj-tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.gj-tag { font-family: 'DM Sans', sans-serif; font-size: 11px; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); color: var(--text-mid); background: rgba(255,255,255,0.02); }
+.gj-tag-accent { border-color: rgb(from var(--accent) r g b / 0.35); color: var(--accent); }
+
+.gj-summary { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; margin-bottom: 28px; font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.75; color: var(--text-mid); }
+
+.gj-layout { display: grid; grid-template-columns: 1fr 300px; gap: 32px; align-items: start; }
+@media (max-width: 860px) { .gj-layout { grid-template-columns: 1fr; } }
+
+.gj-section { margin-bottom: 32px; }
+.gj-section h2 { font-family: 'DM Sans', sans-serif; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.gj-section-lead { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-muted); line-height: 1.6; margin: -6px 0 14px; }
+
+.gj-care-climate { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 600; color: var(--text-high); margin-bottom: 12px; }
+.gj-care-grid { display: grid; gap: 12px; }
+.gj-care-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+.gj-care-label { font-family: 'DM Sans', sans-serif; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+.gj-care-core { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text-high); line-height: 1.55; margin-bottom: 8px; }
+.gj-care-risk { font-family: 'DM Sans', sans-serif; font-size: 12px; color: #d4a017; line-height: 1.5; margin-bottom: 4px; }
+.gj-care-fix { font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--accent); line-height: 1.5; }
+
+.gj-cal-bar { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; margin-bottom: 14px; }
+.gj-cal-month { text-align: center; font-family: 'DM Sans', sans-serif; font-size: 9px; color: var(--text-muted); padding: 4px 0; border-radius: 4px; background: rgba(255,255,255,0.02); }
+.gj-cal-month.on { background: rgb(from var(--accent) r g b / 0.2); color: var(--accent); font-weight: 600; }
+.gj-cal-legend { display: flex; flex-wrap: wrap; gap: 10px; }
+.gj-cal-item { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-mid); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); }
+.gj-cal-item strong { color: var(--text-high); text-transform: capitalize; }
+
+.gj-kitchen { background: linear-gradient(135deg, rgb(from var(--accent) r g b / 0.08), transparent); border: 1px solid rgb(from var(--accent) r g b / 0.25); border-radius: 14px; padding: 18px 20px; }
+.gj-kitchen h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; margin: 0 0 8px; }
+.gj-kitchen-links { list-style: none; padding: 0; margin: 12px 0 0; }
+.gj-kitchen-links li { margin-bottom: 8px; }
+.gj-kitchen-links a { font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; color: var(--accent); text-decoration: none; }
+.gj-kitchen-links a:hover { text-decoration: underline; }
+.gj-kitchen-note { font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--text-muted); line-height: 1.55; margin-top: 12px; }
+
+.gj-varieties { background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; padding: 18px; }
+.gj-varieties-soon { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-mid); line-height: 1.65; }
+
+.gj-side-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+.gj-side-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+.gj-side-value { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-high); line-height: 1.45; }
+
+.gj-btn { display: block; width: 100%; padding: 12px 20px; border-radius: 24px; border: 1px solid var(--accent); background: transparent; color: var(--accent); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 8px; transition: background 0.15s, color 0.15s; }
+.gj-btn:hover { background: rgb(from var(--accent) r g b / 0.12); }
+.gj-btn-filled { background: var(--accent); color: #fff; border-color: var(--accent); }
+.gj-btn-filled:hover { opacity: 0.9; }
+
+.gj-list { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text-mid); line-height: 1.7; padding-left: 18px; margin: 0; }
+.gj-flag { display: inline-block; font-size: 11px; padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(220,120,80,.4); color: #e8a080; margin: 4px 6px 4px 0; }
+
+.gj-dir-stats { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 24px 20px; max-width: 1200px; margin-left: auto; margin-right: auto; }
+.gj-dir-stat { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-mid); padding: 10px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); }
+.gj-dir-stat strong { color: var(--text-high); }
+
+.gj-card-rich .lib-card-desc { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.gj-card-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.gj-card-pill { font-size: 10px; padding: 3px 8px; border-radius: 12px; background: rgba(255,255,255,0.04); color: var(--text-muted); }
+
+.gj-task { display: flex; gap: 14px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); margin-bottom: 10px; }
+.gj-task-icon { font-size: 1.4rem; flex-shrink: 0; }
+.gj-task-body { flex: 1; min-width: 0; }
+.gj-task-title { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 600; color: var(--text-high); }
+.gj-task-sub { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-mid); margin-top: 4px; }
+
+.gj-climate-bar { font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); margin-bottom: 24px; }
+.gj-climate-bar label { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.gj-climate-bar select { flex: 1; min-width: 200px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text-high); font-family: inherit; }
+
+.gj-empty, .gj-error { text-align: center; padding: 60px 24px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; }
