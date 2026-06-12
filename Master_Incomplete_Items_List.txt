@@ -68,7 +68,7 @@ A · DONE — shipped (Phases 1–26 SQL + Phase 27/28 code). Strike after live 
 B · VERIFY — code exists; Betty live test then move to A
   • Lane 2 spot-check — Admin → Lane 2 Spot-Check (journeys A–F: pipeline, grocery, household, health, hero, ops)
   • SQL health + phase48 orphans — Betty confirmed healthy: true ✅
-  • RUN-LIVE-FOLLOWUP.sql (phases 49–51) — pending Betty run after code deploy
+  • RUN-LIVE-FOLLOWUP.sql (phases 49–51) ✅ Betty — healthy: true
   • Fresh recipe submit → approve → public (not only test UUID)
   • Grocery/pantry sign-out persistence · two-account household sync
   • CJ-006 attribution · Tried It → diary · dietary card on recipe page
@@ -96,7 +96,7 @@ D · OPEN — still to build or deepen (work through these)
   Remaining OPEN items:
 
   Library (ongoing content)
-  • Run RUN-LIVE-FOLLOWUP.sql on Supabase (phase 49 library + phase 50 categories + phase 51 pages)
+  • Phase 49–51 SQL ✅ Betty — ongoing library profiles beyond phase 49 only
   • Write/link more library profiles beyond phase 49 (ongoing content)
 
   Recipe

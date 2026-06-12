@@ -9,7 +9,7 @@ LIVE CHECKLIST (Betty — tick when done)
 ══════════════════════════════════════════════════════════════════════
 [x] 1. RUN-LIVE-CLEANUP.sql in Supabase → healthy: true
 [x] 2. RUN-ALL-REMAINING.sql + phase48 orphans → healthy: true (2 approved, 604 ingredients)
-[ ] 3. RUN-LIVE-FOLLOWUP.sql → phases 49–51 (library, categories, soft-launch pages)
+[x] 3. RUN-LIVE-FOLLOWUP.sql → phases 49–51 (library, categories, soft-launch pages) — healthy: true
 [ ] 4. Hard-refresh admin → Dashboard home System Health matches SQL
 [ ] 5. Admin → Lane 2 Spot-Check journeys A–F all ticked
 [ ] 6. Supabase backup confirmed (Dashboard → Database → Backups)
@@ -101,11 +101,11 @@ RUN-LIVE-CLEANUP.sql                | Ordered live cleanup (library + health + v
 fix-phase44 through 47-library      | Library batches 44–47                                  | Ran ✅ Betty (via RUN-ALL-REMAINING)
 fix-phase45-site-fill.sql           | Festival dishes, approve pending, free-limit         | Ran ✅ Betty — 2 approved recipes
 fix-phase48-recipe-ingredient-orphans.sql | Orphan recipe ingredient repair                  | Ran ✅ Betty — healthy: true
-fix-phase49-library-profiles.sql    | Sugar, bread, mushroom, cheddar, oregano             | In RUN-LIVE-FOLLOWUP.sql → pending Betty
-fix-phase50-ingredient-categories.sql | Categorise phase48 Uncategorised rows              | In RUN-LIVE-FOLLOWUP.sql → pending Betty
-fix-phase51-soft-launch-pages.sql   | Register core pages for soft launch                  | In RUN-LIVE-FOLLOWUP.sql → pending Betty
-RUN-ALL-REMAINING.sql               | Full remaining bundle (44–51)                        | Use for fresh run
-RUN-LIVE-FOLLOWUP.sql               | Phases 49–51 only (after 44–48 done)               | Run in Supabase → pending Betty
+fix-phase49-library-profiles.sql    | Sugar, bread, mushroom, cheddar, oregano             | Ran ✅ Betty
+fix-phase50-ingredient-categories.sql | Categorise phase48 Uncategorised rows              | Ran ✅ Betty
+fix-phase51-soft-launch-pages.sql   | Register core pages for soft launch                  | Ran ✅ Betty
+RUN-ALL-REMAINING.sql               | Full remaining bundle (44–51)                        | Superseded by incremental runs ✅
+RUN-LIVE-FOLLOWUP.sql               | Phases 49–51 + health verify                         | Ran ✅ Betty — healthy: true
 
 ══════════════════════════════════════════════════════════════════════
 OPS NOTES (owner)
