@@ -587,7 +587,10 @@ function loadUMTab(key, container) {
   if (key === 'deactivated') loadUMDeactivated(container);
   else if (key === 'reports')   loadUMReports(container);
   else if (key === 'requests')  loadUMRequests(container);
-  else if (key === 'notes')     buildUMStub(container, 'Personal Notes Approval', 'Users can submit their personal recipe notes for public approval. This tab will show the queue once recipe pages are built.');
+  else if (key === 'notes') {
+    if (typeof loadRecipeNotes === 'function') loadRecipeNotes(container);
+    else buildUMStub(container, 'Personal Notes Approval', 'Cooking tips queue loads after dashboard modules finish loading.');
+  }
   else if (key === 'feedback')  loadUMFeedback(container);
   else if (key === 'chefs')     loadUMChefs(container);
   else if (key === 'family-refs') loadUMFamilyRefs(container);

@@ -58,6 +58,7 @@
   },
   "live_cleanup_order": [
     { "file": "RUN-LIVE-CLEANUP.sql", "note": "Single paste: library links + health RPCs + verification" },
+    { "file": "RUN-ALL-REMAINING.sql", "note": "Phase 44–45 content + health verify" },
     { "file": "fix-library-governed-links.sql", "note": "Step 1 only — re-link ingredient library profiles" },
     { "file": "fix-phase43-starter-library-health.sql", "note": "Step 2 only — dashboard System Health RPCs" },
     { "file": "SQL-EDITOR-health-check.sql", "note": "Step 3 only — expect healthy: true" }
@@ -72,6 +73,9 @@
     { "file": "SQL-EDITOR-health-check.sql", "note": "Run after data fixes; expect all zeros" },
     { "file": "fix-phase43-starter-library-health.sql", "note": "Dashboard health RPC: starter wrong-link detection" },
     { "file": "RUN-LIVE-CLEANUP.sql", "note": "Ordered live cleanup bundle (library + health + verify)" },
-    { "file": "fix-phase44-library-profiles.sql", "note": "Library batch: carrot, celery, honey, spinach, coriander" }
-  ]
+    { "file": "fix-phase44-library-profiles.sql", "note": "Library batch: carrot, celery, honey, spinach, coriander" },
+    { "file": "fix-phase45-site-fill.sql", "note": "Festival dishes, approve pending recipes, free-limit settings" },
+    { "file": "RUN-ALL-REMAINING.sql", "note": "Phase 44 + 45 + health check in one paste" }
+  ],
+  "live_cleanup_order_note": "After RUN-LIVE-CLEANUP, run RUN-ALL-REMAINING.sql for latest content fill"
 }

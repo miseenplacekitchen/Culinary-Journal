@@ -85,7 +85,9 @@ fix-phase36 through 42 (bundle)     | Platform, festivals, import audit, browse 
 fix-library-governed-links.sql      | Starter slug fuzzy re-link + full profile audit        | Ran ✅ Betty
 fix-phase43-starter-library-health.sql | Dashboard + SQL editor health RPCs                  | Ran ✅ Betty
 RUN-LIVE-CLEANUP.sql                | Ordered live cleanup (library + health + verify)       | Ran ✅ Betty — healthy: true
-fix-phase44-library-profiles.sql    | Carrot, celery, honey, spinach, coriander              | Run in Supabase → pending Betty
+fix-phase44-library-profiles.sql    | Carrot, celery, honey, spinach, coriander              | In RUN-ALL-REMAINING.sql → pending Betty
+fix-phase45-site-fill.sql           | Festival dishes, approve pending, free-limit settings  | In RUN-ALL-REMAINING.sql → pending Betty
+RUN-ALL-REMAINING.sql               | Phase 44 + 45 + health check                           | Run in Supabase → pending Betty
 
 ══════════════════════════════════════════════════════════════════════
 OPS NOTES (owner)

@@ -700,6 +700,22 @@ async function buildSMSettings(container) {
     });
     bill.appendChild(billSave);
     container.appendChild(bill);
+    var free = card('Free Plan Limits (optional)');
+    free.appendChild(mk('p','font-size:11px;color:var(--text-mid);margin-bottom:12px;line-height:1.55','Off by default while the site is mostly free. When enabled, members on the free tier cannot exceed these caps when submitting recipes.'));
+    var fr = mk('div','display:flex;align-items:center;justify-content:space-between;margin-bottom:12px');
+    fr.appendChild(mk('span','font-size:13px;color:var(--text-high)','Enforce free-tier limits'));
+    var fc = mk('input','width:16px;height:16px;accent-color:var(--accent);cursor:pointer'); fc.type = 'checkbox'; fc.checked = S.enforce_free_limits === 'true';
+    fc.addEventListener('change', async function () {
+      var prev = this.checked;
+      try { await ssSave('enforce_free_limits', String(this.checked)); }
+      catch (e) { this.checked = !prev; alert(e.message); }
+    });
+    fr.appendChild(fc); free.appendChild(fr);
+    free.appendChild(inp('free_max_recipes', 'Max recipes per member', S.free_max_recipes || '10'));
+    free.appendChild(inp('free_max_photo_imports_month', 'Max photo imports / month', S.free_max_photo_imports_month || '5'));
+    free.appendChild(inp('free_max_tables', 'Max table planners', S.free_max_tables || '1'));
+    free.appendChild(saveBtn(['free_max_recipes','free_max_photo_imports_month','free_max_tables'], 'Save Limits'));
+    container.appendChild(free);
     container.dataset.built='1';
   } catch(e){container.dataset.built='';container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>';}
 }

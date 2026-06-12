@@ -116,12 +116,17 @@ async function showFestival(slug){
     console.warn('festival detail', slug, e);
     return null;
   });
-  if (!detail) {
-    detail = Object.assign({}, fest, { dishes: [] });
-    if (slug === 'onam') {
-      var ONAM = ['Upperi / banana chips','Inji curry','Mango pickle','Lime pickle','Pappadam','Banana (ripe)','Salt','Parippu + ghee','Sambar','Rasam','Avial','Thoran','Olan','Kalan','Erissery','Pulisery','Kootu curry','Payasam (first)','Payasam (second)','Rice'];
-      detail.dishes = ONAM.map(function(n,i){ return { dish_name:n, sort_order:i+1, recipes:[] }; });
-    }
+  if (!detail) detail = Object.assign({}, fest, { dishes: [] });
+  if (!detail.dishes || !detail.dishes.length) {
+    var FALLBACK = {
+      onam: ['Upperi / banana chips','Inji curry','Mango pickle','Lime pickle','Pappadam','Banana (ripe)','Salt','Parippu + ghee','Sambar','Rasam','Avial','Thoran','Olan','Kalan','Erissery','Pulisery','Kootu curry','Payasam (first)','Payasam (second)','Rice'],
+      eid: ['Dates & water','Soup / shorba','Samosas / pakoras','Biryani or pilaf','Grilled meat / kebabs','Salad & raita','Dessert / sheer khurma'],
+      christmas: ['Roast main','Roast potatoes','Steamed vegetables','Gravy / jus','Christmas pudding','Mince pies'],
+      diwali: ['Mithai / sweets platter','Savouries / namkeen','Main feast curry','Rice or bread','Chutney & pickle'],
+      wedding: ['Welcome drinks','Appetisers','Main course — vegetarian','Main course — non-vegetarian','Rice / bread service','Dessert table']
+    };
+    var names = FALLBACK[slug];
+    if (names) detail.dishes = names.map(function(n,i){ return { dish_name:n, sort_order:i+1, recipes:[] }; });
   }
   document.getElementById('fp-detail').style.display = 'block';
   document.getElementById('fp-detail-emoji').textContent = fest.emoji || '🎉';

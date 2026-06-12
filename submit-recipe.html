@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
   <script src="supabase-config.js"></script>
+  <script src="lib/plan-limits.js?v=20260706"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
   <script src="lib/recipe-import-core.js"></script>
@@ -8573,6 +8574,14 @@ async function submitRecipe() {
   const data = collectFormData();
   const err  = validate(data);
   if (err) { showMsg(err, 'error'); return; }
+
+  try {
+    var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    if (typeof TcjPlanLimits !== 'undefined' && sess && sess.user && sess.user.id) {
+      var limitMsg = await TcjPlanLimits.assertCanSubmitRecipe(apiFetch, SUPABASE_URL, sess.user.id);
+      if (limitMsg) { showMsg(limitMsg, 'error'); return; }
+    }
+  } catch (e) { console.warn('plan limits check', e); }
 
   if (data.image_url && document.getElementById('img-preview-img')?.src) {
     try {

@@ -1481,8 +1481,8 @@ async function setROTW(id) {
 }
 
 // ── Cooking Tips / Notes Approval ─────────────────────────────────────
-async function loadRecipeNotes() {
-  var panel = document.getElementById('rm-panel');
+async function loadRecipeNotes(container) {
+  var panel = container || document.getElementById('rm-panel');
   if (!panel) return;
   panel.innerHTML = '<div class="ap-loading">Loading…</div>';
   try {
@@ -1529,6 +1529,9 @@ async function reviewNote(id, status) {
     loadRecipeNotes();
   } catch(e) { alert('Error: ' + (e.message||e)); }
 }
+
+window.loadRecipeNotes = loadRecipeNotes;
+window.reviewNote = reviewNote;
 
 async function loadRMTaxonomy(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
