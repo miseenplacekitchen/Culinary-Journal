@@ -59,7 +59,8 @@
   },
   "live_cleanup_order": [
     { "file": "RUN-LIVE-CLEANUP.sql", "note": "Single paste: library links + health RPCs + verification" },
-    { "file": "RUN-ALL-REMAINING.sql", "note": "Phase 44–47 content + health verify" },
+    { "file": "RUN-ALL-REMAINING.sql", "note": "Phase 44–51 content + health verify" },
+    { "file": "RUN-LIVE-FOLLOWUP.sql", "note": "Phases 49–51 after 44–48 already applied" },
     { "file": "fix-library-governed-links.sql", "note": "Step 1 only — re-link ingredient library profiles" },
     { "file": "fix-phase43-starter-library-health.sql", "note": "Step 2 only — dashboard System Health RPCs" },
     { "file": "SQL-EDITOR-health-check.sql", "note": "Step 3 only — expect healthy: true" }
@@ -79,7 +80,11 @@
     { "file": "RUN-ALL-REMAINING.sql", "note": "Phase 44–47 + 45 + health check in one paste" },
     { "file": "fix-phase46-library-profiles.sql", "note": "Library batch: zucchini, eggplant, yogurt, basil, green beans" },
     { "file": "fix-phase47-library-profiles.sql", "note": "Library batch: apple, banana, pasta, red wine vinegar, thyme" },
-    { "file": "fix-phase48-recipe-ingredient-orphans.sql", "note": "Repair orphan recipe ingredient names for healthy: true" }
+    { "file": "fix-phase48-recipe-ingredient-orphans.sql", "note": "Repair orphan recipe ingredient names for healthy: true" },
+    { "file": "fix-phase49-library-profiles.sql", "note": "Library batch: sugar, bread, mushroom, cheddar, oregano" },
+    { "file": "fix-phase50-ingredient-categories.sql", "note": "Categorise phase48 Uncategorised ingredients" },
+    { "file": "fix-phase51-soft-launch-pages.sql", "note": "Register core pages for soft launch" },
+    { "file": "RUN-LIVE-FOLLOWUP.sql", "note": "Phases 49–51 + health (incremental live run)" }
   ],
-  "live_cleanup_order_note": "After RUN-LIVE-CLEANUP, run RUN-ALL-REMAINING.sql for latest content fill"
+  "live_cleanup_order_note": "After RUN-LIVE-CLEANUP, run RUN-ALL-REMAINING.sql or RUN-LIVE-FOLLOWUP.sql for latest content"
 }

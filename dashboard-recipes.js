@@ -284,7 +284,7 @@ async function openRecipeModal(id) {
             });
           });
         }
-      } catch(_) { ingBlock.appendChild(mk('div',"font-size:12px;color:var(--text-mid)",'Ingredients present')); }
+      } catch(e) { console.warn('recipe modal ingredients render', e); ingBlock.appendChild(mk('div',"font-size:12px;color:var(--text-mid)",'Ingredients present')); }
       panel.appendChild(ingBlock);
     }
 
@@ -311,7 +311,7 @@ async function openRecipeModal(id) {
           });
         }
         if (!stepNum) methScroll.appendChild(mk('div',"font-size:12px;color:var(--text-mid)",'No procedure steps listed'));
-      } catch(_) { methScroll.appendChild(mk('div',"font-size:12px;color:var(--text-mid)",'Method present')); }
+      } catch(e) { console.warn('recipe modal method render', e); methScroll.appendChild(mk('div',"font-size:12px;color:var(--text-mid)",'Method present')); }
       methBlock.appendChild(methScroll);
       panel.appendChild(methBlock);
     }
@@ -420,7 +420,7 @@ async function openRecipeModal(id) {
           closeRecipeModal();
           switchView('library-mgmt');
           setTimeout(function() {
-            try { switchLibTab('lm-tools'); } catch(_) {}
+            try { switchLibTab('lm-tools'); } catch(e) { console.warn('switchLibTab lm-tools', e); }
           }, 300);
         });
         actions.appendChild(libBtn);

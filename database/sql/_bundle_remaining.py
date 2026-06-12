@@ -7,13 +7,16 @@ files = [
     "fix-phase46-library-profiles.sql",
     "fix-phase47-library-profiles.sql",
     "fix-phase48-recipe-ingredient-orphans.sql",
+    "fix-phase49-library-profiles.sql",
+    "fix-phase50-ingredient-categories.sql",
+    "fix-phase51-soft-launch-pages.sql",
     "SQL-EDITOR-health-check.sql",
 ]
 out = base / "RUN-ALL-REMAINING.sql"
 header = """-- =============================================================================
 -- THE CULINARY JOURNAL — RUN ALL REMAINING LIVE STEPS
 -- Paste entire file in Supabase SQL Editor after site code deploy.
--- Order: library 44–47 → site fill 45 → orphan repair 48 → health verification.
+-- Order: library 44–49 → site fill 45 → orphan 48 → categories 50 → pages 51 → health.
 -- =============================================================================
 
 """

@@ -7,7 +7,7 @@ Use this order on **production** after deploying site code from GitHub.
 | Step | File | Expect |
 |------|------|--------|
 | 1 | `RUN-LIVE-CLEANUP.sql` | `library_link_summary` with `problems: []`; health RPCs updated |
-| 2 | `RUN-ALL-REMAINING.sql` | `phase45_summary`; final `health_report.healthy: true` |
+| 2 | `RUN-ALL-REMAINING.sql` or `RUN-LIVE-FOLLOWUP.sql` | `phase45_summary` or phase 49–51; `health_report.healthy: true` |
 | 3 | Hard-refresh admin | System Health matches SQL |
 | 4 | `lane2-spot-check.html` | Tick journeys A–F |
 
@@ -17,8 +17,9 @@ Use this order on **production** after deploying site code from GitHub.
 |------|----------|
 | `RUN-IN-SUPABASE-copy-paste-this.sql` | Fresh project or full rebuild (large — ~200KB) |
 | `RUN-LIVE-CLEANUP.sql` | Library links + phase43 health RPCs + verify |
-| `RUN-ALL-REMAINING.sql` | Phase 44–48 library + site fill + orphan repair + verify |
-| `fix-phase48-recipe-ingredient-orphans.sql` | Orphan recipe ingredient names only (if health shows orphans) |
+| `RUN-ALL-REMAINING.sql` | Full bundle: phases 44–51 + orphan repair + verify |
+| `RUN-LIVE-FOLLOWUP.sql` | Phases 49–51 only (if 44–48 already ran) |
+| `fix-phase48-recipe-ingredient-orphans.sql` | Orphan recipe ingredient names only |
 | `SQL-EDITOR-health-check.sql` | Health check only |
 | `fix-phaseNN-*.sql` | Single patch only |
 

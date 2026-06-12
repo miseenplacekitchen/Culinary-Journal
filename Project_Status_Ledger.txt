@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: June 2026 (Phases 36–44 cleanup + admin hardening)
+Last updated: June 2026 (Phases 44–51 + admin UX + live health green)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -7,13 +7,13 @@ Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
 ══════════════════════════════════════════════════════════════════════
 LIVE CHECKLIST (Betty — tick when done)
 ══════════════════════════════════════════════════════════════════════
-[ ] 1. RUN-LIVE-CLEANUP.sql in Supabase → healthy: true
-[ ] 2. RUN-ALL-REMAINING.sql in Supabase → phase45_summary + healthy: true
-[ ] 3. Hard-refresh admin → System Health matches SQL
-[ ] 4. lane2-spot-check.html journeys A–F all ticked
-[ ] 5. Supabase backup confirmed (Dashboard → Database → Backups)
-[ ] 6. TCJ_SITE_PRIVATE intent confirmed (theme-init.js — true = login required)
-[ ] 7. Open verified pages in Site Management → Pages (soft launch)
+[x] 1. RUN-LIVE-CLEANUP.sql in Supabase → healthy: true
+[x] 2. RUN-ALL-REMAINING.sql + phase48 orphans → healthy: true (2 approved, 604 ingredients)
+[ ] 3. RUN-LIVE-FOLLOWUP.sql → phases 49–51 (library, categories, soft-launch pages)
+[ ] 4. Hard-refresh admin → Dashboard home System Health matches SQL
+[ ] 5. Admin → Lane 2 Spot-Check journeys A–F all ticked
+[ ] 6. Supabase backup confirmed (Dashboard → Database → Backups)
+[ ] 7. TCJ_SITE_PRIVATE intent confirmed (theme-init.js — true = login required)
 
 Guide: database/sql/README-LIVE.md
 
@@ -98,12 +98,14 @@ fix-phase36 through 42 (bundle)     | Platform, festivals, import audit, browse 
 fix-library-governed-links.sql      | Starter slug fuzzy re-link + full profile audit        | Ran ✅ Betty
 fix-phase43-starter-library-health.sql | Dashboard + SQL editor health RPCs                  | Ran ✅ Betty
 RUN-LIVE-CLEANUP.sql                | Ordered live cleanup (library + health + verify)       | Ran ✅ Betty — healthy: true
-fix-phase44-library-profiles.sql    | Carrot, celery, honey, spinach, coriander              | In RUN-ALL-REMAINING.sql → pending Betty
-fix-phase45-site-fill.sql           | Festival dishes, approve pending, free-limit settings  | In RUN-ALL-REMAINING.sql → pending Betty
-fix-phase46-library-profiles.sql    | Zucchini, eggplant, yogurt, basil, green beans         | In RUN-ALL-REMAINING.sql → pending Betty
-fix-phase47-library-profiles.sql    | Apple, banana, pasta, red wine vinegar, thyme          | In RUN-ALL-REMAINING.sql → pending Betty
-fix-phase48-recipe-ingredient-orphans.sql | Link recipe lines to governed ingredients         | Run if orphan_recipe_ingredient_names > 0
-RUN-ALL-REMAINING.sql               | Phase 44–48 + 45 + health check                        | Run in Supabase → pending Betty
+fix-phase44 through 47-library      | Library batches 44–47                                  | Ran ✅ Betty (via RUN-ALL-REMAINING)
+fix-phase45-site-fill.sql           | Festival dishes, approve pending, free-limit         | Ran ✅ Betty — 2 approved recipes
+fix-phase48-recipe-ingredient-orphans.sql | Orphan recipe ingredient repair                  | Ran ✅ Betty — healthy: true
+fix-phase49-library-profiles.sql    | Sugar, bread, mushroom, cheddar, oregano             | In RUN-LIVE-FOLLOWUP.sql → pending Betty
+fix-phase50-ingredient-categories.sql | Categorise phase48 Uncategorised rows              | In RUN-LIVE-FOLLOWUP.sql → pending Betty
+fix-phase51-soft-launch-pages.sql   | Register core pages for soft launch                  | In RUN-LIVE-FOLLOWUP.sql → pending Betty
+RUN-ALL-REMAINING.sql               | Full remaining bundle (44–51)                        | Use for fresh run
+RUN-LIVE-FOLLOWUP.sql               | Phases 49–51 only (after 44–48 done)               | Run in Supabase → pending Betty
 
 ══════════════════════════════════════════════════════════════════════
 OPS NOTES (owner)
@@ -112,7 +114,9 @@ OPS NOTES (owner)
 • Supabase backup: Dashboard → Project → Database → Backups (confirm PITR or daily snapshots).
 • After code deploy: hard-refresh admin; System Health should match SQL-EDITOR-health-check.sql.
 • Code: submit validation extracted to lib/submit-recipe-validate.js; duplicate SQL moved to database/sql/archive/.
-• Only 1 approved recipe in DB — approve or import more for browse/chef filters to populate.
+• 2 approved recipes in DB — import or approve more for browse/chef filters to feel full.
+• Admin UX: System Health on dashboard home; Lane 2 + Theme Sweep in admin nav (not new tabs).
+• OG share image: og-image.svg deployed (was missing og-image.png).
 
 ══════════════════════════════════════════════════════════════════════
 PHASE STATUS (36–44)

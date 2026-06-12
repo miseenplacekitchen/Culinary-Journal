@@ -8,13 +8,13 @@
   <meta property="og:title" content="Recipe — The Culinary Journal">
   <meta property="og:description" content="A recipe from The Culinary Journal — your complete culinary life in one place.">
   <meta property="og:url" content="https://theculinaryjournal.site/recipe-page.html">
-  <meta property="og:image" content="https://theculinaryjournal.site/og-image.png">
+  <meta property="og:image" content="https://www.theculinaryjournal.site/og-image.svg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Recipe — The Culinary Journal">
   <meta name="twitter:description" content="A recipe from The Culinary Journal — your complete culinary life in one place.">
-  <meta name="twitter:image" content="https://theculinaryjournal.site/og-image.png">
+  <meta name="twitter:image" content="https://www.theculinaryjournal.site/og-image.svg">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Full recipe with ingredients, method, notes, and nutritional guidance from The Culinary Journal.">
@@ -388,6 +388,7 @@
   <script src="seo-schema.js"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
   <script src="lib/recipe-hero-labels.js?v=20260629"></script>
+  <script src="lib/nutrition-off.js?v=20260712"></script>
   <script src="nav-init.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -432,7 +433,7 @@
         <div class="rp-hero-placeholder" id="hero-placeholder">
           <span class="rp-hero-placeholder-text">Loading recipe image...</span>
         </div>
-        <img id="hero-img" class="rp-hero-img" style="display:none" alt="Recipe photo">
+        <img id="hero-img" class="rp-hero-img" style="display:none" alt="Recipe photo" loading="eager" decoding="async" fetchpriority="high">
         <div class="rp-hero-vignette" id="hero-overlay" style="display:none"></div>
       </div>
     </div>
@@ -1674,7 +1675,7 @@ function updateRecipeMeta(r) {
     ? r.introduction.trim().slice(0, 200)
     : 'A recipe from The Culinary Journal — your complete culinary life in one place.';
   var pageUrl = 'https://www.theculinaryjournal.site/recipe-page.html?id=' + encodeURIComponent(r.id || '');
-  var img = safeRecipeImageUrl(r.image_url) || 'https://www.theculinaryjournal.site/og-image.png';
+  var img = safeRecipeImageUrl(r.image_url) || 'https://www.theculinaryjournal.site/og-image.svg';
   function setMeta(sel, val) {
     var el = document.querySelector(sel);
     if (el) el.setAttribute('content', val);
@@ -2185,134 +2186,28 @@ function renderNutrition(n) {
   `;
 }
 
-// ── NUTRITION (Open Food Facts) ───────────────────────────────────
-const UNIT_TO_G = {
-  'g':1,'gram':1,'grams':1,
-  'kg':1000,'kilogram':1000,
-  'ml':1,'millilitre':1,'milliliter':1,
-  'l':1000,'litre':1000,'liter':1000,
-  'cup':240,'cups':240,
-  'tbsp':15,'tablespoon':15,'tablespoons':15,
-  'tsp':5,'teaspoon':5,'teaspoons':5,
-  'oz':28,'ounce':28,'ounces':28,
-  'lb':454,'pound':454,'pounds':454,
-  'piece':100,'pieces':100,'slice':30,'slices':30,
-  'handful':30,'pinch':1,'dash':1
-};
-
-// CJ-013: cache persists across visits — repeat opens of the Nutrition tab are instant
-const OFP_CACHE = (function(){
-  try { return JSON.parse(lsGet('tcj_off_cache') || '{}') || {}; } catch(_) { return {}; }
-})();
-function persistOFPCache() {
-  try {
-    const keys = Object.keys(OFP_CACHE);
-    if (keys.length > 400) keys.slice(0, keys.length - 400).forEach(k => delete OFP_CACHE[k]);
-    lsSet('tcj_off_cache', JSON.stringify(OFP_CACHE));
-  } catch(_) {}
-}
-
-async function fetchNutrition(ingredientName) {
-  const key = ingredientName.toLowerCase().trim();
-  if (OFP_CACHE[key]) return OFP_CACHE[key];
-  try {
-    const q = encodeURIComponent(key.replace(/[()]/g,'').trim());
-    const res = await fetch(
-      'https://world.openfoodfacts.org/cgi/search.pl?search_terms=' + q +
-      '&json=1&page_size=1&fields=product_name,nutriments&search_simple=1&action=process',
-      {signal: AbortSignal.timeout(3000)}
-    );
-    const data = await res.json();
-    if (data.products && data.products.length && data.products[0].nutriments) {
-      const n = data.products[0].nutriments;
-      const result = {
-        calories: n['energy-kcal_100g'] || n['energy_100g']/4.184 || 0,
-        protein:  n['proteins_100g'] || 0,
-        carbs:    n['carbohydrates_100g'] || 0,
-        fat:      n['fat_100g'] || 0,
-        fibre:    n['fiber_100g'] || n['fibre_100g'] || 0,
-        sugar:    n['sugars_100g'] || 0,
-        sodium:   (n['sodium_100g'] || 0) * 1000 // mg
-      };
-      OFP_CACHE[key] = result;
-      return result;
-    }
-  } catch(_) {}
-  return null;
-}
-
-function toGrams(qty, unit) {
-  const q = parseFloat(qty) || 0;
-  if (!q) return 0;
-  const u = (unit||'').toLowerCase().trim();
-  const factor = UNIT_TO_G[u] || (u ? 0 : 100); // if no unit, assume 100g
-  return q * factor;
-}
-
+// Nutrition lookups → lib/nutrition-off.js (7-day cache, parallel fetch)
 async function loadNutritionFromOFF(recipe, servings) {
   const container = document.getElementById('nutrition-content');
-  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-muted);padding:20px 0">Calculating nutrition <span id="nut-prog"></span></div>';
-
-  const allIngredients = [];
-  (recipe.ingredients || []).forEach(function(sec) {
-    (sec.items || []).forEach(function(item) {
-      allIngredients.push(item);
-    });
-  });
-
-  if (!allIngredients.length) {
+  if (!container) return;
+  if (!window.TcjNutritionOff) {
+    container.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:14px;color:var(--text-muted);padding:20px 0">Nutrition module not loaded.</p>';
+    return;
+  }
+  if (!(recipe.ingredients || []).some(function (s) { return (s.items || []).length; })) {
     container.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:14px;color:var(--text-muted);padding:20px 0">No ingredients found for nutrition calculation.</p>';
     return;
   }
-
-  const totals = {calories:0,protein:0,carbs:0,fat:0,fibre:0,sugar:0,sodium:0};
-  let found = 0, done = 0;
-  const prog = document.getElementById('nut-prog');
-
-  // CJ-013: bounded-parallel lookups (5 at a time) instead of one-by-one —
-  // a 15-ingredient recipe drops from ~15 serial requests to ~3 parallel waves.
-  const CONCURRENCY = 5;
-  let next = 0;
-  async function worker() {
-    while (next < allIngredients.length) {
-      const item = allIngredients[next++];
-      const n = await fetchNutrition(item.ingredient);
-      done++;
-      if (prog) prog.textContent = '(' + done + '/' + allIngredients.length + ')';
-      if (!n) continue;
-      const grams = toGrams(item.qty, item.unit);
-      if (!grams) continue;
-      const scale = grams / 100;
-      Object.keys(totals).forEach(function(k) { totals[k] += (n[k]||0) * scale; });
-      found++;
-    }
-  }
-  await Promise.all(Array.from({length: Math.min(CONCURRENCY, allIngredients.length)}, worker));
-  persistOFPCache();
-
-  if (!found) {
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-muted);padding:20px 0">Calculating nutrition <span id="nut-prog"></span></div>';
+  const result = await TcjNutritionOff.aggregateRecipeNutrition(recipe.ingredients, servings, function (done, total) {
+    const prog = document.getElementById('nut-prog');
+    if (prog) prog.textContent = '(' + done + '/' + total + ')';
+  });
+  if (!result) {
     container.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:14px;color:var(--text-muted);padding:20px 0">Nutritional data not available for these ingredients.</p>';
     return;
   }
-
-  const perServing = servings || 1;
-  const ps = {};
-  Object.keys(totals).forEach(function(k) { ps[k] = Math.round(totals[k] / perServing); });
-
-  renderNutrition({
-    calories: ps.calories,
-    protein:  ps.protein,
-    carbs:    ps.carbs,
-    fat:      ps.fat,
-    fibre:    ps.fibre,
-    sugar:    ps.sugar,
-    sodium:   ps.sodium,
-    details: [
-      {label:'Total Recipe (all servings)', value: Math.round(totals.calories) + ' kcal'},
-      {label:'Based on', value: found + ' of ' + allIngredients.length + ' ingredients'},
-      {label:'Source', value: 'Open Food Facts (approximate)'}
-    ]
-  });
+  renderNutrition(result);
 }
 
 

@@ -3,7 +3,7 @@ Updated June 2026 — lane2-spot-check.html journeys A–F
 Test account: tcj.verify@outlook.com · Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
 
 Method: repository code audit + prior Phase 14 live audit.
-Betty spot-check: lane2-spot-check.html (admin dashboard quick link) — 11 steps, saves in browser.
+Betty spot-check: Admin → Lane 2 Spot-Check (embedded in dashboard) — saves in browser.
 
 ══════════════════════════════════════════════════════════════════════
 Journey A — Recipe pipeline
@@ -41,7 +41,8 @@ Journey C — Household
 Journey D — System Health (June 2026)
 ══════════════════════════════════════════════════════════════════════
 [x] admin_data_integrity_report phase43 fields in SQL (healthy: true, Betty confirmed)
-[x] data-integrity.js shows starter_library_wrong_links + approved_recipes
+[x] phase48 orphan repair — SQL healthy: true, 0 orphans, 2 approved, 604 ingredients
+[x] System Health panel on dashboard home (not buried under Ingredient Management)
 [ ] Betty spot-check: dashboard System Health matches SQL after hard-refresh
 
 ══════════════════════════════════════════════════════════════════════

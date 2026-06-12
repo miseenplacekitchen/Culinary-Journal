@@ -56,6 +56,9 @@ A · DONE — shipped (Phases 1–26 SQL + Phase 27/28 code). Strike after live 
   • Phase 35 ✅ (SQL ✅ Betty): milk, capsicum, cinnamon, paprika, wok, lamb shoulder, smoking · lane2-spot-check.html
   • Phases 36–42 ✅ (SQL ✅ Betty): platform, festivals, import audit, browse pagination, scale caps
   • RUN-LIVE-CLEANUP.sql ✅ (SQL ✅ Betty): library links + phase43 health + healthy: true
+  • RUN-ALL-REMAINING + phase48 ✅ (SQL ✅ Betty): phases 44–48, orphan repair, healthy: true
+  • System Health on dashboard home ✅; Lane 2 + Theme Sweep embedded in admin ✅
+  • og-image.svg share card ✅ (replaces missing og-image.png)
   • Admin pagination hardening ✅: TcjAdminReports/Users/Recipes/Audit/Library + tcjAdminRpc
   • Phase 44 library batch (carrot, celery, honey, spinach, coriander) — SQL ready, run on Supabase
   • GL-07 aisle layout · GL-08 multi-store · GL-09 copy/print export (grocery.html)
@@ -63,8 +66,9 @@ A · DONE — shipped (Phases 1–26 SQL + Phase 27/28 code). Strike after live 
   • Baby food stage on family profiles (UI + SQL in fix-phase4)
 
 B · VERIFY — code exists; Betty live test then move to A
-  • Lane 2 spot-check — lane2-spot-check.html (journeys A–F: pipeline, grocery, household, health, hero, ops)
-  • [x] SQL health + RUN-LIVE-CLEANUP — Betty confirmed healthy: true (move to A when dashboard matches)
+  • Lane 2 spot-check — Admin → Lane 2 Spot-Check (journeys A–F: pipeline, grocery, household, health, hero, ops)
+  • SQL health + phase48 orphans — Betty confirmed healthy: true ✅
+  • RUN-LIVE-FOLLOWUP.sql (phases 49–51) — pending Betty run after code deploy
   • Fresh recipe submit → approve → public (not only test UUID)
   • Grocery/pantry sign-out persistence · two-account household sync
   • CJ-006 attribution · Tried It → diary · dietary card on recipe page
@@ -92,8 +96,8 @@ D · OPEN — still to build or deepen (work through these)
   Remaining OPEN items:
 
   Library (ongoing content)
-  • Run RUN-ALL-REMAINING.sql on Supabase (phase 44 library + phase 45 festivals/approve)
-  • Write/link more library profiles beyond phase 44 (ongoing content)
+  • Run RUN-LIVE-FOLLOWUP.sql on Supabase (phase 49 library + phase 50 categories + phase 51 pages)
+  • Write/link more library profiles beyond phase 49 (ongoing content)
 
   Recipe
   • Hero 4.1 live verify (CSS shipped — Betty visual check on live recipe page)
