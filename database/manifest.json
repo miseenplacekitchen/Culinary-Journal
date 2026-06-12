@@ -86,6 +86,7 @@
     { "file": "fix-phase49-library-profiles.sql", "note": "Library batch: sugar, bread, mushroom, cheddar, oregano" },
     { "file": "fix-phase52-library-profiles.sql", "note": "Library batch: cumin, turmeric, chickpea, lentil, lime, avocado" },
     { "file": "fix-phase52-lane2-recipes.sql", "note": "Three approved sample recipes for Lane 2 / hero testing" },
+    { "file": "fix-phase52-recipe-orphan-repair.sql", "note": "Repair Lane 2 recipe ingredient orphans before health check" },
     { "file": "fix-phase50-ingredient-categories.sql", "note": "Categorise phase48 Uncategorised ingredients" },
     { "file": "fix-phase51-soft-launch-pages.sql", "note": "Register core pages for soft launch" },
     { "file": "RUN-LIVE-FOLLOWUP.sql", "note": "Phases 49–51 + health (incremental live run)" }

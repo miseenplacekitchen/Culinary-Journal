@@ -4,6 +4,7 @@ base = Path(__file__).resolve().parent
 files = [
     "fix-phase52-library-profiles.sql",
     "fix-phase52-lane2-recipes.sql",
+    "fix-phase52-recipe-orphan-repair.sql",
     "SQL-EDITOR-health-check.sql",
 ]
 out = base / "RUN-LIVE-PHASE52.sql"
@@ -27,7 +28,11 @@ out.write_text("".join(parts), encoding="utf-8")
 # Append phase 52 to RUN-ALL-REMAINING
 remaining = base / "RUN-ALL-REMAINING.sql"
 phase52_parts = []
-for name in ["fix-phase52-library-profiles.sql", "fix-phase52-lane2-recipes.sql"]:
+for name in [
+    "fix-phase52-library-profiles.sql",
+    "fix-phase52-lane2-recipes.sql",
+    "fix-phase52-recipe-orphan-repair.sql",
+]:
     phase52_parts.append(f"\n-- ########## BEGIN: {name} ##########\n")
     phase52_parts.append((base / name).read_text(encoding="utf-8"))
     if not phase52_parts[-1].endswith("\n"):
