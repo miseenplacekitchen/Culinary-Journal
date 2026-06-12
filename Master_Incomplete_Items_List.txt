@@ -54,20 +54,27 @@ A · DONE — shipped (Phases 1–26 SQL + Phase 27/28 code). Strike after live 
   • Phase 33 ✅: regional hints · sync conflicts · most-saved · collection print · event scaling/meal sync · wedding presets · JSON-LD · print gating toggle
   • Phase 34 ✅ (SQL ✅ Betty): admin duplicates · ROTW expiry · owner analytics · division CRUD polish · theme-sweep · 7 library profiles · Lane 2 hardening · ROTW cron job 4
   • Phase 35 ✅ (SQL ✅ Betty): milk, capsicum, cinnamon, paprika, wok, lamb shoulder, smoking · lane2-spot-check.html
+  • Phases 36–42 ✅ (SQL ✅ Betty): platform, festivals, import audit, browse pagination, scale caps
+  • RUN-LIVE-CLEANUP.sql ✅ (SQL ✅ Betty): library links + phase43 health + healthy: true
+  • Admin pagination hardening ✅: TcjAdminReports/Users/Recipes/Audit/Library + tcjAdminRpc
+  • Phase 44 library batch (carrot, celery, honey, spinach, coriander) — SQL ready, run on Supabase
   • GL-07 aisle layout · GL-08 multi-store · GL-09 copy/print export (grocery.html)
   • Self-service deactivation · onboarding allergy/health · MP-05 Today panel
   • Baby food stage on family profiles (UI + SQL in fix-phase4)
 
 B · VERIFY — code exists; Betty live test then move to A
-  • Lane 2 full journeys — use lane2-spot-check.html (admin dashboard quick link)
+  • Lane 2 spot-check — lane2-spot-check.html (journeys A–F: pipeline, grocery, household, health, hero, ops)
+  • [x] SQL health + RUN-LIVE-CLEANUP — Betty confirmed healthy: true (move to A when dashboard matches)
   • Fresh recipe submit → approve → public (not only test UUID)
   • Grocery/pantry sign-out persistence · two-account household sync
   • CJ-006 attribution · Tried It → diary · dietary card on recipe page
   • Recipe page 4.2–4.9 · print parity · personal notes approval loop
+  • Recipe hero 4.1 visual on live (Journey E in spot-check)
   • Email delivery (Resend + cron) · OG/PWA on live URL
   • Taxonomy division CRUD · Family Lists admin tab
   • Contributor follow · Chef of Month on homepage
-  • Supabase backup (5-minute ops check)
+  • Supabase backup (5-minute ops check — Journey F)
+  • Dashboard System Health matches SQL (Journey D)
 
 C · DECIDE — Betty decision before build
   • Monetisation: mostly free vs themes-only paid vs full tiers
@@ -85,7 +92,8 @@ D · OPEN — still to build or deepen (work through these)
   Remaining OPEN items:
 
   Library (ongoing content)
-  • Write/link more library profiles (Phase 35 added 7 — ongoing content)
+  • Run fix-phase44-library-profiles.sql on Supabase (5 profiles)
+  • Write/link more library profiles beyond phase 44 (ongoing content)
 
   Recipe
   • Hero 4.1 live verify (CSS shipped — Betty visual check on live recipe page)

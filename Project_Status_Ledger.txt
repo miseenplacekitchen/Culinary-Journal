@@ -1,5 +1,5 @@
 THE CULINARY JOURNAL — PROJECT STATUS LEDGER
-Last updated: 9 June 2026 (Phase 35 — DONE ✅ Betty SQL)
+Last updated: June 2026 (Phases 36–44 cleanup + admin hardening)
 Live site: https://www.theculinaryjournal.site
 Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
@@ -81,6 +81,34 @@ fix-phase34-batch.sql               | Duplicates, ROTW expiry, owner analytics, 
 fix-phase34-library-profiles.sql    | 7 profiles (Sebago, coconut, cardamom, etc.) | DONE ✅ Betty — all published
 schedule-rotw-expiry-cron.sql       | Daily clear expired Recipe of the Week | DONE ✅ Betty — cron job 4
 fix-phase35-library-profiles.sql    | Milk, capsicum, cinnamon, paprika, wok, lamb, smoking | DONE ✅ Betty — all 7 published
+fix-phase36 through 42 (bundle)     | Platform, festivals, import audit, browse pagination   | Ran ✅ Betty
+fix-library-governed-links.sql      | Starter slug fuzzy re-link + full profile audit        | Ran ✅ Betty
+fix-phase43-starter-library-health.sql | Dashboard + SQL editor health RPCs                  | Ran ✅ Betty
+RUN-LIVE-CLEANUP.sql                | Ordered live cleanup (library + health + verify)       | Ran ✅ Betty — healthy: true
+fix-phase44-library-profiles.sql    | Carrot, celery, honey, spinach, coriander              | Run in Supabase → pending Betty
+
+══════════════════════════════════════════════════════════════════════
+OPS NOTES (owner)
+══════════════════════════════════════════════════════════════════════
+• TCJ_SITE_PRIVATE = true in theme-init.js — browsing requires login. Set false to reopen public site.
+• Supabase backup: Dashboard → Project → Database → Backups (confirm PITR or daily snapshots).
+• After code deploy: hard-refresh admin; System Health should match SQL-EDITOR-health-check.sql.
+• Only 1 approved recipe in DB — approve or import more for browse/chef filters to populate.
+
+══════════════════════════════════════════════════════════════════════
+PHASE STATUS (36–44)
+══════════════════════════════════════════════════════════════════════
+Phase | Label                              | Status
+------|------------------------------------|----------------------------------
+36    | Platform batch + festivals hotfix  | DONE ✅ (SQL in RUN-IN-SUPABASE bundle)
+37    | Festival admin + tools profiles    | DONE ✅
+38    | Import audit                       | DONE ✅
+39–39b| Data integrity + SQL editor admin  | DONE ✅ (39b superseded by 43 on live)
+40    | Meal planner picker                | DONE ✅
+41    | Browse pagination                  | DONE ✅
+42    | Scale mitigation                   | DONE ✅
+43    | Starter library wrong-link health  | DONE ✅ Betty — RUN-LIVE-CLEANUP
+44    | Library profiles batch 3           | CODE ✅ — SQL pending Betty run
 
 Phase 32:
   • Library: admin Submissions tab — approve publishes profile live

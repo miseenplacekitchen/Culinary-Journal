@@ -1,5 +1,5 @@
 Lane 2 — Core Journey Verification Log
-Phase 35 spot-check page · 9 June 2026 (updated)
+Updated June 2026 — lane2-spot-check.html journeys A–F
 Test account: tcj.verify@outlook.com · Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
 
 Method: repository code audit + prior Phase 14 live audit.
@@ -36,6 +36,25 @@ Journey C — Household
 [x] grocery.html shared household bar + ~20s sync
 [x] pantry.html shared household bar + sync
 [ ] Betty spot-check: two-account sync on live
+
+══════════════════════════════════════════════════════════════════════
+Journey D — System Health (June 2026)
+══════════════════════════════════════════════════════════════════════
+[x] admin_data_integrity_report phase43 fields in SQL (healthy: true, Betty confirmed)
+[x] data-integrity.js shows starter_library_wrong_links + approved_recipes
+[ ] Betty spot-check: dashboard System Health matches SQL after hard-refresh
+
+══════════════════════════════════════════════════════════════════════
+Journey E — Hero 4.1 visual
+══════════════════════════════════════════════════════════════════════
+[ ] Betty spot-check: circular hero on live approved recipe page
+
+══════════════════════════════════════════════════════════════════════
+Journey F — Ops
+══════════════════════════════════════════════════════════════════════
+[x] RUN-LIVE-CLEANUP.sql run on production
+[ ] Supabase backup confirmed
+[ ] TCJ_SITE_PRIVATE intent confirmed (true = login required)
 
 ══════════════════════════════════════════════════════════════════════
 Also code-verified (moved from old backlog)

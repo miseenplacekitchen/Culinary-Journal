@@ -540,9 +540,8 @@ async function loadUMChefs(container) {
         users = Array.isArray(raw) ? raw : (raw && raw.users ? raw.users : []);
       }
     }
-    if (!users.length) {
-      var res2 = await apiFetch(SUPABASE_URL + '/rest/v1/profiles?select=id,username,full_name,is_active&is_active=eq.true&order=username.asc&limit=200');
-      if (res2 && res2.ok) users = await res2.json();
+    if (!users.length && typeof TcjAdminProfiles !== 'undefined') {
+      users = await TcjAdminProfiles.fetchAllActiveRest(apiFetch, SUPABASE_URL);
     }
 
     container.innerHTML = '';

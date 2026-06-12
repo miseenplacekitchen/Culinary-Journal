@@ -1,4 +1,5 @@
 -- fix-phase39-data-integrity.sql
+-- SUPERSEDED for health RPC fields: fix-phase43-starter-library-health.sql
 -- Data integrity layer: ingredient amend cascade, guarded delete, bulk recipe
 -- normalisation, integrity report, performance indexes, ingredient lookup RPC.
 -- Safe to re-run. Run in Supabase SQL Editor after fix-library-unified.sql.

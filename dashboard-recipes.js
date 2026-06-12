@@ -12,7 +12,7 @@ function getRejectReasons() {
   try {
     var s = localStorage.getItem('tcj_rm_reject_reasons');
     if (s) { var a = JSON.parse(s); if (Array.isArray(a) && a.length) return a; }
-  } catch(_) {}
+  } catch(e) { console.warn('reject reasons cache', e); }
   return ['Incomplete ingredients','Unclear method','Duplicate recipe','Inappropriate content','Missing source credit','Poor formatting','Other'];
 }
 
@@ -346,7 +346,7 @@ async function openRecipeModal(id) {
       var warns = [];
       try {
         warns = Array.isArray(r.import_warnings) ? r.import_warnings : (r.import_warnings ? JSON.parse(r.import_warnings) : []);
-      } catch(_) {}
+      } catch(e) { console.warn('import warnings parse', e); }
       if (warns.length) {
         var wEl = mk('div',"font-size:12px;color:var(--text-mid);margin-top:8px;line-height:1.6");
         wEl.textContent = 'Warnings: ' + warns.join(' · ');
@@ -376,7 +376,7 @@ async function openRecipeModal(id) {
     try {
       unknowns = Array.isArray(r.unknown_ingredients) ? r.unknown_ingredients
                  : (r.unknown_ingredients ? JSON.parse(r.unknown_ingredients) : []);
-    } catch(_) {}
+    } catch(e) { console.warn('unknown ingredients parse', e); }
     if (unknowns.length) {
       var uBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(212,160,23,0.05);border-left:3px solid #d4a017');
       uBlock.appendChild(mk('div',"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#d4a017;margin-bottom:10px",'⚠ New Ingredients Not Yet in Database'));
@@ -402,7 +402,7 @@ async function openRecipeModal(id) {
     try {
       unknownTools = Array.isArray(r.unknown_utensils) ? r.unknown_utensils
         : (r.unknown_utensils ? JSON.parse(r.unknown_utensils) : []);
-    } catch(_) {}
+    } catch(e) { console.warn('unknown utensils parse', e); }
     if (unknownTools.length) {
       var tBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(212,160,23,0.05);border-left:3px solid #d4a017');
       tBlock.appendChild(mk('div',"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#d4a017;margin-bottom:10px",'⚠ New Tools Not Yet in Library'));
@@ -435,7 +435,7 @@ async function openRecipeModal(id) {
     try {
       taxSug = Array.isArray(r.taxonomy_suggestions) ? r.taxonomy_suggestions
         : (r.taxonomy_suggestions ? JSON.parse(r.taxonomy_suggestions) : []);
-    } catch(_) {}
+    } catch(e) { console.warn('taxonomy suggestions parse', e); }
     if (taxSug.length) {
       var tBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(212,160,23,0.05);border-left:3px solid #d4a017');
       tBlock.appendChild(mk('div',"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#d4a017;margin-bottom:10px",'⚠ Suggested Taxonomy Not Yet in Database'));
@@ -1418,6 +1418,7 @@ async function loadROTW() {
     if (typeof TcjAdminRecipes !== 'undefined') {
       recipes = await TcjAdminRecipes.fetchAll({ p_status: 'approved', p_search: null, p_category: null });
     } else {
+      console.warn('loadROTW: TcjAdminRecipes missing — capped at 200 rows');
       var rows = await rpc('admin_get_recipes', { p_status: 'approved', p_limit: 200, p_offset: 0 });
       recipes = Array.isArray(rows) ? rows : [];
     }
@@ -1537,7 +1538,7 @@ async function loadRMTaxonomy(container) {
   try {
     var rows = await rpc('get_recipe_taxonomy', { p_category: null }) || [];
     var missing = [];
-    try { missing = await rpc('admin_list_recipes_missing_taxonomy', { p_limit: 50 }) || []; } catch(_) {}
+    try { missing = await rpc('admin_list_recipes_missing_taxonomy', { p_limit: 50 }) || []; } catch(e) { console.warn('missing taxonomy list', e); }
     container.innerHTML = '';
     function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');

@@ -27,7 +27,7 @@
 <div data-nav-host></div>
 <div class="l2-wrap">
   <h1 class="l2-title">Lane 2 — Live Spot-Check</h1>
-  <p class="l2-sub">Three core journeys on the <strong>live site</strong>. Tick each step as you test. Progress saves in your browser. Test account: <code>tcj.verify@outlook.com</code></p>
+  <p class="l2-sub">Core journeys + admin health on the <strong>live site</strong>. Tick each step as you test. Progress saves in your browser. Test account: <code>tcj.verify@outlook.com</code></p>
   <div class="l2-progress" id="l2-progress">0 / 0 complete</div>
 
   <div class="l2-journey" data-journey="A">
@@ -63,6 +63,37 @@
     <div class="l2-links">
       <a class="l2-link" href="household.html" target="_blank">Household</a>
       <a class="l2-link" href="grocery.html" target="_blank">Shared grocery</a>
+    </div>
+  </div>
+
+  <div class="l2-journey" data-journey="D">
+    <h2>Journey D — Admin System Health</h2>
+    <label class="l2-step"><input type="checkbox" data-id="d1"> Hard-refresh admin (<kbd>Ctrl+Shift+R</kbd>)</label>
+    <label class="l2-step"><input type="checkbox" data-id="d2"> System Health shows green · all issue counts 0</label>
+    <label class="l2-step"><input type="checkbox" data-id="d3"> Shows approved recipe count · no yellow “run phase43” hint</label>
+    <div class="l2-links">
+      <a class="l2-link" href="dashboard.html" target="_blank">Admin dashboard</a>
+    </div>
+  </div>
+
+  <div class="l2-journey" data-journey="E">
+    <h2>Journey E — Recipe hero visual (4.1)</h2>
+    <label class="l2-step"><input type="checkbox" data-id="e1"> Open an approved recipe on live</label>
+    <label class="l2-step"><input type="checkbox" data-id="e2"> Circular hero image loads · title and category readable</label>
+    <label class="l2-step"><input type="checkbox" data-id="e3"> No layout overlap on mobile width</label>
+    <div class="l2-links">
+      <a class="l2-link" href="recipes.html" target="_blank">Recipes list</a>
+      <a class="l2-link" href="recipe-page.html?id=5ba4215b-182f-49ff-80a4-21a36b7190b5" target="_blank">Test recipe</a>
+    </div>
+  </div>
+
+  <div class="l2-journey" data-journey="F">
+    <h2>Journey F — Ops checklist (owner)</h2>
+    <label class="l2-step"><input type="checkbox" data-id="f1"> Supabase backup confirmed (Dashboard → Database → Backups)</label>
+    <label class="l2-step"><input type="checkbox" data-id="f2"> <code>RUN-LIVE-CLEANUP.sql</code> run · SQL health <code>healthy: true</code></label>
+    <label class="l2-step"><input type="checkbox" data-id="f3"> Site privacy: <code>TCJ_SITE_PRIVATE</code> in theme-init.js matches intent (currently login required)</label>
+    <div class="l2-links">
+      <a class="l2-link" href="https://supabase.com/dashboard" target="_blank" rel="noopener">Supabase dashboard</a>
     </div>
   </div>
 

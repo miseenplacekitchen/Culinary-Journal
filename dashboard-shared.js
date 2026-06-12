@@ -217,7 +217,10 @@ async function loadDashboard() {
       var pending = parseInt((document.getElementById('dash-pending')||{}).textContent)||0;
       var inbox = await Promise.all([
         rpc('admin_get_appeals', {}).catch(function(){ return []; }),
-        rpc('admin_get_reports', {p_status:'pending', p_limit:200, p_offset:0}).catch(function(){ return []; }),
+        (typeof TcjAdminReports !== 'undefined'
+          ? TcjAdminReports.fetchAll({ p_status: 'pending' })
+          : rpc('admin_get_reports', { p_status: 'pending', p_limit: 200, p_offset: 0 })
+        ).catch(function(){ return []; }),
         rpc('admin_get_pending_notes', {}).catch(function(){ return []; }),
         rpc('admin_get_pending_ingredients', {}).catch(function(){ return []; }),
         rpc('admin_get_library_submissions', {p_status:'pending', p_limit:50}).catch(function(){ return []; }),
@@ -282,7 +285,7 @@ async function init() {
   }
   try {
     var sess = null;
-    try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(e) {}
+    try { sess = JSON.parse(localStorage.getItem('tcj_session') || 'null'); } catch(e) { console.warn('dash session parse', e); }
     if (!sess || !sess.access_token) {
       window.location.href = 'login.html';
       return;
@@ -598,12 +601,15 @@ function loadUMTab(key, container) {
 async function loadUMReports(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
   try {
-    var results = await Promise.all([
-      rpc('admin_get_reports',  {p_status:null,p_limit:200,p_offset:0}) || [],
-      rpc('admin_get_appeals',  {}) || []
-    ]);
-    var reports = Array.isArray(results[0]) ? results[0] : [];
-    var appeals = Array.isArray(results[1]) ? results[1] : [];
+    var reports = [];
+    if (typeof TcjAdminReports !== 'undefined') {
+      reports = await TcjAdminReports.fetchAll({ p_status: null });
+    } else {
+      var rawReports = await rpc('admin_get_reports', { p_status: null, p_limit: 200, p_offset: 0 });
+      reports = Array.isArray(rawReports) ? rawReports : [];
+    }
+    var appeals = await rpc('admin_get_appeals', {}) || [];
+    appeals = Array.isArray(appeals) ? appeals : [];
     container.innerHTML = '';
     function mk(tag,s,t){var e=document.createElement(tag);if(s)e.style.cssText=s;if(t!==undefined)e.textContent=t;return e;}
 
@@ -1359,8 +1365,8 @@ function auditLog(tab,action,target,oldVal,newVal,details){
       p_old_value: oldVal!=null?String(oldVal):null,
       p_new_value: newVal!=null?String(newVal):null,
       p_details: details||null
-    }).catch(function(){});
-  }catch(e){}
+    }).catch(function(err){ console.warn('audit log', err); });
+  }catch(e){ console.warn('auditLog', e); }
 }
 
 function _tipOn(el, text){

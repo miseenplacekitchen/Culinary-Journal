@@ -71,6 +71,7 @@
     { "file": "fix-library-governed-links.sql", "note": "Re-link starter library slugs to correct governed ingredients" },
     { "file": "SQL-EDITOR-health-check.sql", "note": "Run after data fixes; expect all zeros" },
     { "file": "fix-phase43-starter-library-health.sql", "note": "Dashboard health RPC: starter wrong-link detection" },
-    { "file": "RUN-LIVE-CLEANUP.sql", "note": "Ordered live cleanup bundle (library + health + verify)" }
+    { "file": "RUN-LIVE-CLEANUP.sql", "note": "Ordered live cleanup bundle (library + health + verify)" },
+    { "file": "fix-phase44-library-profiles.sql", "note": "Library batch: carrot, celery, honey, spinach, coriander" }
   ]
 }

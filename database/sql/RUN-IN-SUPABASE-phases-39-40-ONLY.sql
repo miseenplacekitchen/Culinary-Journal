@@ -1,6 +1,7 @@
 -- =============================================================================
--- PHASES 39 + 40 ONLY — use if you already ran fix-all-live and library-unified
--- Copy entire file → Supabase SQL Editor → Run
+-- PHASES 39 + 40 ONLY — PARTIAL SNAPSHOT (superseded)
+-- Prefer RUN-IN-SUPABASE-copy-paste-this.sql or RUN-LIVE-CLEANUP.sql instead.
+-- Missing phases 41–43 health alignment. Do not use on fresh production refresh.
 -- =============================================================================
 
 
