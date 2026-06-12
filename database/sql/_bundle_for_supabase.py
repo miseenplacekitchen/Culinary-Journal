@@ -15,6 +15,7 @@ files = [
     "fix-phase41-browse-pagination.sql",
     "fix-phase42-scale-mitigation.sql",
     "fix-library-governed-links.sql",
+    "fix-phase43-starter-library-health.sql",
 ]
 out = base / "RUN-IN-SUPABASE-copy-paste-this.sql"
 header = """-- =============================================================================
