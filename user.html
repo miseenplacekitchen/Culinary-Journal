@@ -76,6 +76,9 @@
     <div id="up-recipes-section">
       <div class="up-section-title" id="up-recipes-label">Recipes</div>
       <div class="up-recipe-grid" id="up-recipes"></div>
+      <div id="up-load-more-wrap" style="display:none;text-align:center;margin:16px 0 8px">
+        <button type="button" id="up-load-more-btn" class="up-follow-btn" onclick="loadMoreRecipes()">Load more recipes</button>
+      </div>
     </div>
     <div id="up-collections-section" style="display:none">
       <div class="up-section-title">Public Collections</div>
@@ -88,26 +91,64 @@
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 const CAT_EMOJI={'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
+const USER_RECIPE_PAGE = 48;
 var _profileUsername = '';
+var _profileRecipeCount = 0;
+var _userRecipes = [];
+var _userRecipeOffset = 0;
+var _userRecipeHasMore = false;
+var _userRecipeLoading = false;
+
+async function fetchUserRecipes(username, reset) {
+  if (_userRecipeLoading) return;
+  _userRecipeLoading = true;
+  if (reset) {
+    _userRecipeOffset = 0;
+    _userRecipes = [];
+    _userRecipeHasMore = false;
+  }
+  try {
+    var res = await fetch(SUPA_URL + '/rest/v1/rpc/get_approved_recipes', {
+      method: 'POST',
+      headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        p_username: username,
+        p_limit: USER_RECIPE_PAGE,
+        p_offset: _userRecipeOffset
+      })
+    });
+    var rows = res.ok ? await res.json() : [];
+    if (!Array.isArray(rows)) rows = [];
+    if (reset) _userRecipes = rows;
+    else _userRecipes = _userRecipes.concat(rows);
+    _userRecipeHasMore = rows.length >= USER_RECIPE_PAGE;
+    _userRecipeOffset += rows.length;
+  } catch (_) {
+    if (reset) _userRecipes = [];
+  }
+  _userRecipeLoading = false;
+}
 
 async function load(){
   const params=new URLSearchParams(window.location.search);
   const username=params.get('u');
   if(!username){show('error');return;}
   try{
-    const [profileRes,recipesRes]= await Promise.all([
-      fetch(SUPA_URL+'/rest/v1/rpc/get_public_profile',{method:'POST',headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_username:username})}),
-      fetch(SUPA_URL+'/rest/v1/rpc/get_approved_recipes',{method:'POST',headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_limit:40})})
-    ]);
+    const profileRes = await fetch(SUPA_URL+'/rest/v1/rpc/get_public_profile',{method:'POST',headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_username:username})});
     const profiles=await profileRes.json();
     if(!profiles||!profiles.length){show('error');return;}
     const profile=profiles[0];
-    const allRecipes=await recipesRes.json()||[];
-    const userRecipes=allRecipes.filter(r=>r.username&&r.username.toLowerCase()===username.toLowerCase());
-    renderProfile(profile,userRecipes);
+    await fetchUserRecipes(username, true);
+    renderProfile(profile,_userRecipes);
     show('content');
     document.title='@'+profile.username+' — The Culinary Journal';
   }catch(e){show('error');}
+}
+
+async function loadMoreRecipes() {
+  if (!_profileUsername || !_userRecipeHasMore || _userRecipeLoading) return;
+  await fetchUserRecipes(_profileUsername, false);
+  renderRecipeGrid(_userRecipes);
 }
 
 function show(state){
@@ -118,6 +159,7 @@ function show(state){
 
 function renderProfile(profile,recipes){
   _profileUsername = profile.username || '';
+  _profileRecipeCount = Number(profile.recipe_count) || 0;
   const initials=(profile.full_name||profile.username||'?').charAt(0).toUpperCase();
   document.getElementById('up-avatar').textContent=initials;
   document.getElementById('up-username').textContent='@'+profile.username;
@@ -127,10 +169,18 @@ function renderProfile(profile,recipes){
     '<span class="up-stat"><strong>'+profile.recipe_count+'</strong> public recipe'+(profile.recipe_count==1?'':'s')+'</span>'+
     (joined?'<span>Joined '+joined+'</span>':'');
   loadFollowState();
+  renderRecipeGrid(recipes);
+}
+
+function renderRecipeGrid(recipes) {
   const label=document.getElementById('up-recipes-label');
-  label.textContent=(recipes.length||0)+' Public Recipe'+(recipes.length===1?'':'s');
+  const total = _profileRecipeCount || recipes.length;
+  const shown = recipes.length;
+  label.textContent = shown + ' Public Recipe' + (shown === 1 ? '' : 's') +
+    (total > shown ? ' (showing ' + shown + ' of ' + total + ')' : '');
   const grid=document.getElementById('up-recipes');
-  if(!recipes.length){grid.innerHTML='<div class="up-empty">No public recipes yet.</div>';return;}
+  const moreWrap=document.getElementById('up-load-more-wrap');
+  if(!recipes.length){grid.innerHTML='<div class="up-empty">No public recipes yet.</div>';if(moreWrap)moreWrap.style.display='none';return;}
   grid.innerHTML=recipes.map(r=>{
     const emoji=CAT_EMOJI[r.category]||'🍳';
     return '<a class="up-recipe-card" href="recipe-page.html?id='+r.id+'">'+
@@ -138,6 +188,7 @@ function renderProfile(profile,recipes){
       '<div class="up-recipe-body"><div class="up-recipe-name">'+esc(r.recipe_name||'')+'</div>'+
       '<div class="up-recipe-cat">'+esc(r.category||'')+(r.origin_country?' · '+esc(r.origin_country):'')+'</div></div></a>';
   }).join('');
+  if (moreWrap) moreWrap.style.display = _userRecipeHasMore ? 'block' : 'none';
 }
 
 async function loadFollowState(){

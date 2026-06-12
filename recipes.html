@@ -208,6 +208,9 @@
     <div id="cr-family-banner" class="cr-family-banner" style="display:none"></div>
     <div class="cr-grid" id="cr-grid">
       <div class="cr-grid" id="community-grid"><div class="cr-empty">Loading community recipes...</div></div>
+      <div id="cr-load-more-wrap" style="display:none;text-align:center;margin:20px 0 8px">
+        <button type="button" id="cr-load-more-btn" class="cr-filter" onclick="loadMoreCommunityRecipes()">Load more recipes</button>
+      </div>
     </div>
   </div>
 
@@ -557,16 +560,13 @@ async function loadDishRecipes(dishName, categoryName) {
           p_category: categoryName,
           p_sub_category: curSubFilter || null,
           p_division: curDivFilter || null,
-          p_limit: 12
+          p_search: dishName,
+          p_limit: 24
         }) }
     );
     var recipes = res.ok ? await res.json() : [];
-    var dishLower = dishName.toLowerCase();
-    var matching = recipes.filter(function(r){
-      var rname = (r.recipe_name||'').toLowerCase();
-      return rname.indexOf(dishLower) > -1 || dishLower.indexOf(rname.split(' ')[0]) > -1;
-    });
-    var toShow = matching.length ? matching : recipes;
+    if (!Array.isArray(recipes)) recipes = [];
+    var toShow = recipes;
     var cardsEl = document.getElementById('dish-recipe-cards');
     if (!cardsEl) return;
     if (!toShow.length) {
@@ -732,6 +732,10 @@ loadCategories();
 //  COMMUNITY RECIPES
 // ══════════════════════════════════════════════════════════
 var allCommunityRecipes = [];
+var communityOffset = 0;
+var communityHasMore = false;
+var communityLoading = false;
+var COMMUNITY_PAGE_SIZE = 48;
 var browseFamilyProfiles = [];
 var hideUnsafeRecipes = false;
 var activeDietFilter = '';
@@ -854,12 +858,26 @@ function buildBrowseTaxonomyFilters(categoryName) {
   };
 }
 
+function communityChefParams() {
+  if (!activeChefFilter) return {};
+  if (activeChefFilter.charAt(0) === '@') {
+    return { p_username: activeChefFilter.slice(1) };
+  }
+  return { p_credit_name: activeChefFilter };
+}
+
 function buildCommunityTaxonomyFilters() {
   var row = document.getElementById('cr-taxonomy-row');
   var subEl = document.getElementById('cr-sub-filters');
   if (!row || !subEl) return;
   var subs = {};
-  allCommunityRecipes.forEach(function(r){ if (r.sub_category) subs[r.sub_category] = true; });
+  var seen = {};
+  browseTaxonomy.forEach(function(r) {
+    if (r.subcategory_name && !seen[r.subcategory_name]) {
+      seen[r.subcategory_name] = true;
+      subs[r.subcategory_name] = true;
+    }
+  });
   var names = Object.keys(subs).sort();
   if (!names.length) { row.style.display = 'none'; return; }
   row.style.display = 'block';
@@ -875,7 +893,7 @@ function buildCommunityTaxonomyFilters() {
     activeSubFilter = btn.dataset.sub || '';
     activeDivFilter = '';
     buildCommunityDivisionFilters();
-    renderCommunityRecipes();
+    fetchCommunityRecipes(true);
   };
   buildCommunityDivisionFilters();
 }
@@ -886,8 +904,8 @@ function buildCommunityDivisionFilters() {
   if (!divRow || !divEl) return;
   if (!activeSubFilter) { divRow.style.display = 'none'; return; }
   var divs = {};
-  allCommunityRecipes.filter(function(r){ return r.sub_category === activeSubFilter && r.division; })
-    .forEach(function(r){ divs[r.division] = true; });
+  browseTaxonomy.filter(function(r){ return r.subcategory_name === activeSubFilter && r.division_name; })
+    .forEach(function(r){ divs[r.division_name] = true; });
   var names = Object.keys(divs).sort();
   if (!names.length) { divRow.style.display = 'none'; return; }
   divRow.style.display = 'block';
@@ -901,28 +919,60 @@ function buildCommunityDivisionFilters() {
     divEl.querySelectorAll('.cr-filter').forEach(function(b){ b.classList.remove('active'); });
     btn.classList.add('active');
     activeDivFilter = btn.dataset.div || '';
-    renderCommunityRecipes();
+    fetchCommunityRecipes(true);
   };
 }
 
-async function loadCommunityRecipes() {
+async function fetchCommunityRecipes(reset) {
+  if (communityLoading) return;
+  communityLoading = true;
   var grid = document.getElementById('community-grid');
-  if (!grid) return;
-  grid.innerHTML = '<div class="cr-empty">Loading community recipes...</div>';
+  var moreWrap = document.getElementById('cr-load-more-wrap');
+  if (reset) {
+    communityOffset = 0;
+    allCommunityRecipes = [];
+    communityHasMore = false;
+    if (grid) grid.innerHTML = '<div class="cr-empty">Loading community recipes...</div>';
+    if (moreWrap) moreWrap.style.display = 'none';
+  }
   try {
-    await loadBrowseFamilyProfiles();
-    await loadBrowseTaxonomy();
+    var body = Object.assign({
+      p_dietary: activeDietFilter || null,
+      p_spice: activeSpiceFilter || null,
+      p_sub_category: activeSubFilter || null,
+      p_division: activeDivFilter || null,
+      p_limit: COMMUNITY_PAGE_SIZE,
+      p_offset: communityOffset
+    }, communityChefParams());
     var res = await fetch(SUPA_URL_CR + '/rest/v1/rpc/get_approved_recipes', {
       method:'POST', headers:{'apikey':SUPA_KEY_CR,'Content-Type':'application/json'},
-      body:JSON.stringify({p_limit:40})
+      body: JSON.stringify(body)
     });
-    allCommunityRecipes = res.ok ? await res.json() : [];
+    var rows = res.ok ? await res.json() : [];
+    if (!Array.isArray(rows)) rows = [];
+    if (reset) allCommunityRecipes = rows;
+    else allCommunityRecipes = allCommunityRecipes.concat(rows);
+    communityHasMore = rows.length >= COMMUNITY_PAGE_SIZE;
+    communityOffset += rows.length;
     buildChefFilter();
-    buildCommunityTaxonomyFilters();
     renderCommunityRecipes();
+    if (moreWrap) moreWrap.style.display = communityHasMore ? 'block' : 'none';
   } catch(_) {
-    if (grid) grid.innerHTML = '<div class="cr-empty">Could not load community recipes.</div>';
+    if (reset && grid) grid.innerHTML = '<div class="cr-empty">Could not load community recipes.</div>';
   }
+  communityLoading = false;
+}
+
+async function loadCommunityRecipes() {
+  await loadBrowseFamilyProfiles();
+  await loadBrowseTaxonomy();
+  buildCommunityTaxonomyFilters();
+  await fetchCommunityRecipes(true);
+}
+
+async function loadMoreCommunityRecipes() {
+  if (!communityHasMore || communityLoading) return;
+  await fetchCommunityRecipes(false);
 }
 
 function buildChefFilter() {
@@ -967,35 +1017,27 @@ function filterCommunity(tag, btn) {
   activeDietFilter = tag;
   document.querySelectorAll('#cr-dietary-filters .cr-filter').forEach(function(b){b.classList.remove('active');});
   if (btn) btn.classList.add('active');
-  renderCommunityRecipes();
+  fetchCommunityRecipes(true);
 }
 
 function filterSpice(level, btn) {
   activeSpiceFilter = level;
   document.querySelectorAll('#cr-spice-filters .cr-filter').forEach(function(b){b.classList.remove('active');});
   if (btn) btn.classList.add('active');
-  renderCommunityRecipes();
+  fetchCommunityRecipes(true);
 }
 
 function filterByChef(name, btn) {
   activeChefFilter = name;
-  document.querySelectorAll('#cr-chef-filters .cr-filter').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('#cr-chef-filters .cr-filter').forEach(function(b){ b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
-  renderCommunityRecipes();
+  fetchCommunityRecipes(true);
 }
 
 function renderCommunityRecipes() {
   var grid = document.getElementById('community-grid');
   if (!grid) return;
   var filtered = allCommunityRecipes.filter(function(r) {
-    if (activeDietFilter && !(r.dietary_tags||[]).includes(activeDietFilter)) return false;
-    if (activeSpiceFilter && (r.spice_level || '') !== activeSpiceFilter) return false;
-    if (activeSubFilter && (r.sub_category || '') !== activeSubFilter) return false;
-    if (activeDivFilter && (r.division || '') !== activeDivFilter) return false;
-    if (activeChefFilter) {
-      var chefName = r.credit_name || (r.username ? '@'+r.username : '');
-      if (chefName !== activeChefFilter) return false;
-    }
     if (hideUnsafeRecipes && browseFamilyProfiles.length && typeof AllergyEngine !== 'undefined') {
       if (AllergyEngine.isRecipeUnsafe(r, browseFamilyProfiles) || browseAllergyWarnings(r).length) return false;
     }

@@ -61,6 +61,8 @@
     .sr-empty-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--text-high); margin-bottom:6px; }
     .sr-empty-sub   { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); }
     .sr-count { font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); }
+    .sr-load-more { display:block; margin:20px auto 0; padding:10px 22px; border-radius:20px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); cursor:pointer; }
+    .sr-load-more:hover { border-color:var(--accent); color:var(--accent); }
   </style>
   <script src="page-guard.js"></script>
 </head>
@@ -108,10 +110,17 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 
 const CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
 
+const SR_RECIPE_PAGE = 24;
+const SR_ING_PAGE = 20;
 let searchTimer = null;
 let lastQuery = '';
 let allResults = {recipes:[], ingredients:[]};
 let activeTab = 'all';
+let recipeOffset = 0;
+let recipeHasMore = false;
+let ingOffset = 0;
+let ingHasMore = false;
+let searchLoading = false;
 
 function handleSearch(val) {
   const q = val.trim();
@@ -130,59 +139,115 @@ function clearSearch() {
   document.getElementById('sr-results').style.display = 'none';
   document.getElementById('sr-filters').style.display = 'none';
   allResults = {recipes:[], ingredients:[]};
+  recipeOffset = 0;
+  recipeHasMore = false;
+  ingOffset = 0;
+  ingHasMore = false;
 }
 
 function setTab(tab, btn) {
   activeTab = tab;
   document.querySelectorAll('.sr-filter').forEach(function(b){b.classList.remove('active');});
   btn.classList.add('active');
-  renderResults();
+  if (lastQuery) doSearch(lastQuery, true);
+  else renderResults();
 }
 
-async function doSearch(q) {
-  if (q === lastQuery) return;
-  lastQuery = q;
+function searchDietaryParam() {
+  if (activeTab === 'vegan') return 'Vegan';
+  if (activeTab === 'gluten-free') return 'Gluten Free';
+  return null;
+}
+
+async function doSearch(q, reset) {
+  if (!q) return;
+  if (!reset && q === lastQuery && allResults.recipes.length) return;
+  if (reset !== false) {
+    lastQuery = q;
+    recipeOffset = 0;
+    ingOffset = 0;
+    allResults = {recipes: [], ingredients: []};
+    recipeHasMore = false;
+    ingHasMore = false;
+  }
   document.getElementById('sr-start').style.display = 'none';
   document.getElementById('sr-results').style.display = 'block';
   document.getElementById('sr-filters').style.display = 'flex';
-  document.getElementById('sr-results').innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:20px 0">Searching...</div>';
-
-  const [recipes, ingredients] = await Promise.all([
-    searchRecipes(q),
-    searchIngredients(q)
-  ]);
-
-  allResults = {recipes: recipes||[], ingredients: ingredients||[]};
+  if (reset !== false) {
+    document.getElementById('sr-results').innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:20px 0">Searching...</div>';
+  }
+  searchLoading = true;
+  const wantRecipes = activeTab !== 'ingredients';
+  const wantIngredients = activeTab !== 'recipes' && activeTab !== 'vegan' && activeTab !== 'gluten-free';
+  const tasks = [];
+  if (wantRecipes) tasks.push(fetchRecipePage(q, reset !== false));
+  if (wantIngredients) tasks.push(fetchIngredientPage(q, reset !== false));
+  await Promise.all(tasks);
+  searchLoading = false;
   const total = allResults.recipes.length + allResults.ingredients.length;
-  document.getElementById('sr-count').textContent = total + ' result' + (total===1?'':'s') + ' for "' + q + '"';
+  const moreHint = (recipeHasMore || ingHasMore) ? '+' : '';
+  document.getElementById('sr-count').textContent = total + moreHint + ' result' + (total === 1 && !moreHint ? '' : 's') + ' for "' + q + '"';
   renderResults();
 }
 
-async function searchRecipes(q) {
+async function fetchRecipePage(q, reset) {
+  if (!reset && !recipeHasMore) return;
+  const offset = reset ? 0 : recipeOffset;
   try {
+    const body = { p_search: q, p_limit: SR_RECIPE_PAGE, p_offset: offset };
+    const diet = searchDietaryParam();
+    if (diet) body.p_dietary = diet;
     const res = await fetch(SUPA_URL + '/rest/v1/rpc/get_approved_recipes', {
       method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
-      body:JSON.stringify({p_search:q, p_limit:20})
+      body: JSON.stringify(body)
     });
-    return res.ok ? await res.json() : [];
-  } catch(_) { return []; }
+    const rows = res.ok ? await res.json() : [];
+    const list = Array.isArray(rows) ? rows : [];
+    if (reset) allResults.recipes = list;
+    else allResults.recipes = allResults.recipes.concat(list);
+    recipeHasMore = list.length >= SR_RECIPE_PAGE;
+    recipeOffset = offset + list.length;
+  } catch(_) {
+    if (reset) allResults.recipes = [];
+  }
 }
 
-async function searchIngredients(q) {
+async function fetchIngredientPage(q, reset) {
+  if (!reset && !ingHasMore) return;
+  const offset = reset ? 0 : ingOffset;
   try {
-    const data = await rpc('search_ingredients', {p_query: q, p_limit: 12});
-    return Array.isArray(data) ? data : [];
-  } catch(_) { return []; }
+    const data = await rpc('search_ingredients', { p_query: q, p_limit: SR_ING_PAGE, p_offset: offset });
+    const list = Array.isArray(data) ? data : [];
+    if (reset) allResults.ingredients = list;
+    else allResults.ingredients = allResults.ingredients.concat(list);
+    ingHasMore = list.length >= SR_ING_PAGE;
+    ingOffset = offset + list.length;
+  } catch(_) {
+    if (reset) allResults.ingredients = [];
+  }
+}
+
+async function loadMoreRecipes() {
+  if (!lastQuery || !recipeHasMore || searchLoading) return;
+  searchLoading = true;
+  await fetchRecipePage(lastQuery, false);
+  searchLoading = false;
+  renderResults();
+}
+
+async function loadMoreIngredients() {
+  if (!lastQuery || !ingHasMore || searchLoading) return;
+  searchLoading = true;
+  await fetchIngredientPage(lastQuery, false);
+  searchLoading = false;
+  renderResults();
 }
 
 function renderResults() {
   const el = document.getElementById('sr-results');
   let recipes = allResults.recipes;
   let ingredients = allResults.ingredients;
-
-  if (activeTab === 'vegan')       recipes = recipes.filter(function(r){return (r.dietary_tags||[]).includes('Vegan');});
-  if (activeTab === 'gluten-free') recipes = recipes.filter(function(r){return (r.dietary_tags||[]).includes('Gluten Free');});
-  if (activeTab === 'recipes')     ingredients = [];
+  if (activeTab === 'recipes') ingredients = [];
   if (activeTab === 'ingredients') recipes = [];
 
   if (!recipes.length && !ingredients.length) {
@@ -193,7 +258,7 @@ function renderResults() {
   let html = '';
 
   if (recipes.length) {
-    html += '<div class="sr-section-label">Recipes (' + recipes.length + ')</div><div class="sr-grid">';
+    html += '<div class="sr-section-label">Recipes (' + recipes.length + (recipeHasMore ? '+' : '') + ')</div><div class="sr-grid">';
     recipes.forEach(function(r) {
       const emoji = CAT_EMOJI[r.category] || '🍳';
       const tags  = (r.dietary_tags||[]).slice(0,2).map(function(t){return '<span class="sr-card-tag">'+t+'</span>';}).join('');
@@ -203,10 +268,13 @@ function renderResults() {
         '<div class="sr-card-meta">' + (r.category?'<span>'+r.category+'</span>':'') + (r.origin_country?'<span>'+r.origin_country+'</span>':'') + tags + '</div></div></a>';
     });
     html += '</div>';
+    if (recipeHasMore && activeTab !== 'ingredients') {
+      html += '<button type="button" class="sr-load-more" onclick="loadMoreRecipes()">Load more recipes</button>';
+    }
   }
 
   if (ingredients.length) {
-    html += '<div class="sr-section-label">Ingredients (' + ingredients.length + ')</div><div class="sr-ing-list">';
+    html += '<div class="sr-section-label">Ingredients (' + ingredients.length + (ingHasMore ? '+' : '') + ')</div><div class="sr-ing-list">';
     ingredients.forEach(function(i) {
       const isVegan = (i.vegan||'').toLowerCase() === 'yes';
       html += '<div class="sr-ing-item">' +
@@ -216,6 +284,9 @@ function renderResults() {
         (isVegan?'<span class="sr-ing-pill vegan">Vegan</span>':'') + '</div>';
     });
     html += '</div>';
+    if (ingHasMore && activeTab !== 'recipes' && activeTab !== 'vegan' && activeTab !== 'gluten-free') {
+      html += '<button type="button" class="sr-load-more" onclick="loadMoreIngredients()">Load more ingredients</button>';
+    }
   }
 
   el.innerHTML = html;
