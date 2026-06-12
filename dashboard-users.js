@@ -530,15 +530,7 @@ async function loadUMChefs(container) {
     if (typeof TcjAdminUsers !== 'undefined') {
       users = await TcjAdminUsers.fetchAll({ p_search: null, p_status: 'active' });
     } else {
-      var res = await apiFetch(SUPABASE_URL + '/rest/v1/rpc/admin_get_users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ p_search: null, p_status: 'active', p_limit: 200, p_offset: 0 })
-      });
-      if (res && res.ok) {
-        var raw = await res.json();
-        users = Array.isArray(raw) ? raw : (raw && raw.users ? raw.users : []);
-      }
+      console.warn('Chef directory: TcjAdminUsers not loaded — reload dashboard');
     }
     if (!users.length && typeof TcjAdminProfiles !== 'undefined') {
       users = await TcjAdminProfiles.fetchAllActiveRest(apiFetch, SUPABASE_URL);

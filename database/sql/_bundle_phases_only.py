@@ -5,10 +5,10 @@ files = [
     "fix-phase39-data-integrity.sql",
     "fix-phase40-meal-planner-picker.sql",
 ]
-out = base / "RUN-IN-SUPABASE-phases-39-40-ONLY.sql"
+out = base / "archive" / "RUN-IN-SUPABASE-phases-39-40-ONLY.sql"
 header = """-- =============================================================================
--- PHASES 39 + 40 ONLY — use if you already ran fix-all-live and library-unified
--- Copy entire file → Supabase SQL Editor → Run
+-- ARCHIVED — PHASES 39 + 40 ONLY (superseded)
+-- Use RUN-LIVE-CLEANUP.sql or RUN-IN-SUPABASE-copy-paste-this.sql instead.
 -- =============================================================================
 
 """

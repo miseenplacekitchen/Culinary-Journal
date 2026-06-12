@@ -18,6 +18,7 @@ files = [
     "fix-phase43-starter-library-health.sql",
     "fix-phase44-library-profiles.sql",
     "fix-phase45-site-fill.sql",
+    "fix-phase46-library-profiles.sql",
     "SQL-EDITOR-health-check.sql",
 ]
 out = base / "RUN-IN-SUPABASE-copy-paste-this.sql"

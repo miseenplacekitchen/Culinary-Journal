@@ -5,6 +5,19 @@ Test account: tcj.verify@outlook.com / username tcj.verify
 Test recipe: 5ba4215b-182f-49ff-80a4-21a36b7190b5
 
 ══════════════════════════════════════════════════════════════════════
+LIVE CHECKLIST (Betty — tick when done)
+══════════════════════════════════════════════════════════════════════
+[ ] 1. RUN-LIVE-CLEANUP.sql in Supabase → healthy: true
+[ ] 2. RUN-ALL-REMAINING.sql in Supabase → phase45_summary + healthy: true
+[ ] 3. Hard-refresh admin → System Health matches SQL
+[ ] 4. lane2-spot-check.html journeys A–F all ticked
+[ ] 5. Supabase backup confirmed (Dashboard → Database → Backups)
+[ ] 6. TCJ_SITE_PRIVATE intent confirmed (theme-init.js — true = login required)
+[ ] 7. Open verified pages in Site Management → Pages (soft launch)
+
+Guide: database/sql/README-LIVE.md
+
+══════════════════════════════════════════════════════════════════════
 HOW TO READ THIS LEDGER
 ══════════════════════════════════════════════════════════════════════
 DONE     = shipped in code AND (where SQL applies) Betty confirmed run on Supabase
@@ -87,7 +100,8 @@ fix-phase43-starter-library-health.sql | Dashboard + SQL editor health RPCs     
 RUN-LIVE-CLEANUP.sql                | Ordered live cleanup (library + health + verify)       | Ran ✅ Betty — healthy: true
 fix-phase44-library-profiles.sql    | Carrot, celery, honey, spinach, coriander              | In RUN-ALL-REMAINING.sql → pending Betty
 fix-phase45-site-fill.sql           | Festival dishes, approve pending, free-limit settings  | In RUN-ALL-REMAINING.sql → pending Betty
-RUN-ALL-REMAINING.sql               | Phase 44 + 45 + health check                           | Run in Supabase → pending Betty
+fix-phase46-library-profiles.sql    | Zucchini, eggplant, yogurt, basil, green beans         | In RUN-ALL-REMAINING.sql → pending Betty
+RUN-ALL-REMAINING.sql               | Phase 44–46 + 45 + health check                        | Run in Supabase → pending Betty
 
 ══════════════════════════════════════════════════════════════════════
 OPS NOTES (owner)

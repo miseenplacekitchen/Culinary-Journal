@@ -28,7 +28,7 @@ async function rpc(fn, params) {
   var res = await attempt(session.access_token);
   if (res.status === 401) {
     var refreshed = false;
-    try { refreshed = await tryRefreshToken(); } catch(_) {}
+    try { refreshed = await tryRefreshToken(); } catch(e) { console.warn('apiFetch token refresh', e); }
     if (refreshed) {
       res = await attempt(session.access_token);
     } else {
@@ -48,7 +48,7 @@ async function apiFetch(url, opts) {
   var res = await fetch(url, opts);
   if (res.status === 401) {
     var refreshed = false;
-    try { refreshed = await tryRefreshToken(); } catch(_) {}
+    try { refreshed = await tryRefreshToken(); } catch(e) { console.warn('apiFetch token refresh', e); }
     if (refreshed) {
       opts.headers['Authorization'] = 'Bearer ' + session.access_token;
       res = await fetch(url, opts);
@@ -114,7 +114,7 @@ async function loadDashboard() {
           var mrr = (parseFloat(S.price_premium_monthly||'4')*(tierStats.premium||0)) +
                     (parseFloat(S.price_event_monthly||'12')*(tierStats.event||0));
           setEl('dash-mrr', (S.currency_symbol||'$')+mrr.toFixed(2));
-        }).catch(function(){});
+        }).catch(function(e){ console.warn('dash stats badge', e); });
     }
   } catch(e) {
     console.warn('dash stats', e);
@@ -292,7 +292,7 @@ async function init() {
     }
     session = sess;
     // Try to refresh token silently — don't block if it fails
-    try { await tryRefreshToken(); } catch(_) {}
+    try { await tryRefreshToken(); } catch(e) { console.warn('init token refresh', e); }
     var isAdmin = false;
     var adminName = 'miseenplacekitchen';
     try {
@@ -343,8 +343,8 @@ async function init() {
     try { switchView(_sv, _it); } catch(e) { switchView('dashboard'); }
     document.getElementById('screen-main').style.display = 'flex';
     if (typeof window.loadTcjAnnouncements === 'function') window.loadTcjAnnouncements();
-    rpc('admin_get_stats',{}).then(function(st){ if(st) setEl('badge-pending', st.pending||0); }).catch(function(){});
-    rpc('admin_count_pending_users',{}).then(function(n){ setEl('badge-pending-users', n||0); }).catch(function(){});
+    rpc('admin_get_stats',{}).then(function(st){ if(st) setEl('badge-pending', st.pending||0); }).catch(function(e){ console.warn('badge pending recipes', e); });
+    rpc('admin_count_pending_users',{}).then(function(n){ setEl('badge-pending-users', n||0); }).catch(function(e){ console.warn('badge pending users', e); });
     // Load unread feedback count
     rpc('admin_get_feedback',{p_status:'new'}).then(function(rows){
       var n = Array.isArray(rows) ? rows.length : 0;
@@ -352,7 +352,7 @@ async function init() {
       if (el) { el.textContent = n||''; el.style.display = n ? 'inline-block' : 'none'; }
       var vocEl = document.getElementById('badge-voc');
       if (vocEl) { vocEl.textContent = n||''; vocEl.style.display = n ? 'inline-block' : 'none'; }
-    }).catch(function(){});
+    }).catch(function(e){ console.warn('badge feedback', e); });
   } catch(e) {
     showFatalError('Dashboard error: ' + e.message);
   }
@@ -932,7 +932,7 @@ async function buildSMContent(container) {
 
     var _SM_DEFAULT_CATS = ['Main Courses','Appetizers','Desserts','Soups','Salads','Breads','Beverages','Sides','Snacks','Little Ones'];
     var cats = [];
-    try { cats = JSON.parse(S.homepage_categories_order || '[]'); } catch (_) {}
+    try { cats = JSON.parse(S.homepage_categories_order || '[]'); } catch (e) { console.warn('homepage categories parse', e); }
     if (!cats.length) cats = _SM_DEFAULT_CATS.slice();
 
     var catSec = mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');
@@ -1839,7 +1839,7 @@ function buildCategoriesTab(container, _dirty){
         // Propagate rename across ingredients in DB
         rpc('admin_rename_reference_value',{p_table:'ingredients',p_column:'Category',p_old:oldName,p_new:newName}).then(function(n){
           auditLog('IM Interface > Reference Data','Category Renamed',oldName,oldName,newName,'Updated '+n+' ingredients');
-        }).catch(function(){});
+        }).catch(function(e){ console.warn('dash stats badge', e); });
         if(meta[oldName]){meta[newName]=meta[oldName];delete meta[oldName];}
         cats[i]=newName;
         _dirty.categories=true;
@@ -1999,7 +1999,7 @@ function buildUnitsTab(container, _dirty){
         // Propagate rename
         rpc('admin_rename_reference_value',{p_table:'ingredients',p_column:'Unit',p_old:oldU,p_new:units[i]}).then(function(n){
           auditLog('IM Interface > Reference Data','Unit Renamed',oldU,oldU,units[i],'Updated '+n+' ingredients');
-        }).catch(function(){});
+        }).catch(function(e){ console.warn('dash stats badge', e); });
         _dirty.units=true;
       });
       var mSel=document.createElement('select');mSel.style.cssText=_imS.sel;
@@ -2755,7 +2755,7 @@ function getColOrder() {
       const allKeys = STD_COLS.map(function(c){return c.key;}).concat(_extraColKeys.map(function(k){return 'extra:'+k;}));
       allKeys.forEach(function(k){if(!order.includes(k))order.push(k);});
       return order.filter(function(k){return allKeys.includes(k)||STD_COLS.find(function(c){return c.key===k;})||_extraColKeys.includes(k.replace('extra:',''));});
-    } catch(_){}
+    } catch(e){ console.warn('ingredient column order parse', e); }
   }
   return STD_COLS.map(function(c){return c.key;}).concat(_extraColKeys.map(function(k){return 'extra:'+k;}));
 }
@@ -3429,7 +3429,7 @@ function showIngMsg(text,ok){const el=document.getElementById('ing-msg');if(!el)
 // ── CUSTOM FIELDS ────────────────────────────────────────────────
 
 async function loadUnitsAutocomplete(){
-  try{const units=await rpc('admin_get_ingredient_units',{});const dl=document.getElementById('ing-units-list');if(dl&&units.length)dl.innerHTML=units.map(function(u){return '<option value="'+u.unit+'">';}).join('');}catch(_){}
+  try{const units=await rpc('admin_get_ingredient_units',{});const dl=document.getElementById('ing-units-list');if(dl&&units.length)dl.innerHTML=units.map(function(u){return '<option value="'+u.unit+'">';}).join('');}catch(e){ console.warn('ingredient units autocomplete', e); }
 }
 
 // ── CSV IMPORT ───────────────────────────────────────────────────
