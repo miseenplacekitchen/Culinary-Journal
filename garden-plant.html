@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Plant profile — grow, harvest, and kitchen links.">
+<link rel="canonical" href="https://theculinaryjournal.site/garden-plant.html">
+<title>Plant Profile — The Culinary Journal</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
+<script src="lib/garden-api.js"></script>
+<script src="nav-init.js"></script>
+<style>
+.gp-wrap { max-width:900px; margin:0 auto; padding:32px 24px 80px; }
+.gp-back { font-size:12px; color:var(--text-mid); text-decoration:none; display:inline-block; margin-bottom:20px; }
+.gp-back:hover { color:var(--accent); }
+.gp-name { font-family:'Cormorant Garamond',serif; font-size:clamp(2.2rem,5vw,3.2rem); font-weight:700; margin-bottom:6px; }
+.gp-botanical { font-style:italic; color:var(--accent); margin-bottom:16px; }
+.gp-summary { font-family:'DM Sans',sans-serif; font-size:15px; color:var(--text-mid); line-height:1.7; margin-bottom:28px; padding:16px; background:var(--surface); border-radius:12px; border:1px solid var(--border); }
+.gp-section { margin-bottom:32px; }
+.gp-section h2 { font-family:'DM Sans',sans-serif; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+.gp-list { font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-mid); line-height:1.7; }
+.gp-flag { display:inline-block; font-size:11px; padding:4px 10px; border-radius:20px; border:1px solid rgba(220,120,80,.4); color:#e8a080; margin:4px 6px 4px 0; }
+.gp-btn { margin-top:20px; padding:10px 20px; border-radius:24px; border:1px solid var(--accent); background:transparent; color:var(--accent); font-family:'DM Sans',sans-serif; cursor:pointer; }
+.gp-btn:hover { background:rgb(from var(--accent) r g b / .08); }
+.gp-loading, .gp-error { text-align:center; padding:80px 24px; color:var(--text-muted); font-family:'DM Sans',sans-serif; }
+.gp-ing a { color:var(--accent); }
+</style>
+</head>
+<body class="cj-body">
+<nav class="nav">
+  <a class="nav-logo" href="index.html"><span>🍽</span><span class="nav-logo-text">The Culinary Journal</span><span class="nav-logo-badge">Est. 2025</span></a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"></div>
+<div id="gp-root"><div class="gp-loading">Loading plant…</div></div>
+
+<script>
+var slug = new URLSearchParams(window.location.search).get('slug') || '';
+
+function monthLabel(m) {
+  var names = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return names[m] || String(m);
+}
+
+function render(data) {
+  if (!data || !data.plant) {
+    document.getElementById('gp-root').innerHTML = '<div class="gp-error">Plant not found.</div>';
+    return;
+  }
+  var p = data.plant;
+  document.title = (p.common_name || 'Plant') + ' — The Garden';
+  var flags = (data.safety_flags || []).map(function (f) {
+    return '<span class="gp-flag" title="' + GardenApi.esc(f.message) + '">' + GardenApi.esc(f.flag) + '</span>';
+  }).join('');
+  var cal = (data.calendar || []).map(function (c) {
+    return '<li><strong>' + GardenApi.esc(c.activity) + '</strong> — ' +
+      monthLabel(c.month_start) + '–' + monthLabel(c.month_end) +
+      (c.notes ? ' · ' + GardenApi.esc(c.notes) : '') + '</li>';
+  }).join('');
+  var ings = (data.ingredients || []).map(function (i) {
+    return '<li class="gp-ing"><a href="library-profile.html?type=ingredient&slug=' +
+      encodeURIComponent(String(i.ingredient_name || '').toLowerCase().replace(/\s+/g,'-')) + '">' +
+      GardenApi.esc(i.ingredient_name) + '</a>' +
+      (i.part ? ' (' + GardenApi.esc(i.part) + ')' : '') + '</li>';
+  }).join('');
+  var parts = (data.parts || []).map(function (pt) {
+    return '<li>' + GardenApi.esc(pt.part) + ' — ' + GardenApi.esc(pt.role) +
+      (pt.notes ? ' · ' + GardenApi.esc(pt.notes) : '') + '</li>';
+  }).join('');
+
+  document.getElementById('gp-root').innerHTML =
+    '<div class="gp-wrap">' +
+    '<a class="gp-back" href="garden-directory.html">← Garden Directory</a>' +
+    '<h1 class="gp-name">' + GardenApi.esc(p.common_name) + '</h1>' +
+    (p.botanical_name ? '<div class="gp-botanical">' + GardenApi.esc(p.botanical_name) + '</div>' : '') +
+    (flags ? '<div>' + flags + '</div>' : '') +
+    (p.care_summary ? '<div class="gp-summary">' + GardenApi.esc(p.care_summary) + '</div>' : '') +
+    (parts ? '<div class="gp-section"><h2>Plant parts</h2><ul class="gp-list">' + parts + '</ul></div>' : '') +
+    (cal ? '<div class="gp-section"><h2>Seasonal calendar</h2><ul class="gp-list">' + cal + '</ul></div>' : '') +
+    (ings ? '<div class="gp-section"><h2>Kitchen link</h2><ul class="gp-list">' + ings + '</ul></div>' : '') +
+    '<button type="button" class="gp-btn" id="gp-add">Add to My Garden</button>' +
+    '</div>';
+
+  document.getElementById('gp-add').addEventListener('click', async function () {
+    var sess = getSession();
+    if (!sess) { window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href); return; }
+    try {
+      await GardenApi.addToGarden(p.id, 'planned', null);
+      alert('Added to My Garden.');
+    } catch (e) {
+      console.warn('add to garden failed', e);
+      alert('Could not add — sign in and try again.');
+    }
+  });
+}
+
+async function init() {
+  if (!slug) {
+    document.getElementById('gp-root').innerHTML = '<div class="gp-error">No plant specified.</div>';
+    return;
+  }
+  try {
+    var data = await GardenApi.getPlant(slug);
+    render(data);
+  } catch (e) {
+    console.warn('garden-plant load failed', e);
+    document.getElementById('gp-root').innerHTML = '<div class="gp-error">Could not load plant.</div>';
+  }
+}
+init();
+</script>
+</body>
+</html>

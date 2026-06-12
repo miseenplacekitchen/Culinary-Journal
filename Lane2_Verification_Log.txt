@@ -41,7 +41,8 @@ Journey C — Household
 Journey D — System Health (June 2026)
 ══════════════════════════════════════════════════════════════════════
 [x] admin_data_integrity_report phase43 fields in SQL (healthy: true, Betty confirmed)
-[x] phase48 orphan repair — SQL healthy: true, 0 orphans, 2 approved, 604 ingredients
+[x] phase48 orphan repair — SQL healthy: true, 0 orphans (superseded by Phase 52)
+[x] Phase 52 — SQL healthy: true, 5 approved, 613 ingredients, 0 orphans (Betty confirmed)
 [x] System Health panel on dashboard home (not buried under Ingredient Management)
 [ ] Betty spot-check: dashboard System Health matches SQL after hard-refresh
 

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Your personal garden — plants you're growing and what to do now.">
+<link rel="canonical" href="https://theculinaryjournal.site/my-garden.html">
+<title>My Garden — The Culinary Journal</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
+<script src="lib/garden-api.js"></script>
+<script src="nav-init.js"></script>
+<style>
+.mg-wrap { max-width:900px; margin:0 auto; padding:32px 24px 80px; }
+.mg-title { font-family:'Cormorant Garamond',serif; font-size:2.4rem; font-weight:700; margin-bottom:8px; }
+.mg-sub { font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-mid); margin-bottom:24px; }
+.mg-region { margin-bottom:28px; }
+.mg-region select { padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text-high); font-family:'DM Sans',sans-serif; }
+.mg-section h2 { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:12px; }
+.mg-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:12px; }
+.mg-card a { color:var(--text-high); text-decoration:none; font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:600; }
+.mg-card a:hover { color:var(--accent); }
+.mg-meta { font-size:12px; color:var(--text-muted); margin-top:6px; font-family:'DM Sans',sans-serif; }
+.mg-now { border-left:3px solid var(--accent); padding-left:14px; margin-bottom:10px; font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-mid); }
+.mg-empty { color:var(--text-muted); font-family:'DM Sans',sans-serif; padding:24px 0; }
+.mg-guest { text-align:center; padding:60px 24px; }
+.mg-guest a { color:var(--accent); }
+</style>
+</head>
+<body class="cj-body">
+<nav class="nav">
+  <a class="nav-logo" href="index.html"><span>🍽</span><span class="nav-logo-text">The Culinary Journal</span><span class="nav-logo-badge">Est. 2025</span></a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"></div>
+<div id="mg-root"><div class="mg-empty">Loading…</div></div>
+
+<script>
+function monthLabel(m) {
+  var names = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return names[m] || String(m);
+}
+
+async function saveRegion(id) {
+  try { await GardenApi.setRegion(id); } catch (e) { console.warn('set region failed', e); }
+}
+
+async function renderSignedIn() {
+  var regions = [];
+  try { regions = await GardenApi.listRegions(); } catch (e) { console.warn('regions failed', e); }
+
+  var regionHtml = '<div class="mg-region"><label>Your region </label><select id="mg-region">' +
+    '<option value="">— select —</option>' +
+    regions.map(function (r) {
+      return '<option value="' + r.id + '">' + GardenApi.esc(r.name) + '</option>';
+    }).join('') + '</select></div>';
+
+  document.getElementById('mg-root').innerHTML =
+    '<div class="mg-wrap">' +
+    '<h1 class="mg-title">🌿 My Garden</h1>' +
+    '<p class="mg-sub">Plants you are growing and seasonal tasks for this month.</p>' +
+    regionHtml +
+    '<div class="mg-section"><h2>What now</h2><div id="mg-now"></div></div>' +
+    '<div class="mg-section"><h2>My plants</h2><div id="mg-plants"></div></div>' +
+    '<p><a href="garden-directory.html">Browse Garden Directory →</a></p>' +
+    '</div>';
+
+  document.getElementById('mg-region').addEventListener('change', function (e) {
+    if (e.target.value) saveRegion(e.target.value);
+  });
+
+  var nowEl = document.getElementById('mg-now');
+  var plantsEl = document.getElementById('mg-plants');
+  try {
+    var now = await GardenApi.whatNow();
+    var nowList = Array.isArray(now) ? now : [];
+    nowEl.innerHTML = nowList.length ? nowList.map(function (n) {
+      return '<div class="mg-now"><strong>' + GardenApi.esc(n.plant_name) + '</strong> — ' +
+        GardenApi.esc(n.activity) + ' (' + monthLabel(n.month_start) + '–' + monthLabel(n.month_end) + ')' +
+        (n.notes ? '<br>' + GardenApi.esc(n.notes) : '') + '</div>';
+    }).join('') : '<div class="mg-empty">Nothing scheduled this month — add plants from the directory.</div>';
+  } catch (e) {
+    console.warn('what now failed', e);
+    nowEl.innerHTML = '<div class="mg-empty">Could not load seasonal tasks.</div>';
+  }
+
+  try {
+    var mine = await GardenApi.getMyGarden();
+    var list = Array.isArray(mine) ? mine : [];
+    plantsEl.innerHTML = list.length ? list.map(function (p) {
+      return '<div class="mg-card"><a href="garden-plant.html?slug=' + encodeURIComponent(p.plant_slug || '') + '">' +
+        GardenApi.esc(p.plant_name) + '</a>' +
+        '<div class="mg-meta">Status: ' + GardenApi.esc(p.status) +
+        (p.bed_label ? ' · Bed: ' + GardenApi.esc(p.bed_label) : '') + '</div></div>';
+    }).join('') : '<div class="mg-empty">No plants yet — <a href="garden-directory.html">browse the directory</a>.</div>';
+  } catch (e) {
+    console.warn('my garden failed', e);
+    plantsEl.innerHTML = '<div class="mg-empty">Could not load your plants.</div>';
+  }
+}
+
+function renderGuest() {
+  document.getElementById('mg-root').innerHTML =
+    '<div class="mg-guest mg-wrap">' +
+    '<h1 class="mg-title">My Garden</h1>' +
+    '<p class="mg-sub">Sign in to track plants and see seasonal tasks for your region.</p>' +
+    '<p><a href="login.html?redirect=' + encodeURIComponent(window.location.href) + '">Sign in →</a></p>' +
+    '</div>';
+}
+
+if (!getSession()) renderGuest();
+else renderSignedIn();
+</script>
+</body>
+</html>
