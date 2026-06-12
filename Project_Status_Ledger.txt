@@ -102,7 +102,8 @@ fix-phase44-library-profiles.sql    | Carrot, celery, honey, spinach, coriander 
 fix-phase45-site-fill.sql           | Festival dishes, approve pending, free-limit settings  | In RUN-ALL-REMAINING.sql → pending Betty
 fix-phase46-library-profiles.sql    | Zucchini, eggplant, yogurt, basil, green beans         | In RUN-ALL-REMAINING.sql → pending Betty
 fix-phase47-library-profiles.sql    | Apple, banana, pasta, red wine vinegar, thyme          | In RUN-ALL-REMAINING.sql → pending Betty
-RUN-ALL-REMAINING.sql               | Phase 44–47 + 45 + health check                        | Run in Supabase → pending Betty
+fix-phase48-recipe-ingredient-orphans.sql | Link recipe lines to governed ingredients         | Run if orphan_recipe_ingredient_names > 0
+RUN-ALL-REMAINING.sql               | Phase 44–48 + 45 + health check                        | Run in Supabase → pending Betty
 
 ══════════════════════════════════════════════════════════════════════
 OPS NOTES (owner)

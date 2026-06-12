@@ -404,17 +404,21 @@ BEGIN
 
   SELECT count(DISTINCT x.ing_name)::int INTO v_orphan_recipe_names
   FROM (
-    SELECT lower(btrim(item->>'ingredient')) AS ing_name
+    SELECT lower(btrim(COALESCE(item->>'ingredient', item->>'name', ''))) AS ing_name
     FROM submitted_recipes sr,
          jsonb_array_elements(COALESCE(sr.ingredients, '[]'::jsonb)) sec,
          jsonb_array_elements(COALESCE(sec->'items', '[]'::jsonb)) item
     WHERE sr.status = 'approved'
-      AND btrim(COALESCE(item->>'ingredient', '')) <> ''
+      AND btrim(COALESCE(item->>'ingredient', item->>'name', '')) <> ''
   ) x
   WHERE NOT EXISTS (
     SELECT 1 FROM ingredients i
     WHERE lower(btrim(i."Ingredient Name")) = x.ing_name
-       OR lower(btrim(COALESCE(i."Also Known As", ''))) = x.ing_name
+       OR EXISTS (
+         SELECT 1
+         FROM unnest(string_to_array(lower(COALESCE(i."Also Known As", '')), ',')) aka(part)
+         WHERE btrim(aka.part) = x.ing_name
+       )
   );
 
   RETURN jsonb_build_object(

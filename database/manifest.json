@@ -78,7 +78,8 @@
     { "file": "fix-phase45-site-fill.sql", "note": "Festival dishes, approve pending recipes, free-limit settings" },
     { "file": "RUN-ALL-REMAINING.sql", "note": "Phase 44–47 + 45 + health check in one paste" },
     { "file": "fix-phase46-library-profiles.sql", "note": "Library batch: zucchini, eggplant, yogurt, basil, green beans" },
-    { "file": "fix-phase47-library-profiles.sql", "note": "Library batch: apple, banana, pasta, red wine vinegar, thyme" }
+    { "file": "fix-phase47-library-profiles.sql", "note": "Library batch: apple, banana, pasta, red wine vinegar, thyme" },
+    { "file": "fix-phase48-recipe-ingredient-orphans.sql", "note": "Repair orphan recipe ingredient names for healthy: true" }
   ],
   "live_cleanup_order_note": "After RUN-LIVE-CLEANUP, run RUN-ALL-REMAINING.sql for latest content fill"
 }
