@@ -486,7 +486,12 @@ async function loadPendingUsers() {
 async function loadUMDeactivated(container) {
   container.innerHTML = '<div style="font-family:\'DM Sans\',sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
   try {
-    var rows = await rpc('admin_get_users',{p_search:null,p_status:'deactivated',p_limit:200,p_offset:0});
+    var rows = [];
+    if (typeof TcjAdminUsers !== 'undefined') {
+      rows = await TcjAdminUsers.fetchAll({p_search:null,p_status:'deactivated'});
+    } else {
+      rows = await rpc('admin_get_users',{p_search:null,p_status:'deactivated',p_limit:200,p_offset:0});
+    }
     var list = rows || [];
     container.innerHTML = '';
     var title = document.createElement('div');
@@ -521,15 +526,19 @@ async function loadUMChefs(container) {
   try {
     var current = await rpc('get_chef_of_month', {});
     if (current === null) current = null;
-    var res = await apiFetch(SUPABASE_URL + '/rest/v1/rpc/admin_get_users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p_search: null, p_status: 'active', p_limit: 200, p_offset: 0 })
-    });
     var users = [];
-    if (res && res.ok) {
-      var raw = await res.json();
-      users = Array.isArray(raw) ? raw : (raw && raw.users ? raw.users : []);
+    if (typeof TcjAdminUsers !== 'undefined') {
+      users = await TcjAdminUsers.fetchAll({ p_search: null, p_status: 'active' });
+    } else {
+      var res = await apiFetch(SUPABASE_URL + '/rest/v1/rpc/admin_get_users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_search: null, p_status: 'active', p_limit: 200, p_offset: 0 })
+      });
+      if (res && res.ok) {
+        var raw = await res.json();
+        users = Array.isArray(raw) ? raw : (raw && raw.users ? raw.users : []);
+      }
     }
     if (!users.length) {
       var res2 = await apiFetch(SUPABASE_URL + '/rest/v1/profiles?select=id,username,full_name,is_active&is_active=eq.true&order=username.asc&limit=200');
@@ -739,7 +748,12 @@ async function buildFiMembers(container) {
 
 async function loadUserAnalytics() {
   try {
-    const all  = await rpc('admin_get_users', {p_search:null,p_limit:500,p_offset:0,p_status:null});
+    var all = [];
+    if (typeof TcjAdminUsers !== 'undefined') {
+      all = await TcjAdminUsers.fetchAll({p_search:null,p_status:null});
+    } else {
+      all = await rpc('admin_get_users', {p_search:null,p_limit:500,p_offset:0,p_status:null});
+    }
     const total= (all||[]).length;
     const act  = (all||[]).filter(function(u){ return u.account_status==='active'; }).length;
     const pend = (all||[]).filter(function(u){ return u.account_status==='pending'; }).length;

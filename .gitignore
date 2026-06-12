@@ -5,3 +5,5 @@ Thumbs.db
 .env.*
 *.local
 tests/live-api-*.json
+scripts/_check-js-syntax.py
+scripts/syntax-errors.txt

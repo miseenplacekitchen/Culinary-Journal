@@ -177,7 +177,12 @@ async function loadDashboard() {
 
   // ── Recipe of the Week ───────────────────────────────────
   try {
-    var allRecs = await rpc('admin_get_recipes', {p_status:'approved',p_search:null,p_category:null,p_limit:500,p_offset:0});
+    var allRecs = [];
+    if (typeof TcjAdminRecipes !== 'undefined') {
+      allRecs = await TcjAdminRecipes.fetchAll({p_status:'approved',p_search:null,p_category:null});
+    } else {
+      allRecs = await rpc('admin_get_recipes', {p_status:'approved',p_search:null,p_category:null,p_limit:500,p_offset:0});
+    }
     var rotw = Array.isArray(allRecs) ? allRecs.find(function(r){ return r.recipe_of_week; }) : null;
     var rotwEl = document.getElementById('dash-rotw');
     if (rotwEl) {
@@ -838,7 +843,12 @@ function copyToClipboard(text) {
 async function loadUMAudit(container) {
   container.innerHTML = '<div style="font-family:\'DM Sans\',sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
   try {
-    var rows = await rpc('admin_get_audit_log',{p_limit:200,p_offset:0}) || [];
+    var rows = [];
+    if (typeof TcjAdminAudit !== 'undefined') {
+      rows = await TcjAdminAudit.fetchAll({});
+    } else {
+      rows = await rpc('admin_get_audit_log',{p_limit:200,p_offset:0}) || [];
+    }
     var umRows = rows.filter(function(r){ return (r.tab||'').includes('User Management'); });
     container.innerHTML = '';
     if (!umRows.length) { container.innerHTML = '<div style="font-family:\'DM Sans\',sans-serif;font-size:13px;color:var(--text-mid)">No user management actions logged yet.</div>'; return; }
@@ -2143,7 +2153,10 @@ function loadIngRecycleBinInto(container){
 
 function loadAuditTrail(container){
   container.innerHTML='<div style="'+_imS.label+';padding:8px 0">Loading…</div>';
-  rpc('admin_get_audit_log',{p_limit:500,p_offset:0}).then(function(rows){
+  var auditFetch = (typeof TcjAdminAudit !== 'undefined')
+    ? TcjAdminAudit.fetchAll({})
+    : rpc('admin_get_audit_log',{p_limit:500,p_offset:0});
+  auditFetch.then(function(rows){
     container.innerHTML='';
 
     var exportBar=document.createElement('div');exportBar.style.cssText='display:flex;gap:8px;margin-bottom:14px';

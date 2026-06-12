@@ -1212,7 +1212,12 @@ async function loadRMAudit(container) {
   try {
     container.innerHTML = '';
     await loadRMDuplicates(container);
-    var rows = await rpc('admin_get_audit_log', {p_limit:200,p_offset:0}) || [];
+    var rows = [];
+    if (typeof TcjAdminAudit !== 'undefined') {
+      rows = await TcjAdminAudit.fetchAll({});
+    } else {
+      rows = await rpc('admin_get_audit_log', {p_limit:200,p_offset:0}) || [];
+    }
     var rmRows = rows.filter(function(r){ return (r.tab||'').includes('Recipe Management'); });
     function mk(tag, style, text) { var e = document.createElement(tag); if (style) e.style.cssText = style; if (text !== undefined) e.textContent = text; return e; }
     if (!rmRows.length) { container.appendChild(mk('div',"font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-mid)",'No recipe management actions logged yet.')); return; }

@@ -1213,9 +1213,13 @@ async function buildFiInterface(container) {
     var settRes = await apiFetch(SUPABASE_URL+'/rest/v1/site_settings?select=key,value&key=in.(price_premium_monthly,price_premium_annual,price_event_monthly,price_event_annual,currency_symbol,currency_code)');
     var S={};
     if(settRes&&settRes.ok){var sr=await settRes.json();if(Array.isArray(sr))sr.forEach(function(r){S[r.key]=r.value;});}
-    var mRes = await apiFetch(SUPABASE_URL+'/rest/v1/profiles?select=id,username,full_name,email,subscription_tier&order=full_name.asc&limit=500');
     var memberList=[];
-    if(mRes&&mRes.ok){var ml=await mRes.json();if(Array.isArray(ml))memberList=ml;}
+    if (typeof TcjAdminProfiles !== 'undefined') {
+      memberList = await TcjAdminProfiles.fetchAllRest(apiFetch, SUPABASE_URL);
+    } else {
+      var mRes = await apiFetch(SUPABASE_URL+'/rest/v1/profiles?select=id,username,full_name,email,subscription_tier&order=full_name.asc&limit=500');
+      if(mRes&&mRes.ok){var ml=await mRes.json();if(Array.isArray(ml))memberList=ml;}
+    }
     var cur = S.currency_symbol||'$';
     container.innerHTML='';
 

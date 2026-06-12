@@ -112,7 +112,10 @@ async function showFestival(slug){
   renderGrid();
   var fest = festivals.find(function(f){ return f.slug === slug; });
   if (!fest) return;
-  var detail = await rpc('get_festival_detail', { p_slug: slug }).catch(function(){ return null; });
+  var detail = await rpc('get_festival_detail', { p_slug: slug }).catch(function(e){
+    console.warn('festival detail', slug, e);
+    return null;
+  });
   if (!detail) {
     detail = Object.assign({}, fest, { dishes: [] });
     if (slug === 'onam') {
@@ -160,7 +163,8 @@ async function showFestival(slug){
 async function init(){
   try {
     festivals = await rpc('get_public_festivals') || [];
-  } catch(_) {
+  } catch (e) {
+    console.warn('public festivals', e);
     festivals = FESTIVALS_FALLBACK;
   }
   if (!festivals.length) festivals = FESTIVALS_FALLBACK;

@@ -10,7 +10,11 @@ files = [
     "fix-phase37-tools-profiles.sql",
     "fix-phase38-import-audit.sql",
     "fix-phase39-data-integrity.sql",
+    "fix-phase39b-sql-editor-admin.sql",
     "fix-phase40-meal-planner-picker.sql",
+    "fix-phase41-browse-pagination.sql",
+    "fix-phase42-scale-mitigation.sql",
+    "fix-library-governed-links.sql",
 ]
 out = base / "RUN-IN-SUPABASE-copy-paste-this.sql"
 header = """-- =============================================================================

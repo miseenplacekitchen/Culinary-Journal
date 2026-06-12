@@ -3162,5 +3162,437 @@ GRANT EXECUTE ON FUNCTION public.get_approved_recipes(text,text,text,text,text,t
 SELECT 'fix-phase40-meal-planner-picker ready' AS status;
 -- ########## END: fix-phase40-meal-planner-picker.sql ##########
 
+-- ########## BEGIN: fix-phase39b-sql-editor-admin.sql ##########
+-- fix-phase39b-sql-editor-admin.sql
+-- Lets you run integrity + normalise from Supabase SQL Editor (postgres role).
+-- Safe to re-run. Run AFTER fix-phase39.
+
+CREATE OR REPLACE FUNCTION public.admin_data_integrity_report_sql()
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_invalid_governed int;
+  v_name_mismatch int;
+  v_dupes int;
+  v_orphan_recipe_names int;
+  v_total_recipes int;
+  v_total_ingredients int;
+BEGIN
+  IF current_user NOT IN ('postgres', 'supabase_admin', 'service_role')
+     AND (auth.uid() IS NULL OR NOT is_admin()) THEN
+    RAISE EXCEPTION 'Permission denied';
+  END IF;
+
+  SELECT count(*)::int INTO v_total_recipes FROM submitted_recipes;
+  SELECT count(*)::int INTO v_total_ingredients FROM ingredients;
+
+  SELECT count(*)::int INTO v_invalid_governed
+  FROM library_profiles lp
+  WHERE lp.profile_type = 'ingredient'
+    AND lp.governed_ingredient_id IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM ingredients i WHERE i."ID" = lp.governed_ingredient_id);
+
+  SELECT count(*)::int INTO v_name_mismatch
+  FROM library_profiles lp
+  JOIN ingredients i ON i."ID" = lp.governed_ingredient_id
+  WHERE lp.profile_type = 'ingredient'
+    AND lower(btrim(lp.name)) <> lower(btrim(i."Ingredient Name"));
+
+  SELECT count(*)::int INTO v_dupes
+  FROM (
+    SELECT lower(btrim("Ingredient Name")) AS n
+    FROM ingredients
+    WHERE "Ingredient Name" IS NOT NULL AND btrim("Ingredient Name") <> ''
+    GROUP BY 1 HAVING count(*) > 1
+  ) d;
+
+  SELECT count(DISTINCT x.ing_name)::int INTO v_orphan_recipe_names
+  FROM (
+    SELECT lower(btrim(item->>'ingredient')) AS ing_name
+    FROM submitted_recipes sr,
+         jsonb_array_elements(COALESCE(sr.ingredients, '[]'::jsonb)) sec,
+         jsonb_array_elements(COALESCE(sec->'items', '[]'::jsonb)) item
+    WHERE sr.status = 'approved'
+      AND btrim(COALESCE(item->>'ingredient', '')) <> ''
+  ) x
+  WHERE NOT EXISTS (
+    SELECT 1 FROM ingredients i
+    WHERE lower(btrim(i."Ingredient Name")) = x.ing_name
+       OR lower(btrim(COALESCE(i."Also Known As", ''))) = x.ing_name
+  );
+
+  RETURN jsonb_build_object(
+    'totals', jsonb_build_object('recipes', v_total_recipes, 'ingredients', v_total_ingredients),
+    'issues', jsonb_build_object(
+      'invalid_governed_links', v_invalid_governed,
+      'library_name_mismatches', v_name_mismatch,
+      'duplicate_ingredient_names', v_dupes,
+      'orphan_recipe_ingredient_names', v_orphan_recipe_names
+    ),
+    'healthy', (v_invalid_governed = 0 AND v_dupes = 0 AND v_orphan_recipe_names = 0)
+  );
+END; $$;
+
+REVOKE ALL ON FUNCTION public.admin_data_integrity_report_sql() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_data_integrity_report_sql() TO postgres, service_role;
+
+SELECT 'fix-phase39b ready — run: SELECT admin_data_integrity_report_sql();' AS status;
+-- ########## END: fix-phase39b-sql-editor-admin.sql ##########
+
+-- ########## BEGIN: fix-phase41-browse-pagination.sql ##########
+-- fix-phase41-browse-pagination.sql
+-- Server-side contributor filter + paginated public browse/search.
+-- Safe to re-run.
+
+DROP FUNCTION IF EXISTS public.get_approved_recipes(text, text, text, text, text, text, int, int);
+
+CREATE OR REPLACE FUNCTION public.get_approved_recipes(
+  p_category     text DEFAULT NULL,
+  p_spice        text DEFAULT NULL,
+  p_dietary      text DEFAULT NULL,
+  p_search       text DEFAULT NULL,
+  p_sub_category text DEFAULT NULL,
+  p_division     text DEFAULT NULL,
+  p_username     text DEFAULT NULL,
+  p_credit_name  text DEFAULT NULL,
+  p_limit        int  DEFAULT 48,
+  p_offset       int  DEFAULT 0
+)
+RETURNS TABLE (
+  id                  uuid,
+  recipe_name         text,
+  native_title        text,
+  also_known_as       text,
+  category            text,
+  sub_category        text,
+  division            text,
+  spice_level         text,
+  dietary_tags        text[],
+  origin_country      text,
+  image_url           text,
+  credit_name         text,
+  credit_handle       text,
+  submitted_at        timestamptz,
+  username            text,
+  prep_time_minutes   int,
+  cook_time_minutes   int
+)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  p_limit  := GREATEST(1, LEAST(COALESCE(p_limit, 48), 100));
+  p_offset := GREATEST(0, COALESCE(p_offset, 0));
+
+  RETURN QUERY
+  SELECT sr.id, sr.recipe_name, sr.native_title, sr.also_known_as, sr.category,
+         sr.sub_category, sr.division,
+         sr.spice_level, sr.dietary_tags, sr.origin_country,
+         sr.image_url, sr.credit_name, sr.credit_handle,
+         sr.submitted_at, p.username,
+         COALESCE(sr.prep_time_minutes, 0)::int,
+         COALESCE(sr.cook_time_minutes, 0)::int
+    FROM public.submitted_recipes sr
+    LEFT JOIN public.profiles p ON p.id = sr.user_id
+   WHERE sr.status = 'approved'
+     AND (
+       sr.visibility = 'Public'
+       OR (
+         sr.visibility = 'Friends'
+         AND auth.uid() IS NOT NULL
+         AND EXISTS (
+           SELECT 1 FROM public.contributor_follows cf
+            WHERE cf.follower_id = auth.uid() AND cf.following_id = sr.user_id
+         )
+       )
+     )
+     AND (p_category     IS NULL OR btrim(p_category) = '' OR sr.category = p_category)
+     AND (p_spice        IS NULL OR btrim(p_spice) = '' OR sr.spice_level = p_spice)
+     AND (p_dietary      IS NULL OR btrim(p_dietary) = '' OR p_dietary = ANY(sr.dietary_tags))
+     AND (
+       p_search IS NULL OR btrim(p_search) = ''
+       OR sr.recipe_name ILIKE '%' || btrim(p_search) || '%'
+       OR sr.native_title ILIKE '%' || btrim(p_search) || '%'
+       OR sr.also_known_as ILIKE '%' || btrim(p_search) || '%'
+       OR sr.category ILIKE '%' || btrim(p_search) || '%'
+       OR sr.origin_country ILIKE '%' || btrim(p_search) || '%'
+     )
+     AND (p_sub_category IS NULL OR btrim(p_sub_category) = '' OR sr.sub_category = p_sub_category)
+     AND (p_division     IS NULL OR btrim(p_division) = '' OR sr.division = p_division)
+     AND (
+       p_username IS NULL OR btrim(p_username) = ''
+       OR lower(p.username) = lower(btrim(p_username))
+     )
+     AND (
+       p_credit_name IS NULL OR btrim(p_credit_name) = ''
+       OR lower(btrim(sr.credit_name)) = lower(btrim(p_credit_name))
+     )
+   ORDER BY
+     CASE WHEN p_search IS NOT NULL AND btrim(p_search) <> '' THEN
+       CASE WHEN lower(sr.recipe_name) = lower(btrim(p_search)) THEN 0
+            WHEN sr.recipe_name ILIKE btrim(p_search) || '%' THEN 1
+            ELSE 2 END
+     ELSE 2 END,
+     sr.submitted_at DESC
+   LIMIT p_limit OFFSET p_offset;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_approved_recipes(text,text,text,text,text,text,text,text,int,int) TO anon, authenticated;
+
+-- Ingredient search pagination
+DROP FUNCTION IF EXISTS public.search_ingredients(text, int);
+
+CREATE OR REPLACE FUNCTION public.search_ingredients(
+  p_query  text DEFAULT '',
+  p_limit  int  DEFAULT 20,
+  p_offset int  DEFAULT 0
+)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  p_limit  := GREATEST(1, LEAST(COALESCE(p_limit, 20), 50));
+  p_offset := GREATEST(0, COALESCE(p_offset, 0));
+
+  RETURN COALESCE(
+    (SELECT jsonb_agg(r)
+     FROM (
+       SELECT
+         "ID"              AS id,
+         "Ingredient Name" AS ingredient_name,
+         "Also Known As"   AS also_known_as,
+         "Category"        AS category,
+         "Allergen"        AS allergen,
+         "Vegan (Yes/No)"  AS vegan
+       FROM ingredients
+       WHERE p_query = '' OR btrim(p_query) = ''
+          OR "Ingredient Name" ILIKE '%' || btrim(p_query) || '%'
+          OR "Also Known As"   ILIKE '%' || btrim(p_query) || '%'
+       ORDER BY "Ingredient Name" ASC
+       LIMIT p_limit OFFSET p_offset
+     ) r),
+    '[]'::jsonb
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.search_ingredients(text, int, int) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.search_ingredients(text, int, int) TO anon, authenticated;
+
+SELECT pg_notify('pgrst', 'reload schema');
+SELECT 'fix-phase41-browse-pagination ready' AS status;
+-- ########## END: fix-phase41-browse-pagination.sql ##########
+
+-- ########## BEGIN: fix-phase42-scale-mitigation.sql ##########
+-- fix-phase42-scale-mitigation.sql
+-- Server-side stats, chef directory, baby browse, ingredient-linked recipes, admin search offset.
+-- Safe to re-run.
+
+-- ── 1. Homepage trust strip counts (no full-table REST fetch) ─────────
+DROP FUNCTION IF EXISTS public.get_public_site_stats();
+CREATE OR REPLACE FUNCTION public.get_public_site_stats()
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT jsonb_build_object(
+    'recipes', (SELECT count(*)::int FROM public.submitted_recipes WHERE status = 'approved'),
+    'countries', (
+      SELECT count(DISTINCT origin_country)::int FROM public.submitted_recipes
+      WHERE status = 'approved' AND origin_country IS NOT NULL AND btrim(origin_country) <> ''
+    ),
+    'contributors', (
+      SELECT count(DISTINCT user_id)::int FROM public.submitted_recipes
+      WHERE status = 'approved' AND user_id IS NOT NULL
+    ),
+    'collections', (SELECT count(*)::int FROM public.collections WHERE is_public = true)
+  );
+$$;
+GRANT EXECUTE ON FUNCTION public.get_public_site_stats() TO anon, authenticated;
+
+-- ── 2. Chef directory (aggregated — no 100-recipe cap) ────────────────
+DROP FUNCTION IF EXISTS public.get_chef_directory();
+CREATE OR REPLACE FUNCTION public.get_chef_directory()
+RETURNS TABLE (
+  chef_name       text,
+  credit_handle   text,
+  username        text,
+  recipe_count    bigint,
+  countries       text[],
+  categories      text[],
+  is_cj_original  boolean
+)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT
+    btrim(sr.credit_name) AS chef_name,
+    max(sr.credit_handle) AS credit_handle,
+    max(p.username)       AS username,
+    count(*)::bigint      AS recipe_count,
+    array_remove(array_agg(DISTINCT sr.origin_country), NULL) AS countries,
+    array_remove(array_agg(DISTINCT sr.category), NULL)       AS categories,
+    bool_or(sr.source_type = 'Original') AS is_cj_original
+  FROM public.submitted_recipes sr
+  LEFT JOIN public.profiles p ON p.id = sr.user_id
+  WHERE sr.status = 'approved'
+    AND sr.visibility = 'Public'
+    AND btrim(coalesce(sr.credit_name, '')) <> ''
+  GROUP BY btrim(sr.credit_name)
+  ORDER BY count(*) DESC, btrim(sr.credit_name) ASC;
+$$;
+GRANT EXECUTE ON FUNCTION public.get_chef_directory() TO anon, authenticated;
+
+-- ── 3. Baby food browse (ingredients + tags for safety filters) ─────
+DROP FUNCTION IF EXISTS public.get_baby_browse_recipes(int, int);
+CREATE OR REPLACE FUNCTION public.get_baby_browse_recipes(
+  p_limit  int DEFAULT 48,
+  p_offset int DEFAULT 0
+)
+RETURNS TABLE (
+  id              uuid,
+  recipe_name     text,
+  category        text,
+  origin_country  text,
+  image_url       text,
+  dietary_tags    text[],
+  occasion_tags   text[],
+  health_tags     text[],
+  ingredients     jsonb
+)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  p_limit  := GREATEST(1, LEAST(COALESCE(p_limit, 48), 100));
+  p_offset := GREATEST(0, COALESCE(p_offset, 0));
+
+  RETURN QUERY
+  SELECT sr.id, sr.recipe_name, sr.category, sr.origin_country, sr.image_url,
+         sr.dietary_tags, sr.occasion_tags, sr.health_tags, sr.ingredients
+    FROM public.submitted_recipes sr
+   WHERE sr.status = 'approved'
+     AND sr.visibility = 'Public'
+     AND sr.category = 'Little Ones'
+   ORDER BY sr.submitted_at DESC
+   LIMIT p_limit OFFSET p_offset;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.get_baby_browse_recipes(int, int) TO anon, authenticated;
+
+-- ── 4. Recipes using a governed ingredient (library profile links) ────
+DROP FUNCTION IF EXISTS public.get_recipes_using_ingredient(int, int, int);
+CREATE OR REPLACE FUNCTION public.get_recipes_using_ingredient(
+  p_ingredient_id int,
+  p_limit         int DEFAULT 12,
+  p_offset        int DEFAULT 0
+)
+RETURNS TABLE (
+  id          uuid,
+  recipe_name text,
+  image_url   text
+)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_names text[] := ARRAY[]::text[];
+  v_aka   text;
+  v_part  text;
+BEGIN
+  p_limit  := GREATEST(1, LEAST(COALESCE(p_limit, 12), 48));
+  p_offset := GREATEST(0, COALESCE(p_offset, 0));
+
+  IF p_ingredient_id IS NULL THEN RETURN; END IF;
+
+  SELECT array_agg(DISTINCT lower(btrim(n)))
+  INTO v_names
+  FROM (
+    SELECT i."Ingredient Name" AS n FROM ingredients i WHERE i."ID" = p_ingredient_id
+    UNION ALL
+    SELECT unnest(string_to_array(coalesce(i."Also Known As", ''), ',')) AS n
+    FROM ingredients i WHERE i."ID" = p_ingredient_id
+  ) raw
+  WHERE n IS NOT NULL AND btrim(n) <> '';
+
+  IF v_names IS NULL OR array_length(v_names, 1) IS NULL THEN RETURN; END IF;
+
+  RETURN QUERY
+  SELECT DISTINCT sr.id, sr.recipe_name, sr.image_url
+    FROM public.submitted_recipes sr,
+         jsonb_array_elements(COALESCE(sr.ingredients, '[]'::jsonb)) sec,
+         jsonb_array_elements(COALESCE(sec->'items', '[]'::jsonb)) item
+   WHERE sr.status = 'approved'
+     AND sr.visibility = 'Public'
+     AND lower(btrim(item->>'ingredient')) = ANY(v_names)
+   ORDER BY sr.recipe_name
+   LIMIT p_limit OFFSET p_offset;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.get_recipes_using_ingredient(int, int, int) TO anon, authenticated;
+
+-- ── 5. Admin festival search — pagination ───────────────────────────
+DROP FUNCTION IF EXISTS public.admin_search_recipes(text, int);
+CREATE OR REPLACE FUNCTION public.admin_search_recipes(
+  p_query  text DEFAULT '',
+  p_limit  int  DEFAULT 24,
+  p_offset int  DEFAULT 0
+)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
+  p_limit  := GREATEST(1, LEAST(COALESCE(p_limit, 24), 100));
+  p_offset := GREATEST(0, COALESCE(p_offset, 0));
+
+  RETURN COALESCE(
+    (SELECT jsonb_agg(row_to_json(r) ORDER BY r.recipe_name)
+     FROM (
+       SELECT id, recipe_name, category, origin_country
+       FROM public.submitted_recipes
+       WHERE status = 'approved'
+         AND (p_query IS NULL OR btrim(p_query) = '' OR recipe_name ILIKE '%' || btrim(p_query) || '%')
+       ORDER BY recipe_name
+       LIMIT p_limit OFFSET p_offset
+     ) r),
+    '[]'::jsonb
+  );
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.admin_search_recipes(text, int, int) TO authenticated;
+
+SELECT pg_notify('pgrst', 'reload schema');
+SELECT 'fix-phase42-scale-mitigation ready' AS status;
+-- ########## END: fix-phase42-scale-mitigation.sql ##########
+
+-- ########## BEGIN: fix-library-governed-links.sql ##########
+-- fix-library-governed-links.sql
+-- Re-link starter ingredient library profiles to the correct governed ingredient rows.
+-- Run in Supabase SQL Editor, then: SQL-EDITOR-health-check.sql
+
+CREATE TEMP TABLE _lib_slug_targets (slug text PRIMARY KEY, ingredient_name text NOT NULL);
+INSERT INTO _lib_slug_targets (slug, ingredient_name) VALUES
+  ('salt',      'Fine Sea Salt'),
+  ('onion',     'Brown Onion'),
+  ('butter',    'Unsalted Butter'),
+  ('rice',      'Basmati Rice'),
+  ('tomato',    'Roma Tomato'),
+  ('ginger',    'Fresh Ginger'),
+  ('egg',       'Eggs'),
+  ('flour',     'Plain Flour'),
+  ('potato',    'Sebago Potato'),
+  ('coconut',   'Desiccated Coconut'),
+  ('milk',      'Full Cream Milk'),
+  ('capsicum',  'Red Capsicum'),
+  ('olive-oil', 'Extra Virgin Olive Oil');
+
+-- Preview mismatches before update
+SELECT lp.slug, lp.name AS current_name, t.ingredient_name AS target_name,
+       i."ID" AS target_id, gi."Ingredient Name" AS current_governed_name
+FROM library_profiles lp
+JOIN _lib_slug_targets t ON t.slug = lp.slug
+LEFT JOIN ingredients i ON lower(btrim(i."Ingredient Name")) = lower(btrim(t.ingredient_name))
+LEFT JOIN ingredients gi ON gi."ID" = lp.governed_ingredient_id
+WHERE lp.profile_type = 'ingredient';
+
+UPDATE library_profiles lp
+SET
+  governed_ingredient_id = i."ID",
+  name = i."Ingredient Name",
+  updated_at = now()
+FROM _lib_slug_targets t
+JOIN ingredients i ON lower(btrim(i."Ingredient Name")) = lower(btrim(t.ingredient_name))
+WHERE lp.profile_type = 'ingredient'
+  AND lp.slug = t.slug;
+
+SELECT 'fix-library-governed-links ready' AS status;
+-- ########## END: fix-library-governed-links.sql ##########
+
 SELECT pg_notify('pgrst', 'reload schema');
 SELECT 'ALL PRODUCTION PATCHES COMPLETE' AS status;
