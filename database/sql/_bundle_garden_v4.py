@@ -5,11 +5,14 @@ files = [
     "garden-v4-01-varieties.sql",
     "garden-v4-02-climates-regions.sql",
     "garden-v4-02b-tomato-climate-extend.sql",
+    "garden-v4-02c-tomato-monsoon-extend.sql",
     "garden-v4-03-user-climate.sql",
     "garden-v4-04-import-queue.sql",
     "garden-v4-05-rpcs.sql",
     "garden-v4-06-rls.sql",
     "garden-v4-07-seed-tomato-varieties.sql",
+    "garden-v4-08-lookups.sql",
+    "garden-v4-09-import-rpcs.sql",
 ]
 out = base / "RUN-GARDEN-V4.sql"
 header = """-- =============================================================================

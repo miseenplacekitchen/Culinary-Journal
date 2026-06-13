@@ -91,16 +91,22 @@ C · DECIDE — Betty decision before build
   • G2 family section groups in meal planner
   • G3 quantity model (presence vs strict numeric)
 
-D · OPEN — still to build or deepen (work through these)
+  D · OPEN — still to build or deepen (work through these)
   Section D code batch closed at Phase 34 (admin · grocery conflicts · print gating · events · SEO).
   Remaining OPEN items:
+
+  Garden (v4 wave 2 — SQL ✅ Betty June 2026: 91 tomato cultivars, 208-species import queue, RPCs, journal page registered)
+  • Code deploy pending: garden-journal.html, GM Apply/export/species editor (local — not pushed)
+  • Site Management: set garden-journal.html visibility when code is live
+  • Live verify: tomato cultivars (humid-subtropical + tropical-monsoon), My Garden, GM Import Apply on Tomato row
+  • Species INSERT pipeline: 208 inbox assessments parsed locally (6298 cultivar rows) — seed each species row before Apply
+  • Ongoing: guilds, drinks, lessons, garden-media bucket images, full Excel 83-field export, PPT care-card render
 
   Library (ongoing content)
   • Phase 49–51 SQL ✅ Betty — ongoing library profiles beyond phase 49 only
   • Phase 52 SQL ✅ Betty — 5 approved, 613 ingredients, healthy: true
-  • Garden v3 (Next Wave) — code shipped; Betty runs RUN-GARDEN-V3.sql → flip garden pages from hidden when ready
+  • Garden v3 + v4 code shipped; Betty runs RUN-GARDEN-V4.sql (+ v4-09 RPCs, v4-10 queue) → flip garden pages when ready
   • Write/link more library profiles beyond phase 52 (ongoing content)
-  • Garden: more plants, guilds, drinks, lessons (INSERT-only after v3 schema live)
 
   Recipe
   • Hero 4.1 live verify (CSS shipped — Betty visual check on live recipe page)

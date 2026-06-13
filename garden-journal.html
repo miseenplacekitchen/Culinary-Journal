@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Garden journal — notes on what you planted, observed, and harvested.">
+<link rel="canonical" href="https://theculinaryjournal.site/garden-journal.html">
+<title>Garden Journal — The Culinary Journal</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="lib/garden-public.css">
+<script src="theme-init.js"></script>
+<script src="supabase-config.js"></script>
+<script src="page-guard.js"></script>
+<script src="lib/garden-chrome.js"></script>
+<script src="lib/garden-api.js?v=20260718"></script>
+<script src="nav-init.js"></script>
+</head>
+<body class="lib-page cj-body">
+<nav class="nav">
+  <a class="nav-logo" href="index.html"><span class="nav-logo-text">The Culinary Journal</span></a>
+  <div class="nav-btns" id="nav-btns"></div>
+</nav>
+<div class="tab-nav"></div>
+<div id="garden-chrome"></div>
+<div id="gj-root"><div class="lib-loading"><div class="lib-spinner"></div></div></div>
+
+<script>
+GardenChrome.render({ root: 'garden-chrome', active: 'my-garden', showSearch: false });
+
+function renderEntry(e, plants) {
+  var plantLabel = '';
+  if (e.user_plant_id && plants[e.user_plant_id]) {
+    plantLabel = '<span class="gj-tag">' + GardenApi.esc(plants[e.user_plant_id]) + '</span> ';
+  }
+  return '<article class="gj-journal-entry" style="border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:12px">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">' +
+    '<time style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--accent)">' + GardenApi.esc(e.entry_date) + '</time>' +
+    '<button type="button" class="gj-btn" style="font-size:11px;padding:4px 10px" data-del="' + e.id + '">Delete</button></div>' +
+    '<p style="font-family:DM Sans,sans-serif;font-size:14px;line-height:1.65;margin:10px 0 0;color:var(--text-high)">' +
+    plantLabel + GardenApi.esc(e.body || '') + '</p></article>';
+}
+
+async function renderSignedIn() {
+  var root = document.getElementById('gj-root');
+  var entries = [], mine = [];
+  try { entries = await GardenApi.listJournalEntries(); } catch (e) { console.warn(e); }
+  try { mine = await GardenApi.getMyGarden(); } catch (e) { console.warn(e); }
+
+  var plantOptions = (mine || []).map(function (p) {
+    var label = (p.plant_name || p.common_name || 'Plant') + (p.variety_name ? ' — ' + p.variety_name : '');
+    return '<option value="' + GardenApi.esc(p.id || '') + '">' + GardenApi.esc(label) + '</option>';
+  }).join('');
+
+  var plantMap = {};
+  (mine || []).forEach(function (p) {
+    if (p.id) plantMap[p.id] = (p.plant_name || p.common_name || '') + (p.variety_name ? ' (' + p.variety_name + ')' : '');
+  });
+
+  root.innerHTML =
+    '<div class="gj-wrap">' +
+    '<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px">' +
+    '<h1 class="lib-hero-title" style="margin:0;flex:1">Garden Journal</h1>' +
+    '<a href="my-garden.html" class="gj-btn" style="width:auto;padding:8px 16px;text-decoration:none">My Garden</a>' +
+    '</div>' +
+    '<form id="gj-form" class="gj-climate-bar" style="flex-direction:column;align-items:stretch;gap:10px">' +
+    '<label><span style="font-weight:500;color:var(--text-high)">New entry</span>' +
+    '<textarea id="gj-body" rows="4" placeholder="What did you sow, notice, or harvest?" style="width:100%;margin-top:6px;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-high);font-family:DM Sans,sans-serif"></textarea></label>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">' +
+    '<label style="flex:1;min-width:160px"><span style="font-size:12px;color:var(--text-mid)">Date</span>' +
+    '<input type="date" id="gj-date" style="width:100%;margin-top:4px;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-high)"></label>' +
+    '<label style="flex:2;min-width:200px"><span style="font-size:12px;color:var(--text-mid)">Link to my plant (optional)</span>' +
+    '<select id="gj-plant" style="width:100%;margin-top:4px;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-high)">' +
+    '<option value="">— None —</option>' + plantOptions + '</select></label>' +
+    '<button type="submit" class="gj-btn gj-btn-filled" style="width:auto;padding:10px 20px">Save entry</button>' +
+    '</div></form>' +
+    '<div class="gj-section"><h2>Recent entries</h2><div id="gj-list">' +
+    (entries.length ? entries.map(function (e) { return renderEntry(e, plantMap); }).join('') :
+      '<div class="gj-empty" style="padding:16px 0">No journal entries yet.</div>') +
+    '</div></div></div>';
+
+  document.getElementById('gj-date').value = new Date().toISOString().slice(0, 10);
+
+  document.getElementById('gj-form').addEventListener('submit', async function (ev) {
+    ev.preventDefault();
+    var body = document.getElementById('gj-body').value.trim();
+    if (!body) return;
+    try {
+      await GardenApi.addJournalEntry({
+        body: body,
+        entry_date: document.getElementById('gj-date').value,
+        user_plant_id: document.getElementById('gj-plant').value || null
+      });
+      renderSignedIn();
+    } catch (e) { alert('Could not save: ' + e.message); }
+  });
+
+  root.querySelectorAll('[data-del]').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      if (!confirm('Delete this journal entry?')) return;
+      try {
+        await GardenApi.deleteJournalEntry(btn.getAttribute('data-del'));
+        renderSignedIn();
+      } catch (e) { alert('Delete failed: ' + e.message); }
+    });
+  });
+}
+
+function renderGuest() {
+  document.getElementById('gj-root').innerHTML =
+    '<div class="gj-wrap" style="text-align:center;padding-top:40px">' +
+    '<h1 class="lib-hero-title">Garden Journal</h1>' +
+    '<p class="lib-hero-desc" style="max-width:480px;margin:12px auto 24px">Private notes on sowing, growth, pests, and harvest — linked to plants in My Garden.</p>' +
+    '<p><a href="login.html?redirect=' + encodeURIComponent(location.href) + '" class="gj-btn gj-btn-filled" style="display:inline-block;width:auto;padding:12px 28px">Sign in</a></p></div>';
+}
+
+if (!getSession()) renderGuest();
+else renderSignedIn();
+</script>
+</body>
+</html>
