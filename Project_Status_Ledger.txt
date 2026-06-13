@@ -104,8 +104,8 @@ fix-phase56-garden-excel-profiles.sql     | Excel 83-field profiles (tomato × 2
 fix-phase57-garden-artichoke-profile.sql  | Purple Romagna · humid-subtropical profile   | DONE ✅ Betty
 fix-phase57-garden-guilds-media.sql       | Guild admin RPCs + sample guilds + media RPC    | DONE ✅ Betty
 fix-phase58-garden-climate-copy.sql       | Neutralize city names in care/profile copy      | DONE ✅ Betty
-fix-phase59-garden-cultivar-climate-copy.sql | Cultivar + climate_notes city → climate copy | SQL ready — Betty run
-fix-phase59-garden-import-queue-payloads.sql | Queue payloads climate-neutral (186 species)   | SQL optional — Betty
+fix-phase59-garden-cultivar-climate-copy.sql | Cultivar + climate_notes city → climate copy | DONE ✅ Betty (91 cultivar, 91 climate_notes)
+RUN-PHASE59-IMPORT-QUEUE-PAYLOADS.txt        | Queue payloads — 14 SQL Editor batches (208 sp.) | SQL ready — Betty run 01→14
 fix-phase32-batch.sql               | Household meals, slots, allergy, lib approve | DONE ✅ Betty
 fix-phase32-library-profiles.sql    | Desiree + Kipfler potato profiles    | DONE ✅ Betty (249, 250)
 fix-phase33-batch.sql               | Saves ranking, sync conflicts, regional hints, print gating | DONE ✅ Betty
@@ -202,9 +202,9 @@ Phase 58 Garden climate-first copy + public guilds ✅ Betty (SQL) + code on mai
   • fix-phase58-garden-climate-copy.sql ✅ — tomato + artichoke care copy climate-neutral
   • Directory guilds section live when guilds published in GM
 
-Phase 59 Garden cultivar climate copy (code on main):
-  • fix-phase59-garden-cultivar-climate-copy.sql — all plant_varieties + variety_climate_suitability text
-  • fix-phase59-garden-import-queue-payloads.sql — 186 queue payloads neutralized (optional re-apply guard)
+Phase 59 Garden cultivar climate copy ✅ Betty (cultivar SQL) + code on main:
+  • fix-phase59-garden-cultivar-climate-copy.sql ✅ — 91 cultivar rows + 91 climate_notes
+  • RUN-PHASE59-IMPORT-QUEUE-PAYLOADS.txt — 14 batches (~15 species each); monolith removed (SQL Editor limit)
   • Parser + import-payload JSON neutralize at source (garden_climate_copy.py)
 
 Phase 28: master list reopened · grocery archive→pantry · MP-06 drag

@@ -102,8 +102,8 @@ C · DECIDE — Betty decision before build
   • fix-phase56-garden-excel-profiles.sql ✅ — tomato Excel profile (humid-subtropical + tropical-monsoon)
   • fix-phase57-garden-artichoke-profile.sql ✅ · fix-phase57-garden-guilds-media.sql ✅
   • fix-phase58-garden-climate-copy.sql ✅ — live care copy climate-neutral (tomato + artichoke)
-  • Run fix-phase59-garden-cultivar-climate-copy.sql — all cultivar text climate-neutral
-  • Optional: fix-phase59-garden-import-queue-payloads.sql — keeps import queue aligned
+  • fix-phase59-garden-cultivar-climate-copy.sql ✅ — 91 cultivar + 91 climate_notes
+  • RUN-PHASE59-IMPORT-QUEUE-PAYLOADS.txt — paste 14 queue batches (01→14) before Apply all pending imports
   • GM: publish guilds → directory; bulk Excel as workbook grows
 
   Library (ongoing content)

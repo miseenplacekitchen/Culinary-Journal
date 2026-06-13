@@ -91,7 +91,7 @@
     { "file": "fix-phase57-garden-guilds-media.sql", "note": "Guild admin RPCs, plant media register RPC, sample guilds" },
     { "file": "fix-phase58-garden-climate-copy.sql", "note": "Climate-first copy — neutralize Brisbane/Kerala in tomato + artichoke care text" },
     { "file": "fix-phase59-garden-cultivar-climate-copy.sql", "note": "All cultivar text + climate_notes — city labels → climate language" },
-    { "file": "fix-phase59-garden-import-queue-payloads.sql", "note": "Optional — neutralize 186 import queue payloads" },
+    { "file": "RUN-PHASE59-IMPORT-QUEUE-PAYLOADS.txt", "note": "Paste order — 14 batches (fix-phase59-garden-import-queue-payloads-01..14.sql)" },
     { "file": "fix-library-governed-links.sql", "note": "Step 1 only — re-link ingredient library profiles" },
     { "file": "fix-phase43-starter-library-health.sql", "note": "Step 2 only — dashboard System Health RPCs" },
     { "file": "SQL-EDITOR-health-check.sql", "note": "Step 3 only — expect healthy: true" }
@@ -125,7 +125,7 @@
     { "file": "fix-phase57-garden-guilds-media.sql", "note": "Guild admin RPCs, plant media register RPC, sample guilds" },
     { "file": "fix-phase58-garden-climate-copy.sql", "note": "Climate-first copy — neutralize Brisbane/Kerala in tomato + artichoke care text" },
     { "file": "fix-phase59-garden-cultivar-climate-copy.sql", "note": "All cultivar text + climate_notes — city labels → climate language" },
-    { "file": "fix-phase59-garden-import-queue-payloads.sql", "note": "Optional — neutralize 186 import queue payloads" },
+    { "file": "RUN-PHASE59-IMPORT-QUEUE-PAYLOADS.txt", "note": "Paste order — 14 batches (fix-phase59-garden-import-queue-payloads-01..14.sql)" },
     { "file": "RUN-LIVE-FOLLOWUP.sql", "note": "Phases 49–51 + health (incremental live run)" }
   ],
   "live_cleanup_order_note": "After RUN-LIVE-CLEANUP, run RUN-ALL-REMAINING.sql or RUN-LIVE-FOLLOWUP.sql for latest content"
