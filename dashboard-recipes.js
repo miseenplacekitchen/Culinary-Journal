@@ -3,7 +3,8 @@
 // Requires: supabase-config.js to be loaded first
 
 var _RM_LIST_TABS = ['all','pending','approved','rejected'];
-var _RM_OPS_TABS  = ['taxonomy','sourcelinks','nutrition','printqueue','collections','featured','audit'];
+var _RM_OPS_TABS  = ['taxonomy','sourcelinks','nutrition','printqueue','collections','audit'];
+var _RM_SPOTLIGHT_TABS = ['rotw','featured','notes'];
 var _rmPage = 1;
 var _RM_PAGE_SIZE = 50;
 var _rmListTotal = 0;
@@ -17,12 +18,18 @@ function getRejectReasons() {
 }
 
 function switchRecipeTab(tab) {
+  if (_RM_OPS_TABS.indexOf(tab) !== -1) {
+    localStorage.setItem('tcj_rm_interface_tab', tab);
+    tab = 'rmsettings';
+  }
   if (_currentRecipeTab !== tab) _rmPage = 1;
   _currentRecipeTab = tab;
   localStorage.setItem('tcj_active_recipe_tab', tab);
   document.querySelectorAll('#v-recipe-mgmt .ap-inner-tab').forEach(function(t) {
     t.classList.toggle('active', t.dataset.tab === tab);
   });
+  var hint = document.getElementById('rm-panel-hint');
+  if (hint) hint.style.display = (tab === 'rmsettings') ? 'none' : 'block';
   var listPanel = document.getElementById('rmgmt-list-panel');
   var anaPanel  = document.getElementById('rmgmt-analytics-panel');
   var opsPanel  = document.getElementById('rmgmt-ops-panel');
@@ -30,17 +37,18 @@ function switchRecipeTab(tab) {
   var extPanel  = document.getElementById('rmgmt-extra-panel');
   if (listPanel) listPanel.style.display = _RM_LIST_TABS.indexOf(tab) !== -1 ? 'block' : 'none';
   if (anaPanel)  anaPanel.style.display  = tab === 'analytics' ? 'block' : 'none';
-  if (opsPanel)  opsPanel.style.display  = _RM_OPS_TABS.indexOf(tab) !== -1 ? 'block' : 'none';
+  if (opsPanel)  opsPanel.style.display  = 'none';
   if (setPanel)  setPanel.style.display  = tab === 'rmsettings' ? 'block' : 'none';
-  if (extPanel)  extPanel.style.display  = (tab === 'rotw' || tab === 'notes') ? 'block' : 'none';
+  if (extPanel)  extPanel.style.display  = _RM_SPOTLIGHT_TABS.indexOf(tab) !== -1 ? 'block' : 'none';
   if (tab === 'analytics')  { loadRecipeAnalytics(); return; }
   if (tab === 'rmsettings') { loadRMInterfaceSettings(); return; }
-  if (_RM_OPS_TABS.indexOf(tab) !== -1) {
-    var opsEl = document.getElementById('rm-ops-content');
-    if (opsEl) loadRMTab(tab, opsEl);
+  if (tab === 'rotw')  { loadROTW(); return; }
+  if (tab === 'featured') {
+    if (opsPanel) opsPanel.style.display = 'block';
+    var opsElF = document.getElementById('rm-ops-content');
+    if (opsElF) loadRMTab('featured', opsElF);
     return;
   }
-  if (tab === 'rotw')  { loadROTW(); return; }
   if (tab === 'notes') { loadRecipeNotes(); return; }
   loadRecipeMgmt(tab);
 }
@@ -730,16 +738,42 @@ async function doSetRecipeOfWeek(id) {
 function loadRMInterfaceSettings() {
   var el = document.getElementById('rm-interface-content');
   if (!el) return;
+  if (el.dataset.shellBuilt === '1') {
+    var stored = localStorage.getItem('tcj_rm_interface_tab') || 'settings';
+    var btn = el.querySelector('[data-admin-if-tab="' + stored + '"]');
+    if (btn) btn.click();
+    return;
+  }
   el.innerHTML = '';
+  el.dataset.shellBuilt = '1';
+  if (typeof AdminTabNav === 'undefined') {
+    el.textContent = 'Admin tab navigation failed to load.';
+    return;
+  }
+  el.appendChild(AdminTabNav.interfaceBanner('Configuration and reference data — work queues stay in the tabs above. Slugs and rejection reasons are admin-only.'));
+  el.appendChild(AdminTabNav.interfaceIntro('Taxonomy, collections, nutrition queue, print queue, and audit trail live here — same pattern as IM Interface reference data.'));
+
   function mk(tag, style, text) { var e = document.createElement(tag); if (style) e.style.cssText = style; if (text !== undefined) e.textContent = text; return e; }
   function card(title) {
     var d = mk('div', 'background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');
     d.appendChild(mk('div', "font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px", title));
     return d;
   }
-  el.appendChild(mk('p', "font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6",
-    'Settings only — work queues live in the tabs above. Page visibility and tiers are in Site Management \u2192 Pages.'));
 
+  var shell = AdminTabNav.buildInnerTabBar(el, [
+    { key: 'settings', label: 'Settings' },
+    { key: 'taxonomy', label: 'Taxonomy' },
+    { key: 'sourcelinks', label: 'Source Links' },
+    { key: 'nutrition', label: 'Nutrition' },
+    { key: 'printqueue', label: 'Print Queue' },
+    { key: 'collections', label: 'Collections' },
+    { key: 'audit', label: 'Audit Trail' }
+  ], 'tcj_rm_interface_tab', 'settings', function (key, panel) {
+    if (key === 'settings') return;
+    loadRMTab(key, panel);
+  });
+
+  var settingsPanel = shell.panels.settings;
   var rejCard = card('Rejection Reasons');
   rejCard.appendChild(mk('p', 'font-size:11px;color:var(--text-mid);margin-bottom:10px', 'One reason per line. Used in the recipe review panel when rejecting submissions.'));
   var rejTa = mk('textarea', 'width:100%;box-sizing:border-box;min-height:140px;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high);resize:vertical');
@@ -755,24 +789,32 @@ function loadRMInterfaceSettings() {
     auditLog('RM Interface', 'Rejection Reasons Updated', null, null, null, lines.length + ' reasons');
   });
   rejCard.appendChild(rejBtn);
-  el.appendChild(rejCard);
+  settingsPanel.appendChild(rejCard);
 
   var smCard = card('Site Management Shortcuts');
   var smGrid = mk('div', 'display:flex;flex-wrap:wrap;gap:10px');
   [
     { label: 'Pages & visibility', tab: 'sm-pages' },
     { label: 'Feature toggles', tab: 'sm-features' },
-    { label: 'Billing & refund copy', tab: 'sm-settings' }
+    { label: 'Billing & refund copy', smTab: 'sm-interface', sub: 'settings' }
   ].forEach(function(link) {
     var b = mk('button', "padding:8px 16px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer", link.label + ' \u2192');
     b.addEventListener('click', function() {
-      switchView('site-mgmt');
-      switchSMTab(link.tab);
+      if (link.smTab) {
+        localStorage.setItem('tcj_sm_interface_tab', link.sub || 'settings');
+        switchView('site-mgmt');
+        switchSMTab('sm-interface');
+      } else {
+        switchView('site-mgmt');
+        switchSMTab(link.tab);
+      }
     });
     smGrid.appendChild(b);
   });
   smCard.appendChild(smGrid);
-  el.appendChild(smCard);
+  settingsPanel.appendChild(smCard);
+
+  shell.activate(shell.activeKey);
 }
 
 function loadRMTab(key, container) {

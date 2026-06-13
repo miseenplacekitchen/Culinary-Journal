@@ -74,20 +74,26 @@ async function tcjGetAdminEmail() {
 
 function switchSMTab(tab) {
   try {
+    var legacyMap = { 'sm-settings': 'settings', 'sm-lane2': 'lane2', 'sm-theme-sweep': 'themesweep' };
+    if (legacyMap[tab]) {
+      localStorage.setItem('tcj_sm_interface_tab', legacyMap[tab]);
+      tab = 'sm-interface';
+    }
     localStorage.setItem('tcj_active_sm_tab', tab);
-    // Update active class on tab buttons
     document.querySelectorAll('#v-site-mgmt .ap-inner-tab').forEach(function(t){
       t.classList.toggle('active', t.dataset.tab === tab);
     });
-    // Show/hide panels
-    ['sm-pages','sm-features','sm-ann','sm-content','sm-themes','sm-email','sm-settings','sm-lane2','sm-theme-sweep'].forEach(function(p){
+    ['sm-pages','sm-features','sm-ann','sm-content','sm-themes','sm-email','sm-interface'].forEach(function(p){
       var el = document.getElementById('upanel-' + p);
       if (el) el.style.display = p === tab ? 'block' : 'none';
     });
-    // Load content if not already built
     var container = document.getElementById('upanel-' + tab);
     if (!container) return;
-    if (container.dataset.built === '1') return; // Only skip if fully loaded
+    if (tab === 'sm-interface') {
+      loadSMInterface(container);
+      return;
+    }
+    if (container.dataset.built === '1') return;
     container.dataset.built = 'loading';
     if (tab === 'sm-pages')         buildSMPages(container);
     else if (tab === 'sm-features')  buildSMFeatures(container);
@@ -95,22 +101,60 @@ function switchSMTab(tab) {
     else if (tab === 'sm-content')   buildSMContent(container);
     else if (tab === 'sm-themes')    buildSMThemes(container);
     else if (tab === 'sm-email')     buildSMEmail(container);
-    else if (tab === 'sm-settings')  buildSMSettings(container);
-    else if (tab === 'sm-lane2') {
-      container.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:12px">Core journey verification (A–F) on production. Progress saves in this browser.</p>' +
-        '<iframe id="frame-lane2-sm" title="Lane 2 Spot-Check" style="width:100%;min-height:calc(100vh - 220px);border:none;border-radius:12px;background:transparent"></iframe>';
-      if (typeof loadAdminEmbedFrame === 'function') loadAdminEmbedFrame('frame-lane2-sm', 'lane2-spot-check.html?embed=1');
-      container.dataset.built = '1';
-    }
-    else if (tab === 'sm-theme-sweep') {
-      container.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:12px">Review all 47 themes on key pages; mark pass or issue.</p>' +
-        '<iframe id="frame-theme-sweep-sm" title="Theme Sweep" style="width:100%;min-height:calc(100vh - 220px);border:none;border-radius:12px;background:transparent"></iframe>';
-      if (typeof loadAdminEmbedFrame === 'function') loadAdminEmbedFrame('frame-theme-sweep-sm', 'theme-sweep.html?embed=1');
-      container.dataset.built = '1';
-    }
   } catch(e) {
     alert('Site Management tab error: ' + e.message);
   }
+}
+
+function smGetSettingsPanel() {
+  var iface = document.getElementById('upanel-sm-interface');
+  if (iface) {
+    var inner = iface.querySelector('[data-sm-inner="settings"]');
+    if (inner) return inner;
+  }
+  return document.getElementById('upanel-sm-settings');
+}
+
+function loadSMInterface(container) {
+  if (!container) return;
+  if (container.dataset.shellBuilt === '1') {
+    var stored = localStorage.getItem('tcj_sm_interface_tab') || 'settings';
+    var btn = container.querySelector('[data-admin-if-tab="' + stored + '"]');
+    if (btn) btn.click();
+    return;
+  }
+  container.innerHTML = '';
+  container.dataset.shellBuilt = '1';
+  if (typeof AdminTabNav === 'undefined') {
+    container.textContent = 'Admin tab navigation failed to load.';
+    return;
+  }
+  container.appendChild(AdminTabNav.interfaceBanner('Site-wide settings and QA tools — page content lives in the tabs above.'));
+  var shell = AdminTabNav.buildInnerTabBar(container, [
+    { key: 'settings', label: 'Settings' },
+    { key: 'lane2', label: 'Lane 2 QA' },
+    { key: 'themesweep', label: 'Theme Sweep' }
+  ], 'tcj_sm_interface_tab', 'settings', function (key, panel) {
+    if (key === 'settings' && panel.dataset.built !== '1') {
+      panel.dataset.smInner = 'settings';
+      panel.dataset.built = 'loading';
+      buildSMSettings(panel);
+      panel.dataset.built = '1';
+    }
+    if (key === 'lane2' && panel.dataset.built !== '1') {
+      panel.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:12px">Core journey verification (A–F) on production. Progress saves in this browser.</p>' +
+        '<iframe id="frame-lane2-sm" title="Lane 2 Spot-Check" style="width:100%;min-height:calc(100vh - 280px);border:none;border-radius:12px;background:transparent"></iframe>';
+      if (typeof loadAdminEmbedFrame === 'function') loadAdminEmbedFrame('frame-lane2-sm', 'lane2-spot-check.html?embed=1');
+      panel.dataset.built = '1';
+    }
+    if (key === 'themesweep' && panel.dataset.built !== '1') {
+      panel.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:12px">Review all 47 themes on key pages; mark pass or issue.</p>' +
+        '<iframe id="frame-theme-sweep-sm" title="Theme Sweep" style="width:100%;min-height:calc(100vh - 280px);border:none;border-radius:12px;background:transparent"></iframe>';
+      if (typeof loadAdminEmbedFrame === 'function') loadAdminEmbedFrame('frame-theme-sweep-sm', 'theme-sweep.html?embed=1');
+      panel.dataset.built = '1';
+    }
+  });
+  shell.activate(shell.activeKey);
 }
 
 
@@ -659,7 +703,7 @@ async function buildSMSettings(container) {
     function saveBtn(keys,lbl){var b=document.createElement('button');b.className='ing-add-btn';b.style.marginTop='4px';b.textContent=lbl||'Save';
       b.addEventListener('click',async function(){b.disabled=true;b.textContent='Saving\u2026';
         try{for(var k=0;k<keys.length;k++){var el=document.getElementById('ss-'+keys[k]);if(el)await ssSave(keys[k],el.value||'');}
-        b.textContent='\u2713 Saved';setTimeout(function(){var c=document.getElementById('upanel-sm-settings');if(c){c.dataset.built='';buildSMSettings(c);}},1500);}
+        b.textContent='\u2713 Saved';setTimeout(function(){var c=smGetSettingsPanel();if(c){c.dataset.built='';buildSMSettings(c);}},1500);}
         catch(e){b.textContent=lbl||'Save';b.disabled=false;alert('Save failed: '+e.message);}});return b;}
     var m=card('Maintenance Mode');
     var mr=mk('div','display:flex;align-items:center;justify-content:space-between;margin-bottom:12px');
@@ -707,7 +751,7 @@ async function buildSMSettings(container) {
         var ban = document.getElementById('ss-billing_no_refunds_banner');
         if (ban) await ssSave('billing_no_refunds_banner', ban.value || '');
         billSave.textContent = '\u2713 Saved';
-        setTimeout(function(){ var c = document.getElementById('upanel-sm-settings'); if (c) { c.dataset.built = ''; buildSMSettings(c); } }, 1500);
+        setTimeout(function(){ var c = smGetSettingsPanel(); if (c) { c.dataset.built = ''; buildSMSettings(c); } }, 1500);
       } catch (e) { billSave.textContent = 'Save Billing Copy'; billSave.disabled = false; alert(e.message); }
     });
     bill.appendChild(billSave);

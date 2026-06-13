@@ -529,7 +529,7 @@
         <div class="ap-card accent-blue">
           <div class="ap-card-head">
             <span class="ap-card-title blue">&#127942; Recipe of the Week</span>
-            <button type="button" class="ap-card-link blue" onclick="switchView('recipe-mgmt');switchRecipeTab('rmsettings')">Manage &#8594;</button>
+            <button type="button" class="ap-card-link blue" onclick="switchView('recipe-mgmt');switchRecipeTab('rotw')">Manage &#8594;</button>
           </div>
           <div id="dash-rotw" class="ap-card-body pad"><div class="ap-card-empty" style="padding:0">Loading&#8230;</div></div>
         </div>
@@ -548,23 +548,40 @@
     </div>
 
     <div id="v-recipe-mgmt" style="display:none">
-      <div class="ap-inner-tabs">
-        <button class="ap-inner-tab active" data-tab="all"         onclick="switchRecipeTab('all')">All Recipes</button>
-        <button class="ap-inner-tab"        data-tab="pending"     onclick="switchRecipeTab('pending')">Pending Review <span class="ap-nav-badge" id="rtab-badge-pending" style="position:static;margin-left:4px">0</span></button>
-        <button class="ap-inner-tab"        data-tab="approved"    onclick="switchRecipeTab('approved')">Approved</button>
-        <button class="ap-inner-tab"        data-tab="rejected"    onclick="switchRecipeTab('rejected')">Rejected</button>
-        <button class="ap-inner-tab"        data-tab="analytics"   onclick="switchRecipeTab('analytics')">&#128202; Analytics</button>
-        <button class="ap-inner-tab"        data-tab="taxonomy"    onclick="switchRecipeTab('taxonomy')">Sub-cats &amp; Divisions</button>
-        <button class="ap-inner-tab"        data-tab="sourcelinks" onclick="switchRecipeTab('sourcelinks')">Source Links</button>
-        <button class="ap-inner-tab"        data-tab="nutrition"   onclick="switchRecipeTab('nutrition')">Nutrition</button>
-        <button class="ap-inner-tab"        data-tab="printqueue"  onclick="switchRecipeTab('printqueue')">Print Queue</button>
-        <button class="ap-inner-tab"        data-tab="collections" onclick="switchRecipeTab('collections')">Collections</button>
-        <button class="ap-inner-tab"        data-tab="featured"    onclick="switchRecipeTab('featured')">&#11088; Featured</button>
-        <button class="ap-inner-tab"        data-tab="audit"       onclick="switchRecipeTab('audit')">Audit Trail</button>
-        <button class="ap-inner-tab"        data-tab="rmsettings"  onclick="switchRecipeTab('rmsettings')">&#9881;&#65039; RM Interface</button>
-        <button class="ap-inner-tab"        data-tab="rotw"        onclick="switchRecipeTab('rotw')">&#11088; Recipe of the Week</button>
-        <button class="ap-inner-tab"        data-tab="notes"       onclick="switchRecipeTab('notes')">&#128221; Cooking Tips <span class="ap-nav-badge" id="rtab-badge-notes" style="position:static;margin-left:4px">0</span></button>
+      <div class="ap-tab-bar">
+        <div class="ap-tab-group">
+          <span class="ap-tab-group-label">Queues</span>
+          <div class="ap-tab-group-tabs">
+            <button class="ap-inner-tab active" data-tab="all"     onclick="switchRecipeTab('all')">All</button>
+            <button class="ap-inner-tab"        data-tab="pending" onclick="switchRecipeTab('pending')">Pending <span class="ap-nav-badge" id="rtab-badge-pending" style="position:static;margin-left:4px">0</span></button>
+            <button class="ap-inner-tab"        data-tab="approved" onclick="switchRecipeTab('approved')">Approved</button>
+            <button class="ap-inner-tab"        data-tab="rejected" onclick="switchRecipeTab('rejected')">Rejected</button>
+          </div>
+        </div>
+        <div class="ap-tab-divider"></div>
+        <div class="ap-tab-group">
+          <span class="ap-tab-group-label">Insights</span>
+          <div class="ap-tab-group-tabs">
+            <button class="ap-inner-tab" data-tab="analytics" onclick="switchRecipeTab('analytics')">Analytics</button>
+          </div>
+        </div>
+        <div class="ap-tab-divider"></div>
+        <div class="ap-tab-group">
+          <span class="ap-tab-group-label">Spotlight</span>
+          <div class="ap-tab-group-tabs">
+            <button class="ap-inner-tab" data-tab="rotw"     onclick="switchRecipeTab('rotw')">Recipe of the Week</button>
+            <button class="ap-inner-tab" data-tab="featured" onclick="switchRecipeTab('featured')">Featured</button>
+            <button class="ap-inner-tab" data-tab="notes"    onclick="switchRecipeTab('notes')">Cooking Tips <span class="ap-nav-badge" id="rtab-badge-notes" style="position:static;margin-left:4px">0</span></button>
+          </div>
+        </div>
+        <div class="ap-tab-group ap-tab-group-interface">
+          <span class="ap-tab-group-label">Configuration</span>
+          <div class="ap-tab-group-tabs">
+            <button class="ap-inner-tab tab-interface" data-tab="rmsettings" onclick="switchRecipeTab('rmsettings')">&#9881; RM Interface</button>
+          </div>
+        </div>
       </div>
+      <p class="ap-panel-hint" id="rm-panel-hint">Review queues first — taxonomy, collections, print queue, and audit live in <strong style="color:var(--text-high);font-weight:600">RM Interface</strong>.</p>
       <div id="rmgmt-list-panel">
         <div class="ap-stats" style="margin-bottom:16px">
           <div class="ap-stat"><div class="ap-stat-num" id="rmgmt-total">&#8212;</div><div class="ap-stat-label">Total</div></div>
@@ -615,20 +632,34 @@
 
     <!-- USER MANAGEMENT -->
     <div id="v-user-mgmt" style="display:none">
-      <div class="ap-inner-tabs">
-        <button class="ap-inner-tab active" data-tab="members"      onclick="switchUserTab('members')">&#128101; All Members <span class="ap-nav-badge" id="badge-all-users" style="position:static;margin-left:4px"></span></button>
-        <button class="ap-inner-tab"        data-tab="pending"      onclick="switchUserTab('pending')">&#9203; Pending <span class="ap-nav-badge" id="badge-pending-users-2" style="position:static;margin-left:4px">0</span></button>
-        <button class="ap-inner-tab"        data-tab="deactivated"  onclick="switchUserTab('deactivated')">Deactivated</button>
-        <button class="ap-inner-tab"        data-tab="reports"      onclick="switchUserTab('reports')">Reports</button>
-        <button class="ap-inner-tab"        data-tab="requests"     onclick="switchUserTab('requests')">Recipe Requests</button>
-        <button class="ap-inner-tab"        data-tab="feedback"     onclick="switchUserTab('feedback')">Feedback</button>
-        <button class="ap-inner-tab"        data-tab="chefs"        onclick="switchUserTab('chefs')">Chef Directory</button>
-        <button class="ap-inner-tab"        data-tab="family-refs"  onclick="switchUserTab('family-refs')">Family Lists</button>
-        <button class="ap-inner-tab"        data-tab="invites"      onclick="switchUserTab('invites')">Invites</button>
-        <button class="ap-inner-tab"        data-tab="analytics"    onclick="switchUserTab('analytics')">&#128202; Analytics</button>
-        <button class="ap-inner-tab"        data-tab="audit"        onclick="switchUserTab('audit')">Audit Trail</button>
-        <button class="ap-inner-tab"        data-tab="umsettings"   onclick="switchUserTab('umsettings')">&#9881;&#65039; UM Interface</button>
+      <div class="ap-tab-bar">
+        <div class="ap-tab-group">
+          <span class="ap-tab-group-label">Members</span>
+          <div class="ap-tab-group-tabs">
+            <button class="ap-inner-tab active" data-tab="members"     onclick="switchUserTab('members')">All <span class="ap-nav-badge" id="badge-all-users" style="position:static;margin-left:4px"></span></button>
+            <button class="ap-inner-tab"        data-tab="pending"     onclick="switchUserTab('pending')">Pending <span class="ap-nav-badge" id="badge-pending-users-2" style="position:static;margin-left:4px">0</span></button>
+            <button class="ap-inner-tab"        data-tab="deactivated" onclick="switchUserTab('deactivated')">Deactivated</button>
+          </div>
+        </div>
+        <div class="ap-tab-divider"></div>
+        <div class="ap-tab-group">
+          <span class="ap-tab-group-label">Community</span>
+          <div class="ap-tab-group-tabs">
+            <button class="ap-inner-tab" data-tab="reports"     onclick="switchUserTab('reports')">Reports &amp; Appeals</button>
+            <button class="ap-inner-tab" data-tab="requests"    onclick="switchUserTab('requests')">Recipe Requests</button>
+            <button class="ap-inner-tab" data-tab="chefs"       onclick="switchUserTab('chefs')">Chef Directory</button>
+            <button class="ap-inner-tab" data-tab="family-refs" onclick="switchUserTab('family-refs')">Family Lists</button>
+            <button class="ap-inner-tab" data-tab="invites"     onclick="switchUserTab('invites')">Invites</button>
+          </div>
+        </div>
+        <div class="ap-tab-group ap-tab-group-interface">
+          <span class="ap-tab-group-label">Configuration</span>
+          <div class="ap-tab-group-tabs">
+            <button class="ap-inner-tab tab-interface" data-tab="umsettings" onclick="switchUserTab('umsettings')">&#9881; UM Interface</button>
+          </div>
+        </div>
       </div>
+      <p class="ap-panel-hint">Site feedback and widget inbox → <button type="button" onclick="switchView('voc-mgmt')" style="background:none;border:none;padding:0;color:var(--accent);font:inherit;cursor:pointer;font-weight:600">Voice of the Customer</button>. Analytics and audit → UM Interface.</p>
       <div id="upanel-members"      data-panel="members"      style="padding:0"></div>
       <div id="upanel-pending"      data-panel="pending"      style="display:none;padding:0"></div>
       <div id="upanel-deactivated"  data-panel="deactivated"  style="display:none;padding:0"></div>
@@ -818,16 +849,24 @@
         <div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)">Changes are saved per tab. Use Save All to commit everything at once.</div>
         <button id="sm-save-all-btn" onclick="smSaveAll()" style="padding:8px 20px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Save All</button>
       </div>
-      <div class="ap-inner-tabs">
-        <button class="ap-inner-tab active" data-tab="sm-pages"    onclick="switchSMTab('sm-pages')">Pages</button>
-        <button class="ap-inner-tab"        data-tab="sm-features"  onclick="switchSMTab('sm-features')">Features</button>
-        <button class="ap-inner-tab"        data-tab="sm-ann"       onclick="switchSMTab('sm-ann')">Announcements</button>
-        <button class="ap-inner-tab"        data-tab="sm-content"   onclick="switchSMTab('sm-content')">Content</button>
-        <button class="ap-inner-tab"        data-tab="sm-themes"    onclick="switchSMTab('sm-themes')">Themes</button>
-        <button class="ap-inner-tab"        data-tab="sm-email"     onclick="switchSMTab('sm-email')">Email Templates</button>
-        <button class="ap-inner-tab"        data-tab="sm-settings"  onclick="switchSMTab('sm-settings')">Settings</button>
-        <button class="ap-inner-tab"        data-tab="sm-lane2"       onclick="switchSMTab('sm-lane2')">&#9989; Lane 2 QA</button>
-        <button class="ap-inner-tab"        data-tab="sm-theme-sweep" onclick="switchSMTab('sm-theme-sweep')">&#127912; Theme Sweep</button>
+      <div class="ap-tab-bar">
+        <div class="ap-tab-group">
+          <span class="ap-tab-group-label">Site content</span>
+          <div class="ap-tab-group-tabs">
+            <button class="ap-inner-tab active" data-tab="sm-pages"   onclick="switchSMTab('sm-pages')">Pages</button>
+            <button class="ap-inner-tab"        data-tab="sm-features" onclick="switchSMTab('sm-features')">Features</button>
+            <button class="ap-inner-tab"        data-tab="sm-ann"      onclick="switchSMTab('sm-ann')">Announcements</button>
+            <button class="ap-inner-tab"        data-tab="sm-content"  onclick="switchSMTab('sm-content')">Content</button>
+            <button class="ap-inner-tab"        data-tab="sm-themes"   onclick="switchSMTab('sm-themes')">Themes</button>
+            <button class="ap-inner-tab"        data-tab="sm-email"    onclick="switchSMTab('sm-email')">Email</button>
+          </div>
+        </div>
+        <div class="ap-tab-group ap-tab-group-interface">
+          <span class="ap-tab-group-label">Configuration</span>
+          <div class="ap-tab-group-tabs">
+            <button class="ap-inner-tab tab-interface" data-tab="sm-interface" onclick="switchSMTab('sm-interface')">&#9881; SM Interface</button>
+          </div>
+        </div>
       </div>
       <div id="upanel-sm-pages"    data-panel="sm-pages"    style="padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
       <div id="upanel-sm-features" data-panel="sm-features" style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
@@ -835,9 +874,7 @@
       <div id="upanel-sm-content"  data-panel="sm-content"  style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
       <div id="upanel-sm-themes"   data-panel="sm-themes"   style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
       <div id="upanel-sm-email"    data-panel="sm-email"    style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
-      <div id="upanel-sm-settings" data-panel="sm-settings" style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
-      <div id="upanel-sm-lane2" data-panel="sm-lane2" style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
-      <div id="upanel-sm-theme-sweep" data-panel="sm-theme-sweep" style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
+      <div id="upanel-sm-interface" data-panel="sm-interface" style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
     </div>
 
     <!-- GARDEN MANAGEMENT -->
@@ -897,13 +934,29 @@
 
     <!-- ANALYTICS -->
     <div id="v-finance" style="display:none">
-      <div class="ap-inner-tabs" style="margin-bottom:20px">
-        <button class="ap-inner-tab active" data-tab="fi-overview"    onclick="switchFinanceTab('fi-overview')">Overview</button>
-        <button class="ap-inner-tab"        data-tab="fi-members"     onclick="switchFinanceTab('fi-members')">Member Tiers</button>
-        <button class="ap-inner-tab"        data-tab="fi-pricing"     onclick="switchFinanceTab('fi-pricing')">Pricing</button>
-        <button class="ap-inner-tab"        data-tab="fi-print-orders" onclick="switchFinanceTab('fi-print-orders')">📬 Print Orders <span class="ap-nav-badge" id="badge-print-orders" style="position:static;margin-left:4px;display:none">0</span></button>
-        <button class="ap-inner-tab"        data-tab="fi-history"     onclick="switchFinanceTab('fi-history')">History</button>
-        <button class="ap-inner-tab" data-tab="fi-interface" onclick="switchFinanceTab('fi-interface')">&#9881;&#65039; FM Interface</button>
+      <div class="ap-tab-bar">
+        <div class="ap-tab-group">
+          <span class="ap-tab-group-label">Dashboard</span>
+          <div class="ap-tab-group-tabs">
+            <button class="ap-inner-tab active" data-tab="fi-overview" onclick="switchFinanceTab('fi-overview')">Overview</button>
+          </div>
+        </div>
+        <div class="ap-tab-divider"></div>
+        <div class="ap-tab-group">
+          <span class="ap-tab-group-label">Billing</span>
+          <div class="ap-tab-group-tabs">
+            <button class="ap-inner-tab" data-tab="fi-members"      onclick="switchFinanceTab('fi-members')">Member Tiers</button>
+            <button class="ap-inner-tab" data-tab="fi-pricing"      onclick="switchFinanceTab('fi-pricing')">Pricing</button>
+            <button class="ap-inner-tab" data-tab="fi-print-orders" onclick="switchFinanceTab('fi-print-orders')">Print Orders <span class="ap-nav-badge" id="badge-print-orders" style="position:static;margin-left:4px;display:none">0</span></button>
+            <button class="ap-inner-tab" data-tab="fi-history"      onclick="switchFinanceTab('fi-history')">History</button>
+          </div>
+        </div>
+        <div class="ap-tab-group ap-tab-group-interface">
+          <span class="ap-tab-group-label">Tools</span>
+          <div class="ap-tab-group-tabs">
+            <button class="ap-inner-tab tab-interface" data-tab="fi-interface" onclick="switchFinanceTab('fi-interface')">&#9881; FM Interface</button>
+          </div>
+        </div>
       </div>
       <div id="upanel-fi-overview"  data-panel="fi-overview"  style="padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
       <div id="upanel-fi-members"   data-panel="fi-members"   style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
@@ -916,33 +969,70 @@
   
       <!-- ══ LIBRARY MANAGEMENT ══════════════════════════════════════ -->
       <div id="v-library-mgmt" style="display:none">
-        <div class="ap-inner-tabs">
-          <button class="ap-inner-tab active" data-tab="lm-ingredients"   onclick="switchLibTab('lm-ingredients')">🌿 Ingredients</button>
-          <button class="ap-inner-tab"        data-tab="lm-spices"        onclick="switchLibTab('lm-spices')">🌶 Spices</button>
-          <button class="ap-inner-tab"        data-tab="lm-tools"         onclick="switchLibTab('lm-tools')">🔪 Tools</button>
-          <button class="ap-inner-tab"        data-tab="lm-cuts"          onclick="switchLibTab('lm-cuts')">🥩 Cuts</button>
-          <button class="ap-inner-tab"        data-tab="lm-preservation"  onclick="switchLibTab('lm-preservation')">🫙 Preservation</button>
-          <button class="ap-inner-tab"        data-tab="lm-interface"     onclick="switchLibTab('lm-interface')">⚙️ LM Interface</button>
-          <button class="ap-inner-tab"        data-tab="lm-coverage"      onclick="switchLibTab('lm-coverage')">📊 Coverage</button>
-          <button class="ap-inner-tab"        data-tab="lm-submissions"   onclick="switchLibTab('lm-submissions')">📝 Submissions</button>
+        <div class="ap-tab-bar">
+          <div class="ap-tab-group">
+            <span class="ap-tab-group-label">Profiles</span>
+            <div class="ap-tab-group-tabs">
+              <button class="ap-inner-tab active" data-tab="lm-ingredients"  onclick="switchLibTab('lm-ingredients')">Ingredients</button>
+              <button class="ap-inner-tab"        data-tab="lm-spices"       onclick="switchLibTab('lm-spices')">Spices</button>
+              <button class="ap-inner-tab"        data-tab="lm-tools"        onclick="switchLibTab('lm-tools')">Tools</button>
+              <button class="ap-inner-tab"        data-tab="lm-cuts"         onclick="switchLibTab('lm-cuts')">Cuts</button>
+              <button class="ap-inner-tab"        data-tab="lm-preservation" onclick="switchLibTab('lm-preservation')">Preservation</button>
+            </div>
+          </div>
+          <div class="ap-tab-divider"></div>
+          <div class="ap-tab-group">
+            <span class="ap-tab-group-label">Queue</span>
+            <div class="ap-tab-group-tabs">
+              <button class="ap-inner-tab" data-tab="lm-submissions" onclick="switchLibTab('lm-submissions')">Submissions</button>
+              <button class="ap-inner-tab" data-tab="lm-coverage"    onclick="switchLibTab('lm-coverage')">Coverage</button>
+            </div>
+          </div>
+          <div class="ap-tab-group ap-tab-group-interface">
+            <span class="ap-tab-group-label">Editor</span>
+            <div class="ap-tab-group-tabs">
+              <button class="ap-inner-tab tab-interface" data-tab="lm-interface" onclick="switchLibTab('lm-interface')">&#9881; LM Interface</button>
+            </div>
+          </div>
         </div>
+        <p class="ap-panel-hint">Browse profiles by type — open <strong style="color:var(--text-high);font-weight:600">LM Interface</strong> to edit a single profile with collapsible sections.</p>
         <div id="lm-panel" style="margin-top:16px">
           <div class="ap-loading">Loading…</div>
         </div>
       </div>
 
       <div id="v-festival-mgmt" style="display:none">
-        <div class="ap-inner-tabs">
-          <button class="ap-inner-tab active" data-tab="fm-overview" onclick="switchFestTab('fm-overview')">Overview</button>
-          <button class="ap-inner-tab" data-tab="fm-interface" onclick="switchFestTab('fm-interface')">FM Interface</button>
+        <div class="ap-tab-bar">
+          <div class="ap-tab-group">
+            <span class="ap-tab-group-label">Festivals</span>
+            <div class="ap-tab-group-tabs">
+              <button class="ap-inner-tab active" data-tab="fm-overview" onclick="switchFestTab('fm-overview')">Overview</button>
+            </div>
+          </div>
+          <div class="ap-tab-group ap-tab-group-interface">
+            <span class="ap-tab-group-label">Editor</span>
+            <div class="ap-tab-group-tabs">
+              <button class="ap-inner-tab tab-interface" data-tab="fm-interface" onclick="switchFestTab('fm-interface')">&#9881; Fest Interface</button>
+            </div>
+          </div>
         </div>
         <div id="fest-panel" style="margin-top:16px"><div class="ap-loading">Loading…</div></div>
       </div>
 
       <div id="v-voc-mgmt" style="display:none">
-        <div class="ap-inner-tabs">
-          <button class="ap-inner-tab active" data-tab="voc-inbox" onclick="switchVocTab('voc-inbox')">Inbox</button>
-          <button class="ap-inner-tab" data-tab="voc-taxonomy" onclick="switchVocTab('voc-taxonomy')">Taxonomy</button>
+        <div class="ap-tab-bar">
+          <div class="ap-tab-group">
+            <span class="ap-tab-group-label">Inbox</span>
+            <div class="ap-tab-group-tabs">
+              <button class="ap-inner-tab active" data-tab="voc-inbox" onclick="switchVocTab('voc-inbox')">All feedback</button>
+            </div>
+          </div>
+          <div class="ap-tab-group ap-tab-group-interface">
+            <span class="ap-tab-group-label">Reference</span>
+            <div class="ap-tab-group-tabs">
+              <button class="ap-inner-tab tab-interface" data-tab="voc-interface" onclick="switchVocTab('voc-interface')">&#9881; VoC Interface</button>
+            </div>
+          </div>
         </div>
         <div id="voc-panel" style="margin-top:16px"><div class="ap-loading">Loading…</div></div>
       </div>
@@ -1154,12 +1244,13 @@
   <script src="lib/theme-catalog.js"></script>
   <script src="lib/library-admin-fields.js?v=20260614"></script>
   <script src="lib/theme-admin-ui.js"></script>
-  <script src="dashboard-shared.js?v=20260715"></script>
+  <script src="lib/admin-tab-nav.js?v=20260610"></script>
+  <script src="dashboard-shared.js?v=20260610"></script>
   <script src="lib/dashboard-um-ops.js?v=20260714"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
   <script src="lib/admin-recipe-utils.js?v=20260705"></script>
-  <script src="dashboard-recipes.js?v=20260712"></script>
-  <script src="dashboard-users.js?v=20260707"></script>
+  <script src="dashboard-recipes.js?v=20260610"></script>
+  <script src="dashboard-users.js?v=20260610"></script>
   <script src="dashboard-ingredients.js?v=20260630"></script>
   <script src="lib/dashboard-im-interface.js?v=20260713"></script>
   <script src="lib/dashboard-garden.js?v=20260718"></script>
@@ -1176,7 +1267,7 @@
   <script src="lib/lm-interface.js?v=20260615"></script>
   <script src="lib/ingredient-lookup.js?v=20260630"></script>
   <script src="lib/data-integrity.js?v=20260710"></script>
-  <script src="dashboard-site.js?v=20260715"></script>
+  <script src="dashboard-site.js?v=20260610"></script>
   <script src="dashboard-platform.js?v=20260610"></script>
   <script src="dashboard-analytics.js?v=20260608"></script>
 </body>

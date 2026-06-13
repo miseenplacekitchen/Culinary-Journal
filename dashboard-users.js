@@ -3,7 +3,8 @@ var _detailUser = null; // Stores current user detail — action buttons read fr
 // This file is loaded by dashboard.html
 // Requires: supabase-config.js to be loaded first
 
-var _UM_OPS_TABS = ['deactivated','reports','requests','feedback','chefs','family-refs','invites','analytics','audit'];
+var _UM_OPS_TABS = ['deactivated','reports','requests','chefs','family-refs','invites'];
+var _UM_INTERFACE_TABS = ['settings','analytics','audit'];
 
 function formatBadgeLabel(badge) {
   return badge === "Betty's Pick" ? 'Journal Pick' : badge;
@@ -17,6 +18,14 @@ function userHasBadge(badges, badgeName) {
 }
 
 function switchUserTab(tab) {
+  if (tab === 'feedback') {
+    switchView('voc-mgmt');
+    return;
+  }
+  if (_UM_INTERFACE_TABS.indexOf(tab) !== -1 && tab !== 'umsettings') {
+    localStorage.setItem('tcj_um_interface_tab', tab);
+    tab = 'umsettings';
+  }
   localStorage.setItem('tcj_active_user_tab', tab);
   _currentUserTab = tab;
   document.querySelectorAll('#v-user-mgmt .ap-inner-tab').forEach(function(t){
@@ -38,28 +47,72 @@ function switchUserTab(tab) {
 function loadUMInterfaceSettings() {
   var container = document.getElementById('upanel-umsettings');
   if (!container) return;
+  if (container.dataset.shellBuilt === '1') {
+    var stored = localStorage.getItem('tcj_um_interface_tab') || 'settings';
+    var btn = container.querySelector('[data-admin-if-tab="' + stored + '"]');
+    if (btn) btn.click();
+    return;
+  }
   container.innerHTML = '';
+  container.dataset.shellBuilt = '1';
+  if (typeof AdminTabNav === 'undefined') {
+    container.textContent = 'Admin tab navigation failed to load.';
+    return;
+  }
+  container.appendChild(AdminTabNav.interfaceBanner('Member policy and analytics — operational queues stay in the tabs above.'));
+  container.appendChild(AdminTabNav.interfaceIntro('Grant tiers in Finance \u2192 Member Tiers. Site feedback is unified in Voice of the Customer.'));
+
   function mk(tag, style, text) { var e = document.createElement(tag); if (style) e.style.cssText = style; if (text !== undefined) e.textContent = text; return e; }
   function card(title) {
     var d = mk('div', 'background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');
     d.appendChild(mk('div', "font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px", title));
     return d;
   }
-  container.appendChild(mk('p', "font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6",
-    'Settings only — work queues live in the tabs above (Reports, Feedback, Chef Directory, etc.).'));
+
+  var shell = AdminTabNav.buildInnerTabBar(container, [
+    { key: 'settings', label: 'Settings' },
+    { key: 'analytics', label: 'Analytics' },
+    { key: 'audit', label: 'Audit Trail' }
+  ], 'tcj_um_interface_tab', 'settings', function (key, panel) {
+    if (key === 'analytics') loadUMAnalytics(panel);
+    if (key === 'audit') loadUMTab('audit', panel);
+  });
+
+  var settingsPanel = shell.panels.settings;
   var smCard = card('Site Management Shortcuts');
   var grid = mk('div', 'display:flex;flex-wrap:wrap;gap:10px');
-  [{ label: 'Pages & visibility', tab: 'sm-pages' }, { label: 'Feature toggles', tab: 'sm-features' }, { label: 'Billing copy', tab: 'sm-settings' }].forEach(function(link) {
+  [{ label: 'Pages & visibility', tab: 'sm-pages' }, { label: 'Feature toggles', tab: 'sm-features' }, { label: 'Billing copy', smTab: 'sm-interface', sub: 'settings' }].forEach(function(link) {
     var b = mk('button', "padding:8px 16px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer", link.label + ' \u2192');
-    b.addEventListener('click', function() { switchView('site-mgmt'); switchSMTab(link.tab); });
+    b.addEventListener('click', function() {
+      if (link.smTab) {
+        localStorage.setItem('tcj_sm_interface_tab', link.sub || 'settings');
+        switchView('site-mgmt');
+        switchSMTab('sm-interface');
+      } else {
+        switchView('site-mgmt');
+        switchSMTab(link.tab);
+      }
+    });
     grid.appendChild(b);
   });
   smCard.appendChild(grid);
-  container.appendChild(smCard);
+  settingsPanel.appendChild(smCard);
+
+  var vocCard = card('Voice of the Customer');
+  var vocBtn = mk('button', "padding:8px 16px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer", 'Open VoC inbox \u2192');
+  vocBtn.addEventListener('click', function() { switchView('voc-mgmt'); });
+  vocCard.appendChild(vocBtn);
+  settingsPanel.appendChild(vocCard);
+
   var noteCard = card('Member tiers');
   noteCard.appendChild(mk('p', 'font-size:12px;color:var(--text-mid);line-height:1.55',
     'Grant daily / weekly / monthly / yearly tiers from Finance \u2192 Member Tiers. Stripe checkout applies tiers automatically when enabled.'));
-  container.appendChild(noteCard);
+  var fiBtn = mk('button', "margin-top:8px;padding:8px 16px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer", 'Finance \u2192 Member Tiers');
+  fiBtn.addEventListener('click', function() { switchView('finance'); switchFinanceTab('fi-members'); });
+  noteCard.appendChild(fiBtn);
+  settingsPanel.appendChild(noteCard);
+
+  shell.activate(shell.activeKey);
 }
 
 // ── MEMBERS PANEL ─────────────────────────────────────────────────

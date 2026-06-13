@@ -24,6 +24,10 @@ function switchFestTab(tab) {
 }
 
 function switchVocTab(tab) {
+  if (tab === 'voc-taxonomy') {
+    localStorage.setItem('tcj_voc_interface_tab', 'taxonomy');
+    tab = 'voc-interface';
+  }
   localStorage.setItem('tcj_active_voc_tab', tab);
   document.querySelectorAll('#v-voc-mgmt .ap-inner-tab').forEach(function(el) {
     el.classList.toggle('active', el.dataset.tab === tab);
@@ -31,7 +35,40 @@ function switchVocTab(tab) {
   var panel = document.getElementById('voc-panel');
   if (!panel) return;
   if (tab === 'voc-inbox') loadVocInbox(panel);
-  if (tab === 'voc-taxonomy') loadVocTaxonomy(panel);
+  if (tab === 'voc-interface') loadVocInterface(panel);
+}
+
+function loadVocInterface(container) {
+  if (!container) return;
+  if (container.dataset.shellBuilt === '1') {
+    var stored = localStorage.getItem('tcj_voc_interface_tab') || 'taxonomy';
+    var btn = container.querySelector('[data-admin-if-tab="' + stored + '"]');
+    if (btn) btn.click();
+    return;
+  }
+  container.innerHTML = '';
+  container.dataset.shellBuilt = '1';
+  if (typeof AdminTabNav === 'undefined') {
+    container.textContent = 'Admin tab navigation failed to load.';
+    return;
+  }
+  container.appendChild(AdminTabNav.interfaceBanner('Reference for categorising inbox entries — triage happens in the Inbox tab.'));
+  var shell = AdminTabNav.buildInnerTabBar(container, [
+    { key: 'taxonomy', label: 'Taxonomy' },
+    { key: 'routing', label: 'Widget routing' }
+  ], 'tcj_voc_interface_tab', 'taxonomy', function (key, panel) {
+    if (key === 'taxonomy') loadVocTaxonomy(panel);
+    if (key === 'routing') {
+      panel.innerHTML =
+        '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);line-height:1.8;max-width:640px">' +
+        '<div style="font-family:Cormorant Garamond,serif;font-size:1.1rem;font-weight:700;color:var(--text-high);margin-bottom:12px">Automatic type mapping</div>' +
+        '<p><strong>Actionable</strong> — system_bug, process_friction, content_issue, bug</p>' +
+        '<p><strong>Signals</strong> — kudos, value_story, feature_wish, suggestion, recipe praise</p>' +
+        '<p><strong>Noise</strong> — user_error, vague_vent, known_repeat, general, other</p>' +
+        '<p style="margin-top:16px;font-size:12px">Re-categorise in the inbox; admin_notes persist per entry.</p></div>';
+    }
+  });
+  shell.activate(shell.activeKey);
 }
 
 function fmInput(label, id, val, ph) {

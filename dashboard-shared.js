@@ -418,7 +418,7 @@ function switchView(view, ingTab) {
   if (nb) nb.classList.add('active');
   ALL_VIEWS.forEach(function(v) { const el = document.getElementById('v-' + v); if (el) el.style.display = (v===view)?'block':'none'; });
   const titles = { 'dashboard':'Dashboard', 'recipe-mgmt':'Recipe Management', 'user-mgmt':'User Management', 'ingredients':'Ingredients Management', 'garden-mgmt':'Garden Management', 'site-mgmt':'Site Management', 'finance':'Finance Management', 'library-mgmt':'Library Management', 'festival-mgmt':'Festival Management', 'voc-mgmt':'Voice of the Customer' };
-  const subs   = { 'dashboard':'Overview of site activity.', 'recipe-mgmt':'Review, approve and manage all submitted recipes.', 'user-mgmt':'Manage member registrations and accounts.', 'ingredients':'Browse, add and edit the ingredient database.', 'garden-mgmt':'Sacred ground for plants, climates, varieties, and garden data — GM Interface.', 'site-mgmt':'Pages, features, QA spot-checks, theme sweep, announcements, email templates and settings.', 'finance':'Manage membership tiers, subscriptions, pricing and revenue.', 'library-mgmt':'Manage ingredient, spice, tool, cut and preservation profiles.', 'festival-mgmt':'Festivals, dish slots and recipe variants for occasion planners.', 'voc-mgmt':'Categorised member feedback — signals, noise and actionable items.' };
+  const subs   = { 'dashboard':'Overview of site activity.', 'recipe-mgmt':'Review queues and spotlight — configuration in RM Interface.', 'user-mgmt':'Members and community — analytics in UM Interface; feedback in VoC.', 'ingredients':'Browse, add and edit the ingredient database.', 'garden-mgmt':'Species work tabs + GM Interface for lookup, care, and imports.', 'site-mgmt':'Site content tabs + SM Interface for settings and QA.', 'finance':'Overview and billing + FM Interface tools.', 'library-mgmt':'Profile lists by type — edit in LM Interface.', 'festival-mgmt':'Festival overview + Fest Interface editor.', 'voc-mgmt':'Unified feedback inbox + VoC Interface reference.' };
   setEl('page-title', titles[view] || view);
   setEl('page-sub',   subs[view]   || '');
   var mobileTitle = document.querySelector('.ap-mobile-title');
@@ -434,7 +434,7 @@ function switchView(view, ingTab) {
   if (view === 'garden-mgmt') { if (typeof initGardenMgmt === 'function') initGardenMgmt(); }
   if (view === 'site-mgmt')   { var _smt=localStorage.getItem('tcj_active_sm_tab')||'sm-pages'; switchSMTab(_smt); }
   if (view === 'finance')     { switchFinanceTab(localStorage.getItem('tcj_active_finance_tab')||'fi-overview'); }
-  if (view === 'library-mgmt') { switchLibTab(localStorage.getItem('tcj_active_lib_tab')||'lm-interface'); }
+  if (view === 'library-mgmt') { switchLibTab(localStorage.getItem('tcj_active_lib_tab')||'lm-ingredients'); }
   if (view === 'festival-mgmt') { switchFestTab(localStorage.getItem('tcj_active_fest_tab')||'fm-overview'); }
   if (view === 'voc-mgmt') { switchVocTab(localStorage.getItem('tcj_active_voc_tab')||'voc-inbox'); }
 }
