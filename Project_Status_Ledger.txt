@@ -16,7 +16,7 @@ LIVE CHECKLIST (Betty — tick when done)
 [x] 2g. garden-v4-10-batch-import-queue.sql + 10b parts 1–9 (208 species queue) ✅ Betty
 [x] 2h. fix-garden-journal-page.sql registered (hidden) ✅ Betty — flip visibility in Site Mgmt when code deployed
 [x] 2i. garden-v4-11 + garden-v4-12 lookup/content admin RPCs ✅ Betty
-[ ] 2j. RUN-GARDEN-GO-LIVE.sql (or fix-garden-v3-visible + v4-14 + v4-15) — pages registered, shells, cultivars applied
+[x] 2j. RUN-GARDEN-GO-LIVE.sql (or fix-garden-v3-visible + v4-14 + v4-15) — pages registered, shells, cultivars applied ✅ Betty
 [x] 2d. RUN-GARDEN-V3-POLISH.sql → RPC fixes + kitchen hinge ✅ Betty (tomato → library tomato)
 [x] 3. RUN-LIVE-FOLLOWUP.sql → phases 49–51 (library, categories, soft-launch pages) — healthy: true
 [ ] 4. Hard-refresh admin → Dashboard home System Health matches SQL
@@ -97,8 +97,8 @@ fix-phase29-library-content.sql      | 5 ingredient profiles (ginger…flour) | 
 fix-phase29-library-submissions.sql | Member library submit + admin RPCs  | DONE ✅ Betty
 fix-phase31-print-orders.sql        | Print & Post order intent queue      | DONE ✅ Betty
 fix-phase53-print-fulfillment.sql   | Print admin inbox + status workflow + emails | DONE ✅ Betty
-fix-phase54-garden-kitchen-profiles.sql | Kitchen 15 species care + calendar + hinge | CODE ✅ — Betty run pending
-fix-phase54-import-payload-refresh.sql    | Re-parse 12 cultivar payloads (parser v2)  | CODE ✅ — Betty run pending
+fix-phase54-garden-kitchen-profiles.sql | Kitchen 15 species care + calendar + hinge | DONE ✅ Betty
+fix-phase54-import-payload-refresh.sql    | Re-parse 12 cultivar payloads (parser v2)  | DONE ✅ Betty
 fix-phase32-batch.sql               | Household meals, slots, allergy, lib approve | DONE ✅ Betty
 fix-phase32-library-profiles.sql    | Desiree + Kipfler potato profiles    | DONE ✅ Betty (249, 250)
 fix-phase33-batch.sql               | Saves ranking, sync conflicts, regional hints, print gating | DONE ✅ Betty
@@ -171,11 +171,11 @@ Phase 53 Print & Post fulfilment (Phase 1 — no payment):
   • Member: print-studio.html — submit with order ref + My Print Orders table
   • Betty: fix-phase53-print-fulfillment.sql ✅
 
-Phase 54 Garden profiles + parser v2 (Betty run pending):
+Phase 54 Garden profiles + parser v2 ✅ Betty:
   • Parser: parenthetical (HEIRLOOM) docx + Ginseng CULTIVARS blocks + mangosteen summary payload
-  • 6904 cultivars across 208 species (was 6298; 12 formerly empty fixed)
-  • fix-phase54-import-payload-refresh.sql → GM Apply all pending imports
-  • fix-phase54-garden-kitchen-profiles.sql → 15 kitchen species care + calendar (humid-subtropical)
+  • 6904 cultivars across 208 species (parser v2)
+  • fix-phase54-import-payload-refresh.sql ✅ → GM Apply all pending imports (Betty)
+  • fix-phase54-garden-kitchen-profiles.sql ✅ → 15 kitchen species care + calendar
   • Publish species in GM when curated; Excel 83-field ingest still deferred
 
 Phase 28: master list reopened · grocery archive→pantry · MP-06 drag
