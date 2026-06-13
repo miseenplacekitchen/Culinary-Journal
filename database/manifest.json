@@ -65,7 +65,9 @@
     "set_my_garden_region": "garden-v3-06-rpcs.sql",
     "get_my_garden_region": "garden-v3-06-rpcs.sql",
     "garden_what_next": "garden-v3-06-rpcs.sql",
-    "garden_month_in_range": "garden-v3-06-rpcs.sql"
+    "garden_month_in_range": "garden-v3-06-rpcs.sql",
+    "admin_apply_garden_import": "garden-v4-15-batch-apply-imports.sql",
+    "admin_apply_all_garden_imports": "garden-v4-15-batch-apply-imports.sql"
   },
   "live_cleanup_order": [
     { "file": "RUN-LIVE-CLEANUP.sql", "note": "Single paste: library links + health RPCs + verification" },
@@ -74,6 +76,7 @@
     { "file": "RUN-LIVE-PHASE52.sql", "note": "Phase 52 library + Lane 2 sample recipes + health" },
     { "file": "RUN-GARDEN-V3.sql", "note": "Garden v3 — full schema, RLS, RPCs, tomato seed, site pages" },
     { "file": "RUN-GARDEN-V3-POLISH.sql", "note": "Garden v3 polish — RPC fixes, month wrap, library hinge (after V3)" },
+    { "file": "RUN-GARDEN-GO-LIVE.sql", "note": "Garden go-live — visible pages + 208 species shells + batch cultivar apply (step 2j)" },
     { "file": "fix-library-governed-links.sql", "note": "Step 1 only — re-link ingredient library profiles" },
     { "file": "fix-phase43-starter-library-health.sql", "note": "Step 2 only — dashboard System Health RPCs" },
     { "file": "SQL-EDITOR-health-check.sql", "note": "Step 3 only — expect healthy: true" }

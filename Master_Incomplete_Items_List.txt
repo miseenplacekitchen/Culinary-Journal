@@ -95,15 +95,15 @@ C · DECIDE — Betty decision before build
   Section D code batch closed at Phase 34 (admin · grocery conflicts · print gating · events · SEO).
   Remaining OPEN items:
 
-  Garden (v4 wave 3 — GM admin parity ✅ shipped)
-  • Betty SQL: fix-garden-v3-visible.sql → garden pages visible; v4-13 (28 kitchen) or v4-14 (208 all shells)
-  • GM workflow: species shell → Apply cultivars → care/calendar → publish
+  Garden (v4 wave 3 — GM admin parity ✅ shipped · go-live bundle ready)
+  • Betty SQL: RUN-GARDEN-GO-LIVE.sql (pages visible + 208 shells + batch cultivar apply)
+  • After SQL: publish species in GM when curated (Tomato already live)
   • Ongoing: guilds, media, Excel/PPT export (deferred)
 
   Library (ongoing content)
   • Phase 49–51 SQL ✅ Betty — ongoing library profiles beyond phase 49 only
   • Phase 52 SQL ✅ Betty — 5 approved, 613 ingredients, healthy: true
-  • Garden v3 + v4 code shipped; Betty runs RUN-GARDEN-V4.sql (+ v4-09 RPCs, v4-10 queue) → flip garden pages when ready
+  • Garden v3 + v4 code shipped; Betty runs RUN-GARDEN-GO-LIVE.sql → Garden visible to signed-in members
   • Write/link more library profiles beyond phase 52 (ongoing content)
 
   Recipe

@@ -2,6 +2,16 @@
 
 Use this order on **production** after deploying site code from GitHub.
 
+## Garden go-live (step 2j — after v3 + v4)
+
+| Step | File | Expect |
+|------|------|--------|
+| 1 | `RUN-GARDEN-GO-LIVE.sql` | Garden pages `visibility = registered`; ~208 draft species shells; import queue rows → `approved`; thousands of cultivars in DB |
+| 2 | Hard-refresh site + admin | Signed-in members see **The Garden** in nav; directory shows **published** species only (Tomato until you publish more in GM) |
+| 3 | Admin → Garden Management → GM Interface | Optional: **Apply all pending imports** if any queue rows remain; publish species when curated |
+
+Or run the three parts separately: `fix-garden-v3-visible.sql`, `garden-v4-14-all-species-shells.sql`, `garden-v4-15-batch-apply-imports.sql`.
+
 ## Garden v4 (varieties + climate-first)
 
 | Step | File | Expect |

@@ -39,10 +39,11 @@ var CJ_SECTIONS = [
   },
   {
     id:'garden', label:'The Garden', emoji:'🌱', primaryPage:'garden-directory.html',
-    pages:['garden-directory.html','garden-plant.html','my-garden.html'],
+    pages:['garden-directory.html','garden-plant.html','my-garden.html','garden-journal.html'],
     links:[
       {href:'garden-directory.html', emoji:'🌱', label:'Plant Directory'},
       {href:'my-garden.html', emoji:'🌿', label:'My Garden', signedInOnly:true},
+      {href:'garden-journal.html', emoji:'📓', label:'Garden Journal', signedInOnly:true},
       {href:'garden-plant.html?slug=tomato', emoji:'🍅', label:'Tomato'},
     ]
   },

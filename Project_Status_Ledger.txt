@@ -16,7 +16,7 @@ LIVE CHECKLIST (Betty — tick when done)
 [x] 2g. garden-v4-10-batch-import-queue.sql + 10b parts 1–9 (208 species queue) ✅ Betty
 [x] 2h. fix-garden-journal-page.sql registered (hidden) ✅ Betty — flip visibility in Site Mgmt when code deployed
 [x] 2i. garden-v4-11 + garden-v4-12 lookup/content admin RPCs ✅ Betty
-[ ] 2j. fix-garden-v3-visible.sql + species shells (v4-13 kitchen 28 · or v4-14 all 208)
+[ ] 2j. RUN-GARDEN-GO-LIVE.sql (or fix-garden-v3-visible + v4-14 + v4-15) — pages registered, shells, cultivars applied
 [x] 2d. RUN-GARDEN-V3-POLISH.sql → RPC fixes + kitchen hinge ✅ Betty (tomato → library tomato)
 [x] 3. RUN-LIVE-FOLLOWUP.sql → phases 49–51 (library, categories, soft-launch pages) — healthy: true
 [ ] 4. Hard-refresh admin → Dashboard home System Health matches SQL
