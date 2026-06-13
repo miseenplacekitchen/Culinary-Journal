@@ -169,4 +169,4 @@ VALUES ('beetroot', 'Beetroot',
   'Draft species shell — 24 cultivars in import queue. Curate in GM Interface.', false)
 ON CONFLICT (slug) DO NOTHING;
 
-SELECT 'garden-v4-13-species-shells ready — 28 draft species' AS status;
+SELECT 'garden-v4-13-species-shells-kitchen ready — 28 draft species' AS status;
