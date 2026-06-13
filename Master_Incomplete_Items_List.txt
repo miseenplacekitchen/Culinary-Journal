@@ -101,7 +101,7 @@ C · DECIDE — Betty decision before build
   • Run fix-phase55-garden-pages.sql ✅ — Garden Journal + pages registered
   • fix-phase56-garden-excel-profiles.sql ✅ — tomato Excel profile (humid-subtropical + tropical-monsoon)
   • fix-phase57-garden-artichoke-profile.sql ✅ · fix-phase57-garden-guilds-media.sql ✅
-  • Run fix-phase58-garden-climate-copy.sql — strip Brisbane/Kerala from live care copy
+  • fix-phase58-garden-climate-copy.sql ✅ — live care copy climate-neutral (tomato + artichoke)
   • GM: publish guilds → directory; bulk Excel as workbook grows
 
   Library (ongoing content)
