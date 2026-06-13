@@ -31,6 +31,14 @@ Parser v2 fixes parenthetical docx format (Carrot, Peas, etc.) and adds mangoste
 | 2 | `fix-phase55-garden-pages.sql` | All 4 garden pages `visibility = registered` |
 | 3 | GM → Apply refreshed imports → Publish kitchen batch | 15 kitchen species live on directory |
 
+## Garden Phase 56 (Excel 83-field profiles)
+
+| Step | File / action | Expect |
+|------|---------------|--------|
+| 1 | `python scripts/generate-garden-excel-profiles.py` | Regenerates SQL from `brainstorm-inbox/2025.11.09_Garden.xlsx` |
+| 2 | `fix-phase56-garden-excel-profiles.sql` | Tomato species: full plants columns + care rows (humid-subtropical + tropical-monsoon) |
+| 3 | GM → publish tomato when curated | Live profile reflects Excel Master Sheet + Quick Plant Profile |
+
 ## Garden go-live (step 2j — after v3 + v4)
 
 | Step | File | Expect |
