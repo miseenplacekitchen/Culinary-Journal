@@ -901,12 +901,14 @@
         <button class="ap-inner-tab active" data-tab="fi-overview"    onclick="switchFinanceTab('fi-overview')">Overview</button>
         <button class="ap-inner-tab"        data-tab="fi-members"     onclick="switchFinanceTab('fi-members')">Member Tiers</button>
         <button class="ap-inner-tab"        data-tab="fi-pricing"     onclick="switchFinanceTab('fi-pricing')">Pricing</button>
+        <button class="ap-inner-tab"        data-tab="fi-print-orders" onclick="switchFinanceTab('fi-print-orders')">📬 Print Orders <span class="ap-nav-badge" id="badge-print-orders" style="position:static;margin-left:4px;display:none">0</span></button>
         <button class="ap-inner-tab"        data-tab="fi-history"     onclick="switchFinanceTab('fi-history')">History</button>
         <button class="ap-inner-tab" data-tab="fi-interface" onclick="switchFinanceTab('fi-interface')">&#9881;&#65039; FM Interface</button>
       </div>
       <div id="upanel-fi-overview"  data-panel="fi-overview"  style="padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
       <div id="upanel-fi-members"   data-panel="fi-members"   style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
       <div id="upanel-fi-pricing"   data-panel="fi-pricing"   style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
+      <div id="upanel-fi-print-orders" data-panel="fi-print-orders" style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
       <div id="upanel-fi-history"   data-panel="fi-history"   style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
       <div id="upanel-fi-interface"  data-panel="fi-interface"  style="display:none;padding:0"><div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading…</div></div>
     </div>
@@ -1165,6 +1167,7 @@
   <script src="lib/dashboard-gm-editors.js?v=20260719"></script>
   <script src="lib/garden-export.js?v=20260718"></script>
   <script src="lib/dashboard-gm-interface.js?v=20260720"></script>
+  <script src="lib/dashboard-print-orders.js?v=20260608"></script>
   <script src="library-mise.js"></script>
   <script src="lib/recipe-hero-labels.js?v=20260629"></script>
   <script src="lib/circular-hero-editor.js?v=20260629"></script>

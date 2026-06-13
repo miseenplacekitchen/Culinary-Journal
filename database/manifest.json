@@ -67,7 +67,12 @@
     "garden_what_next": "garden-v3-06-rpcs.sql",
     "garden_month_in_range": "garden-v3-06-rpcs.sql",
     "admin_apply_garden_import": "garden-v4-15-batch-apply-imports.sql",
-    "admin_apply_all_garden_imports": "garden-v4-15-batch-apply-imports.sql"
+    "admin_apply_all_garden_imports": "garden-v4-15-batch-apply-imports.sql",
+    "submit_print_order_request": "fix-phase53-print-fulfillment.sql",
+    "get_my_print_orders": "fix-phase53-print-fulfillment.sql",
+    "admin_get_print_orders": "fix-phase53-print-fulfillment.sql",
+    "admin_update_print_order_status": "fix-phase53-print-fulfillment.sql",
+    "admin_count_print_orders": "fix-phase53-print-fulfillment.sql"
   },
   "live_cleanup_order": [
     { "file": "RUN-LIVE-CLEANUP.sql", "note": "Single paste: library links + health RPCs + verification" },
@@ -77,6 +82,7 @@
     { "file": "RUN-GARDEN-V3.sql", "note": "Garden v3 — full schema, RLS, RPCs, tomato seed, site pages" },
     { "file": "RUN-GARDEN-V3-POLISH.sql", "note": "Garden v3 polish — RPC fixes, month wrap, library hinge (after V3)" },
     { "file": "RUN-GARDEN-GO-LIVE.sql", "note": "Garden go-live — visible pages + 208 species shells + batch cultivar apply (step 2j)" },
+    { "file": "fix-phase53-print-fulfillment.sql", "note": "Print & Post Phase 1 — admin inbox, status workflow, member orders, confirmation emails (after phase31)" },
     { "file": "fix-library-governed-links.sql", "note": "Step 1 only — re-link ingredient library profiles" },
     { "file": "fix-phase43-starter-library-health.sql", "note": "Step 2 only — dashboard System Health RPCs" },
     { "file": "SQL-EDITOR-health-check.sql", "note": "Step 3 only — expect healthy: true" }
@@ -103,6 +109,7 @@
     { "file": "fix-phase52-recipe-orphan-repair.sql", "note": "Repair Lane 2 recipe ingredient orphans before health check" },
     { "file": "fix-phase50-ingredient-categories.sql", "note": "Categorise phase48 Uncategorised ingredients" },
     { "file": "fix-phase51-soft-launch-pages.sql", "note": "Register core pages for soft launch" },
+    { "file": "fix-phase53-print-fulfillment.sql", "note": "Print & Post Phase 1 — admin inbox, status workflow, member orders, confirmation emails" },
     { "file": "RUN-LIVE-FOLLOWUP.sql", "note": "Phases 49–51 + health (incremental live run)" }
   ],
   "live_cleanup_order_note": "After RUN-LIVE-CLEANUP, run RUN-ALL-REMAINING.sql or RUN-LIVE-FOLLOWUP.sql for latest content"

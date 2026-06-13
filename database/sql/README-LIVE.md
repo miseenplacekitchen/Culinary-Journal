@@ -2,6 +2,16 @@
 
 Use this order on **production** after deploying site code from GitHub.
 
+## Print & Post Phase 1 (after phase31)
+
+| Step | File | Expect |
+|------|------|--------|
+| 1 | Deploy site code from GitHub | Admin → Finance → **Print Orders** tab; Print Studio **My Print Orders** |
+| 2 | `fix-phase53-print-fulfillment.sql` | Run after `fix-phase31-print-orders.sql`; status workflow + RPCs + email templates |
+| 3 | Place a test order (signed in) | Order ref on confirmation; row in admin inbox; `print_order_received` queued |
+
+Payment checkout is **not** in this phase — manual fulfilment only.
+
 ## Garden go-live (step 2j — after v3 + v4)
 
 | Step | File | Expect |

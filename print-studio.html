@@ -332,6 +332,15 @@
     .po-confirm-icon { font-size:48px; margin-bottom:12px; }
     .po-confirm-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:700; color:var(--text-high); margin-bottom:8px; }
     .po-confirm-text { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); line-height:1.6; }
+    .po-orders-wrap { margin-top:8px; }
+    .po-orders-table { width:100%; border-collapse:collapse; font-family:'DM Sans',sans-serif; font-size:12px; }
+    .po-orders-table th { text-align:left; padding:8px 10px; font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--text-mid); border-bottom:1px solid var(--border); }
+    .po-orders-table td { padding:10px; border-bottom:1px solid rgba(255,255,255,0.06); color:var(--text-high); vertical-align:top; }
+    .po-status-pill { display:inline-block; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600; text-transform:capitalize; }
+    .po-status-pending { background:rgba(201,153,119,.15); color:#c97; }
+    .po-status-processing { background:rgba(91,143,212,.15); color:#5B8FD4; }
+    .po-status-shipped { background:rgba(76,175,118,.15); color:#4caf76; }
+    .po-status-cancelled { background:rgba(255,255,255,.06); color:var(--text-mid); }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -1479,6 +1488,7 @@ function setPrintMode(mode, btn) {
   if (mode === 'order') {
     if (homeSection)  homeSection.style.display  = 'none';
     if (orderSection) orderSection.style.display = 'block';
+    loadMyPrintOrders();
   } else {
     if (homeSection)  homeSection.style.display  = '';
     if (orderSection) orderSection.style.display = 'none';
@@ -1519,6 +1529,19 @@ async function submitOrder() {
   if (!first || !addr1 || !city || !post) {
     alert('Please fill in your name and delivery address.'); return;
   }
+  var stored = localStorage.getItem('tcj_session');
+  if (!stored) {
+    alert('Please sign in to place a Print & Post order.');
+    window.location.href = 'login.html?redirect=' + encodeURIComponent('print-studio.html');
+    return;
+  }
+  var session;
+  try { session = JSON.parse(stored); } catch (_) { session = null; }
+  if (!session || !session.access_token) {
+    alert('Please sign in to place a Print & Post order.');
+    window.location.href = 'login.html?redirect=' + encodeURIComponent('print-studio.html');
+    return;
+  }
   var payload = {
     recipe_id: currentRecipe && currentRecipe.id,
     recipe_name: currentRecipe && currentRecipe.recipe_name,
@@ -1529,28 +1552,94 @@ async function submitOrder() {
     delivery: { first: first, last: last, addr1: addr1, addr2: addr2, city: city, postcode: post, country: country },
     preview_meta: { card_count_label: document.getElementById('ps-card-count') ? document.getElementById('ps-card-count').textContent : '', recipes: currentRecipes.length || 1 }
   };
+  var submitBtn = document.querySelector('.po-submit');
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting…'; }
+  var orderId = null;
   try {
-    var queue = JSON.parse(localStorage.getItem('tcj_print_order_queue') || '[]');
-    queue.push({ ts: Date.now(), payload: payload });
-    localStorage.setItem('tcj_print_order_queue', JSON.stringify(queue.slice(-30)));
-  } catch(_){}
-  try {
-    var stored = localStorage.getItem('tcj_session');
-    if (stored) {
-      var session = JSON.parse(stored);
-      if (session && session.access_token) {
-        await fetch(window.SUPA_URL + '/rest/v1/rpc/submit_print_order_request', {
-          method: 'POST',
-          headers: { apikey: window.SUPA_KEY, Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ p_payload: payload })
-        });
-      }
+    var res = await fetch(window.SUPA_URL + '/rest/v1/rpc/submit_print_order_request', {
+      method: 'POST',
+      headers: { apikey: window.SUPA_KEY, Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify({ p_payload: payload })
+    });
+    var body = await res.json().catch(function(){ return null; });
+    if (!res.ok) {
+      var msg = (body && (body.message || body.error || body.hint)) || ('HTTP ' + res.status);
+      throw new Error(msg);
     }
-  } catch(_){}
+    orderId = typeof body === 'string' ? body : (Array.isArray(body) ? body[0] : body);
+    if (orderId && typeof orderId === 'object') orderId = orderId.id || null;
+  } catch (e) {
+    try {
+      var queue = JSON.parse(localStorage.getItem('tcj_print_order_queue') || '[]');
+      queue.push({ ts: Date.now(), payload: payload, error: e.message });
+      localStorage.setItem('tcj_print_order_queue', JSON.stringify(queue.slice(-30)));
+    } catch(_){}
+    alert('Could not submit order: ' + e.message + '\n\nIf this is your first order, ask admin to run fix-phase53-print-fulfillment.sql on Supabase.');
+    if (submitBtn) { submitBtn.disabled = false; updatePrice(); }
+    return;
+  }
   var form = document.getElementById('po-form-wrap');
   var conf = document.getElementById('po-confirm');
+  var refEl = document.getElementById('po-order-ref');
+  if (refEl) refEl.textContent = orderId ? String(orderId).slice(0, 8).toUpperCase() : '—';
   if (form) form.style.display = 'none';
   if (conf) conf.style.display = 'block';
+  if (submitBtn) { submitBtn.disabled = false; updatePrice(); }
+  loadMyPrintOrders();
+}
+
+function poStatusClass(st) {
+  return { pending: 'po-status-pending', processing: 'po-status-processing', shipped: 'po-status-shipped', cancelled: 'po-status-cancelled' }[st] || 'po-status-pending';
+}
+
+function poStatusLabel(st) {
+  return { pending: 'Pending', processing: 'Processing', shipped: 'Shipped', cancelled: 'Cancelled' }[st] || st || 'Pending';
+}
+
+async function loadMyPrintOrders() {
+  var wrap = document.getElementById('po-my-orders');
+  var body = document.getElementById('po-my-orders-body');
+  if (!wrap || !body) return;
+  var stored = localStorage.getItem('tcj_session');
+  if (!stored) {
+    wrap.style.display = 'none';
+    return;
+  }
+  var session;
+  try { session = JSON.parse(stored); } catch (_) { session = null; }
+  if (!session || !session.access_token) {
+    wrap.style.display = 'none';
+    return;
+  }
+  body.innerHTML = '<tr><td colspan="5" style="color:var(--text-mid);padding:12px">Loading your orders…</td></tr>';
+  wrap.style.display = 'block';
+  try {
+    var res = await fetch(window.SUPA_URL + '/rest/v1/rpc/get_my_print_orders', {
+      method: 'POST',
+      headers: { apikey: window.SUPA_KEY, Authorization: 'Bearer ' + session.access_token, 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    var rows = await res.json().catch(function(){ return []; });
+    if (!res.ok) throw new Error((rows && rows.message) || 'Could not load orders');
+    if (!Array.isArray(rows) || !rows.length) {
+      body.innerHTML = '<tr><td colspan="5" style="color:var(--text-mid);padding:12px">No orders yet — place one below.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(function(r) {
+      var dt = r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+      var ref = r.id ? String(r.id).slice(0, 8).toUpperCase() : '—';
+      var st = r.status || 'pending';
+      return '<tr>' +
+        '<td>' + dt + '</td>' +
+        '<td><code style="font-size:11px">' + ref + '</code></td>' +
+        '<td>' + (r.recipe_name || '—') + '</td>' +
+        '<td>' + (r.card_count || '—') + ' · ' + (r.card_quality || 'standard') + '</td>' +
+        '<td><span class="po-status-pill ' + poStatusClass(st) + '">' + poStatusLabel(st) + '</span></td>' +
+        '</tr>';
+    }).join('');
+  } catch (e) {
+    body.innerHTML = '<tr><td colspan="5" style="color:var(--text-mid);padding:12px">Order history unavailable — ' + e.message + '</td></tr>';
+  }
 }
 
 function resetOrder() {
@@ -1566,13 +1655,32 @@ function resetOrder() {
   <div class="po-wrap">
 
     <div class="po-section">
-      <div class="po-coming-badge">📬 Preview — order intent saved · payment &amp; dispatch when fulfilment launches</div>
+      <div class="po-coming-badge">📬 Orders tracked · confirmation email when cron runs · payment not taken yet</div>
       <div class="po-section-title">How it works</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid)">
         <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:20px;flex-shrink:0">1️⃣</span><div><div style="color:var(--text-high);font-weight:600;margin-bottom:2px">Choose your recipe</div>Select a recipe from your journal to print</div></div>
         <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:20px;flex-shrink:0">2️⃣</span><div><div style="color:var(--text-high);font-weight:600;margin-bottom:2px">Pick size &amp; style</div>Choose card size, layout and quantity</div></div>
         <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:20px;flex-shrink:0">3️⃣</span><div><div style="color:var(--text-high);font-weight:600;margin-bottom:2px">We print &amp; post</div>Cards are printed by a specialist and mailed to you</div></div>
         <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:20px;flex-shrink:0">4️⃣</span><div><div style="color:var(--text-high);font-weight:600;margin-bottom:2px">Delivered beautifully</div>Ready to use, gift or frame</div></div>
+      </div>
+    </div>
+
+    <!-- My orders -->
+    <div class="po-section po-orders-wrap" id="po-my-orders" style="display:none">
+      <div class="po-section-title">My Print Orders</div>
+      <div style="overflow-x:auto">
+        <table class="po-orders-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Ref</th>
+              <th>Recipe</th>
+              <th>Cards</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="po-my-orders-body"></tbody>
+        </table>
       </div>
     </div>
 
@@ -1623,17 +1731,18 @@ function resetOrder() {
         <div class="po-label">Country</div>
         <input class="po-input" id="po-country" placeholder="United Kingdom">
         <button class="po-submit" onclick="submitOrder()">📬 Place Order — <span id="po-btn-price">£4.99</span></button>
-        <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);text-align:center;margin-top:8px">Secure checkout · No payment taken until fulfilment launches</div>
+        <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-mid);text-align:center;margin-top:8px">We will email you a confirmation · Payment collected before printing</div>
       </div>
     </div>
 
     <!-- Confirmation -->
     <div class="po-confirm" id="po-confirm">
       <div class="po-confirm-icon">🎉</div>
-      <div class="po-confirm-title">Order Request Received!</div>
+      <div class="po-confirm-title">Order Received!</div>
       <div class="po-confirm-text">
-        Thank you! We've captured your order details. When the print service launches you'll be among the first to receive your cards.<br><br>
-        We'll send a confirmation and payment link to your email address.
+        Thank you — your order is in our queue.<br><br>
+        Reference: <strong id="po-order-ref">—</strong><br><br>
+        We will email you a confirmation (when the email cron runs). Payment is collected before we print and dispatch.
       </div>
       <button class="po-submit" style="max-width:280px;margin:20px auto 0" onclick="resetOrder()">Place Another Order</button>
     </div>

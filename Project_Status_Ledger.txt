@@ -96,6 +96,7 @@ Phase | Label                         | Status
 fix-phase29-library-content.sql      | 5 ingredient profiles (ginger…flour) | DONE ✅ Betty — potato→Sebago (248)
 fix-phase29-library-submissions.sql | Member library submit + admin RPCs  | DONE ✅ Betty
 fix-phase31-print-orders.sql        | Print & Post order intent queue      | DONE ✅ Betty
+fix-phase53-print-fulfillment.sql   | Print admin inbox + status workflow + emails | CODE ✅ — Betty run pending
 fix-phase32-batch.sql               | Household meals, slots, allergy, lib approve | DONE ✅ Betty
 fix-phase32-library-profiles.sql    | Desiree + Kipfler potato profiles    | DONE ✅ Betty (249, 250)
 fix-phase33-batch.sql               | Saves ranking, sync conflicts, regional hints, print gating | DONE ✅ Betty
@@ -160,6 +161,13 @@ Phase 31 Print Studio:
   • Premium theme labels (soft-launch free) · save/restore print profile
   • Swipe nav (←/→ keys) · copy plain text · Print & Post mode tab restored
   • Order intent: local queue + submit_print_order_request RPC (preview only)
+
+Phase 53 Print & Post fulfilment (Phase 1 — no payment):
+  • SQL: status workflow pending → processing → shipped | cancelled; admin_notes; email templates
+  • RPCs: get_my_print_orders, admin_get_print_orders, admin_update_print_order_status, admin_count_print_orders
+  • Admin: Finance → Print Orders inbox (filter, status, notes, CSV export, copy JSON)
+  • Member: print-studio.html — submit with order ref + My Print Orders table
+  • Betty: run fix-phase53-print-fulfillment.sql on Supabase (after phase31)
 
 Phase 28: master list reopened · grocery archive→pantry · MP-06 drag
 

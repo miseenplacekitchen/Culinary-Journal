@@ -125,7 +125,7 @@ function switchFinanceTab(tab) {
     document.querySelectorAll('#v-finance .ap-inner-tab').forEach(function(t){
       t.classList.toggle('active', t.dataset.tab === tab);
     });
-    ['fi-overview','fi-members','fi-pricing','fi-history','fi-interface'].forEach(function(p){
+    ['fi-overview','fi-members','fi-pricing','fi-print-orders','fi-history','fi-interface'].forEach(function(p){
       var el = document.getElementById('upanel-' + p);
       if (el) el.style.display = p === tab ? 'block' : 'none';
     });
@@ -135,6 +135,7 @@ function switchFinanceTab(tab) {
     if (tab === 'fi-overview') buildFiOverview(container);
     else if (tab === 'fi-members')  buildFiMembers(container);
     else if (tab === 'fi-pricing')  buildFiPricing(container);
+    else if (tab === 'fi-print-orders') buildFIPrintOrders(container);
     else if (tab === 'fi-history')    buildFiHistory(container);
     else if (tab === 'fi-interface') buildFiInterface(container);
   } catch(e) { alert('Finance tab error: ' + e.message); }

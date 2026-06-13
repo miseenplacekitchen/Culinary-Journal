@@ -110,7 +110,8 @@ C · DECIDE — Betty decision before build
   • Hero 4.1 live verify (CSS shipped — Betty visual check on live recipe page)
 
   Print Studio
-  • Print & Post payment + dispatch fulfilment (preview only — needs payment partner)
+  • Print & Post payment checkout (Phase 1 ops shipped — Betty runs fix-phase53-print-fulfillment.sql)
+  • PayPal / payment partner still blocked on monetisation decisions
 
   Legal
   • Lawyer review of policy drafts

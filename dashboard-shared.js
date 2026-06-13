@@ -363,6 +363,10 @@ async function init() {
       var vocEl = document.getElementById('badge-voc');
       if (vocEl) { vocEl.textContent = n||''; vocEl.style.display = n ? 'inline-block' : 'none'; }
     }).catch(function(e){ console.warn('badge feedback', e); });
+    rpc('admin_count_print_orders', { p_status: 'pending' }).then(function(n){
+      var el = document.getElementById('badge-print-orders');
+      if (el) { el.textContent = n || ''; el.style.display = (n && n > 0) ? 'inline-block' : 'none'; }
+    }).catch(function(e){ console.warn('badge print orders', e); });
   } catch(e) {
     showFatalError('Dashboard error: ' + e.message);
   }
