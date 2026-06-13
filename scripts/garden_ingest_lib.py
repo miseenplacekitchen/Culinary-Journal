@@ -12,7 +12,17 @@ CLIMATE_SECTIONS = {
 VARIETY_TITLE_RE = re.compile(
     r"^[A-Z0-9][^\n]{1,70}?(?:\s+[🏆🌱🧬🌏]+)+\s*$"
 )
-FIELD_KEYS = ("origin", "traits", "flesh/fruit", "flesh", "yield", "availability")
+PAREN_LINEAGE_RE = re.compile(
+    r"\((HEIRLOOM|OPEN[- ]?POLLINATED|HYBRID|INDIGENOUS|F1)\)",
+    re.I,
+)
+FIELD_STARTS = (
+    "origin:", "traits:", "flesh", "yield:", "notes:", "availability:",
+    "requirements:", "type:", "maturity:", "adaptation:",
+    "root:", "quality:", "disease resistance:", "climate required:",
+    "commercial use:", "processing:", "purpose:", "issue:",
+    "distinguishing feature:", "breeding focus:", "flowering:", "ginsenosides:",
+)
 
 
 def slugify(name: str) -> str:
@@ -26,6 +36,16 @@ def esc_sql(s: str) -> str:
 
 
 def lineage_from_title(title: str) -> str:
+    m = PAREN_LINEAGE_RE.search(title)
+    if m:
+        tag = m.group(1).upper().replace("-", " ").replace("  ", " ")
+        if "HEIRLOOM" in tag:
+            return "heirloom"
+        if "HYBRID" in tag or tag.strip() == "F1":
+            return "hybrid"
+        if "INDIGENOUS" in tag:
+            return "indigenous"
+        return "open_pollinated"
     if "🌏" in title and "🌱" in title:
         return "indigenous"
     if "🏆" in title:
@@ -40,30 +60,69 @@ def lineage_from_title(title: str) -> str:
 
 
 def clean_variety_name(title: str) -> str:
-    return re.sub(r"\s*[🏆🌱🧬🌏]+\s*$", "", title).strip()
+    name = re.sub(r"\s*[🏆🌱🧬🌏]+\s*$", "", title).strip()
+    name = re.sub(r"\s*\((?:HEIRLOOM|OPEN[- ]?POLLINATED|HYBRID|INDIGENOUS|F1)\)\s*$", "", name, flags=re.I)
+    return name.strip()
 
 
 def species_slug_from_name(species: str) -> str:
     return slugify(species.replace(" Assessment", ""))
 
 
+def is_climate_noise(line: str) -> bool:
+    upper = line.upper()
+    if upper.startswith("ADDITIONAL "):
+        return True
+    if "VARIETIES SUITABLE" in upper or "VARIETY SUITABLE" in upper:
+        return True
+    if re.match(r"^\d+\+?\s", line):
+        return True
+    return False
+
+
+def is_field_line(line: str) -> bool:
+    low = line.lower()
+    return any(low.startswith(k) for k in FIELD_STARTS)
+
+
 def detect_climate_section(line: str) -> str | None:
     upper = line.upper()
-    if "BRISBANE" in upper and "VARIET" in upper:
+    if "BRISBANE" in upper and ("VARIETIES" in upper or "VARIETY" in upper):
         return CLIMATE_SECTIONS["BRISBANE"]
-    if "KERALA" in upper and "VARIET" in upper:
+    if "KERALA" in upper and ("VARIETIES" in upper or "VARIETY" in upper):
         return CLIMATE_SECTIONS["KERALA"]
+    # Reference cultivar blocks without Brisbane/Kerala header (e.g. Ginseng Panax sections)
+    if "CULTIVARS" in upper and "SUMMARY" not in upper:
+        return CLIMATE_SECTIONS["BRISBANE"]
     return None
 
 
-def is_variety_title(line: str) -> bool:
-    if not line or len(line) < 3:
+def is_variety_title(line: str, next_line: str | None = None) -> bool:
+    if not line or len(line) < 2:
         return False
-    if line.startswith(("Origin:", "Traits:", "Flesh", "Yield:", "Notes:", "Availability:", "Requirements:")):
+    if is_field_line(line):
         return False
-    if "VARIETIES" in line.upper() or line.startswith("Brisbane Summary"):
+    if is_climate_noise(line):
         return False
-    return bool(VARIETY_TITLE_RE.match(line))
+    if line.startswith("Brisbane Summary") or line.startswith("Kerala Summary"):
+        return False
+    if "VARIETIES" in line.upper() and "(" in line:
+        return False
+    if VARIETY_TITLE_RE.match(line):
+        return True
+    if PAREN_LINEAGE_RE.search(line):
+        return True
+    if re.match(
+        r"^(HEIRLOOM|OPEN[- ]?POLLINATED|HYBRID|INDIGENOUS|F1)"
+        r"(\s*/\s*(HEIRLOOM|OPEN[- ]?POLLINATED|HYBRID|INDIGENOUS|F1))*$",
+        line,
+        re.I,
+    ):
+        return False
+    if next_line and is_field_line(next_line) and ":" not in line:
+        if len(line) <= 80 and not line.endswith("."):
+            return True
+    return False
 
 
 def parse_fields(lines: list[str]) -> dict[str, str]:
@@ -84,8 +143,39 @@ def parse_fields(lines: list[str]) -> dict[str, str]:
     return fields
 
 
+def variety_from_fields(block_title: str, fields: dict[str, str]) -> dict[str, str]:
+    notes_key = next((k for k in fields if k.startswith("notes")), "notes")
+    traits = fields.get("traits", fields.get("root", ""))
+    type_val = fields.get("type", "")
+    if type_val and traits:
+        traits = type_val + "; " + traits
+    elif type_val:
+        traits = type_val
+    extra_notes = []
+    for key in (
+        "quality", "disease resistance", "climate required", "commercial use",
+        "processing", "purpose", "issue", "distinguishing feature", "breeding focus",
+        "flowering", "ginsenosides",
+    ):
+        if fields.get(key):
+            extra_notes.append(fields[key])
+    growing = fields.get(notes_key, fields.get("adaptation", fields.get("notes", "")))
+    if extra_notes:
+        growing = (growing + " " + " ".join(extra_notes)).strip()
+    yield_notes = fields.get("yield", fields.get("maturity", ""))
+    return {
+        "origin": fields.get("origin", ""),
+        "traits": traits,
+        "flesh_fruit": fields.get("flesh/fruit", fields.get("flesh", "")),
+        "yield_notes": yield_notes,
+        "growing_notes": growing,
+        "availability": fields.get("availability", ""),
+    }
+
+
 def parse_assessment_text(text: str, species: str = "") -> dict:
     """Parse full assessment text into species + variety records with all inbox fields."""
+    raw_lines = [raw.strip() for raw in text.splitlines() if raw.strip()]
     varieties: list[dict] = []
     current_climate: str | None = None
     block_title: str | None = None
@@ -104,41 +194,38 @@ def parse_assessment_text(text: str, species: str = "") -> dict:
             block_lines = []
             return
         fields = parse_fields(block_lines)
-        notes_key = next((k for k in fields if k.startswith("notes")), "notes")
+        parsed = variety_from_fields(block_title, fields)
         idx = order_by_climate.get(current_climate, 0)
         varieties.append({
             "name": name,
             "slug": slugify(name),
             "lineage_type": lineage_from_title(block_title),
             "climate_slug": current_climate,
-            "origin": fields.get("origin", ""),
-            "traits": fields.get("traits", ""),
-            "flesh_fruit": fields.get("flesh/fruit", fields.get("flesh", "")),
-            "yield_notes": fields.get("yield", ""),
-            "growing_notes": fields.get(notes_key, ""),
-            "availability": fields.get("availability", ""),
             "sort_order": idx,
+            **parsed,
         })
         order_by_climate[current_climate] = idx + 1
         block_title = None
         block_lines = []
 
-    for raw in text.splitlines():
-        line = raw.strip()
-        if not line:
-            continue
+    for i, line in enumerate(raw_lines):
         climate = detect_climate_section(line)
         if climate:
             flush_block()
             current_climate = climate
             continue
-        if line.startswith("Brisbane Summary"):
+        if line.startswith("Brisbane Summary") or line.startswith("Kerala Summary"):
+            flush_block()
+            current_climate = None
+            continue
+        if line.startswith("📊") or line.startswith("✅ FINAL") or line.upper().startswith("END OF ASSESSMENT"):
             flush_block()
             current_climate = None
             continue
         if not current_climate:
             continue
-        if is_variety_title(line):
+        next_line = raw_lines[i + 1] if i + 1 < len(raw_lines) else None
+        if is_variety_title(line, next_line):
             flush_block()
             block_title = line
             block_lines = []
@@ -155,6 +242,47 @@ def parse_assessment_text(text: str, species: str = "") -> dict:
         "varieties": varieties,
         "variety_count": len(varieties),
     }
+
+
+def extract_species_meta(text: str, species: str = "") -> dict:
+    """Lightweight header parse for kitchen profile SQL (family, requirements, summary)."""
+    meta = {
+        "species": species,
+        "species_slug": species_slug_from_name(species),
+        "botanical_name": "",
+        "plant_family": "",
+        "requirements": "",
+        "care_summary": "",
+        "gmo_note": "",
+    }
+    in_brisbane = False
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        low = line.lower()
+        if line.startswith("Plants:") or line.startswith("Plant:"):
+            meta["species"] = line.split(":", 1)[1].strip() or species
+            meta["species_slug"] = species_slug_from_name(meta["species"])
+        if low.startswith("family:"):
+            meta["plant_family"] = line.split(":", 1)[1].strip()
+        if "(" in line and ")" in line and not meta["botanical_name"]:
+            m = re.search(r"\(([A-Z][a-z]+(?:\s+[a-z]+)+)\)", line)
+            if m and len(m.group(1).split()) >= 2:
+                meta["botanical_name"] = m.group(1)
+        if detect_climate_section(line):
+            in_brisbane = "BRISBANE" in line.upper()
+        if in_brisbane and low.startswith("requirements:"):
+            meta["requirements"] = line.split(":", 1)[1].strip()
+        if line.startswith("Brisbane Summary"):
+            meta["care_summary"] = line.split(":", 1)[-1].strip() if ":" in line else ""
+        if "non-gmo" in low or "gmo status" in low:
+            meta["gmo_note"] = line
+    if not meta["care_summary"] and meta["requirements"]:
+        meta["care_summary"] = meta["requirements"]
+    if not meta["care_summary"]:
+        meta["care_summary"] = f"Curated {meta['species']} profile — see cultivar notes for Brisbane and Kerala picks."
+    return meta
 
 
 def read_docx(path: Path) -> str:

@@ -1,0 +1,72 @@
+{
+  "species": "Illawara Plum",
+  "species_slug": "illawara-plum",
+  "varieties": [
+    {
+      "name": "Podocarpus elatus 'Wild Type' (Queensland Provenance) \ud83c\udfc6 \ud83c\udf31",
+      "slug": "podocarpus-elatus-wild-type-queensland-provenance",
+      "lineage_type": "indigenous",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 0,
+      "origin": "Native to Queensland and northern NSW rainforests; naturally occurring throughout Brisbane region",
+      "traits": "30-36m potential height in wild, 10-15m typical in cultivation; straight trunk up to 1.5m diameter; dense dark green canopy; fissured brown bark",
+      "flesh_fruit": "",
+      "yield_notes": "Moderate to high productivity on mature female trees (10+ years); fruit drops when fully ripe",
+      "growing_notes": "Excellent natural disease resistance; few pest issues; adapted to local pathogens",
+      "availability": ""
+    },
+    {
+      "name": "Podocarpus elatus 'Female Selection' \ud83c\udfc6 \ud83c\udf31",
+      "slug": "podocarpus-elatus-female-selection",
+      "lineage_type": "indigenous",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 1,
+      "origin": "Queensland/Brisbane local seed sources; selected for fruiting",
+      "traits": "Produces edible fruit receptacles; same growth characteristics as wild type; typically 10-15m in cultivation",
+      "flesh_fruit": "",
+      "yield_notes": "Moderate to high; productivity increases with age; requires cross-pollination from male tree",
+      "growing_notes": "",
+      "availability": "Available at IndigiGrow (La Perouse Nursery NSW), Brisbane native plant nurseries. Often labeled 'Female' to distinguish from male plants."
+    },
+    {
+      "name": "Podocarpus elatus 'Male Selection' \ud83c\udfc6 \ud83c\udf31",
+      "slug": "podocarpus-elatus-male-selection",
+      "lineage_type": "indigenous",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 2,
+      "origin": "Queensland/Brisbane local seed sources; selected for pollen production",
+      "traits": "Produces male pollen cones 2-3cm long; narrowly cylindrical catkin-like structures; same vegetative growth as wild type",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": "Available at Brisbane native nurseries; essential companion to female trees for fruit production"
+    },
+    {
+      "name": "Podocarpus elatus 'Ornamental/Street Tree Selection'",
+      "slug": "podocarpus-elatus-ornamental-street-tree-selection",
+      "lineage_type": "open_pollinated",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 3,
+      "origin": "Selected from Queensland/Brisbane populations for landscaping use",
+      "traits": "Attractive dense conical crown; shiny narrow dark green leaves; used extensively as street tree in Brisbane and Sydney; grows 5-10m in urban conditions",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": "Widely available at Brisbane and Queensland nurseries for landscaping; often sold in larger 200mm pots"
+    },
+    {
+      "name": "Podocarpus elatus 'Compact/Container Selection'",
+      "slug": "podocarpus-elatus-compact-container-selection",
+      "lineage_type": "open_pollinated",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 4,
+      "origin": "Selected from slower-growing Queensland specimens",
+      "traits": "Naturally slower growing; denser branching; can be maintained at 2-5m with pruning; suitable for large pots",
+      "flesh_fruit": "",
+      "yield_notes": "Lower fruit production due to size; suitable for ornamental use with occasional fruit",
+      "growing_notes": "",
+      "availability": "NOT AVAILABLE in India; would require importation from Australia"
+    }
+  ],
+  "variety_count": 5
+}

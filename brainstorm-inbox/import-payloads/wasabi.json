@@ -1,0 +1,85 @@
+{
+  "species": "Wasabi",
+  "species_slug": "wasabi",
+  "varieties": [
+    {
+      "name": "Mazuma",
+      "slug": "mazuma",
+      "lineage_type": "heirloom",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 0,
+      "origin": "Wakayama Prefecture, Japan (former Mazuma Village); 1950s development; now widely cultivated in Shizuoka",
+      "traits": "Purple-red stems and leaf bases, dark green heart-shaped leaves, longer slender rhizomes (6-12 inches), spreading growth habit, white edible flowers in spring",
+      "flesh_fruit": "",
+      "yield_notes": "Takes 18-36 months to mature; slow-growing but highly prized for quality",
+      "growing_notes": "",
+      "availability": "Daley's Fruit Nursery (QLD), Australian Plants Online, The Diggers Club. Usually available July-December. Limited commercial production in Tasmania only."
+    },
+    {
+      "name": "Daruma",
+      "slug": "daruma",
+      "lineage_type": "heirloom",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 1,
+      "origin": "Shimane Prefecture, Japan; 1970s development; blue-stem type",
+      "traits": "Green stems, dark green heart-shaped leaves, plumper shorter rhizomes than Mazuma, upright growth habit, grows faster (12-18 months)",
+      "flesh_fruit": "",
+      "yield_notes": "12-18 months to maturity; faster-growing than Mazuma; produces minimal offshoot branching; superior export quality",
+      "growing_notes": "",
+      "availability": ""
+    },
+    {
+      "name": "Green Thumb",
+      "slug": "green-thumb",
+      "lineage_type": "hybrid",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 2,
+      "origin": "Taiwan development; cultivated successfully in Pacific Northwest USA",
+      "traits": "Vibrant green color, larger leaves than other varieties, fast-growing (12-14 months), more disease-resistant",
+      "flesh_fruit": "",
+      "yield_notes": "Faster maturity under certain conditions; particularly good variety for leaf production",
+      "growing_notes": "",
+      "availability": "Not currently available from Australian suppliers; would need import as tissue culture or seed."
+    },
+    {
+      "name": "Shimane / Shimane No. 3",
+      "slug": "shimane-shimane-no-3",
+      "lineage_type": "heirloom",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 3,
+      "origin": "Shimane Prefecture, Japan; traditional cultivar",
+      "traits": "Delicate spindle-shaped roots, spreading growth habit, tasty stems, leaves, and flowers",
+      "flesh_fruit": "",
+      "yield_notes": "High quality rhizomes; susceptible to disease in humid conditions",
+      "growing_notes": "",
+      "availability": "Not available in Australia; Japanese import only."
+    },
+    {
+      "name": "Traditional Japanese Varieties",
+      "slug": "traditional-japanese-varieties",
+      "lineage_type": "heirloom",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 4,
+      "origin": "",
+      "traits": "",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": ""
+    },
+    {
+      "name": "Indigenous/Traditional Kerala Alternatives",
+      "slug": "indigenous-traditional-kerala-alternatives",
+      "lineage_type": "indigenous",
+      "climate_slug": "tropical-monsoon",
+      "sort_order": 0,
+      "origin": "",
+      "traits": "",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": ""
+    }
+  ],
+  "variety_count": 6
+}

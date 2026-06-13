@@ -12,6 +12,17 @@ Use this order on **production** after deploying site code from GitHub.
 
 Payment checkout is **not** in this phase — manual fulfilment only.
 
+## Garden Phase 54 (profiles + parser v2 — after go-live)
+
+| Step | File | Expect |
+|------|------|--------|
+| 1 | Deploy site code from GitHub | Updated parser scripts in repo |
+| 2 | `fix-phase54-import-payload-refresh.sql` | 12 refreshed payloads; queue status → parsed for re-apply |
+| 3 | `fix-phase54-garden-kitchen-profiles.sql` | 15 kitchen species: care_summary, humid-subtropical care + calendar |
+| 4 | Admin → GM Interface | **Apply all pending imports** → publish species when ready |
+
+Parser v2 fixes parenthetical docx format (Carrot, Peas, etc.) and adds mangosteen summary cultivars.
+
 ## Garden go-live (step 2j — after v3 + v4)
 
 | Step | File | Expect |

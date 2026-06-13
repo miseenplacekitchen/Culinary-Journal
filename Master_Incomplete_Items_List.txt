@@ -96,8 +96,8 @@ C · DECIDE — Betty decision before build
   Remaining OPEN items:
 
   Garden (v4 wave 3 — GM admin parity ✅ shipped · go-live bundle ready)
-  • Betty SQL: RUN-GARDEN-GO-LIVE.sql (pages visible + 208 shells + batch cultivar apply)
-  • After SQL: publish species in GM when curated (Tomato already live)
+  • Betty SQL: RUN-GARDEN-GO-LIVE.sql ✅ + fix-phase54 (kitchen profiles + payload refresh)
+  • After phase54 SQL: GM → Apply all pending imports → publish species when curated (Tomato live)
   • Ongoing: guilds, media, Excel/PPT export (deferred)
 
   Library (ongoing content)

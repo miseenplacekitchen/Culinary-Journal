@@ -1,0 +1,85 @@
+{
+  "species": "Wisteria",
+  "species_slug": "wisteria",
+  "varieties": [
+    {
+      "name": "Alba (Japanese White)",
+      "slug": "alba-japanese-white",
+      "lineage_type": "heirloom",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 0,
+      "origin": "Japan, 1800s",
+      "traits": "White flowers, 60cm racemes",
+      "flesh_fruit": "",
+      "yield_notes": "Abundant",
+      "growing_notes": "Excellent Brisbane subtropical adaptation, heat tolerant",
+      "availability": "Australian nurseries"
+    },
+    {
+      "name": "Royal Purple",
+      "slug": "royal-purple",
+      "lineage_type": "heirloom",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 1,
+      "origin": "Japan",
+      "traits": "Dark violet, 30-50cm racemes",
+      "flesh_fruit": "",
+      "yield_notes": "Heavy",
+      "growing_notes": "Well-suited Brisbane climate",
+      "availability": "Queensland nurseries"
+    },
+    {
+      "name": "Macrobotrys",
+      "slug": "macrobotrys",
+      "lineage_type": "heirloom",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 2,
+      "origin": "Japan, historic",
+      "traits": "Lilac-purple, up to 100cm racemes",
+      "flesh_fruit": "",
+      "yield_notes": "Spectacular",
+      "growing_notes": "Performs well Brisbane, needs pergola",
+      "availability": "Specialist nurseries"
+    },
+    {
+      "name": "Petrea volubilis (Purple Wreath)",
+      "slug": "petrea-volubilis-purple-wreath",
+      "lineage_type": "open_pollinated",
+      "climate_slug": "tropical-monsoon",
+      "sort_order": 0,
+      "origin": "Central America, Kerala-adapted",
+      "traits": "Purple cascading flowers, evergreen climber",
+      "flesh_fruit": "",
+      "yield_notes": "Excellent",
+      "growing_notes": "BEST Kerala alternative, monsoon-adapted",
+      "availability": "Kerala nurseries"
+    },
+    {
+      "name": "Thunbergia grandiflora",
+      "slug": "thunbergia-grandiflora",
+      "lineage_type": "indigenous",
+      "climate_slug": "tropical-monsoon",
+      "sort_order": 1,
+      "origin": "India INDIGENOUS",
+      "traits": "Blue trumpet flowers",
+      "flesh_fruit": "",
+      "yield_notes": "Heavy",
+      "growing_notes": "Native to Kerala region, perfect monsoon adaptation",
+      "availability": "All Kerala nurseries"
+    },
+    {
+      "name": "Clitoria ternatea",
+      "slug": "clitoria-ternatea",
+      "lineage_type": "indigenous",
+      "climate_slug": "tropical-monsoon",
+      "sort_order": 2,
+      "origin": "India INDIGENOUS Kerala",
+      "traits": "Blue pea-shaped flowers",
+      "flesh_fruit": "",
+      "yield_notes": "Good",
+      "growing_notes": "Traditional Kerala medicinal plant, monsoon-adapted",
+      "availability": "Kerala traditional sources"
+    }
+  ],
+  "variety_count": 6
+}

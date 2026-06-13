@@ -1,0 +1,46 @@
+{
+  "species": "Betel Leaf",
+  "species_slug": "betel-leaf",
+  "varieties": [
+    {
+      "name": "Generic Piper betle",
+      "slug": "generic-piper-betle",
+      "lineage_type": "open_pollinated",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 0,
+      "origin": "Southeast Asia (Malaysia/Indonesia origin)",
+      "traits": "Evergreen climbing vine to 3m; glossy heart-shaped leaves 8-12cm; adventitious roots at nodes",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": "RARE in Brisbane. Available from specialist online nurseries: Shaman Australis, Seeds of India. Not stocked by mainstream Queensland nurseries."
+    },
+    {
+      "name": "Venmony Vettila (HEIRLOOM, INDIGENOUS)",
+      "slug": "venmony-vettila-heirloom-indigenous",
+      "lineage_type": "open_pollinated",
+      "climate_slug": "tropical-monsoon",
+      "sort_order": 0,
+      "origin": "Venmony village near Chengannur, Kerala (100+ years history)",
+      "traits": "Premium quality; large size 12-16cm; glossy dark green; smooth texture",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": "Local Kerala nurseries, Greens of Kerala (online), traditional farmers in Venmony/Chengannur region"
+    },
+    {
+      "name": "Standard Piper sarmentosum",
+      "slug": "standard-piper-sarmentosum",
+      "lineage_type": "open_pollinated",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 1,
+      "origin": "Southeast Asia; naturalized in Australia",
+      "traits": "Perennial groundcover; creeping stems 40-60cm; spreads via rhizomes; heart-shaped glossy leaves 8-10cm",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": "EXCELLENT in Brisbane. Widely available: Daleys Fruit Tree Nursery, Garden Express, Food Forest Seeds Australia, Mudbrick Herb Cottage, All Rare Herbs, Green Harvest, Rareplants, Fruitopia Nursery, Fair Dinkum Seeds, Edible Jungle Nursery"
+    }
+  ],
+  "variety_count": 3
+}

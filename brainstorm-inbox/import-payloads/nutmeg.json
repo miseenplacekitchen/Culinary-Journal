@@ -1,0 +1,59 @@
+{
+  "species": "Nutmeg",
+  "species_slug": "nutmeg",
+  "varieties": [
+    {
+      "name": "Myristica insipida var. insipida (Queensland Nutmeg) \ud83c\udf31",
+      "slug": "myristica-insipida-var-insipida-queensland-nutmeg",
+      "lineage_type": "indigenous",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 0,
+      "origin": "Northern Queensland, Australia, indigenous",
+      "traits": "Small rainforest tree 10-16m, dark brown bark, myristicaceous branching",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": "Specialized native plant nurseries, rare"
+    },
+    {
+      "name": "IISR Viswashree (A9/4 Selection)",
+      "slug": "iisr-viswashree-a9-4-selection",
+      "lineage_type": "hybrid",
+      "climate_slug": "tropical-monsoon",
+      "sort_order": 0,
+      "origin": "IISR Kozhikode, Kerala (released 2001-2002)",
+      "traits": "",
+      "flesh_fruit": "",
+      "yield_notes": "Average 1,000 fruits/tree at 8th year, 3,122 kg dry nut and 480 kg mace per hectare",
+      "growing_notes": "",
+      "availability": "Widely distributed Kerala, 50,000+ grafts"
+    },
+    {
+      "name": "IISR Keralashree \ud83e\uddec",
+      "slug": "iisr-keralashree",
+      "lineage_type": "hybrid",
+      "climate_slug": "tropical-monsoon",
+      "sort_order": 1,
+      "origin": "Farmer participatory breeding, Burliar, Tamil Nadu",
+      "traits": "Bold nuts, thick dark red mace, rich in sabinene & myrcene, LOW myristicin",
+      "flesh_fruit": "",
+      "yield_notes": "Superior to Viswashree in all parameters",
+      "growing_notes": "",
+      "availability": "IISR Kozhikode, Kerala spice nurseries"
+    },
+    {
+      "name": "Kochukudy (Punnathanam Jathy) \ud83c\udfc6",
+      "slug": "kochukudy-punnathanam-jathy",
+      "lineage_type": "heirloom",
+      "climate_slug": "tropical-monsoon",
+      "sort_order": 2,
+      "origin": "Farmer Varkey Thoman, Idukki, Kerala - 70+ years development",
+      "traits": "EXTRA-LARGE variety, 50 nuts/kg vs 125 standard, compact form allows 20ft spacing",
+      "flesh_fruit": "",
+      "yield_notes": "3,000 fruits/tree annually, 20kg nutmeg + 4.5kg mace at maturity",
+      "growing_notes": "",
+      "availability": ""
+    }
+  ],
+  "variety_count": 4
+}

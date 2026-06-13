@@ -33,7 +33,7 @@ def main() -> None:
         species = data.get("species", slug.title())
         count = data.get("variety_count", len(data.get("varieties", [])))
         source = f"brainstorm-inbox/import-payloads/{p.name}"
-    lines += [
+        lines += [
             f"-- {species} ({count} cultivars)",
             "INSERT INTO public.garden_import_queue (source_path, species_name, species_slug, climate_slug, status, variety_count, payload)",
             f"SELECT '{esc_sql(source)}', '{esc_sql(species)}', '{esc_sql(slug)}', 'multi', 'parsed', {count}, NULL::jsonb",

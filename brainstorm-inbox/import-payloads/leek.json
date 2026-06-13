@@ -1,0 +1,85 @@
+{
+  "species": "Leek",
+  "species_slug": "leek",
+  "varieties": [
+    {
+      "name": "\ud83e\uddec HYBRID = First-generation cross",
+      "slug": "hybrid-first-generation-cross",
+      "lineage_type": "hybrid",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 0,
+      "origin": "",
+      "traits": "",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": ""
+    },
+    {
+      "name": "Perpetual/Perennial Leeks",
+      "slug": "perpetual-perennial-leeks",
+      "lineage_type": "open_pollinated",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 1,
+      "origin": "Allium ampeloprasum var. ampeloprasum, various origins",
+      "traits": "Forms clumps, regrows from offsets, mild garlic-leek flavor, multiplying",
+      "flesh_fruit": "",
+      "yield_notes": "Continuous harvest over multiple years",
+      "growing_notes": "",
+      "availability": "Green Harvest (Australia), specialty nurseries"
+    },
+    {
+      "name": "American Flag (Broad London)",
+      "slug": "american-flag-broad-london",
+      "lineage_type": "heirloom",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 2,
+      "origin": "United States, pre-1900s heirloom",
+      "traits": "Long narrow white stalks, mild sweet flavor, 2-3cm diameter, light green",
+      "flesh_fruit": "",
+      "yield_notes": "105-130 days, moderate to high yield",
+      "growing_notes": "",
+      "availability": ""
+    },
+    {
+      "name": "King Richard",
+      "slug": "king-richard",
+      "lineage_type": "open_pollinated",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 3,
+      "origin": "Europe, modern OP",
+      "traits": "Long slender white stalks (30cm+), light green foliage, fast-growing",
+      "flesh_fruit": "",
+      "yield_notes": "75-80 days from transplant, early",
+      "growing_notes": "",
+      "availability": "The Seed Collection, Diggers Club"
+    },
+    {
+      "name": "Giant Musselburgh",
+      "slug": "giant-musselburgh",
+      "lineage_type": "heirloom",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 4,
+      "origin": "Scotland, 1830s heirloom",
+      "traits": "Very thick stems (5-8cm), short thick stalks, mild tender",
+      "flesh_fruit": "",
+      "yield_notes": "80-150 days depending on size",
+      "growing_notes": "",
+      "availability": ""
+    },
+    {
+      "name": "Carentan (Giant Carentan)",
+      "slug": "carentan-giant-carentan",
+      "lineage_type": "heirloom",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 5,
+      "origin": "France, old European heirloom",
+      "traits": "Large thick white stems (20cm x 5cm), dark green leaves, very tender",
+      "flesh_fruit": "",
+      "yield_notes": "120-130 days, very high yield",
+      "growing_notes": "",
+      "availability": "Eden Seeds, The Seed Collection"
+    }
+  ],
+  "variety_count": 6
+}

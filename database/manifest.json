@@ -83,6 +83,8 @@
     { "file": "RUN-GARDEN-V3-POLISH.sql", "note": "Garden v3 polish — RPC fixes, month wrap, library hinge (after V3)" },
     { "file": "RUN-GARDEN-GO-LIVE.sql", "note": "Garden go-live — visible pages + 208 species shells + batch cultivar apply (step 2j)" },
     { "file": "fix-phase53-print-fulfillment.sql", "note": "Print & Post Phase 1 — admin inbox, status workflow, member orders, confirmation emails (after phase31)" },
+    { "file": "fix-phase54-import-payload-refresh.sql", "note": "Garden parser v2 — refresh 12 cultivar payloads; re-apply in GM" },
+    { "file": "fix-phase54-garden-kitchen-profiles.sql", "note": "Garden kitchen 15 — care, calendar, ingredient hinge (humid-subtropical)" },
     { "file": "fix-library-governed-links.sql", "note": "Step 1 only — re-link ingredient library profiles" },
     { "file": "fix-phase43-starter-library-health.sql", "note": "Step 2 only — dashboard System Health RPCs" },
     { "file": "SQL-EDITOR-health-check.sql", "note": "Step 3 only — expect healthy: true" }

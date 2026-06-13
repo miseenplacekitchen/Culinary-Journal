@@ -1,0 +1,46 @@
+{
+  "species": "Bloodroot",
+  "species_slug": "bloodroot",
+  "varieties": [
+    {
+      "name": "Pratia pedunculata (White Star Creeper)",
+      "slug": "pratia-pedunculata-white-star-creeper",
+      "lineage_type": "indigenous",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 0,
+      "origin": "Native to Australia (SE Queensland to NSW)",
+      "traits": "Low-growing mat-forming perennial, 2-10cm height, spreads to 1.5m width. Tiny rounded green leaves form dense carpet.",
+      "flesh_fruit": "",
+      "yield_notes": "Prolific flowering, continuous spring-summer blooms.",
+      "growing_notes": "",
+      "availability": "Widely available at Queensland nurseries including Garden Express, Australian Plants Online, SE QLD Plants, Plant Tiles Australia, Sunshine Coast Nurseries."
+    },
+    {
+      "name": "Viola hederacea / Viola banksii (Native Violet) \ud83c\udf0f",
+      "slug": "viola-hederacea-viola-banksii-native-violet",
+      "lineage_type": "heirloom",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 1,
+      "origin": "Native to eastern Australia (SE Queensland to Tasmania). V. banksii discovered 1770 at Botany Bay by Joseph Banks and Daniel Solander.",
+      "traits": "Low evergreen groundcover 5-15cm height, spreads to 2m via underground runners. Kidney-shaped to heart-shaped bright green leaves.",
+      "flesh_fruit": "",
+      "yield_notes": "Profuse flowering creating \"sea of flowers\" effect. Edible flowers for salads and garnish.",
+      "growing_notes": "",
+      "availability": "Widely available throughout Queensland including Australian Plants Online, Birkett Gardens Brisbane, The Plant Hub, Sunshine Coast Plants, Daley's Fruit Tree Nursery."
+    },
+    {
+      "name": "Jasminum sambac 'Maid of Orleans' (Mogra, Motiya, Bela) \ud83c\udf0f",
+      "slug": "jasminum-sambac-maid-of-orleans-mogra-motiya-bela",
+      "lineage_type": "heirloom",
+      "climate_slug": "tropical-monsoon",
+      "sort_order": 0,
+      "origin": "Native to India and Southeast Asia. Traditional cultivar, cultivated for centuries. Most common form of Arabian jasmine.",
+      "traits": "Vigorous vining shrub or climber, 1-3m height. Can be pruned to dense shrub form. Dark green glossy opposite leaves. Fast-growing, evergreen.",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": ""
+    }
+  ],
+  "variety_count": 3
+}

@@ -1,0 +1,98 @@
+{
+  "species": "Golden Shower Tree",
+  "species_slug": "golden-shower-tree",
+  "varieties": [
+    {
+      "name": "Standard Golden Shower Tree \ud83c\udfc6",
+      "slug": "standard-golden-shower-tree",
+      "lineage_type": "heirloom",
+      "climate_slug": "humid-subtropical",
+      "sort_order": 0,
+      "origin": "",
+      "traits": "",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": ""
+    },
+    {
+      "name": "Kani Konna (Kanikonna) \ud83c\udfc6 \ud83c\udf31",
+      "slug": "kani-konna-kanikonna",
+      "lineage_type": "indigenous",
+      "climate_slug": "tropical-monsoon",
+      "sort_order": 0,
+      "origin": "",
+      "traits": "",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": ""
+    },
+    {
+      "name": "Aragvadha (Ayurvedic Medicinal Form) \ud83c\udfc6 \ud83c\udf31",
+      "slug": "aragvadha-ayurvedic-medicinal-form",
+      "lineage_type": "indigenous",
+      "climate_slug": "tropical-monsoon",
+      "sort_order": 1,
+      "origin": "",
+      "traits": "",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": ""
+    },
+    {
+      "name": "Cassia x nealiae (Rainbow Shower Tree)",
+      "slug": "cassia-x-nealiae-rainbow-shower-tree",
+      "lineage_type": "hybrid",
+      "climate_slug": "tropical-monsoon",
+      "sort_order": 2,
+      "origin": "",
+      "traits": "",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": ""
+    },
+    {
+      "name": "Cassia javanica (Pink Shower Tree)",
+      "slug": "cassia-javanica-pink-shower-tree",
+      "lineage_type": "open_pollinated",
+      "climate_slug": "tropical-monsoon",
+      "sort_order": 3,
+      "origin": "",
+      "traits": "",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": ""
+    },
+    {
+      "name": "Cassia grandis (Coral Shower Tree)",
+      "slug": "cassia-grandis-coral-shower-tree",
+      "lineage_type": "open_pollinated",
+      "climate_slug": "tropical-monsoon",
+      "sort_order": 4,
+      "origin": "",
+      "traits": "",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": ""
+    },
+    {
+      "name": "Cassia javanica (Chaipruek in Kerala)",
+      "slug": "cassia-javanica-chaipruek-in-kerala",
+      "lineage_type": "open_pollinated",
+      "climate_slug": "tropical-monsoon",
+      "sort_order": 5,
+      "origin": "",
+      "traits": "",
+      "flesh_fruit": "",
+      "yield_notes": "",
+      "growing_notes": "",
+      "availability": ""
+    }
+  ],
+  "variety_count": 7
+}
