@@ -51,6 +51,7 @@ def main() -> None:
         "-- fix-phase56-garden-excel-profiles.sql",
         "-- Full profile ingest from Garden.xlsx (Master Sheet + Quick Plant Profile).",
         "-- Safe to re-run. Maps Excel cultivar profiles onto species shells (tomato, artichoke, …).",
+        "-- Output keyed by climate_zone slug — inbox city labels neutralized at export.",
         "-- Source: brainstorm-inbox/2025.11.09_Garden.xlsx",
         "",
     ]

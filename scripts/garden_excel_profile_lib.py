@@ -14,6 +14,29 @@ LOCATION_CLIMATE = {
     "thiruvalla": "tropical-monsoon",
 }
 
+# Inbox city labels → climate copy (never store city names in live profile text)
+_CITY_COPY_REPLACEMENTS = (
+    (re.compile(r"Brisbane's humid subtropical", re.I), "Humid subtropical"),
+    (re.compile(r"Brisbane's", re.I), "Humid subtropical"),
+    (re.compile(r"under Brisbane conditions", re.I), "in humid subtropical conditions"),
+    (re.compile(r"\bin Brisbane\b", re.I), "in humid subtropical climates"),
+    (re.compile(r"Brisbane summers", re.I), "humid subtropical summers"),
+    (re.compile(r"Brisbane conditions", re.I), "humid subtropical conditions"),
+    (re.compile(r"Brisbane:", re.I), "Humid subtropical:"),
+    (re.compile(r"\bBrisbane\b", re.I), "humid subtropical climates"),
+    (re.compile(r"Kerala's", re.I), "Tropical monsoon"),
+    (re.compile(r"\bKerala\b", re.I), "tropical monsoon climates"),
+)
+
+
+def neutralize_location_copy(text: str) -> str:
+    if not text:
+        return text
+    out = text
+    for pattern, repl in _CITY_COPY_REPLACEMENTS:
+        out = pattern.sub(repl, out)
+    return out
+
 # Excel cultivar/profile names → existing species shell slug
 SPECIES_SLUG_ALIASES = {
     "black beauty tomato": "tomato",
@@ -148,7 +171,7 @@ def read_key_value_sheet(ws, start_row: int = 1) -> dict[str, str]:
         val = "" if desc is None else str(desc).strip()
         if val in ("#N/A", "-", ""):
             continue
-        fields[normalize_title(title_s)] = val
+        fields[normalize_title(title_s)] = neutralize_location_copy(val)
     return fields
 
 
@@ -180,7 +203,7 @@ def profile_to_plant_updates(fields: dict[str, str]) -> dict[str, str]:
     for title, val in fields.items():
         col = PROFILE_COLUMN_MAP.get(title)
         if col:
-            out[col] = val
+            out[col] = neutralize_location_copy(val)
     if "size at maturity" in fields and "size_height" not in out:
         out["size_height"] = fields["size at maturity"]
     summary = fields.get("care card summary")
@@ -197,7 +220,9 @@ def profile_to_care_rows(fields: dict[str, str]) -> list[dict[str, str]]:
             continue
         core, risk, fix = parse_core_risk_fix(val)
         if not core and not risk and not fix:
-            core = val[:500]
+            core = neutralize_location_copy(val[:500])
+        else:
+            core, risk, fix = neutralize_location_copy(core), neutralize_location_copy(risk), neutralize_location_copy(fix)
         rows.append({"field_key": key, "core": core, "risk": risk, "fix": fix})
     return rows
 
@@ -301,7 +326,7 @@ def sql_plant_block(entry: dict) -> list[str]:
     set_parts = [f"{col} = '{esc_sql(val)}'" for col, val in updates.items()]
     set_parts.append("updated_at = now()")
     lines = [
-        f"-- Excel: {entry['profile_key']} → species slug `{slug}` ({entry['location']})",
+        f"-- Excel: {entry['profile_key']} → species `{slug}` · climate `{entry['climate_slug']}`",
         "DO $$",
         "DECLARE v_plant uuid; v_cz uuid;",
         "BEGIN",

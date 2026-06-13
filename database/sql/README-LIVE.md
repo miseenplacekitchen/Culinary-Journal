@@ -48,6 +48,16 @@ Parser v2 fixes parenthetical docx format (Carrot, Peas, etc.) and adds mangoste
 | 3 | `fix-phase57-garden-guilds-media.sql` | Guild admin RPCs; sample Mediterranean + brassica guilds (draft) |
 | 4 | GM → Guilds → publish when ready; Species → upload hero to garden-media | Media rows in `media` table linked to plants |
 
+## Garden Phase 58 (climate-first copy + public guilds)
+
+| Step | File / action | Expect |
+|------|---------------|--------|
+| 1 | Deploy site code | Directory shows **Plant guilds** when guilds published in GM |
+| 2 | `fix-phase58-garden-climate-copy.sql` | Tomato + artichoke care/profile text uses climate language, not Brisbane/Kerala |
+| 3 | Regenerate Excel SQL after inbox edits | `generate-garden-excel-profiles.py` neutralizes city names at export |
+
+**Climate policy:** Member UI filters by `climate_zone` (humid-subtropical, tropical-monsoon). Inbox city labels map at ingest only — never shown on public pages.
+
 ## Garden go-live (step 2j — after v3 + v4)
 
 | Step | File | Expect |

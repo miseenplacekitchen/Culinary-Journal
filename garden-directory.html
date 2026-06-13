@@ -18,8 +18,8 @@
 <script src="page-guard.js"></script>
 <script src="library-mise.js"></script>
 <script src="lib/garden-chrome.js"></script>
-<script src="lib/garden-api.js?v=20260717"></script>
-<script src="lib/garden-ui.js?v=20260720"></script>
+<script src="lib/garden-api.js?v=20260614"></script>
+<script src="lib/garden-ui.js?v=20260614"></script>
 <script src="nav-init.js"></script>
 </head>
 <body class="lib-page cj-body">
@@ -33,6 +33,7 @@
 <div class="lib-grid lib-grid-mise" id="gd-grid">
   <div class="lib-loading"><div class="lib-spinner"></div></div>
 </div>
+<div id="gd-guilds"></div>
 
 <script>
 var searchTimer = null;
@@ -73,7 +74,19 @@ async function loadPlants(q) {
   }
 }
 
+async function loadGuilds() {
+  var root = document.getElementById('gd-guilds');
+  if (!root) return;
+  try {
+    var guilds = await GardenApi.listPublishedGuilds();
+    root.innerHTML = GardenUI.renderGuildSection(guilds);
+  } catch (e) {
+    console.warn('guilds load failed', e);
+  }
+}
+
 loadPlants('');
+loadGuilds();
 </script>
 </body>
 </html>

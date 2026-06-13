@@ -101,8 +101,9 @@ fix-phase54-garden-kitchen-profiles.sql | Kitchen 15 species care + calendar + h
 fix-phase54-import-payload-refresh.sql    | Re-parse 12 cultivar payloads (parser v2)  | DONE ✅ Betty
 fix-phase55-garden-pages.sql              | Garden pages registered (incl. journal)    | DONE ✅ Betty
 fix-phase56-garden-excel-profiles.sql     | Excel 83-field profiles (tomato × 2 climates) | DONE ✅ Betty
-fix-phase57-garden-artichoke-profile.sql  | Purple Romagna artichoke Brisbane profile     | SQL ready — Betty run
-fix-phase57-garden-guilds-media.sql       | Guild admin RPCs + sample guilds + media RPC    | SQL ready — Betty run
+fix-phase57-garden-artichoke-profile.sql  | Purple Romagna · humid-subtropical profile   | DONE ✅ Betty
+fix-phase57-garden-guilds-media.sql       | Guild admin RPCs + sample guilds + media RPC    | DONE ✅ Betty
+fix-phase58-garden-climate-copy.sql       | Neutralize city names in care/profile copy      | SQL ready — Betty run
 fix-phase32-batch.sql               | Household meals, slots, allergy, lib approve | DONE ✅ Betty
 fix-phase32-library-profiles.sql    | Desiree + Kipfler potato profiles    | DONE ✅ Betty (249, 250)
 fix-phase33-batch.sql               | Saves ranking, sync conflicts, regional hints, print gating | DONE ✅ Betty
@@ -190,11 +191,16 @@ Phase 56 Garden Excel profile ingest ✅ Betty (SQL) + code on main:
   • Scripts: garden_excel_profile_lib.py + generate-garden-excel-profiles.py
   • fix-phase56-garden-excel-profiles.sql ✅ — tomato full 83-field (Brisbane + Kerala)
 
-Phase 57 Garden PPT + artichoke + guilds/media (code on main):
-  • Care tab → Download care-card PPT (PptxGenJS, maps tcj-care-card-v1 JSON)
-  • fix-phase57-garden-artichoke-profile.sql — Purple Romagna Brisbane full profile
-  • fix-phase57-garden-guilds-media.sql — guild CRUD RPCs, media register RPC, sample guilds
+Phase 57 Garden PPT + artichoke + guilds/media ✅ Betty (SQL) + code on main:
+  • Care tab → Download care-card PPT (PptxGenJS)
+  • fix-phase57-garden-artichoke-profile.sql ✅ · fix-phase57-garden-guilds-media.sql ✅
   • GM → Guilds tab + species media upload (garden-media bucket)
+
+Phase 58 Garden climate-first copy + public guilds (code on main):
+  • Policy: care/calendar keyed by climate_zone only — inbox Brisbane/Kerala are ingest aliases, not public labels
+  • fix-phase58-garden-climate-copy.sql — rewrite tomato + artichoke city-named copy on live DB
+  • Excel generator neutralizes city names on export; directory shows published guilds
+  • Betty: run fix-phase58 SQL; publish guilds in GM to show on directory
 
 Phase 28: master list reopened · grocery archive→pantry · MP-06 drag
 

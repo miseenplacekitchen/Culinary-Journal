@@ -113,4 +113,4 @@ Secondary: July–August (late winter) for plants establishing through cool mont
     AND NOT EXISTS (SELECT 1 FROM public.plant_ingredients pi WHERE pi.plant_id = v_plant AND pi.is_primary = true);
 END $$;
 
-SELECT 'fix-phase57-garden-artichoke-profile ready — Purple Romagna Brisbane' AS status;
+SELECT 'fix-phase57-garden-artichoke-profile ready — Purple Romagna · humid-subtropical' AS status;
