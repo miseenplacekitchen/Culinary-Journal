@@ -737,84 +737,84 @@ async function doSetRecipeOfWeek(id) {
 
 function loadRMInterfaceSettings() {
   var el = document.getElementById('rm-interface-content');
-  if (!el) return;
-  if (el.dataset.shellBuilt === '1') {
-    var stored = localStorage.getItem('tcj_rm_interface_tab') || 'settings';
-    var btn = el.querySelector('[data-admin-if-tab="' + stored + '"]');
-    if (btn) btn.click();
+  if (!el || typeof AdminTabNav === 'undefined') {
+    if (el) el.textContent = 'Admin tab navigation failed to load.';
     return;
   }
-  el.innerHTML = '';
-  el.dataset.shellBuilt = '1';
-  if (typeof AdminTabNav === 'undefined') {
-    el.textContent = 'Admin tab navigation failed to load.';
-    return;
-  }
-  el.appendChild(AdminTabNav.interfaceBanner('Configuration and reference data — work queues stay in the tabs above. Slugs and rejection reasons are admin-only.'));
-  el.appendChild(AdminTabNav.interfaceIntro('Taxonomy, collections, nutrition queue, print queue, and audit trail live here — same pattern as IM Interface reference data.'));
 
-  function mk(tag, style, text) { var e = document.createElement(tag); if (style) e.style.cssText = style; if (text !== undefined) e.textContent = text; return e; }
-  function card(title) {
-    var d = mk('div', 'background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');
-    d.appendChild(mk('div', "font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px", title));
-    return d;
-  }
-
-  var shell = AdminTabNav.buildInnerTabBar(el, [
-    { key: 'settings', label: 'Settings' },
-    { key: 'taxonomy', label: 'Taxonomy' },
-    { key: 'sourcelinks', label: 'Source Links' },
-    { key: 'nutrition', label: 'Nutrition' },
-    { key: 'printqueue', label: 'Print Queue' },
-    { key: 'collections', label: 'Collections' },
-    { key: 'audit', label: 'Audit Trail' }
-  ], 'tcj_rm_interface_tab', 'settings', function (key, panel) {
-    if (key === 'settings') return;
-    loadRMTab(key, panel);
+  AdminTabNav.buildInterfaceShell(el, {
+    storageKey: 'tcj_rm_interface_tab',
+    defaultKey: 'hub',
+    banner: 'Recipe configuration — queues and spotlight stay in the tabs above.',
+    sections: [
+      {
+        key: 'hub',
+        label: 'Hub',
+        group: 'Overview',
+        subtitle: 'Jump to work or open an operations screen',
+        render: function (panel, ctx) {
+          panel.innerHTML = '<div class="admin-if-loading">Loading stats…</div>';
+          return rpc('admin_get_stats', {}).then(function (stats) {
+            stats = stats || {};
+            AdminTabNav.renderHub(panel, {
+              intro: 'Taxonomy, collections, nutrition, print queue, and audit — pick a section in the sidebar or use a shortcut below.',
+              stats: [
+                { num: stats.pending || 0, label: 'Pending' },
+                { num: stats.approved || 0, label: 'Approved' },
+                { num: stats.rejected || 0, label: 'Rejected' },
+                { num: stats.total || 0, label: 'Total' }
+              ],
+              actions: [
+                { label: 'Review pending', desc: 'Open pending queue', onClick: function () { switchRecipeTab('pending'); } },
+                { label: 'Recipe of the Week', desc: 'Set or change ROTW', onClick: function () { switchRecipeTab('rotw'); } },
+                { label: 'Taxonomy', desc: 'Sub-categories & divisions', onClick: function () { ctx.activate('taxonomy'); } },
+                { label: 'Print queue', desc: 'Print & Post requests', onClick: function () { ctx.activate('printqueue'); } },
+                { label: 'Collections', desc: 'Curated recipe sets', onClick: function () { ctx.activate('collections'); } },
+                { label: 'Audit trail', desc: 'Admin action log', onClick: function () { ctx.activate('audit'); } }
+              ]
+            });
+          }).catch(function () {
+            AdminTabNav.renderHub(panel, {
+              actions: [
+                { label: 'Review pending', desc: 'Open pending queue', onClick: function () { switchRecipeTab('pending'); } },
+                { label: 'Taxonomy', desc: 'Sub-categories & divisions', onClick: function () { ctx.activate('taxonomy'); } }
+              ]
+            });
+          });
+        }
+      },
+      {
+        key: 'settings',
+        label: 'Rejection reasons',
+        group: 'Policy',
+        subtitle: 'Shown when rejecting a recipe submission',
+        render: function (panel) {
+          panel.innerHTML = '';
+          function mk(tag, style, text) { var e = document.createElement(tag); if (style) e.style.cssText = style; if (text !== undefined) e.textContent = text; return e; }
+          var ta = mk('textarea', 'width:100%;box-sizing:border-box;min-height:160px;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high);resize:vertical');
+          ta.value = getRejectReasons().join('\n');
+          panel.appendChild(mk('p', 'font-size:11px;color:var(--text-mid);margin:0 0 10px', 'One reason per line.'));
+          panel.appendChild(ta);
+          var btn = mk('button', "margin-top:10px;padding:8px 18px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer", 'Save reasons');
+          btn.addEventListener('click', function () {
+            var lines = ta.value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+            if (!lines.length) { alert('Add at least one reason.'); return; }
+            localStorage.setItem('tcj_rm_reject_reasons', JSON.stringify(lines));
+            btn.textContent = '\u2713 Saved';
+            setTimeout(function () { btn.textContent = 'Save reasons'; }, 2000);
+            auditLog('RM Interface', 'Rejection Reasons Updated', null, null, null, lines.length + ' reasons');
+          });
+          panel.appendChild(btn);
+        }
+      },
+      { key: 'taxonomy', label: 'Taxonomy', group: 'Operations', subtitle: 'Sub-categories and divisions', render: function (p) { loadRMTab('taxonomy', p); } },
+      { key: 'sourcelinks', label: 'Source links', group: 'Operations', subtitle: 'Recipe attribution URLs', render: function (p) { loadRMTab('sourcelinks', p); } },
+      { key: 'nutrition', label: 'Nutrition queue', group: 'Operations', subtitle: 'Pending nutrition entries', render: function (p) { loadRMTab('nutrition', p); } },
+      { key: 'printqueue', label: 'Print queue', group: 'Operations', subtitle: 'Print & Post workflow', render: function (p) { loadRMTab('printqueue', p); } },
+      { key: 'collections', label: 'Collections', group: 'Operations', subtitle: 'Curated recipe groups', render: function (p) { loadRMTab('collections', p); } },
+      { key: 'audit', label: 'Audit trail', group: 'System', subtitle: 'Recipe admin actions', render: function (p) { loadRMTab('audit', p); } }
+    ]
   });
-
-  var settingsPanel = shell.panels.settings;
-  var rejCard = card('Rejection Reasons');
-  rejCard.appendChild(mk('p', 'font-size:11px;color:var(--text-mid);margin-bottom:10px', 'One reason per line. Used in the recipe review panel when rejecting submissions.'));
-  var rejTa = mk('textarea', 'width:100%;box-sizing:border-box;min-height:140px;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high);resize:vertical');
-  rejTa.value = getRejectReasons().join('\n');
-  rejCard.appendChild(rejTa);
-  var rejBtn = mk('button', "margin-top:10px;padding:8px 18px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer", 'Save Reasons');
-  rejBtn.addEventListener('click', function() {
-    var lines = rejTa.value.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
-    if (!lines.length) { alert('Add at least one reason.'); return; }
-    localStorage.setItem('tcj_rm_reject_reasons', JSON.stringify(lines));
-    rejBtn.textContent = '\u2713 Saved';
-    setTimeout(function(){ rejBtn.textContent = 'Save Reasons'; }, 2000);
-    auditLog('RM Interface', 'Rejection Reasons Updated', null, null, null, lines.length + ' reasons');
-  });
-  rejCard.appendChild(rejBtn);
-  settingsPanel.appendChild(rejCard);
-
-  var smCard = card('Site Management Shortcuts');
-  var smGrid = mk('div', 'display:flex;flex-wrap:wrap;gap:10px');
-  [
-    { label: 'Pages & visibility', tab: 'sm-pages' },
-    { label: 'Feature toggles', tab: 'sm-features' },
-    { label: 'Billing & refund copy', smTab: 'sm-interface', sub: 'settings' }
-  ].forEach(function(link) {
-    var b = mk('button', "padding:8px 16px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer", link.label + ' \u2192');
-    b.addEventListener('click', function() {
-      if (link.smTab) {
-        localStorage.setItem('tcj_sm_interface_tab', link.sub || 'settings');
-        switchView('site-mgmt');
-        switchSMTab('sm-interface');
-      } else {
-        switchView('site-mgmt');
-        switchSMTab(link.tab);
-      }
-    });
-    smGrid.appendChild(b);
-  });
-  smCard.appendChild(smGrid);
-  settingsPanel.appendChild(smCard);
-
-  shell.activate(shell.activeKey);
 }
 
 function loadRMTab(key, container) {

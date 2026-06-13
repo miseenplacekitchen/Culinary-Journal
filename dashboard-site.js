@@ -116,45 +116,69 @@ function smGetSettingsPanel() {
 }
 
 function loadSMInterface(container) {
-  if (!container) return;
-  if (container.dataset.shellBuilt === '1') {
-    var stored = localStorage.getItem('tcj_sm_interface_tab') || 'settings';
-    var btn = container.querySelector('[data-admin-if-tab="' + stored + '"]');
-    if (btn) btn.click();
+  if (!container || typeof AdminTabNav === 'undefined') {
+    if (container) container.textContent = 'Admin tab navigation failed to load.';
     return;
   }
-  container.innerHTML = '';
-  container.dataset.shellBuilt = '1';
-  if (typeof AdminTabNav === 'undefined') {
-    container.textContent = 'Admin tab navigation failed to load.';
-    return;
-  }
-  container.appendChild(AdminTabNav.interfaceBanner('Site-wide settings and QA tools — page content lives in the tabs above.'));
-  var shell = AdminTabNav.buildInnerTabBar(container, [
-    { key: 'settings', label: 'Settings' },
-    { key: 'lane2', label: 'Lane 2 QA' },
-    { key: 'themesweep', label: 'Theme Sweep' }
-  ], 'tcj_sm_interface_tab', 'settings', function (key, panel) {
-    if (key === 'settings' && panel.dataset.built !== '1') {
-      panel.dataset.smInner = 'settings';
-      panel.dataset.built = 'loading';
-      buildSMSettings(panel);
-      panel.dataset.built = '1';
-    }
-    if (key === 'lane2' && panel.dataset.built !== '1') {
-      panel.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:12px">Core journey verification (A–F) on production. Progress saves in this browser.</p>' +
-        '<iframe id="frame-lane2-sm" title="Lane 2 Spot-Check" style="width:100%;min-height:calc(100vh - 280px);border:none;border-radius:12px;background:transparent"></iframe>';
-      if (typeof loadAdminEmbedFrame === 'function') loadAdminEmbedFrame('frame-lane2-sm', 'lane2-spot-check.html?embed=1');
-      panel.dataset.built = '1';
-    }
-    if (key === 'themesweep' && panel.dataset.built !== '1') {
-      panel.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);margin-bottom:12px">Review all 47 themes on key pages; mark pass or issue.</p>' +
-        '<iframe id="frame-theme-sweep-sm" title="Theme Sweep" style="width:100%;min-height:calc(100vh - 280px);border:none;border-radius:12px;background:transparent"></iframe>';
-      if (typeof loadAdminEmbedFrame === 'function') loadAdminEmbedFrame('frame-theme-sweep-sm', 'theme-sweep.html?embed=1');
-      panel.dataset.built = '1';
-    }
+
+  AdminTabNav.buildInterfaceShell(container, {
+    storageKey: 'tcj_sm_interface_tab',
+    defaultKey: 'hub',
+    banner: 'Site-wide settings and QA — page content stays in the tabs above.',
+    sections: [
+      {
+        key: 'hub',
+        label: 'Hub',
+        group: 'Overview',
+        subtitle: 'Quick links to content tabs and QA',
+        render: function (panel, ctx) {
+          AdminTabNav.renderHub(panel, {
+            actions: [
+              { label: 'Pages & visibility', desc: 'Register pages, min tier', onClick: function () { switchSMTab('sm-pages'); } },
+              { label: 'Feature toggles', desc: 'Site feature flags', onClick: function () { switchSMTab('sm-features'); } },
+              { label: 'Themes', desc: 'Theme catalog', onClick: function () { switchSMTab('sm-themes'); } },
+              { label: 'Email templates', desc: 'Transactional email copy', onClick: function () { switchSMTab('sm-email'); } },
+              { label: 'Site settings', desc: 'Maintenance, SEO, billing copy', onClick: function () { ctx.activate('settings'); } },
+              { label: 'Lane 2 QA', desc: 'Core journey spot-check', onClick: function () { ctx.activate('lane2'); } },
+              { label: 'Theme sweep', desc: 'Review themes on key pages', onClick: function () { ctx.activate('themesweep'); } }
+            ]
+          });
+        }
+      },
+      {
+        key: 'settings',
+        label: 'Settings',
+        group: 'Configuration',
+        subtitle: 'Maintenance, SEO, footer, billing copy',
+        render: function (panel) {
+          panel.dataset.smInner = 'settings';
+          buildSMSettings(panel);
+        }
+      },
+      {
+        key: 'lane2',
+        label: 'Lane 2 QA',
+        group: 'Quality',
+        subtitle: 'Journeys A–F on production',
+        render: function (panel) {
+          panel.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin:0 0 12px">Progress saves in this browser.</p>' +
+            '<iframe id="frame-lane2-sm" title="Lane 2 Spot-Check" style="width:100%;min-height:calc(100vh - 300px);border:none;border-radius:12px;background:transparent"></iframe>';
+          if (typeof loadAdminEmbedFrame === 'function') loadAdminEmbedFrame('frame-lane2-sm', 'lane2-spot-check.html?embed=1');
+        }
+      },
+      {
+        key: 'themesweep',
+        label: 'Theme sweep',
+        group: 'Quality',
+        subtitle: 'All themes on key pages',
+        render: function (panel) {
+          panel.innerHTML = '<p style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin:0 0 12px">Mark pass or issue per theme.</p>' +
+            '<iframe id="frame-theme-sweep-sm" title="Theme Sweep" style="width:100%;min-height:calc(100vh - 300px);border:none;border-radius:12px;background:transparent"></iframe>';
+          if (typeof loadAdminEmbedFrame === 'function') loadAdminEmbedFrame('frame-theme-sweep-sm', 'theme-sweep.html?embed=1');
+        }
+      }
+    ]
   });
-  shell.activate(shell.activeKey);
 }
 
 

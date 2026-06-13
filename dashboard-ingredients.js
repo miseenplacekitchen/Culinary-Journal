@@ -1208,245 +1208,344 @@ function _downloadFICSV(filename, csv){
 }
 
 async function buildFiInterface(container) {
-  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);padding:8px 0">Loading\u2026</div>';
-  try {
-    var settRes = await apiFetch(SUPABASE_URL+'/rest/v1/site_settings?select=key,value&key=in.(price_premium_monthly,price_premium_annual,price_event_monthly,price_event_annual,currency_symbol,currency_code)');
-    var S={};
-    if(settRes&&settRes.ok){var sr=await settRes.json();if(Array.isArray(sr))sr.forEach(function(r){S[r.key]=r.value;});}
-    var memberList=[];
+  if (!container || typeof AdminTabNav === 'undefined') {
+    if (container) container.textContent = 'Admin tab navigation failed to load.';
+    return;
+  }
+  if (container.dataset.ifShell === '1' && container._ifShell) {
+    var stored = localStorage.getItem('tcj_fmi_tab') || 'hub';
+    container._ifShell.activate(stored);
+    return;
+  }
+
+  container.innerHTML = '<div class="admin-if-loading">Loading…</div>';
+  var fiCache = container._fiCache || (container._fiCache = { settings: null, members: null, tiers: null });
+
+  async function fiSettings() {
+    if (fiCache.settings) return fiCache.settings;
+    var S = {};
+    var settRes = await apiFetch(SUPABASE_URL + '/rest/v1/site_settings?select=key,value&key=in.(price_premium_monthly,price_premium_annual,price_event_monthly,price_event_annual,currency_symbol,currency_code)');
+    if (settRes && settRes.ok) {
+      var sr = await settRes.json();
+      if (Array.isArray(sr)) sr.forEach(function (r) { S[r.key] = r.value; });
+    }
+    fiCache.settings = S;
+    return S;
+  }
+
+  async function fiMembers() {
+    if (fiCache.members) return fiCache.members;
+    var memberList = [];
     if (typeof TcjAdminProfiles !== 'undefined') {
       memberList = await TcjAdminProfiles.fetchAllRest(apiFetch, SUPABASE_URL);
     } else {
-      var mRes = await apiFetch(SUPABASE_URL+'/rest/v1/profiles?select=id,username,full_name,email,subscription_tier&order=full_name.asc&limit=500');
-      if(mRes&&mRes.ok){var ml=await mRes.json();if(Array.isArray(ml))memberList=ml;}
+      var mRes = await apiFetch(SUPABASE_URL + '/rest/v1/profiles?select=id,username,full_name,email,subscription_tier&order=full_name.asc&limit=500');
+      if (mRes && mRes.ok) {
+        var ml = await mRes.json();
+        if (Array.isArray(ml)) memberList = ml;
+      }
     }
-    var cur = S.currency_symbol||'$';
-    container.innerHTML='';
+    fiCache.members = memberList;
+    return memberList;
+  }
 
-    function mk(tag,s,t){var e=document.createElement(tag);if(s)e.style.cssText=s;if(t!==undefined)e.textContent=t;return e;}
-    function card(title,desc,color){
-      var d=mk('div','background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');
-      d.appendChild(mk('div',"font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:"+(color||'var(--text-high)')+";margin-bottom:"+(desc?'4':'14')+"px",title));
-      if(desc)d.appendChild(mk('p','font-size:12px;color:var(--text-mid);margin-bottom:14px',desc));
-      return d;
-    }
-    function fi(id,lbl,ph,type){
-      var w=mk('div','');w.appendChild(mk('label','display:block;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:4px',lbl));
-      var i=mk('input','width:100%;box-sizing:border-box;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)');
-      i.id='fmi-'+id;i.type=type||'text';if(ph)i.placeholder=ph;w.appendChild(i);return w;
-    }
-    function fs(id,lbl,opts){
-      var w=mk('div','');w.appendChild(mk('label','display:block;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:4px',lbl));
-      var s=mk('select','width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)');
-      s.id='fmi-'+id;opts.forEach(function(o){var el=document.createElement('option');el.value=o.v;el.textContent=o.l;s.appendChild(el);});w.appendChild(s);return w;
-    }
+  async function fiTiers() {
+    if (fiCache.tiers) return fiCache.tiers;
+    fiCache.tiers = await rpc('admin_get_tier_stats', {}).catch(function () { return {}; }) || {};
+    return fiCache.tiers;
+  }
 
-    // ── Sub-tabs ─────────────────────────────────────────────
-    var FI_TABS=[{key:'manual',label:'Manual Payment'},{key:'invoice',label:'Invoice Generator'},{key:'export',label:'Export Data'},{key:'promo',label:'Promo Codes'}];
-    var bar=mk('div','display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px');
-    var panels={};
-    var active=localStorage.getItem('tcj_fmi_tab')||'manual';
-    FI_TABS.forEach(function(td){
-      var btn=mk('button',"padding:9px 18px;font-family:'DM Sans',sans-serif;font-size:12px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--text-mid);margin-bottom:-1px",td.label);
-      if(td.key===active){btn.style.borderBottomColor='var(--accent)';btn.style.color='var(--accent)';}
-      var panel=mk('div','');panel.style.display=td.key===active?'block':'none';
-      panels[td.key]=panel;
-      btn.addEventListener('click',(function(key,b){return function(){
-        localStorage.setItem('tcj_fmi_tab',key);
-        bar.querySelectorAll('button').forEach(function(x){x.style.borderBottomColor='transparent';x.style.color='var(--text-mid)';});
-        b.style.borderBottomColor='var(--accent)';b.style.color='var(--accent)';
-        Object.keys(panels).forEach(function(k){panels[k].style.display=k===key?'block':'none';});
-      };})(td.key,btn));
-      bar.appendChild(btn);
+  function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
+  function card(title, desc, color) {
+    var d = mk('div', 'background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');
+    d.appendChild(mk('div', "font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:" + (color || 'var(--text-high)') + ';margin-bottom:' + (desc ? '4' : '14') + 'px', title));
+    if (desc) d.appendChild(mk('p', 'font-size:12px;color:var(--text-mid);margin-bottom:14px', desc));
+    return d;
+  }
+  function fi(id, lbl, ph, type) {
+    var w = mk('div', ''); w.appendChild(mk('label', 'display:block;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:4px', lbl));
+    var i = mk('input', 'width:100%;box-sizing:border-box;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)');
+    i.id = 'fmi-' + id; i.type = type || 'text'; if (ph) i.placeholder = ph; w.appendChild(i); return w;
+  }
+  function fs(id, lbl, opts) {
+    var w = mk('div', ''); w.appendChild(mk('label', 'display:block;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:4px', lbl));
+    var s = mk('select', 'width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)');
+    s.id = 'fmi-' + id; opts.forEach(function (o) { var el = document.createElement('option'); el.value = o.v; el.textContent = o.l; s.appendChild(el); }); w.appendChild(s); return w;
+  }
+
+  function renderFiManual(panel, S, memberList, cur) {
+    panel.innerHTML = '';
+    var c = card('Record Manual Payment', 'Record a payment received outside the system — cash, bank transfer, PayPal, etc. Sets member tier and logs the transaction.');
+    var grid = mk('div', 'display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px');
+    var mWrap = mk('div', 'grid-column:1/-1');
+    mWrap.appendChild(mk('label', 'display:block;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:4px', 'Member *'));
+    var mSel = mk('select', 'width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)');
+    var bo = document.createElement('option'); bo.value = ''; bo.textContent = '-- Select member --'; mSel.appendChild(bo);
+    memberList.forEach(function (m) {
+      var o = document.createElement('option'); o.value = m.id;
+      o.textContent = (m.full_name || m.username || '?') + ' (@' + (m.username || ')') + (m.subscription_tier !== 'free' ? ' [' + m.subscription_tier + ']' : '');
+      mSel.appendChild(o);
     });
-    container.appendChild(bar);
-    Object.values(panels).forEach(function(p){container.appendChild(p);});
+    mWrap.appendChild(mSel); grid.appendChild(mWrap);
+    grid.appendChild(fs('tier', 'Upgrade to Tier', [{ v: 'premium', l: 'Premium -- ' + cur + (S.price_premium_monthly || '4.00') + '/mo' }, { v: 'event', l: 'Event / Wedding -- ' + cur + (S.price_event_monthly || '12.00') + '/mo' }]));
+    grid.appendChild(fs('period', 'Billing Period', [{ v: 'monthly', l: 'Monthly' }, { v: 'annual', l: 'Annual' }]));
+    grid.appendChild(fi('amount', 'Amount Received', '', 'text'));
+    grid.appendChild(fs('method', 'Payment Method', [{ v: 'cash', l: 'Cash' }, { v: 'bank_transfer', l: 'Bank Transfer' }, { v: 'paypal', l: 'PayPal' }, { v: 'other', l: 'Other' }]));
+    grid.appendChild(fi('ref', 'Reference / Receipt No.', 'e.g. TXN-12345', 'text'));
+    grid.appendChild(fi('date', 'Payment Date', '', 'date'));
+    setTimeout(function () { var d = document.getElementById('fmi-date'); if (d) d.value = new Date().toISOString().split('T')[0]; }, 0);
+    var nw = mk('div', 'grid-column:1/-1'); nw.appendChild(mk('label', 'display:block;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:4px', 'Notes (optional)'));
+    var na = mk('textarea', 'width:100%;box-sizing:border-box;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high);resize:vertical;height:60px');
+    na.id = 'fmi-notes'; nw.appendChild(na); grid.appendChild(nw); c.appendChild(grid);
+    var sb = mk('button', 'padding:10px 24px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer', 'Record Payment');
+    var sm = mk('span', 'margin-left:12px;font-family:DM Sans,sans-serif;font-size:12px;color:#4caf76', '');
+    sb.addEventListener('click', async function () {
+      var uid = mSel.value;
+      if (!uid) { alert('Please select a member.'); return; }
+      var tier = (document.getElementById('fmi-tier') || {}).value;
+      var method = (document.getElementById('fmi-method') || {}).value || '';
+      var ref = (document.getElementById('fmi-ref') || {}).value || '';
+      var amount = (document.getElementById('fmi-amount') || {}).value || '';
+      var notes = (document.getElementById('fmi-notes') || {}).value || '';
+      var log = 'Manual ' + method + (ref ? ' ref:' + ref : '') + (amount ? ' ' + cur + amount : '') + (notes ? ' -- ' + notes : '');
+      sb.disabled = true; sb.textContent = 'Saving\u2026'; sm.textContent = '';
+      try {
+        await rpc('admin_set_member_tier', { p_user_id: uid, p_tier: tier, p_notes: log });
+        sm.textContent = '\u2713 Payment recorded, tier set to ' + tier;
+        sb.textContent = 'Record Payment'; sb.disabled = false; mSel.value = '';
+        auditLog('Finance Management', 'Manual Payment Recorded', null, null, tier, log);
+        var hist = document.getElementById('upanel-fi-history');
+        if (hist && hist.dataset.built === '1') { hist.dataset.built = ''; buildFiHistory(hist); }
+      } catch (e) { sb.textContent = 'Record Payment'; sb.disabled = false; sm.textContent = ''; alert('Error: ' + e.message); }
+    });
+    var br = mk('div', 'display:flex;align-items:center'); br.appendChild(sb); br.appendChild(sm); c.appendChild(br); panel.appendChild(c);
+  }
 
-    // ── MANUAL PAYMENT ────────────────────────────────────────
-    (function(p){
-      var c=card('Record Manual Payment','Record a payment received outside the system — cash, bank transfer, PayPal, etc. Sets member tier and logs the transaction.');
-      var grid=mk('div','display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px');
-      var mWrap=mk('div','grid-column:1/-1');
-      mWrap.appendChild(mk('label','display:block;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:4px','Member *'));
-      var mSel=mk('select','width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)');
-      var bo=document.createElement('option');bo.value='';bo.textContent='-- Select member --';mSel.appendChild(bo);
-      memberList.forEach(function(m){var o=document.createElement('option');o.value=m.id;o.textContent=(m.full_name||m.username||'?')+' (@'+(m.username||')')+(m.subscription_tier!=='free'?' ['+m.subscription_tier+']':'');mSel.appendChild(o);});
-      mWrap.appendChild(mSel);grid.appendChild(mWrap);
-      grid.appendChild(fs('tier','Upgrade to Tier',[{v:'premium',l:'Premium -- '+cur+(S.price_premium_monthly||'4.00')+'/mo'},{v:'event',l:'Event / Wedding -- '+cur+(S.price_event_monthly||'12.00')+'/mo'}]));
-      grid.appendChild(fs('period','Billing Period',[{v:'monthly',l:'Monthly'},{v:'annual',l:'Annual'}]));
-      grid.appendChild(fi('amount','Amount Received','','text'));
-      grid.appendChild(fs('method','Payment Method',[{v:'cash',l:'Cash'},{v:'bank_transfer',l:'Bank Transfer'},{v:'paypal',l:'PayPal'},{v:'other',l:'Other'}]));
-      grid.appendChild(fi('ref','Reference / Receipt No.','e.g. TXN-12345','text'));
-      grid.appendChild(fi('date','Payment Date','','date'));
-      setTimeout(function(){var d=document.getElementById('fmi-date');if(d)d.value=new Date().toISOString().split('T')[0];},0);
-      var nw=mk('div','grid-column:1/-1');nw.appendChild(mk('label','display:block;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:4px','Notes (optional)'));
-      var na=mk('textarea','width:100%;box-sizing:border-box;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high);resize:vertical;height:60px');
-      na.id='fmi-notes';nw.appendChild(na);grid.appendChild(nw);c.appendChild(grid);
-      var sb=mk('button','padding:10px 24px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer','Record Payment');
-      var sm=mk('span','margin-left:12px;font-family:DM Sans,sans-serif;font-size:12px;color:#4caf76','');
-      sb.addEventListener('click',async function(){
-        var uid=mSel.value;
-        if(!uid){alert('Please select a member.');return;}
-        var tier=(document.getElementById('fmi-tier')||{}).value;
-        var method=(document.getElementById('fmi-method')||{}).value||'';
-        var ref=(document.getElementById('fmi-ref')||{}).value||'';
-        var amount=(document.getElementById('fmi-amount')||{}).value||'';
-        var notes=(document.getElementById('fmi-notes')||{}).value||'';
-        var log='Manual '+method+(ref?' ref:'+ref:'')+(amount?' '+cur+amount:'')+(notes?' -- '+notes:'');
-        sb.disabled=true;sb.textContent='Saving\u2026';sm.textContent='';
-        try{
-          await rpc('admin_set_member_tier',{p_user_id:uid,p_tier:tier,p_notes:log});
-          sm.textContent='\u2713 Payment recorded, tier set to '+tier;
-          sb.textContent='Record Payment';sb.disabled=false;mSel.value='';
-          auditLog('Finance Management','Manual Payment Recorded',null,null,tier,log);
-          var hist=document.getElementById('upanel-fi-history');
-          if(hist&&hist.dataset.built==='1'){hist.dataset.built='';buildFiHistory(hist);}
-        }catch(e){sb.textContent='Record Payment';sb.disabled=false;sm.textContent='';alert('Error: '+e.message);}
-      });
-      var br=mk('div','display:flex;align-items:center');br.appendChild(sb);br.appendChild(sm);c.appendChild(br);p.appendChild(c);
-    })(panels['manual']);
+  function renderFiInvoice(panel, S, memberList, cur) {
+    panel.innerHTML = '';
+    var c = card('Invoice Generator', 'Generate a simple receipt for any member. Useful for business accounts needing proof of subscription.');
+    var mSel2 = mk('select', 'width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high);margin-bottom:14px');
+    var b2 = document.createElement('option'); b2.value = ''; b2.textContent = '-- Select member --'; mSel2.appendChild(b2);
+    memberList.forEach(function (m) {
+      var o = document.createElement('option'); o.value = JSON.stringify({ name: m.full_name || m.username || '', email: m.email || '', tier: m.subscription_tier || 'free' });
+      o.textContent = (m.full_name || m.username || '?') + ' (' + m.email + ')'; mSel2.appendChild(o);
+    });
+    c.appendChild(mSel2);
+    var preview = mk('div', 'background:#fff;border-radius:10px;padding:28px;color:#222;font-family:DM Sans,sans-serif;margin-top:0;display:none'); preview.id = 'fmi-inv-preview';
+    var genBtn = mk('button', 'padding:10px 24px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer', 'Generate Invoice');
+    genBtn.addEventListener('click', function () {
+      if (!mSel2.value) { alert('Select a member first.'); return; }
+      var m = JSON.parse(mSel2.value);
+      var price = m.tier === 'premium' ? (S.price_premium_monthly || '4.00') : m.tier === 'event' ? (S.price_event_monthly || '12.00') : '0.00';
+      var tierLbl = m.tier === 'premium' ? 'Premium Plan' : m.tier === 'event' ? 'Event / Wedding Plan' : 'Free Plan';
+      var today = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'long', year: 'numeric' });
+      var inv = 'INV-' + Date.now().toString().slice(-6);
+      preview.style.display = 'block';
+      preview.innerHTML = '<div style="display:flex;justify-content:space-between;border-bottom:2px solid #C4973B;padding-bottom:14px;margin-bottom:20px"><div><div style="font-family:Cormorant Garamond,serif;font-size:1.5rem;font-weight:700;color:#111">The Culinary Journal</div><div style="font-size:11px;color:#888">theculinaryjournal.site</div></div><div style="text-align:right"><div style="font-size:1rem;font-weight:700;color:#C4973B">INVOICE</div><div style="font-size:11px;color:#888">' + inv + '</div><div style="font-size:11px;color:#888">' + today + '</div></div></div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px"><div><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:3px">Billed To</div><div style="font-size:13px;font-weight:600;color:#111">' + esc(m.name) + '</div><div style="font-size:12px;color:#666">' + esc(m.email) + '</div></div></div>' +
+        '<table style="width:100%;border-collapse:collapse;margin-bottom:18px"><thead><tr style="background:#f5f5f0"><th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:700;color:#555;text-transform:uppercase">Description</th><th style="padding:8px 12px;text-align:right;font-size:11px;font-weight:700;color:#555;text-transform:uppercase">Amount</th></tr></thead><tbody><tr style="border-bottom:1px solid #e0e0e0"><td style="padding:12px;font-size:13px;color:#222">' + tierLbl + ' \u2014 Monthly Subscription</td><td style="padding:12px;font-size:13px;font-weight:700;color:#111;text-align:right">' + cur + price + '</td></tr></tbody><tfoot><tr style="background:#f5f5f0"><td style="padding:10px 12px;font-size:13px;font-weight:700;color:#222">Total</td><td style="padding:10px 12px;font-size:14px;font-weight:700;color:#C4973B;text-align:right">' + cur + price + '</td></tr></tfoot></table>' +
+        '<div style="font-size:11px;color:#999;border-top:1px solid #ddd;padding-top:10px">Thank you for your membership at The Culinary Journal.</div>';
+    });
+    var printBtn = mk('button', 'padding:10px 18px;background:rgba(255,255,255,0.08);border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;margin-left:10px', 'Print / Save PDF');
+    printBtn.addEventListener('click', function () { var pr = document.getElementById('fmi-inv-preview'); if (!pr || pr.style.display === 'none') { alert('Generate invoice first.'); return; } var w = window.open('', '_blank'); w.document.write('<html><head><title>Invoice</title></head><body>' + pr.innerHTML + '</body></html>'); w.document.close(); w.print(); });
+    var br = mk('div', 'display:flex;align-items:center;margin-bottom:14px'); br.appendChild(genBtn); br.appendChild(printBtn); c.appendChild(br); c.appendChild(preview); panel.appendChild(c);
+  }
 
-    // ── INVOICE GENERATOR ─────────────────────────────────────
-    (function(p){
-      var c=card('Invoice Generator','Generate a simple receipt for any member. Useful for business accounts needing proof of subscription.');
-      var mSel2=mk('select','width:100%;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high);margin-bottom:14px');
-      var b2=document.createElement('option');b2.value='';b2.textContent='-- Select member --';mSel2.appendChild(b2);
-      memberList.forEach(function(m){var o=document.createElement('option');o.value=JSON.stringify({name:m.full_name||m.username||'',email:m.email||'',tier:m.subscription_tier||'free'});o.textContent=(m.full_name||m.username||'?')+' ('+m.email+')';mSel2.appendChild(o);});
-      c.appendChild(mSel2);
-      var preview=mk('div','background:#fff;border-radius:10px;padding:28px;color:#222;font-family:DM Sans,sans-serif;margin-top:0;display:none');preview.id='fmi-inv-preview';
-      var genBtn=mk('button','padding:10px 24px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer','Generate Invoice');
-      genBtn.addEventListener('click',function(){
-        if(!mSel2.value){alert('Select a member first.');return;}
-        var m=JSON.parse(mSel2.value);
-        var price=m.tier==='premium'?(S.price_premium_monthly||'4.00'):m.tier==='event'?(S.price_event_monthly||'12.00'):'0.00';
-        var tierLbl=m.tier==='premium'?'Premium Plan':m.tier==='event'?'Event / Wedding Plan':'Free Plan';
-        var today=new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'long',year:'numeric'});
-        var inv='INV-'+Date.now().toString().slice(-6);
-        preview.style.display='block';
-        preview.innerHTML='<div style="display:flex;justify-content:space-between;border-bottom:2px solid #C4973B;padding-bottom:14px;margin-bottom:20px"><div><div style="font-family:Cormorant Garamond,serif;font-size:1.5rem;font-weight:700;color:#111">The Culinary Journal</div><div style="font-size:11px;color:#888">theculinaryjournal.site</div></div><div style="text-align:right"><div style="font-size:1rem;font-weight:700;color:#C4973B">INVOICE</div><div style="font-size:11px;color:#888">'+inv+'</div><div style="font-size:11px;color:#888">'+today+'</div></div></div>'+
-          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px"><div><div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:3px">Billed To</div><div style="font-size:13px;font-weight:600;color:#111">'+esc(m.name)+'</div><div style="font-size:12px;color:#666">'+esc(m.email)+'</div></div></div>'+
-          '<table style="width:100%;border-collapse:collapse;margin-bottom:18px"><thead><tr style="background:#f5f5f0"><th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:700;color:#555;text-transform:uppercase">Description</th><th style="padding:8px 12px;text-align:right;font-size:11px;font-weight:700;color:#555;text-transform:uppercase">Amount</th></tr></thead><tbody><tr style="border-bottom:1px solid #e0e0e0"><td style="padding:12px;font-size:13px;color:#222">'+tierLbl+' \u2014 Monthly Subscription</td><td style="padding:12px;font-size:13px;font-weight:700;color:#111;text-align:right">'+cur+price+'</td></tr></tbody><tfoot><tr style="background:#f5f5f0"><td style="padding:10px 12px;font-size:13px;font-weight:700;color:#222">Total</td><td style="padding:10px 12px;font-size:14px;font-weight:700;color:#C4973B;text-align:right">'+cur+price+'</td></tr></tfoot></table>'+
-          '<div style="font-size:11px;color:#999;border-top:1px solid #ddd;padding-top:10px">Thank you for your membership at The Culinary Journal.</div>';
-      });
-      var printBtn=mk('button','padding:10px 18px;background:rgba(255,255,255,0.08);border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;margin-left:10px','Print / Save PDF');
-      printBtn.addEventListener('click',function(){var pr=document.getElementById('fmi-inv-preview');if(!pr||pr.style.display==='none'){alert('Generate invoice first.');return;}var w=window.open('','_blank');w.document.write('<html><head><title>Invoice</title></head><body>'+pr.innerHTML+'</body></html>');w.document.close();w.print();});
-      var br=mk('div','display:flex;align-items:center;margin-bottom:14px');br.appendChild(genBtn);br.appendChild(printBtn);c.appendChild(br);c.appendChild(preview);p.appendChild(c);
-    })(panels['invoice']);
+  function renderFiExport(panel) {
+    panel.innerHTML = '';
+    var c = card('Export Financial Data', 'Download membership and revenue data as CSV for accounting, tax, or reporting.');
+    var exports = [
+      { label: 'All Members with Tier', icon: '&#128101;', desc: 'Full member list with name, email, tier, and join date.', fn: async function () {
+        var r = await apiFetch(SUPABASE_URL + '/rest/v1/profiles?select=username,full_name,email,subscription_tier,created_at&order=created_at.desc');
+        if (!r || !r.ok) throw new Error('Fetch failed');
+        var rows = await r.json();
+        _downloadFICSV('members-tiers.csv', 'Username,Full Name,Email,Tier,Joined\n' + rows.map(function (r) { return [r.username, r.full_name, r.email, r.subscription_tier, r.created_at ? new Date(r.created_at).toLocaleDateString('en-AU') : ''].map(function (v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; }).join(','); }).join('\n'));
+      }},
+      { label: 'Subscription History', icon: '&#128196;', desc: 'Full log of all tier changes and subscription events.', fn: async function () {
+        var rows = await rpc('admin_get_subscriptions', { p_limit: 9999, p_offset: 0 });
+        if (!Array.isArray(rows)) throw new Error('No data');
+        _downloadFICSV('subscription-history.csv', 'Username,Full Name,Email,Tier,Status,Source,Started,Notes\n' + rows.map(function (r) { return [r.username, r.full_name, r.email, r.tier, r.status, r.source, r.started_at ? new Date(r.started_at).toLocaleDateString('en-AU') : '', r.notes || ''].map(function (v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; }).join(','); }).join('\n'));
+      }},
+      { label: 'Premium Members Only', icon: '&#11088;', desc: 'Filtered list of premium and event tier members only.', fn: async function () {
+        var r = await apiFetch(SUPABASE_URL + '/rest/v1/profiles?select=username,full_name,email,subscription_tier,created_at&subscription_tier=neq.free&order=subscription_tier.asc,created_at.desc');
+        if (!r || !r.ok) throw new Error('Fetch failed');
+        var rows = await r.json();
+        _downloadFICSV('premium-members.csv', 'Username,Full Name,Email,Tier,Joined\n' + rows.map(function (r) { return [r.username, r.full_name, r.email, r.subscription_tier, r.created_at ? new Date(r.created_at).toLocaleDateString('en-AU') : ''].map(function (v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; }).join(','); }).join('\n'));
+      }}
+    ];
+    exports.forEach(function (exp) {
+      var row = mk('div', 'display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05)');
+      var info = mk('div', '');
+      info.appendChild(mk('div', 'font-size:13px;font-weight:600;color:var(--text-high)', exp.icon + ' ' + exp.label));
+      info.appendChild(mk('div', 'font-size:11px;color:var(--text-mid);margin-top:2px', exp.desc));
+      var btn = mk('button', 'padding:6px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:11px;cursor:pointer;flex-shrink:0', '\u2b07 Export CSV');
+      (function (fn, b) { b.addEventListener('click', async function () { b.disabled = true; b.textContent = 'Exporting\u2026'; try { await fn(); b.textContent = '\u2b07 Export CSV'; b.disabled = false; } catch (e) { b.textContent = '\u2b07 Export CSV'; b.disabled = false; alert('Export failed: ' + e.message); } }); })(exp.fn, btn);
+      row.appendChild(info); row.appendChild(btn); c.appendChild(row);
+    });
+    panel.appendChild(c);
+  }
 
-    // ── EXPORT DATA ───────────────────────────────────────────
-    (function(p){
-      var c=card('Export Financial Data','Download membership and revenue data as CSV for accounting, tax, or reporting.');
-      var exports=[
-        {label:'All Members with Tier',icon:'&#128101;',desc:'Full member list with name, email, tier, and join date.',fn:async function(){
-          var r=await apiFetch(SUPABASE_URL+'/rest/v1/profiles?select=username,full_name,email,subscription_tier,created_at&order=created_at.desc');
-          if(!r||!r.ok)throw new Error('Fetch failed');
-          var rows=await r.json();
-          _downloadFICSV('members-tiers.csv','Username,Full Name,Email,Tier,Joined\n'+rows.map(function(r){return [r.username,r.full_name,r.email,r.subscription_tier,r.created_at?new Date(r.created_at).toLocaleDateString('en-AU'):''].map(function(v){return '"'+String(v||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n'));
-        }},
-        {label:'Subscription History',icon:'&#128196;',desc:'Full log of all tier changes and subscription events.',fn:async function(){
-          var rows=await rpc('admin_get_subscriptions',{p_limit:9999,p_offset:0});
-          if(!Array.isArray(rows))throw new Error('No data');
-          _downloadFICSV('subscription-history.csv','Username,Full Name,Email,Tier,Status,Source,Started,Notes\n'+rows.map(function(r){return [r.username,r.full_name,r.email,r.tier,r.status,r.source,r.started_at?new Date(r.started_at).toLocaleDateString('en-AU'):'',r.notes||''].map(function(v){return '"'+String(v||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n'));
-        }},
-        {label:'Premium Members Only',icon:'&#11088;',desc:'Filtered list of premium and event tier members only.',fn:async function(){
-          var r=await apiFetch(SUPABASE_URL+'/rest/v1/profiles?select=username,full_name,email,subscription_tier,created_at&subscription_tier=neq.free&order=subscription_tier.asc,created_at.desc');
-          if(!r||!r.ok)throw new Error('Fetch failed');
-          var rows=await r.json();
-          _downloadFICSV('premium-members.csv','Username,Full Name,Email,Tier,Joined\n'+rows.map(function(r){return [r.username,r.full_name,r.email,r.subscription_tier,r.created_at?new Date(r.created_at).toLocaleDateString('en-AU'):''].map(function(v){return '"'+String(v||'').replace(/"/g,'""')+'"';}).join(',');}).join('\n'));
-        }}
-      ];
-      exports.forEach(function(exp){
-        var row=mk('div','display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05)');
-        var info=mk('div','');
-        info.appendChild(mk('div','font-size:13px;font-weight:600;color:var(--text-high)',exp.icon+' '+exp.label));
-        info.appendChild(mk('div','font-size:11px;color:var(--text-mid);margin-top:2px',exp.desc));
-        var btn=mk('button','padding:6px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-family:DM Sans,sans-serif;font-size:11px;cursor:pointer;flex-shrink:0','\u2b07 Export CSV');
-        (function(fn,b){b.addEventListener('click',async function(){b.disabled=true;b.textContent='Exporting\u2026';try{await fn();b.textContent='\u2b07 Export CSV';b.disabled=false;}catch(e){b.textContent='\u2b07 Export CSV';b.disabled=false;alert('Export failed: '+e.message);}});})(exp.fn,btn);
-        row.appendChild(info);row.appendChild(btn);c.appendChild(row);
-      });
-      p.appendChild(c);
-    })(panels['export']);
-
-    // ── PROMO CODES ───────────────────────────────────────────
-    (function(p){
-      var c=card('Promo & Discount Codes','Create discount codes for promotions, gifts, or partnerships. Codes are enforced at checkout once Stripe is connected.');
-      c.appendChild(Object.assign(mk('div','padding:12px 14px;background:rgba(91,143,212,0.08);border:1px solid rgba(91,143,212,0.25);border-radius:9px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);line-height:1.6;margin-bottom:16px'),{textContent:'Promo code redemption activates when Stripe is connected. You can create and manage codes here now \u2014 they will be enforced at checkout automatically.'}));
-      var form=mk('div','display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px');
-      form.appendChild(fi('promo-code','Promo Code *','e.g. WELCOME20'));
-      form.appendChild(fs('promo-type','Discount Type',[{v:'percent',l:'Percentage off'},{v:'flat',l:'Flat amount off'},{v:'free_month',l:'One free month'}]));
-      form.appendChild(fi('promo-value','Discount Value','e.g. 20 for 20%'));
-      form.appendChild(fs('promo-tier','Applies to Tier',[{v:'premium',l:'Premium'},{v:'event',l:'Event / Wedding'},{v:'both',l:'Both tiers'}]));
-      form.appendChild(fi('promo-uses','Max Uses (blank = unlimited)','','number'));
-      form.appendChild(fi('promo-expires','Expiry Date','','date'));
-      c.appendChild(form);
-      var _promos=[];
-      var listDiv=mk('div','margin-top:8px');
-      function promoTierLabel(t){ return t==='event'?'Event':t==='both'?'Any tier':(t||'monthly'); }
-      function renderPromos(){
-        listDiv.innerHTML='';
-        if(!_promos.length){listDiv.appendChild(mk('div','font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)','No promo codes yet.'));return;}
-        var tbl=document.createElement('table');tbl.className='ap-table';
-        tbl.innerHTML='<thead><tr style="border-bottom:1px solid var(--border)"><th class="ap-th">Code</th><th class="ap-th">Type</th><th class="ap-th">Value</th><th class="ap-th">Tier grant</th><th class="ap-th">Uses</th><th class="ap-th">Expires</th><th class="ap-th">Delete</th></tr></thead>';
-        var tbody=document.createElement('tbody');
-        _promos.forEach(function(pp){
-          var tr=document.createElement('tr');tr.style.borderBottom='1px solid rgba(255,255,255,0.04)';
-          var dtype=pp.discount_type||pp.type||'percent';
-          var dval=pp.discount_value!=null?pp.discount_value:pp.value;
-          var usesTxt=(pp.uses_count||0)+' / '+(pp.max_uses==null?'∞':pp.max_uses);
-          var exp=pp.expires_at?new Date(pp.expires_at).toLocaleDateString():(pp.expires||'Never');
-          tr.innerHTML='<td class="ap-td"><span style="font-family:monospace;font-size:12px;color:var(--accent);font-weight:700">'+esc(pp.code)+'</span></td>'+
-            '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+esc(dtype.replace('_',' '))+'</td>'+
-            '<td class="ap-td" style="font-size:12px;color:var(--text-high)">'+esc(dtype==='percent'?dval+'%':dtype==='flat'?cur+dval:'Free month')+'</td>'+
-            '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+esc(promoTierLabel(pp.tier_grant||pp.tier))+'</td>'+
-            '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+esc(usesTxt)+'</td>'+
-            '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">'+esc(exp)+'</td><td class="ap-td"></td>';
-          var db=mk('button','padding:4px 10px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-size:11px;cursor:pointer','Delete');
-          db.addEventListener('click',function(){
-            if(!confirm('Delete promo '+pp.code+'?'))return;
-            rpc('admin_delete_promo_code',{p_code:pp.code}).then(function(){loadPromos();}).catch(function(e){alert(e.message||e);});
-          });
-          tr.lastElementChild.appendChild(db);tbody.appendChild(tr);
+  function renderFiPromo(panel, cur) {
+    panel.innerHTML = '';
+    var c = card('Promo & Discount Codes', 'Create discount codes for promotions, gifts, or partnerships. Codes are enforced at checkout once Stripe is connected.');
+    c.appendChild(Object.assign(mk('div', 'padding:12px 14px;background:rgba(91,143,212,0.08);border:1px solid rgba(91,143,212,0.25);border-radius:9px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);line-height:1.6;margin-bottom:16px'), { textContent: 'Promo code redemption activates when Stripe is connected. You can create and manage codes here now \u2014 they will be enforced at checkout automatically.' }));
+    var form = mk('div', 'display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px');
+    form.appendChild(fi('promo-code', 'Promo Code *', 'e.g. WELCOME20'));
+    form.appendChild(fs('promo-type', 'Discount Type', [{ v: 'percent', l: 'Percentage off' }, { v: 'flat', l: 'Flat amount off' }, { v: 'free_month', l: 'One free month' }]));
+    form.appendChild(fi('promo-value', 'Discount Value', 'e.g. 20 for 20%'));
+    form.appendChild(fs('promo-tier', 'Applies to Tier', [{ v: 'premium', l: 'Premium' }, { v: 'event', l: 'Event / Wedding' }, { v: 'both', l: 'Both tiers' }]));
+    form.appendChild(fi('promo-uses', 'Max Uses (blank = unlimited)', '', 'number'));
+    form.appendChild(fi('promo-expires', 'Expiry Date', '', 'date'));
+    c.appendChild(form);
+    var _promos = [];
+    var listDiv = mk('div', 'margin-top:8px');
+    function promoTierLabel(t) { return t === 'event' ? 'Event' : t === 'both' ? 'Any tier' : (t || 'monthly'); }
+    function renderPromos() {
+      listDiv.innerHTML = '';
+      if (!_promos.length) { listDiv.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)', 'No promo codes yet.')); return; }
+      var tbl = document.createElement('table'); tbl.className = 'ap-table';
+      tbl.innerHTML = '<thead><tr style="border-bottom:1px solid var(--border)"><th class="ap-th">Code</th><th class="ap-th">Type</th><th class="ap-th">Value</th><th class="ap-th">Tier grant</th><th class="ap-th">Uses</th><th class="ap-th">Expires</th><th class="ap-th">Delete</th></tr></thead>';
+      var tbody = document.createElement('tbody');
+      _promos.forEach(function (pp) {
+        var tr = document.createElement('tr'); tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+        var dtype = pp.discount_type || pp.type || 'percent';
+        var dval = pp.discount_value != null ? pp.discount_value : pp.value;
+        var usesTxt = (pp.uses_count || 0) + ' / ' + (pp.max_uses == null ? '\u221e' : pp.max_uses);
+        var exp = pp.expires_at ? new Date(pp.expires_at).toLocaleDateString() : (pp.expires || 'Never');
+        tr.innerHTML = '<td class="ap-td"><span style="font-family:monospace;font-size:12px;color:var(--accent);font-weight:700">' + esc(pp.code) + '</span></td>' +
+          '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">' + esc(dtype.replace('_', ' ')) + '</td>' +
+          '<td class="ap-td" style="font-size:12px;color:var(--text-high)">' + esc(dtype === 'percent' ? dval + '%' : dtype === 'flat' ? cur + dval : 'Free month') + '</td>' +
+          '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">' + esc(promoTierLabel(pp.tier_grant || pp.tier)) + '</td>' +
+          '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">' + esc(usesTxt) + '</td>' +
+          '<td class="ap-td" style="font-size:12px;color:var(--text-mid)">' + esc(exp) + '</td><td class="ap-td"></td>';
+        var db = mk('button', 'padding:4px 10px;background:none;border:1px solid #dc5050;border-radius:6px;color:#dc5050;font-size:11px;cursor:pointer', 'Delete');
+        db.addEventListener('click', function () {
+          if (!confirm('Delete promo ' + pp.code + '?')) return;
+          rpc('admin_delete_promo_code', { p_code: pp.code }).then(function () { loadPromos(); }).catch(function (e) { alert(e.message || e); });
         });
-        tbl.appendChild(tbody);listDiv.appendChild(tbl);
-      }
-      function loadPromos(){
-        rpc('admin_get_promo_codes',{}).then(function(rows){
-          _promos=Array.isArray(rows)?rows:[];
-          renderPromos();
-        }).catch(function(e){
-          listDiv.innerHTML='<div style="font-size:12px;color:#dc5050">'+esc(e.message||e)+'</div>';
-        });
-      }
-      loadPromos();
-      var addBtn=mk('button','padding:10px 24px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer','+ Add Promo Code');
-      addBtn.addEventListener('click',function(){
-        var code=((document.getElementById('fmi-promo-code')||{}).value||'').trim().toUpperCase();
-        if(!code){alert('Code is required.');return;}
-        var tierSel=(document.getElementById('fmi-promo-tier')||{}).value||'premium';
-        var tierGrant=tierSel==='event'?'event':tierSel==='both'?'monthly':'monthly';
-        var maxUses=((document.getElementById('fmi-promo-uses')||{}).value||'').trim();
-        var expDate=((document.getElementById('fmi-promo-expires')||{}).value||'').trim();
-        var val=parseFloat(((document.getElementById('fmi-promo-value')||{}).value||'0'))||0;
-        rpc('admin_upsert_promo_code',{
-          p_code:code,
-          p_discount_type:(document.getElementById('fmi-promo-type')||{}).value||'percent',
-          p_discount_value:val,
-          p_tier_grant:tierGrant,
-          p_max_uses:maxUses?parseInt(maxUses,10):null,
-          p_expires_at:expDate?new Date(expDate+'T23:59:59').toISOString():null
-        }).then(function(){
-          loadPromos();
-          document.getElementById('fmi-promo-code').value='';document.getElementById('fmi-promo-value').value='';
-          auditLog('Finance Management','Promo Code Created',code,null,null,code);
-        }).catch(function(e){alert(e.message||e);});
+        tr.lastElementChild.appendChild(db); tbody.appendChild(tr);
       });
-      c.appendChild(addBtn);c.appendChild(listDiv);p.appendChild(c);
-    })(panels['promo']);
+      tbl.appendChild(tbody); listDiv.appendChild(tbl);
+    }
+    function loadPromos() {
+      rpc('admin_get_promo_codes', {}).then(function (rows) {
+        _promos = Array.isArray(rows) ? rows : [];
+        renderPromos();
+      }).catch(function (e) {
+        listDiv.innerHTML = '<div style="font-size:12px;color:#dc5050">' + esc(e.message || e) + '</div>';
+      });
+    }
+    loadPromos();
+    var addBtn = mk('button', 'padding:10px 24px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer', '+ Add Promo Code');
+    addBtn.addEventListener('click', function () {
+      var code = ((document.getElementById('fmi-promo-code') || {}).value || '').trim().toUpperCase();
+      if (!code) { alert('Code is required.'); return; }
+      var tierSel = (document.getElementById('fmi-promo-tier') || {}).value || 'premium';
+      var tierGrant = tierSel === 'event' ? 'event' : tierSel === 'both' ? 'monthly' : 'monthly';
+      var maxUses = ((document.getElementById('fmi-promo-uses') || {}).value || '').trim();
+      var expDate = ((document.getElementById('fmi-promo-expires') || {}).value || '').trim();
+      var val = parseFloat(((document.getElementById('fmi-promo-value') || {}).value || '0')) || 0;
+      rpc('admin_upsert_promo_code', {
+        p_code: code,
+        p_discount_type: (document.getElementById('fmi-promo-type') || {}).value || 'percent',
+        p_discount_value: val,
+        p_tier_grant: tierGrant,
+        p_max_uses: maxUses ? parseInt(maxUses, 10) : null,
+        p_expires_at: expDate ? new Date(expDate + 'T23:59:59').toISOString() : null
+      }).then(function () {
+        loadPromos();
+        document.getElementById('fmi-promo-code').value = ''; document.getElementById('fmi-promo-value').value = '';
+        auditLog('Finance Management', 'Promo Code Created', code, null, null, code);
+      }).catch(function (e) { alert(e.message || e); });
+    });
+    c.appendChild(addBtn); c.appendChild(listDiv); panel.appendChild(c);
+  }
 
-    container.dataset.built='1';
-  } catch(e){
-    container.dataset.built='';
-    container.innerHTML='<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> '+String(e.message).replace(/</g,'&lt;')+'</div>';
+  try {
+    container.innerHTML = '';
+    container.dataset.built = '1';
+
+    AdminTabNav.buildInterfaceShell(container, {
+      storageKey: 'tcj_fmi_tab',
+      defaultKey: 'hub',
+      banner: 'Finance tools — overview and billing stay in the tabs above.',
+      sections: [
+        {
+          key: 'hub',
+          label: 'Hub',
+          group: 'Overview',
+          subtitle: 'Tier snapshot and one-click tools',
+          render: function (panel, ctx) {
+            panel.innerHTML = '<div class="admin-if-loading">Loading stats…</div>';
+            return Promise.all([
+              fiTiers(),
+              rpc('admin_count_print_orders', { p_status: 'pending' }).catch(function () { return 0; })
+            ]).then(function (res) {
+              var tiers = res[0] || {};
+              AdminTabNav.renderHub(panel, {
+                intro: 'Record payments, generate invoices, export CSV, or manage promo codes — open a section in the sidebar or use a shortcut.',
+                stats: [
+                  { num: tiers.premium || 0, label: 'Premium' },
+                  { num: tiers.event || 0, label: 'Event tier' },
+                  { num: res[1] || 0, label: 'Print orders' }
+                ],
+                actions: [
+                  { label: 'Manual payment', desc: 'Record off-system payment', onClick: function () { ctx.activate('manual'); } },
+                  { label: 'Invoice generator', desc: 'Printable receipt', onClick: function () { ctx.activate('invoice'); } },
+                  { label: 'Export CSV', desc: 'Members & subscriptions', onClick: function () { ctx.activate('export'); } },
+                  { label: 'Promo codes', desc: 'Discount codes', onClick: function () { ctx.activate('promo'); } },
+                  { label: 'Member tiers', desc: 'Grant or change tier', onClick: function () { switchFinanceTab('fi-members'); } },
+                  { label: 'Pricing', desc: 'Monthly & annual rates', onClick: function () { switchFinanceTab('fi-pricing'); } }
+                ]
+              });
+            });
+          }
+        },
+        {
+          key: 'manual',
+          label: 'Manual payment',
+          group: 'Tools',
+          subtitle: 'Cash, transfer, PayPal, etc.',
+          render: function (panel) {
+            panel.innerHTML = '<div class="admin-if-loading">Loading members…</div>';
+            return Promise.all([fiSettings(), fiMembers()]).then(function (res) {
+              renderFiManual(panel, res[0], res[1], res[0].currency_symbol || '$');
+            });
+          }
+        },
+        {
+          key: 'invoice',
+          label: 'Invoice',
+          group: 'Tools',
+          subtitle: 'Generate printable receipt',
+          render: function (panel) {
+            panel.innerHTML = '<div class="admin-if-loading">Loading members…</div>';
+            return Promise.all([fiSettings(), fiMembers()]).then(function (res) {
+              renderFiInvoice(panel, res[0], res[1], res[0].currency_symbol || '$');
+            });
+          }
+        },
+        {
+          key: 'export',
+          label: 'Export data',
+          group: 'Tools',
+          subtitle: 'CSV downloads for accounting',
+          render: function (panel) { renderFiExport(panel); }
+        },
+        {
+          key: 'promo',
+          label: 'Promo codes',
+          group: 'Tools',
+          subtitle: 'Discount codes for checkout',
+          render: function (panel) {
+            return fiSettings().then(function (S) { renderFiPromo(panel, S.currency_symbol || '$'); });
+          }
+        }
+      ]
+    });
+  } catch (e) {
+    container.dataset.built = '';
+    container.innerHTML = '<div style="padding:16px;background:rgba(220,80,80,0.1);border:1px solid rgba(220,80,80,0.4);border-radius:10px;font-family:DM Sans,sans-serif;font-size:13px;color:#dc5050"><strong>Error:</strong> ' + String(e.message).replace(/</g, '&lt;') + '</div>';
   }
 }
 

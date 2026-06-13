@@ -46,73 +46,50 @@ function switchUserTab(tab) {
 
 function loadUMInterfaceSettings() {
   var container = document.getElementById('upanel-umsettings');
-  if (!container) return;
-  if (container.dataset.shellBuilt === '1') {
-    var stored = localStorage.getItem('tcj_um_interface_tab') || 'settings';
-    var btn = container.querySelector('[data-admin-if-tab="' + stored + '"]');
-    if (btn) btn.click();
+  if (!container || typeof AdminTabNav === 'undefined') {
+    if (container) container.textContent = 'Admin tab navigation failed to load.';
     return;
   }
-  container.innerHTML = '';
-  container.dataset.shellBuilt = '1';
-  if (typeof AdminTabNav === 'undefined') {
-    container.textContent = 'Admin tab navigation failed to load.';
-    return;
-  }
-  container.appendChild(AdminTabNav.interfaceBanner('Member policy and analytics — operational queues stay in the tabs above.'));
-  container.appendChild(AdminTabNav.interfaceIntro('Grant tiers in Finance \u2192 Member Tiers. Site feedback is unified in Voice of the Customer.'));
 
-  function mk(tag, style, text) { var e = document.createElement(tag); if (style) e.style.cssText = style; if (text !== undefined) e.textContent = text; return e; }
-  function card(title) {
-    var d = mk('div', 'background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px');
-    d.appendChild(mk('div', "font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:14px", title));
-    return d;
-  }
-
-  var shell = AdminTabNav.buildInnerTabBar(container, [
-    { key: 'settings', label: 'Settings' },
-    { key: 'analytics', label: 'Analytics' },
-    { key: 'audit', label: 'Audit Trail' }
-  ], 'tcj_um_interface_tab', 'settings', function (key, panel) {
-    if (key === 'analytics') loadUMAnalytics(panel);
-    if (key === 'audit') loadUMTab('audit', panel);
+  AdminTabNav.buildInterfaceShell(container, {
+    storageKey: 'tcj_um_interface_tab',
+    defaultKey: 'hub',
+    banner: 'Member policy and insights — member queues stay in the tabs above.',
+    sections: [
+      {
+        key: 'hub',
+        label: 'Hub',
+        group: 'Overview',
+        subtitle: 'Shortcuts to work queues and related panels',
+        render: function (panel, ctx) {
+          panel.innerHTML = '<div class="admin-if-loading">Loading…</div>';
+          return Promise.all([
+            rpc('admin_count_pending_users', {}).catch(function () { return 0; }),
+            AdminTabNav.restCount('appeals', 'status=eq.pending'),
+            AdminTabNav.restCount('user_reports', 'status=eq.pending')
+          ]).then(function (res) {
+            AdminTabNav.renderHub(panel, {
+              stats: [
+                { num: res[0] || 0, label: 'Pending members' },
+                { num: res[1] || 0, label: 'Appeals' },
+                { num: res[2] || 0, label: 'Open reports' }
+              ],
+              actions: [
+                { label: 'Review pending members', desc: 'Approval queue', onClick: function () { switchUserTab('pending'); } },
+                { label: 'Reports & appeals', desc: 'Moderation inbox', onClick: function () { switchUserTab('reports'); } },
+                { label: 'Voice of the Customer', desc: 'Site feedback inbox', onClick: function () { switchView('voc-mgmt'); } },
+                { label: 'Member tiers', desc: 'Finance → grant tiers', onClick: function () { switchView('finance'); switchFinanceTab('fi-members'); } },
+                { label: 'Analytics', desc: 'Member insights', onClick: function () { ctx.activate('analytics'); } },
+                { label: 'Audit trail', desc: 'User admin log', onClick: function () { ctx.activate('audit'); } }
+              ]
+            });
+          });
+        }
+      },
+      { key: 'analytics', label: 'Analytics', group: 'Insights', subtitle: 'Member and engagement stats', render: function (p) { loadUMAnalytics(p); } },
+      { key: 'audit', label: 'Audit trail', group: 'Insights', subtitle: 'User management actions', render: function (p) { loadUMTab('audit', p); } }
+    ]
   });
-
-  var settingsPanel = shell.panels.settings;
-  var smCard = card('Site Management Shortcuts');
-  var grid = mk('div', 'display:flex;flex-wrap:wrap;gap:10px');
-  [{ label: 'Pages & visibility', tab: 'sm-pages' }, { label: 'Feature toggles', tab: 'sm-features' }, { label: 'Billing copy', smTab: 'sm-interface', sub: 'settings' }].forEach(function(link) {
-    var b = mk('button', "padding:8px 16px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer", link.label + ' \u2192');
-    b.addEventListener('click', function() {
-      if (link.smTab) {
-        localStorage.setItem('tcj_sm_interface_tab', link.sub || 'settings');
-        switchView('site-mgmt');
-        switchSMTab('sm-interface');
-      } else {
-        switchView('site-mgmt');
-        switchSMTab(link.tab);
-      }
-    });
-    grid.appendChild(b);
-  });
-  smCard.appendChild(grid);
-  settingsPanel.appendChild(smCard);
-
-  var vocCard = card('Voice of the Customer');
-  var vocBtn = mk('button', "padding:8px 16px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer", 'Open VoC inbox \u2192');
-  vocBtn.addEventListener('click', function() { switchView('voc-mgmt'); });
-  vocCard.appendChild(vocBtn);
-  settingsPanel.appendChild(vocCard);
-
-  var noteCard = card('Member tiers');
-  noteCard.appendChild(mk('p', 'font-size:12px;color:var(--text-mid);line-height:1.55',
-    'Grant daily / weekly / monthly / yearly tiers from Finance \u2192 Member Tiers. Stripe checkout applies tiers automatically when enabled.'));
-  var fiBtn = mk('button', "margin-top:8px;padding:8px 16px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer", 'Finance \u2192 Member Tiers');
-  fiBtn.addEventListener('click', function() { switchView('finance'); switchFinanceTab('fi-members'); });
-  noteCard.appendChild(fiBtn);
-  settingsPanel.appendChild(noteCard);
-
-  shell.activate(shell.activeKey);
 }
 
 // ── MEMBERS PANEL ─────────────────────────────────────────────────

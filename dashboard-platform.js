@@ -39,36 +39,67 @@ function switchVocTab(tab) {
 }
 
 function loadVocInterface(container) {
-  if (!container) return;
-  if (container.dataset.shellBuilt === '1') {
-    var stored = localStorage.getItem('tcj_voc_interface_tab') || 'taxonomy';
-    var btn = container.querySelector('[data-admin-if-tab="' + stored + '"]');
-    if (btn) btn.click();
+  if (!container || typeof AdminTabNav === 'undefined') {
+    if (container) container.textContent = 'Admin tab navigation failed to load.';
     return;
   }
-  container.innerHTML = '';
-  container.dataset.shellBuilt = '1';
-  if (typeof AdminTabNav === 'undefined') {
-    container.textContent = 'Admin tab navigation failed to load.';
-    return;
-  }
-  container.appendChild(AdminTabNav.interfaceBanner('Reference for categorising inbox entries — triage happens in the Inbox tab.'));
-  var shell = AdminTabNav.buildInnerTabBar(container, [
-    { key: 'taxonomy', label: 'Taxonomy' },
-    { key: 'routing', label: 'Widget routing' }
-  ], 'tcj_voc_interface_tab', 'taxonomy', function (key, panel) {
-    if (key === 'taxonomy') loadVocTaxonomy(panel);
-    if (key === 'routing') {
-      panel.innerHTML =
-        '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);line-height:1.8;max-width:640px">' +
-        '<div style="font-family:Cormorant Garamond,serif;font-size:1.1rem;font-weight:700;color:var(--text-high);margin-bottom:12px">Automatic type mapping</div>' +
-        '<p><strong>Actionable</strong> — system_bug, process_friction, content_issue, bug</p>' +
-        '<p><strong>Signals</strong> — kudos, value_story, feature_wish, suggestion, recipe praise</p>' +
-        '<p><strong>Noise</strong> — user_error, vague_vent, known_repeat, general, other</p>' +
-        '<p style="margin-top:16px;font-size:12px">Re-categorise in the inbox; admin_notes persist per entry.</p></div>';
-    }
+
+  AdminTabNav.buildInterfaceShell(container, {
+    storageKey: 'tcj_voc_interface_tab',
+    defaultKey: 'hub',
+    banner: 'VoC reference — triage happens in the Inbox tab.',
+    sections: [
+      {
+        key: 'hub',
+        label: 'Hub',
+        group: 'Overview',
+        subtitle: 'Inbox summary and quick filters',
+        render: function (panel, ctx) {
+          panel.innerHTML = '<div class="admin-if-loading">Loading…</div>';
+          return Promise.all([
+            AdminTabNav.restCount('user_feedback', 'status=eq.new'),
+            AdminTabNav.restCount('user_feedback', 'voc_category=eq.actionable'),
+            AdminTabNav.restCount('user_feedback', 'action_required=eq.true')
+          ]).then(function (res) {
+            AdminTabNav.renderHub(panel, {
+              stats: [
+                { num: res[0] || 0, label: 'New' },
+                { num: res[1] || 0, label: 'Actionable' },
+                { num: res[2] || 0, label: 'Action required' }
+              ],
+              actions: [
+                { label: 'Open inbox', desc: 'All feedback entries', onClick: function () { switchVocTab('voc-inbox'); } },
+                { label: 'New only', desc: 'Filter inbox to new', onClick: function () { switchVocTab('voc-inbox'); loadVocInbox(document.getElementById('voc-panel'), { status: 'new' }); } },
+                { label: 'Action required', desc: 'Needs your attention', onClick: function () { switchVocTab('voc-inbox'); loadVocInbox(document.getElementById('voc-panel'), { action_required: true }); } },
+                { label: 'Taxonomy guide', desc: 'Actionable / signals / noise', onClick: function () { ctx.activate('taxonomy'); } }
+              ]
+            });
+          });
+        }
+      },
+      { key: 'taxonomy', label: 'Taxonomy', group: 'Reference', subtitle: 'How to categorise entries', render: function (p) { loadVocTaxonomy(p); } },
+      {
+        key: 'routing',
+        label: 'Widget routing',
+        group: 'Reference',
+        subtitle: 'Automatic type → category mapping',
+        render: function (panel) {
+          panel.innerHTML =
+            '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);line-height:1.8;max-width:640px">' +
+            '<p><strong style="color:#dc5050">Actionable</strong> — system_bug, process_friction, content_issue, bug</p>' +
+            '<p><strong style="color:#4caf76">Signals</strong> — kudos, value_story, feature_wish, suggestion, recipe praise</p>' +
+            '<p><strong style="color:#5B8FD4">Noise</strong> — user_error, vague_vent, known_repeat, general, other</p>' +
+            '<p style="margin-top:16px;font-size:12px">Re-categorise in the inbox; admin_notes persist per entry.</p></div>';
+        }
+      }
+    ]
   });
-  shell.activate(shell.activeKey);
+}
+
+function fmOpenFestEditor(slug) {
+  _fmEditSlug = slug || '';
+  if (slug) localStorage.setItem('tcj_fest_if_section', 'fest-' + slug);
+  switchFestTab('fm-interface');
 }
 
 function fmInput(label, id, val, ph) {
@@ -109,7 +140,7 @@ async function loadFestOverview(container) {
           '<input type="checkbox" ' + (f.is_active ? 'checked' : '') + ' onchange="fmToggleActive(\'' + f.id + '\', this.checked)"> Show on Festival Planner</label>' +
         (f.planner_path ? '<a href="' + esc(f.planner_path) + '" target="_blank" style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--accent)">Planner →</a>' : '') +
         '<a href="festival-planner.html" target="_blank" style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--accent)">Public view →</a>' +
-        fmBtn('Edit', 'switchFestTab(\'fm-interface\');fmEditFest(\'' + f.slug + '\')', false);
+        fmBtn('Edit', 'fmOpenFestEditor(\'' + f.slug + '\')', false);
       list.appendChild(card);
     });
   } catch (e) {
@@ -160,35 +191,106 @@ async function fmToggleActive(id, on) {
 var _fmEditSlug = '';
 
 async function loadFestInterface(container) {
-  container.innerHTML = '<div class="ap-loading">Loading FM Interface…</div>';
+  if (!container || typeof AdminTabNav === 'undefined') {
+    if (container) container.textContent = 'Admin tab navigation failed to load.';
+    return;
+  }
+  container.innerHTML = '<div class="admin-if-loading">Loading festivals…</div>';
   try {
     var rows = await rpc('admin_get_festivals') || [];
-    container.innerHTML =
-      '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid);line-height:1.7;margin-bottom:14px">' +
-      'Edit festivals, define <strong style="color:var(--text-high)">sections</strong> (Main, Sides, Desserts…), add dish slots, and link approved recipe variants.</div>' +
-      '<div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">' +
-        '<label style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid)">Festival</label>' +
-        '<select id="fm-pick-fest" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-high);font-family:DM Sans,sans-serif;font-size:12px;min-width:220px"></select>' +
-        fmBtn('Load', 'fmEditFest(document.getElementById(\'fm-pick-fest\').value)', true) +
-      '</div>' +
-      '<div id="fm-editor"></div>';
-    var sel = document.getElementById('fm-pick-fest');
-    rows.forEach(function(f) {
-      var o = document.createElement('option');
-      o.value = f.slug; o.textContent = (f.emoji || '') + ' ' + f.name;
-      sel.appendChild(o);
+    var sections = [
+      {
+        key: 'hub',
+        label: 'Hub',
+        group: 'Festivals',
+        subtitle: 'Overview and create',
+        render: function (panel, ctx) {
+          panel.innerHTML =
+            '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:14px">' +
+            rows.length + ' festival' + (rows.length === 1 ? '' : 's') + ' — pick one in the sidebar to edit dishes and recipes.</div>' +
+            '<div id="fm-new-fest-inline"></div>';
+          AdminTabNav.renderHub(panel, {
+            stats: [
+              { num: rows.length, label: 'Festivals' },
+              { num: rows.filter(function (f) { return f.is_active; }).length, label: 'Active' }
+            ],
+            actions: [
+              { label: 'New festival', desc: 'Create a festival shell', onClick: function () { ctx.activate('new'); } },
+              { label: 'Festival overview', desc: 'Toggle visibility on planner', onClick: function () { switchFestTab('fm-overview'); } }
+            ].concat(rows.slice(0, 4).map(function (f) {
+              return {
+                label: (f.emoji || '🎉') + ' ' + f.name,
+                desc: 'Edit dishes & recipes',
+                onClick: function () { ctx.activate('fest-' + f.slug); }
+              };
+            }))
+          });
+        }
+      },
+      {
+        key: 'new',
+        label: '+ New festival',
+        group: 'Edit',
+        subtitle: 'Create then add dishes in the editor',
+        render: function (panel) {
+          panel.innerHTML =
+            '<div style="font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;color:var(--text-high);margin-bottom:10px">New festival</div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+              fmInput('Name', 'fm-nf-name', '', 'Diwali Feast') +
+              fmInput('Slug (URL key)', 'fm-nf-slug', '', 'diwali-feast') +
+              fmInput('Emoji', 'fm-nf-emoji', '🎉', '🪔') +
+              fmInput('When', 'fm-nf-when', '', 'Oct–Nov') +
+              fmInput('Planner page path', 'fm-nf-planner', '', 'diwali-planner.html') +
+            '</div>' +
+            fmInput('Description', 'fm-nf-desc', '', 'Short intro for the public planner') +
+            '<div style="display:flex;gap:8px;margin-top:8px">' + fmBtn('Create', 'fmSaveNewFestFromInterface()', true) + '</div>';
+        }
+      }
+    ];
+    rows.forEach(function (f) {
+      sections.push({
+        key: 'fest-' + f.slug,
+        label: (f.emoji || '🎉') + ' ' + f.name,
+        group: 'Edit',
+        subtitle: f.when_label || 'Festival editor',
+        render: function (p) { return fmEditFest(f.slug, p); }
+      });
     });
-    if (_fmEditSlug) sel.value = _fmEditSlug;
-    fmEditFest(sel.value || (rows[0] && rows[0].slug));
+    var defaultKey = _fmEditSlug ? ('fest-' + _fmEditSlug) : (rows[0] ? ('fest-' + rows[0].slug) : 'hub');
+    AdminTabNav.buildInterfaceShell(container, {
+      storageKey: 'tcj_fest_if_section',
+      defaultKey: defaultKey,
+      banner: 'Festival editor — visibility toggles stay on Overview.',
+      sections: sections
+    });
   } catch (e) {
-    container.innerHTML = '<div style="color:#dc5050">Error: ' + esc(e.message) + '</div>';
+    container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
   }
 }
 
-async function fmEditFest(slug) {
+async function fmSaveNewFestFromInterface() {
+  try {
+    await rpc('admin_upsert_festival', {
+      p_slug: document.getElementById('fm-nf-slug').value.trim(),
+      p_name: document.getElementById('fm-nf-name').value.trim(),
+      p_emoji: document.getElementById('fm-nf-emoji').value.trim() || '🎉',
+      p_when_label: document.getElementById('fm-nf-when').value.trim() || null,
+      p_description: document.getElementById('fm-nf-desc').value.trim() || null,
+      p_planner_path: document.getElementById('fm-nf-planner').value.trim() || null,
+      p_is_active: true
+    });
+    auditLog('Festival Management', 'Created festival', null, null, null, null);
+    var slug = document.getElementById('fm-nf-slug').value.trim();
+    _fmEditSlug = slug;
+    localStorage.setItem('tcj_fest_if_section', 'fest-' + slug);
+    loadFestInterface(document.getElementById('fest-panel'));
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+async function fmEditFest(slug, container) {
   if (!slug) return;
   _fmEditSlug = slug;
-  var editor = document.getElementById('fm-editor');
+  var editor = container || document.getElementById('fm-editor');
   if (!editor) return;
   editor.innerHTML = '<div class="ap-loading">Loading ' + esc(slug) + '…</div>';
   var all = await rpc('admin_get_festivals') || [];
