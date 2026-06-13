@@ -105,7 +105,7 @@ fix-phase57-garden-artichoke-profile.sql  | Purple Romagna · humid-subtropical 
 fix-phase57-garden-guilds-media.sql       | Guild admin RPCs + sample guilds + media RPC    | DONE ✅ Betty
 fix-phase58-garden-climate-copy.sql       | Neutralize city names in care/profile copy      | DONE ✅ Betty
 fix-phase59-garden-cultivar-climate-copy.sql | Cultivar + climate_notes city → climate copy | DONE ✅ Betty (91 cultivar, 91 climate_notes)
-RUN-PHASE59-IMPORT-QUEUE-PAYLOADS.txt        | Queue payloads — 14 SQL Editor batches (208 sp.) | SQL ready — Betty run 01→14
+RUN-PHASE59-IMPORT-QUEUE-PAYLOADS.txt        | Queue payloads — 14 SQL Editor batches (208 sp.) | DONE ✅ Betty (01→14)
 fix-phase32-batch.sql               | Household meals, slots, allergy, lib approve | DONE ✅ Betty
 fix-phase32-library-profiles.sql    | Desiree + Kipfler potato profiles    | DONE ✅ Betty (249, 250)
 fix-phase33-batch.sql               | Saves ranking, sync conflicts, regional hints, print gating | DONE ✅ Betty
@@ -202,10 +202,11 @@ Phase 58 Garden climate-first copy + public guilds ✅ Betty (SQL) + code on mai
   • fix-phase58-garden-climate-copy.sql ✅ — tomato + artichoke care copy climate-neutral
   • Directory guilds section live when guilds published in GM
 
-Phase 59 Garden cultivar climate copy ✅ Betty (cultivar SQL) + code on main:
+Phase 59 Garden cultivar climate copy ✅ Betty (SQL complete) + code on main:
   • fix-phase59-garden-cultivar-climate-copy.sql ✅ — 91 cultivar rows + 91 climate_notes
-  • RUN-PHASE59-IMPORT-QUEUE-PAYLOADS.txt — 14 batches (~15 species each); monolith removed (SQL Editor limit)
+  • RUN-PHASE59-IMPORT-QUEUE-PAYLOADS.txt ✅ — 14 batches, 208 queue payloads climate-neutral
   • Parser + import-payload JSON neutralize at source (garden_climate_copy.py)
+  • Next: GM Import & health — safe to apply/publish (see ops notes)
 
 Phase 28: master list reopened · grocery archive→pantry · MP-06 drag
 

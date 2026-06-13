@@ -63,9 +63,9 @@ Parser v2 fixes parenthetical docx format (Carrot, Peas, etc.) and adds mangoste
 | Step | File | Expect |
 |------|------|--------|
 | 1 | `fix-phase59-garden-cultivar-climate-copy.sql` | All `plant_varieties` text + `variety_climate_suitability.climate_notes` climate-neutral |
-| 2 | `RUN-PHASE59-IMPORT-QUEUE-PAYLOADS.txt` | Paste **14 batches** (`fix-phase59-garden-import-queue-payloads-01.sql` … `-14.sql`) one at a time — monolith too large for SQL Editor |
+| 2 | `RUN-PHASE59-IMPORT-QUEUE-PAYLOADS.txt` | ✅ 14 batches — 208 queue payloads climate-neutral |
 
-**Do not** GM → Apply all pending imports until step 2 batches are all applied (old queue payloads would restore city labels).
+**Phase 59 SQL complete.** GM → Apply all pending imports is now safe (queue payloads match climate-first copy).
 
 ## Garden go-live (step 2j — after v3 + v4)
 

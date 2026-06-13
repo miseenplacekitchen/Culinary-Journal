@@ -1,6 +1,7 @@
-Garden Phase 59 — import queue payload batches (paste each in Supabase SQL Editor)
+Garden Phase 59 — import queue payload batches ✅ COMPLETE (Betty 2026-06-06)
 Run fix-phase59-garden-cultivar-climate-copy.sql first (already done if cultivars neutralized).
-Paste ONE file at a time in order:
+All 14 batches applied — 208 species. Safe for GM import apply.
+Paste order (archive):
 
 fix-phase59-garden-import-queue-payloads-01.sql
 fix-phase59-garden-import-queue-payloads-02.sql
