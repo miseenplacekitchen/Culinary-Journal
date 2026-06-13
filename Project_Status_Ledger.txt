@@ -99,6 +99,7 @@ fix-phase31-print-orders.sql        | Print & Post order intent queue      | DON
 fix-phase53-print-fulfillment.sql   | Print admin inbox + status workflow + emails | DONE ✅ Betty
 fix-phase54-garden-kitchen-profiles.sql | Kitchen 15 species care + calendar + hinge | DONE ✅ Betty
 fix-phase54-import-payload-refresh.sql    | Re-parse 12 cultivar payloads (parser v2)  | DONE ✅ Betty
+fix-phase55-garden-pages.sql              | Garden pages registered (incl. journal)    | CODE ✅ — Betty run pending
 fix-phase32-batch.sql               | Household meals, slots, allergy, lib approve | DONE ✅ Betty
 fix-phase32-library-profiles.sql    | Desiree + Kipfler potato profiles    | DONE ✅ Betty (249, 250)
 fix-phase33-batch.sql               | Saves ranking, sync conflicts, regional hints, print gating | DONE ✅ Betty
@@ -177,6 +178,10 @@ Phase 54 Garden profiles + parser v2 ✅ Betty:
   • fix-phase54-import-payload-refresh.sql ✅ → GM Apply all pending imports (Betty)
   • fix-phase54-garden-kitchen-profiles.sql ✅ → 15 kitchen species care + calendar
   • Publish species in GM when curated; Excel 83-field ingest still deferred
+
+Phase 55 Garden go-live ops (code shipped · SQL pending Betty):
+  • GM Import & health → Kitchen go-live panel (apply refreshed 12, publish kitchen batch)
+  • fix-phase55-garden-pages.sql → garden-journal + all garden pages registered
 
 Phase 28: master list reopened · grocery archive→pantry · MP-06 drag
 

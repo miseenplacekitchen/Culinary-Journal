@@ -19,9 +19,17 @@ Payment checkout is **not** in this phase — manual fulfilment only.
 | 1 | Deploy site code from GitHub | Updated parser scripts in repo |
 | 2 | `fix-phase54-import-payload-refresh.sql` | 12 refreshed payloads; queue status → parsed for re-apply |
 | 3 | `fix-phase54-garden-kitchen-profiles.sql` | 15 kitchen species: care_summary, humid-subtropical care + calendar |
-| 4 | Admin → GM Interface | **Apply all pending imports** → publish species when ready |
+| 4 | Admin → GM Interface → **Import & health** | Apply refreshed imports → publish kitchen batch |
 
 Parser v2 fixes parenthetical docx format (Carrot, Peas, etc.) and adds mangosteen summary cultivars.
+
+## Garden Phase 55 (pages + GM go-live panel)
+
+| Step | File / action | Expect |
+|------|---------------|--------|
+| 1 | Deploy site code | GM **Import & health** tab shows Kitchen go-live panel |
+| 2 | `fix-phase55-garden-pages.sql` | All 4 garden pages `visibility = registered` |
+| 3 | GM → Apply refreshed imports → Publish kitchen batch | 15 kitchen species live on directory |
 
 ## Garden go-live (step 2j — after v3 + v4)
 
