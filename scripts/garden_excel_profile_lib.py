@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 
 from garden_ingest_lib import esc_sql, slugify
+from garden_climate_copy import neutralize_city_copy as neutralize_location_copy
 
 XLSX_DEFAULT = Path(__file__).resolve().parents[1] / "brainstorm-inbox" / "2025.11.09_Garden.xlsx"
 
@@ -13,29 +14,6 @@ LOCATION_CLIMATE = {
     "kerala": "tropical-monsoon",
     "thiruvalla": "tropical-monsoon",
 }
-
-# Inbox city labels → climate copy (never store city names in live profile text)
-_CITY_COPY_REPLACEMENTS = (
-    (re.compile(r"Brisbane's humid subtropical", re.I), "Humid subtropical"),
-    (re.compile(r"Brisbane's", re.I), "Humid subtropical"),
-    (re.compile(r"under Brisbane conditions", re.I), "in humid subtropical conditions"),
-    (re.compile(r"\bin Brisbane\b", re.I), "in humid subtropical climates"),
-    (re.compile(r"Brisbane summers", re.I), "humid subtropical summers"),
-    (re.compile(r"Brisbane conditions", re.I), "humid subtropical conditions"),
-    (re.compile(r"Brisbane:", re.I), "Humid subtropical:"),
-    (re.compile(r"\bBrisbane\b", re.I), "humid subtropical climates"),
-    (re.compile(r"Kerala's", re.I), "Tropical monsoon"),
-    (re.compile(r"\bKerala\b", re.I), "tropical monsoon climates"),
-)
-
-
-def neutralize_location_copy(text: str) -> str:
-    if not text:
-        return text
-    out = text
-    for pattern, repl in _CITY_COPY_REPLACEMENTS:
-        out = pattern.sub(repl, out)
-    return out
 
 # Excel cultivar/profile names → existing species shell slug
 SPECIES_SLUG_ALIASES = {

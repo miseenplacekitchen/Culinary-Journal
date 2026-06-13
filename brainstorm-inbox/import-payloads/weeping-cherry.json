@@ -65,7 +65,7 @@
       "flesh_fruit": "",
       "yield_notes": "Overwhelming flower production when mature, takes 2-3 years to establish strong head",
       "growing_notes": "",
-      "availability": "Hello Hello Plants, specialty nurseries Melbourne, Victoria (limited Brisbane stock)"
+      "availability": "Hello Hello Plants, specialty nurseries Melbourne, Victoria (limited humid subtropical climates stock)"
     },
     {
       "name": "Prunus subhirtella 'Subhirtella Rosea' (Sub Rosea)",
@@ -78,10 +78,10 @@
       "flesh_fruit": "",
       "yield_notes": "Spectacular full head of flowers, very impressive mature specimens",
       "growing_notes": "",
-      "availability": "Specialty nurseries Victoria, NSW (occasional Brisbane availability)"
+      "availability": "Specialty nurseries Victoria, NSW (occasional humid subtropical climates availability)"
     },
     {
-      "name": "Prunus \u00d7 subhirtella 'Autumnalis Rosea'",
+      "name": "Prunus × subhirtella 'Autumnalis Rosea'",
       "slug": "prunus-subhirtella-autumnalis-rosea",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
@@ -104,7 +104,7 @@
       "flesh_fruit": "",
       "yield_notes": "Spectacular flowering display, ornamental",
       "growing_notes": "",
-      "availability": "Specialty Trees Melbourne (ships to QLD), Brisbane Plant Nursery, Nursery Near Me"
+      "availability": "Specialty Trees Melbourne (ships to QLD), humid subtropical climates Plant Nursery, Nursery Near Me"
     },
     {
       "name": "Prunus serrulata 'Kanzan'",
@@ -169,7 +169,7 @@
       "flesh_fruit": "",
       "yield_notes": "Good flowering along narrow column",
       "growing_notes": "",
-      "availability": "Plantmark wholesale nurseries Melbourne/Sydney/Brisbane"
+      "availability": "Plantmark wholesale nurseries Melbourne/Sydney/humid subtropical climates"
     },
     {
       "name": "Prunus glandulosa (Dwarf Flowering Almond/Chinese Bush Cherry)",
@@ -185,7 +185,7 @@
       "availability": "Specialty nurseries, bonsai suppliers"
     },
     {
-      "name": "Prunus cerasoides (Wild Himalayan Cherry, Padam) \ud83c\udf0f",
+      "name": "Prunus cerasoides (Wild Himalayan Cherry, Padam) 🌏",
       "slug": "prunus-cerasoides-wild-himalayan-cherry-padam",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -195,7 +195,7 @@
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Paudhshala India (Himalayan region), specialty nurseries in temperate hill stations, NOT available in Kerala"
+      "availability": "Paudhshala India (Himalayan region), specialty nurseries in temperate hill stations, NOT available in tropical monsoon climates"
     },
     {
       "name": "Prunus campanulata (Taiwan Cherry, Formosan Cherry)",
@@ -221,7 +221,7 @@
       "flesh_fruit": "",
       "yield_notes": "62-82 pounds per season, fruit matures 22-25 days after flowering, multiple flushes with rain",
       "growing_notes": "Also called Malpighia glabra (wild ornamental species with less fruit). Grown commercially in Brazil (largest producer), India, Australia.",
-      "availability": "KISSAN Kerala (recommended for homesteads), Plants Corner India, Mahindra Nursery, Kerala agricultural nurseries"
+      "availability": "KISSAN tropical monsoon climates (recommended for homesteads), Plants Corner India, Mahindra Nursery, tropical monsoon climates agricultural nurseries"
     },
     {
       "name": "Muntingia calabura (Manila Cherry, Philippine Cherry, Santol)",
@@ -234,7 +234,7 @@
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Mahindra Nursery India, tropical fruit nurseries Kerala"
+      "availability": "Mahindra Nursery India, tropical fruit nurseries tropical monsoon climates"
     },
     {
       "name": "Eugenia aggregata (Cherry of the Rio Grande)",
@@ -286,7 +286,7 @@
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Tropical fruit nurseries India, limited Kerala availability"
+      "availability": "Tropical fruit nurseries India, limited tropical monsoon climates availability"
     },
     {
       "name": "Grumichama (Eugenia brasiliensis)",

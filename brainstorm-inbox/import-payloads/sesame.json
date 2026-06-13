@@ -38,7 +38,7 @@
       "traits": "White, heirloom, white flowers",
       "flesh_fruit": "",
       "yield_notes": "Moderate-high, abundant",
-      "growing_notes": "Historic American heirloom, African roots. Heat-loving, drought-tolerant. 120-150 days. Adaptable to Brisbane.",
+      "growing_notes": "Historic American heirloom, African roots. Heat-loving, drought-tolerant. 120-150 days. Adaptable to humid subtropical climates.",
       "availability": "International suppliers, importable"
     },
     {
@@ -68,25 +68,25 @@
       "availability": "Asian seed suppliers"
     },
     {
-      "name": "Kayamkulam-1 \ud83c\udf31",
+      "name": "Kayamkulam-1 🌱",
       "slug": "kayamkulam-1",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 0,
-      "origin": "Kayamkulam, Kerala, indigenous",
+      "origin": "Kayamkulam, tropical monsoon climates, indigenous",
       "traits": "Indigenous Onattukara, locally adapted",
       "flesh_fruit": "",
       "yield_notes": "Excellent local performance",
-      "growing_notes": "Named after Kayamkulam. Perfect for Thiruvalla (Onattukara tract). Cultural significance. Humid tropical adapted.",
+      "growing_notes": "Named after Kayamkulam. Perfect for tropical monsoon climates (Onattukara tract). Cultural significance. Humid tropical adapted.",
       "availability": "Onattukara Research Station"
     },
     {
-      "name": "Ayali \ud83c\udfc6",
+      "name": "Ayali 🏆",
       "slug": "ayali",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 1,
-      "origin": "Onattukara, Kerala, centuries old",
+      "origin": "Onattukara, tropical monsoon climates, centuries old",
       "traits": "Traditional heirloom, purplish-pink flowers",
       "flesh_fruit": "",
       "yield_notes": "Traditional, well-adapted",
@@ -103,7 +103,7 @@
       "traits": "White, profuse branching, Macrophomina resistant",
       "flesh_fruit": "",
       "yield_notes": "995 kg/ha (rabi), 1055 kg/ha (summer) - 22.74% increase",
-      "growing_notes": "Latest VRI release. Superior performance. Rabi/summer suitable. Disease resistance crucial for Kerala humidity.",
+      "growing_notes": "Latest VRI release. Superior performance. Rabi/summer suitable. Disease resistance crucial for tropical monsoon climates humidity.",
       "availability": "Vridhachalam Station"
     },
     {
@@ -116,11 +116,11 @@
       "traits": "South Indian, commercial",
       "flesh_fruit": "",
       "yield_notes": "Good South India",
-      "growing_notes": "Popular across South India including Kerala. Heat/humidity tolerant. Widely grown commercial.",
-      "availability": "Tamil Nadu AU, Kerala suppliers"
+      "growing_notes": "Popular across South India including tropical monsoon climates. Heat/humidity tolerant. Widely grown commercial.",
+      "availability": "Tamil Nadu AU, tropical monsoon climates suppliers"
     },
     {
-      "name": "Lal Til \ud83c\udfc6",
+      "name": "Lal Til 🏆",
       "slug": "lal-til",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -129,8 +129,8 @@
       "traits": "Red/brown, heirloom, 72.55 seeds/capsule",
       "flesh_fruit": "",
       "yield_notes": "1.25 t/ha - highest Bangladesh trial, best saline performer",
-      "growing_notes": "Indigenous Bangladesh heirloom. Best Satkhira saline region. Excellent monsoon. Climate very similar Kerala. Coastal humid superior.",
-      "availability": "Bangladesh farmers, traditional networks (highly Kerala-suitable)"
+      "growing_notes": "Indigenous Bangladesh heirloom. Best Satkhira saline region. Excellent monsoon. Climate very similar tropical monsoon climates. Coastal humid superior.",
+      "availability": "Bangladesh farmers, traditional networks (highly tropical monsoon climates-suitable)"
     },
     {
       "name": "Sesamum malabaricum",
@@ -138,12 +138,12 @@
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 5,
-      "origin": "Kerala, wild indigenous progenitor species",
+      "origin": "tropical monsoon climates, wild indigenous progenitor species",
       "traits": "Wild species, dark violet flowers, hairy capsules",
       "flesh_fruit": "",
       "yield_notes": "Lower than cultivated, breeding valuable",
       "growing_notes": "Wild progenitor of cultivated sesame. Onattukara region. Genetic resource. Biodiversity conservation important.",
-      "availability": "Wild Kerala populations, research"
+      "availability": "Wild tropical monsoon climates populations, research"
     }
   ],
   "variety_count": 11

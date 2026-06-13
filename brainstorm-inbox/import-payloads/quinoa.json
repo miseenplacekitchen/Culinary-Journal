@@ -11,9 +11,9 @@
       "origin": "Andean highlands, mixed sources",
       "traits": "Cream to golden seeds, 1.5-2mm diameter, light fluffy texture when cooked",
       "flesh_fruit": "Mild, nutty flavor; soft texture; versatile in cooking",
-      "yield_notes": "Low to moderate in Brisbane (500-1000 kg/ha estimated)",
-      "growing_notes": "Most commonly available in Australia. Winter planting (April-June) only. Requires night temps below 20\u00b0C for germination. Sensitive to Brisbane summer heat (>32\u00b0C) and humidity. High risk of fungal diseases in humid conditions. Saponin layer helps protect against pests but requires thorough washing.",
-      "availability": "The Seed Vine (Brisbane area), Boondie Seeds, Australian Wheatgrass (organic), Lost Seed"
+      "yield_notes": "Low to moderate in humid subtropical climates (500-1000 kg/ha estimated)",
+      "growing_notes": "Most commonly available in Australia. Winter planting (April-June) only. Requires night temps below 20°C for germination. Sensitive to humid subtropical climates summer heat (>32°C) and humidity. High risk of fungal diseases in humid conditions. Saponin layer helps protect against pests but requires thorough washing.",
+      "availability": "The Seed Vine (humid subtropical climates area), Boondie Seeds, Australian Wheatgrass (organic), Lost Seed"
     },
     {
       "name": "Red Quinoa",
@@ -24,8 +24,8 @@
       "origin": "Andean highlands, Peru/Bolivia",
       "traits": "Red-brown seeds, retains shape well, slightly chewy texture, colorful",
       "flesh_fruit": "Nutty, earthy, robust flavor; firm texture maintains in salads",
-      "yield_notes": "Low to moderate (similar to white quinoa in Brisbane)",
-      "growing_notes": "Marginally better heat tolerance than white. Best for autumn planting (March-May). Seed coat thickness helps resist humidity-related degradation. Still struggles above 30\u00b0C. Good for Brisbane winter but avoid flowering during hot spells.",
+      "yield_notes": "Low to moderate (similar to white quinoa in humid subtropical climates)",
+      "growing_notes": "Marginally better heat tolerance than white. Best for autumn planting (March-May). Seed coat thickness helps resist humidity-related degradation. Still struggles above 30°C. Good for humid subtropical climates winter but avoid flowering during hot spells.",
       "availability": "Royal Nut Company (organic), specialty seed suppliers"
     },
     {
@@ -38,7 +38,7 @@
       "traits": "Black to deep purple seeds, smallest size, crunchiest texture, high fiber",
       "flesh_fruit": "Earthy, slightly sweet; firmest texture of all quinoas",
       "yield_notes": "Lower than other colors (500-800 kg/ha estimated)",
-      "growing_notes": "Longest maturity time (110-130 days). Most heat-tolerant of the three colors but still challenged by Brisbane climate. Slower germination. Best autumn planting. Thick seed coat somewhat protects against humidity.",
+      "growing_notes": "Longest maturity time (110-130 days). Most heat-tolerant of the three colors but still challenged by humid subtropical climates climate. Slower germination. Best autumn planting. Thick seed coat somewhat protects against humidity.",
       "availability": "Limited; occasionally from specialty Australian seed companies"
     },
     {
@@ -51,7 +51,7 @@
       "traits": "Blend of white, red, and black seeds; visually appealing mix",
       "flesh_fruit": "Varied flavors and textures in one dish",
       "yield_notes": "Variable depending on color proportions",
-      "growing_notes": "Popular consumer product. Brisbane challenges same as individual colors. Winter growing only. Provides genetic diversity which may help with adaptation.",
+      "growing_notes": "Popular consumer product. humid subtropical climates challenges same as individual colors. Winter growing only. Provides genetic diversity which may help with adaptation.",
       "availability": "Australian health food suppliers, some seed companies"
     },
     {
@@ -76,7 +76,7 @@
       "origin": "Denmark/Europe-bred from Bolivian germplasm",
       "traits": "White seeds, early maturity (90-110 days), uniform, photoperiod-insensitive",
       "flesh_fruit": "High-quality white grain, fluffy when cooked",
-      "yield_notes": "2-3 t/ha in temperate conditions; poor in Brisbane",
+      "yield_notes": "2-3 t/ha in temperate conditions; poor in humid subtropical climates",
       "growing_notes": "",
       "availability": ""
     },
@@ -116,7 +116,7 @@
       "traits": "White seeds, coastal adaptation, heat-tolerant (relatively)",
       "flesh_fruit": "Good grain quality",
       "yield_notes": "1-2 t/ha in Mediterranean climates",
-      "growing_notes": "Developed for temperate coastal conditions. Better heat tolerance than highland types but still struggles above 30\u00b0C. Photoperiod-insensitive. Potential for Brisbane winter trials. Requires cool nights for best results.",
+      "growing_notes": "Developed for temperate coastal conditions. Better heat tolerance than highland types but still struggles above 30°C. Photoperiod-insensitive. Potential for humid subtropical climates winter trials. Requires cool nights for best results.",
       "availability": "International suppliers; not common in Australia"
     },
     {
@@ -128,8 +128,8 @@
       "origin": "Mixed Andean sources",
       "traits": "Standard white/cream seeds",
       "flesh_fruit": "Mild flavor when properly grown",
-      "yield_notes": "Near zero expected in Kerala climate",
-      "growing_notes": "THEORETICAL ONLY. Would require complete climate modification (greenhouse with cooling, dehumidification). Not viable for Kerala outdoor cultivation. Seeds available but success rate essentially 0% in typical Kerala conditions.",
+      "yield_notes": "Near zero expected in tropical monsoon climates climate",
+      "growing_notes": "THEORETICAL ONLY. Would require complete climate modification (greenhouse with cooling, dehumidification). Not viable for tropical monsoon climates outdoor cultivation. Seeds available but success rate essentially 0% in typical tropical monsoon climates conditions.",
       "availability": "Import seeds from international suppliers"
     },
     {
@@ -141,7 +141,7 @@
       "origin": "ICAR-NBPGR Shimla, India (Himalayan bred)",
       "traits": "High-yielding Indian variety for mountain climates",
       "flesh_fruit": "Developed for Indian conditions but COOL climates",
-      "yield_notes": "Good in Himalayas; unsuitable for Kerala",
+      "yield_notes": "Good in Himalayas; unsuitable for tropical monsoon climates",
       "growing_notes": "",
       "availability": ""
     },
@@ -154,8 +154,8 @@
       "origin": "Coastal Chile (temperate maritime)",
       "traits": "Sea-level adaptation, some heat tolerance",
       "flesh_fruit": "Variable",
-      "yield_notes": "Unknown in Kerala; likely very poor",
-      "growing_notes": "MOST HEAT-TOLERANT quinoa types globally. Evolved in Chilean Mediterranean coast (cool winters, warm dry summers). Still requires seasonal cooling and LOW humidity. Kerala's year-round heat and monsoon humidity would likely prevent success. Worth experimental trial in Kerala's \"coolest\" season (December-February) but low success probability.",
+      "yield_notes": "Unknown in tropical monsoon climates; likely very poor",
+      "growing_notes": "MOST HEAT-TOLERANT quinoa types globally. Evolved in Chilean Mediterranean coast (cool winters, warm dry summers). Still requires seasonal cooling and LOW humidity. Tropical monsoon year-round heat and monsoon humidity would likely prevent success. Worth experimental trial in Tropical monsoon \"coolest\" season (December-February) but low success probability.",
       "availability": "International research institutions only"
     },
     {
@@ -167,7 +167,7 @@
       "origin": "Ecuador (tropical highlands, 2500-3500m elevation)",
       "traits": "Closest to tropical adaptation, but HIGH altitude (cool)",
       "flesh_fruit": "Variable",
-      "yield_notes": "Unknown; extremely low expected in Kerala",
+      "yield_notes": "Unknown; extremely low expected in tropical monsoon climates",
       "growing_notes": "",
       "availability": ""
     },
@@ -181,7 +181,7 @@
       "traits": "Largest seeds (2-3mm), pearly white, premium quality, 50+ local varieties",
       "flesh_fruit": "Nutty, fluffy, superior flavor and texture",
       "yield_notes": "High in native habitat (3-5 t/ha)",
-      "growing_notes": "Most prized quinoa globally. Grows ONLY in extreme high-altitude Bolivian salt deserts. Requires freezing nights, hot days, low humidity, saline soil. Completely incompatible with Brisbane or Kerala. \"Champagne of Quinoa\".",
+      "growing_notes": "Most prized quinoa globally. Grows ONLY in extreme high-altitude Bolivian salt deserts. Requires freezing nights, hot days, low humidity, saline soil. Completely incompatible with humid subtropical climates or tropical monsoon climates. \"Champagne of Quinoa\".",
       "availability": "Imported grain available; seed cultivation impossible outside Altiplano"
     },
     {

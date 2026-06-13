@@ -11,7 +11,7 @@
       "origin": "Bred in Northern NSW, Australia, released 2019",
       "traits": "Southern Highbush, very low chill (150-250 hours); Semi-evergreen, grows 1-2m high, compact habit, extremely low-chill requirement",
       "flesh_fruit": "",
-      "yield_notes": "High productivity, fruits almost year-round in Brisbane",
+      "yield_notes": "High productivity, fruits almost year-round in humid subtropical climates",
       "growing_notes": "",
       "availability": ""
     },
@@ -48,10 +48,10 @@
       "climate_slug": "humid-subtropical",
       "sort_order": 3,
       "origin": "USDA Mississippi, USA, released 1998",
-      "traits": "Southern Highbush, very low chill (200-300 hours, tolerates up to 40\u00b0C); Vigorous, upright-spreading growth, semi-evergreen, heat tolerant",
+      "traits": "Southern Highbush, very low chill (200-300 hours, tolerates up to 40°C); Vigorous, upright-spreading growth, semi-evergreen, heat tolerant",
       "flesh_fruit": "",
       "yield_notes": "Heavy producer, often has second crop later in season",
-      "growing_notes": "EXCELLENT for Brisbane. Exceptional heat tolerance (up to 40\u00b0C). Can produce two crops per year in Brisbane. Early to mid-season. Best pollinated with Misty or Sharp Blue. Very reliable subtropical performer.",
+      "growing_notes": "EXCELLENT for humid subtropical climates. Exceptional heat tolerance (up to 40°C). Can produce two crops per year in humid subtropical climates. Early to mid-season. Best pollinated with Misty or Sharp Blue. Very reliable subtropical performer.",
       "availability": "Fruit Tree Lane, Ladybird Nursery, major QLD suppliers"
     },
     {
@@ -77,8 +77,8 @@
       "traits": "Southern Highbush, low chill (300-400 hours); Productive, hardy shrub, vigorous, good field survival",
       "flesh_fruit": "",
       "yield_notes": "High productivity, reliable",
-      "growing_notes": "EXCELLENT for Brisbane. Self-fertile (can plant solo). Hardy and easy to grow. Early season ripening. Highly recommended for beginners. Recommended by Fruit Tree Lane as top choice for Glass House Mountains/SE QLD.",
-      "availability": "Fruit Tree Lane, major Brisbane/QLD nurseries"
+      "growing_notes": "EXCELLENT for humid subtropical climates. Self-fertile (can plant solo). Hardy and easy to grow. Early season ripening. Highly recommended for beginners. Recommended by Fruit Tree Lane as top choice for Glass House Mountains/SE QLD.",
+      "availability": "Fruit Tree Lane, major humid subtropical climates/QLD nurseries"
     },
     {
       "name": "Emerald",
@@ -90,7 +90,7 @@
       "traits": "Southern Highbush, very low chill (200-300 hours); Vigorous, stout semi-erect canes, 1.5-2m, semi-evergreen",
       "flesh_fruit": "",
       "yield_notes": "Very high yields, maintains large berry size throughout harvest",
-      "growing_notes": "EXCELLENT for Brisbane. Prolific production. Was backbone of Florida industry for decade. Early season. Cross-pollinate with Star, O\u2019Neal, or Jewel. Reliable Brisbane performer. Commercial quality.",
+      "growing_notes": "EXCELLENT for humid subtropical climates. Prolific production. Was backbone of Florida industry for decade. Early season. Cross-pollinate with Star, O’Neal, or Jewel. Reliable humid subtropical climates performer. Commercial quality.",
       "availability": "Major Australian nurseries"
     },
     {
@@ -103,11 +103,11 @@
       "traits": "Southern Highbush, low chill (300-450 hours); Upright-spreading habit, good spring leaf development, attractive gray-green foliage with red stems",
       "flesh_fruit": "",
       "yield_notes": "Good productivity",
-      "growing_notes": "GOOD for Brisbane. Part of Florida industry backbone. Late April/mid-May ripening in warm climates. Requires cross-pollination (O\u2019Neal, Santa Fe, Emerald). Susceptible to Septoria leaf spot. May be marginal in warmer Brisbane areas.",
+      "growing_notes": "GOOD for humid subtropical climates. Part of Florida industry backbone. Late April/mid-May ripening in warm climates. Requires cross-pollination (O’Neal, Santa Fe, Emerald). Susceptible to Septoria leaf spot. May be marginal in warmer humid subtropical climates areas.",
       "availability": "Specialty Australian nurseries"
     },
     {
-      "name": "O\u2019Neal",
+      "name": "O’Neal",
       "slug": "o-neal",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
@@ -116,11 +116,11 @@
       "traits": "Southern Highbush, moderate chill (450 hours); Vigorous, bushy growth habit, 1.2-1.8m, gray-green foliage with red stems",
       "flesh_fruit": "",
       "yield_notes": "High yield, consistent quality throughout harvest",
-      "growing_notes": "MARGINAL for warmest Brisbane areas. Excellent flavor. Usually first to ripen. Requires pollinator (Star compatible). May struggle in very low-chill areas but worth trying in cooler Brisbane suburbs. Can leaf poorly in insufficient chill.",
+      "growing_notes": "MARGINAL for warmest humid subtropical climates areas. Excellent flavor. Usually first to ripen. Requires pollinator (Star compatible). May struggle in very low-chill areas but worth trying in cooler humid subtropical climates suburbs. Can leaf poorly in insufficient chill.",
       "availability": "Specialty nurseries"
     },
     {
-      "name": "Blueberry Burst\u00ae",
+      "name": "Blueberry Burst®",
       "slug": "blueberry-burst",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
@@ -129,11 +129,11 @@
       "traits": "Southern Highbush, low chill (300-400 hours); Naturally dwarfing, evergreen, compact bushy habit, 1-1.5m",
       "flesh_fruit": "",
       "yield_notes": "High yield over 4-6 months",
-      "growing_notes": "EXCELLENT for Brisbane. Australian-bred specifically for local conditions. Self-pollinating. Perfect for containers. When planted with Blueberry Kisses\u00ae, provides 6-8 months supply. Favorite at Brookfield Gardens.",
-      "availability": "Brookfield Gardens Brisbane, PlantNet Australia stockists"
+      "growing_notes": "EXCELLENT for humid subtropical climates. Australian-bred specifically for local conditions. Self-pollinating. Perfect for containers. When planted with Blueberry Kisses®, provides 6-8 months supply. Favorite at Brookfield Gardens.",
+      "availability": "Brookfield Gardens humid subtropical climates, PlantNet Australia stockists"
     },
     {
-      "name": "Blueberry Kisses\u00ae",
+      "name": "Blueberry Kisses®",
       "slug": "blueberry-kisses",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
@@ -142,11 +142,11 @@
       "traits": "Southern Highbush, low chill (300-400 hours); Naturally dwarfing, evergreen, less bushy than Burst, 1-1.5m",
       "flesh_fruit": "",
       "yield_notes": "Exceptionally high yield, harvest over 3-4 months",
-      "growing_notes": "EXCELLENT for Brisbane. Australian-bred. Characterized by extra-large fruit size. Self-pollinating but best with Blueberry Burst\u00ae. Achieves huge fruit through traditional breeding. All Australian climates except frost-prone under -4\u00b0C.",
+      "growing_notes": "EXCELLENT for humid subtropical climates. Australian-bred. Characterized by extra-large fruit size. Self-pollinating but best with Blueberry Burst®. Achieves huge fruit through traditional breeding. All Australian climates except frost-prone under -4°C.",
       "availability": "PlantNet Australia, specialty nurseries"
     },
     {
-      "name": "Brightwell \ud83e\uddec (Rabbiteye)",
+      "name": "Brightwell 🧬 (Rabbiteye)",
       "slug": "brightwell-rabbiteye",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
@@ -155,11 +155,11 @@
       "traits": "Rabbiteye, moderate chill (350-400 hours); Vigorous, upright growth, highly adaptable, beautiful red fall foliage",
       "flesh_fruit": "",
       "yield_notes": "Heavy producer (15+ pounds/bush)",
-      "growing_notes": "EXCELLENT for Brisbane. One of most reliable rabbiteyes. Drought tolerant. Heat adaptable. Top performer in Brisbane climate. Partially self-pollinating but plant with Powderblue or Tifblue for best results. Recommended for Perth and Brisbane.",
+      "growing_notes": "EXCELLENT for humid subtropical climates. One of most reliable rabbiteyes. Drought tolerant. Heat adaptable. Top performer in humid subtropical climates climate. Partially self-pollinating but plant with Powderblue or Tifblue for best results. Recommended for Perth and humid subtropical climates.",
       "availability": "Fruit Tree Lane, major QLD nurseries"
     },
     {
-      "name": "Powderblue (Powder Blue) \ud83e\uddec (Rabbiteye)",
+      "name": "Powderblue (Powder Blue) 🧬 (Rabbiteye)",
       "slug": "powderblue-powder-blue-rabbiteye",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
@@ -178,7 +178,7 @@
       "climate_slug": "humid-subtropical",
       "sort_order": 13,
       "origin": "Unknown, established variety in Australia",
-      "traits": "Likely Southern Highbush or Rabbiteye hybrid, low to moderate chill; Vigorous, hardy, well-adapted to Brisbane conditions",
+      "traits": "Likely Southern Highbush or Rabbiteye hybrid, low to moderate chill; Vigorous, hardy, well-adapted to humid subtropical conditions",
       "flesh_fruit": "",
       "yield_notes": "Productive, fruits over extended period (to March)",
       "growing_notes": "",
@@ -204,11 +204,11 @@
       "climate_slug": "tropical-monsoon",
       "sort_order": 0,
       "origin": "USDA Mississippi, USA, released 1998",
-      "traits": "Southern Highbush, zero to very low chill (150-300 hours, tolerates up to 40\u00b0C); Vigorous, heat-tolerant, semi-evergreen, upright growth",
+      "traits": "Southern Highbush, zero to very low chill (150-300 hours, tolerates up to 40°C); Vigorous, heat-tolerant, semi-evergreen, upright growth",
       "flesh_fruit": "",
       "yield_notes": "Very high productivity in tropical climates",
-      "growing_notes": "EXCELLENT for Kerala. Top choice for tropical India. Specifically tolerates temperatures up to 40\u00b0C. Recommended by Neva Plantations for Kerala climate. Can produce in continuous warm conditions. Best performer in Indian tropical regions.",
-      "availability": "Neva Plantations (delivers Kerala), Greens of Kerala, Indian Glorious Nursery"
+      "growing_notes": "EXCELLENT for tropical monsoon climates. Top choice for tropical India. Specifically tolerates temperatures up to 40°C. Recommended by Neva Plantations for tropical monsoon climates climate. Can produce in continuous warm conditions. Best performer in Indian tropical regions.",
+      "availability": "Neva Plantations (delivers tropical monsoon climates), Greens of tropical monsoon climates, Indian Glorious Nursery"
     },
     {
       "name": "Emerald",
@@ -217,11 +217,11 @@
       "climate_slug": "tropical-monsoon",
       "sort_order": 1,
       "origin": "University of Florida, USA, released 1999",
-      "traits": "Southern Highbush, very low chill (200-300 hours, performs up to 38\u00b0C); Vigorous, stout semi-erect canes, semi-evergreen, good heat adaptation",
+      "traits": "Southern Highbush, very low chill (200-300 hours, performs up to 38°C); Vigorous, stout semi-erect canes, semi-evergreen, good heat adaptation",
       "flesh_fruit": "",
       "yield_notes": "Very high yields, reliable in warm climates",
-      "growing_notes": "EXCELLENT for Kerala. Recommended by Neva Plantations. Requires only 250 chill hours. Large, flavorful berries. Performs well in temperatures up to 38\u00b0C. Good for both home gardens and commercial production in Kerala.",
-      "availability": "Neva Plantations (Kerala delivery), Kerala online nurseries"
+      "growing_notes": "EXCELLENT for tropical monsoon climates. Recommended by Neva Plantations. Requires only 250 chill hours. Large, flavorful berries. Performs well in temperatures up to 38°C. Good for both home gardens and commercial production in tropical monsoon climates.",
+      "availability": "Neva Plantations (tropical monsoon climates delivery), tropical monsoon climates online nurseries"
     },
     {
       "name": "Misty",
@@ -230,11 +230,11 @@
       "climate_slug": "tropical-monsoon",
       "sort_order": 2,
       "origin": "University of Florida, USA, 1989",
-      "traits": "Southern Highbush, moderate chill (300-400 hours, performs up to 38\u00b0C); Upright vigorous growth, semi-evergreen, adaptable",
+      "traits": "Southern Highbush, moderate chill (300-400 hours, performs up to 38°C); Upright vigorous growth, semi-evergreen, adaptable",
       "flesh_fruit": "",
       "yield_notes": "High productivity, reliable bearer",
-      "growing_notes": "GOOD for Kerala (may need some protection in hottest months). Recommended by Neva Plantations for warmer Kerala regions. Reliable tropical performer with 400 chill hours. Balance of cold tolerance and heat adaptability. Moderate climate zones.",
-      "availability": "Neva Plantations, Indian nurseries delivering to Kerala"
+      "growing_notes": "GOOD for tropical monsoon climates (may need some protection in hottest months). Recommended by Neva Plantations for warmer tropical monsoon climates regions. Reliable tropical performer with 400 chill hours. Balance of cold tolerance and heat adaptability. Moderate climate zones.",
+      "availability": "Neva Plantations, Indian nurseries delivering to tropical monsoon climates"
     },
     {
       "name": "Sharp Blue",
@@ -272,8 +272,8 @@
       "traits": "Northern Highbush, high chill (700-1200 hours); Vigorous growth, requires cooler conditions",
       "flesh_fruit": "",
       "yield_notes": "Productive in cool climates",
-      "growing_notes": "NOT SUITABLE for Kerala. High chill requirements (700-1200 hours) make this completely unsuitable for tropical Kerala climate. Mentioned by Neva Plantations for reference only. Better for hill stations like Munnar, not lowland Kerala/Thiruvalla.",
-      "availability": "Not recommended for Kerala lowlands"
+      "growing_notes": "NOT SUITABLE for tropical monsoon climates. High chill requirements (700-1200 hours) make this completely unsuitable for tropical tropical monsoon climates climate. Mentioned by Neva Plantations for reference only. Better for hill stations like Munnar, not lowland tropical monsoon climates/tropical monsoon climates.",
+      "availability": "Not recommended for tropical monsoon climates lowlands"
     },
     {
       "name": "Vaccinium corymbosum (General Highbush)",
@@ -295,7 +295,7 @@
       "climate_slug": "tropical-monsoon",
       "sort_order": 7,
       "origin": "Variety uncertain - marketed name for tropical-adapted selection",
-      "traits": "Likely Southern Highbush or adapted selection, ultra-low chill; Marketed as suitable for tropical/temperate Kerala climate",
+      "traits": "Likely Southern Highbush or adapted selection, ultra-low chill; Marketed as suitable for tropical/temperate tropical monsoon climates climate",
       "flesh_fruit": "",
       "yield_notes": "Variable",
       "growing_notes": "",
@@ -315,7 +315,7 @@
       "availability": ""
     },
     {
-      "name": "Jersey \ud83c\udfc6 HEIRLOOM",
+      "name": "Jersey 🏆 HEIRLOOM",
       "slug": "jersey-heirloom",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -328,7 +328,7 @@
       "availability": ""
     },
     {
-      "name": "Bluecrop \ud83c\udfc6 HEIRLOOM",
+      "name": "Bluecrop 🏆 HEIRLOOM",
       "slug": "bluecrop-heirloom",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -354,7 +354,7 @@
       "availability": ""
     },
     {
-      "name": "Elizabeth \ud83c\udfc6 HEIRLOOM",
+      "name": "Elizabeth 🏆 HEIRLOOM",
       "slug": "elizabeth-heirloom",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -367,7 +367,7 @@
       "availability": ""
     },
     {
-      "name": "Tifblue \ud83c\udfc6 HEIRLOOM (Rabbiteye)",
+      "name": "Tifblue 🏆 HEIRLOOM (Rabbiteye)",
       "slug": "tifblue-heirloom-rabbiteye",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -380,7 +380,7 @@
       "availability": ""
     },
     {
-      "name": "Climax \ud83c\udfc6 HEIRLOOM (Rabbiteye)",
+      "name": "Climax 🏆 HEIRLOOM (Rabbiteye)",
       "slug": "climax-heirloom-rabbiteye",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -393,7 +393,7 @@
       "availability": ""
     },
     {
-      "name": "Premier \ud83e\uddec (Rabbiteye)",
+      "name": "Premier 🧬 (Rabbiteye)",
       "slug": "premier-rabbiteye",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
@@ -402,7 +402,7 @@
       "traits": "Rabbiteye, moderate chill (500-650 hours); Early to mid-season, upright growth with good foliage, vigorous",
       "flesh_fruit": "",
       "yield_notes": "Highly productive, reliable",
-      "growing_notes": "POSSIBLE for cooler Brisbane areas, NOT SUITABLE for Kerala. One of \u2018old standard\u2019 rabbiteyes alongside Climax, Tifblue, Brightwell, Powderblue. Excellent flavor noted. Plant with Brightwell or Tifblue as pollinators. Top 5 yielder in LSU trials (12.2 lbs/plant).",
+      "growing_notes": "POSSIBLE for cooler humid subtropical climates areas, NOT SUITABLE for tropical monsoon climates. One of ‘old standard’ rabbiteyes alongside Climax, Tifblue, Brightwell, Powderblue. Excellent flavor noted. Plant with Brightwell or Tifblue as pollinators. Top 5 yielder in LSU trials (12.2 lbs/plant).",
       "availability": "Finch Nursery, southern US suppliers"
     }
   ],

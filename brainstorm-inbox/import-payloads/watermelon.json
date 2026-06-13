@@ -13,7 +13,7 @@
       "flesh_fruit": "Deep crimson-red, sweet (high sugar content), crisp texture, small dark seeds",
       "yield_notes": "High productivity, 4-6 melons per vine, early producer",
       "growing_notes": "",
-      "availability": "Widely available at The Seed Collection (Brisbane), Succeed Heirlooms Australia, Diggers Club Australia"
+      "availability": "Widely available at The Seed Collection (humid subtropical climates), Succeed Heirlooms Australia, Diggers Club Australia"
     },
     {
       "name": "Crimson Sweet",
@@ -23,7 +23,7 @@
       "sort_order": 1,
       "origin": "Kansas State University, USA; released 1963",
       "traits": "Oblong picnic type, 20-25 lbs (9-11 kg), light green rind with dark green stripes",
-      "flesh_fruit": "Bright red, exceptionally sweet (12-13\u00b0 Brix), firm, fine-textured, few seeds",
+      "flesh_fruit": "Bright red, exceptionally sweet (12-13° Brix), firm, fine-textured, few seeds",
       "yield_notes": "Very productive, consistent yields, reliable performer",
       "growing_notes": "",
       "availability": ""
@@ -140,7 +140,7 @@
       "sort_order": 10,
       "origin": "Willhite Seed Co., Texas; before 1965",
       "traits": "Large oblong, 20-30 lbs (9-14 kg), light green rind with dark green stripes",
-      "flesh_fruit": "Deep orange (unique), very sweet (11.6\u00b0 Brix), crisp, tropical flavor notes",
+      "flesh_fruit": "Deep orange (unique), very sweet (11.6° Brix), crisp, tropical flavor notes",
       "yield_notes": "Reliable producer, vigorous vines",
       "growing_notes": "",
       "availability": "Baker Creek Heirloom Seeds, Seed Savers Exchange, Mary's Heirloom Seeds"
@@ -224,17 +224,17 @@
       "availability": "Various heirloom seed suppliers"
     },
     {
-      "name": "Kiran \ud83e\uddec",
+      "name": "Kiran 🧬",
       "slug": "kiran",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 0,
       "origin": "Known You Seed Pvt. Ltd., Pune, Maharashtra, India; released 1999",
       "traits": "Small icebox type, 2.5-4 kg (5.5-9 lbs), round to oval, dark green rind with emerald-black undertones, thin but tough rind (excellent for transport)",
-      "flesh_fruit": "Dark saturated red, slightly grainy, crisp, tender, high sugar content 12-14\u00b0 Brix, sweet and refreshing",
+      "flesh_fruit": "Dark saturated red, slightly grainy, crisp, tender, high sugar content 12-14° Brix, sweet and refreshing",
       "yield_notes": "Good, early-season producer",
       "growing_notes": "",
-      "availability": "Known You Seed India, widely available throughout Kerala markets and nurseries"
+      "availability": "Known You Seed India, widely available throughout tropical monsoon climates markets and nurseries"
     },
     {
       "name": "Sugar Baby",
@@ -250,20 +250,20 @@
       "availability": ""
     },
     {
-      "name": "Arka Shyama \ud83c\udf31",
+      "name": "Arka Shyama 🌱",
       "slug": "arka-shyama",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 2,
       "origin": "ICAR-Indian Institute of Horticultural Research, India",
       "traits": "Small icebox type, 2.5-3 kg (5.5-6.6 lbs), round, dark green stripes, shorter internodal length (compact plant)",
-      "flesh_fruit": "Deep red, high sugar content 12-14\u00b0 Brix",
+      "flesh_fruit": "Deep red, high sugar content 12-14° Brix",
       "yield_notes": "50-60 tonnes/hectare, excellent productivity",
       "growing_notes": "",
       "availability": "ICAR-IIHR, Indian agricultural seed suppliers"
     },
     {
-      "name": "Madhubala \ud83e\uddec",
+      "name": "Madhubala 🧬",
       "slug": "madhubala",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -276,7 +276,7 @@
       "availability": ""
     },
     {
-      "name": "Arjun \ud83e\uddec",
+      "name": "Arjun 🧬",
       "slug": "arjun",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -289,7 +289,7 @@
       "availability": ""
     },
     {
-      "name": "Vandana \ud83e\uddec",
+      "name": "Vandana 🧬",
       "slug": "vandana",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -302,7 +302,7 @@
       "availability": ""
     },
     {
-      "name": "Improved Shipper \ud83c\udf31",
+      "name": "Improved Shipper 🌱",
       "slug": "improved-shipper",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -315,7 +315,7 @@
       "availability": "PAU, Indian agricultural seed companies"
     },
     {
-      "name": "NBH-Karan \ud83e\uddec",
+      "name": "NBH-Karan 🧬",
       "slug": "nbh-karan",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -325,10 +325,10 @@
       "flesh_fruit": "Good red, few seeds, higher edible portions",
       "yield_notes": "Good, reliable",
       "growing_notes": "",
-      "availability": "Noble Seeds India, available in Kerala"
+      "availability": "Noble Seeds India, available in tropical monsoon climates"
     },
     {
-      "name": "NBH-Asher \ud83e\uddec",
+      "name": "NBH-Asher 🧬",
       "slug": "nbh-asher",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -338,10 +338,10 @@
       "flesh_fruit": "Good red, quality flesh",
       "yield_notes": "Good",
       "growing_notes": "",
-      "availability": "Noble Seeds India, Kerala agricultural suppliers"
+      "availability": "Noble Seeds India, tropical monsoon climates agricultural suppliers"
     },
     {
-      "name": "NBH-Dolly \ud83e\uddec",
+      "name": "NBH-Dolly 🧬",
       "slug": "nbh-dolly",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -351,36 +351,36 @@
       "flesh_fruit": "Firm red",
       "yield_notes": "Good",
       "growing_notes": "",
-      "availability": "Noble Seeds India, Kerala markets"
+      "availability": "Noble Seeds India, tropical monsoon climates markets"
     },
     {
-      "name": "Seminis Apoorva \ud83e\uddec",
+      "name": "Seminis Apoorva 🧬",
       "slug": "seminis-apoorva",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 10,
       "origin": "Seminis (India), Indian heirloom-based hybrid",
       "traits": "Hybrid, oval to oblong, 9-12 kg (20-26 lbs), light green rind with dark green stripes, disease resistant",
-      "flesh_fruit": "Deep crimson, good texture, sweet (11-12\u00b0 Brix), crisp",
+      "flesh_fruit": "Deep crimson, good texture, sweet (11-12° Brix), crisp",
       "yield_notes": "High, 12-14 fruits per vine",
       "growing_notes": "",
-      "availability": "Agriplex India, widely available in Kerala"
+      "availability": "Agriplex India, widely available in tropical monsoon climates"
     },
     {
-      "name": "Namdhari Kohinoor \ud83e\uddec",
+      "name": "Namdhari Kohinoor 🧬",
       "slug": "namdhari-kohinoor",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 11,
       "origin": "Namdhari Seeds, India",
       "traits": "Hybrid, oblong, dark green rind with bluish-green stripes, attractive appearance",
-      "flesh_fruit": "Deep crimson-red, high sugar content 12-13\u00b0 Brix, sweet, juicy",
+      "flesh_fruit": "Deep crimson-red, high sugar content 12-13° Brix, sweet, juicy",
       "yield_notes": "High, disease and pest-resistant",
       "growing_notes": "",
       "availability": "Agriplex India, Namdhari Seeds suppliers"
     },
     {
-      "name": "US-777 Striped Indian \ud83e\uddec",
+      "name": "US-777 Striped Indian 🧬",
       "slug": "us-777-striped-indian",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",

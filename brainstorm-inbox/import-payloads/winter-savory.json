@@ -13,7 +13,7 @@
       "flesh_fruit": "",
       "yield_notes": "Moderate, continuous harvest possible, becomes semi-dormant in winter",
       "growing_notes": "Susceptible to fungal issues in high humidity; good drainage essential. Drought-tolerant once established.",
-      "availability": "Mudbrick Herb Cottage (Gold Coast QLD), The Seed Collection Australia, Succeed Heirlooms Australia, Basilea Living Herbs (Brisbane), Pohlmans Nursery (Lockyer Valley QLD)"
+      "availability": "Mudbrick Herb Cottage (Gold Coast QLD), The Seed Collection Australia, Succeed Heirlooms Australia, Basilea Living Herbs (humid subtropical climates), Pohlmans Nursery (Lockyer Valley QLD)"
     },
     {
       "name": "Satureja montana 'Nana' (Dwarf Winter Savory)",
@@ -104,7 +104,7 @@
       "flesh_fruit": "",
       "yield_notes": "High productivity during growing season, 8-12 weeks to harvest, complete harvest before frost",
       "growing_notes": "Quick growth outpaces most disease issues, less susceptible to fungal problems than Winter Savory",
-      "availability": "Succeed Heirlooms Australia, The Seed Collection, Basilea Living Herbs (Brisbane), widely available from Australian seed suppliers"
+      "availability": "Succeed Heirlooms Australia, The Seed Collection, Basilea Living Herbs (humid subtropical climates), widely available from Australian seed suppliers"
     },
     {
       "name": "Satureja montana (Standard Type) - NOT RECOMMENDED",
@@ -117,7 +117,7 @@
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Not cultivated in Kerala. Online Indian nurseries (Nurserylive, Ayush Kerala) may import on special order but not recommended due to unsuitability."
+      "availability": "Not cultivated in tropical monsoon climates. Online Indian nurseries (Nurserylive, Ayush tropical monsoon climates) may import on special order but not recommended due to unsuitability."
     },
     {
       "name": "Summer Savory (Satureja hortensis) - MARGINALLY BETTER BUT STILL POOR",
@@ -130,7 +130,7 @@
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Limited availability through Indian seed importers, not commonly sold in Kerala nurseries"
+      "availability": "Limited availability through Indian seed importers, not commonly sold in tropical monsoon climates nurseries"
     },
     {
       "name": "Ocimum tenuiflorum (Tulsi / Holy Basil)",
@@ -138,12 +138,12 @@
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 2,
-      "origin": "Indigenous to Indian subcontinent, cultivated in Kerala for millennia",
+      "origin": "Indigenous to Indian subcontinent, cultivated in tropical monsoon climates for millennia",
       "traits": "Aromatic perennial herb, 30-60cm height, purple or green leaves, highly aromatic",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Universally available throughout Kerala - every plant nursery, home gardens, traditional suppliers"
+      "availability": "Universally available throughout tropical monsoon climates - every plant nursery, home gardens, traditional suppliers"
     },
     {
       "name": "Coleus amboinicus (Cuban Oregano/Indian Borage)",
@@ -151,12 +151,12 @@
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 3,
-      "origin": "Southern and Eastern Africa, naturalized throughout India including Kerala",
+      "origin": "Southern and Eastern Africa, naturalized throughout India including tropical monsoon climates",
       "traits": "Succulent-like herb, large fuzzy aromatic leaves, 30-90cm height, highly heat and humidity tolerant",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Widely available in Kerala nurseries, common in home gardens, traditional medicine shops"
+      "availability": "Widely available in tropical monsoon climates nurseries, common in home gardens, traditional medicine shops"
     },
     {
       "name": "Plectranthus amboinicus (Mexican Mint/Country Borage)",
@@ -164,12 +164,12 @@
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 4,
-      "origin": "Tropical Africa and Asia, long cultivated in Kerala",
+      "origin": "Tropical Africa and Asia, long cultivated in tropical monsoon climates",
       "traits": "Aromatic succulent herb, thick fleshy leaves, strong oregano-like scent, 30-60cm height",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Common in Kerala gardens, available from local nurseries, traditional medicine suppliers"
+      "availability": "Common in tropical monsoon climates gardens, available from local nurseries, traditional medicine suppliers"
     },
     {
       "name": "Mentha spicata (Spearmint)",
@@ -177,12 +177,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 5,
-      "origin": "Europe and Asia, widely cultivated in Kerala",
+      "origin": "Europe and Asia, widely cultivated in tropical monsoon climates",
       "traits": "Perennial herb, 30-90cm height, aromatic leaves, vigorous spreading growth",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Universally available in Kerala - all nurseries, home gardens, markets"
+      "availability": "Universally available in tropical monsoon climates - all nurseries, home gardens, markets"
     },
     {
       "name": "Cymbopogon citratus (Lemongrass)",
@@ -190,12 +190,12 @@
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 6,
-      "origin": "Tropical Asia, widely cultivated in Kerala",
+      "origin": "Tropical Asia, widely cultivated in tropical monsoon climates",
       "traits": "Tall grass, 60-180cm height, aromatic citrus-scented leaves, clumping growth",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Extremely common in Kerala - all nurseries, markets, spice plantations"
+      "availability": "Extremely common in tropical monsoon climates - all nurseries, markets, spice plantations"
     },
     {
       "name": "Murraya koenigii (Curry Leaf)",
@@ -203,12 +203,12 @@
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 7,
-      "origin": "Indigenous to India, essential Kerala herb",
+      "origin": "Indigenous to India, essential tropical monsoon climates herb",
       "traits": "Small tree/shrub, 2-4m height, pinnate aromatic leaves, intensely fragrant",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Every Kerala garden and nursery, traditional plant essential to Kerala homes"
+      "availability": "Every tropical monsoon climates garden and nursery, traditional plant essential to tropical monsoon climates homes"
     }
   ],
   "variety_count": 16

@@ -58,6 +58,13 @@ Parser v2 fixes parenthetical docx format (Carrot, Peas, etc.) and adds mangoste
 
 **Climate policy:** Member UI filters by `climate_zone` (humid-subtropical, tropical-monsoon). Inbox city labels map at ingest only — never shown on public pages.
 
+## Garden Phase 59 (cultivar climate copy)
+
+| Step | File | Expect |
+|------|------|--------|
+| 1 | `fix-phase59-garden-cultivar-climate-copy.sql` | All `plant_varieties` text + `variety_climate_suitability.climate_notes` climate-neutral |
+| 2 | `fix-phase59-garden-import-queue-payloads.sql` (optional) | Import queue payloads match — prevents re-apply from restoring city labels |
+
 ## Garden go-live (step 2j — after v3 + v4)
 
 | Step | File | Expect |

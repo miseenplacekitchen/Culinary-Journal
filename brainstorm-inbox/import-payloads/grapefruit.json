@@ -165,7 +165,7 @@
       "climate_slug": "humid-subtropical",
       "sort_order": 12,
       "origin": "University of California Riverside, 1980 (Drs. Soost & Cameron)",
-      "traits": "Triploid hybrid: acidless pomelo \u00d7 Marsh grapefruit (4N); Round oblate, thick smooth greenish-yellow rind (stays green when ripe), medium size (~9cm diameter)",
+      "traits": "Triploid hybrid: acidless pomelo × Marsh grapefruit (4N); Round oblate, thick smooth greenish-yellow rind (stays green when ripe), medium size (~9cm diameter)",
       "flesh_fruit": "Pale yellow, seedless, slightly less juicy than grapefruit, mild and very sweet, lacks bitterness",
       "yield_notes": "Large spreading tree, needs less heat than standard grapefruit, early maturity, holds well on tree",
       "growing_notes": "",
@@ -178,7 +178,7 @@
       "climate_slug": "humid-subtropical",
       "sort_order": 13,
       "origin": "University of California Riverside, 1986 (Drs. Soost & Cameron)",
-      "traits": "Triploid hybrid: acidless pomelo \u00d7 Marsh grapefruit (4N), sibling to Oro Blanco; Much larger than Oro Blanco (470g vs 360g), more pomelo-like, oblate with slight obconate tendency, smooth to slightly pebbled peel",
+      "traits": "Triploid hybrid: acidless pomelo × Marsh grapefruit (4N), sibling to Oro Blanco; Much larger than Oro Blanco (470g vs 360g), more pomelo-like, oblate with slight obconate tendency, smooth to slightly pebbled peel",
       "flesh_fruit": "Pale yellow, seedless, tender, very juicy, mild and sweet reminiscent of pomelo, low acidity",
       "yield_notes": "Vigorous large tree, early maturity (early November-February at Lindcove), holds well on tree",
       "growing_notes": "",
@@ -195,7 +195,7 @@
       "flesh_fruit": "Deep red, very sweet, maintains color throughout season",
       "yield_notes": "Good productivity, widely adapted",
       "growing_notes": "",
-      "availability": "Limited in Kerala - try specialty citrus nurseries, import from specialized Indian citrus centers"
+      "availability": "Limited in tropical monsoon climates - try specialty citrus nurseries, import from specialized Indian citrus centers"
     },
     {
       "name": "Star Ruby",
@@ -242,12 +242,12 @@
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 4,
-      "origin": "Southeast Asia, cultivated in Kerala",
+      "origin": "Southeast Asia, cultivated in tropical monsoon climates",
       "traits": "Traditional pomelo, indigenous to region; Very large (1-2 kg), thick soft peel (easily peeled), pink to reddish exterior when ripe",
       "flesh_fruit": "Pink to red flesh, very juicy, sweet with slight tartness, less bitter than grapefruit",
       "yield_notes": "Heavy producer, 75-100 fruits per tree per year",
       "growing_notes": "",
-      "availability": "Greens of Kerala, Inet Farms Kerala, local Kerala nurseries, widely available"
+      "availability": "Greens of tropical monsoon climates, Inet Farms tropical monsoon climates, local tropical monsoon climates nurseries, widely available"
     },
     {
       "name": "Green/Yellow Pomelo (Babloos)",
@@ -255,7 +255,7 @@
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 5,
-      "origin": "Southeast Asia, traditional Kerala cultivation",
+      "origin": "Southeast Asia, traditional tropical monsoon climates cultivation",
       "traits": "Traditional pomelo variety; Very large, thick spongy rind (pale yellow to light green), pear or teardrop shape",
       "flesh_fruit": "Pale yellow to light green, juicy, generally sweeter and less bitter than grapefruit",
       "yield_notes": "Good productivity in tropical conditions",

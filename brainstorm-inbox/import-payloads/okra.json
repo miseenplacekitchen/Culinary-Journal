@@ -3,7 +3,7 @@
   "species_slug": "okra",
   "varieties": [
     {
-      "name": "Clemson Spineless \ud83c\udfc6",
+      "name": "Clemson Spineless 🏆",
       "slug": "clemson-spineless",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -16,7 +16,7 @@
       "availability": "Widely available: The Seed Collection (Australia), Bunnings, Yates, Queensland nurseries. Most popular variety in Australia."
     },
     {
-      "name": "Burgundy \ud83c\udfc6",
+      "name": "Burgundy 🏆",
       "slug": "burgundy",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -29,7 +29,7 @@
       "availability": "The Seed Collection (Australia), online specialty suppliers"
     },
     {
-      "name": "Louisiana Green Velvet \ud83c\udfc6",
+      "name": "Louisiana Green Velvet 🏆",
       "slug": "louisiana-green-velvet",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -55,7 +55,7 @@
       "availability": "Specialty seed suppliers"
     },
     {
-      "name": "Emerald \ud83c\udfc6",
+      "name": "Emerald 🏆",
       "slug": "emerald",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -94,7 +94,7 @@
       "availability": "Specialty seed suppliers"
     },
     {
-      "name": "Star of David \ud83c\udfc6",
+      "name": "Star of David 🏆",
       "slug": "star-of-david",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -107,7 +107,7 @@
       "availability": "Heirloom seed suppliers online"
     },
     {
-      "name": "Perkins Long Pod \ud83c\udfc6",
+      "name": "Perkins Long Pod 🏆",
       "slug": "perkins-long-pod",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -120,7 +120,7 @@
       "availability": ""
     },
     {
-      "name": "Cow Horn \ud83c\udfc6",
+      "name": "Cow Horn 🏆",
       "slug": "cow-horn",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -133,7 +133,7 @@
       "availability": "Heirloom seed suppliers"
     },
     {
-      "name": "Silver Queen \ud83c\udfc6",
+      "name": "Silver Queen 🏆",
       "slug": "silver-queen",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -146,7 +146,7 @@
       "availability": "Heirloom seed suppliers"
     },
     {
-      "name": "Red Velvet \ud83c\udfc6",
+      "name": "Red Velvet 🏆",
       "slug": "red-velvet",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -195,16 +195,16 @@
       "flesh_fruit": "",
       "yield_notes": "10-12 t/ha summer, higher in kharif. 21-24 t/ha potential.",
       "growing_notes": "",
-      "availability": "Kerala agricultural stores, IIHR, government seed distribution"
+      "availability": "tropical monsoon climates agricultural stores, IIHR, government seed distribution"
     },
     {
-      "name": "Susthira \ud83c\udf31",
+      "name": "Susthira 🌱",
       "slug": "susthira",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 1,
-      "origin": "Kerala Agricultural University (KAU), India - INDIGENOUS Kerala development. Uses Abelmoschus caillei genetics.",
-      "traits": "YVMV resistant specifically developed for Kerala. Purple leaf veins.",
+      "origin": "tropical monsoon climates Agricultural University (KAU), India - INDIGENOUS tropical monsoon climates development. Uses Abelmoschus caillei genetics.",
+      "traits": "YVMV resistant specifically developed for tropical monsoon climates. Purple leaf veins.",
       "flesh_fruit": "",
       "yield_notes": "Good yields",
       "growing_notes": "",
@@ -221,10 +221,10 @@
       "flesh_fruit": "",
       "yield_notes": "20 t/ha, 12.5 t/ha",
       "growing_notes": "",
-      "availability": "Kerala agricultural stores, IIHR"
+      "availability": "tropical monsoon climates agricultural stores, IIHR"
     },
     {
-      "name": "Anjitha \ud83c\udf31",
+      "name": "Anjitha 🌱",
       "slug": "anjitha",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -237,7 +237,7 @@
       "availability": ""
     },
     {
-      "name": "Manjima \ud83c\udf31",
+      "name": "Manjima 🌱",
       "slug": "manjima",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -255,12 +255,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 5,
-      "origin": "HAU Hisar, India, 1996 (Lam selection 1 \u00d7 Parbhani Kranti) - specifically bred for rainy season",
+      "origin": "HAU Hisar, India, 1996 (Lam selection 1 × Parbhani Kranti) - specifically bred for rainy season",
       "traits": "Medium tall, short internodes. 3-4 branches. Green foliage, occasionally pigmented petioles.",
       "flesh_fruit": "",
       "yield_notes": "12-13 t/ha",
       "growing_notes": "",
-      "availability": "Widely available in India, Kerala agricultural stores"
+      "availability": "Widely available in India, tropical monsoon climates agricultural stores"
     },
     {
       "name": "Parbhani Kranti",
@@ -268,12 +268,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 6,
-      "origin": "Marathwada Agricultural University, Parbhani, India, 1986 (A. esculentus cv. Pusa Sawani \u00d7 A. manihot ssp. manihot)",
+      "origin": "Marathwada Agricultural University, Parbhani, India, 1986 (A. esculentus cv. Pusa Sawani × A. manihot ssp. manihot)",
       "traits": "Single stem, tall. Dark green foliage. First fruit 5-6th node. Interspecific hybrid.",
       "flesh_fruit": "",
       "yield_notes": "8.5-11.5 t/ha in 120 days, 9-11 t/ha",
       "growing_notes": "",
-      "availability": "Widely available across India, Kerala agricultural stores"
+      "availability": "Widely available across India, tropical monsoon climates agricultural stores"
     },
     {
       "name": "CO-3",
@@ -281,12 +281,12 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 7,
-      "origin": "TNAU Coimbatore, India (Parbhani Kranti \u00d7 MDU-1) - F1 hybrid",
+      "origin": "TNAU Coimbatore, India (Parbhani Kranti × MDU-1) - F1 hybrid",
       "traits": "Vigorous hybrid. Improved over CO-2.",
       "flesh_fruit": "",
       "yield_notes": "16-18 t/ha - HIGH yields",
       "growing_notes": "",
-      "availability": "TNAU, Tamil Nadu and Kerala seed suppliers"
+      "availability": "TNAU, Tamil Nadu and tropical monsoon climates seed suppliers"
     },
     {
       "name": "COBhH 1",
@@ -294,12 +294,12 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 8,
-      "origin": "HC & RI, TNAU Coimbatore, India (Varsha Uphar \u00d7 Pusa A-4) - Recent hybrid",
+      "origin": "HC & RI, TNAU Coimbatore, India (Varsha Uphar × Pusa A-4) - Recent hybrid",
       "traits": "Modern hybrid with disease resistance.",
       "flesh_fruit": "",
       "yield_notes": "22.1 t/ha - VERY HIGH yields",
       "growing_notes": "",
-      "availability": "TNAU, Tamil Nadu and Kerala agricultural stores"
+      "availability": "TNAU, Tamil Nadu and tropical monsoon climates agricultural stores"
     },
     {
       "name": "Pusa Sawani",
@@ -307,12 +307,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 9,
-      "origin": "IARI New Delhi, India, 1960s (IC-1542 \u00d7 Pusa Makhmali)",
+      "origin": "IARI New Delhi, India, 1960s (IC-1542 × Pusa Makhmali)",
       "traits": "Plants compact with close nodes. Dark green foliage. Once most popular in India.",
       "flesh_fruit": "",
       "yield_notes": "12-15 t/ha",
       "growing_notes": "",
-      "availability": "Widely available from Kerala agricultural stores, government seed centers"
+      "availability": "Widely available from tropical monsoon climates agricultural stores, government seed centers"
     },
     {
       "name": "Kashi Pragati",
@@ -328,7 +328,7 @@
       "availability": "IIVR Varanasi, Indian agricultural stores"
     },
     {
-      "name": "Kerala Local Long Green \ud83c\udfc6 \ud83c\udf31",
+      "name": "Kerala Local Long Green 🏆 🌱",
       "slug": "kerala-local-long-green",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -341,7 +341,7 @@
       "availability": ""
     },
     {
-      "name": "Kerala Local Red \ud83c\udfc6 \ud83c\udf31",
+      "name": "Kerala Local Red 🏆 🌱",
       "slug": "kerala-local-red",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -372,7 +372,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 14,
-      "origin": "PAU Ludhiana, India (A. esculentus \u00d7 A. manihot ssp. manihot)",
+      "origin": "PAU Ludhiana, India (A. esculentus × A. manihot ssp. manihot)",
       "traits": "Rapid growth reaching 180-200cm. Pigmentation on stem, shoots, petiole, basal lower veins.",
       "flesh_fruit": "",
       "yield_notes": "10-12.5 t/ha",
@@ -385,7 +385,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 15,
-      "origin": "HAU Hisar, India, 1992 (Selection 12-2 \u00d7 Parbhani Kranti)",
+      "origin": "HAU Hisar, India, 1992 (Selection 12-2 × Parbhani Kranti)",
       "traits": "Medium tall with short internodes. 3-4 branches. Field tolerance to leaf hopper.",
       "flesh_fruit": "",
       "yield_notes": "12-13 t/ha",
@@ -403,7 +403,7 @@
       "flesh_fruit": "",
       "yield_notes": "Good yields",
       "growing_notes": "",
-      "availability": "IARI, widely available in India including Kerala"
+      "availability": "IARI, widely available in India including tropical monsoon climates"
     }
   ],
   "variety_count": 31

@@ -3,7 +3,7 @@
   "species_slug": "rice",
   "varieties": [
     {
-      "name": "Tachiminori \ud83c\udfc6",
+      "name": "Tachiminori 🏆",
       "slug": "tachiminori",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -55,7 +55,7 @@
       "availability": "SunRice premium, Asian grocery"
     },
     {
-      "name": "Koshihikari \ud83c\udfc6",
+      "name": "Koshihikari 🏆",
       "slug": "koshihikari",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -107,7 +107,7 @@
       "availability": "SunRice, North Queensland suppliers"
     },
     {
-      "name": "Amaroo \ud83c\udf31 (Historical)",
+      "name": "Amaroo 🌱 (Historical)",
       "slug": "amaroo-historical",
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
@@ -133,7 +133,7 @@
       "availability": "SunRice, Australian suppliers"
     },
     {
-      "name": "Jarrah \ud83c\udf31 (Historical)",
+      "name": "Jarrah 🌱 (Historical)",
       "slug": "jarrah-historical",
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
@@ -159,7 +159,7 @@
       "availability": "SunRice premium, specialty stores"
     },
     {
-      "name": "Kyeema \ud83c\udfc6",
+      "name": "Kyeema 🏆",
       "slug": "kyeema",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -198,51 +198,51 @@
       "availability": "Limited - SunRice trials, specialty"
     },
     {
-      "name": "Jeerakasala (Wayanad Jeerakasala) \ud83c\udfc6 \ud83c\udf31",
+      "name": "Jeerakasala (Wayanad Jeerakasala) 🏆 🌱",
       "slug": "jeerakasala-wayanad-jeerakasala",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 0,
-      "origin": "Wayanad, Kerala (centuries old)",
+      "origin": "Wayanad, tropical monsoon climates (centuries old)",
       "traits": "Indica, short bold, scented, non-basmati",
       "flesh_fruit": "",
       "yield_notes": "2.0-2.7 t/ha (premium quality)",
       "growing_notes": "",
-      "availability": "Kerala seed banks, Wayanad cooperatives, SEED CARE, organic suppliers"
+      "availability": "tropical monsoon climates seed banks, Wayanad cooperatives, SEED CARE, organic suppliers"
     },
     {
-      "name": "Gandhakasala (Wayanad Gandhakasala) \ud83c\udfc6 \ud83c\udf31",
+      "name": "Gandhakasala (Wayanad Gandhakasala) 🏆 🌱",
       "slug": "gandhakasala-wayanad-gandhakasala",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 1,
-      "origin": "Wayanad, Kerala (indigenous)",
+      "origin": "Wayanad, tropical monsoon climates (indigenous)",
       "traits": "Indica, short bold, highly aromatic",
       "flesh_fruit": "",
       "yield_notes": "2.0-2.7 t/ha",
       "growing_notes": "",
-      "availability": "Wayanad farmers, Kerala Agricultural University, SEED CARE, organic stores"
+      "availability": "Wayanad farmers, tropical monsoon climates Agricultural University, SEED CARE, organic stores"
     },
     {
-      "name": "Kayama \ud83c\udfc6 \ud83c\udf31",
+      "name": "Kayama 🏆 🌱",
       "slug": "kayama",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 2,
-      "origin": "Kerala (registered 2016)",
+      "origin": "tropical monsoon climates (registered 2016)",
       "traits": "Indica, aromatic, small round",
       "flesh_fruit": "",
       "yield_notes": "Moderate traditional",
       "growing_notes": "",
-      "availability": "SEED CARE, Kerala Biodiversity Board, traditional farmers"
+      "availability": "SEED CARE, tropical monsoon climates Biodiversity Board, traditional farmers"
     },
     {
-      "name": "Velumbala (Veliyan) \ud83c\udfc6 \ud83c\udf31",
+      "name": "Velumbala (Veliyan) 🏆 🌱",
       "slug": "velumbala-veliyan",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 3,
-      "origin": "Kerala Wayanad (registered 2013)",
+      "origin": "tropical monsoon climates Wayanad (registered 2013)",
       "traits": "Indica, aromatic, long slender",
       "flesh_fruit": "",
       "yield_notes": "30-178kg seed documented",
@@ -250,25 +250,25 @@
       "availability": "SEED CARE, Wayanad seed banks"
     },
     {
-      "name": "Chomala \ud83c\udfc6 \ud83c\udf31",
+      "name": "Chomala 🏆 🌱",
       "slug": "chomala",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 4,
-      "origin": "Kerala (registered 2013)",
+      "origin": "tropical monsoon climates (registered 2013)",
       "traits": "Indica, aromatic, small slender",
       "flesh_fruit": "",
       "yield_notes": "76kg seed documented",
       "growing_notes": "",
-      "availability": "SEED CARE, traditional farmers, Kerala seed banks"
+      "availability": "SEED CARE, traditional farmers, tropical monsoon climates seed banks"
     },
     {
-      "name": "Kothampala \ud83c\udfc6 \ud83c\udf31",
+      "name": "Kothampala 🏆 🌱",
       "slug": "kothampala",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 5,
-      "origin": "Kerala (registered 2016)",
+      "origin": "tropical monsoon climates (registered 2016)",
       "traits": "Indica, aromatic, black grain",
       "flesh_fruit": "",
       "yield_notes": "Traditional",
@@ -276,43 +276,43 @@
       "availability": "SEED CARE, specialty organic"
     },
     {
-      "name": "Pokkali Rice \ud83c\udfc6 \ud83c\udf31",
+      "name": "Pokkali Rice 🏆 🌱",
       "slug": "pokkali-rice",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 6,
-      "origin": "Coastal Kerala (Alappuzha, Kottayam, Thrissur, Ernakulam)",
+      "origin": "Coastal tropical monsoon climates (Alappuzha, Kottayam, Thrissur, Ernakulam)",
       "traits": "Indica, saline-tolerant, organic, medicinal",
       "flesh_fruit": "",
       "yield_notes": "Volume 3.1-4.5, moderate saline",
       "growing_notes": "",
-      "availability": "Kerala Agricultural University, coastal cooperatives, organic stores"
+      "availability": "tropical monsoon climates Agricultural University, coastal cooperatives, organic stores"
     },
     {
-      "name": "Njavara (Black & Golden Njavara) \ud83c\udfc6 \ud83c\udf31",
+      "name": "Njavara (Black & Golden Njavara) 🏆 🌱",
       "slug": "njavara-black-golden-njavara",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 7,
-      "origin": "Kerala (ancient Ayurvedic, centuries)",
+      "origin": "tropical monsoon climates (ancient Ayurvedic, centuries)",
       "traits": "Indica, medicinal varieties",
       "flesh_fruit": "",
       "yield_notes": "Lower yield, extreme medicinal value",
       "growing_notes": "",
-      "availability": "Ayurvedic centers, Kerala Agricultural University, medicinal rice suppliers, traditional farmers"
+      "availability": "Ayurvedic centers, tropical monsoon climates Agricultural University, medicinal rice suppliers, traditional farmers"
     },
     {
-      "name": "Palakkadan Matta (Kerala Matta/Rose Matta/Vadi) \ud83c\udfc6 \ud83c\udf31",
+      "name": "Palakkadan Matta (Kerala Matta/Rose Matta/Vadi) 🏆 🌱",
       "slug": "palakkadan-matta-kerala-matta-rose-matta-vadi",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 8,
-      "origin": "Palakkad, Kerala (traditional)",
+      "origin": "Palakkad, tropical monsoon climates (traditional)",
       "traits": "Indica, red/brown, coarse bold",
       "flesh_fruit": "",
       "yield_notes": "Good yield poonthalpadam",
       "growing_notes": "",
-      "availability": "Palakkad Matta Farmers Producer Company, widely available Kerala, major stores"
+      "availability": "Palakkad Matta Farmers Producer Company, widely available tropical monsoon climates, major stores"
     },
     {
       "name": "Jyothi (Jyothy)",
@@ -320,12 +320,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 9,
-      "origin": "Kerala Agricultural University, M.S. Swaminathan Rice Research Station, Moncompu/Kuttanad",
+      "origin": "tropical monsoon climates Agricultural University, M.S. Swaminathan Rice Research Station, Moncompu/Kuttanad",
       "traits": "Indica, modern high-yielding",
       "flesh_fruit": "",
-      "yield_notes": "High-yielding Kerala",
+      "yield_notes": "High-yielding tropical monsoon climates",
       "growing_notes": "",
-      "availability": "Kerala Agricultural University, state seed corporations, Kerala markets"
+      "availability": "tropical monsoon climates Agricultural University, state seed corporations, tropical monsoon climates markets"
     },
     {
       "name": "Uma",
@@ -333,7 +333,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 10,
-      "origin": "Kerala Agricultural University, Moncompu",
+      "origin": "tropical monsoon climates Agricultural University, Moncompu",
       "traits": "Indica, modern high-yielding",
       "flesh_fruit": "",
       "yield_notes": "High-yielding",
@@ -346,12 +346,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 11,
-      "origin": "Kerala Agricultural University, Moncompu",
+      "origin": "tropical monsoon climates Agricultural University, Moncompu",
       "traits": "Indica, modern Kuttanad",
       "flesh_fruit": "",
       "yield_notes": "High-yielding",
       "growing_notes": "",
-      "availability": "Kerala Agricultural University, Kuttanad cooperatives"
+      "availability": "tropical monsoon climates Agricultural University, Kuttanad cooperatives"
     },
     {
       "name": "Jaya",
@@ -359,7 +359,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 12,
-      "origin": "IARI, widely adopted Kerala",
+      "origin": "IARI, widely adopted tropical monsoon climates",
       "traits": "Indica, high-yielding",
       "flesh_fruit": "",
       "yield_notes": "High-yielding",
@@ -372,7 +372,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 13,
-      "origin": "Kerala, Kuttanad",
+      "origin": "tropical monsoon climates, Kuttanad",
       "traits": "Indica, Kuttanad-adapted",
       "flesh_fruit": "",
       "yield_notes": "Below-sea-level adapted",
@@ -380,12 +380,12 @@
       "availability": "Kuttanad cooperatives, Alappuzha local markets"
     },
     {
-      "name": "Makom \ud83c\udf31",
+      "name": "Makom 🌱",
       "slug": "makom",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 14,
-      "origin": "Kuttanad, Kerala",
+      "origin": "Kuttanad, tropical monsoon climates",
       "traits": "Indica, traditional Kuttanad",
       "flesh_fruit": "",
       "yield_notes": "Traditional",
@@ -432,7 +432,7 @@
       "availability": ""
     },
     {
-      "name": "Adukkan \ud83c\udfc6 \ud83c\udf31",
+      "name": "Adukkan 🏆 🌱",
       "slug": "adukkan",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -445,7 +445,7 @@
       "availability": ""
     },
     {
-      "name": "Thondi \ud83c\udfc6 \ud83c\udf31",
+      "name": "Thondi 🏆 🌱",
       "slug": "thondi",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -458,7 +458,7 @@
       "availability": ""
     },
     {
-      "name": "Mullankayama, Chennellu \ud83c\udfc6 \ud83c\udf31",
+      "name": "Mullankayama, Chennellu 🏆 🌱",
       "slug": "mullankayama-chennellu",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -471,7 +471,7 @@
       "availability": ""
     },
     {
-      "name": "Chenthadi, Kalladiaryan \ud83c\udfc6 \ud83c\udf31",
+      "name": "Chenthadi, Kalladiaryan 🏆 🌱",
       "slug": "chenthadi-kalladiaryan",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -484,7 +484,7 @@
       "availability": ""
     },
     {
-      "name": "Kottathondi, Mannuveliyan \ud83c\udfc6 \ud83c\udf31",
+      "name": "Kottathondi, Mannuveliyan 🏆 🌱",
       "slug": "kottathondi-mannuveliyan",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -497,7 +497,7 @@
       "availability": ""
     },
     {
-      "name": "Lakshmi (Kayamkulam-1) \ud83c\udfc6 \ud83c\udf31",
+      "name": "Lakshmi (Kayamkulam-1) 🏆 🌱",
       "slug": "lakshmi-kayamkulam-1",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -510,7 +510,7 @@
       "availability": ""
     },
     {
-      "name": "Dhanya (Kayamkulam-4) \ud83c\udfc6 \ud83c\udf31",
+      "name": "Dhanya (Kayamkulam-4) 🏆 🌱",
       "slug": "dhanya-kayamkulam-4",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -614,7 +614,7 @@
       "availability": ""
     },
     {
-      "name": "Black Rice (Karutha Kavuni) \ud83c\udfc6 \ud83c\udf31",
+      "name": "Black Rice (Karutha Kavuni) 🏆 🌱",
       "slug": "black-rice-karutha-kavuni",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",

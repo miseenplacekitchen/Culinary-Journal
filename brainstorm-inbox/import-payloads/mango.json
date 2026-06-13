@@ -3,7 +3,7 @@
   "species_slug": "mango",
   "varieties": [
     {
-      "name": "- \ud83e\uddec HYBRID (F1) = First-generation cross (excluded if patented/GMO)",
+      "name": "- 🧬 HYBRID (F1) = First-generation cross (excluded if patented/GMO)",
       "slug": "hybrid-f1-first-generation-cross-excluded-if-patented-gmo",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
@@ -16,7 +16,7 @@
       "availability": ""
     },
     {
-      "name": "Kensington Pride (Bowen) \ud83c\udfc6 HEIRLOOM",
+      "name": "Kensington Pride (Bowen) 🏆 HEIRLOOM",
       "slug": "kensington-pride-bowen-heirloom",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -29,7 +29,7 @@
       "availability": "Widely available Queensland nurseries"
     },
     {
-      "name": "R2E2 \ud83c\udf31 OPEN-POLLINATED (Australian selection)",
+      "name": "R2E2 🌱 OPEN-POLLINATED (Australian selection)",
       "slug": "r2e2-open-pollinated-australian-selection",
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
@@ -42,12 +42,12 @@
       "availability": "Common in Queensland"
     },
     {
-      "name": "Honey Gold\u2122 \ud83e\uddec HYBRID",
+      "name": "Honey Gold™ 🧬 HYBRID",
       "slug": "honey-gold-hybrid",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
       "sort_order": 3,
-      "origin": "Chance seedling (Kensington Pride \u00d7 unknown), Australia",
+      "origin": "Chance seedling (Kensington Pride × unknown), Australia",
       "traits": "Medium-large, golden skin",
       "flesh_fruit": "Very sweet, fiberless",
       "yield_notes": "Good",
@@ -55,7 +55,7 @@
       "availability": "Specialty nurseries"
     },
     {
-      "name": "Calypso\u2122 \ud83e\uddec HYBRID",
+      "name": "Calypso™ 🧬 HYBRID",
       "slug": "calypso-hybrid",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
@@ -68,7 +68,7 @@
       "availability": "QBAN-accredited nurseries"
     },
     {
-      "name": "Brooks \ud83c\udf31 OPEN-POLLINATED",
+      "name": "Brooks 🌱 OPEN-POLLINATED",
       "slug": "brooks-open-pollinated",
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
@@ -81,7 +81,7 @@
       "availability": "Specialty nurseries"
     },
     {
-      "name": "Keitt \ud83c\udf31 OPEN-POLLINATED",
+      "name": "Keitt 🌱 OPEN-POLLINATED",
       "slug": "keitt-open-pollinated",
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
@@ -94,7 +94,7 @@
       "availability": "Available Queensland"
     },
     {
-      "name": "Nam Doc Mai \ud83c\udfc6 HEIRLOOM (Thai)",
+      "name": "Nam Doc Mai 🏆 HEIRLOOM (Thai)",
       "slug": "nam-doc-mai-heirloom-thai",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -107,7 +107,7 @@
       "availability": "Specialty nurseries (Daleys, etc.)"
     },
     {
-      "name": "Palmer \ud83c\udf31 OPEN-POLLINATED",
+      "name": "Palmer 🌱 OPEN-POLLINATED",
       "slug": "palmer-open-pollinated",
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
@@ -120,12 +120,12 @@
       "availability": "Limited"
     },
     {
-      "name": "Muvandan (Moovanden) \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Muvandan (Moovanden) 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "muvandan-moovanden-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 0,
-      "origin": "Idukki District, Kerala",
+      "origin": "Idukki District, tropical monsoon climates",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -133,51 +133,51 @@
       "availability": ""
     },
     {
-      "name": "Kolombu (Vella Kolomban) \ud83c\udfc6 HEIRLOOM",
+      "name": "Kolombu (Vella Kolomban) 🏆 HEIRLOOM",
       "slug": "kolombu-vella-kolomban-heirloom",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 1,
-      "origin": "Sri Lanka (brought to Kerala by workers)",
+      "origin": "Sri Lanka (brought to tropical monsoon climates by workers)",
       "traits": "Extremely tasty, high organic market demand",
       "flesh_fruit": "Sweet, good texture",
       "yield_notes": "Annual bearer",
       "growing_notes": "No insect infestation even when ripe on tree. Common in Thrissur/Ernakulam.",
-      "availability": "Nadan Maavukal network, Kerala nurseries"
+      "availability": "Nadan Maavukal network, tropical monsoon climates nurseries"
     },
     {
-      "name": "Kuttiattor (Nambiar Mango) \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Kuttiattor (Nambiar Mango) 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "kuttiattor-nambiar-mango-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 2,
-      "origin": "Kannur District, Kerala",
+      "origin": "Kannur District, tropical monsoon climates",
       "traits": "GI (Geographical Indication) tagged variety",
       "flesh_fruit": "Very tasty",
       "yield_notes": "Annual bearer, less insect attack",
       "growing_notes": "Famous in Kannur region. Official heritage recognition.",
-      "availability": "Kannur region, specialty Kerala nurseries"
+      "availability": "Kannur region, specialty tropical monsoon climates nurseries"
     },
     {
-      "name": "Priyoor (Dukhrana) \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Priyoor (Dukhrana) 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "priyoor-dukhrana-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 3,
-      "origin": "Kerala (discovered by priest Elias Chavara Kuriakose, 1700s)",
+      "origin": "tropical monsoon climates (discovered by priest Elias Chavara Kuriakose, 1700s)",
       "traits": "PURPLE-COLORED MANGO, unique appearance",
       "flesh_fruit": "Distinctive flavor",
       "yield_notes": "",
       "growing_notes": "Historic variety now propagated by Naadan Maavukal group.",
-      "availability": "Several Kerala nurseries via Naadan Maavukal"
+      "availability": "Several tropical monsoon climates nurseries via Naadan Maavukal"
     },
     {
-      "name": "Karpoora Varikka \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Karpoora Varikka 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "karpoora-varikka-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 4,
-      "origin": "Southern Kerala",
+      "origin": "Southern tropical monsoon climates",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -185,7 +185,7 @@
       "availability": ""
     },
     {
-      "name": "Nedungolan \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Nedungolan 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "nedungolan-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -198,38 +198,38 @@
       "availability": ""
     },
     {
-      "name": "Perakka Manga \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Perakka Manga 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "perakka-manga-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 6,
-      "origin": "Southern Kerala",
+      "origin": "Southern tropical monsoon climates",
       "traits": "High sugar content",
       "flesh_fruit": "Excellent taste, ranked top in acceptability",
       "yield_notes": "Good",
       "growing_notes": "Traditional table variety.",
-      "availability": "Southern Kerala homesteads"
+      "availability": "Southern tropical monsoon climates homesteads"
     },
     {
-      "name": "Inamanga \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Inamanga 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "inamanga-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 7,
-      "origin": "Southern Kerala",
+      "origin": "Southern tropical monsoon climates",
       "traits": "High sugar content, excellent acceptability",
       "flesh_fruit": "Sweet, good texture",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Traditional Kerala gardens"
+      "availability": "Traditional tropical monsoon climates gardens"
     },
     {
-      "name": "Neenda Karpooram \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Neenda Karpooram 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "neenda-karpooram-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 8,
-      "origin": "Southern Kerala",
+      "origin": "Southern tropical monsoon climates",
       "traits": "High sugar content, aromatic",
       "flesh_fruit": "Flavorful, highly acceptable",
       "yield_notes": "",
@@ -237,25 +237,25 @@
       "availability": "Heritage collections"
     },
     {
-      "name": "Velutha Muvandan \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Velutha Muvandan 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "velutha-muvandan-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 9,
-      "origin": "Southern Kerala",
+      "origin": "Southern tropical monsoon climates",
       "traits": "High sugar content",
       "flesh_fruit": "Top-rated in taste tests",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Traditional Kerala farms"
+      "availability": "Traditional tropical monsoon climates farms"
     },
     {
-      "name": "Ambalathara Local \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Ambalathara Local 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "ambalathara-local-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 10,
-      "origin": "Ambalathara, Kerala",
+      "origin": "Ambalathara, tropical monsoon climates",
       "traits": "Flowers round the year",
       "flesh_fruit": "High sugar, excellent acceptability",
       "yield_notes": "Year-round potential",
@@ -263,12 +263,12 @@
       "availability": "Local to Ambalathara region"
     },
     {
-      "name": "Vellari Type-1 & Type-2 \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Vellari Type-1 & Type-2 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "vellari-type-1-type-2-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 11,
-      "origin": "Southern Kerala",
+      "origin": "Southern tropical monsoon climates",
       "traits": "Flowers round the year (Type-1), high sugar (Type-2)",
       "flesh_fruit": "",
       "yield_notes": "Year-round potential",
@@ -276,25 +276,25 @@
       "availability": "Heritage collections"
     },
     {
-      "name": "Thali \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Thali 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "thali-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 12,
-      "origin": "Southern Kerala",
+      "origin": "Southern tropical monsoon climates",
       "traits": "Flowers round the year",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Traditional Kerala homesteads"
+      "availability": "Traditional tropical monsoon climates homesteads"
     },
     {
-      "name": "Kizhakkan Thali \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Kizhakkan Thali 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "kizhakkan-thali-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 13,
-      "origin": "Southern Kerala",
+      "origin": "Southern tropical monsoon climates",
       "traits": "Flowers round the year, eastern variety",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -302,25 +302,25 @@
       "availability": "Heritage farms"
     },
     {
-      "name": "Karpooram Manga \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Karpooram Manga 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "karpooram-manga-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 14,
-      "origin": "Kerala (aromatic type)",
+      "origin": "tropical monsoon climates (aromatic type)",
       "traits": "Strong camphor-like aroma",
       "flesh_fruit": "Top-rated in acceptability",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Traditional Kerala gardens"
+      "availability": "Traditional tropical monsoon climates gardens"
     },
     {
-      "name": "Muthalamookan \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Muthalamookan 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "muthalamookan-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 15,
-      "origin": "Southern Kerala",
+      "origin": "Southern tropical monsoon climates",
       "traits": "Traditional dual-purpose variety",
       "flesh_fruit": "Highly acceptable",
       "yield_notes": "",
@@ -328,12 +328,12 @@
       "availability": "Heritage collections"
     },
     {
-      "name": "Kotookonam Varikka \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Kotookonam Varikka 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "kotookonam-varikka-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 16,
-      "origin": "Southern Kerala",
+      "origin": "Southern tropical monsoon climates",
       "traits": "Traditional table variety",
       "flesh_fruit": "Excellent acceptability",
       "yield_notes": "",
@@ -341,12 +341,12 @@
       "availability": "Limited heritage farms"
     },
     {
-      "name": "Cheri Manga \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Cheri Manga 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "cheri-manga-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 17,
-      "origin": "Kannur region, Kerala",
+      "origin": "Kannur region, tropical monsoon climates",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -354,12 +354,12 @@
       "availability": "Kannapuram region"
     },
     {
-      "name": "Choppan Manga \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Choppan Manga 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "choppan-manga-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 18,
-      "origin": "Kannur region, Kerala",
+      "origin": "Kannur region, tropical monsoon climates",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -367,12 +367,12 @@
       "availability": "Kannapuram village area"
     },
     {
-      "name": "Kannapuram Manga \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Kannapuram Manga 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "kannapuram-manga-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 19,
-      "origin": "Kannapuram village, Kannur, Kerala",
+      "origin": "Kannapuram village, Kannur, tropical monsoon climates",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -380,12 +380,12 @@
       "availability": "Kannapuram region"
     },
     {
-      "name": "Vellathan \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Vellathan 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "vellathan-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 20,
-      "origin": "Kannapuram village, Kerala",
+      "origin": "Kannapuram village, tropical monsoon climates",
       "traits": "Extremely sweet, 200+ year old specimens exist",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -393,12 +393,12 @@
       "availability": "Being propagated, Naadan Maavukal network"
     },
     {
-      "name": "Black Mango \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Black Mango 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "black-mango-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 21,
-      "origin": "Kerala",
+      "origin": "tropical monsoon climates",
       "traits": "BLACK-COLORED skin, unique appearance",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -406,12 +406,12 @@
       "availability": "Very limited, conservation collections"
     },
     {
-      "name": "Thamba (Purple-Blue) \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Thamba (Purple-Blue) 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "thamba-purple-blue-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 22,
-      "origin": "Kerala (recently rediscovered)",
+      "origin": "tropical monsoon climates (recently rediscovered)",
       "traits": "PURPLE-BLUE COLORED mango",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -419,12 +419,12 @@
       "availability": "Being propagated"
     },
     {
-      "name": "Jigu Jigu (Blue) \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Jigu Jigu (Blue) 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "jigu-jigu-blue-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 23,
-      "origin": "Kerala (recently rediscovered)",
+      "origin": "tropical monsoon climates (recently rediscovered)",
       "traits": "BLUE COLORED mango",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -432,12 +432,12 @@
       "availability": "Being propagated"
     },
     {
-      "name": "Sakhi \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Sakhi 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "sakhi-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 24,
-      "origin": "Kerala",
+      "origin": "tropical monsoon climates",
       "traits": "Named after mango conservationist Sakhil Thayyil",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -445,12 +445,12 @@
       "availability": "Naadan Maavukal network"
     },
     {
-      "name": "Thrissurkaran \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Thrissurkaran 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "thrissurkaran-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 25,
-      "origin": "Thrissur, Kerala",
+      "origin": "Thrissur, tropical monsoon climates",
       "traits": "Regional variety",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -458,12 +458,12 @@
       "availability": "Thrissur area"
     },
     {
-      "name": "Thiruvambadi \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Thiruvambadi 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "thiruvambadi-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 26,
-      "origin": "Thiruvambadi, Kerala",
+      "origin": "Thiruvambadi, tropical monsoon climates",
       "traits": "GIANT VARIETY, very large fruits",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -471,12 +471,12 @@
       "availability": "Limited, Thiruvambadi region"
     },
     {
-      "name": "Govind Mango \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Govind Mango 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "govind-mango-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 27,
-      "origin": "Kerala",
+      "origin": "tropical monsoon climates",
       "traits": "PINK-PEACH HUE, unique color",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -484,12 +484,12 @@
       "availability": "Being propagated"
     },
     {
-      "name": "Ariya \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Ariya 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "ariya-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 28,
-      "origin": "Kerala",
+      "origin": "tropical monsoon climates",
       "traits": "FRUITS THROUGHOUT THE YEAR",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -497,20 +497,20 @@
       "availability": "Limited, conservation collections"
     },
     {
-      "name": "Alphonso (Hapus) \ud83c\udfc6 HEIRLOOM",
+      "name": "Alphonso (Hapus) 🏆 HEIRLOOM",
       "slug": "alphonso-hapus-heirloom",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 29,
       "origin": "Maharashtra, India",
-      "traits": "\u201cKing of Mangoes,\u201d premium variety",
+      "traits": "“King of Mangoes,” premium variety",
       "flesh_fruit": "Saffron-colored, fiberless, buttery",
       "yield_notes": "",
-      "growing_notes": "Grows well in Kerala. Highly prized.",
-      "availability": "Widely available Kerala nurseries"
+      "growing_notes": "Grows well in tropical monsoon climates. Highly prized.",
+      "availability": "Widely available tropical monsoon climates nurseries"
     },
     {
-      "name": "Banganapalli \ud83c\udfc6 HEIRLOOM",
+      "name": "Banganapalli 🏆 HEIRLOOM",
       "slug": "banganapalli-heirloom",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -520,10 +520,10 @@
       "flesh_fruit": "Fiberless, sweet",
       "yield_notes": "",
       "growing_notes": "Commercial variety in South India.",
-      "availability": "Kerala nurseries"
+      "availability": "tropical monsoon climates nurseries"
     },
     {
-      "name": "Neelum \ud83c\udfc6 HEIRLOOM",
+      "name": "Neelum 🏆 HEIRLOOM",
       "slug": "neelum-heirloom",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -533,10 +533,10 @@
       "flesh_fruit": "Soft, sweet, mild fiber",
       "yield_notes": "Heavy bearer",
       "growing_notes": "",
-      "availability": "Common in Kerala"
+      "availability": "Common in tropical monsoon climates"
     },
     {
-      "name": "Malgova (Malgoa) \ud83c\udfc6 HEIRLOOM",
+      "name": "Malgova (Malgoa) 🏆 HEIRLOOM",
       "slug": "malgova-malgoa-heirloom",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -546,28 +546,28 @@
       "flesh_fruit": "Thick, fiberless, sweet",
       "yield_notes": "",
       "growing_notes": "High quality commercial variety.",
-      "availability": "Kerala nurseries"
+      "availability": "tropical monsoon climates nurseries"
     },
     {
-      "name": "Mallika \ud83e\uddec HYBRID",
+      "name": "Mallika 🧬 HYBRID",
       "slug": "mallika-hybrid",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 33,
-      "origin": "India (Neelum \u00d7 Dashehari cross)",
+      "origin": "India (Neelum × Dashehari cross)",
       "traits": "Medium size, greenish-yellow",
       "flesh_fruit": "Soft, minimal fiber, sweet",
       "yield_notes": "",
-      "growing_notes": "Suited to Kerala climate.",
-      "availability": "Common Kerala nurseries"
+      "growing_notes": "Suited to tropical monsoon climates climate.",
+      "availability": "Common tropical monsoon climates nurseries"
     },
     {
-      "name": "Kalapady \ud83c\udfc6 HEIRLOOM \ud83c\udf0f INDIGENOUS",
+      "name": "Kalapady 🏆 HEIRLOOM 🌏 INDIGENOUS",
       "slug": "kalapady-heirloom-indigenous",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 34,
-      "origin": "Kerala",
+      "origin": "tropical monsoon climates",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -575,7 +575,7 @@
       "availability": ""
     },
     {
-      "name": "Chaeng Deang (Thai) \ud83c\udfc6 HEIRLOOM",
+      "name": "Chaeng Deang (Thai) 🏆 HEIRLOOM",
       "slug": "chaeng-deang-thai-heirloom",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -584,11 +584,11 @@
       "traits": "Green-eating variety",
       "flesh_fruit": "",
       "yield_notes": "",
-      "growing_notes": "Grows well in Kerala\u2019s tropical climate.",
-      "availability": "Specialty Kerala nurseries"
+      "growing_notes": "Grows well in tropical monsoon climates’s tropical climate.",
+      "availability": "Specialty tropical monsoon climates nurseries"
     },
     {
-      "name": "Glenn \ud83c\udf31 OPEN-POLLINATED",
+      "name": "Glenn 🌱 OPEN-POLLINATED",
       "slug": "glenn-open-pollinated",
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",

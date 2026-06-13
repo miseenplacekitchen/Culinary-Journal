@@ -12,7 +12,7 @@
       "traits": "Bronze-skinned, small berries (15-20mm), self-fertile, perfect flowers, vigorous vine",
       "flesh_fruit": "Sweet, juicy with distinctive fruity flavor, less musky than traditional muscadines",
       "yield_notes": "High yielding, 4-8 tons per acre, uniform ripening",
-      "growing_notes": "Excellent subtropical adaptation. Self-fertile eliminates need for pollinizer. Intermediate tolerance to bitter rot, powdery mildew, angular leaf spot. Susceptible to black rot and Pierce's disease in high pressure areas. Thrives in warm humid climates, performs exceptionally well in Brisbane conditions. Requires minimal spraying.",
+      "growing_notes": "Excellent subtropical adaptation. Self-fertile eliminates need for pollinizer. Intermediate tolerance to bitter rot, powdery mildew, angular leaf spot. Susceptible to black rot and Pierce's disease in high pressure areas. Thrives in warm humid climates, performs exceptionally well in humid subtropical climates conditions. Requires minimal spraying.",
       "availability": "Available from Australian nurseries including Daleys Fruit, subtropical specialist nurseries"
     },
     {
@@ -25,7 +25,7 @@
       "traits": "Black-purple berries, medium size, excellent disease resistance, self-fertile",
       "flesh_fruit": "Rich, sweet, less musky flavor than typical muscadines, excellent for fresh eating",
       "yield_notes": "High yields, uniform berry ripening, consistent production",
-      "growing_notes": "Most popular red muscadine for wine and juice. Self-fertile, excellent for Brisbane's humid climate. High disease resistance to major fungal diseases. Flavor less musky than traditional muscadines making it excellent for fresh consumption. Ideal for coastal subtropical gardens. Performs well without intensive spray programs.",
+      "growing_notes": "Most popular red muscadine for wine and juice. Self-fertile, excellent for Humid subtropical humid climate. High disease resistance to major fungal diseases. Flavor less musky than traditional muscadines making it excellent for fresh consumption. Ideal for coastal subtropical gardens. Performs well without intensive spray programs.",
       "availability": "Daleys Fruit Trees (exclusive Australian distributor), subtropical fruit nurseries"
     },
     {
@@ -38,7 +38,7 @@
       "traits": "Black berries, small to medium clusters (12 berries average), unique maple-shaped leaves, ornamental qualities",
       "flesh_fruit": "Unique aromatic flavor different from typical muscadine, rated moderate to more than acceptable by consumer panels",
       "yield_notes": "Everbearing - produces ripe fruit from mid-August to October/November, extended harvest period",
-      "growing_notes": "Interspecific hybrid (muscadine \u00d7 bunch grape). Highly tolerant to fungal diseases (ripe rot, bitter rot, black rot, anthracnose, downy mildew). No Pierce's disease symptoms observed. Excellent subtropical adaptation. Ornamental qualities with distinctive leaf shape. Regular fungicide/insecticide programs typically not needed. Propagates readily from herbaceous cuttings. Perfect for Brisbane's hot humid climate.",
+      "growing_notes": "Interspecific hybrid (muscadine × bunch grape). Highly tolerant to fungal diseases (ripe rot, bitter rot, black rot, anthracnose, downy mildew). No Pierce's disease symptoms observed. Excellent subtropical adaptation. Ornamental qualities with distinctive leaf shape. Regular fungicide/insecticide programs typically not needed. Propagates readily from herbaceous cuttings. Perfect for Humid subtropical hot humid climate.",
       "availability": "Available through specialized subtropical nurseries, may require importation"
     },
     {
@@ -68,7 +68,7 @@
       "availability": ""
     },
     {
-      "name": "Scuppernong \ud83c\udfc6",
+      "name": "Scuppernong 🏆",
       "slug": "scuppernong",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -90,11 +90,11 @@
       "traits": "Deep colored, medium berries, teinturier (red juice), vigorous productive vine",
       "flesh_fruit": "Black cherry, red fruit, herbaceous notes, black pepper, chocolate undertones. Medium body with modest tannins.",
       "yield_notes": "Very productive, 4-5 tons per year (can reach 7-8 tons with management), 11-17 tons per hectare",
-      "growing_notes": "French-American interspecific hybrid. Excellent resistance to fungal diseases, especially downy mildew. Thrives in warm, humid environments - ideal for Brisbane. Used successfully in Queensland's South Burnett and coastal NSW Hunter Valley. High tolerance to diseases caused by humidity. Works particularly well in subtropical climates. Can be used for table grapes or wine. Heavy cropper of rich flavorsome grapes when fully ripe. Excellent for backyards in humid climates.",
+      "growing_notes": "French-American interspecific hybrid. Excellent resistance to fungal diseases, especially downy mildew. Thrives in warm, humid environments - ideal for humid subtropical climates. Used successfully in Queensland's South Burnett and coastal NSW Hunter Valley. High tolerance to diseases caused by humidity. Works particularly well in subtropical climates. Can be used for table grapes or wine. Heavy cropper of rich flavorsome grapes when fully ripe. Excellent for backyards in humid climates.",
       "availability": "Daleys Fruit Trees, Australian subtropical nurseries, widely available in QLD"
     },
     {
-      "name": "Isabella \ud83c\udfc6",
+      "name": "Isabella 🏆",
       "slug": "isabella",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -120,7 +120,7 @@
       "availability": "Limited availability, heritage grape specialists, may require grafting from collectors"
     },
     {
-      "name": "Concord \ud83c\udfc6",
+      "name": "Concord 🏆",
       "slug": "concord",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -190,7 +190,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
       "sort_order": 14,
-      "origin": "France (Rh\u00f4ne Valley), ancient variety",
+      "origin": "France (Rhône Valley), ancient variety",
       "traits": "Small berries, loose bunches minimize mildew risk",
       "flesh_fruit": "Silky, seductive, aromatic - floral notes, stone fruit",
       "yield_notes": "Moderate yields",
@@ -203,7 +203,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
       "sort_order": 15,
-      "origin": "France (Rh\u00f4ne), ancient origins",
+      "origin": "France (Rhône), ancient origins",
       "traits": "Medium berries, tight to medium clusters",
       "flesh_fruit": "Dark fruit, spice, pepper notes",
       "yield_notes": "Good to high yields",
@@ -268,7 +268,7 @@
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
       "sort_order": 20,
-      "origin": "England (Bedfordshire), cross of Italian \u00d7 Russian varieties",
+      "origin": "England (Bedfordshire), cross of Italian × Russian varieties",
       "traits": "Large, fleshy, dark reddish-black berries, almost black",
       "flesh_fruit": "Very sweet, strong muscat flavor, rich",
       "yield_notes": "Good yields, early ripening",
@@ -298,7 +298,7 @@
       "traits": "Oval, medium, yellow-green to golden, seedless",
       "flesh_fruit": "Sweet, versatile - fresh eating, raisins, wine",
       "yield_notes": "High yields",
-      "growing_notes": "World's most widely planted grape. Adaptable to various climates including subtropical with management. Needs warm, dry conditions ideally but can be grown in Brisbane with disease management. Used as fresh fruit, sultanas, wine filler.",
+      "growing_notes": "World's most widely planted grape. Adaptable to various climates including subtropical with management. Needs warm, dry conditions ideally but can be grown in humid subtropical climates with disease management. Used as fresh fruit, sultanas, wine filler.",
       "availability": "Widely available"
     },
     {
@@ -311,7 +311,7 @@
       "traits": "Very large, round, red grapes",
       "flesh_fruit": "Very sweet",
       "yield_notes": "Very early season, requires bunch thinning",
-      "growing_notes": "Popular table grape. Early ripening advantageous. Grapes may split with rain - challenging in Brisbane summer rains. Requires protection from rain during ripening.",
+      "growing_notes": "Popular table grape. Early ripening advantageous. Grapes may split with rain - challenging in humid subtropical climates summer rains. Requires protection from rain during ripening.",
       "availability": "Table grape specialists"
     },
     {
@@ -337,7 +337,7 @@
       "traits": "Large, yellow-green, seeded",
       "flesh_fruit": "Firm, very sweet, strong muscat flavor",
       "yield_notes": "Not vigorous but bears heavily",
-      "growing_notes": "Popular table grape. Requires warm climate - suitable for Brisbane. Strong characteristic muscat flavor. Self-fertile.",
+      "growing_notes": "Popular table grape. Requires warm climate - suitable for humid subtropical climates. Strong characteristic muscat flavor. Self-fertile.",
       "availability": "Table grape nurseries"
     },
     {
@@ -419,7 +419,7 @@
       "availability": ""
     },
     {
-      "name": "Bangalore Blue \ud83c\udfc6",
+      "name": "Bangalore Blue 🏆",
       "slug": "bangalore-blue",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -432,7 +432,7 @@
       "availability": ""
     },
     {
-      "name": "Anab-e-Shahi \ud83c\udfc6",
+      "name": "Anab-e-Shahi 🏆",
       "slug": "anab-e-shahi",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -445,7 +445,7 @@
       "availability": ""
     },
     {
-      "name": "Dilkhush \ud83c\udfc6",
+      "name": "Dilkhush 🏆",
       "slug": "dilkhush",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -536,7 +536,7 @@
       "availability": "Indian nurseries"
     },
     {
-      "name": "Thompson Seedless & Clones \ud83c\udf31",
+      "name": "Thompson Seedless & Clones 🌱",
       "slug": "thompson-seedless-clones",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -549,7 +549,7 @@
       "availability": ""
     },
     {
-      "name": "Sharad Seedless \ud83e\uddec",
+      "name": "Sharad Seedless 🧬",
       "slug": "sharad-seedless",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -562,7 +562,7 @@
       "availability": "Northern India nurseries, expanding to Southern regions"
     },
     {
-      "name": "Beauty Seedless \ud83e\uddec",
+      "name": "Beauty Seedless 🧬",
       "slug": "beauty-seedless",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -575,7 +575,7 @@
       "availability": "Northern India nurseries"
     },
     {
-      "name": "Perlette \ud83e\uddec",
+      "name": "Perlette 🧬",
       "slug": "perlette",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -588,7 +588,7 @@
       "availability": ""
     },
     {
-      "name": "Kishmish Chorni \ud83c\udf31",
+      "name": "Kishmish Chorni 🌱",
       "slug": "kishmish-chorni",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -601,7 +601,7 @@
       "availability": "Northern India nurseries, raisin production areas"
     },
     {
-      "name": "Flame Seedless \ud83e\uddec",
+      "name": "Flame Seedless 🧬",
       "slug": "flame-seedless",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -614,7 +614,7 @@
       "availability": "Major Indian nurseries"
     },
     {
-      "name": "Red Globe \ud83e\uddec",
+      "name": "Red Globe 🧬",
       "slug": "red-globe",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -627,7 +627,7 @@
       "availability": "Indian table grape nurseries, widely available"
     },
     {
-      "name": "Emperor (Dattier) \ud83c\udf31",
+      "name": "Emperor (Dattier) 🌱",
       "slug": "emperor-dattier",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -636,11 +636,11 @@
       "traits": "White, seeded",
       "flesh_fruit": "Sweet",
       "yield_notes": "High resistance to heat and diseases",
-      "growing_notes": "Known for exceptional heat and disease resistance - critical for Kerala. Can be consumed fresh or used for wine making. Well-adapted to tropical conditions.",
+      "growing_notes": "Known for exceptional heat and disease resistance - critical for tropical monsoon climates. Can be consumed fresh or used for wine making. Well-adapted to tropical conditions.",
       "availability": "Indian nurseries specializing in heat-tolerant varieties"
     },
     {
-      "name": "Black Monukka \ud83c\udf31",
+      "name": "Black Monukka 🌱",
       "slug": "black-monukka",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -653,7 +653,7 @@
       "availability": ""
     },
     {
-      "name": "Black Prince \ud83e\uddec",
+      "name": "Black Prince 🧬",
       "slug": "black-prince",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -679,7 +679,7 @@
       "availability": "Northern India suppliers"
     },
     {
-      "name": "Sonaka \ud83c\udf31",
+      "name": "Sonaka 🌱",
       "slug": "sonaka",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -692,7 +692,7 @@
       "availability": "Raisin production region nurseries"
     },
     {
-      "name": "Manik Chaman \ud83c\udf31",
+      "name": "Manik Chaman 🌱",
       "slug": "manik-chaman",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -718,7 +718,7 @@
       "availability": "Regional Indian nurseries"
     },
     {
-      "name": "Cabernet Sauvignon \ud83c\udf31",
+      "name": "Cabernet Sauvignon 🌱",
       "slug": "cabernet-sauvignon",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -727,11 +727,11 @@
       "traits": "Small, thick-skinned black berries",
       "flesh_fruit": "Dark fruit, tannic",
       "yield_notes": "Can struggle with excessive heat; late ripening variety suffers in hot tropical regions",
-      "growing_notes": "Grown in Indian wine regions. Challenging in hot tropics due to heat and dust affecting sugar maturity. Better suited to elevated areas. Can be attempted in Kerala with intensive management.",
+      "growing_notes": "Grown in Indian wine regions. Challenging in hot tropics due to heat and dust affecting sugar maturity. Better suited to elevated areas. Can be attempted in tropical monsoon climates with intensive management.",
       "availability": "Indian wine grape nurseries"
     },
     {
-      "name": "Chardonnay \ud83c\udf31",
+      "name": "Chardonnay 🌱",
       "slug": "chardonnay",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -744,7 +744,7 @@
       "availability": "Wine regions, Nasik and Karnataka suppliers"
     },
     {
-      "name": "Sauvignon Blanc \ud83c\udf31",
+      "name": "Sauvignon Blanc 🌱",
       "slug": "sauvignon-blanc",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -757,7 +757,7 @@
       "availability": "Wine grape specialists"
     },
     {
-      "name": "Chenin Blanc \ud83c\udf31",
+      "name": "Chenin Blanc 🌱",
       "slug": "chenin-blanc",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -770,7 +770,7 @@
       "availability": "Wine regions"
     },
     {
-      "name": "Merlot \ud83c\udf31",
+      "name": "Merlot 🌱",
       "slug": "merlot",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -783,7 +783,7 @@
       "availability": "Wine grape nurseries"
     },
     {
-      "name": "Pinot Noir \ud83c\udf31",
+      "name": "Pinot Noir 🌱",
       "slug": "pinot-noir",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -792,11 +792,11 @@
       "traits": "Small black berries",
       "flesh_fruit": "Delicate, complex",
       "yield_notes": "Low yields, very challenging",
-      "growing_notes": "Difficult in tropical conditions. Requires cool climates. Not recommended for Kerala unless in high-elevation areas.",
+      "growing_notes": "Difficult in tropical conditions. Requires cool climates. Not recommended for tropical monsoon climates unless in high-elevation areas.",
       "availability": "Limited availability, specialty wine nurseries"
     },
     {
-      "name": "Muscat Blanc \ud83c\udf31",
+      "name": "Muscat Blanc 🌱",
       "slug": "muscat-blanc",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -818,11 +818,11 @@
       "traits": "Deep colored, red juice, medium berries",
       "flesh_fruit": "Black cherry, red fruit, chocolate, pepper notes",
       "yield_notes": "High yields, 11-17 t/ha",
-      "growing_notes": "French-American hybrid with excellent disease resistance. Thrives in warm, humid environments - ideal for Kerala tropical monsoon climate. Superior resistance to fungal diseases especially downy mildew. Could perform excellently in Kerala but may require importation approval.",
+      "growing_notes": "French-American hybrid with excellent disease resistance. Thrives in warm, humid environments - ideal for tropical monsoon climates tropical monsoon climate. Superior resistance to fungal diseases especially downy mildew. Could perform excellently in tropical monsoon climates but may require importation approval.",
       "availability": "Not commonly available in India, would require special import"
     },
     {
-      "name": "Bangalore Purple \ud83e\uddec",
+      "name": "Bangalore Purple 🧬",
       "slug": "bangalore-purple",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -835,7 +835,7 @@
       "availability": "Karnataka nurseries"
     },
     {
-      "name": "Arkavati \ud83e\uddec",
+      "name": "Arkavati 🧬",
       "slug": "arkavati",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -848,7 +848,7 @@
       "availability": "Indian agricultural research centers, specialized nurseries"
     },
     {
-      "name": "Arka Hybrids \ud83e\uddec",
+      "name": "Arka Hybrids 🧬",
       "slug": "arka-hybrids",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -861,7 +861,7 @@
       "availability": "IIHR Bangalore, agricultural research outlets"
     },
     {
-      "name": "Tas-A-Ganesh \ud83e\uddec",
+      "name": "Tas-A-Ganesh 🧬",
       "slug": "tas-a-ganesh",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -874,7 +874,7 @@
       "availability": "Major Indian nurseries"
     },
     {
-      "name": "2A-Clone \ud83e\uddec",
+      "name": "2A-Clone 🧬",
       "slug": "2a-clone",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",

@@ -3,7 +3,7 @@
   "species_slug": "ice-cream-bean",
   "varieties": [
     {
-      "name": "1. Inga edulis \u2018Standard Commercial\u2019",
+      "name": "1. Inga edulis ‘Standard Commercial’",
       "slug": "1-inga-edulis-standard-commercial",
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
@@ -13,10 +13,10 @@
       "flesh_fruit": "",
       "yield_notes": "Fruits 2-3 times yearly. Mature trees produce 100-300+ pods annually under optimal conditions",
       "growing_notes": "",
-      "availability": "Daleys Fruit Trees, Fruitopia Nursery (Brisbane), Heaven on Earth Fruit Trees (FNQ), Greenpatch Organic Seeds, The Australian Plant Shop"
+      "availability": "Daleys Fruit Trees, Fruitopia Nursery (humid subtropical climates), Heaven on Earth Fruit Trees (FNQ), Greenpatch Organic Seeds, The Australian Plant Shop"
     },
     {
-      "name": "2. Inga edulis \u2018Long Pod Selection\u2019",
+      "name": "2. Inga edulis ‘Long Pod Selection’",
       "slug": "2-inga-edulis-long-pod-selection",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -26,55 +26,55 @@
       "flesh_fruit": "",
       "yield_notes": "High productivity, 200-400 pods per mature tree. Extended harvest season",
       "growing_notes": "",
-      "availability": "Specialty subtropical fruit nurseries, occasionally at Daleys as \u2018Giant Ice Cream Bean\u2019"
+      "availability": "Specialty subtropical fruit nurseries, occasionally at Daleys as ‘Giant Ice Cream Bean’"
     },
     {
-      "name": "3. Inga edulis \u2018Female Type\u2019 (Black Seed Selection)",
+      "name": "3. Inga edulis ‘Female Type’ (Black Seed Selection)",
       "slug": "3-inga-edulis-female-type-black-seed-selection",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
       "sort_order": 2,
-      "origin": "Traditional Amazonian farmer selection, cultivated for centuries. Distinguished by deep black \u2018female\u2019 seeds",
-      "traits": "Vigorous tree 15-25m, broad canopy. Seeds are deep purplish-black (vs.\u00a0lighter olive tones in \u2018male\u2019 types)",
+      "origin": "Traditional Amazonian farmer selection, cultivated for centuries. Distinguished by deep black ‘female’ seeds",
+      "traits": "Vigorous tree 15-25m, broad canopy. Seeds are deep purplish-black (vs. lighter olive tones in ‘male’ types)",
       "flesh_fruit": "",
-      "yield_notes": "Significantly higher productivity than \u2018male\u2019 types - Amazonian farmers preferentially propagate this form. 250-500 pods per tree",
+      "yield_notes": "Significantly higher productivity than ‘male’ types - Amazonian farmers preferentially propagate this form. 250-500 pods per tree",
       "growing_notes": "",
-      "availability": "Rare Fruit Club WA members, specialty imports. Request \u2018female\u2019 or \u2018black seed\u2019 type when ordering"
+      "availability": "Rare Fruit Club WA members, specialty imports. Request ‘female’ or ‘black seed’ type when ordering"
     },
     {
-      "name": "4. Inga densiflora \u2018Brisbane Short Pod\u2019",
+      "name": "4. Inga densiflora ‘Brisbane Short Pod’",
       "slug": "4-inga-densiflora-brisbane-short-pod",
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
       "sort_order": 3,
-      "origin": "Central America (Costa Rica, Venezuela), naturalized in Brisbane region 1980s-1990s",
+      "origin": "Central America (Costa Rica, Venezuela), naturalized in humid subtropical climates region 1980s-1990s",
       "traits": "Large attractive tree with spreading branches. Produces short hairy yellow-colored pods (distinctive from I. edulis)",
       "flesh_fruit": "",
       "yield_notes": "Very productive, fruits 2-3 times per year. Compact pods make harvesting easier",
       "growing_notes": "",
-      "availability": "Daleys Fruit Trees (often labeled as I. edulis), local Brisbane nurseries, propagates readily from seed"
+      "availability": "Daleys Fruit Trees (often labeled as I. edulis), local humid subtropical climates nurseries, propagates readily from seed"
     },
     {
-      "name": "5. Inga feuillei \u2018Pacay\u2019",
+      "name": "5. Inga feuillei ‘Pacay’",
       "slug": "5-inga-feuillei-pacay",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
       "sort_order": 4,
       "origin": "Peru (particularly Andean valleys), traditional cultivar, 500+ years cultivation history",
-      "traits": "Rounded-depressed spreading tree 20-40\u2019, more cold-hardy than I. edulis. Covered with white lenticels on young branches",
+      "traits": "Rounded-depressed spreading tree 20-40’, more cold-hardy than I. edulis. Covered with white lenticels on young branches",
       "flesh_fruit": "",
       "yield_notes": "Moderate to high productivity. Excellent fruit quality makes up for slightly smaller yields",
       "growing_notes": "",
       "availability": "Specialty tropical fruit importers, occasionally available through Australian subtropical fruit networks"
     },
     {
-      "name": "6. Inga spectabilis \u2018Machete\u2019 / \u2018Guaba de Machete\u2019",
+      "name": "6. Inga spectabilis ‘Machete’ / ‘Guaba de Machete’",
       "slug": "6-inga-spectabilis-machete-guaba-de-machete",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
       "sort_order": 5,
-      "origin": "Ecuador, Colombia. Named \u2018machete\u2019 for the wide, flat pod shape resembling a machete blade",
-      "traits": "Fast-growing tree to 40\u2019, distinctive wide leaves. Spectacular white brush-like flowers",
+      "origin": "Ecuador, Colombia. Named ‘machete’ for the wide, flat pod shape resembling a machete blade",
+      "traits": "Fast-growing tree to 40’, distinctive wide leaves. Spectacular white brush-like flowers",
       "flesh_fruit": "",
       "yield_notes": "Moderate yields, exceptional quality. Pods are large and wide, providing substantial pulp per pod",
       "growing_notes": "",
@@ -87,19 +87,19 @@
       "climate_slug": "humid-subtropical",
       "sort_order": 6,
       "origin": "Tropical America, closely related to I. edulis. Some taxonomists consider it synonymous",
-      "traits": "Medium to large tree 30-60\u2019, spreading canopy. Very similar growth habit to I. edulis",
+      "traits": "Medium to large tree 30-60’, spreading canopy. Very similar growth habit to I. edulis",
       "flesh_fruit": "",
       "yield_notes": "Good productivity, 2-3 fruiting periods annually",
       "growing_notes": "",
       "availability": "Available through specialist seed suppliers, sometimes marketed interchangeably with I. edulis"
     },
     {
-      "name": "8. Inga laurina \u2018White Inga\u2019 / \u2018Ing\u00e1-mirim\u2019",
+      "name": "8. Inga laurina ‘White Inga’ / ‘Ingá-mirim’",
       "slug": "8-inga-laurina-white-inga-ing-mirim",
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
       "sort_order": 7,
-      "origin": "Brazil (widespread throughout), Mexico to Argentina. Called \u2018small ice-cream bean\u2019 due to petite pods",
+      "origin": "Brazil (widespread throughout), Mexico to Argentina. Called ‘small ice-cream bean’ due to petite pods",
       "traits": "Smaller tree 15-20m, dense low rounded crown. Distinctive leaves set it apart from other Inga. Tolerates drier climates",
       "flesh_fruit": "",
       "yield_notes": "Numerous small pods compensate for size. Very productive given tree dimensions",
@@ -107,7 +107,7 @@
       "availability": "Specialty suppliers. Real Sweet Farms (USA) has seedlings - check Australian import options"
     },
     {
-      "name": "9. Inga cinnamomea \u2018Gua\u00e7\u00fa\u2019 / \u2018Inga-a\u00e7u\u2019",
+      "name": "9. Inga cinnamomea ‘Guaçú’ / ‘Inga-açu’",
       "slug": "9-inga-cinnamomea-gua-inga-a-u",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -133,20 +133,20 @@
       "availability": "Very rare, specialist collectors only"
     },
     {
-      "name": "1. Inga edulis \u2018Standard Tropical Form\u2019",
+      "name": "1. Inga edulis ‘Standard Tropical Form’",
       "slug": "1-inga-edulis-standard-tropical-form",
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 0,
-      "origin": "Central/South America, naturalized across tropics. Available in Kerala since early 2000s",
+      "origin": "Central/South America, naturalized across tropics. Available in tropical monsoon climates since early 2000s",
       "traits": "Evergreen tree 20-30m, dense spreading canopy provides excellent shade. Rapid growth - 3-5m annually under optimal conditions",
       "flesh_fruit": "",
-      "yield_notes": "Outstanding in Kerala\u2019s climate - fruits 2-3 times annually with 300-500 pods per mature tree",
+      "yield_notes": "Outstanding in tropical monsoon climates’s climate - fruits 2-3 times annually with 300-500 pods per mature tree",
       "growing_notes": "",
-      "availability": "Kerala Nursery (Ayush Kerala), Veliyath Gardens (Kerala), local agricultural nurseries in Thiruvalla region"
+      "availability": "tropical monsoon climates Nursery (Ayush tropical monsoon climates), Veliyath Gardens (tropical monsoon climates), local agricultural nurseries in tropical monsoon climates region"
     },
     {
-      "name": "2. Inga edulis \u2018Amazonian Long Pod\u2019",
+      "name": "2. Inga edulis ‘Amazonian Long Pod’",
       "slug": "2-inga-edulis-amazonian-long-pod",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -159,20 +159,20 @@
       "availability": "Specialty seed suppliers, international tropical fruit networks. Seeds Del Mundo (Europe) ships to India"
     },
     {
-      "name": "3. Inga edulis \u2018Female Type\u2019 (Deep Black Seed)",
+      "name": "3. Inga edulis ‘Female Type’ (Deep Black Seed)",
       "slug": "3-inga-edulis-female-type-deep-black-seed",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 2,
       "origin": "Amazon basin, traditional indigenous selection. Seeds characterized by deep purplish-black color",
-      "traits": "Vigorous tree 20-28m, dense foliage. Distinguished from \u2018male\u2019 types by darker seeds and superior fruiting",
+      "traits": "Vigorous tree 20-28m, dense foliage. Distinguished from ‘male’ types by darker seeds and superior fruiting",
       "flesh_fruit": "",
-      "yield_notes": "Dramatically higher than \u2018male\u2019 seed types - 400-700 pods per tree in Kerala\u2019s optimal conditions",
+      "yield_notes": "Dramatically higher than ‘male’ seed types - 400-700 pods per tree in tropical monsoon climates’s optimal conditions",
       "growing_notes": "",
-      "availability": "Source from reputable Kerala nurseries with specific request for \u2018female\u2019/\u2018black seed\u2019 selections. Import seeds from Amazonian suppliers"
+      "availability": "Source from reputable tropical monsoon climates nurseries with specific request for ‘female’/‘black seed’ selections. Import seeds from Amazonian suppliers"
     },
     {
-      "name": "4. Inga feuillei \u2018Pacay\u2019",
+      "name": "4. Inga feuillei ‘Pacay’",
       "slug": "4-inga-feuillei-pacay",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -182,16 +182,16 @@
       "flesh_fruit": "",
       "yield_notes": "Good productivity, 200-400 pods per tree. Excellent fruit quality compensates for smaller size",
       "growing_notes": "",
-      "availability": "International seed suppliers. Has been introduced to Polynesia, Italy, California - Kerala introduction feasible"
+      "availability": "International seed suppliers. Has been introduced to Polynesia, Italy, California - tropical monsoon climates introduction feasible"
     },
     {
-      "name": "5. Inga spectabilis \u2018Guaba de Machete\u2019",
+      "name": "5. Inga spectabilis ‘Guaba de Machete’",
       "slug": "5-inga-spectabilis-guaba-de-machete",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 4,
       "origin": "Ecuador, Colombia, widespread in Andean foothills. Named for machete-blade shape",
-      "traits": "Fast-growing to 30-40\u2019, attractive broad leaves. Showy white brush flowers highly ornamental",
+      "traits": "Fast-growing to 30-40’, attractive broad leaves. Showy white brush flowers highly ornamental",
       "flesh_fruit": "",
       "yield_notes": "Moderate to high productivity. Large wide pods provide substantial pulp volume",
       "growing_notes": "",
@@ -204,14 +204,14 @@
       "climate_slug": "tropical-monsoon",
       "sort_order": 5,
       "origin": "Throughout tropical America, sometimes considered synonym of I. edulis",
-      "traits": "Large spreading tree 30-60\u2019, very similar to I. edulis in appearance and growth",
+      "traits": "Large spreading tree 30-60’, very similar to I. edulis in appearance and growth",
       "flesh_fruit": "",
       "yield_notes": "Good productivity, multiple fruiting periods annually",
       "growing_notes": "",
       "availability": "Often marketed interchangeably with I. edulis. Available through seed suppliers"
     },
     {
-      "name": "7. Inga cinnamomea \u2018Inga-a\u00e7u\u2019 / \u2018Gua\u00e7\u00fa\u2019",
+      "name": "7. Inga cinnamomea ‘Inga-açu’ / ‘Guaçú’",
       "slug": "7-inga-cinnamomea-inga-a-u-gua",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -224,12 +224,12 @@
       "availability": "Rare. Source from Brazilian seed suppliers or botanical garden networks"
     },
     {
-      "name": "8. Inga laurina \u2018Ing\u00e1-mirim\u2019 / White Inga",
+      "name": "8. Inga laurina ‘Ingá-mirim’ / White Inga",
       "slug": "8-inga-laurina-ing-mirim-white-inga",
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 7,
-      "origin": "Brazil (throughout), Mexico to Argentina. \u2018Ing\u00e1-mirim\u2019 = small ice cream bean in Portuguese",
+      "origin": "Brazil (throughout), Mexico to Argentina. ‘Ingá-mirim’ = small ice cream bean in Portuguese",
       "traits": "Compact tree 15-20m with dense rounded crown. More drought-tolerant than most Inga species",
       "flesh_fruit": "",
       "yield_notes": "Prolific - numerous small pods. High productivity relative to tree size",
@@ -250,7 +250,7 @@
       "availability": "Very rare, specialist botanical collections only"
     },
     {
-      "name": "10. Inga edulis var. parvifolia \u2018Cipo Brazilian Minor\u2019",
+      "name": "10. Inga edulis var. parvifolia ‘Cipo Brazilian Minor’",
       "slug": "10-inga-edulis-var-parvifolia-cipo-brazilian-minor",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -263,7 +263,7 @@
       "availability": "Specialty suppliers. AKME Gardens (USA) carries this variety - explore Indian import options"
     },
     {
-      "name": "11. Inga edulis forma typica \u2018Cipo Porto Yard Long\u2019",
+      "name": "11. Inga edulis forma typica ‘Cipo Porto Yard Long’",
       "slug": "11-inga-edulis-forma-typica-cipo-porto-yard-long",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",

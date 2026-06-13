@@ -4,6 +4,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from garden_climate_copy import neutralize_city_copy
+
 CLIMATE_SECTIONS = {
     "BRISBANE": "humid-subtropical",
     "KERALA": "tropical-monsoon",
@@ -164,12 +166,12 @@ def variety_from_fields(block_title: str, fields: dict[str, str]) -> dict[str, s
         growing = (growing + " " + " ".join(extra_notes)).strip()
     yield_notes = fields.get("yield", fields.get("maturity", ""))
     return {
-        "origin": fields.get("origin", ""),
-        "traits": traits,
-        "flesh_fruit": fields.get("flesh/fruit", fields.get("flesh", "")),
-        "yield_notes": yield_notes,
-        "growing_notes": growing,
-        "availability": fields.get("availability", ""),
+        "origin": neutralize_city_copy(fields.get("origin", "")),
+        "traits": neutralize_city_copy(traits),
+        "flesh_fruit": neutralize_city_copy(fields.get("flesh/fruit", fields.get("flesh", ""))),
+        "yield_notes": neutralize_city_copy(yield_notes),
+        "growing_notes": neutralize_city_copy(growing),
+        "availability": neutralize_city_copy(fields.get("availability", "")),
     }
 
 
@@ -281,7 +283,12 @@ def extract_species_meta(text: str, species: str = "") -> dict:
     if not meta["care_summary"] and meta["requirements"]:
         meta["care_summary"] = meta["requirements"]
     if not meta["care_summary"]:
-        meta["care_summary"] = f"Curated {meta['species']} profile — see cultivar notes for Brisbane and Kerala picks."
+        meta["care_summary"] = (
+            f"Curated {meta['species']} profile — see cultivar notes for humid-subtropical and tropical-monsoon picks."
+        )
+    for key in ("botanical_name", "plant_family", "requirements", "care_summary", "gmo_note"):
+        if meta.get(key):
+            meta[key] = neutralize_city_copy(meta[key])
     return meta
 
 

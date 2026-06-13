@@ -13,7 +13,7 @@
       "flesh_fruit": "",
       "yield_notes": "Fast-growing, reaches 3-4m in first 12 months from 200mm container",
       "growing_notes": "",
-      "availability": "Bamboo Land (Hervey Bay), Living Bamboo (Brisbane/Samford Valley), Aussie Bamboo (Sydney), Zen Bamboo nurseries, widely available throughout Queensland and NSW"
+      "availability": "Bamboo Land (Hervey Bay), Living Bamboo (humid subtropical climates/Samford Valley), Aussie Bamboo (Sydney), Zen Bamboo nurseries, widely available throughout Queensland and NSW"
     },
     {
       "name": "Bambusa multiplex 'Alphonse Karr'",
@@ -26,7 +26,7 @@
       "flesh_fruit": "",
       "yield_notes": "Moderate to fast growth, dense clumping",
       "growing_notes": "",
-      "availability": "Living Bamboo (Brisbane), Bamboo Land (Hervey Bay), major Queensland nurseries"
+      "availability": "Living Bamboo (humid subtropical climates), Bamboo Land (Hervey Bay), major Queensland nurseries"
     },
     {
       "name": "Bambusa multiplex 'Goldstripe'",
@@ -39,7 +39,7 @@
       "flesh_fruit": "",
       "yield_notes": "Moderate growth, tight clumping to 1m diameter",
       "growing_notes": "",
-      "availability": "Living Bamboo (Brisbane), Zen Bamboo (Canberra/Newcastle), Bamboo Land (Hervey Bay)"
+      "availability": "Living Bamboo (humid subtropical climates), Zen Bamboo (Canberra/Newcastle), Bamboo Land (Hervey Bay)"
     },
     {
       "name": "Bambusa multiplex 'Chinese Dwarf'",
@@ -74,7 +74,7 @@
       "climate_slug": "humid-subtropical",
       "sort_order": 5,
       "origin": "India, Myanmar, China, Southeast Asia",
-      "traits": "Height up to 20m in subtropical Brisbane (30m+ in tropics), culms 20-30cm diameter, dull green to dark blue-green with white waxy crust when young, second-tallest bamboo species globally",
+      "traits": "Height up to 20m in subtropical humid subtropical climates (30m+ in tropics), culms 20-30cm diameter, dull green to dark blue-green with white waxy crust when young, second-tallest bamboo species globally",
       "flesh_fruit": "",
       "yield_notes": "Can grow 30cm per day under optimal conditions, produces enormous biomass",
       "growing_notes": "",
@@ -130,7 +130,7 @@
       "flesh_fruit": "",
       "yield_notes": "Moderate to fast growth",
       "growing_notes": "",
-      "availability": "Bamboo nurseries in Brisbane and Queensland"
+      "availability": "Bamboo nurseries in humid subtropical climates and Queensland"
     },
     {
       "name": "Bambusa oldhamii (Giant Timber Bamboo)",
@@ -169,7 +169,7 @@
       "flesh_fruit": "",
       "yield_notes": "Moderate to fast growth",
       "growing_notes": "",
-      "availability": "Living Bamboo (Brisbane), specialist nurseries"
+      "availability": "Living Bamboo (humid subtropical climates), specialist nurseries"
     },
     {
       "name": "Bambusa tuldoides 'Ventricosa'",
@@ -190,12 +190,12 @@
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 0,
-      "origin": "Indigenous to Kerala and Southern India",
+      "origin": "Indigenous to tropical monsoon climates and Southern India",
       "traits": "Height 20-30m (up to 40m recorded), culms 10-18cm diameter, dark green culms, thorny branches, most massive Bambusa species, thick-walled culms",
       "flesh_fruit": "",
       "yield_notes": "High biomass production, occupies 15% of India's bamboo forests",
       "growing_notes": "",
-      "availability": "Widely available throughout Kerala, Kerala State Bamboo Corporation, local nurseries, home garden propagation common"
+      "availability": "Widely available throughout tropical monsoon climates, tropical monsoon climates State Bamboo Corporation, local nurseries, home garden propagation common"
     },
     {
       "name": "Dendrocalamus strictus (Solid Bamboo, Male Bamboo)",
@@ -203,12 +203,12 @@
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 1,
-      "origin": "Indigenous to Kerala and throughout India",
+      "origin": "Indigenous to tropical monsoon climates and throughout India",
       "traits": "Height 8-16m, culms 2.5-8cm diameter, dull green becoming brown with maturity, culms often solid especially in dry conditions, straight growth with slight zig-zag toward top",
       "flesh_fruit": "",
       "yield_notes": "Moderate growth, occupies 53% of India's total bamboo area",
       "growing_notes": "",
-      "availability": "KFRI Peechi, JNTBGRI Thiruvananthapuram, Uravu Wayanad, Kerala Forest Department nurseries, Kerala State Bamboo Mission outlets"
+      "availability": "KFRI Peechi, JNTBGRI Thiruvananthapuram, Uravu Wayanad, tropical monsoon climates Forest Department nurseries, tropical monsoon climates State Bamboo Mission outlets"
     },
     {
       "name": "Ochlandra travancorica (Kerala Reed Bamboo, Travancore Reed)",
@@ -216,12 +216,12 @@
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 2,
-      "origin": "Endemic to Western Ghats, Kerala - found nowhere else naturally",
+      "origin": "Endemic to Western Ghats, tropical monsoon climates - found nowhere else naturally",
       "traits": "Height 2-6m, culms 2.5-5cm diameter, thin-walled reed bamboo, small graceful species, forms extensive brakes on hilltops and along streams",
       "flesh_fruit": "",
       "yield_notes": "Forms large monospecific patches, moderate growth rate",
       "growing_notes": "",
-      "availability": "Kerala Forest Department, Kerala State Bamboo Corporation, KFRI Peechi, JNTBGRI, limited due to conservation concerns"
+      "availability": "tropical monsoon climates Forest Department, tropical monsoon climates State Bamboo Corporation, KFRI Peechi, JNTBGRI, limited due to conservation concerns"
     },
     {
       "name": "Bambusa tulda (Bengal Bamboo, Indian Timber Bamboo)",
@@ -243,11 +243,11 @@
       "climate_slug": "tropical-monsoon",
       "sort_order": 4,
       "origin": "India (Northeast), Myanmar, China, Southeast Asia",
-      "traits": "Height 20-30m in Kerala (up to 42m in optimal tropical conditions), culms 20-30cm diameter, second-tallest bamboo globally, dull green to dark blue-green culms with white waxy crust when young",
+      "traits": "Height 20-30m in tropical monsoon climates (up to 42m in optimal tropical conditions), culms 20-30cm diameter, second-tallest bamboo globally, dull green to dark blue-green culms with white waxy crust when young",
       "flesh_fruit": "",
       "yield_notes": "Can grow up to 46cm in 24 hours under optimal conditions, produces 20-30 tonnes/hectare annually - 2.7 times more than D. latiflorus",
       "growing_notes": "",
-      "availability": "National Bamboo Mission nurseries, Uravu (Wayanad), Kerala agricultural extension centers, progressive farmer networks"
+      "availability": "National Bamboo Mission nurseries, Uravu (Wayanad), tropical monsoon climates agricultural extension centers, progressive farmer networks"
     },
     {
       "name": "Dendrocalamus brandisii (Brandis's Bamboo)",
@@ -273,7 +273,7 @@
       "flesh_fruit": "",
       "yield_notes": "Extremely fast growth, adds 10cm or more per day",
       "growing_notes": "",
-      "availability": "National Bamboo Mission nurseries, Kerala bamboo growers"
+      "availability": "National Bamboo Mission nurseries, tropical monsoon climates bamboo growers"
     },
     {
       "name": "Bambusa balcooa (Female Bamboo, Bhaluka)",
@@ -286,7 +286,7 @@
       "flesh_fruit": "",
       "yield_notes": "Fast growth in monsoon conditions",
       "growing_notes": "",
-      "availability": "Kerala Forest Research Institute, National Bamboo Mission outlets"
+      "availability": "tropical monsoon climates Forest Research Institute, National Bamboo Mission outlets"
     },
     {
       "name": "Bambusa vulgaris (Common Bamboo)",
@@ -299,7 +299,7 @@
       "flesh_fruit": "",
       "yield_notes": "Very fast growth, high biomass",
       "growing_notes": "",
-      "availability": "Widely available throughout Kerala, common in home gardens"
+      "availability": "Widely available throughout tropical monsoon climates, common in home gardens"
     },
     {
       "name": "Bambusa vulgaris 'Vittata' (Painted Bamboo)",
@@ -351,7 +351,7 @@
       "flesh_fruit": "",
       "yield_notes": "Moderate growth, forms extensive stands",
       "growing_notes": "",
-      "availability": "Specialized collections in Kerala, research institutes"
+      "availability": "Specialized collections in tropical monsoon climates, research institutes"
     },
     {
       "name": "Bambusa nutans (Mountain Bamboo)",
@@ -390,7 +390,7 @@
       "flesh_fruit": "",
       "yield_notes": "Fast-growing",
       "growing_notes": "",
-      "availability": "Some Kerala nurseries, better suited to cooler regions"
+      "availability": "Some tropical monsoon climates nurseries, better suited to cooler regions"
     },
     {
       "name": "Bambusa multiplex varieties",
@@ -424,7 +424,7 @@
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 18,
-      "origin": "Endemic to Western Ghats, Kerala",
+      "origin": "Endemic to Western Ghats, tropical monsoon climates",
       "traits": "Reed bamboo, similar to O. travancorica, supports endemic rodent species Platacanthomys lasyrus",
       "flesh_fruit": "",
       "yield_notes": "Forms bamboo brakes",
@@ -437,8 +437,8 @@
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 19,
-      "origin": "Western Ghats, Kerala endemic",
-      "traits": "Reed bamboo species, part of Kerala's endemic Ochlandra genus",
+      "origin": "Western Ghats, tropical monsoon climates endemic",
+      "traits": "Reed bamboo species, part of Tropical monsoon endemic Ochlandra genus",
       "flesh_fruit": "",
       "yield_notes": "Moderate",
       "growing_notes": "",
@@ -451,7 +451,7 @@
       "climate_slug": "tropical-monsoon",
       "sort_order": 20,
       "origin": "Western Ghats endemic",
-      "traits": "Reed bamboo, one of Kerala's endemic Ochlandra species",
+      "traits": "Reed bamboo, one of Tropical monsoon endemic Ochlandra species",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
@@ -464,7 +464,7 @@
       "climate_slug": "tropical-monsoon",
       "sort_order": 21,
       "origin": "Western Ghats endemic",
-      "traits": "Reed bamboo species endemic to Kerala's Western Ghats",
+      "traits": "Reed bamboo species endemic to Tropical monsoon Western Ghats",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
@@ -477,7 +477,7 @@
       "climate_slug": "tropical-monsoon",
       "sort_order": 22,
       "origin": "Western Ghats endemic",
-      "traits": "Reed bamboo endemic to Kerala region",
+      "traits": "Reed bamboo endemic to tropical monsoon climates region",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",

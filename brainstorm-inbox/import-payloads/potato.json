@@ -12,8 +12,8 @@
       "traits": "Determinate type, medium to large oval tubers, white skin, shallow eyes",
       "flesh_fruit": "White, floury texture, dry when cooked",
       "yield_notes": "High yield potential under winter conditions",
-      "growing_notes": "TOP CHOICE for Brisbane subtropics. Determinate growth means single layer tubers, no hilling required. Performs excellently planted July-August. Widely recommended by subtropical gardeners. Good disease resistance.",
-      "availability": "Australian seed potato suppliers, Brisbane nurseries"
+      "growing_notes": "TOP CHOICE for humid subtropical climates subtropics. Determinate growth means single layer tubers, no hilling required. Performs excellently planted July-August. Widely recommended by subtropical gardeners. Good disease resistance.",
+      "availability": "Australian seed potato suppliers, humid subtropical climates nurseries"
     },
     {
       "name": "Sebago",
@@ -21,7 +21,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
       "sort_order": 1,
-      "origin": "USA (Maine), 1938. Cross of Chippewa \u00d7 Katahdin. Arrived Victoria 1940",
+      "origin": "USA (Maine), 1938. Cross of Chippewa × Katahdin. Arrived Victoria 1940",
       "traits": "Long to oval shape, creamy-white skin, shallow eyes, uniform size",
       "flesh_fruit": "White, medium starch, fluffy texture",
       "yield_notes": "25-30 t/ha, 130 days maturity",
@@ -38,7 +38,7 @@
       "traits": "Oval shape, smooth pink/red skin, fleet eyes",
       "flesh_fruit": "Pale yellow, firm waxy texture",
       "yield_notes": "Good yielder, reliable performer",
-      "growing_notes": "Excellent all-rounder for Brisbane. Suitable for roasting, mashing, baking. Holds shape well. One of Australia's favorite potatoes. Performs well in subtropical conditions. Good for multiple uses.",
+      "growing_notes": "Excellent all-rounder for humid subtropical climates. Suitable for roasting, mashing, baking. Holds shape well. One of Australia's favorite potatoes. Performs well in subtropical conditions. Good for multiple uses.",
       "availability": "Widely available Australian supermarkets, Queensland nurseries"
     },
     {
@@ -91,7 +91,7 @@
       "flesh_fruit": "Golden yellow, waxy, smooth texture",
       "yield_notes": "High yielding, good storage life",
       "growing_notes": "One of Australia's most popular fingerling varieties. Nutty, buttery flavor. Excellent for salads, roasting, boiling, steaming. Fast growing determinate (10-13 weeks) suitable for subtropics. Holds shape when cooked. Highly valued by chefs.",
-      "availability": "Australian farmers markets, specialty nurseries, Brisbane suppliers"
+      "availability": "Australian farmers markets, specialty nurseries, humid subtropical climates suppliers"
     },
     {
       "name": "Dutch Cream",
@@ -117,7 +117,7 @@
       "flesh_fruit": "Yellow, waxy texture, buttery",
       "yield_notes": "Good all-rounder yields",
       "growing_notes": "Perfect all-rounder with sweet nutty flavor. Excellent for mashing, gnocchi, boiling, baking, salads, roasting. Indeterminate type. Very versatile. Popular in Australian markets.",
-      "availability": "Australian supermarkets, Brisbane markets, nurseries"
+      "availability": "Australian supermarkets, humid subtropical climates markets, nurseries"
     },
     {
       "name": "Pontiac (Red Pontiac)",
@@ -307,12 +307,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 3,
-      "origin": "India (CPRI), 1968. Cross of 3069d(4) \u00d7 2814 Q(1)",
+      "origin": "India (CPRI), 1968. Cross of 3069d(4) × 2814 Q(1)",
       "traits": "Large oval, white skin, fleet eyes, small swift eyes",
       "flesh_fruit": "White flesh",
       "yield_notes": "20 t/acre (50 t/ha), 90-100 days maturity",
-      "growing_notes": "Widely cultivated across India including Karnataka (peninsular region near Kerala). Moderately resistant to early and late blight. Suitable for processing. Grown in Bihar, Maharashtra, Gujarat, Haryana, Punjab, Uttar Pradesh, West Bengal. Can adapt to warmer climates.",
-      "availability": "Widely available Indian seed suppliers, Kerala agricultural stores"
+      "growing_notes": "Widely cultivated across India including Karnataka (peninsular region near tropical monsoon climates). Moderately resistant to early and late blight. Suitable for processing. Grown in Bihar, Maharashtra, Gujarat, Haryana, Punjab, Uttar Pradesh, West Bengal. Can adapt to warmer climates.",
+      "availability": "Widely available Indian seed suppliers, tropical monsoon climates agricultural stores"
     },
     {
       "name": "Kufri Chandramukhi",
@@ -333,7 +333,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 5,
-      "origin": "India (CPRI), 1966. Cross of Kufri Kundan \u00d7 Kufri Red",
+      "origin": "India (CPRI), 1966. Cross of Kufri Kundan × Kufri Red",
       "traits": "Medium sized, round, red skin, deep eyes",
       "flesh_fruit": "Dull white flesh",
       "yield_notes": "40 t/ha (120 qtl/acre), 110-120 days",
@@ -346,7 +346,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 6,
-      "origin": "India (CPRI), 1980. Cross of Kufri Jyoti \u00d7 Kufri Alankar",
+      "origin": "India (CPRI), 1980. Cross of Kufri Jyoti × Kufri Alankar",
       "traits": "Large to medium, red, round, medium deep eyes",
       "flesh_fruit": "White flesh, tasty with good flavor",
       "yield_notes": "40-50 t/ha (130 qtl/acre), 100-110 days",
@@ -359,12 +359,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 7,
-      "origin": "India (CPRI), 1980. Cross of Kufri Red \u00d7 Ginek",
+      "origin": "India (CPRI), 1980. Cross of Kufri Red × Ginek",
       "traits": "White, large, round to oval, deep eyes. Slow degeneration rate",
       "flesh_fruit": "White flesh",
       "yield_notes": "45 t/ha (100-120 qtl/acre), 100-110 days",
       "growing_notes": "Released for plains of Haryana, Punjab, Western Uttar Pradesh. Very good keeper (10-12% weight loss). Resistant to late blight, early blight, leaf roll. Suitable for diverse culinary applications.",
-      "availability": "Northern Indian suppliers, Kerala via dealers"
+      "availability": "Northern Indian suppliers, tropical monsoon climates via dealers"
     },
     {
       "name": "Kufri Pukhraj",
@@ -372,12 +372,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 8,
-      "origin": "India (CPRI), 1998. Cross of Craig's Defiance \u00d7 JEX/B-687",
+      "origin": "India (CPRI), 1998. Cross of Craig's Defiance × JEX/B-687",
       "traits": "Large, oval, slightly tapered, white skin, fleet eyes",
       "flesh_fruit": "Yellow flesh, low dry matter (16.1%)",
       "yield_notes": "40 t/ha (160 qtl/acre), 70-90 days",
       "growing_notes": "Widely adaptable variety. Resistant to early blight, moderately resistant to late blight. Suitable for table purposes. Grown in Maharashtra, Orissa, Uttar Pradesh, Bihar, Gujarat, Haryana, Himachal Pradesh, Punjab, Madhya Pradesh, West Bengal. Very good keeper. High water use efficiency.",
-      "availability": "Available across India including Kerala region"
+      "availability": "Available across India including tropical monsoon climates region"
     },
     {
       "name": "Kufri Ashoka",
@@ -385,12 +385,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 9,
-      "origin": "India (CPRI), 1996. Cross of (EM/C-1020 \u00d7 Allerfr\u00fcheste Gelbe)",
+      "origin": "India (CPRI), 1996. Cross of (EM/C-1020 × Allerfrüheste Gelbe)",
       "traits": "Early variety, large oval-long, white skin, fleet eyes",
       "flesh_fruit": "White flesh",
       "yield_notes": "40 t/ha, 70-80 days maturity",
       "growing_notes": "Widely adaptable variety. Released to replace Kufri Chandramukhi. Suitable for short day conditions. Grown in Bihar, Haryana, Punjab, Uttar Pradesh, West Bengal. Susceptible to late blight. Table purpose.",
-      "availability": "Indian seed suppliers, Kerala agricultural centers"
+      "availability": "Indian seed suppliers, tropical monsoon climates agricultural centers"
     },
     {
       "name": "Kufri Lauvkar",
@@ -402,8 +402,8 @@
       "traits": "Large, round, white skin, fleet eyes. Early tuberization in warm climates",
       "flesh_fruit": "White flesh",
       "yield_notes": "30 t/ha, fast maturing (75-80 days)",
-      "growing_notes": "EXCELLENT for warm climate regions like Kerala. Able to build yields rapidly under warmer climate. Primarily cultivated in Maharashtra, Madhya Pradesh, Karnataka. Perfect for processing into chips. Heat-tolerant characteristics.",
-      "availability": "Southern India suppliers, Karnataka/Kerala dealers"
+      "growing_notes": "EXCELLENT for warm climate regions like tropical monsoon climates. Able to build yields rapidly under warmer climate. Primarily cultivated in Maharashtra, Madhya Pradesh, Karnataka. Perfect for processing into chips. Heat-tolerant characteristics.",
+      "availability": "Southern India suppliers, Karnataka/tropical monsoon climates dealers"
     },
     {
       "name": "Kufri Jawahar",
@@ -411,12 +411,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 11,
-      "origin": "India (CPRI), 1996. Cross of Kufri Neelamani \u00d7 Kufri Jyoti",
+      "origin": "India (CPRI), 1996. Cross of Kufri Neelamani × Kufri Jyoti",
       "traits": "Medium round-oval, creamy white skin, fleet eyes",
       "flesh_fruit": "Pale yellow flesh",
       "yield_notes": "40 t/ha, 80-90 days maturity",
       "growing_notes": "Early maturing variety suitable for intensive cropping systems. Moderately resistant to late blight. Grown in Gujarat, Haryana, Madhya Pradesh, Punjab, Karnataka (southern region). Table purpose variety.",
-      "availability": "Available in Karnataka and surrounding southern states including Kerala"
+      "availability": "Available in Karnataka and surrounding southern states including tropical monsoon climates"
     },
     {
       "name": "Kufri Chipsona-1",
@@ -429,7 +429,7 @@
       "flesh_fruit": "Dull white flesh, high dry matter (9.8%)",
       "yield_notes": "40 t/ha (170-180 qtl/acre), 90-110 days",
       "growing_notes": "Primarily for making chips and French fries. Resistant to late blight, tolerant to frost. Grown mainly in Bihar and Uttar Pradesh. Excellent keeper. Higher germination percentage. Highest dry matter production suitable for processing industry.",
-      "availability": "Northern India suppliers, available through Kerala dealers"
+      "availability": "Northern India suppliers, available through tropical monsoon climates dealers"
     },
     {
       "name": "Kufri Chipsona-3",
@@ -466,7 +466,7 @@
       "origin": "India (ICAR-CPRI). Advanced heat tolerant line",
       "traits": "Heat tolerant characteristics",
       "flesh_fruit": "Good quality",
-      "yield_notes": "25 t/ha in Kerala trials",
+      "yield_notes": "25 t/ha in tropical monsoon climates trials",
       "growing_notes": "",
       "availability": ""
     },
@@ -497,12 +497,12 @@
       "availability": "Indian seed suppliers nationwide"
     },
     {
-      "name": "Chinese Potato (Plectranthus rotundifolius) - Koorka \ud83c\udf0f INDIGENOUS",
+      "name": "Chinese Potato (Plectranthus rotundifolius) - Koorka 🌏 INDIGENOUS",
       "slug": "chinese-potato-plectranthus-rotundifolius-koorka-indigenous",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 18,
-      "origin": "Indigenous to Kerala. Known as 'Koorka' in Malayalam",
+      "origin": "Indigenous to tropical monsoon climates. Known as 'Koorka' in Malayalam",
       "traits": "Small tubers, harder than Irish potato, aromatic",
       "flesh_fruit": "Unique taste and aroma, desired shape",
       "yield_notes": "Variable, monsoon crop",

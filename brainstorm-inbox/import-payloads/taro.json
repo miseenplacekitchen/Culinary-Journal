@@ -3,7 +3,7 @@
   "species_slug": "taro",
   "varieties": [
     {
-      "name": "Pacific Taro \ud83c\udfc6",
+      "name": "Pacific Taro 🏆",
       "slug": "pacific-taro",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -42,7 +42,7 @@
       "availability": ""
     },
     {
-      "name": "Dasheen \ud83c\udfc6",
+      "name": "Dasheen 🏆",
       "slug": "dasheen",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -68,7 +68,7 @@
       "availability": ""
     },
     {
-      "name": "Lehua Maoli \ud83c\udfc6",
+      "name": "Lehua Maoli 🏆",
       "slug": "lehua-maoli",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -94,7 +94,7 @@
       "availability": "Australian native plant nurseries, tropical plant specialists"
     },
     {
-      "name": "Thula Chembu \ud83c\udfc6",
+      "name": "Thula Chembu 🏆",
       "slug": "thula-chembu",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -107,7 +107,7 @@
       "availability": ""
     },
     {
-      "name": "Karkkidakam Chembu (\u0d15\u0d7c\u0d15\u0d4d\u0d15\u0d3f\u0d1f\u0d15 \u0d1a\u0d47\u0d2e\u0d4d\u0d2a\u0d4d) \ud83c\udfc6",
+      "name": "Karkkidakam Chembu (കർക്കിടക ചേമ്പ്) 🏆",
       "slug": "karkkidakam-chembu",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -120,12 +120,12 @@
       "availability": ""
     },
     {
-      "name": "Nadan Chembu (\u0d28\u0d3e\u0d1f\u0d7b \u0d1a\u0d47\u0d2e\u0d4d\u0d2a\u0d4d) \ud83c\udfc6",
+      "name": "Nadan Chembu (നാടൻ ചേമ്പ്) 🏆",
       "slug": "nadan-chembu",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 2,
-      "origin": "Kerala, 'nadan' means 'local' or 'native'",
+      "origin": "tropical monsoon climates, 'nadan' means 'local' or 'native'",
       "traits": "Organic backyard variety, smaller tender corms preferred, traditional homestead cultivation",
       "flesh_fruit": "",
       "yield_notes": "Moderate; quality over quantity",
@@ -133,12 +133,12 @@
       "availability": ""
     },
     {
-      "name": "Kochu Chembu (\u0d15\u0d4a\u0d1a\u0d4d\u0d1a\u0d41 \u0d1a\u0d47\u0d2e\u0d4d\u0d2a\u0d4d) \ud83c\udfc6",
+      "name": "Kochu Chembu (കൊച്ചു ചേമ്പ്) 🏆",
       "slug": "kochu-chembu",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 3,
-      "origin": "Kerala, 'kochu' means 'small'",
+      "origin": "tropical monsoon climates, 'kochu' means 'small'",
       "traits": "Baby taro, harvested young, very tender",
       "flesh_fruit": "",
       "yield_notes": "Moderate; harvested early",
@@ -146,20 +146,20 @@
       "availability": ""
     },
     {
-      "name": "Cheera Chembu (\u0d1a\u0d40\u0d30 \u0d1a\u0d47\u0d2e\u0d4d\u0d2a\u0d4d) - Alocasia indica \ud83c\udf31",
+      "name": "Cheera Chembu (ചീര ചേമ്പ്) - Alocasia indica 🌱",
       "slug": "cheera-chembu-alocasia-indica",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 4,
-      "origin": "Kerala, Indian subcontinent, 'cheera' means 'leaf vegetable'",
+      "origin": "tropical monsoon climates, Indian subcontinent, 'cheera' means 'leaf vegetable'",
       "traits": "Also called Tahitian Spinach, grown primarily for leaves, two varieties (green stem and dark violet stem)",
       "flesh_fruit": "",
       "yield_notes": "High leaf production",
       "growing_notes": "",
-      "availability": "Widely available in Kerala nurseries and markets"
+      "availability": "Widely available in tropical monsoon climates nurseries and markets"
     },
     {
-      "name": "Maaran Chembu / Maaramb (\u0d2e\u0d3e\u0d31\u0d3e\u0d2e\u0d4d\u0d2a\u0d4d) \ud83c\udfc6",
+      "name": "Maaran Chembu / Maaramb (മാറാമ്പ്) 🏆",
       "slug": "maaran-chembu-maaramb",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -172,20 +172,20 @@
       "availability": ""
     },
     {
-      "name": "Violet/Nila Chembu (\u0d35\u0d48\u0d32\u0d31\u0d4d\u0d31\u0d4d/\u0d28\u0d40\u0d32 \u0d1a\u0d47\u0d2e\u0d4d\u0d2a\u0d4d) - Xanthosoma violaceum",
+      "name": "Violet/Nila Chembu (വൈലറ്റ്/നീല ചേമ്പ്) - Xanthosoma violaceum",
       "slug": "violet-nila-chembu-xanthosoma-violaceum",
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 6,
-      "origin": "Americas, introduced to Kerala, also called Violet/Blue Tannia",
+      "origin": "Americas, introduced to tropical monsoon climates, also called Violet/Blue Tannia",
       "traits": "Purple-violet coloring, distinct from Colocasia species",
       "flesh_fruit": "",
       "yield_notes": "Good",
       "growing_notes": "",
-      "availability": "Kerala nurseries, specialty suppliers"
+      "availability": "tropical monsoon climates nurseries, specialty suppliers"
     },
     {
-      "name": "General Indian Native Varieties \ud83c\udfc6",
+      "name": "General Indian Native Varieties 🏆",
       "slug": "general-indian-native-varieties",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -198,17 +198,17 @@
       "availability": ""
     },
     {
-      "name": "Dasheen Type (Kerala) \ud83c\udfc6",
+      "name": "Dasheen Type (Kerala) 🏆",
       "slug": "dasheen-type-kerala",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 8,
-      "origin": "Southeast Asian origin, cultivated in Kerala",
+      "origin": "Southeast Asian origin, cultivated in tropical monsoon climates",
       "traits": "Large cylindrical central corm, few cormels, robust growth",
       "flesh_fruit": "",
       "yield_notes": "High; substantial corm production",
       "growing_notes": "",
-      "availability": "Kerala agricultural markets, commercial cultivation"
+      "availability": "tropical monsoon climates agricultural markets, commercial cultivation"
     },
     {
       "name": "Eddoe Type (Kerala)",
@@ -216,7 +216,7 @@
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 9,
-      "origin": "Asian origin, grown in Kerala",
+      "origin": "Asian origin, grown in tropical monsoon climates",
       "traits": "Small central corm with numerous cormels, more tolerant of variable conditions",
       "flesh_fruit": "",
       "yield_notes": "Good; many smaller tubers",

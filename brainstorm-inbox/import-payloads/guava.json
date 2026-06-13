@@ -12,7 +12,7 @@
       "traits": "Large (200-400g), round to oval, green skin, minimal seeds",
       "flesh_fruit": "White, crisp, crunchy texture like apple, mildly sweet",
       "yield_notes": "Very high, 60-100kg per tree annually",
-      "growing_notes": "Excellent for Brisbane subtropical climate. Highly humidity-resistant, tolerates Brisbane summer heat well. Popular in Queensland nurseries. Can be eaten firm or soft.",
+      "growing_notes": "Excellent for humid subtropical climates subtropical climate. Highly humidity-resistant, tolerates humid subtropical climates summer heat well. Popular in Queensland nurseries. Can be eaten firm or soft.",
       "availability": "Widely available - Daleys Fruit, Bulleen Art Garden, Queensland nurseries"
     },
     {
@@ -25,7 +25,7 @@
       "traits": "Large (180-250g), yellow skin when ripe, oval to round",
       "flesh_fruit": "Deep pink, juicy, sweet with tropical fruit aroma",
       "yield_notes": "High, prolific bearer, 50-80kg per tree",
-      "growing_notes": "Performs excellently in Brisbane subtropical conditions. Very hardy and adaptable to humidity. Suitable for both fresh eating and juicing. Available from specialist Queensland nurseries.",
+      "growing_notes": "Performs excellently in humid subtropical climates subtropical conditions. Very hardy and adaptable to humidity. Suitable for both fresh eating and juicing. Available from specialist Queensland nurseries.",
       "availability": "Daleys Fruit Tree Nursery, Bulleen Art Garden"
     },
     {
@@ -64,7 +64,7 @@
       "traits": "Medium to large, round, yellow skin",
       "flesh_fruit": "Pink, firm, good sweetness",
       "yield_notes": "Moderate to high",
-      "growing_notes": "Specifically bred for Australian subtropical conditions including Brisbane. Excellent humidity tolerance and heat resistance. Good for fresh eating.",
+      "growing_notes": "Specifically bred for Australian subtropical conditions including humid subtropical climates. Excellent humidity tolerance and heat resistance. Good for fresh eating.",
       "availability": "Australian nurseries, Rare Fruit Club WA"
     },
     {
@@ -142,7 +142,7 @@
       "traits": "Medium, yellow skin, can grow to 4m (prune to size)",
       "flesh_fruit": "White firm flesh with seeds, juicy, sweet",
       "yield_notes": "Good",
-      "growing_notes": "Suitable for Brisbane subtropical conditions. Can be grown in pots and containers. Frost tender but handles summer heat and humidity well.",
+      "growing_notes": "Suitable for humid subtropical climates subtropical conditions. Can be grown in pots and containers. Frost tender but handles summer heat and humidity well.",
       "availability": "Bulleen Art Garden, Queensland nurseries"
     },
     {
@@ -168,7 +168,7 @@
       "traits": "Very large (largest of all guava varieties)",
       "flesh_fruit": "Full of vitamins and nutrients",
       "yield_notes": "High",
-      "growing_notes": "Considered a superfruit, used for commercial guava juice worldwide. Suitable for Brisbane tropical to subtropical conditions. Handles heat and humidity excellently.",
+      "growing_notes": "Considered a superfruit, used for commercial guava juice worldwide. Suitable for humid subtropical climates tropical to subtropical conditions. Handles heat and humidity excellently.",
       "availability": "Limited - California Tropical, specialist nurseries"
     },
     {
@@ -224,7 +224,7 @@
       "availability": ""
     },
     {
-      "name": "Allahabad Surkha \ud83c\udfc6",
+      "name": "Allahabad Surkha 🏆",
       "slug": "allahabad-surkha",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -246,7 +246,7 @@
       "traits": "Saffron yellow with reddish flush, 175-210g",
       "flesh_fruit": "Firm, pinkish, good mix of sweet and sour, TSS vitamin C 250mg/100g",
       "yield_notes": "Very high, 100-125kg per plant annually (highest in group)",
-      "growing_notes": "Modern hybrid excellent for Kerala monsoon climate. Suitable for both table and processing. Better jam flavor and appearance. Increasingly popular in Maharashtra, Karnataka, Andhra Pradesh.",
+      "growing_notes": "Modern hybrid excellent for tropical monsoon climates monsoon climate. Suitable for both table and processing. Better jam flavor and appearance. Increasingly popular in Maharashtra, Karnataka, Andhra Pradesh.",
       "availability": "Available across India - specialist nurseries"
     },
     {
@@ -257,7 +257,7 @@
       "sort_order": 4,
       "origin": "ICAR-Indian Institute of Horticultural Research, hybrid",
       "traits": "Round, 180-230g, smooth shiny pericarp, yellow",
-      "flesh_fruit": "White, firm, thick outer rind, good flavor, soft seeds, TSS 10-12\u00b0B, vitamin C 190-198mg/100g",
+      "flesh_fruit": "White, firm, thick outer rind, good flavor, soft seeds, TSS 10-12°B, vitamin C 190-198mg/100g",
       "yield_notes": "High, semi-vigorous, prolific bearer",
       "growing_notes": "",
       "availability": ""
@@ -270,10 +270,10 @@
       "sort_order": 5,
       "origin": "ICAR-IIHR, hybrid selection",
       "traits": "Semi-vigorous",
-      "flesh_fruit": "Red pulp, low oxalate content (28.3mg/100g), medium lycopene (5.0mg/100g), medium seed hardiness (9.0 kg/cm\u00b2)",
+      "flesh_fruit": "Red pulp, low oxalate content (28.3mg/100g), medium lycopene (5.0mg/100g), medium seed hardiness (9.0 kg/cm²)",
       "yield_notes": "Dual purpose variety",
-      "growing_notes": "Modern hybrid suitable for Kerala climate. Rich in ascorbic acid. Developed for both table and processing uses. Adapts well to tropical monsoon conditions.",
-      "availability": "IIHR, agricultural institutes, Kerala nurseries"
+      "growing_notes": "Modern hybrid suitable for tropical monsoon climates climate. Rich in ascorbic acid. Developed for both table and processing uses. Adapts well to tropical monsoon conditions.",
+      "availability": "IIHR, agricultural institutes, tropical monsoon climates nurseries"
     },
     {
       "name": "Shweta (Swetha)",
@@ -341,7 +341,7 @@
       "availability": ""
     },
     {
-      "name": "Khaja (Bengal Safeda) \ud83c\udfc6",
+      "name": "Khaja (Bengal Safeda) 🏆",
       "slug": "khaja-bengal-safeda",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -363,8 +363,8 @@
       "traits": "Quality variety",
       "flesh_fruit": "Good quality",
       "yield_notes": "Good",
-      "growing_notes": "Modern hybrid suitable for Kerala climate. Developed for commercial cultivation. Well-adapted to monsoon conditions.",
-      "availability": "Agricultural universities, Kerala nurseries"
+      "growing_notes": "Modern hybrid suitable for tropical monsoon climates climate. Developed for commercial cultivation. Well-adapted to monsoon conditions.",
+      "availability": "Agricultural universities, tropical monsoon climates nurseries"
     },
     {
       "name": "Safed Jam",
@@ -376,11 +376,11 @@
       "traits": "White variety",
       "flesh_fruit": "White, good for jam making",
       "yield_notes": "Good",
-      "growing_notes": "Hybrid developed specifically for processing/jam making. Suitable for Kerala monsoon climate. Higher pectin content ideal for preserves.",
-      "availability": "Processing-focused nurseries, Kerala"
+      "growing_notes": "Hybrid developed specifically for processing/jam making. Suitable for tropical monsoon climates monsoon climate. Higher pectin content ideal for preserves.",
+      "availability": "Processing-focused nurseries, tropical monsoon climates"
     },
     {
-      "name": "Kohir Safeda \ud83e\uddec",
+      "name": "Kohir Safeda 🧬",
       "slug": "kohir-safeda",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -389,7 +389,7 @@
       "traits": "Similar to Allahabad Safeda, bigger fruit, good quality",
       "flesh_fruit": "Few soft seeds",
       "yield_notes": "Good",
-      "growing_notes": "Indigenous Karnataka hybrid using local collection. Suitable for Kerala climate. Combines best traits of Allahabad Safeda with local adaptation.",
+      "growing_notes": "Indigenous Karnataka hybrid using local collection. Suitable for tropical monsoon climates climate. Combines best traits of Allahabad Safeda with local adaptation.",
       "availability": "Karnataka region, South India nurseries"
     },
     {
@@ -400,13 +400,13 @@
       "sort_order": 15,
       "origin": "ICAR-IIHR, hybrid (cross between Kamsari and Purple Local)",
       "traits": "Round, about 200g",
-      "flesh_fruit": "Deep pink, high ascorbic acid and lycopene content, medium soft seeds, TSS 11\u00b0Brix",
+      "flesh_fruit": "Deep pink, high ascorbic acid and lycopene content, medium soft seeds, TSS 11°Brix",
       "yield_notes": "Good",
-      "growing_notes": "Modern hybrid excellent for Kerala climate. High nutritional value. Suitable for both table and processing.",
-      "availability": "IIHR, Kerala agricultural nurseries"
+      "growing_notes": "Modern hybrid excellent for tropical monsoon climates climate. High nutritional value. Suitable for both table and processing.",
+      "availability": "IIHR, tropical monsoon climates agricultural nurseries"
     },
     {
-      "name": "Apple Color / Apple Guava \ud83c\udfc6",
+      "name": "Apple Color / Apple Guava 🏆",
       "slug": "apple-color-apple-guava",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -419,7 +419,7 @@
       "availability": ""
     },
     {
-      "name": "Red Fleshed \ud83c\udf31",
+      "name": "Red Fleshed 🌱",
       "slug": "red-fleshed",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -432,7 +432,7 @@
       "availability": ""
     },
     {
-      "name": "Kerala (Local) \ud83c\udfc6",
+      "name": "Kerala (Local) 🏆",
       "slug": "kerala-local",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -471,7 +471,7 @@
       "availability": ""
     },
     {
-      "name": "Banarasi \ud83c\udfc6",
+      "name": "Banarasi 🏆",
       "slug": "banarasi",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -484,7 +484,7 @@
       "availability": ""
     },
     {
-      "name": "Anakapalli \ud83c\udfc6",
+      "name": "Anakapalli 🏆",
       "slug": "anakapalli",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -493,7 +493,7 @@
       "traits": "Regional Andhra variety",
       "flesh_fruit": "Good quality",
       "yield_notes": "Good",
-      "growing_notes": "Indigenous heirloom from Andhra Pradesh. Well-suited to South India tropical climate including Kerala. Regional cultural significance.",
+      "growing_notes": "Indigenous heirloom from Andhra Pradesh. Well-suited to South India tropical climate including tropical monsoon climates. Regional cultural significance.",
       "availability": "Andhra Pradesh nurseries, South India"
     },
     {
@@ -523,7 +523,7 @@
       "availability": ""
     },
     {
-      "name": "Deshi Karnataka \ud83c\udfc6",
+      "name": "Deshi Karnataka 🏆",
       "slug": "deshi-karnataka",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -584,7 +584,7 @@
       "traits": "Brazilian variety",
       "flesh_fruit": "Good",
       "yield_notes": "Good",
-      "growing_notes": "Brazilian cultivar suitable for tropical climates including Kerala monsoon conditions.",
+      "growing_notes": "Brazilian cultivar suitable for tropical climates including tropical monsoon climates monsoon conditions.",
       "availability": "Limited - specialist sources"
     },
     {
@@ -610,7 +610,7 @@
       "traits": "Vietnamese variety",
       "flesh_fruit": "Good",
       "yield_notes": "Good",
-      "growing_notes": "Popular Vietnamese cultivar. Suitable for Kerala monsoon climate with high humidity adaptation.",
+      "growing_notes": "Popular Vietnamese cultivar. Suitable for tropical monsoon climates monsoon climate with high humidity adaptation.",
       "availability": "Limited - Southeast Asian importers"
     },
     {

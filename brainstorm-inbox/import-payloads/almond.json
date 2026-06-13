@@ -73,7 +73,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
       "sort_order": 5,
-      "origin": "Durham, California, 1953, chance seedling (Nonpareil \u00d7 Mission cross)",
+      "origin": "Durham, California, 1953, chance seedling (Nonpareil × Mission cross)",
       "traits": "Medium vigor, used to cross-pollinate Nonpareil",
       "flesh_fruit": "",
       "yield_notes": "Good productivity, early-mid season harvest",
@@ -99,7 +99,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
       "sort_order": 7,
-      "origin": "University of Adelaide, released 2016, cross of Nonpareil \u00d7 Lauranne",
+      "origin": "University of Adelaide, released 2016, cross of Nonpareil × Lauranne",
       "traits": "Open to spreading, low-medium vigor, flowers 1-4 days before Nonpareil",
       "flesh_fruit": "",
       "yield_notes": "10%+ higher than Nonpareil, same water usage",
@@ -112,7 +112,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
       "sort_order": 8,
-      "origin": "University of Adelaide, released 2017, cross of Chellaston \u00d7 1bT47 (Nonpareil \u00d7 Lauranne)",
+      "origin": "University of Adelaide, released 2017, cross of Chellaston × 1bT47 (Nonpareil × Lauranne)",
       "traits": "Medium vigor",
       "flesh_fruit": "",
       "yield_notes": "10%+ higher than Nonpareil",
@@ -125,7 +125,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
       "sort_order": 9,
-      "origin": "University of Adelaide, released 2016, cross of Nonpareil \u00d7 Lauranne",
+      "origin": "University of Adelaide, released 2016, cross of Nonpareil × Lauranne",
       "traits": "Spreading tree, medium vigor, flowers 3-6 days after Nonpareil",
       "flesh_fruit": "",
       "yield_notes": "High productivity",
@@ -250,7 +250,7 @@
       "availability": "Extremely rare, mostly found in heritage collections (Drake: 116 acres in CA; Languedoc: no longer commercially listed)"
     },
     {
-      "name": "Mamra Badam \ud83c\udfc6",
+      "name": "Mamra Badam 🏆",
       "slug": "mamra-badam",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -259,11 +259,11 @@
       "traits": "Small, round, compact size, boat-like/concave shape, rough striped texture",
       "flesh_fruit": "",
       "yield_notes": "Lower commercial yields (not mass-produced), hand-harvested from individual trees",
-      "growing_notes": "Cold temperate (Kashmir winters), NOT suitable for Kerala",
-      "availability": "Kashmir, imported to Kerala markets from Kashmir/Afghanistan/Iran, expensive due to limited supply"
+      "growing_notes": "Cold temperate (Kashmir winters), NOT suitable for tropical monsoon climates",
+      "availability": "Kashmir, imported to tropical monsoon climates markets from Kashmir/Afghanistan/Iran, expensive due to limited supply"
     },
     {
-      "name": "Gurbandi Badam (Choti Giri) \ud83c\udfc6",
+      "name": "Gurbandi Badam (Choti Giri) 🏆",
       "slug": "gurbandi-badam-choti-giri",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -272,11 +272,11 @@
       "traits": "Smaller than California/Mamra (hence 'Choti Giri' = small kernel), darker color, denser",
       "flesh_fruit": "",
       "yield_notes": "",
-      "growing_notes": "Cold temperate, NOT suitable for Kerala",
-      "availability": "Kashmir, imported to Kerala markets from Kashmir/Afghanistan, expensive, limited supply"
+      "growing_notes": "Cold temperate, NOT suitable for tropical monsoon climates",
+      "availability": "Kashmir, imported to tropical monsoon climates markets from Kashmir/Afghanistan, expensive, limited supply"
     },
     {
-      "name": "Kashmiri Badam (General) \ud83c\udfc6",
+      "name": "Kashmiri Badam (General) 🏆",
       "slug": "kashmiri-badam-general",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -285,8 +285,8 @@
       "traits": "Varies by tree - non-hybrid native varieties produce different shapes, sizes, flavors per tree",
       "flesh_fruit": "",
       "yield_notes": "",
-      "growing_notes": "Kashmir temperate climate with cold winters, NOT suitable for Kerala 100% natural, no chemical treatment, kernel sold in shell or as 'giri' (kernels)",
-      "availability": "Kashmir orchards, FSSAI/ISO certified suppliers ship to Kerala, sold in Kerala markets as premium imported product"
+      "growing_notes": "Kashmir temperate climate with cold winters, NOT suitable for tropical monsoon climates 100% natural, no chemical treatment, kernel sold in shell or as 'giri' (kernels)",
+      "availability": "Kashmir orchards, FSSAI/ISO certified suppliers ship to tropical monsoon climates, sold in tropical monsoon climates markets as premium imported product"
     },
     {
       "name": "Nonpareil",
@@ -295,7 +295,7 @@
       "climate_slug": "tropical-monsoon",
       "sort_order": 3,
       "origin": "",
-      "traits": "Well-suited to subtropical and tropical climates of northern India (NOTE: This refers to the subtropical zones of Kashmir/Himachal, NOT Kerala's tropical monsoon)",
+      "traits": "Well-suited to subtropical and tropical climates of northern India (NOTE: This refers to the subtropical zones of Kashmir/Himachal, NOT Tropical monsoon tropical monsoon)",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",

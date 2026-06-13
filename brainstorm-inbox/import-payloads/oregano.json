@@ -3,7 +3,7 @@
   "species_slug": "oregano",
   "varieties": [
     {
-      "name": "\ud83e\uddec HYBRID = First-generation crosses (F1) between distinct parent lines.",
+      "name": "🧬 HYBRID = First-generation crosses (F1) between distinct parent lines.",
       "slug": "hybrid-first-generation-crosses-f1-between-distinct-parent-lines",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
@@ -16,7 +16,7 @@
       "availability": ""
     },
     {
-      "name": "Greek Oregano (True Greek) \ud83c\udfc6",
+      "name": "Greek Oregano (True Greek) 🏆",
       "slug": "greek-oregano-true-greek",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -29,7 +29,7 @@
       "availability": "Widely available in Australian nurseries and seed suppliers (The Seed Collection, Bunnings, local herb nurseries)"
     },
     {
-      "name": "Greek Kaliteri Oregano \ud83c\udfc6",
+      "name": "Greek Kaliteri Oregano 🏆",
       "slug": "greek-kaliteri-oregano",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -42,7 +42,7 @@
       "availability": "Specialty herb nurseries, online Australian suppliers"
     },
     {
-      "name": "Italian Oregano (Common Italian) \ud83c\udfc6",
+      "name": "Italian Oregano (Common Italian) 🏆",
       "slug": "italian-oregano-common-italian",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -55,7 +55,7 @@
       "availability": "Widely available - The Seed Collection, Succeed Heirlooms, most nurseries"
     },
     {
-      "name": "Wild Oregano (Wild Marjoram) \ud83c\udfc6",
+      "name": "Wild Oregano (Wild Marjoram) 🏆",
       "slug": "wild-oregano-wild-marjoram",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -120,7 +120,7 @@
       "availability": "Specialty herb nurseries in Australia"
     },
     {
-      "name": "Australian Native Oregano \ud83c\udf0f",
+      "name": "Australian Native Oregano 🌏",
       "slug": "australian-native-oregano",
       "lineage_type": "indigenous",
       "climate_slug": "humid-subtropical",
@@ -130,10 +130,10 @@
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Melbourne Bushfood, Bunnings Australia, Fruitopia Nursery (Brisbane/Gold Coast), native plant nurseries throughout Queensland"
+      "availability": "Melbourne Bushfood, Bunnings Australia, Fruitopia Nursery (humid subtropical climates/Gold Coast), native plant nurseries throughout Queensland"
     },
     {
-      "name": "Turkish Oregano (Pot Marjoram) \ud83c\udfc6",
+      "name": "Turkish Oregano (Pot Marjoram) 🏆",
       "slug": "turkish-oregano-pot-marjoram",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -146,7 +146,7 @@
       "availability": "Specialty herb suppliers, imported seeds"
     },
     {
-      "name": "Sweet Marjoram (Knotted Marjoram) \ud83c\udfc6",
+      "name": "Sweet Marjoram (Knotted Marjoram) 🏆",
       "slug": "sweet-marjoram-knotted-marjoram",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -159,7 +159,7 @@
       "availability": "Herb nurseries, seed suppliers throughout Australia"
     },
     {
-      "name": "Syrian Oregano (Za'atar, Bible Hyssop) \ud83c\udfc6",
+      "name": "Syrian Oregano (Za'atar, Bible Hyssop) 🏆",
       "slug": "syrian-oregano-za-atar-bible-hyssop",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -178,7 +178,7 @@
       "climate_slug": "humid-subtropical",
       "sort_order": 13,
       "origin": "Hybrid developed in UK",
-      "traits": "Low-growing 15cm tall \u00d7 30cm wide, grey-green foliage, large pink and green papery bracts resembling hops",
+      "traits": "Low-growing 15cm tall × 30cm wide, grey-green foliage, large pink and green papery bracts resembling hops",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
@@ -198,7 +198,7 @@
       "availability": "Australian ornamental herb suppliers"
     },
     {
-      "name": "Dittany of Crete (Hop Marjoram) \ud83c\udfc6",
+      "name": "Dittany of Crete (Hop Marjoram) 🏆",
       "slug": "dittany-of-crete-hop-marjoram",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -211,17 +211,17 @@
       "availability": "Limited availability in Australia, specialty ornamental suppliers"
     },
     {
-      "name": "Cuban Oregano (Indian Borage) \ud83c\udf0f",
+      "name": "Cuban Oregano (Indian Borage) 🌏",
       "slug": "cuban-oregano-indian-borage",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 0,
       "origin": "Native to Eastern/Southern Africa, naturalized throughout tropics including India, Southeast Asia",
-      "traits": "Succulent perennial 30-90cm tall \u00d7 60-120cm wide, thick fleshy oval leaves 5-10cm, velvety hairy, lime-green to grey-green",
+      "traits": "Succulent perennial 30-90cm tall × 60-120cm wide, thick fleshy oval leaves 5-10cm, velvety hairy, lime-green to grey-green",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Widely available throughout India/Kerala, tropical plant nurseries, easy to propagate from cuttings, common in home gardens"
+      "availability": "Widely available throughout India/tropical monsoon climates, tropical plant nurseries, easy to propagate from cuttings, common in home gardens"
     },
     {
       "name": "Cuban Oregano Variegated",
@@ -237,7 +237,7 @@
       "availability": "Specialty plant nurseries in India, online tropical plant suppliers"
     },
     {
-      "name": "Asian Oregano (Indian Oregano) \ud83c\udf0f",
+      "name": "Asian Oregano (Indian Oregano) 🌏",
       "slug": "asian-oregano-indian-oregano",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -247,10 +247,10 @@
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Indian Spices Board, northern India suppliers, limited in Kerala"
+      "availability": "Indian Spices Board, northern India suppliers, limited in tropical monsoon climates"
     },
     {
-      "name": "Mexican Oregano \ud83c\udfc6",
+      "name": "Mexican Oregano 🏆",
       "slug": "mexican-oregano",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -263,7 +263,7 @@
       "availability": "International seed suppliers, specialty herb importers, limited in India"
     },
     {
-      "name": "Wild Oregano (for Kerala) \ud83c\udfc6",
+      "name": "Wild Oregano (for Kerala) 🏆",
       "slug": "wild-oregano-for-kerala",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -276,7 +276,7 @@
       "availability": "International seed suppliers"
     },
     {
-      "name": "Greek Oregano (for Kerala - Advanced Growers) \ud83c\udfc6",
+      "name": "Greek Oregano (for Kerala - Advanced Growers) 🏆",
       "slug": "greek-oregano-for-kerala-advanced-growers",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -286,10 +286,10 @@
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "International suppliers, rarely successful in Kerala climate"
+      "availability": "International suppliers, rarely successful in tropical monsoon climates climate"
     },
     {
-      "name": "Sweet Marjoram (for Kerala) \ud83c\udfc6",
+      "name": "Sweet Marjoram (for Kerala) 🏆",
       "slug": "sweet-marjoram-for-kerala",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -302,7 +302,7 @@
       "availability": "International seed suppliers, specialty herb importers"
     },
     {
-      "name": "Italian Oregano (for Kerala) \ud83c\udfc6",
+      "name": "Italian Oregano (for Kerala) 🏆",
       "slug": "italian-oregano-for-kerala",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -315,7 +315,7 @@
       "availability": ""
     },
     {
-      "name": "Heirloom/Open-Pollinated: 22 varieties marked \ud83c\udfc6 or",
+      "name": "Heirloom/Open-Pollinated: 22 varieties marked 🏆 or",
       "slug": "heirloom-open-pollinated-22-varieties-marked-or",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",

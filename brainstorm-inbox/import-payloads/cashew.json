@@ -13,7 +13,7 @@
       "flesh_fruit": "",
       "yield_notes": "Higher yields per tree than standard types (1-2 tonnes/ha vs 0.25 tonnes/ha), more productive for space",
       "growing_notes": "",
-      "availability": "Daleys Fruit Tree Nursery, Ross Creek Tropicals, Fruitopia Nursery (Brisbane/Gold Coast), online tropical plant suppliers. Usually sold as seedlings or air-layers, occasionally grafted."
+      "availability": "Daleys Fruit Tree Nursery, Ross Creek Tropicals, Fruitopia Nursery (humid subtropical climates/Gold Coast), online tropical plant suppliers. Usually sold as seedlings or air-layers, occasionally grafted."
     },
     {
       "name": "Red Dwarf Cashew",
@@ -26,7 +26,7 @@
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Specialty tropical fruit nurseries, limited availability in Brisbane region"
+      "availability": "Specialty tropical fruit nurseries, limited availability in humid subtropical climates region"
     },
     {
       "name": "Yellow Dwarf Cashew",
@@ -55,7 +55,7 @@
       "availability": ""
     },
     {
-      "name": "Semecarpus australiensis \ud83c\udf0f (Native Australian Cashew)",
+      "name": "Semecarpus australiensis 🌏 (Native Australian Cashew)",
       "slug": "semecarpus-australiensis-native-australian-cashew",
       "lineage_type": "indigenous",
       "climate_slug": "humid-subtropical",
@@ -68,7 +68,7 @@
       "availability": "Not commercially available; wild populations in natural habitat only"
     },
     {
-      "name": "KAU Nihara \ud83c\udf31 (Dwarf)",
+      "name": "KAU Nihara 🌱 (Dwarf)",
       "slug": "kau-nihara-dwarf",
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
@@ -78,7 +78,7 @@
       "flesh_fruit": "",
       "yield_notes": "1.25 tonnes/ha despite small size. Suitable for home gardens, rooftop cultivation, small-scale intensive farming",
       "growing_notes": "",
-      "availability": "KAU Cashew Research Station Madakkathara, Kerala nurseries, specialized tropical fruit suppliers"
+      "availability": "KAU Cashew Research Station Madakkathara, tropical monsoon climates nurseries, specialized tropical fruit suppliers"
     },
     {
       "name": "Amrutha (H-1597)",
@@ -86,7 +86,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 1,
-      "origin": "Hybrid BLA-139-1 \u00d7 H-3-13. Released 1998 by CRS Madakkathara, KAU",
+      "origin": "Hybrid BLA-139-1 × H-3-13. Released 1998 by CRS Madakkathara, KAU",
       "traits": "Spreading canopy, extensive branching, mid-season flowering (December-January), fruiting January-March",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -99,12 +99,12 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 2,
-      "origin": "Hybrid H-4-7 \u00d7 K-30-1. Released 1998 by CRS Anakkayam, Malappuram, KAU",
+      "origin": "Hybrid H-4-7 × K-30-1. Released 1998 by CRS Anakkayam, Malappuram, KAU",
       "traits": "Compact canopy, intensive branching ideal for high-density planting, mid-season flowering (December-January)",
       "flesh_fruit": "",
       "yield_notes": "11.78 kg/tree, premium quality kernels command highest prices",
       "growing_notes": "",
-      "availability": "CRS Madakkathara and Anakkayam, Kerala nurseries"
+      "availability": "CRS Madakkathara and Anakkayam, tropical monsoon climates nurseries"
     },
     {
       "name": "Anagha (H-8-1)",
@@ -112,12 +112,12 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 3,
-      "origin": "Hybrid T20 \u00d7 K-30-1. Released 1998 by CRS Anakkayam, Malappuram, KAU",
+      "origin": "Hybrid T20 × K-30-1. Released 1998 by CRS Anakkayam, Malappuram, KAU",
       "traits": "Compact canopy, intensive branching, mid-season flowering (January-February), fruiting February-April",
       "flesh_fruit": "",
       "yield_notes": "13.73 kg/tree average, reliable producer",
       "growing_notes": "",
-      "availability": "CRS Madakkathara and Anakkayam, Kerala nurseries"
+      "availability": "CRS Madakkathara and Anakkayam, tropical monsoon climates nurseries"
     },
     {
       "name": "Sree",
@@ -125,7 +125,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 4,
-      "origin": "Released 2019 by CRS Madakkathara, KAU. Developed specifically for Kerala agro-climatic conditions",
+      "origin": "Released 2019 by CRS Madakkathara, KAU. Developed specifically for tropical monsoon climates agro-climatic conditions",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -133,12 +133,12 @@
       "availability": ""
     },
     {
-      "name": "Mrudula (PTR1) \ud83c\udf31",
+      "name": "Mrudula (PTR1) 🌱",
       "slug": "mrudula-ptr1",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 5,
-      "origin": "Selection from Pattannur region, Kannur district, Kerala. Indigenous Kerala germplasm",
+      "origin": "Selection from Pattannur region, Kannur district, tropical monsoon climates. Indigenous tropical monsoon climates germplasm",
       "traits": "LATE-SEASON variety, UNIQUE FEATURE: absence of cashew nut shell liquid (CNSL) - rare characteristic making processing easier and safer",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -151,12 +151,12 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 6,
-      "origin": "Hybrid BLA 139-1 \u00d7 K-30-1. Released 2006, KAU",
+      "origin": "Hybrid BLA 139-1 × K-30-1. Released 2006, KAU",
       "traits": "Compact canopy, intensive branching, well-suited for dense planting and organized orchard management",
       "flesh_fruit": "",
       "yield_notes": "Good productivity in high-density systems",
       "growing_notes": "",
-      "availability": "KAU research stations, Kerala nurseries"
+      "availability": "KAU research stations, tropical monsoon climates nurseries"
     },
     {
       "name": "Dhana (H-1608)",
@@ -180,12 +180,12 @@
       "origin": "Hybrid variety, KAU release",
       "traits": "Good spreading growth, suitable for standard planting systems",
       "flesh_fruit": "",
-      "yield_notes": "Moderate yields, stable producer in Kerala conditions",
+      "yield_notes": "Moderate yields, stable producer in tropical monsoon climates conditions",
       "growing_notes": "",
       "availability": "KAU research stations"
     },
     {
-      "name": "K-22-1 \ud83c\udf31",
+      "name": "K-22-1 🌱",
       "slug": "k-22-1",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -206,12 +206,12 @@
       "origin": "Hybrid variety, KAU",
       "traits": "Mid-season flowering and fruiting, good canopy structure",
       "flesh_fruit": "",
-      "yield_notes": "Good productivity in Kerala conditions",
+      "yield_notes": "Good productivity in tropical monsoon climates conditions",
       "growing_notes": "",
-      "availability": "KAU research stations, Kerala nurseries"
+      "availability": "KAU research stations, tropical monsoon climates nurseries"
     },
     {
-      "name": "Madakkathara-1 (BLA-39-4) \ud83c\udf31",
+      "name": "Madakkathara-1 (BLA-39-4) 🌱",
       "slug": "madakkathara-1-bla-39-4",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -234,7 +234,7 @@
       "flesh_fruit": "",
       "yield_notes": "17 kg/tree - good yielder",
       "growing_notes": "",
-      "availability": "CRS Madakkathara, Kerala nurseries"
+      "availability": "CRS Madakkathara, tropical monsoon climates nurseries"
     },
     {
       "name": "Priyanka (H-1591)",
@@ -245,7 +245,7 @@
       "origin": "Hybrid variety, KAU",
       "traits": "Compact canopy, good branching for organized orchards",
       "flesh_fruit": "",
-      "yield_notes": "Good productivity in Kerala climate",
+      "yield_notes": "Good productivity in tropical monsoon climates climate",
       "growing_notes": "",
       "availability": "KAU research stations"
     },
@@ -260,10 +260,10 @@
       "flesh_fruit": "",
       "yield_notes": "EXCELLENT 21.9 kg/tree average - one of highest yielding selections",
       "growing_notes": "",
-      "availability": "CRS Madakkathara (680651), Kerala nurseries"
+      "availability": "CRS Madakkathara (680651), tropical monsoon climates nurseries"
     },
     {
-      "name": "Anakkayam-1 (BLA-139-1) \ud83c\udf31",
+      "name": "Anakkayam-1 (BLA-139-1) 🌱",
       "slug": "anakkayam-1-bla-139-1",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -276,7 +276,7 @@
       "availability": ""
     },
     {
-      "name": "Vengurla-4 \ud83c\udf31 \ud83c\udfc6",
+      "name": "Vengurla-4 🌱 🏆",
       "slug": "vengurla-4",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -289,7 +289,7 @@
       "availability": ""
     },
     {
-      "name": "Vengurla-1 \ud83c\udf31 \ud83c\udfc6",
+      "name": "Vengurla-1 🌱 🏆",
       "slug": "vengurla-1",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -302,7 +302,7 @@
       "availability": ""
     },
     {
-      "name": "Vengurla-2 \ud83c\udf31 \ud83c\udfc6",
+      "name": "Vengurla-2 🌱 🏆",
       "slug": "vengurla-2",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -312,28 +312,28 @@
       "flesh_fruit": "",
       "yield_notes": "24 kg/tree (20th year) - HIGHEST yielding Vengurla variety",
       "growing_notes": "",
-      "availability": "Limited availability, some Kerala nurseries"
+      "availability": "Limited availability, some tropical monsoon climates nurseries"
     },
     {
-      "name": "Vengurla-7 \ud83e\uddec",
+      "name": "Vengurla-7 🧬",
       "slug": "vengurla-7",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 19,
-      "origin": "Hybrid Vengurla-3 \u00d7 M 10/4 (VRI-1), Maharashtra-Tamil Nadu cross",
+      "origin": "Hybrid Vengurla-3 × M 10/4 (VRI-1), Maharashtra-Tamil Nadu cross",
       "traits": "VERY HIGH perfect flower percentage (40% - exceptional), bold nut type",
       "flesh_fruit": "",
       "yield_notes": "18.5 kg/tree average - high yields",
       "growing_notes": "",
-      "availability": "RFRS Vengurla, Goa and Kerala nurseries, widely planted"
+      "availability": "RFRS Vengurla, Goa and tropical monsoon climates nurseries, widely planted"
     },
     {
-      "name": "Ullal-1 \ud83c\udf31",
+      "name": "Ullal-1 🌱",
       "slug": "ullal-1",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 20,
-      "origin": "Selection from Agricultural Research Station, Ullal, Karnataka. Released for entire Karnataka, widely adopted in Kerala",
+      "origin": "Selection from Agricultural Research Station, Ullal, Karnataka. Released for entire Karnataka, widely adopted in tropical monsoon climates",
       "traits": "EARLY BEARING cultivar with high sex ratio, intensive branching. Flowering late November-mid March, harvest complete by May (ESCAPES MONSOON)",
       "flesh_fruit": "",
       "yield_notes": "19.6 kg/tree - high yielding",
@@ -341,7 +341,7 @@
       "availability": ""
     },
     {
-      "name": "Ullal-2 \ud83c\udf31",
+      "name": "Ullal-2 🌱",
       "slug": "ullal-2",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -364,7 +364,7 @@
       "flesh_fruit": "",
       "yield_notes": "14.68 kg/tree (10th year) - moderate to good yields",
       "growing_notes": "",
-      "availability": "ARS Ullal, Kerala nurseries"
+      "availability": "ARS Ullal, tropical monsoon climates nurseries"
     },
     {
       "name": "Ullal-4",
@@ -377,10 +377,10 @@
       "flesh_fruit": "",
       "yield_notes": "9.5 kg/tree average (moderate), but EARLY MATURITY and high quality compensate",
       "growing_notes": "",
-      "availability": "ARS Ullal, Chintamani, Kerala nurseries"
+      "availability": "ARS Ullal, Chintamani, tropical monsoon climates nurseries"
     },
     {
-      "name": "Goa-1 \ud83c\udf31",
+      "name": "Goa-1 🌱",
       "slug": "goa-1",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -393,7 +393,7 @@
       "availability": ""
     },
     {
-      "name": "Goa-2 \ud83c\udf31",
+      "name": "Goa-2 🌱",
       "slug": "goa-2",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -403,10 +403,10 @@
       "flesh_fruit": "",
       "yield_notes": "5.5 kg/tree average (moderate but consistent)",
       "growing_notes": "",
-      "availability": "ICAR Research Complex Goa, limited Kerala availability"
+      "availability": "ICAR Research Complex Goa, limited tropical monsoon climates availability"
     },
     {
-      "name": "Bhaskara (Goa 11/6) \ud83c\udf31",
+      "name": "Bhaskara (Goa 11/6) 🌱",
       "slug": "bhaskara-goa-11-6",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -414,9 +414,9 @@
       "origin": "Selection from Goa germplasm, ICAR Research Complex, Goa",
       "traits": "Compact canopy suitable for high-density planting",
       "flesh_fruit": "",
-      "yield_notes": "RESPONDS WELL TO HIGH-DENSITY PLANTING - Normal planting (8\u00d78m): 737.88 kg/ha; HIGH-DENSITY (5\u00d75m): 1882.54 kg/ha (2.5\u00d7 increase)",
+      "yield_notes": "RESPONDS WELL TO HIGH-DENSITY PLANTING - Normal planting (8×8m): 737.88 kg/ha; HIGH-DENSITY (5×5m): 1882.54 kg/ha (2.5× increase)",
       "growing_notes": "",
-      "availability": "ICAR Research Complex Goa, Karnataka CDC, some Kerala nurseries"
+      "availability": "ICAR Research Complex Goa, Karnataka CDC, some tropical monsoon climates nurseries"
     },
     {
       "name": "VRI (CW) H1",
@@ -432,7 +432,7 @@
       "availability": ""
     },
     {
-      "name": "Vridhachalam-3 (M 26/2) \ud83c\udf31",
+      "name": "Vridhachalam-3 (M 26/2) 🌱",
       "slug": "vridhachalam-3-m-26-2",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -458,7 +458,7 @@
       "availability": ""
     },
     {
-      "name": "TRADITIONAL/LOCAL GERMPLASM \ud83c\udf0f",
+      "name": "TRADITIONAL/LOCAL GERMPLASM 🌏",
       "slug": "traditional-local-germplasm",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -471,20 +471,20 @@
       "availability": ""
     },
     {
-      "name": "Local Seedling Types (Nadan/Traditional) \ud83c\udf31 \ud83c\udf0f",
+      "name": "Local Seedling Types (Nadan/Traditional) 🌱 🌏",
       "slug": "local-seedling-types-nadan-traditional",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 31,
-      "origin": "Indigenous Kerala cashews, descended from Portuguese introductions 1560s-1600s. 400+ years natural selection in Kerala conditions",
-      "traits": "HIGHLY VARIABLE - each tree genetically unique. Typically tall (10-14m), late bearing (5-8 years), irregular yields. Found in old homesteads, temple groves, traditional farms throughout Kerala",
+      "origin": "Indigenous tropical monsoon climates cashews, descended from Portuguese introductions 1560s-1600s. 400+ years natural selection in tropical monsoon climates conditions",
+      "traits": "HIGHLY VARIABLE - each tree genetically unique. Typically tall (10-14m), late bearing (5-8 years), irregular yields. Found in old homesteads, temple groves, traditional farms throughout tropical monsoon climates",
       "flesh_fruit": "",
       "yield_notes": "Unpredictable 2-15 kg/tree, highly erratic year-to-year",
       "growing_notes": "",
       "availability": ""
     },
     {
-      "name": "Thaliparamba Local \ud83c\udf31 \ud83c\udf0f",
+      "name": "Thaliparamba Local 🌱 🌏",
       "slug": "thaliparamba-local",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",

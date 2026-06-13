@@ -13,7 +13,7 @@
       "flesh_fruit": "",
       "yield_notes": "Moderate to high with proper care, hand pollination required, flowering November-December",
       "growing_notes": "",
-      "availability": "Daleys Fruit Tree Nursery (Brisbane), All Rare Herbs (Australia-wide), local orchid societies"
+      "availability": "Daleys Fruit Tree Nursery (humid subtropical climates), All Rare Herbs (Australia-wide), local orchid societies"
     },
     {
       "name": "Queensland Commercial Strain",
@@ -73,7 +73,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
       "sort_order": 5,
-      "origin": "French Polynesia (Tahiti, Raiatea), hybrid of V. planifolia \u00d7 V. odorata, 1800s",
+      "origin": "French Polynesia (Tahiti, Raiatea), hybrid of V. planifolia × V. odorata, 1800s",
       "traits": "Shorter, plumper pods, more robust plant, different flowering pattern",
       "flesh_fruit": "",
       "yield_notes": "Lower than planifolia but indehiscent pods (don't split)",
@@ -126,11 +126,11 @@
       "climate_slug": "tropical-monsoon",
       "sort_order": 0,
       "origin": "Introduced to India 1835, adapted to Western Ghats conditions since mid-1900s",
-      "traits": "Well-adapted to Kerala monsoon climate, vigorous growth in humid conditions",
+      "traits": "Well-adapted to tropical monsoon climates monsoon climate, vigorous growth in humid conditions",
       "flesh_fruit": "",
-      "yield_notes": "High productivity in Kerala conditions, 250-350 kg green pods per hectare",
+      "yield_notes": "High productivity in tropical monsoon climates conditions, 250-350 kg green pods per hectare",
       "growing_notes": "",
-      "availability": "Spices Board of India, Kerala Agricultural University, Goodness Vanilla (Western Ghats), ICAR-Indian Institute of Spices Research (Kozhikode), local vanilla growers associations"
+      "availability": "Spices Board of India, tropical monsoon climates Agricultural University, Goodness Vanilla (Western Ghats), ICAR-Indian Institute of Spices Research (Kozhikode), local vanilla growers associations"
     },
     {
       "name": "Wayanad Traditional Type",
@@ -138,12 +138,12 @@
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 1,
-      "origin": "Wayanad district, Kerala, cultivated since 1960s at Horticultural Research Station",
+      "origin": "Wayanad district, tropical monsoon climates, cultivated since 1960s at Horticultural Research Station",
       "traits": "Selected for Wayanad's high elevation (700-2,100m) and cool, humid climate",
       "flesh_fruit": "",
-      "yield_notes": "Good productivity in Kerala highland conditions",
+      "yield_notes": "Good productivity in tropical monsoon climates highland conditions",
       "growing_notes": "",
-      "availability": "Wayanad Horticultural Research Station, Kerala Agricultural University, local growers in Wayanad"
+      "availability": "Wayanad Horticultural Research Station, tropical monsoon climates Agricultural University, local growers in Wayanad"
     },
     {
       "name": "Western Ghats Selection (Goodness Vanilla)",
@@ -151,12 +151,12 @@
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 2,
-      "origin": "Developed through Indian Vanilla Initiative across Karnataka, Tamil Nadu, and Kerala",
+      "origin": "Developed through Indian Vanilla Initiative across Karnataka, Tamil Nadu, and tropical monsoon climates",
       "traits": "Selected for Western Ghats terroir, high quality production, organic cultivation practices",
       "flesh_fruit": "",
       "yield_notes": "Reliable commercial production with organized cultivation network",
       "growing_notes": "",
-      "availability": "Indian Vanilla Initiative, Goodness Vanilla (Pollachi), Indian Vanilla Enterprise, Kerala contract farming networks"
+      "availability": "Indian Vanilla Initiative, Goodness Vanilla (Pollachi), Indian Vanilla Enterprise, tropical monsoon climates contract farming networks"
     },
     {
       "name": "Karnataka-Kerala Border Type",
@@ -164,12 +164,12 @@
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 3,
-      "origin": "Grown along Karnataka-Kerala border regions",
-      "traits": "Adapted to transition zone between Karnataka and Kerala climates",
+      "origin": "Grown along Karnataka-tropical monsoon climates border regions",
+      "traits": "Adapted to transition zone between Karnataka and tropical monsoon climates climates",
       "flesh_fruit": "",
       "yield_notes": "Moderate to good production",
       "growing_notes": "",
-      "availability": "Karnataka and Kerala vanilla growers, regional agricultural departments"
+      "availability": "Karnataka and tropical monsoon climates vanilla growers, regional agricultural departments"
     },
     {
       "name": "Nilgiri Type (Tamil Nadu-Kerala)",
@@ -182,7 +182,7 @@
       "flesh_fruit": "",
       "yield_notes": "Good in appropriate elevations",
       "growing_notes": "",
-      "availability": "Tamil Nadu agricultural universities, accessible to Kerala growers"
+      "availability": "Tamil Nadu agricultural universities, accessible to tropical monsoon climates growers"
     },
     {
       "name": "Bourbon-type (Indian Ocean Lineage)",
@@ -190,7 +190,7 @@
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 5,
-      "origin": "Madagascar/R\u00e9union lineage, same V. planifolia grown in Bourbon Islands",
+      "origin": "Madagascar/Réunion lineage, same V. planifolia grown in Bourbon Islands",
       "traits": "Traditional planifolia characteristics, proven tropical adaptation",
       "flesh_fruit": "",
       "yield_notes": "High productivity in tropical monsoon conditions",

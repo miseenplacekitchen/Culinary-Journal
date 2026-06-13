@@ -3,7 +3,7 @@
   "species_slug": "cardamom",
   "varieties": [
     {
-      "name": "Malabar Type \ud83c\udf31",
+      "name": "Malabar Type 🌱",
       "slug": "malabar-type",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -16,7 +16,7 @@
       "availability": ""
     },
     {
-      "name": "Mysore Type \ud83c\udf31",
+      "name": "Mysore Type 🌱",
       "slug": "mysore-type",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -29,12 +29,12 @@
       "availability": "Available through Queensland specialist herb nurseries and online retailers"
     },
     {
-      "name": "Vazhukka \ud83e\uddec",
+      "name": "Vazhukka 🧬",
       "slug": "vazhukka",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 1,
-      "origin": "Kerala/Tamil Nadu - Natural hybrid between Malabar and Mysore types",
+      "origin": "tropical monsoon climates/Tamil Nadu - Natural hybrid between Malabar and Mysore types",
       "traits": "Medium height plants, semi-erect panicles (between horizontal and vertical), deep green oblong-lanceolate leaves, compact growth habit",
       "flesh_fruit": "",
       "yield_notes": "Moderate to good yields, better than both parent varieties in optimal conditions",
@@ -47,7 +47,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 2,
-      "origin": "Kattappana, Kerala, India - Developed by farmer Sebastian Joseph and son Regimon (1990s)",
+      "origin": "Kattappana, tropical monsoon climates, India - Developed by farmer Sebastian Joseph and son Regimon (1990s)",
       "traits": "High-yielding farmer-bred variety, requires 40% less shade than traditional varieties, year-round harvesting potential, deep green leaves",
       "flesh_fruit": "",
       "yield_notes": "1500 kg/hectare (vs conventional 200 kg/ha) - Revolutionary high yield",
@@ -60,7 +60,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
       "sort_order": 1,
-      "origin": "Indian Cardamom Research Institute (ICRI), Myladumpara, Kerala - Released 1980s",
+      "origin": "Indian Cardamom Research Institute (ICRI), Myladumpara, tropical monsoon climates - Released 1980s",
       "traits": "Early maturing variety, profuse flowering, medium-sized panicle, globose extra bold dark green capsules",
       "flesh_fruit": "",
       "yield_notes": "656 kg dry capsules/hectare",
@@ -73,7 +73,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
       "sort_order": 2,
-      "origin": "ICRI, Myladumpara, Kerala - Released 1980s",
+      "origin": "ICRI, Myladumpara, tropical monsoon climates - Released 1980s",
       "traits": "Performs well under irrigated conditions, suitable for higher altitudes, medium-long panicles, tolerant to azhukal disease",
       "flesh_fruit": "",
       "yield_notes": "766 kg dry capsules/hectare",
@@ -81,20 +81,20 @@
       "availability": ""
     },
     {
-      "name": "Malabar (Nadan/Native) \ud83c\udfc6 \ud83c\udf31",
+      "name": "Malabar (Nadan/Native) 🏆 🌱",
       "slug": "malabar-nadan-native",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 3,
-      "origin": "Western Ghats, Kerala - Native to Malabar Coast (100+ years, indigenous)",
+      "origin": "Western Ghats, tropical monsoon climates - Native to Malabar Coast (100+ years, indigenous)",
       "traits": "Plants under 3m tall, prostrate panicles grow horizontally along ground, hairy underside of leaves, compact growth",
       "flesh_fruit": "",
       "yield_notes": "260-500 kg dry capsules/ha, stable traditional yields",
       "growing_notes": "",
-      "availability": "Kerala Spices Board nurseries, KAU Cardamom Research Station Pampadumpara, private Idukki growers, Graamya Organic Spices"
+      "availability": "tropical monsoon climates Spices Board nurseries, KAU Cardamom Research Station Pampadumpara, private Idukki growers, Graamya Organic Spices"
     },
     {
-      "name": "Mysore \ud83c\udfc6 \ud83c\udf31",
+      "name": "Mysore 🏆 🌱",
       "slug": "mysore",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -107,20 +107,20 @@
       "availability": "Karnataka State Spices Development Board, ICRI Regional Research Station Sakleshpur"
     },
     {
-      "name": "Vazhukka (Vazuka) \ud83c\udfc6 \ud83e\uddec \ud83c\udf31",
+      "name": "Vazhukka (Vazuka) 🏆 🧬 🌱",
       "slug": "vazhukka-vazuka",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 5,
-      "origin": "Kerala/Tamil Nadu - Natural hybrid between Malabar and Mysore (70+ years)",
+      "origin": "tropical monsoon climates/Tamil Nadu - Natural hybrid between Malabar and Mysore (70+ years)",
       "traits": "Semi-erect panicles (intermediate between parents), short plant height, deep green oblong-lanceolate leaves, consistent robust shape",
       "flesh_fruit": "",
       "yield_notes": "Good yields exceeding both parent varieties",
       "growing_notes": "",
-      "availability": "Widely available - Kerala Spices Board, ICRI Myladumpara, KAU Pampadumpara, local Kerala nurseries"
+      "availability": "Widely available - tropical monsoon climates Spices Board, ICRI Myladumpara, KAU Pampadumpara, local tropical monsoon climates nurseries"
     },
     {
-      "name": "Palakudi (Pallakudi) \ud83c\udfc6 \ud83c\udf31",
+      "name": "Palakudi (Pallakudi) 🏆 🌱",
       "slug": "palakudi-pallakudi",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -138,7 +138,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 7,
-      "origin": "Kattappana, Idukki, Kerala - Developed by farmer Sebastian Joseph and son Regimon (1990s)",
+      "origin": "Kattappana, Idukki, tropical monsoon climates - Developed by farmer Sebastian Joseph and son Regimon (1990s)",
       "traits": "Requires 40% less shade than traditional varieties, year-round harvesting capability, robust growth, multiple productive suckers",
       "flesh_fruit": "",
       "yield_notes": "1500 kg/ha (revolutionary 7.5x increase over conventional 200 kg/ha), shortened yield span to 2 years instead of 3",
@@ -151,12 +151,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 8,
-      "origin": "Santhanpara, Idukki, Kerala - Developed by farmer T.P. Joseph (2000s)",
+      "origin": "Santhanpara, Idukki, tropical monsoon climates - Developed by farmer T.P. Joseph (2000s)",
       "traits": "Malabar type, fibrous stem resistant to stem borers, low maintenance requirements, high resistance to pests and diseases, less fertilizer needs",
       "flesh_fruit": "",
       "yield_notes": "4-6 kg dried cardamom per plant (exceptionally high), 2000-3000 kg/acre dry weight, 22% curing weight",
       "growing_notes": "",
-      "availability": "T.P. Joseph's nursery (Santhampara, Idukki), Kerala agricultural institutions, distributed through Spices Board"
+      "availability": "T.P. Joseph's nursery (Santhampara, Idukki), tropical monsoon climates agricultural institutions, distributed through Spices Board"
     },
     {
       "name": "ICRI-1 (Malabar)",
@@ -164,12 +164,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 9,
-      "origin": "ICRI Myladumpara, Kerala - Released 1980s for Kerala Zone",
+      "origin": "ICRI Myladumpara, tropical monsoon climates - Released 1980s for tropical monsoon climates Zone",
       "traits": "Malabar type, early maturing variety, profuse flowering, medium-sized panicle",
       "flesh_fruit": "",
       "yield_notes": "656 kg/ha dry capsules",
       "growing_notes": "",
-      "availability": "ICRI Myladumpara, Spices Board nurseries, Kerala Spices Board outlets"
+      "availability": "ICRI Myladumpara, Spices Board nurseries, tropical monsoon climates Spices Board outlets"
     },
     {
       "name": "ICRI-2 (Mysore)",
@@ -177,7 +177,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 10,
-      "origin": "ICRI Myladumpara - Released 1980s for Kerala Zone",
+      "origin": "ICRI Myladumpara - Released 1980s for tropical monsoon climates Zone",
       "traits": "Mysore type clonal selection, erect type, high yielder, suitable for higher altitudes, performs well under irrigation, medium-long panicles, tolerant to azhukal disease",
       "flesh_fruit": "",
       "yield_notes": "766 kg/ha dry capsules (highest among ICRI varieties)",
@@ -216,7 +216,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 13,
-      "origin": "ICRI Myladumpara - Released for Kerala Zone",
+      "origin": "ICRI Myladumpara - Released for tropical monsoon climates Zone",
       "traits": "Selection from Chakkupallam collections (MCC-49)",
       "flesh_fruit": "",
       "yield_notes": "Good commercial yields",
@@ -229,7 +229,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 14,
-      "origin": "ICRI Myladumpara - Released for Kerala Zone",
+      "origin": "ICRI Myladumpara - Released for tropical monsoon climates Zone",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -242,7 +242,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 15,
-      "origin": "ICRI Myladumpara - Released for Kerala Zone",
+      "origin": "ICRI Myladumpara - Released for tropical monsoon climates Zone",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -419,7 +419,7 @@
       "availability": "ICRI CRC Appangala"
     },
     {
-      "name": "Kanipparamban (Kumily Cardamom) \ud83c\udfc6 \ud83c\udf31",
+      "name": "Kanipparamban (Kumily Cardamom) 🏆 🌱",
       "slug": "kanipparamban-kumily-cardamom",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -432,7 +432,7 @@
       "availability": ""
     },
     {
-      "name": "Elam Rani \ud83c\udfc6 \ud83c\udf31",
+      "name": "Elam Rani 🏆 🌱",
       "slug": "elam-rani",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -445,25 +445,25 @@
       "availability": ""
     },
     {
-      "name": "Mysore Vazhukka \ud83c\udfc6 \ud83c\udf31",
+      "name": "Mysore Vazhukka 🏆 🌱",
       "slug": "mysore-vazhukka",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 31,
-      "origin": "Karnataka-Kerala border regions",
+      "origin": "Karnataka-tropical monsoon climates border regions",
       "traits": "Variant of Vazhukka type with Mysore characteristics",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Limited - Karnataka-Kerala border farmers"
+      "availability": "Limited - Karnataka-tropical monsoon climates border farmers"
     },
     {
-      "name": "Sundhari \ud83c\udf31",
+      "name": "Sundhari 🌱",
       "slug": "sundhari",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 32,
-      "origin": "Kerala - Local selection",
+      "origin": "tropical monsoon climates - Local selection",
       "traits": "Name means 'Beautiful' in Malayalam",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -471,12 +471,12 @@
       "availability": ""
     },
     {
-      "name": "Panikkulangara (Panikulangara) \ud83c\udf31",
+      "name": "Panikkulangara (Panikulangara) 🌱",
       "slug": "panikkulangara-panikulangara",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 33,
-      "origin": "Kerala - Named after location",
+      "origin": "tropical monsoon climates - Named after location",
       "traits": "Local geographic selection",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -484,7 +484,7 @@
       "availability": "Local area farmers"
     },
     {
-      "name": "Palakkodiyan \ud83c\udfc6 \ud83c\udf31",
+      "name": "Palakkodiyan 🏆 🌱",
       "slug": "palakkodiyan",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -502,12 +502,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 35,
-      "origin": "Kerala valley selections",
+      "origin": "tropical monsoon climates valley selections",
       "traits": "Developed for valley cultivation",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Kerala Spices Board"
+      "availability": "tropical monsoon climates Spices Board"
     },
     {
       "name": "White-Flowered Vazhukka",
@@ -515,7 +515,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 36,
-      "origin": "Developed by K.J. Baby, Idukki district, Kerala",
+      "origin": "Developed by K.J. Baby, Idukki district, tropical monsoon climates",
       "traits": "Purely white-flowered variety (unique mutation), Vazhukka type, high adaptability to different shade conditions",
       "flesh_fruit": "",
       "yield_notes": "Higher yield than Njallani",

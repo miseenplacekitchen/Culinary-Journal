@@ -11,9 +11,9 @@
       "origin": "Native to Moluccas (Maluku Islands), Indonesia",
       "traits": "Evergreen tree, 8-12m height, glossy oval leaves, small pale pink flowers clustered at branch tips",
       "flesh_fruit": "",
-      "yield_notes": "Zero to minimal in Brisbane climate. Trees begin flowering at 7-8 years (IF conditions met), full bearing at 15+ years. Brisbane's climate will prevent flowering.",
+      "yield_notes": "Zero to minimal in humid subtropical climates climate. Trees begin flowering at 7-8 years (IF conditions met), full bearing at 15+ years. Humid subtropical climate will prevent flowering.",
       "growing_notes": "",
-      "availability": "Rarely available in Australian nurseries. Some specialist tropical plant nurseries may carry seedlings. Not readily available in Brisbane due to climatic unsuitability."
+      "availability": "Rarely available in Australian nurseries. Some specialist tropical plant nurseries may carry seedlings. Not readily available in humid subtropical climates due to climatic unsuitability."
     },
     {
       "name": "1. Zanzibar Type",
@@ -21,12 +21,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 0,
-      "origin": "Originally from Zanzibar/Pemba Islands (Tanzania), introduced to India in 19th century, now widely cultivated in Kerala",
+      "origin": "Originally from Zanzibar/Pemba Islands (Tanzania), introduced to India in 19th century, now widely cultivated in tropical monsoon climates",
       "traits": "Smaller, slender buds compared to Penang type. Dark brown color when dried. Medium-sized tree with good branching habit.",
       "flesh_fruit": "",
       "yield_notes": "High productivity - 2-8 kg/tree/year. Known for better adaptability and consistent yields.",
       "growing_notes": "",
-      "availability": "Widely available through Kerala Agricultural University, ICAR centers, certified nurseries in Kottayam and Kollam districts, Kerala State Spices Development Board."
+      "availability": "Widely available through tropical monsoon climates Agricultural University, ICAR centers, certified nurseries in Kottayam and Kollam districts, tropical monsoon climates State Spices Development Board."
     },
     {
       "name": "2. Penang Type",
@@ -39,7 +39,7 @@
       "flesh_fruit": "",
       "yield_notes": "Moderate productivity - 2-5 kg/tree/year. Prized for appearance and export quality.",
       "growing_notes": "",
-      "availability": "Available from specialized spice nurseries, Kerala Agricultural University research stations, limited commercial availability compared to Zanzibar."
+      "availability": "Available from specialized spice nurseries, tropical monsoon climates Agricultural University research stations, limited commercial availability compared to Zanzibar."
     },
     {
       "name": "3. Amboyan Type",
@@ -52,7 +52,7 @@
       "flesh_fruit": "",
       "yield_notes": "Slightly lower productivity than Zanzibar - 2-4 kg/tree/year.",
       "growing_notes": "",
-      "availability": "Limited availability in Kerala. May be sourced through specialized collectors or direct import of planting material from Indonesia."
+      "availability": "Limited availability in tropical monsoon climates. May be sourced through specialized collectors or direct import of planting material from Indonesia."
     },
     {
       "name": "4. Burliar-1 Selection",
@@ -65,7 +65,7 @@
       "flesh_fruit": "",
       "yield_notes": "2-8 kg/tree/year (average 2-5 kg). Consistent bearer.",
       "growing_notes": "",
-      "availability": "Available from Tamil Nadu Agricultural University, Kerala Agricultural University, certified nurseries in Kerala-Tamil Nadu border regions."
+      "availability": "Available from Tamil Nadu Agricultural University, tropical monsoon climates Agricultural University, certified nurseries in tropical monsoon climates-Tamil Nadu border regions."
     },
     {
       "name": "5. KC-1 (King Clove-1)",
@@ -78,7 +78,7 @@
       "flesh_fruit": "",
       "yield_notes": "Moderate - 2-5 kg/tree/year, but higher value per kg due to size.",
       "growing_notes": "",
-      "availability": "Tamil Nadu Agricultural University, Kanyakumari district nurseries, some Kerala nurseries near Tamil Nadu border."
+      "availability": "Tamil Nadu Agricultural University, Kanyakumari district nurseries, some tropical monsoon climates nurseries near Tamil Nadu border."
     },
     {
       "name": "6. KC-2 (King Clove-2)",
@@ -107,7 +107,7 @@
       "availability": "Limited. Tamil Nadu nurseries, some experimental stations."
     },
     {
-      "name": "8. Kanyakumari Clove (GI Tagged) \ud83c\udfc6",
+      "name": "8. Kanyakumari Clove (GI Tagged) 🏆",
       "slug": "8-kanyakumari-clove-gi-tagged",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -117,10 +117,10 @@
       "flesh_fruit": "",
       "yield_notes": "2-6 kg/tree/year. Kanyakumari district produces 80% of India's total clove production.",
       "growing_notes": "",
-      "availability": "Kanyakumari district nurseries, Kerala State Spices Development Board, certified through GI registry sources."
+      "availability": "Kanyakumari district nurseries, tropical monsoon climates State Spices Development Board, certified through GI registry sources."
     },
     {
-      "name": "9. Tuni Clove (Maluku Endemic) \ud83c\udf0f",
+      "name": "9. Tuni Clove (Maluku Endemic) 🌏",
       "slug": "9-tuni-clove-maluku-endemic",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -133,7 +133,7 @@
       "availability": ""
     },
     {
-      "name": "10. Afo Clove (Maluku Endemic) \ud83c\udf0f",
+      "name": "10. Afo Clove (Maluku Endemic) 🌏",
       "slug": "10-afo-clove-maluku-endemic",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -185,7 +185,7 @@
       "availability": ""
     },
     {
-      "name": "14. Forest Clove (Maluku Wild Type) \ud83c\udf0f",
+      "name": "14. Forest Clove (Maluku Wild Type) 🌏",
       "slug": "14-forest-clove-maluku-wild-type",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -221,7 +221,7 @@
       "flesh_fruit": "",
       "yield_notes": "Lower productivity - average 250 kg/hectare. Harvest October-January.",
       "growing_notes": "",
-      "availability": "Limited. Would require import from Sri Lankan sources or through regional spice networks. Kerala's proximity to Sri Lanka makes cultural exchange possible."
+      "availability": "Limited. Would require import from Sri Lankan sources or through regional spice networks. Tropical monsoon proximity to Sri Lanka makes cultural exchange possible."
     },
     {
       "name": "17. Pemba Clove (Zanzibar Archipelago)",

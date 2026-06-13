@@ -12,8 +12,8 @@
       "traits": "Medium-sized tree (30-60 feet), compact growth, early bearing in 3-4 years. Available in Yellow, Green, Golden/Orange, and Red varieties based on fruit color.",
       "flesh_fruit": "",
       "yield_notes": "60-100 nuts per year once established",
-      "growing_notes": "Suitable for Brisbane's subtropical climate with protection. Requires warm, sheltered position, free-draining soil, and deep organic mulch. Resistant to Lethal Yellowing disease. Best planted in coastal locations; will tolerate temperatures to -3\u00b0C but unlikely to fruit south of northern NSW.",
-      "availability": "Daley's Fruit Tree Nursery (Queensland), Oxley Nursery Brisbane, specialized palm nurseries"
+      "growing_notes": "Suitable for Humid subtropical subtropical climate with protection. Requires warm, sheltered position, free-draining soil, and deep organic mulch. Resistant to Lethal Yellowing disease. Best planted in coastal locations; will tolerate temperatures to -3°C but unlikely to fruit south of northern NSW.",
+      "availability": "Daley's Fruit Tree Nursery (Queensland), Oxley Nursery humid subtropical climates, specialized palm nurseries"
     },
     {
       "name": "Dwarf Hybrid (Solomon Islands selection)",
@@ -25,7 +25,7 @@
       "traits": "High-yielding precocious hybrid, flowers in 3rd year, fruits in 4th year in moist tropical conditions. Moderate-sized fruit with large volume-to-husk ratio.",
       "flesh_fruit": "",
       "yield_notes": "High productivity once established",
-      "growing_notes": "Will grow outside the tropics in warm, sheltered position. Worth trying in coastal locations as far south as Coffs Harbour, NSW. Requires free-draining soil and deep organic mulch. Suitable for Brisbane's warmer suburbs with frost protection.",
+      "growing_notes": "Will grow outside the tropics in warm, sheltered position. Worth trying in coastal locations as far south as Coffs Harbour, NSW. Requires free-draining soil and deep organic mulch. Suitable for Humid subtropical warmer suburbs with frost protection.",
       "availability": "Daley's Fruit Tree Nursery (Queensland)"
     },
     {
@@ -34,7 +34,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
       "sort_order": 2,
-      "origin": "Jamaica, 1960s (Malayan Dwarf \u00d7 Panama Tall)",
+      "origin": "Jamaica, 1960s (Malayan Dwarf × Panama Tall)",
       "traits": "Medium-sized tree to 60 feet, cold-hardy for a coconut, disease-resistant especially to Lethal Yellowing. Combines hardiness of Malayan Dwarf with weather resistance of Panama Tall.",
       "flesh_fruit": "",
       "yield_notes": "Good productivity, 80-100 nuts per year",
@@ -51,7 +51,7 @@
       "traits": "Unique dwarf with swollen bole at base, slower-growing, distinctive thick crooked trunk, compact height to 25 feet. Shorter, wider leaflets create fuller canopy.",
       "flesh_fruit": "",
       "yield_notes": "Moderate, 50-70 nuts per year",
-      "growing_notes": "Selected for resistance to Lethal Yellowing disease. Suitable for Brisbane with protection, especially in warmer coastal suburbs. Compact size makes harvesting easier. Requires warm microclimate and frost protection.",
+      "growing_notes": "Selected for resistance to Lethal Yellowing disease. Suitable for humid subtropical climates with protection, especially in warmer coastal suburbs. Compact size makes harvesting easier. Requires warm microclimate and frost protection.",
       "availability": "Specialty palm nurseries"
     },
     {
@@ -99,12 +99,12 @@
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 1,
-      "origin": "Kuttiyadi region, Kozhikode District, Kerala - ecotype of West Coast Tall",
+      "origin": "Kuttiyadi region, Kozhikode District, tropical monsoon climates - ecotype of West Coast Tall",
       "traits": "Tall palm adapted to hilly midland regions, distinct genetic makeup from other WCT due to local environmental factors (climate, pH, rainfall). Matures in 5 years (faster than standard WCT).",
       "flesh_fruit": "",
       "yield_notes": "Higher nut yield than standard WCT",
-      "growing_notes": "Indigenous Kerala ecotype adapted to midland regions with different environmental conditions than coastal WCT. Developed over generations through natural selection in Kuttiyadi's specific terroir. Represents local agrobiodiversity. Excellent for Thiruvalla area which is inland.",
-      "availability": "Kerala Agricultural University, regional nurseries in Kozhikode/Calicut area"
+      "growing_notes": "Indigenous tropical monsoon climates ecotype adapted to midland regions with different environmental conditions than coastal WCT. Developed over generations through natural selection in Kuttiyadi's specific terroir. Represents local agrobiodiversity. Excellent for tropical monsoon climates area which is inland.",
+      "availability": "tropical monsoon climates Agricultural University, regional nurseries in Kozhikode/Calicut area"
     },
     {
       "name": "East Coast Tall (ECT)",
@@ -116,8 +116,8 @@
       "traits": "Tall variety 50-90 feet, thrives in well-drained sandy loam, alluvial and red loamy soils. Distinct orange color on young nuts. Tolerates inland conditions better than WCT.",
       "flesh_fruit": "",
       "yield_notes": "60-70 nuts per year, starts bearing 6-8 years",
-      "growing_notes": "Well-balanced water and meat content, excellent for both tender coconut water and mature processing. Moderately tolerant to pests (bugs, mites, insects). More tolerant of inland conditions than WCT, making it suitable for areas slightly away from coast. Good choice for Thiruvalla's inland location.",
-      "availability": "Available in Kerala from Coconut Development Board, government nurseries"
+      "growing_notes": "Well-balanced water and meat content, excellent for both tender coconut water and mature processing. Moderately tolerant to pests (bugs, mites, insects). More tolerant of inland conditions than WCT, making it suitable for areas slightly away from coast. Good choice for Tropical monsoon inland location.",
+      "availability": "Available in tropical monsoon climates from Coconut Development Board, government nurseries"
     },
     {
       "name": "Lakshadweep Ordinary (LCT / Chandrakalpa)",
@@ -129,8 +129,8 @@
       "traits": "Moderate height 11.6 meters, stem girth 80cm. Grows in all soil types, excellent moisture stress tolerance. Long productive life 50-80 years.",
       "flesh_fruit": "",
       "yield_notes": "100 nuts per palm annually, starts flowering 6 years after planting",
-      "growing_notes": "Extremely versatile - grows well in all soil types from sandy beaches to inland areas. Superior toddy production makes it valuable for traditional Kerala toddy/jaggery industry. High humidity and salt spray tolerance. Perfect for Kerala's monsoon climate. Recommended throughout Kerala, Karnataka, Tamil Nadu.",
-      "availability": "Coconut Development Board, Kerala Agricultural University, government nurseries throughout Kerala"
+      "growing_notes": "Extremely versatile - grows well in all soil types from sandy beaches to inland areas. Superior toddy production makes it valuable for traditional tropical monsoon climates toddy/jaggery industry. High humidity and salt spray tolerance. Perfect for Tropical monsoon monsoon climate. Recommended throughout tropical monsoon climates, Karnataka, Tamil Nadu.",
+      "availability": "Coconut Development Board, tropical monsoon climates Agricultural University, government nurseries throughout tropical monsoon climates"
     },
     {
       "name": "Tiptur Tall (TPT)",
@@ -142,8 +142,8 @@
       "traits": "Tall variety, very low maintenance, one of easiest coconuts to grow. Large leathery fronds.",
       "flesh_fruit": "",
       "yield_notes": "70-80 coconuts per year, starts bearing 6-7 years after planting",
-      "growing_notes": "Famous for minimal maintenance requirements. Reliable year-after-year production. Well-suited to Kerala's climate. Good choice for low-input farming.",
-      "availability": "Available in Kerala from agricultural departments, regional nurseries"
+      "growing_notes": "Famous for minimal maintenance requirements. Reliable year-after-year production. Well-suited to Tropical monsoon climate. Good choice for low-input farming.",
+      "availability": "Available in tropical monsoon climates from agricultural departments, regional nurseries"
     },
     {
       "name": "Andaman Ordinary Tall",
@@ -155,7 +155,7 @@
       "traits": "Very tall variety up to 30 meters, robust growth, good toddy yielder",
       "flesh_fruit": "",
       "yield_notes": "Good productivity",
-      "growing_notes": "Farmers plant in large numbers especially in Karnataka. Well-adapted to island and coastal tropical conditions, performs well in Kerala's monsoon climate.",
+      "growing_notes": "Farmers plant in large numbers especially in Karnataka. Well-adapted to island and coastal tropical conditions, performs well in Tropical monsoon monsoon climate.",
       "availability": "Government nurseries, Coconut Development Board"
     },
     {
@@ -164,7 +164,7 @@
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 6,
-      "origin": "Kerala, India - known as 'Chenthangu' in Malayalam",
+      "origin": "tropical monsoon climates, India - known as 'Chenthangu' in Malayalam",
       "traits": "True dwarf variety 12-16 feet height, early flowering 3-4 years. Round to almost-round fruits with smooth orange skin when ripe. Compact size ideal for small holdings.",
       "flesh_fruit": "",
       "yield_notes": "65-112 nuts per palm annually",
@@ -177,12 +177,12 @@
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 7,
-      "origin": "Kerala, India",
+      "origin": "tropical monsoon climates, India",
       "traits": "Dwarf variety with dark green leaves, petioles, and nuts. Takes 3-4 years to bear.",
       "flesh_fruit": "",
       "yield_notes": "66 nuts per palm per year",
-      "growing_notes": "Recommended for Kerala tender coconut production. Distinctive all-green appearance. Well-adapted to Kerala's monsoon conditions.",
-      "availability": "Kerala Agricultural University, ICAR-CPCRI, Coconut Development Board nurseries"
+      "growing_notes": "Recommended for tropical monsoon climates tender coconut production. Distinctive all-green appearance. Well-adapted to Tropical monsoon monsoon conditions.",
+      "availability": "tropical monsoon climates Agricultural University, ICAR-CPCRI, Coconut Development Board nurseries"
     },
     {
       "name": "Chowghat Yellow Dwarf",
@@ -190,12 +190,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 8,
-      "origin": "Kerala, India",
+      "origin": "tropical monsoon climates, India",
       "traits": "Smallest coconut tree variety, vibrant yellow-colored coconuts",
       "flesh_fruit": "",
       "yield_notes": "Good yield for dwarf type",
-      "growing_notes": "Highly resistant to diseases and pests. Easier maintenance. Perfect for small gardens and home cultivation in Kerala.",
-      "availability": "Kerala nurseries, agricultural departments"
+      "growing_notes": "Highly resistant to diseases and pests. Easier maintenance. Perfect for small gardens and home cultivation in tropical monsoon climates.",
+      "availability": "tropical monsoon climates nurseries, agricultural departments"
     },
     {
       "name": "Chowghat Red Dwarf",
@@ -203,12 +203,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 9,
-      "origin": "Kerala, India",
+      "origin": "tropical monsoon climates, India",
       "traits": "Dwarf variety 25-30 feet height, distinctive red-tinged nuts. Thrives in various soil types including sandy and loamy.",
       "flesh_fruit": "",
       "yield_notes": "Up to 150 coconuts annually",
-      "growing_notes": "Excellent pest and disease resistance. Low-maintenance option. Prized for sweet water and distinctive appearance. Ideal for Kerala's humid tropical climate.",
-      "availability": "Kerala Agricultural University, specialized nurseries"
+      "growing_notes": "Excellent pest and disease resistance. Low-maintenance option. Prized for sweet water and distinctive appearance. Ideal for Tropical monsoon humid tropical climate.",
+      "availability": "tropical monsoon climates Agricultural University, specialized nurseries"
     },
     {
       "name": "Gangabondam (Gangabondam Green Dwarf)",
@@ -233,8 +233,8 @@
       "traits": "Medium dwarf 30-50 feet, pale yellow petioles and mature fruit. Early bearing 3-4 years, 50-year lifespan.",
       "flesh_fruit": "",
       "yield_notes": "Good productivity in tropical climates",
-      "growing_notes": "Widely grown globally, performs excellently in Kerala's hot tropical climate. High yields in consistently hot areas. Disease resistant. Ideal for Kerala's monsoon conditions with high heat and humidity.",
-      "availability": "Available from Greens of Kerala, Indian Glorious Nursery, Kerala nurseries"
+      "growing_notes": "Widely grown globally, performs excellently in Tropical monsoon hot tropical climate. High yields in consistently hot areas. Disease resistant. Ideal for Tropical monsoon monsoon conditions with high heat and humidity.",
+      "availability": "Available from Greens of tropical monsoon climates, Indian Glorious Nursery, tropical monsoon climates nurseries"
     },
     {
       "name": "Malayan Green Dwarf",
@@ -259,8 +259,8 @@
       "traits": "Compact dwarf variety, vibrant orange-colored coconuts",
       "flesh_fruit": "",
       "yield_notes": "High productivity with impressive yields",
-      "growing_notes": "Excellent disease resistance ensures healthy, strong trees. Popular among home gardeners and commercial growers in Kerala due to compact size and high yield.",
-      "availability": "Kerala nurseries, Mahindra Nursery, Kadiyam Nursery"
+      "growing_notes": "Excellent disease resistance ensures healthy, strong trees. Popular among home gardeners and commercial growers in tropical monsoon climates due to compact size and high yield.",
+      "availability": "tropical monsoon climates nurseries, Mahindra Nursery, Kadiyam Nursery"
     },
     {
       "name": "Kalpasree",
@@ -272,8 +272,8 @@
       "traits": "EARLIEST flowering cultivar - 2.5-3 years for flowering. Dwarf variety. Root wilt disease tolerant.",
       "flesh_fruit": "",
       "yield_notes": "90 nuts per palm annually",
-      "growing_notes": "Released specifically for cultivation in root wilt prevalent areas of Kerala. Disease resistance critical for Kerala's conditions. Exceptionally fast to production. Excellent choice for Thiruvalla and Pathanamthitta District where root wilt can be an issue.",
-      "availability": "ICAR-CPCRI stations, Kerala Agricultural University, Coconut Development Board"
+      "growing_notes": "Released specifically for cultivation in root wilt prevalent areas of tropical monsoon climates. Disease resistance critical for Tropical monsoon conditions. Exceptionally fast to production. Excellent choice for tropical monsoon climates and Pathanamthitta District where root wilt can be an issue.",
+      "availability": "ICAR-CPCRI stations, tropical monsoon climates Agricultural University, Coconut Development Board"
     },
     {
       "name": "Kalpa Jyothi",
@@ -285,8 +285,8 @@
       "traits": "Dwarf variety with yellow fruits",
       "flesh_fruit": "",
       "yield_notes": "114 nuts per palm per year under rainfed conditions",
-      "growing_notes": "Recommended specifically for Kerala and Karnataka for tender nut purpose. Higher average yield than many dwarfs. Performs well even without irrigation in Kerala's high-rainfall monsoon climate.",
-      "availability": "ICAR-CPCRI, Kerala Agricultural University"
+      "growing_notes": "Recommended specifically for tropical monsoon climates and Karnataka for tender nut purpose. Higher average yield than many dwarfs. Performs well even without irrigation in Tropical monsoon high-rainfall monsoon climate.",
+      "availability": "ICAR-CPCRI, tropical monsoon climates Agricultural University"
     },
     {
       "name": "Kalpa Suvarna",
@@ -311,8 +311,8 @@
       "traits": "Semi-tall variety with higher resistance to root wilt disease. Flowering by 54 months (4.5 years).",
       "flesh_fruit": "",
       "yield_notes": "87 nuts per palm in normal conditions; 65 nuts per palm in root wilt affected tracts",
-      "growing_notes": "Specifically released for tender nut production AND cultivation in root wilt prevalent areas of Kerala. Critical for Thiruvalla/Pathanamthitta region where root wilt disease is a concern. Disease resistance plus good productivity makes it excellent choice for Kerala.",
-      "availability": "ICAR-CPCRI Kayamkulam station (near Thiruvalla), Kerala Agricultural University"
+      "growing_notes": "Specifically released for tender nut production AND cultivation in root wilt prevalent areas of tropical monsoon climates. Critical for tropical monsoon climates/Pathanamthitta region where root wilt disease is a concern. Disease resistance plus good productivity makes it excellent choice for tropical monsoon climates.",
+      "availability": "ICAR-CPCRI Kayamkulam station (near tropical monsoon climates), tropical monsoon climates Agricultural University"
     },
     {
       "name": "Kalpa Dhenu (Tall Variety)",
@@ -359,33 +359,33 @@
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 21,
-      "origin": "West Coast Tall \u00d7 West Coast Tall progenies, selected from high-yielding root wilt disease-free WCT palms",
+      "origin": "West Coast Tall × West Coast Tall progenies, selected from high-yielding root wilt disease-free WCT palms",
       "traits": "Superior selection of traditional WCT with enhanced disease resistance and higher yield",
       "flesh_fruit": "",
       "yield_notes": "Higher yield than standard WCT with less root wilt disease incidence",
-      "growing_notes": "Based on performance trials at CDB Farm Neriamangalam and ICAR-CPCRI Kayamkulam (both in Kerala). Selected specifically for Kerala conditions from the indigenous West Coast Tall. Maintains WCT characteristics while improving disease resistance and yield. Perfect for Thiruvalla region.",
-      "availability": "Kerala Agricultural University, ICAR-CPCRI Kayamkulam, Coconut Development Board Neriamangalam"
+      "growing_notes": "Based on performance trials at CDB Farm Neriamangalam and ICAR-CPCRI Kayamkulam (both in tropical monsoon climates). Selected specifically for tropical monsoon climates conditions from the indigenous West Coast Tall. Maintains WCT characteristics while improving disease resistance and yield. Perfect for tropical monsoon climates region.",
+      "availability": "tropical monsoon climates Agricultural University, ICAR-CPCRI Kayamkulam, Coconut Development Board Neriamangalam"
     },
     {
-      "name": "Kerasree (WCT \u00d7 MYD)",
+      "name": "Kerasree (WCT × MYD)",
       "slug": "kerasree-wct-myd",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 22,
-      "origin": "Released by Kerala Agricultural University, 1992",
-      "traits": "Dwarf hybrid (West Coast Tall \u00d7 Malayan Yellow Dwarf), starts bearing 5th year",
+      "origin": "Released by tropical monsoon climates Agricultural University, 1992",
+      "traits": "Dwarf hybrid (West Coast Tall × Malayan Yellow Dwarf), starts bearing 5th year",
       "flesh_fruit": "",
       "yield_notes": "130-150 fruits per tree - considered best variety among Dwarf coconuts",
       "growing_notes": "",
       "availability": ""
     },
     {
-      "name": "Chandra Sankara (COD \u00d7 WCT)",
+      "name": "Chandra Sankara (COD × WCT)",
       "slug": "chandra-sankara-cod-wct",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 23,
-      "origin": "India (Chowghat Orange Dwarf \u00d7 West Coast Tall)",
+      "origin": "India (Chowghat Orange Dwarf × West Coast Tall)",
       "traits": "Early bearing hybrid compared to tall palms. Copra 160-230g per nut.",
       "flesh_fruit": "",
       "yield_notes": "116 nuts per palm (range 100-150)",
@@ -393,30 +393,30 @@
       "availability": ""
     },
     {
-      "name": "Keraganga (WCT \u00d7 Gangabondam)",
+      "name": "Keraganga (WCT × Gangabondam)",
       "slug": "keraganga-wct-gangabondam",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 24,
-      "origin": "Kerala (West Coast Tall \u00d7 Gangabondam)",
-      "traits": "Hybrid combining Kerala's indigenous WCT with early-bearing Gangabondam",
+      "origin": "tropical monsoon climates (West Coast Tall × Gangabondam)",
+      "traits": "Hybrid combining Tropical monsoon indigenous WCT with early-bearing Gangabondam",
       "flesh_fruit": "",
       "yield_notes": "100 nuts per tree",
-      "growing_notes": "Released specifically for Kerala. Excellent copra and oil production. Combines local adaptation of WCT with early bearing of Gangabondam.",
-      "availability": "Kerala Agricultural University, government nurseries"
+      "growing_notes": "Released specifically for tropical monsoon climates. Excellent copra and oil production. Combines local adaptation of WCT with early bearing of Gangabondam.",
+      "availability": "tropical monsoon climates Agricultural University, government nurseries"
     },
     {
-      "name": "Kerasowbhagya (WCT \u00d7 SSA)",
+      "name": "Kerasowbhagya (WCT × SSA)",
       "slug": "kerasowbhagya-wct-ssa",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 25,
-      "origin": "Kerala (West Coast Tall \u00d7 SSA)",
+      "origin": "tropical monsoon climates (West Coast Tall × SSA)",
       "traits": "Hybrid variety",
       "flesh_fruit": "",
       "yield_notes": "116 nuts per tree",
-      "growing_notes": "Released for Kerala cultivation. Uses indigenous WCT as parent.",
-      "availability": "Kerala Agricultural University"
+      "growing_notes": "Released for tropical monsoon climates cultivation. Uses indigenous WCT as parent.",
+      "availability": "tropical monsoon climates Agricultural University"
     },
     {
       "name": "Kera Keralam (WCT Selection)",
@@ -424,12 +424,12 @@
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 26,
-      "origin": "Kerala - 'Kera Keralam' literally means 'Coconut of Kerala'",
+      "origin": "tropical monsoon climates - 'Kera Keralam' literally means 'Coconut of tropical monsoon climates'",
       "traits": "Selection from traditional West Coast Tall",
       "flesh_fruit": "",
       "yield_notes": "147 nuts per tree - very high",
-      "growing_notes": "Released by Coconut Research Station Veppankulam for Kerala, Tamil Nadu, and West Bengal. Name celebrates Kerala's coconut heritage. High-yielding selection of the traditional WCT that is the backbone of Kerala coconut cultivation.",
-      "availability": "Available online at Cocoter Farm, Kerala nurseries, agricultural stations"
+      "growing_notes": "Released by Coconut Research Station Veppankulam for tropical monsoon climates, Tamil Nadu, and West Bengal. Name celebrates Tropical monsoon coconut heritage. High-yielding selection of the traditional WCT that is the backbone of tropical monsoon climates coconut cultivation.",
+      "availability": "Available online at Cocoter Farm, tropical monsoon climates nurseries, agricultural stations"
     },
     {
       "name": "Kalyani Coconut-1",
@@ -437,7 +437,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 27,
-      "origin": "Released for Kerala",
+      "origin": "Released for tropical monsoon climates",
       "traits": "High-yielding variety",
       "flesh_fruit": "",
       "yield_notes": "180 nuts per tree - exceptionally high",
@@ -445,7 +445,7 @@
       "availability": ""
     },
     {
-      "name": "Anandaganga (Andaman Ordinary \u00d7 Gangabondam)",
+      "name": "Anandaganga (Andaman Ordinary × Gangabondam)",
       "slug": "anandaganga-andaman-ordinary-gangabondam",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -454,16 +454,16 @@
       "traits": "Hybrid combining island and mainland varieties",
       "flesh_fruit": "",
       "yield_notes": "Good productivity",
-      "growing_notes": "Suitable for Kerala's tropical climate. Combines tropical island genetics with early bearing.",
+      "growing_notes": "Suitable for Tropical monsoon tropical climate. Combines tropical island genetics with early bearing.",
       "availability": "Government nurseries"
     },
     {
-      "name": "Godavari Ganga (ECT \u00d7 Gangabondam)",
+      "name": "Godavari Ganga (ECT × Gangabondam)",
       "slug": "godavari-ganga-ect-gangabondam",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 29,
-      "origin": "Andhra Pradesh/India (East Coast Tall \u00d7 Gangabondam)",
+      "origin": "Andhra Pradesh/India (East Coast Tall × Gangabondam)",
       "traits": "Hybrid variety",
       "flesh_fruit": "",
       "yield_notes": "140 nuts per tree",
@@ -471,12 +471,12 @@
       "availability": ""
     },
     {
-      "name": "VHC1 (ECT \u00d7 Malayan Green Dwarf)",
+      "name": "VHC1 (ECT × Malayan Green Dwarf)",
       "slug": "vhc1-ect-malayan-green-dwarf",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 30,
-      "origin": "Tamil Nadu, India (East Coast Tall \u00d7 Malayan Green Dwarf)",
+      "origin": "Tamil Nadu, India (East Coast Tall × Malayan Green Dwarf)",
       "traits": "Famous hybrid for massive coconut production, early bearing 4 years, disease-resistant, intercropping-friendly",
       "flesh_fruit": "",
       "yield_notes": "80-100 nuts per year",
@@ -484,29 +484,29 @@
       "availability": ""
     },
     {
-      "name": "Kalpa Ganga (COD \u00d7 Gangabondam)",
+      "name": "Kalpa Ganga (COD × Gangabondam)",
       "slug": "kalpa-ganga-cod-gangabondam",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 31,
-      "origin": "ICAR-CPCRI (Chowghat Orange Dwarf \u00d7 Gangabondam)",
-      "traits": "Hybrid combining Kerala's COD with Gangabondam early bearing",
+      "origin": "ICAR-CPCRI (Chowghat Orange Dwarf × Gangabondam)",
+      "traits": "Hybrid combining Tropical monsoon COD with Gangabondam early bearing",
       "flesh_fruit": "",
       "yield_notes": "167 nuts per palm per year - extremely high",
-      "growing_notes": "Recommended for Kerala and Karnataka. Suitable for tender nut purpose. Exceptional yields make it excellent for commercial cultivation.",
-      "availability": "ICAR-CPCRI, Kerala Agricultural University"
+      "growing_notes": "Recommended for tropical monsoon climates and Karnataka. Suitable for tender nut purpose. Exceptional yields make it excellent for commercial cultivation.",
+      "availability": "ICAR-CPCRI, tropical monsoon climates Agricultural University"
     },
     {
-      "name": "Kalpa Shreyas (COD \u00d7 West Asian Tall)",
+      "name": "Kalpa Shreyas (COD × West Asian Tall)",
       "slug": "kalpa-shreyas-cod-west-asian-tall",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 32,
-      "origin": "ICAR-CPCRI (Chowghat Orange Dwarf \u00d7 West Asian Tall)",
+      "origin": "ICAR-CPCRI (Chowghat Orange Dwarf × West Asian Tall)",
       "traits": "DxT hybrid, high nut yield",
       "flesh_fruit": "",
       "yield_notes": "151 coconuts per palm per year, 26,497 nuts per ha",
-      "growing_notes": "Triple purpose: tender nut, copra, and neera/toddy production. Uses Kerala's indigenous COD as parent. Excellent for traditional Kerala coconut industries.",
+      "growing_notes": "Triple purpose: tender nut, copra, and neera/toddy production. Uses Tropical monsoon indigenous COD as parent. Excellent for traditional tropical monsoon climates coconut industries.",
       "availability": "ICAR-CPCRI"
     },
     {
@@ -519,8 +519,8 @@
       "traits": "Moderate height to 10 meters, distinctive orange-yellow fruits",
       "flesh_fruit": "",
       "yield_notes": "Good productivity",
-      "growing_notes": "Common along roads in southern India. Prized for nutritional tender coconut water. Well-suited to Kerala's tropical climate. Popular for health-conscious consumers.",
-      "availability": "South Indian nurseries, Kerala suppliers"
+      "growing_notes": "Common along roads in southern India. Prized for nutritional tender coconut water. Well-suited to Tropical monsoon tropical climate. Popular for health-conscious consumers.",
+      "availability": "South Indian nurseries, tropical monsoon climates suppliers"
     },
     {
       "name": "Macapuno (Kopyor)",
@@ -532,7 +532,7 @@
       "traits": "Dwarf mutant tree, abnormal endosperm development",
       "flesh_fruit": "",
       "yield_notes": "Moderate",
-      "growing_notes": "Prized specialty coconut for desserts and sweets. Commands premium prices. Popular in Asian desserts. Would grow well in Kerala's tropical climate. Cultural significance in regions where grown.",
+      "growing_notes": "Prized specialty coconut for desserts and sweets. Commands premium prices. Popular in Asian desserts. Would grow well in Tropical monsoon tropical climate. Cultural significance in regions where grown.",
       "availability": "Specialty nurseries, may need importation from Philippines"
     },
     {
@@ -545,7 +545,7 @@
       "traits": "Very tall to 33 meters, beautiful fast-growing palm, lives 80 years. Dense globose canopy with huge dark green leaves. Swollen base trunk.",
       "flesh_fruit": "",
       "yield_notes": "Prolific - up to 200 coconuts per year",
-      "growing_notes": "Extremely high productivity. Distinctive appearance. Suitable for Kerala's consistently hot tropical climate. Kalpasree or Kalparaksha - root wilt resistant",
+      "growing_notes": "Extremely high productivity. Distinctive appearance. Suitable for Tropical monsoon consistently hot tropical climate. Kalpasree or Kalparaksha - root wilt resistant",
       "availability": "May require specialty import"
     }
   ],

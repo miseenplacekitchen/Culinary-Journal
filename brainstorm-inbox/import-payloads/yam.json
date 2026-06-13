@@ -13,7 +13,7 @@
       "flesh_fruit": "",
       "yield_notes": "25-40 t/ha, highly productive in one growing season",
       "growing_notes": "",
-      "availability": "Asian grocers, ethnic markets in Brisbane area. Available from community gardens (Northey Street City Farm, Brisbane)"
+      "availability": "Asian grocers, ethnic markets in humid subtropical climates area. Available from community gardens (Northey Street City Farm, humid subtropical climates)"
     },
     {
       "name": "Purple Yam (Ube)",
@@ -39,7 +39,7 @@
       "flesh_fruit": "",
       "yield_notes": "Aerial bulbils harvestable throughout season, underground tubers less productive than winged yam but still substantial",
       "growing_notes": "",
-      "availability": "Community gardens, city farms (Northey Street City Farm, Brisbane). Shared at gardening open days. Some online nurseries."
+      "availability": "Community gardens, city farms (Northey Street City Farm, humid subtropical climates). Shared at gardening open days. Some online nurseries."
     },
     {
       "name": "Australian Native Yams",
@@ -73,7 +73,7 @@
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
       "sort_order": 5,
-      "origin": "Endemic to Western Australia (not naturally occurring in Brisbane area, but included for reference)",
+      "origin": "Endemic to Western Australia (not naturally occurring in humid subtropical climates area, but included for reference)",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -91,7 +91,7 @@
       "flesh_fruit": "",
       "yield_notes": "15-25 t/ha, lower than greater yam but still productive",
       "growing_notes": "",
-      "availability": "Asian grocers, ethnic markets in Brisbane. Less common than greater yam but available seasonally."
+      "availability": "Asian grocers, ethnic markets in humid subtropical climates. Less common than greater yam but available seasonally."
     },
     {
       "name": "Chinese Yam (Standard)",
@@ -117,7 +117,7 @@
       "flesh_fruit": "",
       "yield_notes": "30-40 t/ha in optimal conditions, single large tuber per plant",
       "growing_notes": "",
-      "availability": "African grocers, international markets in Brisbane. Increasingly available as Brisbane's African community grows."
+      "availability": "African grocers, international markets in humid subtropical climates. Increasingly available as Humid subtropical African community grows."
     },
     {
       "name": "Yellow Yam (Standard)",
@@ -143,7 +143,7 @@
       "flesh_fruit": "",
       "yield_notes": "Moderate, produces crop after only 4 months and continues for up to 2 years",
       "growing_notes": "",
-      "availability": "Caribbean grocers, South American food markets in Brisbane. Rare but worth seeking."
+      "availability": "Caribbean grocers, South American food markets in humid subtropical climates. Rare but worth seeking."
     },
     {
       "name": "Oca Varieties",
@@ -152,7 +152,7 @@
       "climate_slug": "humid-subtropical",
       "sort_order": 11,
       "origin": "Andean highlands of South America. Second most important root crop after potato in Andes",
-      "traits": "Small tubers 3-10cm, crinkled waxy appearance. Various colors (red, pink, cream, yellow). Plants sensitive to heat >28\u00b0C",
+      "traits": "Small tubers 3-10cm, crinkled waxy appearance. Various colors (red, pink, cream, yellow). Plants sensitive to heat >28°C",
       "flesh_fruit": "",
       "yield_notes": "0.5-1kg per plant, multiple small tubers",
       "growing_notes": "",
@@ -164,7 +164,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 0,
-      "origin": "Developed by Central Tuber Crops Research Institute (CTCRI), Thiruvananthapuram, Kerala",
+      "origin": "Developed by Central Tuber Crops Research Institute (CTCRI), Thiruvananthapuram, tropical monsoon climates",
       "traits": "Conical tubers with brown skin and white flesh. Compact growth habit suitable for intercropping",
       "flesh_fruit": "",
       "yield_notes": "25-30 t/ha in 9-10 months",
@@ -177,7 +177,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 1,
-      "origin": "CTCRI, Thiruvananthapuram, Kerala. Selected from germplasm collection",
+      "origin": "CTCRI, Thiruvananthapuram, tropical monsoon climates. Selected from germplasm collection",
       "traits": "Digitate (finger-like) shaped tubers with black/brownish-black skin and white flesh. More irregular shape than Sree Keerthi",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -190,7 +190,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 2,
-      "origin": "CTCRI, Thiruvananthapuram, Kerala",
+      "origin": "CTCRI, Thiruvananthapuram, tropical monsoon climates",
       "traits": "Swollen, oval, smooth tubers with black skin and white flesh. More uniform shape than Sree Roopa",
       "flesh_fruit": "",
       "yield_notes": "28 t/ha in 8 months - SHORTER growing season than other varieties",
@@ -203,7 +203,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 3,
-      "origin": "Developed by Kerala Agricultural University (KAU)",
+      "origin": "Developed by tropical monsoon climates Agricultural University (KAU)",
       "traits": "Digitate tubers with brownish-black skin and white to pale flesh",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -216,12 +216,12 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 4,
-      "origin": "CTCRI, Thiruvananthapuram, Kerala",
+      "origin": "CTCRI, Thiruvananthapuram, tropical monsoon climates",
       "traits": "Pale green colored leaves (distinctive identification feature)",
       "flesh_fruit": "",
       "yield_notes": "25-30 t/ha in 9-10 months",
       "growing_notes": "",
-      "availability": "CTCRI, Kerala agricultural extension network"
+      "availability": "CTCRI, tropical monsoon climates agricultural extension network"
     },
     {
       "name": "CO 1",
@@ -229,7 +229,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 5,
-      "origin": "Developed in Tamil Nadu, widely grown in Kerala",
+      "origin": "Developed in Tamil Nadu, widely grown in tropical monsoon climates",
       "traits": "Standard greater yam characteristics",
       "flesh_fruit": "",
       "yield_notes": "30-35 t/ha",
@@ -247,7 +247,7 @@
       "flesh_fruit": "",
       "yield_notes": "20-25 t/ha in 8 months",
       "growing_notes": "",
-      "availability": "CTCRI, KAU, widely grown in Thiruvananthapuram and surrounding districts including Pathanamthitta (Thiruvalla)"
+      "availability": "CTCRI, KAU, widely grown in Thiruvananthapuram and surrounding districts including Pathanamthitta (tropical monsoon climates)"
     },
     {
       "name": "Sree Kala",
@@ -255,7 +255,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 7,
-      "origin": "CTCRI, Thiruvananthapuram, Kerala",
+      "origin": "CTCRI, Thiruvananthapuram, tropical monsoon climates",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -273,7 +273,7 @@
       "flesh_fruit": "",
       "yield_notes": "35-40 t/ha in 9-10 months - HIGHER than greater yam",
       "growing_notes": "",
-      "availability": "CTCRI, KAU, expanding availability through Kerala agricultural network"
+      "availability": "CTCRI, KAU, expanding availability through tropical monsoon climates agricultural network"
     },
     {
       "name": "Sree Priya",
@@ -286,7 +286,7 @@
       "flesh_fruit": "",
       "yield_notes": "35-40 t/ha in 9-10 months",
       "growing_notes": "",
-      "availability": "CTCRI, KAU, increasingly popular in Kerala"
+      "availability": "CTCRI, KAU, increasingly popular in tropical monsoon climates"
     },
     {
       "name": "Sree Dhanya",
@@ -325,7 +325,7 @@
       "flesh_fruit": "",
       "yield_notes": "42 t/ha in 8-9 months",
       "growing_notes": "",
-      "availability": "CTCRI, KAU, very widely available throughout Kerala agricultural system. Popular in Thiruvalla region"
+      "availability": "CTCRI, KAU, very widely available throughout tropical monsoon climates agricultural system. Popular in tropical monsoon climates region"
     },
     {
       "name": "Sree Athira",
@@ -338,7 +338,7 @@
       "flesh_fruit": "",
       "yield_notes": "High yielding (specific data: 40+ t/ha estimated)",
       "growing_notes": "",
-      "availability": "CTCRI, KAU, Kerala agricultural extension network"
+      "availability": "CTCRI, KAU, tropical monsoon climates agricultural extension network"
     },
     {
       "name": "Gajendra",
@@ -351,7 +351,7 @@
       "flesh_fruit": "",
       "yield_notes": "40-45 t/ha",
       "growing_notes": "",
-      "availability": "Available through Kerala agricultural departments, increasingly grown in Kerala"
+      "availability": "Available through tropical monsoon climates agricultural departments, increasingly grown in tropical monsoon climates"
     },
     {
       "name": "Purple Yam (General)",
@@ -364,7 +364,7 @@
       "flesh_fruit": "",
       "yield_notes": "25-35 t/ha in 8-10 months",
       "growing_notes": "",
-      "availability": "Asian markets, Indian grocers in Kerala. Filipino and Southeast Asian communities. Growing in popularity for health benefits."
+      "availability": "Asian markets, Indian grocers in tropical monsoon climates. Filipino and Southeast Asian communities. Growing in popularity for health benefits."
     },
     {
       "name": "Aerial Potato",
@@ -377,7 +377,7 @@
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Grows wild in many areas of Kerala. Available from traditional farmers, not widely commercially cultivated"
+      "availability": "Grows wild in many areas of tropical monsoon climates. Available from traditional farmers, not widely commercially cultivated"
     },
     {
       "name": "Chinese Yam",
@@ -390,7 +390,7 @@
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Chinese/Korean grocers in major Kerala cities. Limited cultivation in Kerala - more common in North India"
+      "availability": "Chinese/Korean grocers in major tropical monsoon climates cities. Limited cultivation in tropical monsoon climates - more common in North India"
     },
     {
       "name": "Japanese Mountain Yam (Dioscorea japonica)",
@@ -403,7 +403,7 @@
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Rare in Kerala. Japanese community gardens may have specimens."
+      "availability": "Rare in tropical monsoon climates. Japanese community gardens may have specimens."
     },
     {
       "name": "Cush-Cush Yam (Dioscorea trifida)",
@@ -416,7 +416,7 @@
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Rare in India. Would need to source from Caribbean or South American diaspora communities. Worth importing for Kerala cultivation trials."
+      "availability": "Rare in India. Would need to source from Caribbean or South American diaspora communities. Worth importing for tropical monsoon climates cultivation trials."
     },
     {
       "name": "Yellow Yam (Dioscorea cayenensis)",
@@ -450,12 +450,12 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 22,
-      "origin": "Developed by Kerala Agricultural University",
+      "origin": "Developed by tropical monsoon climates Agricultural University",
       "traits": "Conical cormels, economic yield under low input levels",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "KAU, widely available in Kerala"
+      "availability": "KAU, widely available in tropical monsoon climates"
     },
     {
       "name": "Sree Pallavi",
@@ -463,7 +463,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 23,
-      "origin": "Kerala Agricultural University",
+      "origin": "tropical monsoon climates Agricultural University",
       "traits": "Club-shaped cormels, field tolerant to leaf blight and mosaic diseases",
       "flesh_fruit": "",
       "yield_notes": "",

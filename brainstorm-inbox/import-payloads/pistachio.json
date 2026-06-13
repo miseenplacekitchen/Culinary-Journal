@@ -22,7 +22,7 @@
       "climate_slug": "humid-subtropical",
       "sort_order": 1,
       "origin": "Kerman Province, Iran (introduced to USA 1957, released commercially 1960s as seedling selection)",
-      "traits": "Large spreading deciduous tree (6-10m), late flowering (late April), late harvest (September-October), biennial bearing pattern, requires 800-1000 chill hours below 7\u00b0C",
+      "traits": "Large spreading deciduous tree (6-10m), late flowering (late April), late harvest (September-October), biennial bearing pattern, requires 800-1000 chill hours below 7°C",
       "flesh_fruit": "",
       "yield_notes": "Good consistent producer after year 7-8, 2-3 tonnes per hectare, moderate alternate bearing, industry standard for 60+ years",
       "growing_notes": "",
@@ -68,7 +68,7 @@
       "availability": ""
     },
     {
-      "name": "Peters \ud83c\udfc6 (Male Pollinator)",
+      "name": "Peters 🏆 (Male Pollinator)",
       "slug": "peters-male-pollinator",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -77,11 +77,11 @@
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
-      "growing_notes": "Industry standard male for 60+ years. Reliable and well-tested. Problem: in low-chill years, Peters often flowers AFTER Kerman, causing poor pollination and reduced nut set. Being replaced by Famoso in many orchards. One male pollinates up to 10-11 female trees. UNSUITABLE for Brisbane/Kerala climates.",
+      "growing_notes": "Industry standard male for 60+ years. Reliable and well-tested. Problem: in low-chill years, Peters often flowers AFTER Kerman, causing poor pollination and reduced nut set. Being replaced by Famoso in many orchards. One male pollinates up to 10-11 female trees. UNSUITABLE for humid subtropical climates/tropical monsoon climates climates.",
       "availability": ""
     },
     {
-      "name": "Randy \ud83e\uddec (Male Pollinator)",
+      "name": "Randy 🧬 (Male Pollinator)",
       "slug": "randy-male-pollinator",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
@@ -94,7 +94,7 @@
       "availability": ""
     },
     {
-      "name": "Famoso \ud83e\uddec (Male Pollinator)",
+      "name": "Famoso 🧬 (Male Pollinator)",
       "slug": "famoso-male-pollinator",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
@@ -103,11 +103,11 @@
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
-      "growing_notes": "Specifically bred to replace Peters due to its irregular bloom in low-chill years. Solves the Peters timing problem with Kerman. Modern orchards increasingly using Famoso instead of Peters. UNSUITABLE for Brisbane/Kerala climates.",
+      "growing_notes": "Specifically bred to replace Peters due to its irregular bloom in low-chill years. Solves the Peters timing problem with Kerman. Modern orchards increasingly using Famoso instead of Peters. UNSUITABLE for humid subtropical climates/tropical monsoon climates climates.",
       "availability": ""
     },
     {
-      "name": "Tejon \ud83e\uddec (Male Pollinator)",
+      "name": "Tejon 🧬 (Male Pollinator)",
       "slug": "tejon-male-pollinator",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
@@ -120,7 +120,7 @@
       "availability": ""
     },
     {
-      "name": "Red Aleppo (Ashouri) \ud83c\udfc6",
+      "name": "Red Aleppo (Ashouri) 🏆",
       "slug": "red-aleppo-ashouri",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -133,7 +133,7 @@
       "availability": ""
     },
     {
-      "name": "Batouri \ud83c\udfc6",
+      "name": "Batouri 🏆",
       "slug": "batouri",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -146,7 +146,7 @@
       "availability": ""
     },
     {
-      "name": "Antep (Gaziantep) \ud83c\udfc6",
+      "name": "Antep (Gaziantep) 🏆",
       "slug": "antep-gaziantep",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -159,7 +159,7 @@
       "availability": ""
     },
     {
-      "name": "Uzun \ud83c\udfc6",
+      "name": "Uzun 🏆",
       "slug": "uzun",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -172,7 +172,7 @@
       "availability": ""
     },
     {
-      "name": "Kirmizi \ud83c\udfc6",
+      "name": "Kirmizi 🏆",
       "slug": "kirmizi",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -185,7 +185,7 @@
       "availability": ""
     },
     {
-      "name": "Akbari \ud83c\udfc6",
+      "name": "Akbari 🏆",
       "slug": "akbari",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -198,7 +198,7 @@
       "availability": ""
     },
     {
-      "name": "Ahmad Aghaei \ud83c\udfc6",
+      "name": "Ahmad Aghaei 🏆",
       "slug": "ahmad-aghaei",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -211,7 +211,7 @@
       "availability": ""
     },
     {
-      "name": "Kale Ghouchi (Kale Ghuchi) \ud83c\udfc6",
+      "name": "Kale Ghouchi (Kale Ghuchi) 🏆",
       "slug": "kale-ghouchi-kale-ghuchi",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -224,7 +224,7 @@
       "availability": ""
     },
     {
-      "name": "Larnaka (Larnaca) \ud83c\udfc6",
+      "name": "Larnaka (Larnaca) 🏆",
       "slug": "larnaka-larnaca",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -233,7 +233,7 @@
       "traits": "Short overwintering period (400-600 chill hours - less than Kerman), EARLY flowering (early April), medium-length fruit less elongated than Mateur, adapted to coastal Mediterranean areas",
       "flesh_fruit": "",
       "yield_notes": "",
-      "growing_notes": "Successfully grown in Spain (Castilla-La Mancha), Greece, and Cyprus. Lower chill requirement than Kerman but still needs 400-600 hours. Early flowering. Grown primarily in Mediterranean basin. UNSUITABLE for Brisbane (insufficient chill, high humidity) and IMPOSSIBLE for Kerala (no chill hours, tropical climate).",
+      "growing_notes": "Successfully grown in Spain (Castilla-La Mancha), Greece, and Cyprus. Lower chill requirement than Kerman but still needs 400-600 hours. Early flowering. Grown primarily in Mediterranean basin. UNSUITABLE for humid subtropical climates (insufficient chill, high humidity) and IMPOSSIBLE for tropical monsoon climates (no chill hours, tropical climate).",
       "availability": ""
     },
     {
@@ -250,7 +250,7 @@
       "availability": ""
     },
     {
-      "name": "Aegina \ud83c\udfc6",
+      "name": "Aegina 🏆",
       "slug": "aegina",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -263,7 +263,7 @@
       "availability": ""
     },
     {
-      "name": "Napoletana (Bianca) \ud83c\udfc6",
+      "name": "Napoletana (Bianca) 🏆",
       "slug": "napoletana-bianca",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",

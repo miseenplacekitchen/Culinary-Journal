@@ -39,7 +39,7 @@
       "flesh_fruit": "Notable sweetness with fragrant aroma. Good quality, crisp texture. Popular canning variety in Thailand.",
       "yield_notes": "Late maturing cultivar. Mean yield 8.3 kg/tree. Tends to alternate bearing (on/off years). Heavy cropper in good years.",
       "growing_notes": "",
-      "availability": "Available at The Longan Farm Narangba, Daley's Fruit, Brisbane area fruit tree nurseries"
+      "availability": "Available at The Longan Farm Narangba, Daley's Fruit, humid subtropical climates area fruit tree nurseries"
     },
     {
       "name": "Homestead",
@@ -159,7 +159,7 @@
       "availability": "Not commercially available"
     },
     {
-      "name": "Shixia \ud83c\udfc6",
+      "name": "Shixia 🏆",
       "slug": "shixia",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -169,10 +169,10 @@
       "flesh_fruit": "Crisp, thick, very sweet aril. Extremely high TSS (Total Soluble Solids) at 19-20%. Best cultivar for consuming fresh. Excellent flavor - superior quality.",
       "yield_notes": "Heavy crops regularly on unusually large panicles. High-density system yields 2,250 kg per mu on 8-year trees (120 trees/mu). Most cultivated in Guangdong province.",
       "growing_notes": "",
-      "availability": "Available from Kerala specialty nurseries, Greens of Kerala, Indian agricultural research stations"
+      "availability": "Available from tropical monsoon climates specialty nurseries, Greens of tropical monsoon climates, Indian agricultural research stations"
     },
     {
-      "name": "Chuliang \ud83c\udfc6",
+      "name": "Chuliang 🏆",
       "slug": "chuliang",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -182,10 +182,10 @@
       "flesh_fruit": "Thick, firm aril. Very sweet (TSS 20-23%) with fragrant flavor. High aril recovery (69-74% edible portion). Golden yellow when dried. Excellent drying variety.",
       "yield_notes": "High and stable yield. Output over 60,000 metric tons from 12,000 ha production area. Early bearing, hereditary stability.",
       "growing_notes": "",
-      "availability": "Greens of Kerala, Kerala agricultural departments, Indian tropical fruit nurseries"
+      "availability": "Greens of tropical monsoon climates, tropical monsoon climates agricultural departments, Indian tropical fruit nurseries"
     },
     {
-      "name": "Wulongling (Black Dragon Peak) \ud83c\udfc6",
+      "name": "Wulongling (Black Dragon Peak) 🏆",
       "slug": "wulongling-black-dragon-peak",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -198,7 +198,7 @@
       "availability": ""
     },
     {
-      "name": "E-Daw/Yiduo (Edaw) \ud83c\udf31",
+      "name": "E-Daw/Yiduo (Edaw) 🌱",
       "slug": "e-daw-yiduo-edaw",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -224,7 +224,7 @@
       "availability": ""
     },
     {
-      "name": "Diamond River (Belian) \ud83e\uddec",
+      "name": "Diamond River (Belian) 🧬",
       "slug": "diamond-river-belian",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -237,7 +237,7 @@
       "availability": ""
     },
     {
-      "name": "Pingpong \ud83c\udf31",
+      "name": "Pingpong 🌱",
       "slug": "pingpong",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -250,7 +250,7 @@
       "availability": ""
     },
     {
-      "name": "Fuyan (Lucky Eye) \ud83c\udfc6",
+      "name": "Fuyan (Lucky Eye) 🏆",
       "slug": "fuyan-lucky-eye",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -263,7 +263,7 @@
       "availability": ""
     },
     {
-      "name": "Wu Yuan (Wuyuan/Black Round) \ud83c\udf31",
+      "name": "Wu Yuan (Wuyuan/Black Round) 🌱",
       "slug": "wu-yuan-wuyuan-black-round",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -276,7 +276,7 @@
       "availability": ""
     },
     {
-      "name": "Fengko (Fukien/Fenke) \ud83c\udf31",
+      "name": "Fengko (Fukien/Fenke) 🌱",
       "slug": "fengko-fukien-fenke",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -289,7 +289,7 @@
       "availability": ""
     },
     {
-      "name": "Lidongben \ud83c\udfc6",
+      "name": "Lidongben 🏆",
       "slug": "lidongben",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -302,20 +302,20 @@
       "availability": ""
     },
     {
-      "name": "Songfengben \ud83c\udf31",
+      "name": "Songfengben 🌱",
       "slug": "songfengben",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
       "sort_order": 11,
       "origin": "Fujian Province, China (traditional cultivar)",
       "traits": "Medium fruit. Highly sensitive to potassium chlorate flowering induction (90%+ flowering rates).",
-      "flesh_fruit": "Good quality. Lowest quercetin content (69.6 \u00b5g/g) but still nutritionally valuable.",
+      "flesh_fruit": "Good quality. Lowest quercetin content (69.6 µg/g) but still nutritionally valuable.",
       "yield_notes": "Excellent response to KClO3 treatment allows controlled flowering - can achieve 90%+ flowering rates with proper treatment.",
       "growing_notes": "",
       "availability": ""
     },
     {
-      "name": "Dawuyuan \ud83c\udf31",
+      "name": "Dawuyuan 🌱",
       "slug": "dawuyuan",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -328,7 +328,7 @@
       "availability": ""
     },
     {
-      "name": "Biew Kiew \ud83c\udf31",
+      "name": "Biew Kiew 🌱",
       "slug": "biew-kiew",
       "lineage_type": "indigenous",
       "climate_slug": "humid-subtropical",
@@ -341,7 +341,7 @@
       "availability": ""
     },
     {
-      "name": "Sri Chompoo (Si Chompoo) \ud83c\udf31",
+      "name": "Sri Chompoo (Si Chompoo) 🌱",
       "slug": "sri-chompoo-si-chompoo",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -349,12 +349,12 @@
       "origin": "Thailand (premium variety, 'Chompoo' = pink in Thai)",
       "traits": "Large attractive fruit, rose-tinted/pink color, greenish-brown to reddish skin, small seed. Red/pink new foliage (ornamental).",
       "flesh_fruit": "Pink-tinted flesh (unique). Mouthwatering sweetness, pleasant aromatic fragrance. Premium quality. Very ornamental.",
-      "yield_notes": "Good productivity. Mid-season. Highly responsive to KClO3 treatment (100% flowering at just 1 g/m\u00b2).",
+      "yield_notes": "Good productivity. Mid-season. Highly responsive to KClO3 treatment (100% flowering at just 1 g/m²).",
       "growing_notes": "",
       "availability": ""
     },
     {
-      "name": "Haew (Water Chestnut) \ud83c\udf31",
+      "name": "Haew (Water Chestnut) 🌱",
       "slug": "haew-water-chestnut",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -367,7 +367,7 @@
       "availability": ""
     },
     {
-      "name": "Baidum (Black Leaf) \ud83c\udf31",
+      "name": "Baidum (Black Leaf) 🌱",
       "slug": "baidum-black-leaf",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",

@@ -3,7 +3,7 @@
   "species_slug": "shallots",
   "varieties": [
     {
-      "name": "\ud83e\uddec HYBRID = First-generation (F1) cross between distinct parent lines for improved traits",
+      "name": "🧬 HYBRID = First-generation (F1) cross between distinct parent lines for improved traits",
       "slug": "hybrid-first-generation-f1-cross-between-distinct-parent-lines-for-improved-traits",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
@@ -16,7 +16,7 @@
       "availability": ""
     },
     {
-      "name": "French Gray Shallot (Griselle) \ud83c\udfc6",
+      "name": "French Gray Shallot (Griselle) 🏆",
       "slug": "french-gray-shallot-griselle",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -29,7 +29,7 @@
       "availability": ""
     },
     {
-      "name": "French Red Shallot \ud83c\udfc6",
+      "name": "French Red Shallot 🏆",
       "slug": "french-red-shallot",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -42,7 +42,7 @@
       "availability": ""
     },
     {
-      "name": "Zebrune (Cuisse de Poulet du Poitou) \ud83c\udfc6",
+      "name": "Zebrune (Cuisse de Poulet du Poitou) 🏆",
       "slug": "zebrune-cuisse-de-poulet-du-poitou",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -55,7 +55,7 @@
       "availability": "Specialty seed suppliers; Australian heirloom seed companies; online international suppliers"
     },
     {
-      "name": "Jersey (Pink) Shallot \ud83c\udfc6",
+      "name": "Jersey (Pink) Shallot 🏆",
       "slug": "jersey-pink-shallot",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -68,7 +68,7 @@
       "availability": ""
     },
     {
-      "name": "Hative de Niort \ud83c\udfc6",
+      "name": "Hative de Niort 🏆",
       "slug": "hative-de-niort",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -81,7 +81,7 @@
       "availability": ""
     },
     {
-      "name": "Roderique (Echalion) \ud83c\udfc6",
+      "name": "Roderique (Echalion) 🏆",
       "slug": "roderique-echalion",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -198,7 +198,7 @@
       "availability": ""
     },
     {
-      "name": "Yellow Potato Onion \ud83c\udfc6",
+      "name": "Yellow Potato Onion 🏆",
       "slug": "yellow-potato-onion",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -224,7 +224,7 @@
       "availability": ""
     },
     {
-      "name": "French Winter Red Potato Onion \ud83c\udfc6",
+      "name": "French Winter Red Potato Onion 🏆",
       "slug": "french-winter-red-potato-onion",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -250,12 +250,12 @@
       "availability": "Widely available Australian nurseries; Succeed Heirlooms Australia; common in Queensland"
     },
     {
-      "name": "Sambar Onion (Small Onion/Chinna Vengayam) \ud83c\udfc6",
+      "name": "Sambar Onion (Small Onion/Chinna Vengayam) 🏆",
       "slug": "sambar-onion-small-onion-chinna-vengayam",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 1,
-      "origin": "Indigenous to South India, particularly Tamil Nadu, Andhra Pradesh, and Kerala; cultivated for centuries",
+      "origin": "Indigenous to South India, particularly Tamil Nadu, Andhra Pradesh, and tropical monsoon climates; cultivated for centuries",
       "traits": "Very small bulbs (thumb-width to marble size, 15-25mm diameter); spherical to oval shape; bright red-purple skin; intense color",
       "flesh_fruit": "",
       "yield_notes": "Multiplies prolifically; many small bulbs; adapted to tropical conditions",
@@ -263,7 +263,7 @@
       "availability": ""
     },
     {
-      "name": "Madras Onion (Red Shallot/Chinna Ulli) \ud83c\udfc6",
+      "name": "Madras Onion (Red Shallot/Chinna Ulli) 🏆",
       "slug": "madras-onion-red-shallot-chinna-ulli",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -276,7 +276,7 @@
       "availability": ""
     },
     {
-      "name": "Rose Onion (Krishnapuram Onion) \ud83c\udfc6",
+      "name": "Rose Onion (Krishnapuram Onion) 🏆",
       "slug": "rose-onion-krishnapuram-onion",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -289,7 +289,7 @@
       "availability": ""
     },
     {
-      "name": "Podisu Shallot \ud83c\udfc6",
+      "name": "Podisu Shallot 🏆",
       "slug": "podisu-shallot",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -302,7 +302,7 @@
       "availability": ""
     },
     {
-      "name": "Kerala Red Shallot (Cheriya Ulli) \ud83c\udfc6",
+      "name": "Kerala Red Shallot (Cheriya Ulli) 🏆",
       "slug": "kerala-red-shallot-cheriya-ulli",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -315,7 +315,7 @@
       "availability": ""
     },
     {
-      "name": "Bawang Merah (Indonesian Red Shallot) \ud83c\udf31",
+      "name": "Bawang Merah (Indonesian Red Shallot) 🌱",
       "slug": "bawang-merah-indonesian-red-shallot",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -328,7 +328,7 @@
       "availability": ""
     },
     {
-      "name": "Thai Shallot (Hom Dang) \ud83c\udf31",
+      "name": "Thai Shallot (Hom Dang) 🌱",
       "slug": "thai-shallot-hom-dang",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -377,7 +377,7 @@
       "flesh_fruit": "",
       "yield_notes": "Multiplies well in tropical heat; monsoon-tolerant",
       "growing_notes": "",
-      "availability": "Asian seed suppliers; Kerala agricultural markets; South Indian distributors"
+      "availability": "Asian seed suppliers; tropical monsoon climates agricultural markets; South Indian distributors"
     },
     {
       "name": "Ambition F1 (Tropical Selection)",
@@ -393,7 +393,7 @@
       "availability": ""
     },
     {
-      "name": "French Red (Tropical Trial) \ud83c\udfc6",
+      "name": "French Red (Tropical Trial) 🏆",
       "slug": "french-red-tropical-trial",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",

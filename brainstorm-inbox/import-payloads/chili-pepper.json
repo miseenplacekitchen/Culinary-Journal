@@ -42,7 +42,7 @@
       "availability": ""
     },
     {
-      "name": "Jalape\u00f1o",
+      "name": "Jalapeño",
       "slug": "jalape-o",
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
@@ -52,7 +52,7 @@
       "flesh_fruit": "",
       "yield_notes": "Very popular, productive plants with chunky fruits",
       "growing_notes": "",
-      "availability": "Brisbane Markets, Queensland nurseries (Mudbrick Herb Cottage, Infusion Chilli Farms Redland Bay), seed companies, widely available in Australian garden centers"
+      "availability": "humid subtropical climates Markets, Queensland nurseries (Mudbrick Herb Cottage, Infusion Chilli Farms Redland Bay), seed companies, widely available in Australian garden centers"
     },
     {
       "name": "Habanero (Orange & Red)",
@@ -74,7 +74,7 @@
       "climate_slug": "humid-subtropical",
       "sort_order": 5,
       "origin": "Mexican mountain regions (Puebla, Hidalgo)",
-      "traits": "Bullet-shaped fruits (6cm long), slender like jalape\u00f1o but with rounded end, thick flesh, bright green to red",
+      "traits": "Bullet-shaped fruits (6cm long), slender like jalapeño but with rounded end, thick flesh, bright green to red",
       "flesh_fruit": "",
       "yield_notes": "Very productive, continuous harvest",
       "growing_notes": "",
@@ -91,7 +91,7 @@
       "flesh_fruit": "",
       "yield_notes": "Very productive with many small peppers per bush, continuous harvest",
       "growing_notes": "",
-      "availability": "Brisbane Markets, Queensland nurseries, widely available at Brisbane garden centers, Asian grocery stores for fresh produce"
+      "availability": "humid subtropical climates Markets, Queensland nurseries, widely available at humid subtropical climates garden centers, Asian grocery stores for fresh produce"
     },
     {
       "name": "Poblano / Ancho",
@@ -104,7 +104,7 @@
       "flesh_fruit": "",
       "yield_notes": "Good producer, moderate yields",
       "growing_notes": "",
-      "availability": "Queensland specialty nurseries, seed suppliers (heirloom collections, Succeed Heirlooms), some Brisbane garden centers"
+      "availability": "Queensland specialty nurseries, seed suppliers (heirloom collections, Succeed Heirlooms), some humid subtropical climates garden centers"
     },
     {
       "name": "Anaheim / New Mexico",
@@ -117,7 +117,7 @@
       "flesh_fruit": "",
       "yield_notes": "Productive, good yields",
       "growing_notes": "",
-      "availability": "Queensland specialty nurseries, seed companies (heirloom seed suppliers, Survival Seeds), some Brisbane garden centers"
+      "availability": "Queensland specialty nurseries, seed companies (heirloom seed suppliers, Survival Seeds), some humid subtropical climates garden centers"
     },
     {
       "name": "Carolina Reaper",
@@ -133,7 +133,7 @@
       "availability": "Specialty Queensland nurseries (Exotic Chillies, Infusion Chilli Farms Redland Bay), AustChilli Bundaberg, seed suppliers (The Hippy Seed Company, Survival Seeds, Chillibird)"
     },
     {
-      "name": "Kanthari Mulaku / Bird's Eye \ud83c\udf0f",
+      "name": "Kanthari Mulaku / Bird's Eye 🌏",
       "slug": "kanthari-mulaku-bird-s-eye",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -151,12 +151,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 1,
-      "origin": "Developed by Kerala Agricultural University (KAU), Vellanikkara Horticultural College",
+      "origin": "Developed by tropical monsoon climates Agricultural University (KAU), Vellanikkara Horticultural College",
       "traits": "Can be grown in pots as ornamental plant; non-contagious; medium-length fruits",
       "flesh_fruit": "",
       "yield_notes": "High yield, thick-skinned variety",
       "growing_notes": "",
-      "availability": "Kerala Agricultural University, KAU-affiliated nurseries, Kerala agricultural departments"
+      "availability": "tropical monsoon climates Agricultural University, KAU-affiliated nurseries, tropical monsoon climates agricultural departments"
     },
     {
       "name": "Jwala Sakhi",
@@ -164,12 +164,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 2,
-      "origin": "Developed by Kerala Agricultural University (KAU), College of Agriculture, Vellayani",
+      "origin": "Developed by tropical monsoon climates Agricultural University (KAU), College of Agriculture, Vellayani",
       "traits": "Light green fruit color; short crop duration 4-5 months",
       "flesh_fruit": "",
       "yield_notes": "Average yield 20 t/ha green chilli",
       "growing_notes": "",
-      "availability": "Kerala Agricultural University, KAU Vellayani campus, Kerala agricultural departments, southern Kerala nurseries"
+      "availability": "tropical monsoon climates Agricultural University, KAU Vellayani campus, tropical monsoon climates agricultural departments, southern tropical monsoon climates nurseries"
     },
     {
       "name": "Ujjwala",
@@ -177,7 +177,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 3,
-      "origin": "Developed by Kerala Agricultural University (KAU), College of Horticulture, Vellanikkara",
+      "origin": "Developed by tropical monsoon climates Agricultural University (KAU), College of Horticulture, Vellanikkara",
       "traits": "Dark green fruits turning dark brown on ripening; 6cm length; borne in bunches",
       "flesh_fruit": "",
       "yield_notes": "Good yield, suitable for both green chilli and drying",
@@ -190,7 +190,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 4,
-      "origin": "Developed by Kerala Agricultural University (KAU), College of Horticulture, Vellanikkara",
+      "origin": "Developed by tropical monsoon climates Agricultural University (KAU), College of Horticulture, Vellanikkara",
       "traits": "Medium stature plants with attractive long green fruits turning deep red; average fruit weight 3.6g",
       "flesh_fruit": "",
       "yield_notes": "High yielding, average yield 27 t/ha, early maturing",
@@ -203,7 +203,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 5,
-      "origin": "Developed by Kerala Agricultural University (KAU), College of Agriculture, Vellayani",
+      "origin": "Developed by tropical monsoon climates Agricultural University (KAU), College of Agriculture, Vellayani",
       "traits": "Shade-tolerant kanthari-type variety; small fruits similar to kanthari",
       "flesh_fruit": "",
       "yield_notes": "32 t/ha green chilli",
@@ -216,7 +216,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 6,
-      "origin": "Developed by Kerala Agricultural University (KAU), College of Agriculture, Vellayani",
+      "origin": "Developed by tropical monsoon climates Agricultural University (KAU), College of Agriculture, Vellayani",
       "traits": "Shade-tolerant kanthari-type variety; short plant with high yield; sharp, shiny-ended fruit; thick skin",
       "flesh_fruit": "",
       "yield_notes": "High yield, 27 t/ha green chilli",
@@ -229,12 +229,12 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 7,
-      "origin": "Developed by Kerala Agricultural University (KAU), College of Agriculture, Vellayani",
+      "origin": "Developed by tropical monsoon climates Agricultural University (KAU), College of Agriculture, Vellayani",
       "traits": "Newer variety from Vellayani program",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Kerala Agricultural University Vellayani, Kerala agricultural departments"
+      "availability": "tropical monsoon climates Agricultural University Vellayani, tropical monsoon climates agricultural departments"
     },
     {
       "name": "Pant C-1",
@@ -255,15 +255,15 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 9,
-      "origin": "Kerala development",
+      "origin": "tropical monsoon climates development",
       "traits": "Erect plants with height of 90.2cm",
       "flesh_fruit": "",
       "yield_notes": "High yielding variety",
       "growing_notes": "",
-      "availability": "Kerala agricultural departments, Kerala nurseries"
+      "availability": "tropical monsoon climates agricultural departments, tropical monsoon climates nurseries"
     },
     {
-      "name": "Byadagi \ud83c\udfc6",
+      "name": "Byadagi 🏆",
       "slug": "byadagi",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -273,10 +273,10 @@
       "flesh_fruit": "",
       "yield_notes": "Good yields, widely cultivated in Karnataka",
       "growing_notes": "",
-      "availability": "Kerala spice markets, South Indian agricultural stores, widely available in Kerala due to regional cuisine importance"
+      "availability": "tropical monsoon climates spice markets, South Indian agricultural stores, widely available in tropical monsoon climates due to regional cuisine importance"
     },
     {
-      "name": "Guntur Sannam \ud83c\udf0f",
+      "name": "Guntur Sannam 🌏",
       "slug": "guntur-sannam",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -289,7 +289,7 @@
       "availability": ""
     },
     {
-      "name": "Kashmiri Chilli \ud83c\udfc6",
+      "name": "Kashmiri Chilli 🏆",
       "slug": "kashmiri-chilli",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",

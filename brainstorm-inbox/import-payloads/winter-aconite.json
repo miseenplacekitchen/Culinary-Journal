@@ -3,7 +3,7 @@
   "species_slug": "winter-aconite",
   "varieties": [
     {
-      "name": "Eranthis hyemalis (Common Winter Aconite) \ud83c\udfc6",
+      "name": "Eranthis hyemalis (Common Winter Aconite) 🏆",
       "slug": "eranthis-hyemalis-common-winter-aconite",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -26,7 +26,7 @@
       "flesh_fruit": "",
       "yield_notes": "Non-seeding, spreads only by tuber division",
       "growing_notes": "",
-      "availability": "Not suitable for Brisbane"
+      "availability": "Not suitable for humid subtropical climates"
     },
     {
       "name": "Eranthis hyemalis 'Schwefelglanz' (Sulphur Glow)",
@@ -39,10 +39,10 @@
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Not available in Brisbane region"
+      "availability": "Not available in humid subtropical climates region"
     },
     {
-      "name": "Eranthis hyemalis 'No\u00ebl Ayres'",
+      "name": "Eranthis hyemalis 'Noël Ayres'",
       "slug": "eranthis-hyemalis-no-l-ayres",
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
@@ -81,7 +81,7 @@
       "availability": "Not suitable for warm climates"
     },
     {
-      "name": "Eranthis cilicica (Cilicica Group) \ud83c\udfc6",
+      "name": "Eranthis cilicica (Cilicica Group) 🏆",
       "slug": "eranthis-cilicica-cilicica-group",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -104,15 +104,15 @@
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "Prefers sunnier location, less vigorous at naturalizing",
-      "availability": "Not suitable for Brisbane"
+      "availability": "Not suitable for humid subtropical climates"
     },
     {
-      "name": "Eranthis \u00d7 tubergenii 'Guinea Gold'",
+      "name": "Eranthis × tubergenii 'Guinea Gold'",
       "slug": "eranthis-tubergenii-guinea-gold",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
       "sort_order": 8,
-      "origin": "Hybrid between E. hyemalis \u00d7 E. cilicica, 1950s",
+      "origin": "Hybrid between E. hyemalis × E. cilicica, 1950s",
       "traits": "8-10cm tall, vigorous growth, bronze-tinged hairy leaves",
       "flesh_fruit": "",
       "yield_notes": "STERILE - cannot produce seeds, propagated only by division",
@@ -120,12 +120,12 @@
       "availability": "Not available in warm climate regions"
     },
     {
-      "name": "Eranthis \u00d7 tubergenii 'Glory'",
+      "name": "Eranthis × tubergenii 'Glory'",
       "slug": "eranthis-tubergenii-glory",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
       "sort_order": 9,
-      "origin": "E. hyemalis \u00d7 E. cilicica hybrid",
+      "origin": "E. hyemalis × E. cilicica hybrid",
       "traits": "Bronze-colored leaves, sterile flowers",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -133,7 +133,7 @@
       "availability": "Not suitable for subtropical Australia"
     },
     {
-      "name": "Eranthis pinnatifida \ud83c\udfc6",
+      "name": "Eranthis pinnatifida 🏆",
       "slug": "eranthis-pinnatifida",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -146,7 +146,7 @@
       "availability": "Rare, not available in Australia"
     },
     {
-      "name": "Eranthis stellata \ud83c\udfc6",
+      "name": "Eranthis stellata 🏆",
       "slug": "eranthis-stellata",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -185,7 +185,7 @@
       "availability": "Not available in warm regions"
     },
     {
-      "name": "Eranthis hyemalis (Common Winter Aconite) \ud83c\udfc6",
+      "name": "Eranthis hyemalis (Common Winter Aconite) 🏆",
       "slug": "eranthis-hyemalis-common-winter-aconite",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -198,7 +198,7 @@
       "availability": "Not available in any Indian nurseries"
     },
     {
-      "name": "Eranthis cilicica (Cilicica Group) \ud83c\udfc6",
+      "name": "Eranthis cilicica (Cilicica Group) 🏆",
       "slug": "eranthis-cilicica-cilicica-group",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -211,7 +211,7 @@
       "availability": "Not available in tropical regions"
     },
     {
-      "name": "Eranthis \u00d7 tubergenii Hybrids",
+      "name": "Eranthis × tubergenii Hybrids",
       "slug": "eranthis-tubergenii-hybrids",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
@@ -224,7 +224,7 @@
       "availability": "Not cultivated in India"
     },
     {
-      "name": "Eranthis pinnatifida \ud83c\udfc6",
+      "name": "Eranthis pinnatifida 🏆",
       "slug": "eranthis-pinnatifida",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",

@@ -13,7 +13,7 @@
       "flesh_fruit": "",
       "yield_notes": "Excellent productivity in subtropical conditions with 25-30 year rotation",
       "growing_notes": "",
-      "availability": "Widely available from Queensland nurseries and HQPlantations. Major commercial plantation species in Brisbane region"
+      "availability": "Widely available from Queensland nurseries and HQPlantations. Major commercial plantation species in humid subtropical climates region"
     },
     {
       "name": "Caribbean Pine (Pinus caribaea var. hondurensis)",
@@ -29,7 +29,7 @@
       "availability": "Queensland plantation forestry suppliers, HQPlantations commercial varieties"
     },
     {
-      "name": "Hybrid Southern Pine (P. elliottii \u00d7 P. caribaea)",
+      "name": "Hybrid Southern Pine (P. elliottii × P. caribaea)",
       "slug": "hybrid-southern-pine-p-elliottii-p-caribaea",
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
@@ -37,12 +37,12 @@
       "origin": "Developed in Queensland through selective breeding programs, mid-20th century",
       "traits": "Combines best attributes of both parents - Slash pine's straightness, high wood density, wet site tolerance with Caribbean pine's fast growth, fine branching, even texture",
       "flesh_fruit": "",
-      "yield_notes": "Outstanding productivity for subtropical Queensland conditions. Annual sustainable yield up to 1.8 million m\u00b3",
+      "yield_notes": "Outstanding productivity for subtropical Queensland conditions. Annual sustainable yield up to 1.8 million m³",
       "growing_notes": "",
       "availability": ""
     },
     {
-      "name": "Hoop Pine (Araucaria cunninghamii) \ud83c\udf0f",
+      "name": "Hoop Pine (Araucaria cunninghamii) 🌏",
       "slug": "hoop-pine-araucaria-cunninghamii",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -63,9 +63,9 @@
       "origin": "California Central Coast (Monterey region), introduced to Australia 1870s-1876",
       "traits": "Fast-growing medium-density softwood, 30-45m tall, 30-90cm diameter. Straight stems, narrow crowns, small branches. Deeply ridged dark brown bark aging gray. Needles 7.5-15cm long in groups of three. Large asymmetrical cones 7-17cm on curved stalks",
       "flesh_fruit": "",
-      "yield_notes": "Very rapid - up to 2m growth per year. 30-35 year rotation. Mean annual increment 16-21 m\u00b3/ha/yr in most sites",
+      "yield_notes": "Very rapid - up to 2m growth per year. 30-35 year rotation. Mean annual increment 16-21 m³/ha/yr in most sites",
       "growing_notes": "",
-      "availability": "Queensland plantation suppliers, specialty forestry nurseries. Less common in Brisbane area than in southern Australia"
+      "availability": "Queensland plantation suppliers, specialty forestry nurseries. Less common in humid subtropical climates area than in southern Australia"
     },
     {
       "name": "Canary Island Pine (Pinus canariensis)",
@@ -91,7 +91,7 @@
       "flesh_fruit": "",
       "yield_notes": "Long-lived ornamental, not typically harvested for timber in cultivation",
       "growing_notes": "",
-      "availability": "Widely available from Queensland coastal nurseries, garden centers throughout Brisbane region"
+      "availability": "Widely available from Queensland coastal nurseries, garden centers throughout humid subtropical climates region"
     },
     {
       "name": "Maritime Pine (Pinus pinaster)",
@@ -133,7 +133,7 @@
       "availability": "Ornamental nurseries, Italian cultural gardens, specialty Mediterranean plant suppliers"
     },
     {
-      "name": "Bunya Pine (Araucaria bidwillii) \ud83c\udf0f",
+      "name": "Bunya Pine (Araucaria bidwillii) 🌏",
       "slug": "bunya-pine-araucaria-bidwillii",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -146,20 +146,20 @@
       "availability": "Queensland native plant nurseries, Bunya Mountains National Park seed programs, protected species with cultivation restrictions"
     },
     {
-      "name": "Khasi Pine (Pinus kesiya) \ud83c\udf0f",
+      "name": "Khasi Pine (Pinus kesiya) 🌏",
       "slug": "khasi-pine-pinus-kesiya",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 0,
-      "origin": "Indigenous to India (Khasi Hills, Meghalaya - northernmost limit of range), also Thailand, Myanmar, Laos, China, Vietnam, Philippines. Named after Khasi Hills. Known as Th\u00f4ng ba l\u00e1 (Vietnamese), \u601d\u8305\u677e (Chinese), son-songbai (Thai)",
+      "origin": "Indigenous to India (Khasi Hills, Meghalaya - northernmost limit of range), also Thailand, Myanmar, Laos, China, Vietnam, Philippines. Named after Khasi Hills. Known as Thông ba lá (Vietnamese), 思茅松 (Chinese), son-songbai (Thai)",
       "traits": "One of most widely distributed Asian pines. Subtropical to temperate tree reaching 30-35m height. Straight cylindrical trunk, thick dark brown bark with deep longitudinal fissures. Dark green needles usually 3 per fascicle, 15-20cm long. Robust red-brown branches horizontal to drooping",
       "flesh_fruit": "",
       "yield_notes": "Slow-growing first 5 years, then becomes fairly fast. Important plantation species throughout Asia, Africa, South America",
       "growing_notes": "",
-      "availability": "Indian forestry departments, northeastern India plantations, Kerala Forest Research Institute, traditional seed sources from Meghalaya and Assam regions"
+      "availability": "Indian forestry departments, northeastern India plantations, tropical monsoon climates Forest Research Institute, traditional seed sources from Meghalaya and Assam regions"
     },
     {
-      "name": "Chir Pine (Pinus roxburghii) \ud83c\udf0f",
+      "name": "Chir Pine (Pinus roxburghii) 🌏",
       "slug": "chir-pine-pinus-roxburghii",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -169,23 +169,23 @@
       "flesh_fruit": "",
       "yield_notes": "16% of Uttarakhand forests covered by Chir pine. Over 15 lakh tonnes pine needles generated annually in Uttarakhand alone",
       "growing_notes": "",
-      "availability": "Himalayan state forestry departments, highland Kerala experimental forestry stations, Idukki district plantation programs"
+      "availability": "Himalayan state forestry departments, highland tropical monsoon climates experimental forestry stations, Idukki district plantation programs"
     },
     {
-      "name": "Merkus Pine (Pinus merkusii) \ud83c\udf0f",
+      "name": "Merkus Pine (Pinus merkusii) 🌏",
       "slug": "merkus-pine-pinus-merkusii",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 2,
-      "origin": "Indigenous to India (Northeast Frontier - Assam, Meghalaya regions), Myanmar, Thailand, Laos, Vietnam, Philippines, Indonesia (Sumatra). Only pine species with natural distribution extending south of equator (northern Sumatra 1-2\u00b0S). Also called Sumatran Pine, Mindoro Pine, Cambodian Pine",
+      "origin": "Indigenous to India (Northeast Frontier - Assam, Meghalaya regions), Myanmar, Thailand, Laos, Vietnam, Philippines, Indonesia (Sumatra). Only pine species with natural distribution extending south of equator (northern Sumatra 1-2°S). Also called Sumatran Pine, Mindoro Pine, Cambodian Pine",
       "traits": "Truly tropical pine, large tree 25-45m tall (exceptionally 50-70m), trunk up to 140cm diameter. Orange-red bark thick and deeply fissured at base, thin and flaky in upper crown. Very slender needles in pairs, 15-25cm long, green to yellowish-green. Cylindrical cones 5-11cm long",
       "flesh_fruit": "",
       "yield_notes": "First thinning 9-10 years, subsequent thinning every 5 years. 30-year rotation for optimal timber. 15-year rotation for pulpwood. Viable seeds produced year-round in Sumatra, most abundantly July-November",
       "growing_notes": "",
-      "availability": "Northeast India forestry departments, experimental tropical pine plantations, Kerala Forest Research Institute for tropical species trials"
+      "availability": "Northeast India forestry departments, experimental tropical pine plantations, tropical monsoon climates Forest Research Institute for tropical species trials"
     },
     {
-      "name": "Blue Pine (Pinus wallichiana) \ud83c\udf0f",
+      "name": "Blue Pine (Pinus wallichiana) 🌏",
       "slug": "blue-pine-pinus-wallichiana",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -195,7 +195,7 @@
       "flesh_fruit": "",
       "yield_notes": "Moderate growth in montane conditions",
       "growing_notes": "",
-      "availability": "Himalayan state forestry programs, high-elevation experimental stations in Kerala Western Ghats, Munnar/Idukki district specialty nurseries"
+      "availability": "Himalayan state forestry programs, high-elevation experimental stations in tropical monsoon climates Western Ghats, Munnar/Idukki district specialty nurseries"
     },
     {
       "name": "Casuarina (Australian Pine/She Oak - Casuarina equisetifolia)",
@@ -208,7 +208,7 @@
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
-      "availability": "Widely available throughout Kerala nurseries, coastal plantation programs, agroforestry suppliers"
+      "availability": "Widely available throughout tropical monsoon climates nurseries, coastal plantation programs, agroforestry suppliers"
     },
     {
       "name": "Open-Pollinated Non-Hybrid Varieties: 18 species marked",

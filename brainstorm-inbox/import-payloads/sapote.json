@@ -21,7 +21,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
       "sort_order": 1,
-      "origin": "North Queensland selection | Traits: Medium fruit | Flesh: Superior taste | Yield: Very heavy, may need pruning | Brisbane: Queensland-bred, excellent subtropical performer | Availability: Daleys, Queensland nurseries",
+      "origin": "North Queensland selection | Traits: Medium fruit | Flesh: Superior taste | Yield: Very heavy, may need pruning | Humid subtropical: Queensland-bred, excellent subtropical performer | Availability: Daleys, Queensland nurseries",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -60,7 +60,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
       "sort_order": 4,
-      "origin": "NSW, Australia | Yield: Heavy late crops, extends season to late spring | Brisbane: Australian-bred for subtropics, excellent for fruit forest canopy | Availability: Daleys, NSW/QLD suppliers",
+      "origin": "NSW, Australia | Yield: Heavy late crops, extends season to late spring | Humid subtropical: Australian-bred for subtropics, excellent for fruit forest canopy | Availability: Daleys, NSW/QLD suppliers",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -101,7 +101,7 @@
       "sort_order": 7,
       "origin": "",
       "traits": "",
-      "flesh_fruit": "Dark salmon-red, less fibrous, pumpkin-pie flavor | Yield: Very productive, Nov-Dec peak | Brisbane: Performs well with frost protection when young, mature trees hardy to -2\u00b0C | Availability: Daleys, Cairns/North Queensland, Tropical Fruit World",
+      "flesh_fruit": "Dark salmon-red, less fibrous, pumpkin-pie flavor | Yield: Very productive, Nov-Dec peak | Humid subtropical: Performs well with frost protection when young, mature trees hardy to -2°C | Availability: Daleys, Cairns/North Queensland, Tropical Fruit World",
       "yield_notes": "",
       "growing_notes": "",
       "availability": ""
@@ -114,7 +114,7 @@
       "sort_order": 8,
       "origin": "",
       "traits": "",
-      "flesh_fruit": "Pale salmon, very sweet, one seed | Brisbane: Connoisseur favorite for fresh eating, grafted trees fruit in 3-5 years | Availability: Daleys, specialist tropical nurseries",
+      "flesh_fruit": "Pale salmon, very sweet, one seed | Humid subtropical: Connoisseur favorite for fresh eating, grafted trees fruit in 3-5 years | Availability: Daleys, specialist tropical nurseries",
       "yield_notes": "",
       "growing_notes": "",
       "availability": ""
@@ -125,7 +125,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
       "sort_order": 9,
-      "origin": "Central American highlands | Traits: 200-500g fruit, green turning yellow | Flesh: Lighter orange-red, milder sweeter than mamey | Brisbane: Thrives with well-drained soil, hill planting recommended. Can graft on mamey rootstock. Flowers late spring, fruit takes 12 months | Availability: Sub-Tropical Fruit Club Queensland, rare fruit nurseries",
+      "origin": "Central American highlands | Traits: 200-500g fruit, green turning yellow | Flesh: Lighter orange-red, milder sweeter than mamey | Humid subtropical: Thrives with well-drained soil, hill planting recommended. Can graft on mamey rootstock. Flowers late spring, fruit takes 12 months | Availability: Sub-Tropical Fruit Club Queensland, rare fruit nurseries",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -139,7 +139,7 @@
       "climate_slug": "humid-subtropical",
       "sort_order": 10,
       "origin": "",
-      "traits": "Large elongated | Flesh: Yellow, egg-yolk texture, excellent quality | Brisbane: Performs adequately, needs full sun, tolerates light frost | Availability: Daleys",
+      "traits": "Large elongated | Flesh: Yellow, egg-yolk texture, excellent quality | Humid subtropical: Performs adequately, needs full sun, tolerates light frost | Availability: Daleys",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
@@ -151,7 +151,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
       "sort_order": 11,
-      "origin": "Northern NSW, Australia | Flesh: Very sweet, moist, superior flavor | Brisbane: Australian-selected for subtropical conditions, proven local performer | Availability: Daleys, Picone Exotic Orchards",
+      "origin": "Northern NSW, Australia | Flesh: Very sweet, moist, superior flavor | Humid subtropical: Australian-selected for subtropical conditions, proven local performer | Availability: Daleys, Picone Exotic Orchards",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -185,7 +185,7 @@
       "availability": ""
     },
     {
-      "name": "Kalipatti \ud83c\udfc6",
+      "name": "Kalipatti 🏆",
       "slug": "kalipatti",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -198,7 +198,7 @@
       "availability": ""
     },
     {
-      "name": "Cricket Ball \ud83c\udfc6",
+      "name": "Cricket Ball 🏆",
       "slug": "cricket-ball",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -211,7 +211,7 @@
       "availability": ""
     },
     {
-      "name": "Pala \ud83c\udfc6",
+      "name": "Pala 🏆",
       "slug": "pala",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -224,12 +224,12 @@
       "availability": ""
     },
     {
-      "name": "PKM Series (PKM-1 to PKM-5) \ud83e\uddec",
+      "name": "PKM Series (PKM-1 to PKM-5) 🧬",
       "slug": "pkm-series-pkm-1-to-pkm-5",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 4,
-      "origin": "Tamil Nadu Agricultural University | Traits: Improved hybrids, consistent quality | Yield: High yielding, disease resistant | Kerala: Modern hybrids bred for South Indian conditions, excellent Kerala climate performance | Availability: Tamil Nadu Agricultural University, Kerala agricultural extension",
+      "origin": "Tamil Nadu Agricultural University | Traits: Improved hybrids, consistent quality | Yield: High yielding, disease resistant | tropical monsoon climates: Modern hybrids bred for South Indian conditions, excellent tropical monsoon climates climate performance | Availability: Tamil Nadu Agricultural University, tropical monsoon climates agricultural extension",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -237,12 +237,12 @@
       "availability": ""
     },
     {
-      "name": "CO Series (CO-1, CO-2, CO-3) \ud83e\uddec",
+      "name": "CO Series (CO-1, CO-2, CO-3) 🧬",
       "slug": "co-series-co-1-co-2-co-3",
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 5,
-      "origin": "Coimbatore University | Kerala: Bred for South Indian tropical monsoon conditions, popular commercial orchards | Availability: Agricultural universities, Kerala Dept. Agriculture",
+      "origin": "Coimbatore University | tropical monsoon climates: Bred for South Indian tropical monsoon conditions, popular commercial orchards | Availability: Agricultural universities, tropical monsoon climates Dept. Agriculture",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -250,7 +250,7 @@
       "availability": ""
     },
     {
-      "name": "Baramasi \ud83c\udfc6",
+      "name": "Baramasi 🏆",
       "slug": "baramasi",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -263,7 +263,7 @@
       "availability": ""
     },
     {
-      "name": "Traditional Varieties \ud83c\udf31",
+      "name": "Traditional Varieties 🌱",
       "slug": "traditional-varieties",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",

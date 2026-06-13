@@ -3,7 +3,7 @@
   "species_slug": "mint",
   "varieties": [
     {
-      "name": "Common Spearmint (Garden Mint) \ud83c\udfc6",
+      "name": "Common Spearmint (Garden Mint) 🏆",
       "slug": "common-spearmint-garden-mint",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -13,10 +13,10 @@
       "flesh_fruit": "",
       "yield_notes": "Highly productive, can be harvested multiple times per season",
       "growing_notes": "",
-      "availability": "Widely available from Queensland nurseries including Basilea Living Herbs (Brisbane), Bunnings, local garden centers"
+      "availability": "Widely available from Queensland nurseries including Basilea Living Herbs (humid subtropical climates), Bunnings, local garden centers"
     },
     {
-      "name": "Kentucky Colonel Spearmint \ud83c\udfc6",
+      "name": "Kentucky Colonel Spearmint 🏆",
       "slug": "kentucky-colonel-spearmint",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -68,12 +68,12 @@
       "availability": "Limited availability, specialist collectors"
     },
     {
-      "name": "Common Peppermint \ud83c\udfc6",
+      "name": "Common Peppermint 🏆",
       "slug": "common-peppermint",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
       "sort_order": 5,
-      "origin": "Natural hybrid (M. aquatica \u00d7 M. spicata), Europe, 1700s",
+      "origin": "Natural hybrid (M. aquatica × M. spicata), Europe, 1700s",
       "traits": "Dark green pointed leaves with purple-tinged stems, grows 60-90cm, spreading habit",
       "flesh_fruit": "",
       "yield_notes": "Very productive, vigorous grower",
@@ -86,7 +86,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
       "sort_order": 6,
-      "origin": "Cultivated hybrid (M. \u00d7 piperita f. citrata 'Chocolate')",
+      "origin": "Cultivated hybrid (M. × piperita f. citrata 'Chocolate')",
       "traits": "Dark green leaves with brown-purple stems and veins, 30-60cm tall, attractive purple flowers",
       "flesh_fruit": "",
       "yield_notes": "Good productivity, sterile (doesn't set seed)",
@@ -99,7 +99,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
       "sort_order": 7,
-      "origin": "Cultivated variety (M. \u00d7 piperita f. citrata)",
+      "origin": "Cultivated variety (M. × piperita f. citrata)",
       "traits": "Smooth green leaves with reddish stems, spreading growth 40-60cm",
       "flesh_fruit": "",
       "yield_notes": "Productive, vigorous spreader",
@@ -112,7 +112,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
       "sort_order": 8,
-      "origin": "Peppermint cultivar (M. \u00d7 piperita 'Lavendula')",
+      "origin": "Peppermint cultivar (M. × piperita 'Lavendula')",
       "traits": "Purple-tinged leaves and reddish stems, lavender flowers",
       "flesh_fruit": "",
       "yield_notes": "Moderate to good production",
@@ -138,7 +138,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
       "sort_order": 10,
-      "origin": "European cultivar (M. \u00d7 piperita var. piperita)",
+      "origin": "European cultivar (M. × piperita var. piperita)",
       "traits": "Dark purple-black stems, green leaves with purple undertones",
       "flesh_fruit": "",
       "yield_notes": "High yielding, vigorous",
@@ -146,7 +146,7 @@
       "availability": "Limited commercial availability"
     },
     {
-      "name": "Common Apple Mint (Woolly Mint) \ud83c\udfc6",
+      "name": "Common Apple Mint (Woolly Mint) 🏆",
       "slug": "common-apple-mint-woolly-mint",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -177,7 +177,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "humid-subtropical",
       "sort_order": 13,
-      "origin": "Cultivated variety (M. \u00d7 gracilis)",
+      "origin": "Cultivated variety (M. × gracilis)",
       "traits": "Deep green leaves variegated with yellow, spicy apple fragrance",
       "flesh_fruit": "",
       "yield_notes": "Moderate production",
@@ -224,12 +224,12 @@
       "availability": "Specialty nurseries"
     },
     {
-      "name": "Ginger Mint (Red Mint, Scotch Spearmint) \ud83c\udfc6",
+      "name": "Ginger Mint (Red Mint, Scotch Spearmint) 🏆",
       "slug": "ginger-mint-red-mint-scotch-spearmint",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
       "sort_order": 17,
-      "origin": "Hybrid (M. \u00d7 gracilis = M. arvensis \u00d7 M. spicata)",
+      "origin": "Hybrid (M. × gracilis = M. arvensis × M. spicata)",
       "traits": "Small green leaves with yellow variegation, red upright stems 45cm tall, slightly fuzzy",
       "flesh_fruit": "",
       "yield_notes": "Very productive, vigorous",
@@ -242,7 +242,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
       "sort_order": 18,
-      "origin": "Texas, USA - developed by herbalist Madalene Hill (M. \u00d7 gracilis)",
+      "origin": "Texas, USA - developed by herbalist Madalene Hill (M. × gracilis)",
       "traits": "Red stems, green leaves, upright growth",
       "flesh_fruit": "",
       "yield_notes": "Highly productive",
@@ -255,7 +255,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
       "sort_order": 19,
-      "origin": "Cuba (M. \u00d7 villosa, hybrid of spearmint)",
+      "origin": "Cuba (M. × villosa, hybrid of spearmint)",
       "traits": "Large leaves, spearmint-like appearance, vigorous growth 60cm",
       "flesh_fruit": "",
       "yield_notes": "Very productive",
@@ -268,7 +268,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "humid-subtropical",
       "sort_order": 20,
-      "origin": "Hybrid (M. \u00d7 villosa f. alopecuroides)",
+      "origin": "Hybrid (M. × villosa f. alopecuroides)",
       "traits": "Large fuzzy leaves, robust growth, rounded appearance",
       "flesh_fruit": "",
       "yield_notes": "Very productive, vigorous",
@@ -276,7 +276,7 @@
       "availability": "Specialist herb nurseries"
     },
     {
-      "name": "Native River Mint (Wild Mint) \ud83c\udfc6 \ud83c\udf0f",
+      "name": "Native River Mint (Wild Mint) 🏆 🌏",
       "slug": "native-river-mint-wild-mint",
       "lineage_type": "indigenous",
       "climate_slug": "humid-subtropical",
@@ -289,7 +289,7 @@
       "availability": "Tucker Bush (Australian native specialist), native plant nurseries Queensland"
     },
     {
-      "name": "Bush Mint (Native Pennyroyal) \ud83c\udfc6 \ud83c\udf0f",
+      "name": "Bush Mint (Native Pennyroyal) 🏆 🌏",
       "slug": "bush-mint-native-pennyroyal",
       "lineage_type": "indigenous",
       "climate_slug": "humid-subtropical",
@@ -299,7 +299,7 @@
       "flesh_fruit": "",
       "yield_notes": "Generous yields when established, best harvested cooler months",
       "growing_notes": "",
-      "availability": "Tucker Bush Brisbane, native plant specialists Queensland"
+      "availability": "Tucker Bush humid subtropical climates, native plant specialists Queensland"
     },
     {
       "name": "Vietnamese Mint (Laksa Leaf)",
@@ -328,7 +328,7 @@
       "availability": "Rare, specialty collectors only"
     },
     {
-      "name": "Pennyroyal (European) \ud83c\udfc6",
+      "name": "Pennyroyal (European) 🏆",
       "slug": "pennyroyal-european",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -341,7 +341,7 @@
       "availability": "Limited due to toxicity concerns, specialist suppliers"
     },
     {
-      "name": "Field Mint (Corn Mint, Wild Mint) \ud83c\udfc6",
+      "name": "Field Mint (Corn Mint, Wild Mint) 🏆",
       "slug": "field-mint-corn-mint-wild-mint",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -354,7 +354,7 @@
       "availability": "Wild-collected, some specialty suppliers"
     },
     {
-      "name": "Water Mint (Marsh Mint) \ud83c\udfc6",
+      "name": "Water Mint (Marsh Mint) 🏆",
       "slug": "water-mint-marsh-mint",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -393,7 +393,7 @@
       "availability": "Specialist seed companies (Survival Garden Seeds type suppliers)"
     },
     {
-      "name": "Lemon Balm \ud83c\udfc6",
+      "name": "Lemon Balm 🏆",
       "slug": "lemon-balm",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -406,7 +406,7 @@
       "availability": "Widely available - Bunnings, all herb nurseries, common"
     },
     {
-      "name": "Catmint/Catnip \ud83c\udfc6",
+      "name": "Catmint/Catnip 🏆",
       "slug": "catmint-catnip",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -463,7 +463,7 @@
       "lineage_type": "open_pollinated",
       "climate_slug": "tropical-monsoon",
       "sort_order": 3,
-      "origin": "Progeny selection from interspecific cross M. arvensis \u00d7 M. piperita",
+      "origin": "Progeny selection from interspecific cross M. arvensis × M. piperita",
       "traits": "Hybrid vigor, combines characteristics of both parents",
       "flesh_fruit": "",
       "yield_notes": "Improved yield potential",
@@ -520,7 +520,7 @@
       "flesh_fruit": "",
       "yield_notes": "Good herb yield",
       "growing_notes": "",
-      "availability": "CIMAP, Indian agricultural universities, Kerala nurseries"
+      "availability": "CIMAP, Indian agricultural universities, tropical monsoon climates nurseries"
     },
     {
       "name": "Spearmint - Ganga",
@@ -533,7 +533,7 @@
       "flesh_fruit": "",
       "yield_notes": "Productive in tropical conditions",
       "growing_notes": "",
-      "availability": "Kerala agricultural suppliers, local nurseries"
+      "availability": "tropical monsoon climates agricultural suppliers, local nurseries"
     },
     {
       "name": "Spearmint - Neerkalka",
@@ -611,7 +611,7 @@
       "flesh_fruit": "",
       "yield_notes": "High herb and oil yield",
       "growing_notes": "",
-      "availability": "CIMAP, Indian agricultural suppliers, Kerala hill region nurseries"
+      "availability": "CIMAP, Indian agricultural suppliers, tropical monsoon climates hill region nurseries"
     },
     {
       "name": "Peppermint - Prajwal",
@@ -666,7 +666,7 @@
       "availability": ""
     },
     {
-      "name": "Common Pudina (Garden Pudina) \ud83c\udfc6 \ud83c\udf0f",
+      "name": "Common Pudina (Garden Pudina) 🏆 🌏",
       "slug": "common-pudina-garden-pudina",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -679,7 +679,7 @@
       "availability": ""
     },
     {
-      "name": "Pahari Pudina (Hill Mint) \ud83c\udfc6 \ud83c\udf0f",
+      "name": "Pahari Pudina (Hill Mint) 🏆 🌏",
       "slug": "pahari-pudina-hill-mint",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -702,10 +702,10 @@
       "flesh_fruit": "",
       "yield_notes": "Moderate in tropical conditions",
       "growing_notes": "",
-      "availability": "Some Kerala nurseries, specialty growers"
+      "availability": "Some tropical monsoon climates nurseries, specialty growers"
     },
     {
-      "name": "Jungli Pudina (Wild Mint) \ud83c\udfc6 \ud83c\udf0f",
+      "name": "Jungli Pudina (Wild Mint) 🏆 🌏",
       "slug": "jungli-pudina-wild-mint",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -718,7 +718,7 @@
       "availability": "Wild-collected, not typically nursery-sold"
     },
     {
-      "name": "Ban Pudina (Forest Mint) \ud83c\udfc6 \ud83c\udf0f",
+      "name": "Ban Pudina (Forest Mint) 🏆 🌏",
       "slug": "ban-pudina-forest-mint",
       "lineage_type": "indigenous",
       "climate_slug": "tropical-monsoon",
@@ -731,7 +731,7 @@
       "availability": "Wild forage, forest communities, rare in cultivation"
     },
     {
-      "name": "Common Spearmint (Garden Mint) \ud83c\udfc6",
+      "name": "Common Spearmint (Garden Mint) 🏆",
       "slug": "common-spearmint-garden-mint",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -741,20 +741,20 @@
       "flesh_fruit": "",
       "yield_notes": "Very productive",
       "growing_notes": "",
-      "availability": "Kerala nurseries, agricultural suppliers"
+      "availability": "tropical monsoon climates nurseries, agricultural suppliers"
     },
     {
-      "name": "Common Peppermint \ud83c\udfc6",
+      "name": "Common Peppermint 🏆",
       "slug": "common-peppermint",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 18,
-      "origin": "European hybrid (M. \u00d7 piperita)",
+      "origin": "European hybrid (M. × piperita)",
       "traits": "Dark green pointed leaves with purple stems, 60-90cm",
       "flesh_fruit": "",
       "yield_notes": "Good in appropriate conditions",
       "growing_notes": "",
-      "availability": "Kerala hill station nurseries, specialty suppliers"
+      "availability": "tropical monsoon climates hill station nurseries, specialty suppliers"
     },
     {
       "name": "Chocolate Mint",
@@ -767,10 +767,10 @@
       "flesh_fruit": "",
       "yield_notes": "Moderate",
       "growing_notes": "",
-      "availability": "Specialty nurseries Kerala, online suppliers"
+      "availability": "Specialty nurseries tropical monsoon climates, online suppliers"
     },
     {
-      "name": "Apple Mint (Woolly Mint) \ud83c\udfc6",
+      "name": "Apple Mint (Woolly Mint) 🏆",
       "slug": "apple-mint-woolly-mint",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -780,7 +780,7 @@
       "flesh_fruit": "",
       "yield_notes": "Good production",
       "growing_notes": "",
-      "availability": "Some Kerala nurseries, specialty suppliers"
+      "availability": "Some tropical monsoon climates nurseries, specialty suppliers"
     },
     {
       "name": "Vietnamese Mint (Laksa Leaf)",
@@ -793,20 +793,20 @@
       "flesh_fruit": "",
       "yield_notes": "Prolific in tropical conditions",
       "growing_notes": "",
-      "availability": "Growing availability in Kerala nurseries, Asian grocers, easy from cuttings"
+      "availability": "Growing availability in tropical monsoon climates nurseries, Asian grocers, easy from cuttings"
     },
     {
-      "name": "Ginger Mint (Red Mint) \ud83c\udfc6",
+      "name": "Ginger Mint (Red Mint) 🏆",
       "slug": "ginger-mint-red-mint",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 22,
-      "origin": "Hybrid (M. \u00d7 gracilis)",
+      "origin": "Hybrid (M. × gracilis)",
       "traits": "Yellow-variegated leaves, red stems, 45cm",
       "flesh_fruit": "",
       "yield_notes": "Very productive",
       "growing_notes": "",
-      "availability": "Specialty suppliers, rare in Kerala"
+      "availability": "Specialty suppliers, rare in tropical monsoon climates"
     },
     {
       "name": "Mojito Mint (Cuban Mint)",
@@ -814,12 +814,12 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 23,
-      "origin": "Cuba (M. \u00d7 villosa)",
+      "origin": "Cuba (M. × villosa)",
       "traits": "Large leaves, vigorous 60cm",
       "flesh_fruit": "",
       "yield_notes": "Very productive",
       "growing_notes": "",
-      "availability": "Increasing availability, specialty Kerala nurseries"
+      "availability": "Increasing availability, specialty tropical monsoon climates nurseries"
     },
     {
       "name": "Orange Mint (Bergamot Mint)",
@@ -827,7 +827,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 24,
-      "origin": "Cultivated variety (M. \u00d7 piperita f. citrata)",
+      "origin": "Cultivated variety (M. × piperita f. citrata)",
       "traits": "Smooth green leaves, reddish stems, 40-60cm",
       "flesh_fruit": "",
       "yield_notes": "Productive, vigorous",
@@ -845,10 +845,10 @@
       "flesh_fruit": "",
       "yield_notes": "Moderate, ornamental value",
       "growing_notes": "",
-      "availability": "Some Kerala nurseries, ornamental suppliers"
+      "availability": "Some tropical monsoon climates nurseries, ornamental suppliers"
     },
     {
-      "name": "Lemon Balm \ud83c\udfc6",
+      "name": "Lemon Balm 🏆",
       "slug": "lemon-balm",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -858,7 +858,7 @@
       "flesh_fruit": "",
       "yield_notes": "Very productive, easy to grow",
       "growing_notes": "",
-      "availability": "Widely available Kerala nurseries, common"
+      "availability": "Widely available tropical monsoon climates nurseries, common"
     },
     {
       "name": "Moroccan Mint (Nana Mint)",
@@ -879,7 +879,7 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 28,
-      "origin": "Hybrid (M. \u00d7 villosa f. alopecuroides)",
+      "origin": "Hybrid (M. × villosa f. alopecuroides)",
       "traits": "Large fuzzy leaves, robust growth",
       "flesh_fruit": "",
       "yield_notes": "Very productive, vigorous",
@@ -887,7 +887,7 @@
       "availability": "Rare, specialist sources"
     },
     {
-      "name": "Field Mint (Corn Mint) \ud83c\udfc6",
+      "name": "Field Mint (Corn Mint) 🏆",
       "slug": "field-mint-corn-mint",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -900,7 +900,7 @@
       "availability": "Wild-type, some specialty growers"
     },
     {
-      "name": "Catmint/Catnip \ud83c\udfc6",
+      "name": "Catmint/Catnip 🏆",
       "slug": "catmint-catnip",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -910,7 +910,7 @@
       "flesh_fruit": "",
       "yield_notes": "Very productive",
       "growing_notes": "",
-      "availability": "Some Kerala nurseries, growing popularity"
+      "availability": "Some tropical monsoon climates nurseries, growing popularity"
     },
     {
       "name": "Heirloom Varieties: 35+ traditional varieties marked",

@@ -12,7 +12,7 @@
       "traits": "Compact plant 1.2-2.1m high, short stature ideal for backyards",
       "flesh_fruit": "",
       "yield_notes": "Good producer, 15-25kg bunches with 6-7 hands",
-      "growing_notes": "Well-adapted to Brisbane subtropical climate. Performs well with high-density planting and drip irrigation. Thick peel retains greenish color even when ripe. Highly susceptible to Sigatoka in humid conditions.",
+      "growing_notes": "Well-adapted to humid subtropical climates subtropical climate. Performs well with high-density planting and drip irrigation. Thick peel retains greenish color even when ripe. Highly susceptible to Sigatoka in humid conditions.",
       "availability": "Widely available Queensland nurseries, tissue culture suppliers"
     },
     {
@@ -51,7 +51,7 @@
       "traits": "Semi-tall type, 3-5m high, vigorous growth",
       "flesh_fruit": "",
       "yield_notes": "High yielding, large bunches",
-      "growing_notes": "Adapts to Brisbane subtropical conditions. Highly susceptible to Sigatoka leaf spot in humid tropics, requires disease management. Good for table use.",
+      "growing_notes": "Adapts to humid subtropical climates subtropical conditions. Highly susceptible to Sigatoka leaf spot in humid tropics, requires disease management. Good for table use.",
       "availability": "Queensland and NSW nurseries"
     },
     {
@@ -77,7 +77,7 @@
       "traits": "Compact 2-4m height, easier to manage for harvesting",
       "flesh_fruit": "",
       "yield_notes": "Good producer with heavy bunches for size",
-      "growing_notes": "Excellent disease, wind and cold resistance for Brisbane conditions. Tissue culture produced for disease-free stock. Select suckers with thicker stems to avoid reversion.",
+      "growing_notes": "Excellent disease, wind and cold resistance for humid subtropical conditions. Tissue culture produced for disease-free stock. Select suckers with thicker stems to avoid reversion.",
       "availability": "Queensland tissue culture suppliers, specialty nurseries"
     },
     {
@@ -142,7 +142,7 @@
       "traits": "Dwarf 2.4-3.5m (8-12 feet), compact sturdy, strong pseudostem, high wind resistance",
       "flesh_fruit": "",
       "yield_notes": "Solid producer, 100 lb bunches with no propping, hands mature sequentially",
-      "growing_notes": "EXCELLENT FOR BRISBANE SUBTROPICS - performs BEST in subtropical conditions with superior flavor vs tropical zones! Outstanding cold tolerance, wind resistance, disease resistance (Fusarium wilt Race 1, Black Sigatoka resistant, Yellow Sigatoka tolerant). PERMITTED for SE QLD. Can grow without pesticides.",
+      "growing_notes": "EXCELLENT FOR humid subtropical climates SUBTROPICS - performs BEST in subtropical conditions with superior flavor vs tropical zones! Outstanding cold tolerance, wind resistance, disease resistance (Fusarium wilt Race 1, Black Sigatoka resistant, Yellow Sigatoka tolerant). PERMITTED for SE QLD. Can grow without pesticides.",
       "availability": "Queensland nurseries, Daley's Fruit Tree Nursery, specialty suppliers"
     },
     {
@@ -155,7 +155,7 @@
       "traits": "4-5m tall, attractive red hue to pseudostems",
       "flesh_fruit": "",
       "yield_notes": "Good producer, medium bunches",
-      "growing_notes": "Higher beta carotene and vitamin C than yellow bananas. Shows promise in cooler urban Brisbane. Can be eaten fresh or cooked (baked, fried, dried). Queensland tissue culture available.",
+      "growing_notes": "Higher beta carotene and vitamin C than yellow bananas. Shows promise in cooler urban humid subtropical climates. Can be eaten fresh or cooked (baked, fried, dried). Queensland tissue culture available.",
       "availability": "Queensland DPI tissue culture ($3 each), specialty nurseries"
     },
     {
@@ -181,7 +181,7 @@
       "traits": "Hardy plant suitable for subtropical",
       "flesh_fruit": "",
       "yield_notes": "Good productivity",
-      "growing_notes": "Adapts to Brisbane subtropical conditions. Used in Pacific Island cuisine.",
+      "growing_notes": "Adapts to humid subtropical climates subtropical conditions. Used in Pacific Island cuisine.",
       "availability": "Queensland specialty nurseries, Blue Sky Backyard Bananas"
     },
     {
@@ -204,14 +204,14 @@
       "climate_slug": "humid-subtropical",
       "sort_order": 15,
       "origin": "Philippines, specialty variety",
-      "traits": "Compact growth suitable for Brisbane gardens",
+      "traits": "Compact growth suitable for humid subtropical climates gardens",
       "flesh_fruit": "",
       "yield_notes": "Moderate producer",
       "growing_notes": "Now available in Queensland after regulation changes. Adapts to subtropical conditions.",
       "availability": "Queensland specialty nurseries, Blue Sky Backyard Bananas"
     },
     {
-      "name": "Musa banksii \ud83c\udf0f",
+      "name": "Musa banksii 🌏",
       "slug": "musa-banksii",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -224,7 +224,7 @@
       "availability": "Not commercially available, wild species - try Cairns Botanical Gardens or SGAP"
     },
     {
-      "name": "Musa jackeyi \ud83c\udf0f",
+      "name": "Musa jackeyi 🌏",
       "slug": "musa-jackeyi",
       "lineage_type": "heirloom",
       "climate_slug": "humid-subtropical",
@@ -237,12 +237,12 @@
       "availability": "Extremely rare, not commercially available"
     },
     {
-      "name": "Nendran (Nenthiram, Ethapazham) \ud83c\udf0f",
+      "name": "Nendran (Nenthiram, Ethapazham) 🌏",
       "slug": "nendran-nenthiram-ethapazham",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 0,
-      "origin": "Southern India, growing wild since ancient times, KERALA'S MOST ICONIC BANANA",
+      "origin": "Southern India, growing wild since ancient times, Tropical monsoon MOST ICONIC BANANA",
       "traits": "Tall robust plant, monsoon-adapted",
       "flesh_fruit": "",
       "yield_notes": "12-15kg bunches with 5-6 hands, 40-50 fruits per bunch",
@@ -250,7 +250,7 @@
       "availability": ""
     },
     {
-      "name": "Changalikodan \ud83c\udf0f",
+      "name": "Changalikodan 🌏",
       "slug": "changalikodan",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -263,7 +263,7 @@
       "availability": ""
     },
     {
-      "name": "Attunendran (Aattunenthran) \ud83c\udf0f",
+      "name": "Attunendran (Aattunenthran) 🌏",
       "slug": "attunendran-aattunenthran",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -276,7 +276,7 @@
       "availability": ""
     },
     {
-      "name": "Nedunendran \ud83c\udf0f",
+      "name": "Nedunendran 🌏",
       "slug": "nedunendran",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -289,12 +289,12 @@
       "availability": ""
     },
     {
-      "name": "Palayankodan (Palayam Kodan) \ud83c\udf0f",
+      "name": "Palayankodan (Palayam Kodan) 🌏",
       "slug": "palayankodan-palayam-kodan",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 4,
-      "origin": "Kerala, regional name for Poovan type",
+      "origin": "tropical monsoon climates, regional name for Poovan type",
       "traits": "Small variety, thickly clustered bunches, medium bunches",
       "flesh_fruit": "",
       "yield_notes": "Good yield, tightly clustered",
@@ -302,7 +302,7 @@
       "availability": ""
     },
     {
-      "name": "Njalipoovan (Jnali Poovan) \ud83c\udf0f",
+      "name": "Njalipoovan (Jnali Poovan) 🌏",
       "slug": "njalipoovan-jnali-poovan",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -315,20 +315,20 @@
       "availability": ""
     },
     {
-      "name": "Ney Poovan \ud83c\udf0f",
+      "name": "Ney Poovan 🌏",
       "slug": "ney-poovan",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 6,
-      "origin": "Southern India, traditional in Tamil Nadu/Karnataka, now large-scale in Kerala",
+      "origin": "Southern India, traditional in Tamil Nadu/Karnataka, now large-scale in tropical monsoon climates",
       "traits": "Slender plant, previously backyard crop now commercial, 12-14 months to fruit",
       "flesh_fruit": "",
       "yield_notes": "15-30kg bunches, VERY GOOD keeping quality",
-      "growing_notes": "Most delicate diploid cultivar. Tolerant to leaf spot but susceptible to Fusarium wilt. Thrives in Kerala tropical climate. Excellent shelf life.",
-      "availability": "Kerala commercial and backyard growers"
+      "growing_notes": "Most delicate diploid cultivar. Tolerant to leaf spot but susceptible to Fusarium wilt. Thrives in tropical monsoon climates tropical climate. Excellent shelf life.",
+      "availability": "tropical monsoon climates commercial and backyard growers"
     },
     {
-      "name": "Rasthali (Rasakadali) \ud83c\udf0f",
+      "name": "Rasthali (Rasakadali) 🌏",
       "slug": "rasthali-rasakadali",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -337,8 +337,8 @@
       "traits": "Medium tall, yellowish green stem with brownish blotches, reddish petiole margin, 5-7 hands",
       "flesh_fruit": "",
       "yield_notes": "Moderate yield",
-      "growing_notes": "HIGHLY PRIZED for table use. EXTREMELY SWEET, perfect for desserts and smoothies. Longer crop duration (15 months). Severe susceptibility to Fusarium wilt. Requires bunch cover for sun cracking protection. Formation of hard lumps makes production expensive. Popular in Kerala but challenging. Available year-round.",
-      "availability": "Kerala markets, Karnataka and Tamil Nadu suppliers"
+      "growing_notes": "HIGHLY PRIZED for table use. EXTREMELY SWEET, perfect for desserts and smoothies. Longer crop duration (15 months). Severe susceptibility to Fusarium wilt. Requires bunch cover for sun cracking protection. Formation of hard lumps makes production expensive. Popular in tropical monsoon climates but challenging. Available year-round.",
+      "availability": "tropical monsoon climates markets, Karnataka and Tamil Nadu suppliers"
     },
     {
       "name": "Robusta (Morris)",
@@ -354,7 +354,7 @@
       "availability": ""
     },
     {
-      "name": "Chenkadali (Kappa Vazha, Red Banana) \ud83c\udf0f",
+      "name": "Chenkadali (Kappa Vazha, Red Banana) 🌏",
       "slug": "chenkadali-kappa-vazha-red-banana",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -367,7 +367,7 @@
       "availability": ""
     },
     {
-      "name": "Monthan \ud83c\udf0f",
+      "name": "Monthan 🌏",
       "slug": "monthan",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -380,17 +380,17 @@
       "availability": ""
     },
     {
-      "name": "Karpuravalli \ud83c\udf0f",
+      "name": "Karpuravalli 🌏",
       "slug": "karpuravalli",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 11,
-      "origin": "Southern districts of Tamil Nadu and Kerala, also Bihar as \"Kanthali\"",
+      "origin": "Southern districts of Tamil Nadu and tropical monsoon climates, also Bihar as \"Kanthali\"",
       "traits": "Tall robust plant, well-suited to marginal lands and soils, low input conditions",
       "flesh_fruit": "",
       "yield_notes": "8-9 compact hands, 13-14 fingers per hand, 100-120 fruits per bunch",
-      "growing_notes": "Highly susceptible to wilt but tolerant to leaf spot. Well-suited for DROUGHT and SALT conditions. Thrives even in alkaline soils. Popular for desserts and fresh eating. 12-14 months crop duration. Can be grown under marginal conditions PERFECT for Kerala varied terrains.",
-      "availability": "Kerala and Tamil Nadu markets and nurseries"
+      "growing_notes": "Highly susceptible to wilt but tolerant to leaf spot. Well-suited for DROUGHT and SALT conditions. Thrives even in alkaline soils. Popular for desserts and fresh eating. 12-14 months crop duration. Can be grown under marginal conditions PERFECT for tropical monsoon climates varied terrains.",
+      "availability": "tropical monsoon climates and Tamil Nadu markets and nurseries"
     },
     {
       "name": "Dwarf Cavendish (Pachakadhali)",
@@ -406,46 +406,46 @@
       "availability": ""
     },
     {
-      "name": "Annaan \ud83c\udf0f",
+      "name": "Annaan 🌏",
       "slug": "annaan",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 13,
-      "origin": "Kerala traditional",
-      "traits": "Traditional Kerala, monsoon-adapted",
+      "origin": "tropical monsoon climates traditional",
+      "traits": "Traditional tropical monsoon climates, monsoon-adapted",
       "flesh_fruit": "",
-      "yield_notes": "Good producer in Kerala",
+      "yield_notes": "Good producer in tropical monsoon climates",
       "growing_notes": "",
       "availability": ""
     },
     {
-      "name": "Mannan (Malayannan) \ud83c\udf0f",
+      "name": "Mannan (Malayannan) 🌏",
       "slug": "mannan-malayannan",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 14,
-      "origin": "Northern Kerala (Wayanad and Kannur districts)",
-      "traits": "Regional favorite in northern Kerala",
+      "origin": "Northern tropical monsoon climates (Wayanad and Kannur districts)",
+      "traits": "Regional favorite in northern tropical monsoon climates",
       "flesh_fruit": "",
       "yield_notes": "Good yields in Wayanad",
-      "growing_notes": "\"Every district in Kerala has its favourite banana\" - this is Wayanad and Kannur's choice. Shows strong regional preference. Thrives in monsoon conditions.",
+      "growing_notes": "\"Every district in tropical monsoon climates has its favourite banana\" - this is Wayanad and Kannur's choice. Shows strong regional preference. Thrives in monsoon conditions.",
       "availability": "Wayanad and Kannur region markets"
     },
     {
-      "name": "Peyan \ud83c\udf0f",
+      "name": "Peyan 🌏",
       "slug": "peyan",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 15,
-      "origin": "Mostly Tamil Nadu, favorite in Kollam district Kerala",
+      "origin": "Mostly Tamil Nadu, favorite in Kollam district tropical monsoon climates",
       "traits": "Regional specialty with district-specific popularity",
       "flesh_fruit": "",
       "yield_notes": "Moderate producer",
-      "growing_notes": "Favorite in Kollam district but not popular elsewhere in Kerala. Demonstrates strong regional taste preferences. Adapts to southern Kerala monsoon climate.",
-      "availability": "Kollam district Kerala, Tamil Nadu suppliers"
+      "growing_notes": "Favorite in Kollam district but not popular elsewhere in tropical monsoon climates. Demonstrates strong regional taste preferences. Adapts to southern tropical monsoon climates monsoon climate.",
+      "availability": "Kollam district tropical monsoon climates, Tamil Nadu suppliers"
     },
     {
-      "name": "Kadali (Kathali) \ud83c\udf0f",
+      "name": "Kadali (Kathali) 🌏",
       "slug": "kadali-kathali",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -458,7 +458,7 @@
       "availability": ""
     },
     {
-      "name": "Sahasrapadali \ud83c\udf0f",
+      "name": "Sahasrapadali 🌏",
       "slug": "sahasrapadali",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
@@ -471,12 +471,12 @@
       "availability": ""
     },
     {
-      "name": "Ayiram Poovan \ud83c\udf0f",
+      "name": "Ayiram Poovan 🌏",
       "slug": "ayiram-poovan",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 18,
-      "origin": "Kerala traditional",
+      "origin": "tropical monsoon climates traditional",
       "traits": "Poovan-type traditional",
       "flesh_fruit": "",
       "yield_notes": "Moderate",
@@ -484,77 +484,77 @@
       "availability": ""
     },
     {
-      "name": "Kumpillaannan \ud83c\udf0f",
+      "name": "Kumpillaannan 🌏",
       "slug": "kumpillaannan",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 19,
-      "origin": "Kerala regional",
-      "traits": "Traditional Kerala type",
+      "origin": "tropical monsoon climates regional",
+      "traits": "Traditional tropical monsoon climates type",
       "flesh_fruit": "",
       "yield_notes": "Moderate",
-      "growing_notes": "Part of Kerala traditional banana diversity. Monsoon-adapted.",
-      "availability": "Kerala traditional markets"
+      "growing_notes": "Part of tropical monsoon climates traditional banana diversity. Monsoon-adapted.",
+      "availability": "tropical monsoon climates traditional markets"
     },
     {
-      "name": "Thottannan \ud83c\udf0f",
+      "name": "Thottannan 🌏",
       "slug": "thottannan",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 20,
-      "origin": "Kerala traditional",
-      "traits": "Traditional Kerala type",
+      "origin": "tropical monsoon climates traditional",
+      "traits": "Traditional tropical monsoon climates type",
       "flesh_fruit": "",
       "yield_notes": "Variable",
       "growing_notes": "",
       "availability": ""
     },
     {
-      "name": "Kaliyethan \ud83c\udf0f",
+      "name": "Kaliyethan 🌏",
       "slug": "kaliyethan",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 21,
-      "origin": "Kerala regional",
-      "traits": "Traditional Kerala banana",
+      "origin": "tropical monsoon climates regional",
+      "traits": "Traditional tropical monsoon climates banana",
       "flesh_fruit": "",
       "yield_notes": "Moderate",
-      "growing_notes": "Part of Kerala traditional diversity. Monsoon-adapted.",
-      "availability": "Kerala traditional markets"
+      "growing_notes": "Part of tropical monsoon climates traditional diversity. Monsoon-adapted.",
+      "availability": "tropical monsoon climates traditional markets"
     },
     {
-      "name": "Chengali \ud83c\udf0f",
+      "name": "Chengali 🌏",
       "slug": "chengali",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 22,
-      "origin": "Kerala traditional",
-      "traits": "Traditional Kerala type",
+      "origin": "tropical monsoon climates traditional",
+      "traits": "Traditional tropical monsoon climates type",
       "flesh_fruit": "",
       "yield_notes": "Variable",
       "growing_notes": "",
       "availability": ""
     },
     {
-      "name": "Pachakkappa \ud83c\udf0f",
+      "name": "Pachakkappa 🌏",
       "slug": "pachakkappa",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 23,
-      "origin": "Kerala traditional",
-      "traits": "Traditional Kerala, possible green-type",
+      "origin": "tropical monsoon climates traditional",
+      "traits": "Traditional tropical monsoon climates, possible green-type",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
       "availability": ""
     },
     {
-      "name": "Matti \ud83c\udf0f",
+      "name": "Matti 🌏",
       "slug": "matti",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 24,
-      "origin": "Tamil Nadu and Kerala traditional",
+      "origin": "Tamil Nadu and tropical monsoon climates traditional",
       "traits": "Traditional variety both states",
       "flesh_fruit": "",
       "yield_notes": "Moderate",
@@ -562,25 +562,25 @@
       "availability": ""
     },
     {
-      "name": "Padatti \ud83c\udf0f",
+      "name": "Padatti 🌏",
       "slug": "padatti",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 25,
-      "origin": "Kerala traditional",
-      "traits": "Traditional Kerala type",
+      "origin": "tropical monsoon climates traditional",
+      "traits": "Traditional tropical monsoon climates type",
       "flesh_fruit": "",
       "yield_notes": "Variable",
-      "growing_notes": "Part of Kerala traditional banana diversity. Monsoon-adapted.",
-      "availability": "Kerala local markets"
+      "growing_notes": "Part of tropical monsoon climates traditional banana diversity. Monsoon-adapted.",
+      "availability": "tropical monsoon climates local markets"
     },
     {
-      "name": "Sundari \ud83c\udf0f",
+      "name": "Sundari 🌏",
       "slug": "sundari",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 26,
-      "origin": "Kerala traditional",
+      "origin": "tropical monsoon climates traditional",
       "traits": "",
       "flesh_fruit": "",
       "yield_notes": "",
@@ -588,13 +588,13 @@
       "availability": ""
     },
     {
-      "name": "Kannan (Kannankaya) \ud83c\udf0f",
+      "name": "Kannan (Kannankaya) 🌏",
       "slug": "kannan-kannankaya",
       "lineage_type": "heirloom",
       "climate_slug": "tropical-monsoon",
       "sort_order": 27,
-      "origin": "Kerala traditional",
-      "traits": "Traditional Kerala banana",
+      "origin": "tropical monsoon climates traditional",
+      "traits": "Traditional tropical monsoon climates banana",
       "flesh_fruit": "",
       "yield_notes": "",
       "growing_notes": "",
@@ -606,12 +606,12 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 28,
-      "origin": "Banana Research Station, Kannara, Kerala Agricultural University - Agniswar x Pisang Lilin",
+      "origin": "Banana Research Station, Kannara, tropical monsoon climates Agricultural University - Agniswar x Pisang Lilin",
       "traits": "Medium tall triploid hybrid",
       "flesh_fruit": "",
       "yield_notes": "14-16kg bunches without propping",
-      "growing_notes": "REMARKABLE early ratooning ability - completes FOUR CROPS IN THREE YEARS. Resistant to leaf spot, Fusarium wilt, and burrowing nematode. Promising hybrid for Kerala monsoon climate with disease resistance.",
-      "availability": "Kerala Agricultural University, Banana Research Station Kannara"
+      "growing_notes": "REMARKABLE early ratooning ability - completes FOUR CROPS IN THREE YEARS. Resistant to leaf spot, Fusarium wilt, and burrowing nematode. Promising hybrid for tropical monsoon climates monsoon climate with disease resistance.",
+      "availability": "tropical monsoon climates Agricultural University, Banana Research Station Kannara"
     },
     {
       "name": "Anakhia",
@@ -619,12 +619,12 @@
       "lineage_type": "hybrid",
       "climate_slug": "tropical-monsoon",
       "sort_order": 29,
-      "origin": "Banana Research Station, Kannara, Kerala Agricultural University - Vannan x Pisang Lilin",
+      "origin": "Banana Research Station, Kannara, tropical monsoon climates Agricultural University - Vannan x Pisang Lilin",
       "traits": "Medium stature hybrid",
       "flesh_fruit": "",
       "yield_notes": "15-20kg average bunch",
-      "growing_notes": "Developed for Kerala conditions with compact fruits. Good adaptation to monsoon climate.",
-      "availability": "Kerala Agricultural University, Banana Research Station Kannara"
+      "growing_notes": "Developed for tropical monsoon climates conditions with compact fruits. Good adaptation to monsoon climate.",
+      "availability": "tropical monsoon climates Agricultural University, Banana Research Station Kannara"
     },
     {
       "name": "Yelakki",
@@ -637,7 +637,7 @@
       "flesh_fruit": "",
       "yield_notes": "20kg bunches",
       "growing_notes": "HIGHLY VALUED in India for exceptional sweetness. Small size makes it popular for snacking. Available in specialty markets both regions.",
-      "availability": "Specialty suppliers both Brisbane and Kerala"
+      "availability": "Specialty suppliers both humid subtropical climates and tropical monsoon climates"
     },
     {
       "name": "Malbhog",
@@ -649,8 +649,8 @@
       "traits": "Medium height",
       "flesh_fruit": "",
       "yield_notes": "Moderate",
-      "growing_notes": "Known for fragrant flavor. Popular choice for special celebrations. Adapts to Kerala monsoon.",
-      "availability": "Kerala and Indian specialty markets"
+      "growing_notes": "Known for fragrant flavor. Popular choice for special celebrations. Adapts to tropical monsoon climates monsoon.",
+      "availability": "tropical monsoon climates and Indian specialty markets"
     },
     {
       "name": "Chakkarakeli",
@@ -662,8 +662,8 @@
       "traits": "Traditional South Indian variety",
       "flesh_fruit": "",
       "yield_notes": "Good yields",
-      "growing_notes": "Poovan-type cultivar popular in Andhra Pradesh. Also grown in Kerala. Monsoon-adapted.",
-      "availability": "Kerala and Andhra Pradesh suppliers"
+      "growing_notes": "Poovan-type cultivar popular in Andhra Pradesh. Also grown in tropical monsoon climates. Monsoon-adapted.",
+      "availability": "tropical monsoon climates and Andhra Pradesh suppliers"
     }
   ],
   "variety_count": 51
