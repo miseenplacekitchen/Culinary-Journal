@@ -39,6 +39,15 @@ Parser v2 fixes parenthetical docx format (Carrot, Peas, etc.) and adds mangoste
 | 2 | `fix-phase56-garden-excel-profiles.sql` | Tomato species: full plants columns + care rows (humid-subtropical + tropical-monsoon) |
 | 3 | GM → publish tomato when curated | Live profile reflects Excel Master Sheet + Quick Plant Profile |
 
+## Garden Phase 57 (PPT + artichoke + guilds/media)
+
+| Step | File / action | Expect |
+|------|---------------|--------|
+| 1 | Deploy site code | GM Care tab → **Download care-card PPT**; Guilds tab; species media upload |
+| 2 | `fix-phase57-garden-artichoke-profile.sql` | Artichoke Purple Romagna Brisbane profile + care + calendar |
+| 3 | `fix-phase57-garden-guilds-media.sql` | Guild admin RPCs; sample Mediterranean + brassica guilds (draft) |
+| 4 | GM → Guilds → publish when ready; Species → upload hero to garden-media | Media rows in `media` table linked to plants |
+
 ## Garden go-live (step 2j — after v3 + v4)
 
 | Step | File | Expect |

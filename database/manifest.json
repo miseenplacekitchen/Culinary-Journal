@@ -87,6 +87,8 @@
     { "file": "fix-phase54-garden-kitchen-profiles.sql", "note": "Garden kitchen 15 — care, calendar, ingredient hinge (humid-subtropical)" },
     { "file": "fix-phase55-garden-pages.sql", "note": "Garden pages registered incl. garden-journal.html" },
     { "file": "fix-phase56-garden-excel-profiles.sql", "note": "Garden Excel 83-field profiles — tomato Brisbane + Kerala from Garden.xlsx" },
+    { "file": "fix-phase57-garden-artichoke-profile.sql", "note": "Purple Romagna artichoke Brisbane full profile" },
+    { "file": "fix-phase57-garden-guilds-media.sql", "note": "Guild admin RPCs, plant media register RPC, sample guilds" },
     { "file": "fix-library-governed-links.sql", "note": "Step 1 only — re-link ingredient library profiles" },
     { "file": "fix-phase43-starter-library-health.sql", "note": "Step 2 only — dashboard System Health RPCs" },
     { "file": "SQL-EDITOR-health-check.sql", "note": "Step 3 only — expect healthy: true" }
@@ -116,6 +118,8 @@
     { "file": "fix-phase53-print-fulfillment.sql", "note": "Print & Post Phase 1 — admin inbox, status workflow, member orders, confirmation emails" },
     { "file": "fix-phase55-garden-pages.sql", "note": "Garden pages registered incl. garden-journal.html" },
     { "file": "fix-phase56-garden-excel-profiles.sql", "note": "Garden Excel 83-field profiles — tomato Brisbane + Kerala from Garden.xlsx" },
+    { "file": "fix-phase57-garden-artichoke-profile.sql", "note": "Purple Romagna artichoke Brisbane full profile" },
+    { "file": "fix-phase57-garden-guilds-media.sql", "note": "Guild admin RPCs, plant media register RPC, sample guilds" },
     { "file": "RUN-LIVE-FOLLOWUP.sql", "note": "Phases 49–51 + health (incremental live run)" }
   ],
   "live_cleanup_order_note": "After RUN-LIVE-CLEANUP, run RUN-ALL-REMAINING.sql or RUN-LIVE-FOLLOWUP.sql for latest content"

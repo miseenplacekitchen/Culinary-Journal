@@ -99,8 +99,10 @@ C · DECIDE — Betty decision before build
   • Betty SQL: RUN-GARDEN-GO-LIVE.sql ✅ + fix-phase54 ✅ (profiles + payload refresh)
   • GM: Apply refreshed imports → publish kitchen species (Tomato live; kitchen 15 have care/calendar)
   • Run fix-phase55-garden-pages.sql ✅ — Garden Journal + pages registered
-  • Run fix-phase56-garden-excel-profiles.sql — Excel 83-field tomato profile (Brisbane + Kerala)
-  • Ongoing: guilds, media, Excel/PPT export (deferred)
+  • Run fix-phase56-garden-excel-profiles.sql ✅ — tomato Excel profile (Brisbane + Kerala)
+  • Run fix-phase57-garden-artichoke-profile.sql — Purple Romagna Brisbane
+  • Run fix-phase57-garden-guilds-media.sql — guild RPCs + media upload
+  • Ongoing: public guild display on site, bulk Excel as workbook grows
 
   Library (ongoing content)
   • Phase 49–51 SQL ✅ Betty — ongoing library profiles beyond phase 49 only

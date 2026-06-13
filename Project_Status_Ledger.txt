@@ -100,7 +100,9 @@ fix-phase53-print-fulfillment.sql   | Print admin inbox + status workflow + emai
 fix-phase54-garden-kitchen-profiles.sql | Kitchen 15 species care + calendar + hinge | DONE ✅ Betty
 fix-phase54-import-payload-refresh.sql    | Re-parse 12 cultivar payloads (parser v2)  | DONE ✅ Betty
 fix-phase55-garden-pages.sql              | Garden pages registered (incl. journal)    | DONE ✅ Betty
-fix-phase56-garden-excel-profiles.sql     | Excel 83-field profiles (tomato × 2 climates) | SQL ready — Betty run
+fix-phase56-garden-excel-profiles.sql     | Excel 83-field profiles (tomato × 2 climates) | DONE ✅ Betty
+fix-phase57-garden-artichoke-profile.sql  | Purple Romagna artichoke Brisbane profile     | SQL ready — Betty run
+fix-phase57-garden-guilds-media.sql       | Guild admin RPCs + sample guilds + media RPC    | SQL ready — Betty run
 fix-phase32-batch.sql               | Household meals, slots, allergy, lib approve | DONE ✅ Betty
 fix-phase32-library-profiles.sql    | Desiree + Kipfler potato profiles    | DONE ✅ Betty (249, 250)
 fix-phase33-batch.sql               | Saves ranking, sync conflicts, regional hints, print gating | DONE ✅ Betty
@@ -184,12 +186,15 @@ Phase 55 Garden go-live ops ✅ Betty (SQL) + code on main:
   • GM Import & health → Kitchen go-live panel (apply refreshed 12, publish kitchen batch)
   • fix-phase55-garden-pages.sql ✅
 
-Phase 56 Garden Excel profile ingest (code on main):
+Phase 56 Garden Excel profile ingest ✅ Betty (SQL) + code on main:
   • Scripts: garden_excel_profile_lib.py + generate-garden-excel-profiles.py
-  • Source: brainstorm-inbox/2025.11.09_Garden.xlsx (Master Sheet + Quick Plant Profile)
-  • fix-phase56-garden-excel-profiles.sql — tomato full 83-field profile + care (Brisbane + Kerala climates)
-  • Betty: run SQL on Supabase; re-run generator as more Master Sheet rows are completed
-  • Still deferred: care-card PPT export, bulk Excel when workbook grows
+  • fix-phase56-garden-excel-profiles.sql ✅ — tomato full 83-field (Brisbane + Kerala)
+
+Phase 57 Garden PPT + artichoke + guilds/media (code on main):
+  • Care tab → Download care-card PPT (PptxGenJS, maps tcj-care-card-v1 JSON)
+  • fix-phase57-garden-artichoke-profile.sql — Purple Romagna Brisbane full profile
+  • fix-phase57-garden-guilds-media.sql — guild CRUD RPCs, media register RPC, sample guilds
+  • GM → Guilds tab + species media upload (garden-media bucket)
 
 Phase 28: master list reopened · grocery archive→pantry · MP-06 drag
 
