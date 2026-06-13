@@ -13,6 +13,8 @@ files = [
     "garden-v4-07-seed-tomato-varieties.sql",
     "garden-v4-08-lookups.sql",
     "garden-v4-09-import-rpcs.sql",
+    "garden-v4-11-lookup-admin-rpcs.sql",
+    "garden-v4-12-content-admin-rpcs.sql",
 ]
 out = base / "RUN-GARDEN-V4.sql"
 header = """-- =============================================================================
