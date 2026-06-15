@@ -69,18 +69,17 @@ async function fetchRecipe(recipeId) {
   return rows?.[0] || null;
 }
 
-async function setRecipeStatus(recipeId, status, notes, reviewerId) {
+async function setRecipeStatus(recipeId, status, notes) {
   const patch = {
     status,
     reviewed_at: new Date().toISOString(),
     reviewer_notes: notes || null,
   };
-  if (reviewerId) patch.reviewer_id = reviewerId;
   const res = await sbFetch(
     `/rest/v1/submitted_recipes?id=eq.${encodeURIComponent(recipeId)}&status=eq.pending`,
     {
       method: 'PATCH',
-      headers: { Prefer: 'return=minimal' },
+      headers: { Prefer: 'return=representation' },
       body: JSON.stringify(patch),
     },
     SERVICE_KEY,
@@ -93,6 +92,44 @@ async function setRecipeStatus(recipeId, status, notes, reviewerId) {
       if (j.message) msg = j.message;
     } catch (_) {}
     throw new Error(msg);
+  }
+  const rows = await res.json().catch(() => []);
+  if (!Array.isArray(rows) || rows.length === 0) {
+    throw new Error(`Recipe was not pending — could not mark ${status}`);
+  }
+}
+
+async function finalizeViaAdminRpc(recipeId, status, notes, userToken) {
+  const res = await sbFetch(
+    '/rest/v1/rpc/admin_review_recipe',
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        p_id: recipeId,
+        p_status: status,
+        p_notes: notes || '',
+      }),
+    },
+    ANON_KEY,
+    userToken,
+  );
+  if (!res.ok) {
+    const t = await res.text();
+    let msg = t || `admin_review_recipe failed (${status})`;
+    try {
+      const j = JSON.parse(t);
+      if (j.message) msg = j.message;
+    } catch (_) {}
+    throw new Error(msg);
+  }
+}
+
+async function applyReviewStatus(recipeId, status, notes, userToken) {
+  try {
+    await finalizeViaAdminRpc(recipeId, status, notes, userToken);
+    return;
+  } catch (rpcErr) {
+    await setRecipeStatus(recipeId, status, notes);
   }
 }
 
@@ -153,7 +190,7 @@ async function getIngredientIndex() {
   return cachedIngredientIndex;
 }
 
-async function reviewOneRecipe(recipeId, adminUserId) {
+async function reviewOneRecipe(recipeId, userToken) {
   const row = await fetchRecipe(recipeId);
   if (!row) throw new Error('Recipe not found');
   if (row.status !== 'pending') throw new Error('Only pending recipes can be agent-reviewed');
@@ -173,13 +210,13 @@ async function reviewOneRecipe(recipeId, adminUserId) {
   let statusError = null;
   try {
     if (assessment.outcome === 'auto_approve') {
-      await setRecipeStatus(recipeId, 'approved', null, adminUserId);
+      await applyReviewStatus(recipeId, 'approved', '', userToken);
       statusApplied = true;
     } else if (assessment.outcome === 'reject') {
       const notes = structured.reject_reason ||
         (assessment.reasons && assessment.reasons[0]) ||
         'Agent: not a valid recipe';
-      await setRecipeStatus(recipeId, 'rejected', notes, adminUserId);
+      await applyReviewStatus(recipeId, 'rejected', notes, userToken);
       statusApplied = true;
     }
   } catch (e) {
@@ -234,9 +271,8 @@ module.exports = async function handler(req, res) {
   }
   body = body || {};
 
-  let adminUserId;
   try {
-    adminUserId = await assertAdmin(token);
+    await assertAdmin(token);
   } catch (e) {
     return res.status(403).json({ ok: false, error: e.message });
   }
@@ -250,7 +286,7 @@ module.exports = async function handler(req, res) {
       let failed = 0;
       for (const row of pending) {
         try {
-          const r = await reviewOneRecipe(row.id, adminUserId);
+          const r = await reviewOneRecipe(row.id, token);
           results.push(r);
           ok += 1;
         } catch (e) {
@@ -271,7 +307,7 @@ module.exports = async function handler(req, res) {
     if (!recipeId) {
       return res.status(400).json({ ok: false, error: 'recipe_id required' });
     }
-    const result = await reviewOneRecipe(recipeId, adminUserId);
+    const result = await reviewOneRecipe(recipeId, token);
     return res.status(200).json(result);
   } catch (e) {
     const status = e.status === 429 ? 429 : 500;
