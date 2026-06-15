@@ -69,6 +69,33 @@ async function fetchRecipe(recipeId) {
   return rows?.[0] || null;
 }
 
+async function setRecipeStatus(recipeId, status, notes, reviewerId) {
+  const patch = {
+    status,
+    reviewed_at: new Date().toISOString(),
+    reviewer_notes: notes || null,
+  };
+  if (reviewerId) patch.reviewer_id = reviewerId;
+  const res = await sbFetch(
+    `/rest/v1/submitted_recipes?id=eq.${encodeURIComponent(recipeId)}&status=eq.pending`,
+    {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify(patch),
+    },
+    SERVICE_KEY,
+  );
+  if (!res.ok) {
+    const t = await res.text();
+    let msg = t || `Could not mark recipe ${status}`;
+    try {
+      const j = JSON.parse(t);
+      if (j.message) msg = j.message;
+    } catch (_) {}
+    throw new Error(msg);
+  }
+}
+
 async function saveRecipeReview(recipeId, payload) {
   const patch = {
     recipe_name: payload.recipe_name,
@@ -126,7 +153,7 @@ async function getIngredientIndex() {
   return cachedIngredientIndex;
 }
 
-async function reviewOneRecipe(recipeId, userToken) {
+async function reviewOneRecipe(recipeId, adminUserId) {
   const row = await fetchRecipe(recipeId);
   if (!row) throw new Error('Recipe not found');
   if (row.status !== 'pending') throw new Error('Only pending recipes can be agent-reviewed');
@@ -142,6 +169,23 @@ async function reviewOneRecipe(recipeId, userToken) {
 
   const assessment = assessAgentOutcome(structured, row, payload);
 
+  let statusApplied = false;
+  let statusError = null;
+  try {
+    if (assessment.outcome === 'auto_approve') {
+      await setRecipeStatus(recipeId, 'approved', null, adminUserId);
+      statusApplied = true;
+    } else if (assessment.outcome === 'reject') {
+      const notes = structured.reject_reason ||
+        (assessment.reasons && assessment.reasons[0]) ||
+        'Agent: not a valid recipe';
+      await setRecipeStatus(recipeId, 'rejected', notes, adminUserId);
+      statusApplied = true;
+    }
+  } catch (e) {
+    statusError = e.message || String(e);
+  }
+
   return {
     id: recipeId,
     recipe_name: payload.recipe_name,
@@ -153,6 +197,8 @@ async function reviewOneRecipe(recipeId, userToken) {
     needs_manual: assessment.needs_manual,
     assessment_reasons: assessment.reasons,
     info_notes: assessment.info_notes || [],
+    status_applied: statusApplied,
+    status_error: statusError,
     ok: true,
   };
 }
@@ -188,8 +234,9 @@ module.exports = async function handler(req, res) {
   }
   body = body || {};
 
+  let adminUserId;
   try {
-    await assertAdmin(token);
+    adminUserId = await assertAdmin(token);
   } catch (e) {
     return res.status(403).json({ ok: false, error: e.message });
   }
@@ -203,7 +250,7 @@ module.exports = async function handler(req, res) {
       let failed = 0;
       for (const row of pending) {
         try {
-          const r = await reviewOneRecipe(row.id, token);
+          const r = await reviewOneRecipe(row.id, adminUserId);
           results.push(r);
           ok += 1;
         } catch (e) {
@@ -224,7 +271,7 @@ module.exports = async function handler(req, res) {
     if (!recipeId) {
       return res.status(400).json({ ok: false, error: 'recipe_id required' });
     }
-    const result = await reviewOneRecipe(recipeId, token);
+    const result = await reviewOneRecipe(recipeId, adminUserId);
     return res.status(200).json(result);
   } catch (e) {
     const status = e.status === 429 ? 429 : 500;

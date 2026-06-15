@@ -112,7 +112,10 @@ async function loadRecipeMgmt(tab) {
         : '\u2014';
       var tr = document.createElement('tr');
       tr.style.cssText = 'cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.04)';
-      tr.addEventListener('click', (function(id){ return function(){ openRecipeModal(id); }; })(r.id));
+      tr.addEventListener('click', (function(id){ return function(e){
+        if (e.target.closest('.rm-row-actions')) return;
+        openRecipeModal(id);
+      }; })(r.id));
       tr.innerHTML =
         '<td class="ap-td" style="width:36px">' +
           '<div style="width:32px;height:32px;background:var(--text-ghost);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px">\uD83D\uDCD6</div>' +
@@ -737,7 +740,7 @@ async function quickReviewRecipe(id, status, e) {
     await rpc('admin_review_recipe', {
       p_id: id,
       p_status: status,
-      p_notes: status === 'rejected' ? 'Quick reject from list' : null
+      p_notes: status === 'rejected' ? 'Quick reject from list' : ''
     });
     auditLog('Recipe Management', 'Recipe ' + status.charAt(0).toUpperCase() + status.slice(1), null, id, status, status === 'rejected' ? 'Quick reject from list' : null);
     loadRecipeMgmt(_currentRecipeTab);
