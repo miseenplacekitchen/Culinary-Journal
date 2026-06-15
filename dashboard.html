@@ -213,8 +213,26 @@
     .ap-review-msg.success { background: rgba(76,175,118,0.15); color: #4caf76; }
     .ap-review-msg.error   { background: rgb(from var(--danger) r g b / 0.15);  color: var(--danger); }
 
-
-
+    /* ── RECIPE REVIEW (center popup — dashboard-recipes.js) ── */
+    .rm-review-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; box-sizing: border-box;
+      background: var(--scrim); backdrop-filter: blur(4px);
+      overflow-y: auto;
+    }
+    .rm-review-modal {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 16px;
+      width: 100%; max-width: 920px;
+      max-height: min(92vh, 920px);
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+      margin: auto;
+    }
+    @media (max-width: 640px) {
+      .rm-review-overlay { padding: 0; align-items: stretch; }
+      .rm-review-modal { max-height: 100vh; border-radius: 0; max-width: none; }
+    }
 
 
 
@@ -1250,7 +1268,7 @@
   <script src="lib/dashboard-um-ops.js?v=20260714"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
   <script src="lib/admin-recipe-utils.js?v=20260705"></script>
-  <script src="dashboard-recipes.js?v=20260616"></script>
+  <script src="dashboard-recipes.js?v=20260617"></script>
   <script src="dashboard-users.js?v=20260616"></script>
   <script src="dashboard-ingredients.js?v=20260616"></script>
   <script src="lib/dashboard-im-interface.js?v=20260713"></script>

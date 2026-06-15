@@ -2030,6 +2030,125 @@ async function loadSubmissionForEdit(recipeId) {
   }
 }
 
+async function adminRpc(fn, params) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + session.access_token,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(params || {})
+  });
+  if (!res.ok) {
+    let msg = fn + ' failed (' + res.status + ')';
+    try {
+      const err = await res.json();
+      if (err && err.message) msg = err.message;
+    } catch (_) {}
+    throw new Error(msg);
+  }
+  const ct = res.headers.get('content-type') || '';
+  if (ct.indexOf('application/json') >= 0) return res.json();
+  return null;
+}
+
+function applyAdminReviewUi(recipeName) {
+  window._adminReviewRecipeId = window._adminReviewRecipeId || window._editRecipeId;
+  const hdr = document.querySelector('.sr-header h1');
+  if (hdr) hdr.textContent = 'Admin — Edit Pending Recipe';
+  const sub = document.querySelector('.sr-header p');
+  if (sub) sub.textContent = (recipeName || 'Pending recipe') + ' — same form as Submit a Recipe. Save, then approve in the dashboard.';
+  const importSec = document.getElementById('section-import');
+  if (importSec) importSec.style.display = 'none';
+  const draftPrompt = document.getElementById('draft-restore-prompt');
+  if (draftPrompt) draftPrompt.style.display = 'none';
+  const btn = document.getElementById('btn-submit');
+  if (btn) btn.textContent = 'Save recipe changes';
+  const draftBtn = document.querySelector('.btn-draft');
+  if (draftBtn) draftBtn.style.display = 'none';
+  let back = document.getElementById('admin-review-back');
+  if (!back) {
+    back = document.createElement('a');
+    back.id = 'admin-review-back';
+    back.href = 'dashboard.html';
+    back.textContent = '← Back to Admin inbox';
+    back.style.cssText = 'display:inline-block;margin-top:12px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--accent);text-decoration:none';
+    const header = document.querySelector('.sr-header');
+    if (header) header.appendChild(back);
+  }
+}
+
+async function loadAdminRecipeForReview(recipeId) {
+  try {
+    const raw = await adminRpc('admin_get_recipe_detail', { p_id: recipeId });
+    const r = Array.isArray(raw) ? raw[0] : raw;
+    if (!r || !r.id) {
+      showMsg('Recipe not found or you are not signed in as admin.', 'error');
+      return false;
+    }
+    const secWrap  = document.getElementById('ingredient-sections');
+    const methWrap = document.getElementById('method-sections');
+    const utWrap   = document.getElementById('utensil-rows');
+    if (secWrap)  { secWrap.innerHTML = '';  ingSectionCount = 0; }
+    if (methWrap) { methWrap.innerHTML = ''; methodSectionCount = 0; }
+    if (utWrap)   { utWrap.innerHTML = ''; }
+    window._adminReviewRecipeId = recipeId;
+    window._editRecipeId = recipeId;
+    restoreDraft(JSON.stringify(r));
+    applyAdminReviewUi(r.recipe_name);
+    if (r.status === 'pending') {
+      showMsg('Loaded for admin review — edit any field, then Save recipe changes.', 'success');
+    }
+    return true;
+  } catch (e) {
+    console.error('Admin review load error:', e);
+    showMsg('Could not load recipe: ' + (e.message || e), 'error');
+    return false;
+  }
+}
+
+async function saveAdminRecipeReview() {
+  const data = collectFormData();
+  const btn = document.getElementById('btn-submit');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  try {
+    if (data.image_url && document.getElementById('img-preview-img')?.src) {
+      try {
+        const bakedUrl = await bakeRecipeImageCrop();
+        data.image_url = await uploadRecipeImageToStorage(bakedUrl);
+      } catch (e) { console.warn('Admin image upload:', e); }
+    }
+    delete data.image_pan_x;
+    delete data.image_pan_y;
+    delete data.image_zoom;
+    delete data.image_source_url;
+
+    const unknownIngredients = [];
+    document.querySelectorAll('.ing-row').forEach(function(row) {
+      const badge = row.querySelector('.ing-unknown-badge');
+      const nameInput = row.querySelector('.ing-name-input');
+      if (badge && badge.style.display !== 'none' && nameInput && nameInput.value.trim()) {
+        unknownIngredients.push(nameInput.value.trim());
+      }
+    });
+    data.unknown_ingredients = unknownIngredients;
+    data.unknown_utensils = collectUnknownUtensils();
+
+    await adminRpc('admin_save_recipe_review', {
+      p_id: window._adminReviewRecipeId,
+      p_data: data
+    });
+    showMsg('Recipe saved. Return to Admin → Pending to approve.', 'success');
+    setTimeout(function() {
+      window.location.href = 'dashboard.html';
+    }, 1400);
+  } catch (e) {
+    showMsg('Save failed: ' + (e.message || e), 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Save recipe changes'; }
+  }
+}
+
 // ── INIT ─────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
   try { session = JSON.parse(lsGet('tcj_session') || 'null'); } catch(_) { session = null; }
@@ -4771,6 +4890,11 @@ async function restoreDraftById(draftId) {
 
 async function bootstrapDraftOnLoad() {
   const urlParams = new URLSearchParams(window.location.search);
+  const adminReviewId = urlParams.get('adminReview');
+  if (adminReviewId) {
+    const loaded = await loadAdminRecipeForReview(adminReviewId);
+    if (loaded) return { loaded: true, name: (document.getElementById('recipe-name') || {}).value || '' };
+  }
   const editId = urlParams.get('id');
   if (editId) {
     const loaded = await loadSubmissionForEdit(editId);
@@ -5260,6 +5384,9 @@ async function refreshSessionIfNeeded() {
 
 // ── SUBMIT RECIPE ─────────────────────────────────────────────────────────────
 async function submitRecipe() {
+  if (window._adminReviewRecipeId) {
+    return saveAdminRecipeReview();
+  }
   const data = collectFormData();
   const err  = validate(data);
   if (err) { showMsg(err, 'error'); return; }

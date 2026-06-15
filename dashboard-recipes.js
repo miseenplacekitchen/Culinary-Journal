@@ -155,13 +155,29 @@ async function loadRecipeMgmt(tab) {
 }
 
 async function openRecipeModal(id) {
-  var existing = document.getElementById('rm-detail-panel');
-  if (existing) existing.remove();
+  closeRecipeModal();
+  var overlay = document.createElement('div');
+  overlay.id = 'rm-review-overlay';
+  overlay.className = 'rm-review-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', 'Recipe review');
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) closeRecipeModal();
+  });
   var panel = document.createElement('div');
   panel.id = 'rm-detail-panel';
-  panel.style.cssText = 'position:fixed;top:0;right:0;width:620px;max-width:100vw;height:100vh;background:var(--bg);border-left:1px solid var(--border);z-index:9999;overflow-y:auto;box-shadow:-8px 0 32px rgba(0,0,0,0.5)';
+  panel.className = 'rm-review-modal';
+  panel.addEventListener('click', function(e) { e.stopPropagation(); });
   panel.innerHTML = '<div style="padding:24px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
-  document.body.appendChild(panel);
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+  if (window._rmReviewEscHandler) document.removeEventListener('keydown', window._rmReviewEscHandler);
+  window._rmReviewEscHandler = function(e) {
+    if (e.key === 'Escape') closeRecipeModal();
+  };
+  document.addEventListener('keydown', window._rmReviewEscHandler);
   try {
     var raw = await rpc('admin_get_recipe_detail', {p_id: id});
     var r   = Array.isArray(raw) ? raw[0] : raw;
@@ -216,7 +232,40 @@ async function openRecipeModal(id) {
     if (r.prep_time_minutes) metaRow.appendChild(mk('span',"font-size:11px;color:var(--text-mid)", 'Prep: ' + r.prep_time_minutes + 'm'));
     if (r.cook_time_minutes) metaRow.appendChild(mk('span',"font-size:11px;color:var(--text-mid)", 'Cook: ' + r.cook_time_minutes + 'm'));
     titleBlock.appendChild(metaRow);
+    // Full editor — every Submit a Recipe field (ingredients, procedure, dropdowns)
+    var editFullBar = mk('div','margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(91,143,212,0.12);border:1px solid rgba(91,143,212,0.35)');
+    editFullBar.appendChild(mk('div',"font-size:12px;color:var(--text-high);line-height:1.55;margin-bottom:10px",
+      'Need to fix ingredients, procedure steps, or any dropdown? Open the full Submit a Recipe form — everything is editable there.'));
+    var editFullBtn = mk('a','display:inline-block;padding:10px 18px;background:#5B8FD4;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer',
+      'Edit full recipe (all fields) →');
+    editFullBtn.href = 'submit-recipe.html?adminReview=' + encodeURIComponent(r.id);
+    editFullBtn.target = '_blank';
+    editFullBtn.rel = 'noopener';
+    editFullBar.appendChild(editFullBtn);
+    titleBlock.appendChild(editFullBar);
     panel.appendChild(titleBlock);
+
+    var bodyScroll = mk('div','flex:1;overflow-y:auto;min-height:0');
+    panel.appendChild(bodyScroll);
+    function bodyAppend(el) { bodyScroll.appendChild(el); }
+
+    // Introduction & notes (batch imports often have empty intro — show either way)
+    var introBlock = mk('div','padding:14px 20px;border-bottom:1px solid var(--border)');
+    introBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:8px",'Introduction'));
+    var introText = (r.introduction || '').trim();
+    if (introText && introText !== 'Imported from Personal book collection.') {
+      introBlock.appendChild(mk('div',"font-size:13px;color:var(--text-high);line-height:1.65", introText));
+    } else {
+      introBlock.appendChild(mk('div',"font-size:12px;color:var(--text-mid);font-style:italic",'No introduction yet — run Groq polish or edit below / full form.'));
+    }
+    if (r.cooking_notes) {
+      introBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin:14px 0 8px",'Cooking Notes'));
+      introBlock.appendChild(mk('div',"font-size:12px;color:var(--text-mid);line-height:1.65", r.cooking_notes));
+    }
+    bodyAppend(introBlock);
+
+    bodyAppend(mk('div','padding:8px 20px;border-bottom:1px solid var(--border);background:rgba(91,143,212,0.08);font-size:11px;color:#5B8FD4;line-height:1.5',
+      'Quick edits below, or use Edit full recipe above for ingredients & procedure. Approve/Reject stays fixed at the bottom.'));
 
     // Recipe image — admin can replace before approving
     var imgBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border)');
@@ -270,12 +319,13 @@ async function openRecipeModal(id) {
     imgBtnRow.appendChild(imgMsg);
     imgBlock.appendChild(imgBtnRow);
     imgBlock.appendChild(imgFile);
-    panel.appendChild(imgBlock);
+    bodyAppend(imgBlock);
 
     // Ingredients
     if (r.ingredients) {
       var ingBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border)');
-      ingBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:10px",'Ingredients'));
+      ingBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:4px",'Ingredients'));
+      ingBlock.appendChild(mk('div',"font-size:11px;color:var(--text-mid);margin-bottom:8px;font-style:italic",'Preview only — use Edit full recipe above to change sections and rows.'));
       try {
         var ings = typeof r.ingredients === 'string' ? JSON.parse(r.ingredients) : r.ingredients;
         if (Array.isArray(ings)) {
@@ -293,13 +343,14 @@ async function openRecipeModal(id) {
           });
         }
       } catch(e) { console.warn('recipe modal ingredients render', e); ingBlock.appendChild(mk('div',"font-size:12px;color:var(--text-mid)",'Ingredients present')); }
-      panel.appendChild(ingBlock);
+      bodyAppend(ingBlock);
     }
 
     // Method — section blocks with steps (not raw JSON per section)
     if (r.method) {
       var methBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border)');
-      methBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:10px",'Procedure'));
+      methBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:4px",'Procedure'));
+      methBlock.appendChild(mk('div',"font-size:11px;color:var(--text-mid);margin-bottom:8px;font-style:italic",'Preview only — use Edit full recipe above to edit steps.'));
       var methScroll = mk('div','max-height:240px;overflow-y:auto');
       try {
         var blocks = (typeof RecipeProcedure !== 'undefined') ? RecipeProcedure.parseBlocks(r.method) : [];
@@ -321,7 +372,7 @@ async function openRecipeModal(id) {
         if (!stepNum) methScroll.appendChild(mk('div',"font-size:12px;color:var(--text-mid)",'No procedure steps listed'));
       } catch(e) { console.warn('recipe modal method render', e); methScroll.appendChild(mk('div',"font-size:12px;color:var(--text-mid)",'Method present')); }
       methBlock.appendChild(methScroll);
-      panel.appendChild(methBlock);
+      bodyAppend(methBlock);
     }
 
     // Source
@@ -331,7 +382,7 @@ async function openRecipeModal(id) {
       srcBlock.innerHTML += field('Type', r.source_type);
       if (r.credit_name)   srcBlock.innerHTML += field('Credit', r.credit_name);
       if (r.credit_handle) srcBlock.innerHTML += field('Handle', '@'+r.credit_handle);
-      panel.appendChild(srcBlock);
+      bodyAppend(srcBlock);
     }
 
     // Import audit trail (Wave 3)
@@ -376,7 +427,7 @@ async function openRecipeModal(id) {
         snap.appendChild(pre);
         iaBlock.appendChild(snap);
       }
-      panel.appendChild(iaBlock);
+      bodyAppend(iaBlock);
     }
 
     // Unknown ingredients — ingredients submitted that aren't in the database yet
@@ -402,7 +453,7 @@ async function openRecipeModal(id) {
         row.appendChild(addBtn);
         uBlock.appendChild(row);
       });
-      panel.appendChild(uBlock);
+      bodyAppend(uBlock);
     }
 
     // Unknown utensils — tools not yet in the Tools & Appliances library
@@ -435,7 +486,7 @@ async function openRecipeModal(id) {
         row.appendChild(actions);
         tBlock.appendChild(row);
       });
-      panel.appendChild(tBlock);
+      bodyAppend(tBlock);
     }
 
     // Suggested taxonomy — sub-categories / divisions not yet in the database
@@ -496,7 +547,7 @@ async function openRecipeModal(id) {
         switchRecipeTab('taxonomy');
       });
       tBlock.appendChild(manageBtn);
-      panel.appendChild(tBlock);
+      bodyAppend(tBlock);
     }
 
     // Edit before approving
@@ -543,23 +594,55 @@ async function openRecipeModal(id) {
     spiceSel.style.cssText = catSel.style.cssText;
     ['Not Applicable','Mild','Medium','Hot','Very Hot','Extremely Hot'].forEach(function(s) { var o = document.createElement('option'); o.value = s; o.textContent = s; o.selected = (r.spice_level === s); spiceSel.appendChild(o); });
     spiceWrap.appendChild(spiceSel);
+    var sweetWrap = mk('div','');
+    sweetWrap.appendChild(mk('label',"display:block;font-size:10px;color:var(--text-mid);margin-bottom:3px",'Sweet Level'));
+    var sweetSel = document.createElement('select');
+    sweetSel.id = 'rm-edit-sweet';
+    sweetSel.style.cssText = catSel.style.cssText;
+    ['Not Applicable','Subtly Sweet','Lightly Sweet','Sweet','Very Sweet','Extremely Sweet'].forEach(function(s) {
+      var o = document.createElement('option'); o.value = s; o.textContent = s; o.selected = (r.sweet_level === s); sweetSel.appendChild(o);
+    });
+    sweetWrap.appendChild(sweetSel);
+    var servWrap = editField('Servings', 'rm-edit-servings', r.servings, 'text');
+    var prepWrap = editField('Prep (minutes)', 'rm-edit-prep', r.prep_time_minutes, 'text');
+    var cookWrap = editField('Cook (minutes)', 'rm-edit-cook', r.cook_time_minutes, 'text');
     var locWrap = editField('Origin locality (village/area)', 'rm-edit-locality', r.origin_locality, 'text');
     var stateWrap = editField('Origin state/region', 'rm-edit-state', r.origin_state, 'text');
     var countryWrap = editField('Origin country', 'rm-edit-country', r.origin_country, 'text');
     editGrid.appendChild(nameWrap); editGrid.appendChild(nativeWrap);
     editGrid.appendChild(catWrap);  editGrid.appendChild(spiceWrap);
+    editGrid.appendChild(sweetWrap); editGrid.appendChild(servWrap);
+    editGrid.appendChild(prepWrap); editGrid.appendChild(cookWrap);
     editGrid.appendChild(locWrap); editGrid.appendChild(stateWrap);
     editGrid.appendChild(countryWrap);
     editBlock.appendChild(editGrid);
+    var introWrap = mk('div','margin-top:10px');
+    introWrap.appendChild(mk('label',"display:block;font-size:10px;color:var(--text-mid);margin-bottom:3px",'Introduction'));
+    var introTa = document.createElement('textarea');
+    introTa.id = 'rm-edit-intro';
+    introTa.rows = 3;
+    introTa.value = r.introduction || '';
+    introTa.style.cssText = 'width:100%;box-sizing:border-box;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high);resize:vertical';
+    introWrap.appendChild(introTa);
+    editBlock.appendChild(introWrap);
+    var notesWrap = mk('div','margin-top:10px');
+    notesWrap.appendChild(mk('label',"display:block;font-size:10px;color:var(--text-mid);margin-bottom:3px",'Cooking Notes'));
+    var notesTa = document.createElement('textarea');
+    notesTa.id = 'rm-edit-cooking-notes';
+    notesTa.rows = 2;
+    notesTa.value = r.cooking_notes || '';
+    notesTa.style.cssText = introTa.style.cssText;
+    notesWrap.appendChild(notesTa);
+    editBlock.appendChild(notesWrap);
     var saveEditBtn = mk('button','margin-top:10px;padding:6px 16px;background:none;border:1px solid var(--accent);border-radius:7px;color:var(--accent);font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer','Save Edits');
     saveEditBtn.addEventListener('click', function(){ saveRecipeEdits(r.id); });
     var editMsg = mk('span','margin-left:10px;font-family:DM Sans,sans-serif;font-size:11px;color:#4caf76','');
     editMsg.id = 'rm-edit-msg';
     editBlock.appendChild(saveEditBtn); editBlock.appendChild(editMsg);
-    panel.appendChild(editBlock);
+    bodyAppend(editBlock);
 
-    // Review actions
-    var reviewBlock = mk('div','padding:16px 20px');
+    // Sticky review footer — always visible
+    var reviewBlock = mk('div','padding:16px 20px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0;box-shadow:0 -8px 24px rgba(0,0,0,0.25)');
     reviewBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:12px",'Review'));
     // Rejection reason dropdown
     var rejectSel = document.createElement('select');
@@ -612,8 +695,13 @@ async function toggleFeature(id, currentFeatured) {
 }
 
 function closeRecipeModal() {
-  var el = document.getElementById('rm-detail-panel');
-  if (el) el.remove();
+  if (window._rmReviewEscHandler) {
+    document.removeEventListener('keydown', window._rmReviewEscHandler);
+    window._rmReviewEscHandler = null;
+  }
+  var overlay = document.getElementById('rm-review-overlay');
+  if (overlay) overlay.remove();
+  document.body.style.overflow = '';
   currentRecipe = null;
 }
 
@@ -705,15 +793,28 @@ async function saveRecipeEdits(id) {
   var native = (document.getElementById('rm-edit-native') || {}).value || '';
   var cat    = (document.getElementById('rm-edit-cat')    || {}).value || '';
   var spice   = (document.getElementById('rm-edit-spice')  || {}).value || '';
+  var sweet   = (document.getElementById('rm-edit-sweet')  || {}).value || '';
+  var intro   = (document.getElementById('rm-edit-intro') || {}).value || '';
+  var cookN   = (document.getElementById('rm-edit-cooking-notes') || {}).value || '';
+  var servRaw = (document.getElementById('rm-edit-servings') || {}).value || '';
+  var prepRaw = (document.getElementById('rm-edit-prep') || {}).value || '';
+  var cookRaw = (document.getElementById('rm-edit-cook') || {}).value || '';
   var locality = (document.getElementById('rm-edit-locality') || {}).value || '';
   var state   = (document.getElementById('rm-edit-state')   || {}).value || '';
   var country = (document.getElementById('rm-edit-country') || {}).value || '';
+  var serv = servRaw ? parseInt(String(servRaw).replace(/\D/g, ''), 10) : null;
+  var prep = prepRaw ? parseInt(String(prepRaw).replace(/\D/g, ''), 10) : null;
+  var cook = cookRaw ? parseInt(String(cookRaw).replace(/\D/g, ''), 10) : null;
   var msg    = document.getElementById('rm-edit-msg');
   try {
     await rpc('admin_edit_recipe', {
       p_id: id, p_recipe_name: name || null, p_category: cat || null,
-      p_spice_level: spice || null, p_native_title: native || null,
-      p_introduction: null, p_cooking_notes: null, p_servings: null,
+      p_spice_level: spice || null, p_sweet_level: sweet || null,
+      p_native_title: native || null,
+      p_introduction: intro, p_cooking_notes: cookN,
+      p_servings: isNaN(serv) ? null : serv,
+      p_prep_time_minutes: isNaN(prep) ? null : prep,
+      p_cook_time_minutes: isNaN(cook) ? null : cook,
       p_origin_locality: locality || null, p_origin_state: state || null,
       p_origin_country: country || null
     });
@@ -805,6 +906,7 @@ function loadRMInterfaceSettings() {
       },
       { key: 'taxonomy', label: 'Taxonomy', group: 'Operations', subtitle: 'Sub-categories and divisions', render: function (p) { loadRMTab('taxonomy', p); } },
       { key: 'sourcelinks', label: 'Source links', group: 'Operations', subtitle: 'Recipe attribution URLs', render: function (p) { loadRMTab('sourcelinks', p); } },
+      { key: 'websitesources', label: 'Website sources', group: 'Operations', subtitle: 'Import on/off + chef credits', render: function (p) { loadRMTab('websitesources', p); } },
       { key: 'nutrition', label: 'Nutrition queue', group: 'Operations', subtitle: 'Pending nutrition entries', render: function (p) { loadRMTab('nutrition', p); } },
       { key: 'printqueue', label: 'Print queue', group: 'Operations', subtitle: 'Print & Post workflow', render: function (p) { loadRMTab('printqueue', p); } },
       { key: 'collections', label: 'Collections', group: 'Operations', subtitle: 'Curated recipe groups', render: function (p) { loadRMTab('collections', p); } },
@@ -820,6 +922,7 @@ function loadRMTab(key, container) {
   else if (key === 'collections') loadRMCollections(container);
   else if (key === 'featured')    loadRMFeatured(container);
   else if (key === 'sourcelinks') loadRMSourceLinks(container);
+  else if (key === 'websitesources') loadRMWebsiteSources(container);
   else if (key === 'nutrition')   loadRMNutritionQueue(container);
   else if (key === 'printqueue')  loadRMPrintQueue(container);
   else if (key === 'audit')       loadRMAudit(container);
@@ -1199,6 +1302,86 @@ async function loadRMSourceLinks(container) {
       }
       tbody.appendChild(tr);
     });
+    tbl.appendChild(tbody);
+    wrap.appendChild(tbl);
+    container.appendChild(wrap);
+  } catch (e) {
+    container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
+  }
+}
+
+async function loadRMWebsiteSources(container) {
+  container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
+  try {
+    var rows = await rpc('admin_list_website_sources', {}) || [];
+    container.innerHTML = '';
+    function mk(tag, style, text) { var e = document.createElement(tag); if (style) e.style.cssText = style; if (text !== undefined) e.textContent = text; return e; }
+    container.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:14px;line-height:1.6',
+      'Turn a website OFF to stop new imports and hide approved recipes from that site on public browse. ' +
+      'Chef name is saved on each recipe as credit. Live recipe URL is stored as Source URL on Submit a Recipe.'));
+    container.appendChild(mk('div', 'font-size:11px;color:var(--text-mid);margin-bottom:14px',
+      'Run database/sql/fix-website-sources.sql in Supabase once if this tab shows an RPC error.'));
+
+    if (!rows.length) {
+      container.appendChild(mk('div', 'font-size:13px;color:var(--text-mid)', 'No website sources yet. Run fix-website-sources.sql to seed your list.'));
+      return;
+    }
+
+    var wrap = mk('div', 'overflow-x:auto');
+    var tbl = mk('table', 'width:100%;border-collapse:collapse;font-size:12px;min-width:860px');
+    tbl.innerHTML = '<thead><tr style="text-align:left;color:var(--text-mid);font-size:10px;text-transform:uppercase;letter-spacing:0.08em">' +
+      '<th style="padding:8px">Site</th><th style="padding:8px">Chef credit</th><th style="padding:8px">Recipes</th>' +
+      '<th style="padding:8px">Import</th><th style="padding:8px">Base URL</th></tr></thead>';
+    var tbody = mk('tbody');
+
+    rows.forEach(function(r) {
+      var tr = mk('tr');
+      tr.style.borderTop = '1px solid rgba(255,255,255,0.06)';
+      tr.appendChild(mk('td', 'padding:8px;color:var(--text-high);font-weight:500', r.display_name || r.host));
+      tr.appendChild(mk('td', 'padding:8px;color:var(--text-mid)', r.chef_name || '\u2014'));
+      tr.appendChild(mk('td', 'padding:8px;color:var(--text-mid)', String(r.recipe_count || 0)));
+
+      var toggleTd = mk('td', 'padding:8px');
+      var toggle = mk('button', 'padding:6px 12px;border-radius:8px;border:1px solid var(--border);cursor:pointer;font-size:11px;font-family:DM Sans,sans-serif',
+        r.is_active ? 'ON \u2014 click to switch off' : 'OFF \u2014 click to switch on');
+      toggle.style.background = r.is_active ? 'rgba(76,175,118,0.15)' : 'rgba(220,80,80,0.12)';
+      toggle.style.color = r.is_active ? '#4caf76' : '#dc5050';
+      toggle.addEventListener('click', function() {
+        var next = !r.is_active;
+        var msg = next
+          ? 'Switch ON ' + (r.display_name || r.host) + '? Approved recipes from this site will become public again.'
+          : 'Switch OFF ' + (r.display_name || r.host) + '? New imports stop and approved recipes from this site are hidden from public browse.';
+        if (!confirm(msg)) return;
+        toggle.disabled = true;
+        rpc('admin_set_website_source_active', { p_host: r.host, p_active: next })
+          .then(function(res) {
+            var hidden = res && res.recipes_hidden != null ? res.recipes_hidden : 0;
+            var shown = res && res.recipes_restored != null ? res.recipes_restored : 0;
+            alert(next
+              ? 'Source enabled. Restored ' + shown + ' recipe(s) to public visibility.'
+              : 'Source disabled. Hidden ' + hidden + ' approved recipe(s) from public browse.');
+            loadRMWebsiteSources(container);
+          })
+          .catch(function(e) { alert(e.message); toggle.disabled = false; });
+      });
+      toggleTd.appendChild(toggle);
+      tr.appendChild(toggleTd);
+
+      var urlTd = mk('td', 'padding:8px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap');
+      if (r.base_url) {
+        var link = mk('a', 'color:var(--text-mid);text-decoration:none');
+        link.href = r.base_url;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = r.base_url;
+        urlTd.appendChild(link);
+      } else {
+        urlTd.textContent = '\u2014';
+      }
+      tr.appendChild(urlTd);
+      tbody.appendChild(tr);
+    });
+
     tbl.appendChild(tbody);
     wrap.appendChild(tbl);
     container.appendChild(wrap);
