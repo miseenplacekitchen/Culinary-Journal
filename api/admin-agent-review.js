@@ -2,18 +2,16 @@
  * POST /api/admin-agent-review
  * Body: { recipe_id: "uuid" } OR { bulk: true, limit: 10 }
  * Auth: Bearer session token (admin only)
- * Env: GROQ_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+ * Env: SUPABASE_SERVICE_ROLE_KEY (Groq NOT used — reels/video only)
  */
 const {
-  flattenRecipeForPrompt,
   buildSavePayload,
   assessAgentOutcome,
-  callGroqAgent,
 } = require('../lib/admin-agent-review-core.js');
+const { polishMechanically, loadIngredientIndex } = require('../lib/admin-mechanical-polish.js');
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://kzywmodvfbyexqgipcjt.supabase.co';
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const GROQ_KEY = process.env.GROQ_API_KEY;
 // Public anon key (same as supabase-config.js) — fallback if Vercel env name typo
 const ANON_KEY_FALLBACK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
 const ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ANON_KEY_FALLBACK;
@@ -94,11 +92,20 @@ async function updateProcedureFlags(recipeId) {
       headers: { Prefer: 'return=minimal' },
       body: JSON.stringify({
         procedure_rewritten: true,
-        import_extractor: 'admin-agent-review-v1',
+        import_extractor: 'admin-mechanical-v1',
       }),
     },
     SERVICE_KEY,
   );
+}
+
+let cachedIngredientIndex = null;
+
+async function getIngredientIndex() {
+  if (!cachedIngredientIndex) {
+    cachedIngredientIndex = await loadIngredientIndex(sbFetch, SERVICE_KEY);
+  }
+  return cachedIngredientIndex;
 }
 
 async function reviewOneRecipe(recipeId) {
@@ -106,9 +113,12 @@ async function reviewOneRecipe(recipeId) {
   if (!row) throw new Error('Recipe not found');
   if (row.status !== 'pending') throw new Error('Only pending recipes can be agent-reviewed');
 
-  const sourceText = flattenRecipeForPrompt(row);
-  const structured = await callGroqAgent(sourceText, GROQ_KEY);
+  const { canonicalMap, knownLower } = await getIngredientIndex();
+  const structured = polishMechanically(row, canonicalMap, knownLower);
   const payload = buildSavePayload(structured, row);
+  if (structured.unknown_ingredients?.length) {
+    payload.unknown_ingredients = structured.unknown_ingredients;
+  }
 
   await saveRecipeReview(recipeId, payload);
   await updateProcedureFlags(recipeId);
@@ -143,10 +153,10 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'POST only' });
   }
-  if (!SERVICE_KEY || !GROQ_KEY) {
+  if (!SERVICE_KEY) {
     return res.status(503).json({
       ok: false,
-      error: 'Server missing GROQ_API_KEY or SUPABASE_SERVICE_ROLE_KEY in hosting env',
+      error: 'Server missing SUPABASE_SERVICE_ROLE_KEY in hosting env',
     });
   }
 
@@ -186,7 +196,7 @@ module.exports = async function handler(req, res) {
             ok: false,
             error: e.message,
           });
-          if (String(e.message).includes('429') || String(e.status) === '429') break;
+          if (String(e.message).includes('429')) break;
         }
       }
       return res.status(200).json({ ok: true, bulk: true, processed: results.length, succeeded: ok, failed, results });
