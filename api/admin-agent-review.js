@@ -209,10 +209,7 @@ async function reviewOneRecipe(recipeId, userToken) {
   let statusApplied = false;
   let statusError = null;
   try {
-    if (assessment.outcome === 'auto_approve') {
-      await applyReviewStatus(recipeId, 'approved', '', userToken);
-      statusApplied = true;
-    } else if (assessment.outcome === 'reject') {
+    if (assessment.outcome === 'reject') {
       const notes = structured.reject_reason ||
         (assessment.reasons && assessment.reasons[0]) ||
         'Agent: not a valid recipe';

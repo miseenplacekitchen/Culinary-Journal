@@ -264,7 +264,7 @@ async function openRecipeModal(id) {
     // Agent + full editor — every Submit a Recipe field (ingredients, procedure, dropdowns)
     var editFullBar = mk('div','margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(91,143,212,0.12);border:1px solid rgba(91,143,212,0.35)');
     editFullBar.appendChild(mk('div',"font-size:12px;color:var(--text-high);line-height:1.55;margin-bottom:10px",
-      'Agent Review cleans all fields, then auto-approves if ready, auto-rejects junk, or opens the editor only when something still needs you.'));
+      'Agent Review cleans all fields and saves — you approve when the content looks right. Junk is auto-rejected; gaps open the editor.'));
     var agentBtnRow = mk('div','display:flex;flex-wrap:wrap;gap:10px;align-items:center');
     var agentReviewBtn = mk('button','padding:10px 18px;background:#7c5cbf;border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer',
       '\uD83E\uDD16 Agent Review');
