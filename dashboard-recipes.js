@@ -40,6 +40,8 @@ function switchRecipeTab(tab) {
   if (opsPanel)  opsPanel.style.display  = 'none';
   if (setPanel)  setPanel.style.display  = tab === 'rmsettings' ? 'block' : 'none';
   if (extPanel)  extPanel.style.display  = _RM_SPOTLIGHT_TABS.indexOf(tab) !== -1 ? 'block' : 'none';
+  var bulkAgentBtn = document.getElementById('rm-bulk-agent-btn');
+  if (bulkAgentBtn) bulkAgentBtn.style.display = tab === 'pending' ? 'inline-flex' : 'none';
   if (tab === 'analytics')  { loadRecipeAnalytics(); return; }
   if (tab === 'rmsettings') { loadRMInterfaceSettings(); return; }
   if (tab === 'rotw')  { loadROTW(); return; }
@@ -232,16 +234,33 @@ async function openRecipeModal(id) {
     if (r.prep_time_minutes) metaRow.appendChild(mk('span',"font-size:11px;color:var(--text-mid)", 'Prep: ' + r.prep_time_minutes + 'm'));
     if (r.cook_time_minutes) metaRow.appendChild(mk('span',"font-size:11px;color:var(--text-mid)", 'Cook: ' + r.cook_time_minutes + 'm'));
     titleBlock.appendChild(metaRow);
-    // Full editor — every Submit a Recipe field (ingredients, procedure, dropdowns)
+    // Agent + full editor — every Submit a Recipe field (ingredients, procedure, dropdowns)
     var editFullBar = mk('div','margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(91,143,212,0.12);border:1px solid rgba(91,143,212,0.35)');
     editFullBar.appendChild(mk('div',"font-size:12px;color:var(--text-high);line-height:1.55;margin-bottom:10px",
-      'Need to fix ingredients, procedure steps, or any dropdown? Open the full Submit a Recipe form — everything is editable there.'));
-    var editFullBtn = mk('a','display:inline-block;padding:10px 18px;background:#5B8FD4;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;text-decoration:none;cursor:pointer',
-      'Edit full recipe (all fields) →');
-    editFullBtn.href = 'submit-recipe.html?adminReview=' + encodeURIComponent(r.id);
-    editFullBtn.target = '_blank';
-    editFullBtn.rel = 'noopener';
-    editFullBar.appendChild(editFullBtn);
+      'Agent Review runs Groq cleanup on all fields (title, ingredients, procedure, credits), then opens the full editor. Or open the editor manually.'));
+    var agentBtnRow = mk('div','display:flex;flex-wrap:wrap;gap:10px;align-items:center');
+    var agentReviewBtn = mk('button','padding:10px 18px;background:#7c5cbf;border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer',
+      '\uD83E\uDD16 Agent Review');
+    agentReviewBtn.type = 'button';
+    agentReviewBtn.title = 'Groq clean this recipe, then open all fields in a popup';
+    agentReviewBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (typeof runAgentReviewRecipe === 'function') runAgentReviewRecipe(r.id, r.recipe_name);
+    });
+    var editFullBtn = mk('button','padding:10px 18px;background:#5B8FD4;border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer',
+      'Edit all fields \u2192');
+    editFullBtn.type = 'button';
+    editFullBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (typeof openAdminFullEditorPopup === 'function') {
+        openAdminFullEditorPopup(r.id, { title: 'Edit all fields', subtitle: 'Same form as Submit a Recipe — save, then approve below.' });
+      } else {
+        window.open('submit-recipe.html?adminReview=' + encodeURIComponent(r.id), '_blank', 'noopener');
+      }
+    });
+    agentBtnRow.appendChild(agentReviewBtn);
+    agentBtnRow.appendChild(editFullBtn);
+    editFullBar.appendChild(agentBtnRow);
     titleBlock.appendChild(editFullBar);
     panel.appendChild(titleBlock);
 

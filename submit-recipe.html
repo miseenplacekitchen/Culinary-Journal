@@ -1124,6 +1124,13 @@
     #shelf-life-block .sr-field { margin-bottom: 0; }
     #shelf-life-block .sr-label { font-size: 12px; }
     #shelf-life-block .sr-hint  { font-size: 11px; }
+    /* Embedded in admin dashboard iframe (Agent Review popup) */
+    body.sr-embedded nav,
+    body.sr-embedded .tab-nav,
+    body.sr-embedded #admin-review-back { display: none !important; }
+    body.sr-embedded .sr-page { max-width: none; padding: 16px 16px 48px; margin: 0; }
+    body.sr-embedded .sr-header { margin-bottom: 24px; text-align: left; }
+    body.sr-embedded .sr-header h1 { font-size: 1.35rem; }
 </style>
   
 </head>
@@ -2055,10 +2062,14 @@ async function adminRpc(fn, params) {
 
 function applyAdminReviewUi(recipeName) {
   window._adminReviewRecipeId = window._adminReviewRecipeId || window._editRecipeId;
+  var embedded = new URLSearchParams(window.location.search).get('embedded') === '1';
+  if (embedded) document.body.classList.add('sr-embedded');
   const hdr = document.querySelector('.sr-header h1');
-  if (hdr) hdr.textContent = 'Admin — Edit Pending Recipe';
+  if (hdr) hdr.textContent = embedded ? 'Edit all fields' : 'Admin — Edit Pending Recipe';
   const sub = document.querySelector('.sr-header p');
-  if (sub) sub.textContent = (recipeName || 'Pending recipe') + ' — same form as Submit a Recipe. Save, then approve in the dashboard.';
+  if (sub) sub.textContent = embedded
+    ? (recipeName || 'Pending recipe') + ' — save when done, then approve in the review panel.'
+    : (recipeName || 'Pending recipe') + ' — same form as Submit a Recipe. Save, then approve in the dashboard.';
   const importSec = document.getElementById('section-import');
   if (importSec) importSec.style.display = 'none';
   const draftPrompt = document.getElementById('draft-restore-prompt');
@@ -2067,15 +2078,17 @@ function applyAdminReviewUi(recipeName) {
   if (btn) btn.textContent = 'Save recipe changes';
   const draftBtn = document.querySelector('.btn-draft');
   if (draftBtn) draftBtn.style.display = 'none';
-  let back = document.getElementById('admin-review-back');
-  if (!back) {
-    back = document.createElement('a');
-    back.id = 'admin-review-back';
-    back.href = 'dashboard.html';
-    back.textContent = '← Back to Admin inbox';
-    back.style.cssText = 'display:inline-block;margin-top:12px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--accent);text-decoration:none';
-    const header = document.querySelector('.sr-header');
-    if (header) header.appendChild(back);
+  if (!embedded) {
+    let back = document.getElementById('admin-review-back');
+    if (!back) {
+      back = document.createElement('a');
+      back.id = 'admin-review-back';
+      back.href = 'dashboard.html';
+      back.textContent = '← Back to Admin inbox';
+      back.style.cssText = 'display:inline-block;margin-top:12px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--accent);text-decoration:none';
+      const header = document.querySelector('.sr-header');
+      if (header) header.appendChild(back);
+    }
   }
 }
 
@@ -2139,6 +2152,17 @@ async function saveAdminRecipeReview() {
       p_id: window._adminReviewRecipeId,
       p_data: data
     });
+    var embedded = new URLSearchParams(window.location.search).get('embedded') === '1';
+    if (embedded) {
+      showMsg('Recipe saved. Close this panel and approve in the review popup.', 'success');
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'tcj-admin-recipe-saved', recipeId: window._adminReviewRecipeId }, '*');
+        }
+      } catch (_) {}
+      if (btn) { btn.disabled = false; btn.textContent = 'Save recipe changes'; }
+      return;
+    }
     showMsg('Recipe saved. Return to Admin → Pending to approve.', 'success');
     setTimeout(function() {
       window.location.href = 'dashboard.html';

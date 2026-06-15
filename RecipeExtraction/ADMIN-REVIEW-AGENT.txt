@@ -1,0 +1,60 @@
+TCJ ADMIN REVIEW AGENT — Betty's new chat setup
+===============================================
+
+YES — you have a dedicated agent that walks the review panel section-by-section,
+cleans pending recipes the way you would, then opens the full editor for you to tweak.
+
+DASHBOARD BUTTONS (live site after deploy)
+------------------------------------------
+  Recipe Management → Pending tab:
+    • Bulk Agent Review — Groq-cleans up to 10 oldest pending, then opens full editor popup
+
+  Open any pending recipe (Recipe Review popup):
+    • Agent Review — Groq-cleans THIS recipe, then opens full editor popup with agent notes
+    • Edit all fields — full Submit a Recipe form in popup (no Groq)
+
+  Both agent buttons SAVE to the database first, then pop up ALL fields to edit.
+  You still click Approve yourself.
+
+SECTION-BY-SECTION PLAYBOOK
+---------------------------
+  See: .cursor/skills/tcj-admin-recipe-review/REVIEW-PANEL.md
+  (Title, intro, image flag, ingredients, procedure, source, audit, unknowns, footer)
+
+WHAT THE CURSOR AGENT DOES
+--------------------------
+  • Inbox snapshot (run_admin_routine.bat)
+  • Groq polish batches (polish_pending.py) when needed
+  • Same cleaning rules as dashboard Agent Review
+  • Reports READY / FLAG REJECT / NEEDS_IMAGE — never approves
+
+WHAT IT DOES NOT DO
+-------------------
+  • Cannot click Approve in the browser — only you can
+  • Cannot polish 10,000 recipes in one day (Groq daily limit — batches over days)
+  • Does not generate recipe images
+
+VERCEL ENV (required for dashboard Agent Review buttons)
+--------------------------------------------------------
+  GROQ_API_KEY
+  SUPABASE_SERVICE_ROLE_KEY
+  (SUPABASE_ANON_KEY for admin session check)
+
+HOW TO START A NEW CURSOR AGENT CHAT
+------------------------------------
+  1. Open a new Cursor chat
+  2. Paste:
+
+     You are my TCJ Admin Recipe Review agent.
+     Use the tcj-admin-recipe-review skill and REVIEW-PANEL.md.
+     Walk pending recipes section-by-section. Groq clean, flag reject candidates.
+     Report which IDs are ready vs needs_image vs flag_reject. Do not approve anything.
+
+YOUR PART (unchanged)
+---------------------
+  Admin → Recipes → Pending
+  Agent Review (or Bulk) → edit in popup if needed → Approve in batches of 10–15
+
+ONE COMMAND YOU STILL USE YOURSELF
+----------------------------------
+  .\RecipeExtraction\run_admin_routine.bat     (before a review session)
