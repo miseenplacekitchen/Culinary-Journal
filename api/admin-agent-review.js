@@ -14,7 +14,9 @@ const {
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://kzywmodvfbyexqgipcjt.supabase.co';
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const GROQ_KEY = process.env.GROQ_API_KEY;
-const ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Public anon key (same as supabase-config.js) — fallback if Vercel env name typo
+const ANON_KEY_FALLBACK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6eXdtb2R2ZmJ5ZXhxZ2lwY2p0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2Mzc0NjcsImV4cCI6MjA5NTIxMzQ2N30.hkGIGx-IYrVtyTQRg6eduUAVQKnkxJHUd9KM_us6_ZM';
+const ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ANON_KEY_FALLBACK;
 
 async function sbFetch(path, options, key, userJwt) {
   const bearer = userJwt || key;
@@ -31,23 +33,30 @@ async function sbFetch(path, options, key, userJwt) {
 }
 
 async function assertAdmin(userToken) {
-  const anonKey = ANON_KEY || SERVICE_KEY;
-  if (!anonKey) throw new Error('Server missing Supabase anon key');
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+  const anonKey = ANON_KEY;
+  const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
     headers: { apikey: anonKey, Authorization: `Bearer ${userToken}` },
   });
-  if (!res.ok) throw new Error('Not signed in — refresh the page and log in again');
-  const user = await res.json();
+  if (!userRes.ok) throw new Error('Not signed in — refresh the page and log in again');
+  const user = await userRes.json();
   if (!user?.id) throw new Error('Not signed in');
-  // Service role read — user JWT already validated above
-  const prof = await sbFetch(
-    `/rest/v1/profiles?id=eq.${user.id}&select=is_admin`,
-    { method: 'GET' },
-    SERVICE_KEY,
-  );
-  if (!prof.ok) throw new Error('Could not verify admin');
-  const rows = await prof.json();
-  if (!rows?.[0]?.is_admin) throw new Error('Admin access required');
+
+  // Same check the dashboard uses: is_admin() RPC with your session token
+  const adminRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+    method: 'POST',
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${userToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: '{}',
+  });
+  if (!adminRes.ok) {
+    const detail = await adminRes.text().catch(() => '');
+    throw new Error('Could not verify admin' + (detail ? ' — try logging out and back in' : ''));
+  }
+  const isAdmin = await adminRes.json();
+  if (!isAdmin) throw new Error('Admin access required for this account');
   return user.id;
 }
 
