@@ -81,6 +81,28 @@ async function tryRefreshToken() {
   } catch(e) { return false; }
 }
 
+function applyAdminBadges(counts) {
+  if (!counts) return;
+  setEl('badge-pending', counts.pending_recipes || 0);
+  setEl('badge-pending-users', counts.pending_users || 0);
+  var fb = counts.new_feedback || 0;
+  var fbEl = document.getElementById('badge-feedback');
+  if (fbEl) { fbEl.textContent = fb || ''; fbEl.style.display = fb ? 'inline-block' : 'none'; }
+  var vocEl = document.getElementById('badge-voc');
+  if (vocEl) { vocEl.textContent = fb || ''; vocEl.style.display = fb ? 'inline-block' : 'none'; }
+  var po = counts.print_orders_pending || 0;
+  var poEl = document.getElementById('badge-print-orders');
+  if (poEl) { poEl.textContent = po || ''; poEl.style.display = (po && po > 0) ? 'inline-block' : 'none'; }
+}
+
+function refreshAdminBadges(force) {
+  if (typeof TcjAdminCounts === 'undefined') return Promise.resolve(null);
+  return TcjAdminCounts.fetchInboxCounts(!!force).then(function (counts) {
+    applyAdminBadges(counts);
+    return counts;
+  }).catch(function (e) { console.warn('admin badges', e); return null; });
+}
+
 async function loadDashboard() {
   // ── Recipe + user + finance stats ────────────────────────
   try {
@@ -215,25 +237,36 @@ async function loadDashboard() {
         return [];
       }
       var pending = parseInt((document.getElementById('dash-pending')||{}).textContent)||0;
-      var inbox = await Promise.all([
-        rpc('admin_get_appeals', {}).catch(function(){ return []; }),
-        (typeof TcjAdminReports !== 'undefined'
-          ? TcjAdminReports.fetchAll({ p_status: 'pending' })
-          : rpc('admin_get_reports', { p_status: 'pending', p_limit: 200, p_offset: 0 })
-        ).catch(function(){ return []; }),
-        rpc('admin_get_pending_notes', {}).catch(function(){ return []; }),
-        rpc('admin_get_pending_ingredients', {}).catch(function(){ return []; }),
-        rpc('admin_get_library_submissions', {p_status:'pending', p_limit:50}).catch(function(){ return []; }),
-        rpc('admin_count_pending_users', {}).catch(function(){ return 0; }),
-        rpc('admin_get_audit_log', {p_limit:5, p_offset:0}).catch(function(){ return []; })
-      ]);
-      var appealCount = asList(inbox[0]).filter(function(a){ return a.status === 'pending'; }).length;
-      var reportCount = asList(inbox[1]).length;
-      var noteCount = asList(inbox[2]).length;
-      var ingCount = asList(inbox[3]).length;
-      var libSubCount = asList(inbox[4]).length;
-      var pendingUsers = parseInt(inbox[5]) || 0;
-      var auditRows = asList(inbox[6]);
+      var inboxCounts = typeof TcjAdminCounts !== 'undefined'
+        ? await TcjAdminCounts.fetchInboxCounts(false).catch(function(){ return null; })
+        : null;
+      var appealCount = inboxCounts ? (inboxCounts.appeals_pending || 0) : 0;
+      var reportCount = inboxCounts ? (inboxCounts.reports_pending || 0) : 0;
+      var noteCount = inboxCounts ? (inboxCounts.pending_notes || 0) : 0;
+      var ingCount = inboxCounts ? (inboxCounts.pending_ingredients || 0) : 0;
+      var libSubCount = inboxCounts ? (inboxCounts.library_submissions_pending || 0) : 0;
+      var pendingUsers = inboxCounts ? (inboxCounts.pending_users || 0) : 0;
+      var auditRows = [];
+      if (!inboxCounts) {
+        var inbox = await Promise.all([
+          TcjAdminCounts ? TcjAdminCounts.restCount('appeals', 'status=eq.pending') : Promise.resolve(0),
+          TcjAdminCounts ? TcjAdminCounts.restCount('user_reports', 'status=eq.pending') : Promise.resolve(0),
+          rpc('admin_get_pending_notes', {}).catch(function(){ return []; }),
+          rpc('admin_get_pending_ingredients', {}).catch(function(){ return []; }),
+          rpc('admin_get_library_submissions', {p_status:'pending', p_limit:50}).catch(function(){ return []; }),
+          rpc('admin_count_pending_users', {}).catch(function(){ return 0; }),
+          rpc('admin_get_audit_log', {p_limit:5, p_offset:0}).catch(function(){ return []; })
+        ]);
+        appealCount = inbox[0] || 0;
+        reportCount = inbox[1] || 0;
+        noteCount = asList(inbox[2]).length;
+        ingCount = asList(inbox[3]).length;
+        libSubCount = asList(inbox[4]).length;
+        pendingUsers = parseInt(inbox[5]) || 0;
+        auditRows = asList(inbox[6]);
+      } else {
+        auditRows = asList(await rpc('admin_get_audit_log', {p_limit:5, p_offset:0}).catch(function(){ return []; }));
+      }
       setEl('rtab-badge-notes', noteCount);
       setEl('badge-pending-users', pendingUsers);
       var items = [];
@@ -353,20 +386,7 @@ async function init() {
     try { switchView(_sv, _it); } catch(e) { switchView('dashboard'); }
     document.getElementById('screen-main').style.display = 'flex';
     if (typeof window.loadTcjAnnouncements === 'function') window.loadTcjAnnouncements();
-    rpc('admin_get_stats',{}).then(function(st){ if(st) setEl('badge-pending', st.pending||0); }).catch(function(e){ console.warn('badge pending recipes', e); });
-    rpc('admin_count_pending_users',{}).then(function(n){ setEl('badge-pending-users', n||0); }).catch(function(e){ console.warn('badge pending users', e); });
-    // Load unread feedback count
-    rpc('admin_get_feedback',{p_status:'new'}).then(function(rows){
-      var n = Array.isArray(rows) ? rows.length : 0;
-      var el = document.getElementById('badge-feedback');
-      if (el) { el.textContent = n||''; el.style.display = n ? 'inline-block' : 'none'; }
-      var vocEl = document.getElementById('badge-voc');
-      if (vocEl) { vocEl.textContent = n||''; vocEl.style.display = n ? 'inline-block' : 'none'; }
-    }).catch(function(e){ console.warn('badge feedback', e); });
-    rpc('admin_count_print_orders', { p_status: 'pending' }).then(function(n){
-      var el = document.getElementById('badge-print-orders');
-      if (el) { el.textContent = n || ''; el.style.display = (n && n > 0) ? 'inline-block' : 'none'; }
-    }).catch(function(e){ console.warn('badge print orders', e); });
+    refreshAdminBadges(false);
   } catch(e) {
     showFatalError('Dashboard error: ' + e.message);
   }

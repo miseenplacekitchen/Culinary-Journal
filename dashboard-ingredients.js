@@ -1313,6 +1313,7 @@ async function buildFiInterface(container) {
         await rpc('admin_set_member_tier', { p_user_id: uid, p_tier: tier, p_notes: log });
         sm.textContent = '\u2713 Payment recorded, tier set to ' + tier;
         sb.textContent = 'Record Payment'; sb.disabled = false; mSel.value = '';
+        fiCache.members = null;
         auditLog('Finance Management', 'Manual Payment Recorded', null, null, tier, log);
         var hist = document.getElementById('upanel-fi-history');
         if (hist && hist.dataset.built === '1') { hist.dataset.built = ''; buildFiHistory(hist); }
@@ -1475,11 +1476,14 @@ async function buildFiInterface(container) {
           label: 'Hub',
           group: 'Overview',
           subtitle: 'Tier snapshot and one-click tools',
-          render: function (panel, ctx) {
-            panel.innerHTML = '<div class="admin-if-loading">Loading stats…</div>';
+          refreshOnShow: true,
+          render: function (panel, ctx, isRefresh) {
+            if (!isRefresh) panel.innerHTML = '<div class="admin-if-loading">Loading stats…</div>';
             return Promise.all([
               fiTiers(),
-              rpc('admin_count_print_orders', { p_status: 'pending' }).catch(function () { return 0; })
+              typeof TcjAdminCounts !== 'undefined'
+                ? TcjAdminCounts.fetchInboxCounts(isRefresh).then(function (c) { return c.print_orders_pending || 0; })
+                : rpc('admin_count_print_orders', { p_status: 'pending' }).catch(function () { return 0; })
             ]).then(function (res) {
               var tiers = res[0] || {};
               AdminTabNav.renderHub(panel, {

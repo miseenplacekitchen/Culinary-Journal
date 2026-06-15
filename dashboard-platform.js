@@ -49,23 +49,24 @@ function loadVocInterface(container) {
     defaultKey: 'hub',
     banner: 'VoC reference — triage happens in the Inbox tab.',
     sections: [
-      {
-        key: 'hub',
-        label: 'Hub',
-        group: 'Overview',
+      AdminTabNav.hubSection({
         subtitle: 'Inbox summary and quick filters',
-        render: function (panel, ctx) {
-          panel.innerHTML = '<div class="admin-if-loading">Loading…</div>';
-          return Promise.all([
-            AdminTabNav.restCount('user_feedback', 'status=eq.new'),
-            AdminTabNav.restCount('user_feedback', 'voc_category=eq.actionable'),
-            AdminTabNav.restCount('user_feedback', 'action_required=eq.true')
-          ]).then(function (res) {
-            AdminTabNav.renderHub(panel, {
+        loadHub: function (panel, ctx) {
+          return (typeof TcjAdminCounts !== 'undefined'
+            ? TcjAdminCounts.fetchInboxCounts(false)
+            : Promise.all([
+              AdminTabNav.restCount('user_feedback', 'status=eq.new'),
+              AdminTabNav.restCount('user_feedback', 'voc_category=eq.actionable'),
+              AdminTabNav.restCount('user_feedback', 'action_required=eq.true')
+            ]).then(function (res) {
+              return { new_feedback: res[0], feedback_actionable: res[1], feedback_action_required: res[2] };
+            })
+          ).then(function (c) {
+            return {
               stats: [
-                { num: res[0] || 0, label: 'New' },
-                { num: res[1] || 0, label: 'Actionable' },
-                { num: res[2] || 0, label: 'Action required' }
+                { num: c.new_feedback || 0, label: 'New' },
+                { num: c.feedback_actionable || 0, label: 'Actionable' },
+                { num: c.feedback_action_required || 0, label: 'Action required' }
               ],
               actions: [
                 { label: 'Open inbox', desc: 'All feedback entries', onClick: function () { switchVocTab('voc-inbox'); } },
@@ -73,10 +74,10 @@ function loadVocInterface(container) {
                 { label: 'Action required', desc: 'Needs your attention', onClick: function () { switchVocTab('voc-inbox'); loadVocInbox(document.getElementById('voc-panel'), { action_required: true }); } },
                 { label: 'Taxonomy guide', desc: 'Actionable / signals / noise', onClick: function () { ctx.activate('taxonomy'); } }
               ]
-            });
+            };
           });
         }
-      },
+      }),
       { key: 'taxonomy', label: 'Taxonomy', group: 'Reference', subtitle: 'How to categorise entries', render: function (p) { loadVocTaxonomy(p); } },
       {
         key: 'routing',
@@ -195,38 +196,56 @@ async function loadFestInterface(container) {
     if (container) container.textContent = 'Admin tab navigation failed to load.';
     return;
   }
+  if (container.dataset.ifShell === '1' && container._ifShell) {
+    var stored = localStorage.getItem('tcj_fest_if_section') || 'hub';
+    container._ifShell.activate(stored);
+    return;
+  }
+
   container.innerHTML = '<div class="admin-if-loading">Loading festivals…</div>';
   try {
     var rows = await rpc('admin_get_festivals') || [];
-    var sections = [
-      {
-        key: 'hub',
-        label: 'Hub',
-        group: 'Festivals',
-        subtitle: 'Overview and create',
-        render: function (panel, ctx) {
-          panel.innerHTML =
-            '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:14px">' +
-            rows.length + ' festival' + (rows.length === 1 ? '' : 's') + ' — pick one in the sidebar to edit dishes and recipes.</div>' +
-            '<div id="fm-new-fest-inline"></div>';
-          AdminTabNav.renderHub(panel, {
-            stats: [
-              { num: rows.length, label: 'Festivals' },
-              { num: rows.filter(function (f) { return f.is_active; }).length, label: 'Active' }
-            ],
-            actions: [
-              { label: 'New festival', desc: 'Create a festival shell', onClick: function () { ctx.activate('new'); } },
-              { label: 'Festival overview', desc: 'Toggle visibility on planner', onClick: function () { switchFestTab('fm-overview'); } }
-            ].concat(rows.slice(0, 4).map(function (f) {
-              return {
-                label: (f.emoji || '🎉') + ' ' + f.name,
-                desc: 'Edit dishes & recipes',
-                onClick: function () { ctx.activate('fest-' + f.slug); }
-              };
-            }))
-          });
-        }
-      },
+    fmBuildFestInterfaceShell(container, rows);
+  } catch (e) {
+    container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
+  }
+}
+
+function fmRebuildFestInterface(forceSlug) {
+  if (forceSlug) _fmEditSlug = forceSlug;
+  var container = document.getElementById('fest-panel');
+  if (!container) return;
+  delete container.dataset.ifShell;
+  container._ifShell = null;
+  loadFestInterface(container);
+}
+
+function fmBuildFestInterfaceShell(container, rows) {
+  var sections = [
+    AdminTabNav.hubSection({
+      group: 'Festivals',
+      subtitle: 'Overview and create',
+      refreshOnShow: false,
+      loadHub: function (panel, ctx) {
+        return Promise.resolve({
+          intro: rows.length + ' festival' + (rows.length === 1 ? '' : 's') + ' — pick one in the sidebar to edit dishes and recipes.',
+          stats: [
+            { num: rows.length, label: 'Festivals' },
+            { num: rows.filter(function (f) { return f.is_active; }).length, label: 'Active' }
+          ],
+          actions: [
+            { label: 'New festival', desc: 'Create a festival shell', onClick: function () { ctx.activate('new'); } },
+            { label: 'Festival overview', desc: 'Toggle visibility on planner', onClick: function () { switchFestTab('fm-overview'); } }
+          ].concat(rows.slice(0, 4).map(function (f) {
+            return {
+              label: (f.emoji || '🎉') + ' ' + f.name,
+              desc: 'Edit dishes & recipes',
+              onClick: function () { ctx.activate('fest-' + f.slug); }
+            };
+          }))
+        });
+      }
+    }),
       {
         key: 'new',
         label: '+ New festival',
@@ -257,15 +276,13 @@ async function loadFestInterface(container) {
       });
     });
     var defaultKey = _fmEditSlug ? ('fest-' + _fmEditSlug) : (rows[0] ? ('fest-' + rows[0].slug) : 'hub');
+    container.innerHTML = '';
     AdminTabNav.buildInterfaceShell(container, {
       storageKey: 'tcj_fest_if_section',
       defaultKey: defaultKey,
       banner: 'Festival editor — visibility toggles stay on Overview.',
       sections: sections
     });
-  } catch (e) {
-    container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
-  }
 }
 
 async function fmSaveNewFestFromInterface() {
@@ -283,7 +300,7 @@ async function fmSaveNewFestFromInterface() {
     var slug = document.getElementById('fm-nf-slug').value.trim();
     _fmEditSlug = slug;
     localStorage.setItem('tcj_fest_if_section', 'fest-' + slug);
-    loadFestInterface(document.getElementById('fest-panel'));
+    fmRebuildFestInterface(slug);
   } catch (e) { alert('Error: ' + e.message); }
 }
 

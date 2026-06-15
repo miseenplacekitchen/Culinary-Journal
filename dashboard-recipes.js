@@ -747,16 +747,12 @@ function loadRMInterfaceSettings() {
     defaultKey: 'hub',
     banner: 'Recipe configuration — queues and spotlight stay in the tabs above.',
     sections: [
-      {
-        key: 'hub',
-        label: 'Hub',
-        group: 'Overview',
+      AdminTabNav.hubSection({
         subtitle: 'Jump to work or open an operations screen',
-        render: function (panel, ctx) {
-          panel.innerHTML = '<div class="admin-if-loading">Loading stats…</div>';
+        loadHub: function (panel, ctx) {
           return rpc('admin_get_stats', {}).then(function (stats) {
             stats = stats || {};
-            AdminTabNav.renderHub(panel, {
+            return {
               intro: 'Taxonomy, collections, nutrition, print queue, and audit — pick a section in the sidebar or use a shortcut below.',
               stats: [
                 { num: stats.pending || 0, label: 'Pending' },
@@ -772,17 +768,17 @@ function loadRMInterfaceSettings() {
                 { label: 'Collections', desc: 'Curated recipe sets', onClick: function () { ctx.activate('collections'); } },
                 { label: 'Audit trail', desc: 'Admin action log', onClick: function () { ctx.activate('audit'); } }
               ]
-            });
+            };
           }).catch(function () {
-            AdminTabNav.renderHub(panel, {
+            return {
               actions: [
                 { label: 'Review pending', desc: 'Open pending queue', onClick: function () { switchRecipeTab('pending'); } },
                 { label: 'Taxonomy', desc: 'Sub-categories & divisions', onClick: function () { ctx.activate('taxonomy'); } }
               ]
-            });
+            };
           });
         }
-      },
+      }),
       {
         key: 'settings',
         label: 'Rejection reasons',

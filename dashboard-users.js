@@ -56,23 +56,28 @@ function loadUMInterfaceSettings() {
     defaultKey: 'hub',
     banner: 'Member policy and insights — member queues stay in the tabs above.',
     sections: [
-      {
-        key: 'hub',
-        label: 'Hub',
-        group: 'Overview',
+      AdminTabNav.hubSection({
         subtitle: 'Shortcuts to work queues and related panels',
-        render: function (panel, ctx) {
-          panel.innerHTML = '<div class="admin-if-loading">Loading…</div>';
-          return Promise.all([
-            rpc('admin_count_pending_users', {}).catch(function () { return 0; }),
-            AdminTabNav.restCount('appeals', 'status=eq.pending'),
-            AdminTabNav.restCount('user_reports', 'status=eq.pending')
-          ]).then(function (res) {
-            AdminTabNav.renderHub(panel, {
+        loadHub: function (panel, ctx) {
+          return (typeof TcjAdminCounts !== 'undefined'
+            ? TcjAdminCounts.fetchInboxCounts(false)
+            : Promise.all([
+              rpc('admin_count_pending_users', {}).catch(function () { return 0; }),
+              AdminTabNav.restCount('appeals', 'status=eq.pending'),
+              AdminTabNav.restCount('user_reports', 'status=eq.pending')
+            ]).then(function (res) {
+              return {
+                pending_users: res[0] || 0,
+                appeals_pending: res[1] || 0,
+                reports_pending: res[2] || 0
+              };
+            })
+          ).then(function (c) {
+            return {
               stats: [
-                { num: res[0] || 0, label: 'Pending members' },
-                { num: res[1] || 0, label: 'Appeals' },
-                { num: res[2] || 0, label: 'Open reports' }
+                { num: c.pending_users || 0, label: 'Pending members' },
+                { num: c.appeals_pending || 0, label: 'Appeals' },
+                { num: c.reports_pending || 0, label: 'Open reports' }
               ],
               actions: [
                 { label: 'Review pending members', desc: 'Approval queue', onClick: function () { switchUserTab('pending'); } },
@@ -82,10 +87,10 @@ function loadUMInterfaceSettings() {
                 { label: 'Analytics', desc: 'Member insights', onClick: function () { ctx.activate('analytics'); } },
                 { label: 'Audit trail', desc: 'User admin log', onClick: function () { ctx.activate('audit'); } }
               ]
-            });
+            };
           });
         }
-      },
+      }),
       { key: 'analytics', label: 'Analytics', group: 'Insights', subtitle: 'Member and engagement stats', render: function (p) { loadUMAnalytics(p); } },
       { key: 'audit', label: 'Audit trail', group: 'Insights', subtitle: 'User management actions', render: function (p) { loadUMTab('audit', p); } }
     ]
