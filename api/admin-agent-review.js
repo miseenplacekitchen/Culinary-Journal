@@ -69,18 +69,24 @@ async function fetchRecipe(recipeId) {
   return rows?.[0] || null;
 }
 
-async function saveRecipeReview(recipeId, payload) {
+async function saveRecipeReview(recipeId, payload, userToken) {
   const res = await sbFetch(
     '/rest/v1/rpc/admin_save_recipe_review',
     {
       method: 'POST',
       body: JSON.stringify({ p_id: recipeId, p_data: payload }),
     },
-    SERVICE_KEY,
+    ANON_KEY,
+    userToken,
   );
   if (!res.ok) {
     const t = await res.text();
-    throw new Error(t || 'Save failed');
+    let msg = t || 'Save failed';
+    try {
+      const j = JSON.parse(t);
+      if (j.message) msg = j.message;
+    } catch (_) {}
+    throw new Error(msg);
   }
 }
 
@@ -108,7 +114,7 @@ async function getIngredientIndex() {
   return cachedIngredientIndex;
 }
 
-async function reviewOneRecipe(recipeId) {
+async function reviewOneRecipe(recipeId, userToken) {
   const row = await fetchRecipe(recipeId);
   if (!row) throw new Error('Recipe not found');
   if (row.status !== 'pending') throw new Error('Only pending recipes can be agent-reviewed');
@@ -120,7 +126,7 @@ async function reviewOneRecipe(recipeId) {
     payload.unknown_ingredients = structured.unknown_ingredients;
   }
 
-  await saveRecipeReview(recipeId, payload);
+  await saveRecipeReview(recipeId, payload, userToken);
   await updateProcedureFlags(recipeId);
 
   const assessment = assessAgentOutcome(structured, row, payload);
@@ -185,7 +191,7 @@ module.exports = async function handler(req, res) {
       let failed = 0;
       for (const row of pending) {
         try {
-          const r = await reviewOneRecipe(row.id);
+          const r = await reviewOneRecipe(row.id, token);
           results.push(r);
           ok += 1;
         } catch (e) {
@@ -206,7 +212,7 @@ module.exports = async function handler(req, res) {
     if (!recipeId) {
       return res.status(400).json({ ok: false, error: 'recipe_id required' });
     }
-    const result = await reviewOneRecipe(recipeId);
+    const result = await reviewOneRecipe(recipeId, token);
     return res.status(200).json(result);
   } catch (e) {
     const status = e.status === 429 ? 429 : 500;
