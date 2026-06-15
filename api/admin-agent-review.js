@@ -69,15 +69,42 @@ async function fetchRecipe(recipeId) {
   return rows?.[0] || null;
 }
 
-async function saveRecipeReview(recipeId, payload, userToken) {
+async function saveRecipeReview(recipeId, payload) {
+  const patch = {
+    recipe_name: payload.recipe_name,
+    native_title: payload.native_title || '',
+    category: payload.category,
+    introduction: payload.introduction || '',
+    prep_time_minutes: payload.prep_time_minutes ?? 0,
+    cook_time_minutes: payload.cook_time_minutes ?? 0,
+    servings: payload.servings ?? 1,
+    spice_level: payload.spice_level,
+    sweet_level: payload.sweet_level,
+    origin_continent: payload.origin_continent || '',
+    origin_country: payload.origin_country || '',
+    origin_state: payload.origin_state || '',
+    origin_locality: payload.origin_locality || '',
+    source_type: payload.source_type,
+    credit_name: payload.credit_name || '',
+    credit_handle: payload.credit_handle || '',
+    credit_url: payload.credit_url || '',
+    ingredients: payload.ingredients,
+    method: payload.method,
+    cooking_notes: payload.cooking_notes || '',
+    procedure_rewritten: true,
+    import_extractor: 'admin-mechanical-v1',
+  };
+  if (payload.unknown_ingredients?.length) {
+    patch.unknown_ingredients = payload.unknown_ingredients;
+  }
   const res = await sbFetch(
-    '/rest/v1/rpc/admin_save_recipe_review',
+    `/rest/v1/submitted_recipes?id=eq.${encodeURIComponent(recipeId)}`,
     {
-      method: 'POST',
-      body: JSON.stringify({ p_id: recipeId, p_data: payload }),
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify(patch),
     },
-    ANON_KEY,
-    userToken,
+    SERVICE_KEY,
   );
   if (!res.ok) {
     const t = await res.text();
@@ -88,21 +115,6 @@ async function saveRecipeReview(recipeId, payload, userToken) {
     } catch (_) {}
     throw new Error(msg);
   }
-}
-
-async function updateProcedureFlags(recipeId) {
-  await sbFetch(
-    `/rest/v1/submitted_recipes?id=eq.${encodeURIComponent(recipeId)}`,
-    {
-      method: 'PATCH',
-      headers: { Prefer: 'return=minimal' },
-      body: JSON.stringify({
-        procedure_rewritten: true,
-        import_extractor: 'admin-mechanical-v1',
-      }),
-    },
-    SERVICE_KEY,
-  );
 }
 
 let cachedIngredientIndex = null;
@@ -126,8 +138,7 @@ async function reviewOneRecipe(recipeId, userToken) {
     payload.unknown_ingredients = structured.unknown_ingredients;
   }
 
-  await saveRecipeReview(recipeId, payload, userToken);
-  await updateProcedureFlags(recipeId);
+  await saveRecipeReview(recipeId, payload);
 
   const assessment = assessAgentOutcome(structured, row, payload);
 
