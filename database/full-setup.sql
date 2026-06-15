@@ -1,6 +1,6 @@
 -- ======================================================================
 -- THE CULINARY JOURNAL — FULL DATABASE SETUP
--- Generated: 2026-06-06 01:49 UTC
+-- Generated: 2026-06-15 11:26 UTC
 -- Source: database/manifest.json → database/build-setup.py
 --
 -- Run this ONCE in Supabase Dashboard → SQL Editor on a fresh project.
@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS public.submitted_recipes (
   origin_continent    text,
   origin_country      text,
   origin_state        text,
+  origin_locality     text,
   prep_time_minutes   integer     DEFAULT 0,
   cook_time_minutes   integer     DEFAULT 0,
   servings            integer     DEFAULT 1,
@@ -116,7 +117,7 @@ CREATE POLICY "Users can view own submissions"
 
 CREATE POLICY "Users can update own submissions"
   ON public.submitted_recipes FOR UPDATE TO authenticated
-  USING (auth.uid() = user_id AND status = 'pending')
+  USING (auth.uid() = user_id AND status IN ('pending', 'rejected'))
   WITH CHECK (auth.uid() = user_id AND status = 'pending');
 
 CREATE POLICY "Anyone can read approved public recipes"
@@ -363,10 +364,29 @@ ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS after_open_value         
 ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS after_open_unit          text DEFAULT 'weeks';
 ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS reviewer_id              uuid REFERENCES auth.users(id) ON DELETE SET NULL;
 ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS unknown_ingredients      text[];
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS unknown_utensils        text[];
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS taxonomy_suggestions     jsonb DEFAULT '[]'::jsonb;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS cooking_style            text;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS origin_locality          text;
 
 -- Also ensure reviewer_notes exists (used by admin_review_recipe)
 ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS reviewer_notes           text;
 ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS reviewed_at              timestamptz;
+
+-- Wave 3 import audit (see fix-phase38-import-audit.sql)
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS paste_text              text;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS source_url              text;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS parser_version          text;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS extractor_version       text;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS import_extractor        text;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS import_confidence_score integer;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS import_warnings         jsonb DEFAULT '[]'::jsonb;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS import_paste_snapshot   text;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS import_raw_article_text text;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS imported_at             timestamptz;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS procedure_rewritten     boolean DEFAULT false;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS import_merge_mode       boolean DEFAULT false;
+ALTER TABLE submitted_recipes ADD COLUMN IF NOT EXISTS import_source_url       text;
 
 SELECT 'submitted_recipes columns synced' AS status;
 
@@ -734,6 +754,37 @@ END;
 $$;
 GRANT EXECUTE ON FUNCTION public.get_approved_recipes(text,text,text,text,int,int) TO anon, authenticated;
 
+-- Public recipe page fetch — includes submitter username; enforces visibility server-side
+DROP FUNCTION IF EXISTS public.get_public_recipe(uuid);
+CREATE OR REPLACE FUNCTION public.get_public_recipe(p_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_row   public.submitted_recipes%ROWTYPE;
+  v_user  text;
+  v_uid   uuid;
+BEGIN
+  IF p_id IS NULL THEN RETURN NULL; END IF;
+  SELECT * INTO v_row
+    FROM public.submitted_recipes
+   WHERE id = p_id;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+  SELECT username INTO v_user
+    FROM public.profiles
+   WHERE id = v_row.user_id;
+  v_uid := auth.uid();
+  IF is_admin()
+     OR (v_uid IS NOT NULL AND v_row.user_id = v_uid)
+     OR (v_row.status = 'approved' AND v_row.visibility = 'Public')
+  THEN
+    RETURN to_jsonb(v_row) || jsonb_build_object('username', v_user);
+  END IF;
+  RETURN NULL;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.get_public_recipe(uuid) TO anon, authenticated;
+
 -- Quick edit: name, visibility, description only
 -- FIX: stores correct case — 'Public'/'Private'/'Archived' not lowercased
 DO $$ DECLARE r record;
@@ -794,30 +845,8 @@ END;
 $$;
 GRANT EXECUTE ON FUNCTION public.admin_get_stats() TO authenticated;
 
-DO $$ DECLARE r record;
-BEGIN
-  FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
-           WHERE proname = 'admin_review_recipe' AND pronamespace = 'public'::regnamespace
-  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
-END $$;
-CREATE OR REPLACE FUNCTION public.admin_review_recipe(
-  p_id     uuid,
-  p_status text,
-  p_notes  text DEFAULT ''
-)
-RETURNS void
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-BEGIN
-  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
-  IF p_status NOT IN ('approved','rejected','pending')
-    THEN RAISE EXCEPTION 'Invalid status: %', p_status; END IF;
-  UPDATE public.submitted_recipes
-     SET status = p_status, reviewer_notes = p_notes, reviewed_at = now()
-   WHERE id = p_id;
-END;
-$$;
-GRANT EXECUTE ON FUNCTION public.admin_review_recipe(uuid,text,text) TO authenticated;
+-- admin_review_recipe — MOVED to recipe_management.sql (canonical owner per manifest.json).
+-- Do not redefine here; fresh installs get it from recipe_management.sql in setup_order.
 
 DO $$ DECLARE r record;
 BEGIN
@@ -1164,12 +1193,12 @@ GRANT EXECUTE ON FUNCTION public.set_page_visibility(text,text,text) TO authenti
 
 -- ── is_username_taken — used by signup form ────────────────────────────
 DROP FUNCTION IF EXISTS public.is_username_taken(text);
-CREATE FUNCTION public.is_username_taken(p_username text)
+CREATE FUNCTION public.is_username_taken(uname text)
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE LOWER(username) = LOWER(p_username)
+    WHERE LOWER(username) = LOWER(TRIM(uname))
   );
 END; $$;
 REVOKE ALL ON FUNCTION public.is_username_taken(text) FROM PUBLIC;
@@ -1421,14 +1450,20 @@ GRANT EXECUTE ON FUNCTION public.upsert_diary_entry(uuid,date,text,text,text,tex
 -- Delete a diary entry
 DROP FUNCTION IF EXISTS public.delete_diary_entry(uuid);
 CREATE FUNCTION public.delete_diary_entry(p_id uuid)
-RETURNS void
+RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
+DECLARE v_count int;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  IF p_id IS NULL THEN RAISE EXCEPTION 'missing_id'; END IF;
   DELETE FROM public.diary_entries WHERE id = p_id AND user_id = auth.uid();
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  IF v_count = 0 THEN RAISE EXCEPTION 'diary_entry_not_found'; END IF;
+  RETURN jsonb_build_object('deleted', v_count);
 END;
 $$;
+REVOKE ALL ON FUNCTION public.delete_diary_entry(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.delete_diary_entry(uuid) TO authenticated;
 
 -- Diary stats (streak + count)
@@ -1795,13 +1830,19 @@ GRANT EXECUTE ON FUNCTION public.check_cooking_milestones() TO authenticated;
 -- ── DELETE A COOKING EVENT ──────────────────────────────────────
 DROP FUNCTION IF EXISTS public.delete_cooking_event(uuid);
 CREATE FUNCTION public.delete_cooking_event(p_id uuid)
-RETURNS void
+RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_count int;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  IF p_id IS NULL THEN RAISE EXCEPTION 'missing_id'; END IF;
   DELETE FROM cooking_events WHERE id = p_id AND user_id = auth.uid();
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  IF v_count = 0 THEN RAISE EXCEPTION 'cooking_event_not_found'; END IF;
+  RETURN jsonb_build_object('deleted', v_count);
 END;
 $$;
+REVOKE ALL ON FUNCTION public.delete_cooking_event(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.delete_cooking_event(uuid) TO authenticated;
 
 -- ── UPDATE COOKING EVENT (AP-03) ─────────────────────────────────
@@ -2515,6 +2556,51 @@ END;
 $$;
 
 -- ── 5. Review recipe (approve/reject/reset) ───────────────────────
+-- Canonical owner: manifest.json function_owners.admin_review_recipe
+DO $$ DECLARE r record;
+BEGIN
+  FOR r IN SELECT oid::regprocedure AS sig FROM pg_proc
+           WHERE proname = 'admin_review_recipe' AND pronamespace = 'public'::regnamespace
+  LOOP EXECUTE 'DROP FUNCTION IF EXISTS ' || r.sig; END LOOP;
+END $$;
+CREATE OR REPLACE FUNCTION public.admin_review_recipe(
+  p_id     uuid,
+  p_status text,
+  p_notes  text DEFAULT ''
+)
+RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_user_id uuid;
+  v_name    text;
+  v_msg     text;
+BEGIN
+  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
+  IF p_status NOT IN ('approved','rejected','pending')
+    THEN RAISE EXCEPTION 'Invalid status: %', p_status; END IF;
+  SELECT user_id, recipe_name INTO v_user_id, v_name
+    FROM public.submitted_recipes WHERE id = p_id;
+  UPDATE public.submitted_recipes
+     SET status = p_status, reviewer_notes = p_notes, reviewed_at = now()
+   WHERE id = p_id;
+  IF v_user_id IS NOT NULL AND p_status IN ('approved', 'rejected') THEN
+    v_msg := CASE p_status
+      WHEN 'approved' THEN 'Your recipe "' || COALESCE(v_name, 'submission') || '" was approved and is now live!'
+      ELSE 'Your recipe "' || COALESCE(v_name, 'submission') || '" needs updates.'
+           || CASE WHEN COALESCE(p_notes, '') <> '' THEN ' ' || p_notes ELSE '' END
+    END;
+    INSERT INTO public.notifications (user_id, type, recipe_id, recipe_name, message)
+    VALUES (
+      v_user_id,
+      CASE WHEN p_status = 'approved' THEN 'recipe_approved' ELSE 'recipe_rejected' END,
+      p_id, v_name, v_msg
+    );
+  END IF;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.admin_review_recipe(uuid,text,text) TO authenticated;
+
 -- ── 6. Edit recipe fields before approving ────────────────────────
 DROP FUNCTION IF EXISTS public.admin_edit_recipe(uuid, text, text, text, text, text, text, integer);
 CREATE OR REPLACE FUNCTION public.admin_edit_recipe(
@@ -2559,15 +2645,17 @@ RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
 BEGIN
   IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
-  -- Clear existing recipe of the week
-  UPDATE public.submitted_recipes SET is_recipe_of_week = false, recipe_of_week_expires = NULL
-  WHERE is_recipe_of_week = true;
-  -- Set new one, expires in 7 days
-  UPDATE public.submitted_recipes SET
-    is_recipe_of_week = true,
-    recipe_of_week_at = now(),
-    recipe_of_week_expires = now() + interval '7 days'
-  WHERE id = p_id;
+  UPDATE public.submitted_recipes
+     SET is_recipe_of_week = false, recipe_of_week_at = NULL, recipe_of_week_expires = NULL
+   WHERE is_recipe_of_week = true;
+  IF p_id IS NOT NULL THEN
+    UPDATE public.submitted_recipes SET
+      is_recipe_of_week = true,
+      recipe_of_week_at = now(),
+      recipe_of_week_expires = now() + interval '7 days'
+    WHERE id = p_id;
+    IF NOT FOUND THEN RAISE EXCEPTION 'recipe_not_found'; END IF;
+  END IF;
 END;
 $$;
 
@@ -3887,13 +3975,6 @@ CREATE POLICY "Anon cannot read email templates" ON public.email_templates
 -- and creates the email_queue table + queue_email RPC
 -- ══════════════════════════════════════════════════════════════════════
 
--- RLS on existing table
-ALTER TABLE email_templates ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "admin manages email templates" ON email_templates;
-CREATE POLICY "admin manages email templates"
-  ON email_templates FOR ALL TO authenticated
-  USING (is_admin()) WITH CHECK (is_admin());
-
 -- Insert/update templates using actual columns: key, name, subject, body
 INSERT INTO email_templates (key, name, subject, body, updated_at) VALUES
 
@@ -3925,6 +4006,24 @@ INSERT INTO email_templates (key, name, subject, body, updated_at) VALUES
  'Recipe Request Fulfilled',
  'Your recipe request has been fulfilled ✓',
  '<h2 style="font-family:Cormorant Garamond,serif;color:#C4973B">Request fulfilled 🍽</h2><p>Hi {{name}}, the recipe you requested — <strong>{{recipe_name}}</strong> — is now live. <a href="{{recipe_url}}">View it →</a></p>',
+ NOW()),
+
+('note_approved',
+ 'Cooking Tip Approved',
+ 'Your cooking tip has been published',
+ '<h2 style="font-family:Cormorant Garamond,serif;color:#C4973B">Your tip is live</h2><p>Hi {{name}}, your cooking tip for <strong>{{recipe_name}}</strong> has been approved.</p>',
+ NOW()),
+
+('follow_new_recipe',
+ 'Follow — New Recipe',
+ '{{author}} published a new recipe',
+ '<h2 style="font-family:Cormorant Garamond,serif;color:#C4973B">New from {{author}}</h2><p>Hi {{name}}, <strong>{{recipe_name}}</strong> is now live. <a href="{{recipe_url}}">View recipe →</a></p>',
+ NOW()),
+
+('custom',
+ 'Admin Custom Message',
+ '{{subject}}',
+ '<p>Hi {{name}},</p><div style="white-space:pre-wrap">{{message}}</div>',
  NOW())
 
 ON CONFLICT (key) DO UPDATE SET
@@ -4000,9 +4099,6 @@ $$;
 REVOKE ALL ON FUNCTION public.queue_email(text, text, text, jsonb) FROM PUBLIC;
 GRANT  EXECUTE ON FUNCTION public.queue_email(text, text, text, jsonb) TO authenticated;
 
-SELECT 'Email system ready — ' || COUNT(*) || ' templates' AS status
-FROM email_templates;
-
 -- ── Add missing columns to email_queue ────────────────────────────────
 ALTER TABLE public.email_queue ADD COLUMN IF NOT EXISTS status     text        NOT NULL DEFAULT 'pending';
 ALTER TABLE public.email_queue ADD COLUMN IF NOT EXISTS sent_at    timestamptz;
@@ -4016,42 +4112,12 @@ ALTER TABLE public.email_queue ADD CONSTRAINT email_queue_status_check
 -- Index for efficient queue polling
 CREATE INDEX IF NOT EXISTS idx_email_queue_status ON public.email_queue(status, created_at);
 
--- ── Email templates for all key events ────────────────────────────────
-INSERT INTO email_templates (key, name, subject, body) VALUES
-
-('recipe_approved',
- 'Recipe Approved',
- 'Your recipe has been published! 🎉',
- '<h2>Your recipe is live!</h2><p>Hi {{name}},</p><p><strong>{{recipe_name}}</strong> has been approved and is now published on The Culinary Journal.</p><p><a href="{{site_url}}/recipe-page.html?id={{recipe_id}}">View your recipe →</a></p>')
-
-ON CONFLICT (key) DO NOTHING;
-
-INSERT INTO email_templates (key, name, subject, body) VALUES
-
-('recipe_rejected',
- 'Recipe Not Approved',
- 'Update on your recipe submission',
- '<h2>Recipe update</h2><p>Hi {{name}},</p><p>Your recipe <strong>{{recipe_name}}</strong> was not approved at this time.</p><p><em>{{reviewer_notes}}</em></p><p>You can edit and resubmit from your <a href="{{site_url}}/my-dashboard.html">dashboard</a>.</p>')
-
-ON CONFLICT (key) DO NOTHING;
-
-INSERT INTO email_templates (key, name, subject, body) VALUES
-
-('note_approved',
- 'Cooking Tip Approved',
- 'Your cooking tip has been published',
- '<h2>Your tip is live!</h2><p>Hi {{name}},</p><p>Your cooking tip for <strong>{{recipe_name}}</strong> has been approved and is now visible to other members.</p>')
-
-ON CONFLICT (key) DO NOTHING;
-
-SELECT 'Email templates updated' AS status;
-
--- Status constraint enforced above, immediately after ADD COLUMN.
-
 -- ── Add retry tracking columns ─────────────────────────────────────────
 ALTER TABLE public.email_queue ADD COLUMN IF NOT EXISTS attempts        integer     NOT NULL DEFAULT 0;
 ALTER TABLE public.email_queue ADD COLUMN IF NOT EXISTS last_attempt_at timestamptz;
 
+SELECT 'Email system ready — ' || COUNT(*) || ' templates' AS status
+FROM email_templates;
 
 SELECT pg_notify('pgrst', 'reload schema');
 

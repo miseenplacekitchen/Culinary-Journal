@@ -4,7 +4,7 @@
 -- Deploy check-dead-links edge function, then schedule-dead-link-cron.sql.
 -- ══════════════════════════════════════════════════════════════════════
 
-GRANT SELECT, UPDATE ON public.submitted_recipes TO service_role;
+GRANT SELECT, INSERT, UPDATE ON public.submitted_recipes TO service_role;
 
 CREATE OR REPLACE FUNCTION public.admin_get_source_link_status(
   p_limit int DEFAULT 50

@@ -2,6 +2,11 @@
 
 Single source of truth for The Culinary Journal Supabase schema, RPCs, policies, and seed data.
 
+## Betty — start here
+
+**`WHATS-WHAT.md`** — which SQL files matter for you (3 categories).  
+Ignore `sql/archive/` unless a developer asks.
+
 ## Quick start — one run, no manual script hunting
 
 ```text

@@ -1,0 +1,128 @@
+{
+  "10.com.au": {
+    "display_name": "10 MasterChef Recipes",
+    "chef_name": "MasterChef Australia",
+    "base_url": "https://10.com.au/masterchef/recipes",
+    "is_active": true,
+    "sort_order": 1
+  },
+  "curryworld.me": {
+    "display_name": "Veena's Curry World",
+    "chef_name": "Veena",
+    "base_url": "https://curryworld.me",
+    "is_active": true,
+    "sort_order": 2
+  },
+  "malayali.me": {
+    "display_name": "Malayali.me",
+    "chef_name": "Malayali.me",
+    "base_url": "https://malayali.me/",
+    "is_active": true,
+    "sort_order": 3
+  },
+  "mariasmenu.com": {
+    "display_name": "Maria's Menu",
+    "chef_name": "Maria",
+    "base_url": "https://mariasmenu.com/",
+    "is_active": true,
+    "sort_order": 4
+  },
+  "poulef.com": {
+    "display_name": "Poulef",
+    "chef_name": "Poulef",
+    "base_url": "https://poulef.com/",
+    "is_active": true,
+    "sort_order": 5
+  },
+  "sandhyahariharan.co.uk": {
+    "display_name": "Sandhya Hariharan",
+    "chef_name": "Sandhya Hariharan",
+    "base_url": "https://sandhyahariharan.co.uk/",
+    "is_active": true,
+    "sort_order": 6
+  },
+  "thewanderlustkitchen.com": {
+    "display_name": "The Wanderlust Kitchen",
+    "chef_name": "The Wanderlust Kitchen",
+    "base_url": "https://thewanderlustkitchen.com/",
+    "is_active": true,
+    "sort_order": 7
+  },
+  "villagecookingkerala.com": {
+    "display_name": "Village Cooking Kerala",
+    "chef_name": "Village Cooking Kerala",
+    "base_url": "https://villagecookingkerala.com/",
+    "is_active": true,
+    "sort_order": 8
+  },
+  "allrecipes.com": {
+    "display_name": "Allrecipes",
+    "chef_name": "Allrecipes",
+    "base_url": "https://www.allrecipes.com/",
+    "is_active": true,
+    "sort_order": 9
+  },
+  "kevinandamanda.com": {
+    "display_name": "Kevin & Amanda",
+    "chef_name": "Kevin & Amanda",
+    "base_url": "https://www.kevinandamanda.com/all-recipes/",
+    "is_active": true,
+    "sort_order": 10
+  },
+  "kothiyavunu.com": {
+    "display_name": "Kothiyavunu",
+    "chef_name": "Shnunni",
+    "base_url": "https://www.kothiyavunu.com/",
+    "is_active": true,
+    "sort_order": 11
+  },
+  "philly.com.au": {
+    "display_name": "Philly Australia",
+    "chef_name": "Philly",
+    "base_url": "https://www.philly.com.au/",
+    "is_active": true,
+    "sort_order": 12
+  },
+  "taste.com.au": {
+    "display_name": "Taste.com.au",
+    "chef_name": "Taste",
+    "base_url": "https://www.taste.com.au/",
+    "is_active": true,
+    "sort_order": 13
+  },
+  "vegrecipesofindia.com": {
+    "display_name": "Veg Recipes of India",
+    "chef_name": "Dassana",
+    "base_url": "https://www.vegrecipesofindia.com/",
+    "is_active": true,
+    "sort_order": 14
+  },
+  "yummyntasty.com": {
+    "display_name": "Yummy N Tasty",
+    "chef_name": "Yummy N Tasty",
+    "base_url": "https://www.yummyntasty.com/",
+    "is_active": true,
+    "sort_order": 15
+  },
+  "yummytummyaarthi.com": {
+    "display_name": "Yummy Tummy Aarthi",
+    "chef_name": "Aarthi",
+    "base_url": "https://www.yummytummyaarthi.com/",
+    "is_active": true,
+    "sort_order": 16
+  },
+  "woolworths.com.au": {
+    "display_name": "Woolworths Recipes",
+    "chef_name": "Woolworths",
+    "base_url": "https://www.woolworths.com.au/shop/recipes",
+    "is_active": true,
+    "sort_order": 17
+  },
+  "coles.com.au": {
+    "display_name": "Coles Recipes",
+    "chef_name": "Coles",
+    "base_url": "https://www.coles.com.au/recipes-inspiration",
+    "is_active": true,
+    "sort_order": 18
+  }
+}

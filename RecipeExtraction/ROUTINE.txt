@@ -1,0 +1,135 @@
+# Betty — your set routine (The Culinary Journal recipe pipeline)
+# Keep this file open. You only need these commands.
+
+================================================================================
+THE THREE COMMANDS YOU ACTUALLY USE
+================================================================================
+
+  1. ADD RECIPES (after dropping files in inputs/)
+  2. CLEAN UP (Groq polish — do NOT skip)
+  3. APPROVE (Admin dashboard — you)
+
+All commands run from this folder in PowerShell:
+
+  cd C:\Users\betty\Downloads\Culinary-Journal-main\RecipeExtraction
+
+
+--------------------------------------------------------------------------------
+COMMAND 1 — Import new recipes
+--------------------------------------------------------------------------------
+
+  Books (PDFs in inputs\books\):
+
+      .\run_books.bat
+
+  Everything else (websites, Instagram, YouTube, videos, Word):
+
+      .\run_pipeline.bat
+
+  What it does automatically:
+    • Extract new items only (skips already done)
+    • Upload to Admin inbox as Pending
+    • Run Groq polish on new pending recipes (Step 3 built in)
+
+  Safe to run again anytime — duplicates are skipped.
+
+
+--------------------------------------------------------------------------------
+COMMAND 2 — Catch-up polish (if Groq ran out of tokens)
+--------------------------------------------------------------------------------
+
+  Run this when Command 1 said some recipes failed, or once a week:
+
+      .\run_admin_routine.bat
+
+  What it does:
+    • Polishes any pending recipe not yet cleaned
+    • Fixes titles on anything Groq missed
+    • Prints how many are waiting in your inbox
+
+
+--------------------------------------------------------------------------------
+COMMAND 3 — You approve (browser, ~5 min per batch)
+--------------------------------------------------------------------------------
+
+  1. Open:  https://www.theculinaryjournal.site/dashboard.html
+  2. Recipes → Pending
+  3. Click a recipe
+  4. Skim ingredients + procedure (should look professional after polish)
+  5. If something needs fixing:
+       • Quick fix: Edit Before Approving (title, intro, times)
+       • Full fix:  "Edit full recipe (all fields)" → same as Submit a Recipe
+  6. ✓ Approve  (or ✕ Reject junk)
+  7. Repeat — you do NOT need to edit every field
+
+  Tip: Approve in batches of 10–15. Reject obvious junk only.
+  Run fix-admin-recipe-full-edit.sql once in Supabase if full edit save fails.
+
+
+================================================================================
+YOUR WEEKLY LOOP (solo admin)
+================================================================================
+
+  WHEN YOU ADD NEW SOURCE FILES
+  ─────────────────────────────
+  Drop files in inputs\  →  run_books.bat OR run_pipeline.bat  →  done
+
+  BEFORE YOU REVIEW IN ADMIN
+  ─────────────────────────
+  run_admin_routine.bat  (if you haven't already)
+
+  REVIEW SESSION (30–60 min)
+  ──────────────────────────
+  Admin → Pending → approve good ones
+
+  OPTIONAL (monthly, Supabase SQL Editor)
+  ───────────────────────────────────────
+  SELECT repair_orphan_recipe_ingredients();
+  (Links ingredient names to your governed database)
+
+
+================================================================================
+WHERE FILES GO (you never edit MyCookbook/)
+================================================================================
+
+  inputs\books\              PDF cookbooks
+  inputs\urls\websites.txt   Website list
+  inputs\urls\instagram.txt  Instagram links
+  inputs\urls\youtube.txt    YouTube links
+  inputs\videos\             Downloaded video files
+  inputs\word_docs\          Word cookbook
+  inputs\instagram\saved_reels\saved_collections.json
+
+  Keys (once):  copy setup-env.example.ps1 → setup-env.ps1
+
+
+================================================================================
+IF SOMETHING LOOKS WRONG
+================================================================================
+
+  List still shows lowercase / broken words?
+    → Run:  .\run_admin_routine.bat
+    → Hard-refresh Admin (Ctrl+F5)
+
+  Groq daily limit hit?
+    → Wait ~1 hour or next day, run run_admin_routine.bat again
+    → Already-polished recipes are skipped
+
+  Permission error on upload?
+    → Run fix-recipe-batch-ingest.sql in Supabase (once)
+
+  Book extracts badly (Jamie Oliver etc.)?
+    → Tell support the book title — parser can be tuned
+    → Do NOT approve junk; reject and move on
+
+
+================================================================================
+WHAT YOU NEVER HAVE TO DO
+================================================================================
+
+  ✗ Hand-edit 39 recipes in Admin before approving
+  ✗ Run separate polish command after every import (built into run_books now)
+  ✗ Paste API keys anywhere except setup-env.ps1
+  ✗ Edit JSON in MyCookbook\
+
+================================================================================

@@ -1,13 +1,13 @@
-ARCHIVED SQL — do not run on production unless you know why.
+ARCHIVED SQL — DO NOT RUN unless a developer explicitly asks.
 
-These files are superseded by RUN-IN-SUPABASE-copy-paste-this.sql,
-RUN-LIVE-CLEANUP.sql, or feature-owner modules in database/sql/.
+These files were moved here during repo cleanup (June 2026).
+Your live Supabase database already has this content applied via the
+RUN-*.sql bundles in the parent sql/ folder.
 
-Files:
-  RUN-IN-SUPABASE-phases-39-40-ONLY.sql — partial snapshot; missing phases 41-43
-  admin_rpcs.sql — duplicate admin bundle; functions live in feature modules
-  setup-notifications.sql — duplicate of notification_rpcs.sql
-  setup-user-features.sql — folded into 01-schema.sql + 03-seed.sql
+Subfolders:
+  historical-phases/   Old fix-phase2–38 and one-off patches (superseded)
+  garden-modules/      Individual garden-v3/v4 files (bundled in RUN-GARDEN-*.sql)
+  dev-tools/           Python scripts that regenerate mega SQL bundles
+  (root)               Retired admin bundles, duplicate notification setup, etc.
 
-Regenerate archived 39-40 bundle (dev only):
-  python database/sql/_bundle_phases_only.py
+Betty: read database/WHATS-WHAT.md instead of browsing this folder.

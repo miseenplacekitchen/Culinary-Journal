@@ -3,7 +3,19 @@ Thumbs.db
 *.log
 .env
 .env.*
+RecipeExtraction/setup-env.ps1
 *.local
 tests/live-api-*.json
 scripts/_check-js-syntax.py
 scripts/syntax-errors.txt
+
+# Recipe pipeline working data (regenerated locally)
+RecipeExtraction/MyCookbook/
+RecipeExtraction/processed_registry.json
+RecipeExtraction/discovered_urls.json
+RecipeExtraction/inputs/books/
+RecipeExtraction/inputs/videos/
+RecipeExtraction/inputs/instagram/saved_reels/*.json
+_excel_*.txt
+__pycache__/
+*.pyc

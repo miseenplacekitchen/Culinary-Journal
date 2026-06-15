@@ -1,0 +1,53 @@
+{
+  "sources": {
+    "websites": {
+      "label": "Websites (inputs/urls/websites.txt)",
+      "enabled": true,
+      "extract": "engines/extract_websites.py",
+      "ingest": "ingest_tcj.py",
+      "ingest_subdir": "websites"
+    },
+    "instagram_reels": {
+      "label": "Instagram Saved Collection reels (inputs/instagram/saved_reels/)",
+      "enabled": true,
+      "extract": "engines/extract_instagram_reels.py",
+      "ingest": "ingest_instagram_reels.py",
+      "ingest_subdir": null
+    },
+    "instagram_profiles": {
+      "label": "Instagram chef posts (inputs/urls/instagram.txt)",
+      "enabled": true,
+      "extract": "engines/extract_instagram_profiles.py",
+      "ingest": "ingest_tcj.py",
+      "ingest_subdir": "instagram"
+    },
+    "youtube": {
+      "label": "YouTube channels (inputs/urls/youtube.txt)",
+      "enabled": true,
+      "extract": "engines/extract_youtube.py",
+      "ingest": "ingest_tcj.py",
+      "ingest_subdir": "youtube"
+    },
+    "videos": {
+      "label": "Downloaded video files (inputs/videos/)",
+      "enabled": true,
+      "extract": "engines/extract_videos.py",
+      "ingest": "ingest_tcj.py",
+      "ingest_subdir": "videos"
+    },
+    "books": {
+      "label": "Books & PDFs (inputs/books/)",
+      "enabled": true,
+      "extract": "engines/extract_books.py",
+      "ingest": "ingest_tcj.py",
+      "ingest_subdir": "books"
+    },
+    "word_cookbook": {
+      "label": "Word cookbook (inputs/word_docs/)",
+      "enabled": true,
+      "extract": "engines/extract_word.py",
+      "ingest": "ingest_tcj.py",
+      "ingest_subdir": "word"
+    }
+  }
+}
