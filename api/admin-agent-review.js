@@ -152,6 +152,7 @@ async function reviewOneRecipe(recipeId, userToken) {
     auto_approve: assessment.auto_approve,
     needs_manual: assessment.needs_manual,
     assessment_reasons: assessment.reasons,
+    info_notes: assessment.info_notes || [],
     ok: true,
   };
 }

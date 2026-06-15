@@ -28,8 +28,6 @@ function switchRecipeTab(tab) {
   document.querySelectorAll('#v-recipe-mgmt .ap-inner-tab').forEach(function(t) {
     t.classList.toggle('active', t.dataset.tab === tab);
   });
-  var hint = document.getElementById('rm-panel-hint');
-  if (hint) hint.style.display = (tab === 'rmsettings') ? 'none' : 'block';
   var listPanel = document.getElementById('rmgmt-list-panel');
   var anaPanel  = document.getElementById('rmgmt-analytics-panel');
   var opsPanel  = document.getElementById('rmgmt-ops-panel');
@@ -133,23 +131,49 @@ async function loadRecipeMgmt(tab) {
           '<span style="padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(0,0,0,.2);color:' + sc + '">' + esc(r.status) + '</span>' +
         '</td>' +
         '<td class="ap-td" style="font-size:12px;color:var(--text-mid);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(r.reviewer_notes || '') + '</td>' +
-        '<td class="ap-td"></td>';
+        '<td class="ap-td"><div class="rm-row-actions"></div></td>';
       tbody.appendChild(tr);
-      // Feature toggle button in last cell (DOM to avoid quote nesting)
-      var lastTd = tr.lastElementChild;
+      var actions = tr.querySelector('.rm-row-actions');
+      if (r.status === 'pending') {
+        var approveBtn = document.createElement('button');
+        approveBtn.type = 'button';
+        approveBtn.className = 'rm-quick-btn approve';
+        approveBtn.textContent = '\u2713 Approve';
+        approveBtn.title = 'Quick approve';
+        approveBtn.addEventListener('click', (function(id){ return function(e){ quickReviewRecipe(id, 'approved', e); }; })(r.id));
+        actions.appendChild(approveBtn);
+        var rejectBtn = document.createElement('button');
+        rejectBtn.type = 'button';
+        rejectBtn.className = 'rm-quick-btn reject';
+        rejectBtn.textContent = '\u2715 Reject';
+        rejectBtn.title = 'Quick reject';
+        rejectBtn.addEventListener('click', (function(id){ return function(e){ quickReviewRecipe(id, 'rejected', e); }; })(r.id));
+        actions.appendChild(rejectBtn);
+      } else if (r.status === 'approved') {
+        var rejectApprovedBtn = document.createElement('button');
+        rejectApprovedBtn.type = 'button';
+        rejectApprovedBtn.className = 'rm-quick-btn reject';
+        rejectApprovedBtn.textContent = '\u2715 Reject';
+        rejectApprovedBtn.title = 'Reject approved recipe';
+        rejectApprovedBtn.addEventListener('click', (function(id){ return function(e){ quickReviewRecipe(id, 'rejected', e); }; })(r.id));
+        actions.appendChild(rejectApprovedBtn);
+      } else if (r.status === 'rejected') {
+        var approveRejectedBtn = document.createElement('button');
+        approveRejectedBtn.type = 'button';
+        approveRejectedBtn.className = 'rm-quick-btn approve';
+        approveRejectedBtn.textContent = '\u2713 Approve';
+        approveRejectedBtn.title = 'Approve rejected recipe';
+        approveRejectedBtn.addEventListener('click', (function(id){ return function(e){ quickReviewRecipe(id, 'approved', e); }; })(r.id));
+        actions.appendChild(approveRejectedBtn);
+      }
       var featBtn = document.createElement('button');
+      featBtn.type = 'button';
+      featBtn.className = 'rm-feat-btn';
       featBtn.textContent = r.featured ? '\u2b50' : '\u2606';
       featBtn.title = r.featured ? 'Unfeature' : 'Feature';
-      featBtn.style.cssText = 'padding:3px 8px;background:none;border:1px solid var(--border);border-radius:5px;font-size:11px;color:var(--text-mid);cursor:pointer';
       featBtn.addEventListener('click', (function(id, featured){ return function(e){ e.stopPropagation(); toggleFeature(id, featured); }; })(r.id, r.featured));
-      lastTd.appendChild(featBtn);
+      actions.appendChild(featBtn);
     });
-    // Ensure thead has 8 columns
-    var thead = tbody.closest('table').querySelector('thead tr');
-    if (thead && thead.children.length < 8) {
-      var th = document.createElement('th');
-      thead.appendChild(th);
-    }
     renderRmPagination();
   } catch(e) {
     tbody.innerHTML = '<tr><td colspan="8" class="ap-empty-row">Error: ' + esc(e.message) + '</td></tr>';
@@ -704,6 +728,23 @@ async function openRecipeModal(id) {
 }
 
 async function reviewRecipe(newStatus) { doReviewRecipe(currentRecipe && currentRecipe.id, newStatus); }
+
+async function quickReviewRecipe(id, status, e) {
+  if (e) e.stopPropagation();
+  if (!id) return;
+  if (status === 'rejected' && !confirm('Reject this recipe?')) return;
+  try {
+    await rpc('admin_review_recipe', {
+      p_id: id,
+      p_status: status,
+      p_notes: status === 'rejected' ? 'Quick reject from list' : null
+    });
+    auditLog('Recipe Management', 'Recipe ' + status.charAt(0).toUpperCase() + status.slice(1), null, id, status, status === 'rejected' ? 'Quick reject from list' : null);
+    loadRecipeMgmt(_currentRecipeTab);
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
 
 async function toggleFeature(id, currentFeatured) {
   try {

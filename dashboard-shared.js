@@ -438,9 +438,11 @@ function switchView(view, ingTab) {
   if (nb) nb.classList.add('active');
   ALL_VIEWS.forEach(function(v) { const el = document.getElementById('v-' + v); if (el) el.style.display = (v===view)?'block':'none'; });
   const titles = { 'dashboard':'Dashboard', 'recipe-mgmt':'Recipe Management', 'user-mgmt':'User Management', 'ingredients':'Ingredients Management', 'garden-mgmt':'Garden Management', 'site-mgmt':'Site Management', 'finance':'Finance Management', 'library-mgmt':'Library Management', 'festival-mgmt':'Festival Management', 'voc-mgmt':'Voice of the Customer' };
-  const subs   = { 'dashboard':'Overview of site activity.', 'recipe-mgmt':'Review queues and spotlight — configuration in RM Interface.', 'user-mgmt':'Members and community — analytics in UM Interface; feedback in VoC.', 'ingredients':'Browse, add and edit the ingredient database.', 'garden-mgmt':'Species work tabs + GM Interface for lookup, care, and imports.', 'site-mgmt':'Site content tabs + SM Interface for settings and QA.', 'finance':'Overview and billing + FM Interface tools.', 'library-mgmt':'Profile lists by type — edit in LM Interface.', 'festival-mgmt':'Festival overview + Fest Interface editor.', 'voc-mgmt':'Unified feedback inbox + VoC Interface reference.' };
+  const subs   = { 'dashboard':'Overview of site activity.', 'recipe-mgmt':'Pending queue, spotlight, and RM Interface.', 'user-mgmt':'Members and community — analytics in UM Interface; feedback in VoC.', 'ingredients':'Browse, add and edit the ingredient database.', 'garden-mgmt':'Species work tabs + GM Interface for lookup, care, and imports.', 'site-mgmt':'Site content tabs + SM Interface for settings and QA.', 'finance':'Overview and billing + FM Interface tools.', 'library-mgmt':'Profile lists by type — edit in LM Interface.', 'festival-mgmt':'Festival overview + Fest Interface editor.', 'voc-mgmt':'Unified feedback inbox + VoC Interface reference.' };
   setEl('page-title', titles[view] || view);
   setEl('page-sub',   subs[view]   || '');
+  var pageSubEl = document.getElementById('page-sub');
+  if (pageSubEl) pageSubEl.style.marginBottom = (view === 'recipe-mgmt') ? '10px' : '32px';
   var mobileTitle = document.querySelector('.ap-mobile-title');
   if (mobileTitle) mobileTitle.textContent = titles[view] || 'Admin Panel';
   if (view === 'dashboard')   loadDashboard();

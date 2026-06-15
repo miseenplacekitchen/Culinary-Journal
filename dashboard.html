@@ -280,6 +280,39 @@
     }
     .rm-agent-btn-bulk:hover { background: rgba(124, 92, 191, 0.28); }
 
+    /* Recipe Management — compact nav + list toolbar */
+    .rm-nav-tabs { margin-bottom: 10px; flex-wrap: wrap; }
+    .rm-nav-tabs .ap-inner-tab { padding: 7px 13px; font-size: 12px; }
+    .rm-nav-sep { width: 1px; height: 16px; background: var(--border); align-self: center; margin: 0 4px; flex-shrink: 0; opacity: 0.65; }
+    .rm-nav-settings { margin-left: auto; }
+    .rm-list-toolbar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+      margin-bottom: 12px; padding: 10px 12px;
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+    }
+    .rm-toolbar-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-right: auto; }
+    .rm-stat-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border);
+      font-family: "DM Sans", sans-serif; font-size: 11px; color: var(--text-mid); white-space: nowrap;
+    }
+    .rm-stat-chip strong { font-size: 12px; font-weight: 700; color: var(--text-high); }
+    .rm-stat-chip.pending strong { color: #d4a017; }
+    .rm-stat-chip.approved strong { color: #4caf76; }
+    .rm-stat-chip.rejected strong { color: #dc5050; }
+    .rm-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; flex-wrap: nowrap; }
+    .rm-quick-btn {
+      padding: 4px 8px; border-radius: 5px; font-family: "DM Sans", sans-serif;
+      font-size: 11px; font-weight: 600; cursor: pointer; background: none; line-height: 1.2;
+      border: 1px solid var(--border); color: var(--text-mid); white-space: nowrap;
+    }
+    .rm-quick-btn:hover { color: var(--text-high); border-color: var(--accent-border); }
+    .rm-quick-btn.approve { color: #4caf76; border-color: rgba(76, 175, 118, 0.35); }
+    .rm-quick-btn.approve:hover { background: rgba(76, 175, 118, 0.1); }
+    .rm-quick-btn.reject { color: #dc5050; border-color: rgba(220, 80, 80, 0.35); }
+    .rm-quick-btn.reject:hover { background: rgba(220, 80, 80, 0.1); }
+    .rm-feat-btn { padding: 4px 7px; background: none; border: 1px solid var(--border); border-radius: 5px; font-size: 11px; color: var(--text-mid); cursor: pointer; }
+
     /* ── COLUMN VISIBILITY ───────────────────── */
     .col-vis-panel { position:fixed; top:60px; right:20px; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:16px; z-index:9997; box-shadow:0 8px 32px rgba(0,0,0,0.4); min-width:200px; display:none; }
     .col-vis-panel.open { display:block; }
@@ -610,57 +643,36 @@
     </div>
 
     <div id="v-recipe-mgmt" style="display:none">
-      <div class="ap-tab-bar">
-        <div class="ap-tab-group">
-          <span class="ap-tab-group-label">Queues</span>
-          <div class="ap-tab-group-tabs">
-            <button class="ap-inner-tab active" data-tab="all"     onclick="switchRecipeTab('all')">All</button>
-            <button class="ap-inner-tab"        data-tab="pending" onclick="switchRecipeTab('pending')">Pending <span class="ap-nav-badge" id="rtab-badge-pending" style="position:static;margin-left:4px">0</span></button>
-            <button class="ap-inner-tab"        data-tab="approved" onclick="switchRecipeTab('approved')">Approved</button>
-            <button class="ap-inner-tab"        data-tab="rejected" onclick="switchRecipeTab('rejected')">Rejected</button>
-          </div>
-        </div>
-        <div class="ap-tab-divider"></div>
-        <div class="ap-tab-group">
-          <span class="ap-tab-group-label">Insights</span>
-          <div class="ap-tab-group-tabs">
-            <button class="ap-inner-tab" data-tab="analytics" onclick="switchRecipeTab('analytics')">Analytics</button>
-          </div>
-        </div>
-        <div class="ap-tab-divider"></div>
-        <div class="ap-tab-group">
-          <span class="ap-tab-group-label">Spotlight</span>
-          <div class="ap-tab-group-tabs">
-            <button class="ap-inner-tab" data-tab="rotw"     onclick="switchRecipeTab('rotw')">Recipe of the Week</button>
-            <button class="ap-inner-tab" data-tab="featured" onclick="switchRecipeTab('featured')">Featured</button>
-            <button class="ap-inner-tab" data-tab="notes"    onclick="switchRecipeTab('notes')">Cooking Tips <span class="ap-nav-badge" id="rtab-badge-notes" style="position:static;margin-left:4px">0</span></button>
-          </div>
-        </div>
-        <div class="ap-tab-group ap-tab-group-interface">
-          <span class="ap-tab-group-label">Configuration</span>
-          <div class="ap-tab-group-tabs">
-            <button class="ap-inner-tab tab-interface" data-tab="rmsettings" onclick="switchRecipeTab('rmsettings')">&#9881; RM Interface</button>
-          </div>
-        </div>
+      <div class="ap-inner-tabs rm-nav-tabs">
+        <button class="ap-inner-tab active" data-tab="all"     onclick="switchRecipeTab('all')">All</button>
+        <button class="ap-inner-tab"        data-tab="pending" onclick="switchRecipeTab('pending')">Pending <span class="ap-nav-badge" id="rtab-badge-pending" style="position:static;margin-left:4px">0</span></button>
+        <button class="ap-inner-tab"        data-tab="approved" onclick="switchRecipeTab('approved')">Approved</button>
+        <button class="ap-inner-tab"        data-tab="rejected" onclick="switchRecipeTab('rejected')">Rejected</button>
+        <span class="rm-nav-sep" aria-hidden="true"></span>
+        <button class="ap-inner-tab" data-tab="analytics" onclick="switchRecipeTab('analytics')">Analytics</button>
+        <span class="rm-nav-sep" aria-hidden="true"></span>
+        <button class="ap-inner-tab" data-tab="rotw"     onclick="switchRecipeTab('rotw')">Recipe of the Week</button>
+        <button class="ap-inner-tab" data-tab="featured" onclick="switchRecipeTab('featured')">Featured</button>
+        <button class="ap-inner-tab" data-tab="notes"    onclick="switchRecipeTab('notes')">Cooking Tips <span class="ap-nav-badge" id="rtab-badge-notes" style="position:static;margin-left:4px">0</span></button>
+        <button class="ap-inner-tab tab-interface rm-nav-settings" data-tab="rmsettings" onclick="switchRecipeTab('rmsettings')">&#9881; RM Interface</button>
       </div>
-      <p class="ap-panel-hint" id="rm-panel-hint">Review queues first — taxonomy, collections, print queue, and audit live in <strong style="color:var(--text-high);font-weight:600">RM Interface</strong>.</p>
       <div id="rmgmt-list-panel">
-        <div class="ap-stats" style="margin-bottom:16px">
-          <div class="ap-stat"><div class="ap-stat-num" id="rmgmt-total">&#8212;</div><div class="ap-stat-label">Total</div></div>
-          <div class="ap-stat pending"><div class="ap-stat-num" id="rmgmt-pending">&#8212;</div><div class="ap-stat-label">Pending</div></div>
-          <div class="ap-stat approved"><div class="ap-stat-num" id="rmgmt-approved">&#8212;</div><div class="ap-stat-label">Approved</div></div>
-          <div class="ap-stat rejected"><div class="ap-stat-num" id="rmgmt-rejected">&#8212;</div><div class="ap-stat-label">Rejected</div></div>
-        </div>
-        <div class="ap-filters" style="margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px">
-          <input type="text" class="ap-search" id="rmgmt-search" placeholder="Search recipes&#8230;" oninput="_rmPage=1;loadRecipeMgmt(_currentRecipeTab)" style="flex:1;min-width:180px">
-          <button type="button" class="rm-agent-btn-bulk" id="rm-bulk-agent-btn" onclick="runBulkAgentReview(10)" title="Groq-clean pending: auto-approve ready, auto-reject junk, editor only for exceptions">
+        <div class="rm-list-toolbar">
+          <div class="rm-toolbar-stats">
+            <span class="rm-stat-chip">Total <strong id="rmgmt-total">&#8212;</strong></span>
+            <span class="rm-stat-chip pending">Pending <strong id="rmgmt-pending">&#8212;</strong></span>
+            <span class="rm-stat-chip approved">Approved <strong id="rmgmt-approved">&#8212;</strong></span>
+            <span class="rm-stat-chip rejected">Rejected <strong id="rmgmt-rejected">&#8212;</strong></span>
+          </div>
+          <input type="text" class="ap-search" id="rmgmt-search" placeholder="Search recipes&#8230;" oninput="_rmPage=1;loadRecipeMgmt(_currentRecipeTab)" style="flex:1;min-width:160px;max-width:280px">
+          <button type="button" class="rm-agent-btn-bulk" id="rm-bulk-agent-btn" onclick="runBulkAgentReview(10)" title="Mechanical polish: auto-approve ready, auto-reject junk, editor only for exceptions">
             &#129302; Bulk Autopilot
           </button>
         </div>
         <div class="ap-table-wrap">
           <table class="ap-table">
-            <thead><tr><th></th><th>Recipe</th><th>Submitted by</th><th>Origin</th><th>Submitted</th><th>Status</th><th>Notes</th></tr></thead>
-            <tbody id="rmgmt-tbody"><tr><td colspan="7" class="ap-empty-row">Loading&#8230;</td></tr></tbody>
+            <thead><tr><th></th><th>Recipe</th><th>Submitted by</th><th>Origin</th><th>Submitted</th><th>Status</th><th>Notes</th><th style="text-align:right;min-width:120px">Actions</th></tr></thead>
+            <tbody id="rmgmt-tbody"><tr><td colspan="8" class="ap-empty-row">Loading&#8230;</td></tr></tbody>
           </table>
         </div>
         <div id="rmgmt-pagination" style="display:none;align-items:center;justify-content:center;gap:8px;margin-top:14px"></div>
