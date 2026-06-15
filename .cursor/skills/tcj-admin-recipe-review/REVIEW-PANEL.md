@@ -1,164 +1,80 @@
-# Admin Review Panel — Section-by-Section Agent Playbook
+# Admin Review Panel — Agent Autopilot (Betty handles exceptions only)
 
-Betty's deputy agent walks the **same sections** as the Recipe Review popup, in order.
-The agent **cleans and saves**; Betty **approves** (never auto-approve unless she says so).
-
----
-
-## 1. Header — identity & status
-
-| Field | Agent does |
-|-------|------------|
-| Recipe name | Title Case; remove PDF junk (`POUL TRY`, page numbers, run-on codes) |
-| Also known as | Keep if in source; else leave empty |
-| Status badge | **Do not change** (stays Pending until Betty approves) |
-| Category tag | Pick single best TCJ category |
-| Origin / spice tags | Set from cleaned metadata |
+The agent does the work. Betty's job is **one button + fix yellows**.
 
 ---
 
-## 2. Submitter & timing row
+## Betty's workflow (3 steps, not 14)
 
-| Field | Agent does |
-|-------|------------|
-| Submitted by / date | Read-only — no change |
-| Serves | Parse from "Serves N" in source |
-| Prep / Cook minutes | From source or 0 if unknown |
+| Step | Who | Action |
+|------|-----|--------|
+| 1 | Betty | Pending tab → **Bulk Autopilot** (or **Agent Review** on one recipe) |
+| 2 | Agent | Groq clean → quality gates → **auto-approve green**, **auto-reject red** |
+| 3 | Betty | **Only if yellow** — editor popup opens; fix, Save, Approve |
 
----
-
-## 3. Agent actions bar (buttons)
-
-| Button | Agent does |
-|--------|------------|
-| **Agent Review (this recipe)** | Runs Groq full clean → saves → opens **Edit all fields** popup |
-| **Edit all fields** | Opens Submit a Recipe form (no agent run) |
-| **Bulk Agent Review** | Runs agent on oldest N pending (max 25/batch) |
+No manual approve for clean recipes. No editor popup for greens. No review of junk — auto-rejected.
 
 ---
 
-## 4. Introduction & cooking notes
+## Outcome tiers (after Groq + code gates)
 
-| Field | Agent does |
-|-------|------------|
-| Introduction | Write 1–2 professional sentences; remove boilerplate "Imported from…" only text |
-| Cooking notes | Tips not repeated in steps; empty if none in source |
+| Tier | Meaning | Betty |
+|------|---------|-------|
+| **Green** | Title, category, ≥2 ingredients, ≥2 steps, real intro, not flagged reject | **Nothing** — auto-approved |
+| **Red** | Spam, not a recipe, empty structure, agent `reject_recommended` | **Nothing** — auto-rejected |
+| **Yellow** | Fixable gaps (weak intro, unknown ingredients, low confidence but salvageable) | **Edit popup → Save → Approve** |
 
----
-
-## 5. Recipe image
-
-| Field | Agent does |
-|-------|------------|
-| Image | **Does not generate images** — leaves `image_url` unchanged |
-| Flag | Notes `needs_image` in agent_notes for book imports without photos |
+Missing recipe **images** do **not** block green (book imports approve without photos).
 
 ---
 
-## 6. Ingredients (preview in panel)
+## Section-by-section — what the agent does (not Betty)
 
-| Field | Agent does |
-|-------|------------|
-| Sections | Preserve sub-sections (Spice Paste, Garnish, etc.) |
-| Each row | Split qty, unit, ingredient, note |
-| Governed names | Match TCJ ingredient database when obvious |
-| Unknown list | Populate `unknown_ingredients` for names not in DB |
+### 1–2. Header & timing
+Agent sets name, category, serves, prep/cook, tags. Betty: nothing if green.
 
-Betty: use **Edit all fields** popup to fix rows the agent missed.
+### 3. Buttons
+- **Bulk Autopilot** — batch green/red/yellow routing
+- **Agent Review** — same logic, one recipe
+- **Edit all fields** — manual override only
 
----
+### 4. Introduction & notes
+Agent writes intro; removes import boilerplate. Betty: only if yellow.
 
-## 7. Procedure (preview in panel)
+### 5. Image
+Agent leaves unchanged. No image required for approve.
 
-| Field | Agent does |
-|-------|------------|
-| Sections | PREP WORK / DIRECTIONS when source supports |
-| Steps | ≥2 steps; `{ title, text }`; formal English |
-| Logic | Same cooking logic as source — no invented steps |
-| Flag | Sets `procedure_rewritten = true` |
+### 6–7. Ingredients & procedure
+Agent splits, sections, formal steps. Betty: only if yellow (unknown names, weak splits).
 
----
+### 8. Source & credits
+Agent fills from import metadata. Betty: rarely.
 
-## 8. Source & credits
+### 9. Import audit
+Agent uses confidence + structure for red vs yellow. Betty: reads summary alert only.
 
-| Field | Agent does |
-|-------|------------|
-| Source type | Book / Website / Social / Original from import path |
-| Credit name | Book title or site name |
-| Credit handle | Instagram @ if reel import |
-| Credit URL | `import_source_url` when present |
+### 10–12. Unknowns & taxonomy
+Agent preserves lists; yellow if many unknowns. Betty: fix in editor or approve anyway after edit.
 
----
+### 13. Quick edit block
+Agent pre-fills via save. Betty: optional tweak before approve on yellows.
 
-## 9. Import audit (read-only context)
-
-| Field | Agent does |
-|-------|------------|
-| Parser / confidence | Uses low confidence + empty structure → `reject_recommended` |
-| Warnings | Reads warnings; fixes split issues when possible |
-| Raw text | Reference only — do not paste into live fields |
-
-**Reject candidates:** not a recipe, spam, empty ingredients+method, duplicate obvious junk.
+### 14. Footer Approve/Reject
+Agent **auto-clicks** via RPC for green/red. Betty **only** for yellow after edit.
 
 ---
 
-## 10. Unknown ingredients ⚠
+## What still cannot be automated
 
-| Agent does |
-|------------|
-| Lists names not in governed DB |
-| Does **not** auto-add to Ingredients admin — Betty clicks + Add or ignores |
-
----
-
-## 11. Unknown tools ⚠
-
-| Agent does |
-|------------|
-| Preserves `unknown_utensils` |
-| Betty handles via Tools admin or library submit |
+| Item | Why |
+|------|-----|
+| Groq daily cap | ~25/batch, repeat daily for 10k |
+| Subjective “is this dish good enough?” | Yellow tier catches edge cases |
+| Adding new ingredients to master DB | Governance — agent flags, Betty adds if needed |
+| Recipe photos | No image generation |
 
 ---
 
-## 12. Suggested taxonomy ⚠
+## Cursor agent (same rules)
 
-| Agent does |
-|------------|
-| Preserves `taxonomy_suggestions` |
-| May infer sub_category/division in full save when confident |
-| Betty adds to taxonomy master list when needed |
-
----
-
-## 13. Quick edit block (panel form)
-
-| Field | Agent does |
-|-------|------------|
-| Name, native, category, spice, sweet | Same as full agent pass |
-| Servings, prep, cook, origin | Filled in agent pass |
-| Intro & cooking notes textareas | Updated in DB by agent |
-
-Betty can still tweak here before Approve without opening full form.
-
----
-
-## 14. Review footer (Betty only)
-
-| Field | Agent does |
-|-------|------------|
-| Rejection reason | **Never set** |
-| Reviewer notes | **Never set** |
-| Approve / Reject / Feature | **Never click** — Betty only |
-
----
-
-## Workflow summary
-
-```
-Import (7 sources) → Groq polish (pipeline) → Agent Review (dashboard)
-    → Edit all fields popup (if needed) → Betty Approve
-```
-
-**Groq limit:** Bulk Agent Review max 25/run; repeat daily for 10k backlog.
-
-**Hosting:** Set `GROQ_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY` on Vercel (or host) for `/api/admin-agent-review`.
+Use skill + this doc. Run bulk/autopilot, report: **approved / rejected / needs_you** counts — not a 14-step Betty checklist.

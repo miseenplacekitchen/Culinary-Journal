@@ -653,8 +653,8 @@
         </div>
         <div class="ap-filters" style="margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px">
           <input type="text" class="ap-search" id="rmgmt-search" placeholder="Search recipes&#8230;" oninput="_rmPage=1;loadRecipeMgmt(_currentRecipeTab)" style="flex:1;min-width:180px">
-          <button type="button" class="rm-agent-btn-bulk" id="rm-bulk-agent-btn" onclick="runBulkAgentReview(10)" title="Groq-clean up to 10 oldest pending recipes, then open full editor">
-            &#129302; Bulk Agent Review
+          <button type="button" class="rm-agent-btn-bulk" id="rm-bulk-agent-btn" onclick="runBulkAgentReview(10)" title="Groq-clean pending: auto-approve ready, auto-reject junk, editor only for exceptions">
+            &#129302; Bulk Autopilot
           </button>
         </div>
         <div class="ap-table-wrap">
@@ -1315,8 +1315,8 @@
   <script src="lib/dashboard-um-ops.js?v=20260714"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
   <script src="lib/admin-recipe-utils.js?v=20260705"></script>
-  <script src="lib/dashboard-agent-review.js?v=20260618"></script>
-  <script src="dashboard-recipes.js?v=20260618"></script>
+  <script src="lib/dashboard-agent-review.js?v=20260619"></script>
+  <script src="dashboard-recipes.js?v=20260619"></script>
   <script src="dashboard-users.js?v=20260616"></script>
   <script src="dashboard-ingredients.js?v=20260616"></script>
   <script src="lib/dashboard-im-interface.js?v=20260713"></script>

@@ -7,6 +7,7 @@
 const {
   flattenRecipeForPrompt,
   buildSavePayload,
+  assessAgentOutcome,
   callGroqAgent,
 } = require('../lib/admin-agent-review-core.js');
 
@@ -15,12 +16,13 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const GROQ_KEY = process.env.GROQ_API_KEY;
 const ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-async function sbFetch(path, options, key) {
+async function sbFetch(path, options, key, userJwt) {
+  const bearer = userJwt || key;
   const res = await fetch(`${SUPABASE_URL}${path}`, {
     ...options,
     headers: {
       apikey: key,
-      Authorization: `Bearer ${key}`,
+      Authorization: `Bearer ${bearer}`,
       'Content-Type': 'application/json',
       ...(options.headers || {}),
     },
@@ -29,18 +31,19 @@ async function sbFetch(path, options, key) {
 }
 
 async function assertAdmin(userToken) {
-  const key = ANON_KEY || SERVICE_KEY;
-  if (!key) throw new Error('Server missing Supabase anon key');
+  const anonKey = ANON_KEY || SERVICE_KEY;
+  if (!anonKey) throw new Error('Server missing Supabase anon key');
   const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-    headers: { apikey: key, Authorization: `Bearer ${userToken}` },
+    headers: { apikey: anonKey, Authorization: `Bearer ${userToken}` },
   });
-  if (!res.ok) throw new Error('Not signed in');
+  if (!res.ok) throw new Error('Not signed in — refresh the page and log in again');
   const user = await res.json();
   if (!user?.id) throw new Error('Not signed in');
+  // Service role read — user JWT already validated above
   const prof = await sbFetch(
     `/rest/v1/profiles?id=eq.${user.id}&select=is_admin`,
     { method: 'GET' },
-    userToken,
+    SERVICE_KEY,
   );
   if (!prof.ok) throw new Error('Could not verify admin');
   const rows = await prof.json();
@@ -101,12 +104,18 @@ async function reviewOneRecipe(recipeId) {
   await saveRecipeReview(recipeId, payload);
   await updateProcedureFlags(recipeId);
 
+  const assessment = assessAgentOutcome(structured, row, payload);
+
   return {
     id: recipeId,
     recipe_name: payload.recipe_name,
     reject_recommended: !!structured.reject_recommended,
     reject_reason: structured.reject_reason || '',
     agent_notes: structured.agent_notes || '',
+    outcome: assessment.outcome,
+    auto_approve: assessment.auto_approve,
+    needs_manual: assessment.needs_manual,
+    assessment_reasons: assessment.reasons,
     ok: true,
   };
 }
