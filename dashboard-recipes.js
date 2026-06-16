@@ -40,6 +40,8 @@ function switchRecipeTab(tab) {
   if (extPanel)  extPanel.style.display  = _RM_SPOTLIGHT_TABS.indexOf(tab) !== -1 ? 'block' : 'none';
   var bulkAgentBtn = document.getElementById('rm-bulk-agent-btn');
   if (bulkAgentBtn) bulkAgentBtn.style.display = tab === 'pending' ? 'inline-flex' : 'none';
+  var bulkApproveBtn = document.getElementById('rm-bulk-approve-btn');
+  if (bulkApproveBtn) bulkApproveBtn.style.display = tab === 'pending' ? 'inline-flex' : 'none';
   var bulkRejectBtn = document.getElementById('rm-bulk-reject-btn');
   if (bulkRejectBtn) bulkRejectBtn.style.display = tab === 'pending' ? 'inline-flex' : 'none';
   if (tab === 'analytics')  { loadRecipeAnalytics(); return; }
@@ -1762,6 +1764,29 @@ async function bulkApproveRecipes() {
   } catch(e) { alert('Error: '+e.message); }
 }
 
+async function approveAllPendingRecipes() {
+  var pending = getRmStatNum('rmgmt-pending');
+  if (!pending) return;
+  if (!confirm('Approve all ' + pending + ' pending recipe' + (pending === 1 ? '' : 's') + '?\n\nThey will go live on the site. One confirmation only.')) return;
+  var btn = document.getElementById('rm-bulk-approve-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Approving\u2026'; }
+  try {
+    var n = await rpc('admin_approve_all_pending', {});
+    auditLog('Recipe Management', 'Bulk Approval', null, null, 'approved', String(n) + ' recipes');
+    _rmPage = 1;
+    await loadRecipeMgmt('pending');
+  } catch (e) {
+    var msg = e && e.message ? e.message : String(e);
+    if (/admin_approve_all_pending|Could not find|PGRST202/i.test(msg)) {
+      alert('Approve All Pending needs one SQL step first.\n\nRun database/sql/fix-admin-approve-all-pending.sql in Supabase SQL Editor, then try again.');
+    } else {
+      alert('Error: ' + msg);
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '\u2713 Approve All Pending'; }
+  }
+}
+
 async function rejectAllPendingRecipes() {
   var pending = getRmStatNum('rmgmt-pending');
   if (!pending) return;
@@ -1776,12 +1801,12 @@ async function rejectAllPendingRecipes() {
   } catch (e) {
     var msg = e && e.message ? e.message : String(e);
     if (/admin_reject_all_pending|Could not find|PGRST202/i.test(msg)) {
-      alert('Bulk reject needs one SQL step first.\n\nRun database/sql/fix-admin-bulk-reject-recipes.sql in Supabase SQL Editor, then try again.\n\nUntil then, use \u2715 Reject on each row (no popup per row anymore).');
+      alert('Reject All Pending needs one SQL step first.\n\nRun database/sql/fix-admin-bulk-reject-recipes.sql in Supabase SQL Editor, then try again.\n\nUntil then, use \u2715 Reject on each row (no popup per row anymore).');
     } else {
       alert('Error: ' + msg);
     }
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '\u2715 Reject all pending'; }
+    if (btn) { btn.disabled = false; btn.textContent = '\u2715 Reject All Pending'; }
   }
 }
 
