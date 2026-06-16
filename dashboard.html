@@ -279,6 +279,14 @@
       background: rgba(124, 92, 191, 0.15); border: 1px solid rgba(124, 92, 191, 0.45); color: #c9b8e8;
     }
     .rm-agent-btn-bulk:hover { background: rgba(124, 92, 191, 0.28); }
+    .rm-bulk-reject-btn {
+      display: none; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: 8px; font-family: DM Sans, sans-serif;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      background: rgba(220, 80, 80, 0.12); border: 1px solid rgba(220, 80, 80, 0.4); color: #e88888;
+    }
+    .rm-bulk-reject-btn:hover { background: rgba(220, 80, 80, 0.22); }
+    .rm-bulk-reject-btn:disabled { opacity: 0.5; cursor: wait; }
 
     /* Recipe Management — compact nav + list toolbar */
     .rm-nav-tabs { margin-bottom: 10px; flex-wrap: wrap; }
@@ -667,6 +675,9 @@
           <input type="text" class="ap-search" id="rmgmt-search" placeholder="Search recipes&#8230;" oninput="_rmPage=1;loadRecipeMgmt(_currentRecipeTab)" style="flex:1;min-width:160px;max-width:280px">
           <button type="button" class="rm-agent-btn-bulk" id="rm-bulk-agent-btn" onclick="runBulkAgentReview(10)" title="Mechanical polish: saves cleanup, auto-rejects junk only, editor for gaps — you approve">
             &#129302; Bulk Autopilot
+          </button>
+          <button type="button" class="rm-bulk-reject-btn" id="rm-bulk-reject-btn" onclick="rejectAllPendingRecipes()" title="Reject every pending recipe in one step (one confirmation)">
+            &#10005; Reject all pending
           </button>
         </div>
         <div class="ap-table-wrap">
@@ -1327,8 +1338,8 @@
   <script src="lib/dashboard-um-ops.js?v=20260714"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
   <script src="lib/admin-recipe-utils.js?v=20260705"></script>
-  <script src="lib/dashboard-agent-review.js?v=20260622"></script>
-  <script src="dashboard-recipes.js?v=20260622"></script>
+  <script src="lib/dashboard-agent-review.js?v=20260623"></script>
+  <script src="dashboard-recipes.js?v=20260623"></script>
   <script src="dashboard-users.js?v=20260616"></script>
   <script src="dashboard-ingredients.js?v=20260616"></script>
   <script src="lib/dashboard-im-interface.js?v=20260713"></script>

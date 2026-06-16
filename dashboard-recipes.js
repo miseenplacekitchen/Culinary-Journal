@@ -40,6 +40,8 @@ function switchRecipeTab(tab) {
   if (extPanel)  extPanel.style.display  = _RM_SPOTLIGHT_TABS.indexOf(tab) !== -1 ? 'block' : 'none';
   var bulkAgentBtn = document.getElementById('rm-bulk-agent-btn');
   if (bulkAgentBtn) bulkAgentBtn.style.display = tab === 'pending' ? 'inline-flex' : 'none';
+  var bulkRejectBtn = document.getElementById('rm-bulk-reject-btn');
+  if (bulkRejectBtn) bulkRejectBtn.style.display = tab === 'pending' ? 'inline-flex' : 'none';
   if (tab === 'analytics')  { loadRecipeAnalytics(); return; }
   if (tab === 'rmsettings') { loadRMInterfaceSettings(); return; }
   if (tab === 'rotw')  { loadROTW(); return; }
@@ -71,12 +73,87 @@ function renderRmPagination() {
   });
 }
 
-async function loadRecipeMgmt(tab) {
+function getRmStatNum(id) {
+  var el = document.getElementById(id);
+  if (!el) return 0;
+  var n = parseInt(String(el.textContent).replace(/[^\d]/g, ''), 10);
+  return isNaN(n) ? 0 : n;
+}
+
+function bumpRmStats(fromStatus, toStatus) {
+  if (!fromStatus || !toStatus || fromStatus === toStatus) return;
+  var keys = {
+    pending: ['rmgmt-pending', 'badge-pending', 'rtab-badge-pending'],
+    approved: ['rmgmt-approved'],
+    rejected: ['rmgmt-rejected']
+  };
+  function adjust(status, delta) {
+    var list = keys[status];
+    if (!list) return;
+    list.forEach(function(statId) {
+      setEl(statId, Math.max(0, getRmStatNum(statId) + delta));
+    });
+  }
+  adjust(fromStatus, -1);
+  adjust(toStatus, 1);
+}
+
+function findRecipeRow(id) {
+  var tbody = document.getElementById('rmgmt-tbody');
+  return tbody ? tbody.querySelector('tr[data-recipe-id="' + id + '"]') : null;
+}
+
+function removeRecipeRowAnimated(tr, cb) {
+  if (!tr) { if (cb) cb(); return; }
+  tr.style.transition = 'opacity 0.18s ease, transform 0.18s ease';
+  tr.style.opacity = '0';
+  tr.style.transform = 'translateX(10px)';
+  tr.style.pointerEvents = 'none';
+  setTimeout(function() {
+    tr.remove();
+    if (cb) cb();
+  }, 180);
+}
+
+function afterRecipeReviewInList(id, prevStatus, newStatus) {
+  var tab = _currentRecipeTab;
+  var tr = findRecipeRow(id);
+  var removesFromTab = (tab !== 'all' && tab !== newStatus);
+  bumpRmStats(prevStatus, newStatus);
+  if (removesFromTab && _rmListTotal > 0) _rmListTotal--;
+
+  if (removesFromTab && tr) {
+    removeRecipeRowAnimated(tr, function() {
+      var tbody = document.getElementById('rmgmt-tbody');
+      if (tbody && !tbody.querySelector('tr[data-recipe-id]')) {
+        tbody.innerHTML = '<tr><td colspan="8" class="ap-empty-row">No recipes found.</td></tr>';
+      }
+      renderRmPagination();
+    });
+    return;
+  }
+  if (tr && tab === 'all') {
+    var statusTd = tr.children[5];
+    if (statusTd) {
+      var sc = newStatus === 'approved' ? '#4caf76' : newStatus === 'rejected' ? '#dc5050' : '#d4a017';
+      statusTd.innerHTML = '<span style="padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(0,0,0,.2);color:' + sc + '">' + esc(newStatus) + '</span>';
+    }
+    return;
+  }
+  loadRecipeMgmt(tab, { silent: true });
+}
+
+async function loadRecipeMgmt(tab, opts) {
+  opts = opts || {};
   var status = (tab === 'all') ? null : tab;
   var tbody  = document.getElementById('rmgmt-tbody');
   if (!tbody) return;
   _currentRecipeTab = tab;
-  tbody.innerHTML = '<tr><td colspan="8" class="ap-empty-row">Loading\u2026</td></tr>';
+  if (!opts.silent) {
+    tbody.innerHTML = '<tr><td colspan="8" class="ap-empty-row">Loading\u2026</td></tr>';
+  } else {
+    tbody.style.opacity = '0.6';
+  }
   try {
     var search   = (document.getElementById('rmgmt-search')   || {}).value || '';
     var catFilter = (document.getElementById('rmgmt-cat-filter') || {}).value || '';
@@ -111,6 +188,7 @@ async function loadRecipeMgmt(tab) {
         ? new Date(r.submitted_at).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'})
         : '\u2014';
       var tr = document.createElement('tr');
+      tr.setAttribute('data-recipe-id', r.id);
       tr.style.cssText = 'cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.04)';
       tr.addEventListener('click', (function(id){ return function(e){
         if (e.target.closest('.rm-row-actions')) return;
@@ -143,14 +221,14 @@ async function loadRecipeMgmt(tab) {
         approveBtn.className = 'rm-quick-btn approve';
         approveBtn.textContent = '\u2713 Approve';
         approveBtn.title = 'Quick approve';
-        approveBtn.addEventListener('click', (function(id){ return function(e){ quickReviewRecipe(id, 'approved', e); }; })(r.id));
+        approveBtn.addEventListener('click', (function(id, st){ return function(e){ quickReviewRecipe(id, 'approved', e, st); }; })(r.id, r.status));
         actions.appendChild(approveBtn);
         var rejectBtn = document.createElement('button');
         rejectBtn.type = 'button';
         rejectBtn.className = 'rm-quick-btn reject';
         rejectBtn.textContent = '\u2715 Reject';
         rejectBtn.title = 'Quick reject';
-        rejectBtn.addEventListener('click', (function(id){ return function(e){ quickReviewRecipe(id, 'rejected', e); }; })(r.id));
+        rejectBtn.addEventListener('click', (function(id, st){ return function(e){ quickReviewRecipe(id, 'rejected', e, st); }; })(r.id, r.status));
         actions.appendChild(rejectBtn);
       } else if (r.status === 'approved') {
         var rejectApprovedBtn = document.createElement('button');
@@ -158,7 +236,7 @@ async function loadRecipeMgmt(tab) {
         rejectApprovedBtn.className = 'rm-quick-btn reject';
         rejectApprovedBtn.textContent = '\u2715 Reject';
         rejectApprovedBtn.title = 'Reject approved recipe';
-        rejectApprovedBtn.addEventListener('click', (function(id){ return function(e){ quickReviewRecipe(id, 'rejected', e); }; })(r.id));
+        rejectApprovedBtn.addEventListener('click', (function(id, st){ return function(e){ quickReviewRecipe(id, 'rejected', e, st); }; })(r.id, r.status));
         actions.appendChild(rejectApprovedBtn);
       } else if (r.status === 'rejected') {
         var approveRejectedBtn = document.createElement('button');
@@ -166,7 +244,7 @@ async function loadRecipeMgmt(tab) {
         approveRejectedBtn.className = 'rm-quick-btn approve';
         approveRejectedBtn.textContent = '\u2713 Approve';
         approveRejectedBtn.title = 'Approve rejected recipe';
-        approveRejectedBtn.addEventListener('click', (function(id){ return function(e){ quickReviewRecipe(id, 'approved', e); }; })(r.id));
+        approveRejectedBtn.addEventListener('click', (function(id, st){ return function(e){ quickReviewRecipe(id, 'approved', e, st); }; })(r.id, r.status));
         actions.appendChild(approveRejectedBtn);
       }
       var featBtn = document.createElement('button');
@@ -180,6 +258,8 @@ async function loadRecipeMgmt(tab) {
     renderRmPagination();
   } catch(e) {
     tbody.innerHTML = '<tr><td colspan="8" class="ap-empty-row">Error: ' + esc(e.message) + '</td></tr>';
+  } finally {
+    tbody.style.opacity = '';
   }
 }
 
@@ -732,10 +812,11 @@ async function openRecipeModal(id) {
 
 async function reviewRecipe(newStatus) { doReviewRecipe(currentRecipe && currentRecipe.id, newStatus); }
 
-async function quickReviewRecipe(id, status, e) {
-  if (e) e.stopPropagation();
+async function quickReviewRecipe(id, status, e, prevStatus) {
+  if (e) { e.stopPropagation(); e.preventDefault(); }
   if (!id) return;
-  if (status === 'rejected' && !confirm('Reject this recipe?')) return;
+  var btn = e && e.currentTarget;
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.45'; }
   try {
     await rpc('admin_review_recipe', {
       p_id: id,
@@ -743,8 +824,9 @@ async function quickReviewRecipe(id, status, e) {
       p_notes: status === 'rejected' ? 'Quick reject from list' : ''
     });
     auditLog('Recipe Management', 'Recipe ' + status.charAt(0).toUpperCase() + status.slice(1), null, id, status, status === 'rejected' ? 'Quick reject from list' : null);
-    loadRecipeMgmt(_currentRecipeTab);
+    afterRecipeReviewInList(id, prevStatus || status, status);
   } catch (err) {
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
     alert('Error: ' + err.message);
   }
 }
@@ -778,16 +860,11 @@ async function doReviewRecipe(id, status) {
   document.querySelectorAll('#rm-detail-panel button').forEach(function(b){ b.disabled = true; });
   if (msg) { msg.textContent = 'Saving\u2026'; msg.style.color = 'var(--text-mid)'; }
   try {
+    var prevStatus = currentRecipe ? currentRecipe.status : null;
     await rpc('admin_review_recipe', {p_id: id, p_status: status, p_notes: combined || null});
     auditLog('Recipe Management', 'Recipe ' + status.charAt(0).toUpperCase() + status.slice(1), null, id, status, combined || null);
-    if (msg) {
-      msg.style.color = status === 'approved' ? '#4caf76' : status === 'rejected' ? '#dc5050' : 'var(--text-mid)';
-      msg.textContent = status === 'approved' ? '\u2713 Approved!' : status === 'rejected' ? '\u2715 Rejected' : '\u21ba Reset to Pending';
-    }
-    setTimeout(function(){
-      closeRecipeModal();
-      loadRecipeMgmt(_currentRecipeTab);
-    }, 1000);
+    closeRecipeModal();
+    afterRecipeReviewInList(id, prevStatus, status);
   } catch(e) {
     document.querySelectorAll('#rm-detail-panel button').forEach(function(b){ b.disabled = false; });
     if (msg) { msg.textContent = 'Error: ' + e.message; msg.style.color = '#dc5050'; }
@@ -1683,6 +1760,29 @@ async function bulkApproveRecipes() {
     _selectedRecipes = new Set();
     loadRecipeMgmt(_currentRecipeTab);
   } catch(e) { alert('Error: '+e.message); }
+}
+
+async function rejectAllPendingRecipes() {
+  var pending = getRmStatNum('rmgmt-pending');
+  if (!pending) return;
+  if (!confirm('Reject all ' + pending + ' pending recipe' + (pending === 1 ? '' : 's') + '?\n\nOne confirmation only — the list will clear without reloading each row.')) return;
+  var btn = document.getElementById('rm-bulk-reject-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Rejecting\u2026'; }
+  try {
+    var n = await rpc('admin_reject_all_pending', { p_notes: 'Bulk inbox clear' });
+    auditLog('Recipe Management', 'Bulk Reject', null, null, 'rejected', String(n) + ' recipes');
+    _rmPage = 1;
+    await loadRecipeMgmt('pending');
+  } catch (e) {
+    var msg = e && e.message ? e.message : String(e);
+    if (/admin_reject_all_pending|Could not find|PGRST202/i.test(msg)) {
+      alert('Bulk reject needs one SQL step first.\n\nRun database/sql/fix-admin-bulk-reject-recipes.sql in Supabase SQL Editor, then try again.\n\nUntil then, use \u2715 Reject on each row (no popup per row anymore).');
+    } else {
+      alert('Error: ' + msg);
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '\u2715 Reject all pending'; }
+  }
 }
 
 
