@@ -14,13 +14,21 @@ if (Test-Path "setup-env.ps1") {
 
 Write-Host ""
 Write-Host "=== TCJ Books ===" -ForegroundColor Cyan
-Write-Host "Step 1/3: Extract NEW books from inputs\books\ ..." -ForegroundColor White
-python engines/extract_books.py
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+Write-Host "Step 1/3: Extract books from inputs\books\ (always refresh) ..." -ForegroundColor White
+$bookFiles = @(Get-ChildItem -Path "inputs\books\*" -File -Include *.pdf,*.docx,*.txt,*.md,*.text -ErrorAction SilentlyContinue)
+if (-not $bookFiles -or $bookFiles.Count -eq 0) {
+    Write-Host "No book files in inputs\books\" -ForegroundColor Red
+    exit 1
+}
+foreach ($book in $bookFiles) {
+    Write-Host "  -> $($book.Name)" -ForegroundColor DarkGray
+    python engines/extract_books.py --refresh $book.Name
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
 
 Write-Host ""
 Write-Host "Step 2/3: Upload verified recipes to Admin inbox ..." -ForegroundColor White
-Write-Host "(Skips junk extractions and duplicates automatically)" -ForegroundColor DarkGray
+Write-Host "(Only JSON for books in inputs\books\; skips junk and duplicates)" -ForegroundColor DarkGray
 python ingest_tcj.py --subdir books
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

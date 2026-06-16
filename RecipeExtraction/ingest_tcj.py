@@ -27,12 +27,14 @@ from supabase import Client, create_client
 
 from tcj_ingest import build_submitted_recipes_row, normalize_host, normalize_structured
 from tcj_normalize import clean_recipe_title
+from tcj_from_text import slugify
 from website_sources import is_source_active
 
 BASE_DIR = Path(__file__).resolve().parent
 MYCOOKBOOK = BASE_DIR / "MyCookbook"
+BOOKS_INPUT_DIR = BASE_DIR / "inputs" / "books"
 JSON_SUBDIRS = ("websites", "books", "word", "youtube", "videos", "instagram")
-TRUSTED_BOOK_PARSERS = {"cookbook-serves-v1"}
+TRUSTED_BOOK_PARSERS = {"cookbook-serves-v1", "yield-cookbook-v1"}
 COOKBOOK_SECTION = re.compile(
     r"\((?:Vegetarian|Seafood|Poultry|Meat|Desserts) section\)",
     re.I,
@@ -70,6 +72,20 @@ def log_line(path: Path, record: dict) -> None:
         handle.write(json.dumps(record) + "\n")
 
 
+def active_book_prefixes() -> set[str]:
+    if not BOOKS_INPUT_DIR.is_dir():
+        return set()
+    exts = {".pdf", ".docx", ".txt", ".md", ".text"}
+    return {slugify(path.stem) for path in BOOKS_INPUT_DIR.iterdir() if path.is_file() and path.suffix.lower() in exts}
+
+
+def belongs_to_active_book(path: Path, prefixes: set[str]) -> bool:
+    if not prefixes:
+        return True
+    stem = path.stem
+    return any(stem == prefix or stem.startswith(f"{prefix}-") for prefix in prefixes)
+
+
 def resolve_files(subdir: str, limit: int | None) -> list[Path]:
     if subdir == "all":
         files: list[Path] = []
@@ -81,6 +97,14 @@ def resolve_files(subdir: str, limit: int | None) -> list[Path]:
         folder = MYCOOKBOOK / subdir
         files = sorted(folder.rglob("*.json")) if folder.is_dir() else []
     files = [p for p in files if not p.name.startswith("_")]
+    if subdir == "books":
+        prefixes = active_book_prefixes()
+        if prefixes:
+            before = len(files)
+            files = [p for p in files if belongs_to_active_book(p, prefixes)]
+            dropped = before - len(files)
+            if dropped:
+                print(f"Ignoring {dropped} stale book JSON file(s) not matching inputs/books/")
     if limit:
         files = files[:limit]
     return files

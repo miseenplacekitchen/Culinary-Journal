@@ -14,6 +14,7 @@ from processed_registry import is_file_processed, load_registry, mark_file_proce
 from tcj_from_text import slugify, split_document_into_recipes, structure_text_to_envelope
 
 from _cookbook_pdf import extract_cookbook_pdf_chunks  # noqa: E402
+from _yield_cookbook_pdf import extract_yield_cookbook_pdf_chunks  # noqa: E402
 
 
 def _safe_console(text: str) -> str:
@@ -108,7 +109,16 @@ def extract_document_folder(
             continue
         print(f"  [*] Reading {path.name}")
         try:
-            chunks = extract_cookbook_pdf_chunks(path) if path.suffix.lower() == ".pdf" else None
+            book_parser = "document-generic"
+            chunks = None
+            if path.suffix.lower() == ".pdf":
+                chunks = extract_cookbook_pdf_chunks(path)
+                if chunks:
+                    book_parser = "cookbook-serves-v1"
+                else:
+                    chunks = extract_yield_cookbook_pdf_chunks(path)
+                    if chunks:
+                        book_parser = "yield-cookbook-v1"
             if chunks is None:
                 text = load_document_text(path)
                 if len(text) < 80:
@@ -118,7 +128,7 @@ def extract_document_folder(
             else:
                 print(f"  [*] Cookbook layout detected ({len(chunks)} recipe(s) found)")
                 for chunk in chunks:
-                    chunk["book_parser"] = "cookbook-serves-v1"
+                    chunk["book_parser"] = book_parser
         except Exception as exc:
             print(f"  [!] Failed {path.name}: {exc}")
             continue
@@ -146,6 +156,12 @@ def extract_document_folder(
                     "poultry": "Meat & Fire",
                     "meat": "Meat & Fire",
                     "desserts": "Sweet Serenades",
+                    "sweets": "Sweet Serenades",
+                    "kibbeh": "Garden & Earth",
+                    "grains": "Garden & Earth",
+                    "legumes": "Garden & Earth",
+                    "vegetables": "Garden & Earth",
+                    "sauces": "Sips & Stories",
                 }
                 mapped = category_map.get(section)
                 if mapped:
@@ -160,6 +176,8 @@ def extract_document_folder(
                 )
                 envelope["structured"]["credit_name"] = book
                 serves_match = re.search(r"^Serves\s+(\d+)", chunk["body"], re.I | re.M)
+                if not serves_match:
+                    serves_match = re.search(r"Yield:\s*(\d+)", chunk["body"], re.I | re.M)
                 if serves_match:
                     envelope["structured"]["servings"] = max(1, int(serves_match.group(1)))
             if not envelope.get("ok"):

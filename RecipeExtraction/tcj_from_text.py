@@ -102,8 +102,9 @@ def passes_document_quality(structured: dict[str, Any], title: str, text: str, i
 
     if import_path in {"book-batch", "word-batch", "document-batch"}:
         measured = count_measured_ingredients(structured)
-        if measured < 3:
-            return False, f"quality gate: only {measured} measured ingredients (need 3+)"
+        min_measured = 2 if re.search(r"Yield:\s*\d", text or "", re.I) else 3
+        if measured < min_measured:
+            return False, f"quality gate: only {measured} measured ingredients (need {min_measured}+)"
         if looks_like_glossary_or_index(name, text, structured):
             return False, "quality gate: glossary/index page"
 
