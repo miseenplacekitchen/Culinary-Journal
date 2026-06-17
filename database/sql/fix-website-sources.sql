@@ -44,14 +44,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS submitted_recipes_import_source_url_uidx
   ON public.submitted_recipes (import_source_url)
   WHERE import_source_url IS NOT NULL AND btrim(import_source_url) <> '';
 
--- ── Drink sub-categories (Mixology / mocktails / shakes under Sips & Stories) ─
-INSERT INTO public.recipe_subcategories (category, name, sort_order) VALUES
-  ('Sips & Stories', 'Cocktails & Spirits', 1),
-  ('Sips & Stories', 'Mocktails', 2),
-  ('Sips & Stories', 'Smoothies & Shakes', 3),
-  ('Sips & Stories', 'Tea & Coffee', 4),
-  ('Sips & Stories', 'Juices & Refreshers', 5)
-ON CONFLICT (category, name) DO NOTHING;
+-- Drink taxonomy: use fix-sips-drinks-taxonomy.sql (Parts A–D, 21 subs). Do not seed old placeholder subs here.
 
 -- ── Helpers ─────────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION public.normalize_website_host(p_url text)

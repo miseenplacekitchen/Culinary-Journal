@@ -86,10 +86,8 @@ for line in see_refs[:8]:
 if len(see_refs) > 8:
     print(f'    ... +{len(see_refs)-8} more pointer lines in other categories')
 
-print('\n=== 8. LEGACY SUBS (may still be active in DB) ===')
-print('  Sips legacy subs in fix-sips-drinks-taxonomy.sql: Cocktails & Spirits, Mocktails,')
-print('  Smoothies & Shakes, Tea & Coffee, Juices & Refreshers (sort 401+).')
-print('  Old phase-6 subs deactivated by fix-book-taxonomy for loaded categories.')
+print('\n=== 8. SIPS PLACEHOLDER SUBS (removed) ===')
+print('  Old placeholder names (Cocktails & Spirits, Mocktails, etc.) deactivated by fix-sips-drinks-taxonomy.sql.')
 
 print('\n=== 9. COMMUNITY RECIPES FILTER ===')
 print('  cr-taxonomy-row mixes ALL subs from ALL categories globally — not scoped per category.')

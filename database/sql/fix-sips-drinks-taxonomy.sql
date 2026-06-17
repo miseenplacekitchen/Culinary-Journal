@@ -2,14 +2,16 @@
 -- Sips & Stories drink taxonomy (Parts A–D). Safe to re-run.
 -- Run in Supabase SQL Editor once (re-run after taxonomy updates).
 
--- Deactivate superseded sub-categories from earlier drafts (legacy names kept active)
+-- Deactivate superseded sub-categories from earlier drafts (not part of Parts A–D)
 UPDATE public.recipe_subcategories SET is_active = false
 WHERE category = 'Sips & Stories'
   AND name IN (
     'Non-Alcoholic Drinks', 'Functional Beverages', 'Alcoholic Drinks',
     'Traditional & Regional Drinks', 'Mocktails & Non-Alcoholic Spirits',
     'Syrups, Cordials & Concentrates', 'Carbonated Sodas & Tonics',
-    'Protein Drinks', 'Refreshment Drinks', 'Kids'' Drinks'
+    'Protein Drinks', 'Refreshment Drinks', 'Kids'' Drinks',
+    'Cocktails & Spirits', 'Mocktails', 'Smoothies & Shakes',
+    'Tea & Coffee', 'Juices & Refreshers'
   );
 
 -- ── Part A: Non-alcoholic ─────────────────────────────────────────────────────
@@ -37,13 +39,7 @@ INSERT INTO public.recipe_subcategories (category, name, sort_order, is_active) 
   ('Sips & Stories', 'World Drinks', 300, true),
   ('Sips & Stories', 'By Season & Occasion', 310, true),
   ('Sips & Stories', 'For Kids', 320, true),
-  ('Sips & Stories', 'Mocktails & Zero-Proof', 330, true),
-  -- Legacy (existing recipes)
-  ('Sips & Stories', 'Cocktails & Spirits', 401, true),
-  ('Sips & Stories', 'Mocktails', 402, true),
-  ('Sips & Stories', 'Smoothies & Shakes', 403, true),
-  ('Sips & Stories', 'Tea & Coffee', 404, true),
-  ('Sips & Stories', 'Juices & Refreshers', 405, true)
+  ('Sips & Stories', 'Mocktails & Zero-Proof', 330, true)
 ON CONFLICT (category, name) DO UPDATE SET
   sort_order = EXCLUDED.sort_order,
   is_active = EXCLUDED.is_active;
@@ -168,6 +164,31 @@ ON CONFLICT (category, subcategory, name) DO UPDATE SET
   is_active = true,
   subtitle = EXCLUDED.subtitle,
   description = EXCLUDED.description;
+
+-- Deactivate any Sips sub not in Parts A–D (21 subs)
+UPDATE public.recipe_subcategories SET is_active = false
+WHERE category = 'Sips & Stories'
+  AND name NOT IN (
+    'Water & Sparkling', 'Coffee', 'Tea & Infusions', 'Hot Chocolate & Warm Comforts',
+    'Juices, Smoothies & Blends', 'Milk, Plant Milks & Cultured Drinks',
+    'Sodas, Tonics & Fizz', 'Functional & Fermented', 'Beer & Brewing',
+    'Wine, Cider & Fermented Fruit', 'Spirits & Liqueurs', 'Cocktails & Mixed Drinks',
+    'Syrups & Sweeteners', 'Cordials, Squash & Concentrates', 'Shrubs, Bitters & Infusions',
+    'Garnishes, Ice & Glassware', 'Techniques & Reference', 'World Drinks',
+    'By Season & Occasion', 'For Kids', 'Mocktails & Zero-Proof'
+  );
+
+UPDATE public.recipe_divisions SET is_active = false
+WHERE category = 'Sips & Stories'
+  AND subcategory NOT IN (
+    'Water & Sparkling', 'Coffee', 'Tea & Infusions', 'Hot Chocolate & Warm Comforts',
+    'Juices, Smoothies & Blends', 'Milk, Plant Milks & Cultured Drinks',
+    'Sodas, Tonics & Fizz', 'Functional & Fermented', 'Beer & Brewing',
+    'Wine, Cider & Fermented Fruit', 'Spirits & Liqueurs', 'Cocktails & Mixed Drinks',
+    'Syrups & Sweeteners', 'Cordials, Squash & Concentrates', 'Shrubs, Bitters & Infusions',
+    'Garnishes, Ice & Glassware', 'Techniques & Reference', 'World Drinks',
+    'By Season & Occasion', 'For Kids', 'Mocktails & Zero-Proof'
+  );
 
 -- Verify
 SELECT subcategory_name, count(*)::int AS divisions
