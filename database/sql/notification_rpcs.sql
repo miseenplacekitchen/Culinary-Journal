@@ -26,5 +26,7 @@ BEGIN
   VALUES (p_user_id, p_type, p_recipe_id, p_recipe_name, p_message);
 END;
 $$;
+REVOKE ALL ON FUNCTION public.send_notification(uuid, text, uuid, text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.send_notification(uuid, text, uuid, text, text) TO authenticated;
 
 SELECT 'Notification RPCs ready' AS status;

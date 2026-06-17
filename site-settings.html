@@ -228,7 +228,6 @@
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
-const ADMIN_EMAIL = 'miseenplacekitchen.official@gmail.com';
 const SETTINGS_KEY = 'tcj_site_settings';
 
 function getSettings() {
@@ -359,10 +358,19 @@ function loadSavedSettings() {
   if (s.registrations) document.getElementById('bp-registrations').value = s.registrations;
 }
 
+async function verifySiteSettingsAdmin() {
+  const session = JSON.parse(localStorage.getItem('tcj_session')||'null');
+  if (!session || !session.access_token) return false;
+  if (typeof fetchTcjIsAdmin === 'function') {
+    return (await fetchTcjIsAdmin(session)) === true;
+  }
+  const profile = JSON.parse(localStorage.getItem('tcj_profile')||'null');
+  return !!(profile && profile.is_admin === true);
+}
+
 async function init() {
   const session = JSON.parse(localStorage.getItem('tcj_session')||'null');
-  const profile  = JSON.parse(localStorage.getItem('tcj_profile')||'null');
-  const isAdmin = profile && (profile.is_admin === true || profile.email === ADMIN_EMAIL);
+  const isAdmin = await verifySiteSettingsAdmin();
   if (!session || !isAdmin) {
     document.getElementById('bp-denied').style.display = 'block';
     return;
@@ -373,8 +381,7 @@ async function init() {
 
 document.addEventListener('DOMContentLoaded', async function() {
   var session = JSON.parse(localStorage.getItem('tcj_session')||'null');
-  var profile  = JSON.parse(localStorage.getItem('tcj_profile')||'null');
-  var isAdminUser = profile && (profile.is_admin === true || profile.email === 'miseenplacekitchen.official@gmail.com');
+  var isAdminUser = await verifySiteSettingsAdmin();
   if (!session || !isAdminUser) {
     document.getElementById('bp-denied').style.display = 'block';
     return;

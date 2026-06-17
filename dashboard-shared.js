@@ -344,9 +344,10 @@ async function init() {
         if (typeof fetchTcjIsAdmin === 'function') {
           var rpcAdmin = await fetchTcjIsAdmin(sess);
           if (rpcAdmin === true) pr.is_admin = true;
+          else if (rpcAdmin === false) pr.is_admin = false;
         }
         if (typeof normalizeTcjProfile === 'function') pr = normalizeTcjProfile(pr, sess);
-        isAdmin = !!(pr.is_admin || (typeof isTcjAdmin === 'function' && isTcjAdmin(pr, sess)));
+        isAdmin = pr.is_admin === true;
         adminName = pr.full_name || pr.username || 'miseenplacekitchen';
         if (pr.avatar_url && typeof avatarBust === 'function') {
           pr.avatar_url = avatarBust(pr.avatar_url, pr.id, pr.last_seen);

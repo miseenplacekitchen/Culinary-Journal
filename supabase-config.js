@@ -51,9 +51,9 @@
   };
 
   // ── Profile / avatar cache helpers ───────────────────────────────────
-  var ADMIN_EMAIL = 'miseenplacekitchen.official@gmail.com';
-
-  window.TCJ_ADMIN_EMAIL = ADMIN_EMAIL;
+  window.isTcjAdmin = function(profile) {
+    return !!(profile && profile.is_admin === true);
+  };
 
   window.sessionEmail = function(session) {
     if (session && session.user && session.user.email) return session.user.email;
@@ -65,22 +65,24 @@
     } catch (_) { return ''; }
   };
 
-  window.isTcjAdmin = function(profile, session) {
-    if (profile && profile.is_admin === true) return true;
-    var admin = ADMIN_EMAIL.toLowerCase();
-    var emails = [];
-    if (profile && profile.email) emails.push(String(profile.email).toLowerCase());
-    var se = window.sessionEmail(session);
-    if (se) emails.push(String(se).toLowerCase());
-    return emails.some(function(e) { return e === admin; });
-  };
-
   window.normalizeTcjProfile = function(profile, session) {
     profile = profile || {};
     session = session || window.getSession();
     if (!profile.email && window.sessionEmail(session)) profile.email = window.sessionEmail(session);
-    if (profile.is_admin !== true && window.isTcjAdmin(profile, session)) profile.is_admin = true;
     return profile;
+  };
+
+  window.syncTcjAdminFromServer = async function(session) {
+    session = session || window.getSession();
+    if (!session || !session.access_token) return false;
+    var isAdmin = await window.fetchTcjIsAdmin(session);
+    try {
+      var prof = JSON.parse(localStorage.getItem('tcj_profile') || 'null') || {};
+      prof.is_admin = isAdmin === true;
+      localStorage.setItem('tcj_profile', JSON.stringify(prof));
+      window.dispatchEvent(new CustomEvent('tcj-profile-updated', { detail: prof }));
+    } catch (_) {}
+    return isAdmin === true;
   };
 
   window.saveTcjProfile = function(profile, session) {

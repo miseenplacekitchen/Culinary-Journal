@@ -14,7 +14,7 @@
  *   hidden     → silently redirect to homepage
  *
  * Tier hierarchy: free < daily < weekly < monthly < yearly < premium/event
- * Admins bypass all restrictions.
+ * Admins bypass all restrictions (profiles.is_admin from server via fetchTcjIsAdmin).
  * coming_soon → redirect to coming-soon.html regardless of visibility
  */
 (function() {
@@ -39,71 +39,84 @@
                 'email-confirm.html','email-reset.html'];
   if (exempt.indexOf(path) !== -1) return;
 
-  var accessToken = null;
   var isAdmin     = false;
   var userTier    = 'free';
   var isLoggedIn  = false;
+  var sess        = null;
 
   try {
-    var sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
-    if (sess && sess.access_token) {
-      accessToken = sess.access_token;
-      isLoggedIn  = true;
-    }
+    sess = JSON.parse(localStorage.getItem('tcj_session') || 'null');
+    if (sess && sess.access_token) isLoggedIn = true;
     var prof = JSON.parse(localStorage.getItem('tcj_profile') || 'null');
     if (prof) {
-      isAdmin  = !!(prof.is_admin || (typeof isTcjAdmin === 'function' && isTcjAdmin(prof, sess)));
+      isAdmin  = !!(prof.is_admin === true);
       userTier = prof.subscription_tier || 'free';
     }
   } catch(e) {}
 
-  // theme-init.js already sent anonymous visitors to login.html
   if (window.TCJ_SITE_PRIVATE && !isLoggedIn) return;
+
+  function applyPageRules() {
+    fetch(SUPA_URL + '/rest/v1/site_pages?path=eq.' + encodeURIComponent(path) +
+          '&select=visibility,coming_soon,min_tier', {
+      headers: { 'apikey': SUPA_KEY, 'Accept': 'application/json' }
+    })
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(rows) {
+      if (!Array.isArray(rows) || !rows.length) return;
+
+      var page = rows[0];
+      var minTier = page.min_tier || 'free';
+
+      if (page.coming_soon) {
+        window.location.replace('coming-soon.html?from=' + encodeURIComponent(path));
+        return;
+      }
+
+      switch (page.visibility) {
+
+        case 'hidden':
+          window.location.replace('index.html');
+          break;
+
+        case 'registered':
+          if (!isLoggedIn) {
+            window.location.replace('members-only.html?next=' + encodeURIComponent(path));
+            return;
+          }
+          if (!userMeetsTier(userTier, minTier)) {
+            window.location.replace('paid-members-only.html?next=' + encodeURIComponent(path) + '&tier=' + encodeURIComponent(minTier));
+          }
+          break;
+
+        case 'paid':
+          var required = (minTier && minTier !== 'free') ? minTier : 'monthly';
+          if (!isLoggedIn || !userMeetsTier(userTier, required)) {
+            window.location.replace('paid-members-only.html?next=' + encodeURIComponent(path) + '&tier=' + encodeURIComponent(required));
+          }
+          break;
+
+        default:
+          break;
+      }
+    })
+    .catch(function() {});
+  }
+
+  function startGuard() {
+    if (isAdmin) return;
+    applyPageRules();
+  }
 
   if (isAdmin) return;
 
-  fetch(SUPA_URL + '/rest/v1/site_pages?path=eq.' + encodeURIComponent(path) +
-        '&select=visibility,coming_soon,min_tier', {
-    headers: { 'apikey': SUPA_KEY, 'Accept': 'application/json' }
-  })
-  .then(function(r) { return r.ok ? r.json() : null; })
-  .then(function(rows) {
-    if (!Array.isArray(rows) || !rows.length) return;
+  if (isLoggedIn && typeof window.fetchTcjIsAdmin === 'function') {
+    window.fetchTcjIsAdmin(sess).then(function(ok) {
+      if (ok === true) return;
+      startGuard();
+    }).catch(function() { startGuard(); });
+    return;
+  }
 
-    var page = rows[0];
-    var minTier = page.min_tier || 'free';
-
-    if (page.coming_soon) {
-      window.location.replace('coming-soon.html?from=' + encodeURIComponent(path));
-      return;
-    }
-
-    switch (page.visibility) {
-
-      case 'hidden':
-        window.location.replace('index.html');
-        break;
-
-      case 'registered':
-        if (!isLoggedIn) {
-          window.location.replace('members-only.html?next=' + encodeURIComponent(path));
-          return;
-        }
-        if (!userMeetsTier(userTier, minTier)) {
-          window.location.replace('paid-members-only.html?next=' + encodeURIComponent(path) + '&tier=' + encodeURIComponent(minTier));
-        }
-        break;
-
-      case 'paid':
-        var required = (minTier && minTier !== 'free') ? minTier : 'monthly';
-        if (!isLoggedIn || !userMeetsTier(userTier, required)) {
-          window.location.replace('paid-members-only.html?next=' + encodeURIComponent(path) + '&tier=' + encodeURIComponent(required));
-        }
-        break;
-
-      default:
-        break;
-    }
-  })
-  .catch(function() {});
+  startGuard();
 })();

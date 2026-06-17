@@ -272,8 +272,7 @@ function buildSectionNav() {
     return '';
   }
 
-  function isNavAdmin(profile, session) {
-    if (typeof window.isTcjAdmin === 'function') return window.isTcjAdmin(profile, session);
+  function isNavAdmin(profile) {
     return !!(profile && profile.is_admin === true);
   }
 
@@ -498,6 +497,7 @@ function buildSectionNav() {
         p = await enrichProfile(p, session);
       }
       if (rpcAdmin === true) p.is_admin = true;
+      else if (rpcAdmin === false) p.is_admin = false;
       p = normalizeNavProfile(p, session);
       if (typeof window.saveTcjProfile === 'function') {
         window.saveTcjProfile(p, session);

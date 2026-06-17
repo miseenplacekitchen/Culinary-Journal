@@ -629,6 +629,10 @@ async function doLogin() {
           if (typeof enrichProfile === 'function') {
             profile = await enrichProfile(profile, sessionObj);
           }
+          if (typeof fetchTcjIsAdmin === 'function') {
+            var rpcAdmin = await fetchTcjIsAdmin(sessionObj);
+            profile.is_admin = rpcAdmin === true;
+          }
           if (typeof saveTcjProfile === 'function') {
             profile = saveTcjProfile(profile, sessionObj);
           } else {
@@ -636,7 +640,7 @@ async function doLogin() {
           }
           sessionObj.username = profile.username || username;
           localStorage.setItem('tcj_session', JSON.stringify(sessionObj));
-          isAdmin = !!(profile.is_admin || (typeof isTcjAdmin === 'function' && isTcjAdmin(profile, sessionObj)));
+          isAdmin = profile.is_admin === true;
           // Save theme immediately so every page applies it on first load
           if (profile.theme_preference && profile.theme_preference !== 'midnight-slate') {
             localStorage.setItem('tcj_theme', profile.theme_preference);

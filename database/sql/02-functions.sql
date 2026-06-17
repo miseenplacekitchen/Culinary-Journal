@@ -459,10 +459,16 @@ BEGIN
 END $$;
 CREATE OR REPLACE FUNCTION public.admin_get_submitter(p_user_id uuid)
 RETURNS text
-LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public
+LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = public
 AS $$
-  SELECT email FROM auth.users WHERE id = p_user_id AND is_admin();
+BEGIN
+  IF auth.uid() IS NULL OR NOT is_admin() THEN
+    RAISE EXCEPTION 'Not authorized';
+  END IF;
+  RETURN (SELECT email FROM auth.users WHERE id = p_user_id);
+END;
 $$;
+REVOKE ALL ON FUNCTION public.admin_get_submitter(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.admin_get_submitter(uuid) TO authenticated;
 
 DO $$ DECLARE r record;

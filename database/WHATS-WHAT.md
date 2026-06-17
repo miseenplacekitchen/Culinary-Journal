@@ -43,6 +43,16 @@ Audit site wiring: `python database/taxonomy/audit_taxonomy.py`
 
 ---
 
+### 5. Security (run after RPC changes)
+
+| File | When |
+|------|------|
+| `sql/fix-security-rpcs.sql` | Once — harden `admin_get_submitter`, `send_notification`, `repair_orphan_recipe_ingredients` |
+| `security/SECURITY-AUDIT.md` | Full RLS/RPC audit findings |
+| `security/audit_rls_rpcs.py` | Re-scan `full-setup.sql` for unguarded SECURITY DEFINER functions |
+
+---
+
 ### 3. Live site bundles (already applied — do not re-run unless told)
 
 These were pasted into Supabase during build-out. **You do not hunt through 180 files anymore.**
