@@ -7,6 +7,7 @@ from typing import Any
 
 from tcj_extract import (
     build_structured,
+    infer_division,
     infer_sub_category,
     segment_article_text,
 )
@@ -168,6 +169,10 @@ def structure_text_to_envelope(
         sub = infer_sub_category(structured["recipe_name"], seg.get("ingredients") or [])
         if sub:
             structured["sub_category"] = sub
+    if structured.get("category") == "Sips & Stories" and not structured.get("division"):
+        div = infer_division(structured["recipe_name"], seg.get("ingredients") or [])
+        if div:
+            structured["division"] = div
 
     ing_count = sum(len(s.get("items") or []) for s in structured.get("ingredients") or [])
     step_count = sum(len(s.get("steps") or []) for s in structured.get("method") or [])

@@ -25,6 +25,7 @@
   <script src="lib/recipe-import-paths.js"></script>
   <script src="lib/recipe-hero-labels.js?v=20260629"></script>
   <script src="lib/ingredient-lookup.js?v=20260630"></script>
+  <script src="lib/drink-taxonomy-infer.js?v=20260715"></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -4202,7 +4203,8 @@ var CATEGORY_TAXONOMY_HINTS = {
   'Garden & Earth': 'Vegetable- and plant-forward dishes. Search or suggest a sub-category if needed.',
   'Breads & Bakes': 'Breads, flatbreads, batters and baked goods.',
   'Sweet Serenades': 'Desserts, sweets and confections.',
-  'Slow & Soulful': 'Soups, stews and slow-cooked comfort food.'
+  'Slow & Soulful': 'Soups, stews and slow-cooked comfort food.',
+  'Sips & Stories': 'All drinks under Sips & Stories. Non-alcoholic (A1–A8), with alcohol (B1–B4), foundations (C1–C5), or collections (D1–D4). Smoothies go under Juices, Smoothies & Blends — search or type your own.'
 };
 
 function escTaxOpt(s) {
@@ -4496,6 +4498,9 @@ function inferSubCategoryDivision(name, items, category) {
     else if (/\bchicken\b|\bpoultry\b/.test(blob)) out.sub = 'Poultry';
     else if (/\bbeef\b/.test(blob)) out.sub = 'Beef';
     else if (/\bpork\b/.test(blob)) out.sub = 'Pork';
+  }
+  if (category === 'Sips & Stories' && typeof DrinkTaxonomyInfer !== 'undefined') {
+    return DrinkTaxonomyInfer.infer(blob);
   }
   return out;
 }
@@ -6395,7 +6400,7 @@ async function cancelSubmission() {
 
 
 </script>
-<script src="lib/submit-recipe-auto-enrich.js?v=20260714"></script>
-<script src="lib/submit-recipe-parse.js?v=20260714"></script>
+<script src="lib/submit-recipe-auto-enrich.js?v=20260715"></script>
+<script src="lib/submit-recipe-parse.js?v=20260715"></script>
 </body>
 </html>
