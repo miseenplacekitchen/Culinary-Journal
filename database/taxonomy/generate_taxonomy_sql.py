@@ -14,6 +14,178 @@ MD_PATH = Path(__file__).resolve().parent / "book-taxonomy.md"
 SQL_PATH = ROOT / "database" / "sql" / "fix-book-taxonomy.sql"
 JS_PATH = ROOT / "lib" / "taxonomy-sub-codes.js"
 PARTS_JS_PATH = ROOT / "lib" / "taxonomy-parts.js"
+FOOD_INFER_JS_PATH = ROOT / "lib" / "food-taxonomy-infer.js"
+
+# Sips uses drink-taxonomy-infer.js
+SKIP_FOOD_INFER_CATEGORY_NUMS = {10}
+
+GENERIC_INFER_WORDS = frozenset(
+    {
+        "other",
+        "misc",
+        "miscellaneous",
+        "general",
+        "basic",
+        "simple",
+        "classic",
+        "traditional",
+        "style",
+        "styles",
+        "dishes",
+        "dish",
+        "food",
+        "foods",
+        "recipe",
+        "recipes",
+        "guide",
+        "reference",
+        "notes",
+        "adaptations",
+        "preparations",
+        "homemade",
+        "how",
+        "make",
+        "cooking",
+        "based",
+        "mixed",
+        "fresh",
+        "regional",
+        "global",
+        "international",
+        "asian",
+        "indian",
+        "european",
+        "western",
+        "middle",
+        "eastern",
+        "south",
+        "north",
+        "east",
+        "west",
+        "central",
+    }
+)
+
+# High-priority disambiguation (regex, sub, div). div '' = sub only.
+CURATED_FOOD_RULES: dict[str, list[tuple[str, str, str]]] = {
+    "Grains & Comfort": [
+        (r"\b(mutton biryani|goat biryani|beef biryani|lamb biryani)\b", "Mutton & Beef Biryani", ""),
+        (r"\b(prawn biryani|fish biryani|crab biryani|seafood biryani)\b", "Seafood Biryani", ""),
+        (r"\b(paneer biryani|mushroom biryani|veg biryani|vegetable biryani)\b", "Vegetarian Biryani", ""),
+        (r"\b(chicken biryani|hyderabadi biryani|dum biryani|thalassery biryani|ambur biryani)\b", "Chicken Biryani", ""),
+        (r"\b(biriyani|biryani)\b", "Chicken Biryani", ""),
+        (r"\b(pulao|pilaf|pilau|yakhni pulao|matar pulao)\b", "Pulao", ""),
+        (r"\b(plov|machboos|mujaddara|chelow)\b", "Middle Eastern & Central Asian Pilaf", ""),
+        (r"\b(fried rice|nasi goreng)\b", "Chinese Fried Rice", ""),
+        (r"\b(risotto|paella)\b", "International Rice Dishes", ""),
+        (r"\b(ramen|udon|soba)\b", "Ramen", ""),
+        (r"\b(spaghetti|carbonara|bolognese|lasagna|penne pasta)\b", "Tomato-Based Pasta", ""),
+        (r"\b(khichdi|kitchari)\b", "Other Grain & Starch Dishes", ""),
+    ],
+    "Meat & Fire": [
+        (r"\b(chicken 65|nadan chicken|chicken pakora|amritsari chicken|chicken sukka|kozhi varuval)\b", "South Asian Fried Chicken", ""),
+        (r"\b(karaage|chicken katsu|yangnyeom|korean fried chicken|popcorn chicken)\b", "East & South-East Asian Fried Chicken", ""),
+        (r"\b(fried chicken|southern fried|buttermilk chicken)\b", "Western Fried Chicken", ""),
+        (r"\b(tandoori|tikka|seekh kebab|galouti|reshmi kebab|haryali kebab)\b", "Tandoor & Indian Grill", ""),
+        (r"\b(shawarma|kebab|kofta kebab|doner)\b", "Middle Eastern & Mediterranean Grill", ""),
+        (r"\b(yakitori|satay|bulgogi|galbi)\b", "East Asian Grill & Skewers", ""),
+        (r"\b(bbq|barbecue|pulled pork|smoked ribs|brisket)\b", "Western & BBQ Roasts", ""),
+        (r"\b(mutton|goat fry|goat roast|meen varuval)\b", "South Asian Dry Mutton & Goat", ""),
+        (r"\b(beef steak|ribeye|sirloin|t-bone)\b", "Beef Steaks", ""),
+        (r"\b(lamb chop|rack of lamb|lamb shank)\b", "Lamb & Pork Chops", ""),
+        (r"\b(pork belly|pork roast|bacon fry)\b", "Pork Dry Dishes", ""),
+    ],
+    "Ocean & River": [
+        (r"\b(fish and chips|fish fry|karimeen|meen varuval|amritsari fish)\b", "Whole Fish Fry", ""),
+        (r"\b(prawn fry|prawn roast|chemmeen|jhinga fry)\b", "Fried & Dry Prawn Dishes", ""),
+        (r"\b(fish curry|meen curry|malabar fish curry|goan fish curry)\b", "Coconut-Based Fish Curries", ""),
+        (r"\b(prawn curry|chemmeen curry)\b", "Prawn Curries", ""),
+        (r"\b(crab curry|nandu curry)\b", "Crab Curries", ""),
+        (r"\b(sushi|sashimi|poke|ceviche)\b", "Cured & Smoked Fish", ""),
+        (r"\b(grilled salmon|baked fish|poached fish)\b", "Grilled & Baked Fish", ""),
+    ],
+    "Slow & Soulful": [
+        (r"\b(dal|daal|sambar|rassam|rasam)\b", "Indian Dal", ""),
+        (r"\b(miso soup|ramen broth|pho|bone broth)\b", "Asian Broths & Soups", ""),
+        (r"\b(haleem|nihari|tagine|pot roast|braised)\b", "Haleem & Slow Braises", ""),
+        (r"\b(butter chicken|tikka masala|korma|vindaloo)\b", "North Indian & Pakistani Chicken Curries", ""),
+        (r"\b(avial| olan| erissery)\b", "Coconut-Based Vegetarian Curries", ""),
+    ],
+    "Rise & Shine": [
+        (r"\b(congee|jook|kanji|okayu|khao tom|champorado)\b", "Rice Porridges", ""),
+        (r"\b(idli|rava idli|kanchipuram idli)\b", "Idlis", ""),
+        (r"\b(dosa|masala dosa|neer dosa|rava dosa|pesarattu)\b", "Dosas", ""),
+        (r"\b(appam|vellayappam|idiyappam|string hopper)\b", "Appams & Hoppers", ""),
+        (r"\b(puttu|kozhukatta)\b", "Puttu & Steamed Rice Dishes", ""),
+        (r"\b(pancake|waffle|french toast|crepe)\b", "Pancakes & Crepes", ""),
+        (r"\b(omelette|omelet|frittata|scrambled egg|shakshuka)\b", "Omelettes", ""),
+        (r"\b(paratha|thepla|aloo paratha)\b", "Indian Flatbreads (Breakfast)", ""),
+        (r"\b(overnight oat|bircher|steel.?cut oat)\b", "Oat & Grain Porridges", ""),
+        (r"\b(upma|rava upma)\b", "Semolina & Flour Porridges", ""),
+    ],
+    "The Evening Table": [
+        (r"\b(pakora|bhajji|bajji|fritter)\b", "Vegetable Fritters & Pakoras", ""),
+        (r"\b(paneer pakora|halloumi fries)\b", "Paneer & Cheese Fritters", ""),
+        (r"\b(dumpling|gyoza|momos|dim sum)\b", "Asian Dumplings (Steamed)", ""),
+        (r"\b(spring roll|samosa|vada pav|pani puri|bhel puri|chaat)\b", "Tossed & Assembled Chaat", ""),
+        (r"\b(bruschetta|toast)\b", "Toasts & Bruschetta", ""),
+        (r"\b(finger sandwich|tea sandwich|high tea)\b", "High Tea Finger Sandwiches", ""),
+        (r"\b(scone)\b", "Scones", ""),
+        (r"\b(satay|skewer)\b", "Skewers & Satay", ""),
+    ],
+    "Breads & Bakes": [
+        (r"\b(sourdough|ciabatta|baguette|focaccia)\b", "Yeasted Loaves", ""),
+        (r"\b(naan|roti|paratha|chapati|pita|lavash)\b", "Flatbreads", ""),
+        (r"\b(croissant|danish|pain au chocolat)\b", "Croissants & Danish", ""),
+        (r"\b(muffin|scone|dinner roll)\b", "Rolls & Small Breads", ""),
+        (r"\b(pie|quiche|pot pie)\b", "Pies & Baked Casseroles", ""),
+    ],
+    "Sweet Serenades": [
+        (r"\b(gulab jamun|jalebi|ladoo|barfi|halwa|rasgulla|laddu)\b", "Fried & Syrup-Soaked Sweets", ""),
+        (r"\b(kheer|payasam|rice pudding)\b", "Milk-Based Sweets & Puddings", ""),
+        (r"\b(ice cream|gelato)\b", "Ice Cream", ""),
+        (r"\b(tiramisu|panna cotta|creme brulee)\b", "Custard-Based Desserts", ""),
+        (r"\b(mousse|parfait)\b", "Mousse & Light Set Desserts", ""),
+        (r"\b(truffle|bonbon|fudge)\b", "Truffles & Bonbons", ""),
+    ],
+    "Preserved & Cherished": [
+        (r"\b(mango pickle|avakaya|achar)\b", "Mango Pickles", ""),
+        (r"\b(kimchi|kkakdugi)\b", "Korean Kimchi", ""),
+        (r"\b(sauerkraut)\b", "European Pickles", ""),
+        (r"\b(coconut chutney|mint chutney|tomato chutney)\b", "Fresh Chutneys (South Indian)", ""),
+        (r"\b(garam masala|biryani masala|curry powder)\b", "Kerala Spice Blends", ""),
+        (r"\b(jam|marmalade|fruit preserve)\b", "Jams", ""),
+    ],
+    "Feast Days": [
+        (r"\b(thanksgiving)\b", "Thanksgiving", ""),
+        (r"\b(christmas|yule log|stollen|panettone)\b", "Christmas", ""),
+        (r"\b(diwali)\b", "Diwali Sweets & Savouries", ""),
+        (r"\b(eid|ramadan|iftar)\b", "Eid", ""),
+        (r"\b(easter)\b", "Easter", ""),
+        (r"\b(holi)\b", "Holi", ""),
+        (r"\b(onam|sadya)\b", "Onam Sadya (Kerala)", ""),
+    ],
+    "Little Ones": [
+        (r"\b(baby food|weaning|first food|puree baby|infant)\b", "Single Vegetable Purees", ""),
+        (r"\b(toddler|finger food|blw|baby.?led weaning)\b", "Soft-Cooked Vegetable Finger Foods", ""),
+        (r"\b(lunchbox|school lunch|packed lunch)\b", "Toddler Finger Foods & Snacks", ""),
+    ],
+    "Nourish & Heal": [
+        (r"\b(keto|low.?carb)\b", "Low-GI Grain Dishes", ""),
+        (r"\b(gluten.?free|celiac)\b", "Gluten-Free Flatbreads & Breads", ""),
+        (r"\b(golden milk|haldi doodh|turmeric milk)\b", "Warming & Immunity Foods", ""),
+        (r"\b(kanji|moong dal kanji|recovery soup)\b", "Recovery & Convalescence Foods", ""),
+        (r"\b(postpartum|pathila|pathiam)\b", "Postpartum Recovery (Kerala / South Indian)", ""),
+    ],
+    "Garden & Earth": [
+        (r"\b(thoran)\b", "Thoran & Stir-Fries (Coconut-Based)", ""),
+        (r"\b(poriyal|varuval)\b", "Poriyal & Varuval (Tamil Style)", ""),
+        (r"\b(mezhukkupuratti)\b", "Mezhukkupuratti (Stir-Fried in Oil)", ""),
+        (r"\b(tofu stir|tofu fry|mapo tofu)\b", "Tofu Stir-Fries", ""),
+        (r"\b(avial| olan)\b", "Thoran & Stir-Fries (Coconut-Based)", ""),
+        (r"\b(roasted vegetable|roast veg)\b", "Roasted Vegetables", ""),
+    ],
+}
 
 CATEGORY_MAP: dict[int, str] = {
     1: "Rise & Shine",
@@ -481,6 +653,235 @@ def generate_parts_js(categories: list[Category]) -> str:
     return f"window.TAXONOMY_PARTS = {body};\n"
 
 
+@dataclass
+class FoodInferRule:
+    pattern: str
+    sub: str
+    div: str
+    priority: int
+
+
+SHORT_INFER_WORDS = frozenset(
+    {
+        "idli",
+        "dosa",
+        "paneer",
+        "ramen",
+        "udon",
+        "soba",
+        "pho",
+        "kimchi",
+        "puttu",
+        "appam",
+        "vada",
+        "naan",
+        "roti",
+        "dal",
+        "pho",
+        "bun",
+        "pie",
+        "jam",
+        "halwa",
+        "ladoo",
+        "jalebi",
+        "barfi",
+        "scone",
+        "chaat",
+        "pakora",
+        "satay",
+        "tempura",
+        "sushi",
+        "poke",
+        "eid",
+        "holi",
+        "onam",
+        "avial",
+        "olan",
+        "thoran",
+        "poriyal",
+        "upma",
+        "congee",
+        "kanji",
+        "puttu",
+        "haleem",
+        "biryani",
+        "pulao",
+        "pilaf",
+        "risotto",
+        "paella",
+        "schnitzel",
+    }
+)
+
+
+def infer_words(text: str) -> list[str]:
+    return re.findall(r"[a-z0-9']+", text.lower())
+
+
+def significant_word_count(phrase: str) -> int:
+    return sum(
+        1
+        for w in infer_words(phrase)
+        if (len(w) > 2 or w in SHORT_INFER_WORDS) and w not in GENERIC_INFER_WORDS
+    )
+
+
+def phrases_from_label(label: str) -> list[str]:
+    phrases: list[str] = []
+    for match in re.finditer(r"\(([^)]+)\)", label):
+        alias = match.group(1).strip()
+        if len(alias) >= 4:
+            phrases.append(alias)
+    base = re.sub(r"\([^)]*\)", "", label).strip()
+    for part in re.split(r"[/,&]", base):
+        part = part.strip()
+        if len(part) >= 4:
+            phrases.append(part)
+    if len(base) >= 4:
+        phrases.append(base)
+    seen: set[str] = set()
+    out: list[str] = []
+    for phrase in sorted(phrases, key=len, reverse=True):
+        key = phrase.lower()
+        if key not in seen:
+            seen.add(key)
+            out.append(phrase)
+    return out
+
+
+def phrase_to_regex(phrase: str) -> str | None:
+    words = [
+        w
+        for w in infer_words(phrase)
+        if w not in GENERIC_INFER_WORDS and (len(w) > 2 or w in SHORT_INFER_WORDS)
+    ]
+    if not words:
+        return None
+    if len(words) == 1:
+        word = words[0]
+        if len(word) < 5 and word not in SHORT_INFER_WORDS:
+            return None
+        return rf"\b{re.escape(word)}\b"
+    return r"\b" + r"\s+".join(re.escape(w) for w in words[:6]) + r"\b"
+
+
+def division_rules_for_category(cat: Category) -> list[FoodInferRule]:
+    rules: list[FoodInferRule] = []
+    valid_subs = {sub.name for sub in cat.subs}
+    for sub in cat.subs:
+        for div in sub.divisions:
+            for phrase in phrases_from_label(div.name):
+                if significant_word_count(phrase) < 1 and len(phrase) < 8:
+                    continue
+                pattern = phrase_to_regex(phrase)
+                if not pattern:
+                    continue
+                rules.append(
+                    FoodInferRule(
+                        pattern=pattern,
+                        sub=sub.name,
+                        div=div.name,
+                        priority=len(phrase) + (20 if sub.name in valid_subs else 0),
+                    )
+                )
+    rules.sort(key=lambda r: r.priority, reverse=True)
+    deduped: list[FoodInferRule] = []
+    seen_patterns: set[str] = set()
+    for rule in rules:
+        if rule.pattern in seen_patterns:
+            continue
+        seen_patterns.add(rule.pattern)
+        deduped.append(rule)
+    return deduped
+
+
+def curated_rules_for_category(cat_name: str, valid_subs: set[str]) -> list[FoodInferRule]:
+    rules: list[FoodInferRule] = []
+    for idx, (pattern, sub, div) in enumerate(CURATED_FOOD_RULES.get(cat_name, [])):
+        if sub not in valid_subs:
+            continue
+        rules.append(
+            FoodInferRule(pattern=pattern, sub=sub, div=div, priority=10_000 - idx)
+        )
+    return rules
+
+
+def build_food_infer_rules(categories: list[Category]) -> dict[str, list[FoodInferRule]]:
+    out: dict[str, list[FoodInferRule]] = {}
+    for cat in categories:
+        if cat.num in SKIP_FOOD_INFER_CATEGORY_NUMS:
+            continue
+        valid_subs = {sub.name for sub in cat.subs}
+        merged: list[FoodInferRule] = []
+        merged.extend(curated_rules_for_category(cat.db_name, valid_subs))
+        merged.extend(division_rules_for_category(cat))
+        merged.sort(key=lambda r: r.priority, reverse=True)
+        deduped: list[FoodInferRule] = []
+        seen: set[str] = set()
+        for rule in merged:
+            if rule.pattern in seen:
+                continue
+            seen.add(rule.pattern)
+            deduped.append(rule)
+        out[cat.db_name] = deduped
+    return out
+
+
+def js_rule_object(rule: FoodInferRule) -> str:
+    pat = json.dumps(rule.pattern)
+    sub = json.dumps(rule.sub, ensure_ascii=False)
+    div = json.dumps(rule.div, ensure_ascii=False)
+    return f"    {{ re: new RegExp({pat}, 'i'), sub: {sub}, div: {div} }}"
+
+
+def generate_food_infer_js(categories: list[Category]) -> str:
+    rules_by_cat = build_food_infer_rules(categories)
+    lines = [
+        "/**",
+        " * Food categories — sub-category + division inference from recipe name/ingredients.",
+        " * Generated by database/taxonomy/generate_taxonomy_sql.py — do not edit by hand.",
+        " * Sips & Stories uses lib/drink-taxonomy-infer.js instead.",
+        " */",
+        "(function (root) {",
+        "  'use strict';",
+        "",
+        "  var RULES = {",
+    ]
+    cat_names = sorted(rules_by_cat.keys())
+    for idx, cat_name in enumerate(cat_names):
+        rules = rules_by_cat[cat_name]
+        lines.append(f"    {json.dumps(cat_name, ensure_ascii=False)}: [")
+        if rules:
+            lines.append(",\n".join(js_rule_object(r) for r in rules))
+        lines.append("    ]" + ("," if idx < len(cat_names) - 1 else ""))
+    lines.extend(
+        [
+            "  };",
+            "",
+            "  function infer(category, blob) {",
+            "    var text = String(blob || '').toLowerCase().replace(/\\s+/g, ' ');",
+            "    var out = { sub: '', div: '' };",
+            "    if (!category || !text) return out;",
+            "    var list = RULES[category];",
+            "    if (!list) return out;",
+            "    for (var i = 0; i < list.length; i++) {",
+            "      if (list[i].re.test(text)) {",
+            "        out.sub = list[i].sub;",
+            "        out.div = list[i].div || '';",
+            "        return out;",
+            "      }",
+            "    }",
+            "    return out;",
+            "  }",
+            "",
+            "  root.FoodTaxonomyInfer = { infer: infer, RULES: RULES };",
+            "})(typeof globalThis !== 'undefined' ? globalThis : typeof self !== 'undefined' ? self : this);",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def main() -> int:
     text = MD_PATH.read_text(encoding="utf-8")
     categories, warnings = parse_taxonomy(text)
@@ -491,10 +892,12 @@ def main() -> int:
     SQL_PATH.write_text(generate_sql(categories), encoding="utf-8")
     JS_PATH.write_text(generate_js(categories), encoding="utf-8")
     PARTS_JS_PATH.write_text(generate_parts_js(categories), encoding="utf-8")
+    FOOD_INFER_JS_PATH.write_text(generate_food_infer_js(categories), encoding="utf-8")
 
     print(f"Wrote {SQL_PATH}")
     print(f"Wrote {JS_PATH}")
     print(f"Wrote {PARTS_JS_PATH}")
+    print(f"Wrote {FOOD_INFER_JS_PATH}")
     print()
     print("Counts per category (subs, divisions):")
     for cat in categories:
