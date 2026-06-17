@@ -57,6 +57,10 @@
     .cr-filter { padding:6px 14px; border-radius:20px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); cursor:pointer; transition:all 0.15s; white-space:nowrap; }
     .cr-filter:hover { border-color:var(--accent); color:var(--accent); }
     .cr-filter.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:500; }
+    .browse-part-label { flex-basis:100%; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-mid); margin:8px 0 2px; padding-top:4px; }
+    .browse-part-label:first-child { margin-top:0; }
+    .browse-part-section { margin-bottom:20px; }
+    .browse-part-hdr { font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--accent); margin:0 0 10px; }
     .cr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
     .cr-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; overflow:hidden; cursor:pointer; transition:transform 0.15s,border-color 0.15s; text-decoration:none; display:block; }
     .cr-card:hover { transform:translateY(-2px); border-color:var(--accent-border); }
@@ -198,6 +202,10 @@
         <button class="cr-filter" data-spice="Hot" onclick="filterSpice('Hot',this)">🌶🌶🌶 Hot</button>
         <button class="cr-filter" data-spice="Very Hot" onclick="filterSpice('Very Hot',this)">🌶🌶🌶🌶 Very Hot</button>
         <button class="cr-filter" data-spice="Extremely Hot" onclick="filterSpice('Extremely Hot',this)">🌶🌶🌶🌶🌶 Extreme</button>
+      </div>
+      <div id="cr-category-row" style="display:none;margin-top:10px">
+        <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px">Category</div>
+        <div class="cr-filters" id="cr-category-filters"></div>
       </div>
       <div id="cr-taxonomy-row" style="display:none;margin-top:10px">
         <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px">Sub-category</div>
@@ -509,6 +517,40 @@ function getSubCategoryCode(categoryName, subName) {
   return (catMap && catMap[subName]) || '';
 }
 
+function getTaxonomyPartsForCategory(categoryName) {
+  return (window.TAXONOMY_PARTS && window.TAXONOMY_PARTS[categoryName]) || null;
+}
+
+function getSubsGroupedByPart(categoryName) {
+  var allSubs = getBrowseSubsForCategory(categoryName);
+  var parts = getTaxonomyPartsForCategory(categoryName);
+  if (!parts || !allSubs.length) {
+    return [{ letter: '', title: '', emoji: '', subs: allSubs }];
+  }
+  var byName = {};
+  allSubs.forEach(function(s) { byName[s.name] = s; });
+  var groups = [];
+  Object.keys(parts).sort().forEach(function(letter) {
+    var part = parts[letter];
+    var subs = (part.subs || []).map(function(name) { return byName[name]; }).filter(Boolean);
+    if (subs.length) {
+      groups.push({
+        letter: letter,
+        title: part.title || ('Part ' + letter),
+        emoji: part.emoji || '',
+        subs: subs
+      });
+    }
+  });
+  var placed = {};
+  groups.forEach(function(g) { g.subs.forEach(function(s) { placed[s.name] = true; }); });
+  var orphans = allSubs.filter(function(s) { return !placed[s.name]; });
+  if (orphans.length) {
+    groups.push({ letter: '', title: 'Other', emoji: '🍽', subs: orphans });
+  }
+  return groups.length ? groups : [{ letter: '', title: '', emoji: '', subs: allSubs }];
+}
+
 function getBrowseSubsForCategory(categoryName) {
   var order = [];
   var map = {};
@@ -567,18 +609,31 @@ function renderBrowseSubCategoryCards(categoryName) {
       '<div class="empty-desc">Check back soon</div></div>';
     return;
   }
-  g.innerHTML = subs.map(function(s, i) {
-    return '<div class="dish-card" data-sub-idx="' + i + '">' +
-      '<span class="dish-emoji">' + s.emoji + '</span>' +
-      '<div class="dish-name">' + s.name + '</div>' +
-      '<div class="dish-aka">' + s.aka + '</div>' +
-      '<div class="dish-desc">' + (s.preview || (s.divisionCount + ' division' + (s.divisionCount === 1 ? '' : 's'))) + '</div>' +
-      '</div>';
-  }).join('');
+  var flatSubs = [];
+  var groups = getSubsGroupedByPart(categoryName);
+  var html = '';
+  groups.forEach(function(group) {
+    if (group.title) {
+      html += '<div class="browse-part-section"><div class="browse-part-hdr">' +
+        (group.emoji ? group.emoji + ' ' : '') + group.title + '</div><div class="dish-grid" style="display:contents">';
+    }
+    group.subs.forEach(function(s) {
+      var idx = flatSubs.length;
+      flatSubs.push(s);
+      html += '<div class="dish-card" data-sub-idx="' + idx + '">' +
+        '<span class="dish-emoji">' + s.emoji + '</span>' +
+        '<div class="dish-name">' + s.name + '</div>' +
+        '<div class="dish-aka">' + s.aka + '</div>' +
+        '<div class="dish-desc">' + (s.preview || (s.divisionCount + ' division' + (s.divisionCount === 1 ? '' : 's'))) + '</div>' +
+        '</div>';
+    });
+    if (group.title) html += '</div></div>';
+  });
+  g.innerHTML = html;
   g.querySelectorAll('.dish-card').forEach(function(card) {
     card.addEventListener('click', function() {
       var idx = parseInt(this.dataset.subIdx, 10);
-      if (!isNaN(idx) && subs[idx]) selectBrowseSubCategory(categoryName, subs[idx].name);
+      if (!isNaN(idx) && flatSubs[idx]) selectBrowseSubCategory(categoryName, flatSubs[idx].name);
     });
   });
 }
@@ -942,6 +997,7 @@ function hide(id) { document.getElementById(id).style.display='none'; }
 loadCategories();
 </script>
 <script src="lib/taxonomy-sub-codes.js"></script>
+<script src="lib/taxonomy-parts.js"></script>
 <script src="allergy-engine.js"></script>
 <script src="seo-schema.js"></script>
 <script src="nav-init.js"></script>
@@ -960,6 +1016,7 @@ var activeDietFilter = '';
 var activeChefFilter = '';
 var chefDirectory = [];
 var activeSpiceFilter = '';
+var activeCatFilter = '';
 var activeSubFilter = '';
 var activeDivFilter = '';
 var SUPA_URL_CR = window.SUPA_URL;
@@ -1043,8 +1100,16 @@ function buildBrowseTaxonomyFilters(categoryName) {
   });
   if (!subs.length) { row.style.display = 'none'; return; }
   row.style.display = 'block';
-  subEl.innerHTML = '<button class="cr-filter active" data-sub="" type="button">All</button>' +
-    subs.map(function(s){ return '<button class="cr-filter" data-sub="'+s.replace(/"/g,'&quot;')+'" type="button">'+s+'</button>'; }).join('');
+  var pillHtml = '<button class="cr-filter active" data-sub="" type="button">All</button>';
+  getSubsGroupedByPart(categoryName).forEach(function(group) {
+    if (group.title) {
+      pillHtml += '<span class="browse-part-label">' + (group.emoji ? group.emoji + ' ' : '') + group.title + '</span>';
+    }
+    group.subs.forEach(function(s) {
+      pillHtml += '<button class="cr-filter" data-sub="' + s.name.replace(/"/g, '&quot;') + '" type="button">' + s.name + '</button>';
+    });
+  });
+  subEl.innerHTML = pillHtml;
   if (divRow) divRow.style.display = 'none';
   if (divEl) divEl.innerHTML = '';
   subEl.onclick = function(e) {
@@ -1092,25 +1157,60 @@ function communityChefParams() {
   return { p_credit_name: activeChefFilter };
 }
 
+function buildCommunityCategoryFilters() {
+  var row = document.getElementById('cr-category-row');
+  var el = document.getElementById('cr-category-filters');
+  if (!row || !el) return;
+  var cats = Object.keys(CR_CAT_EMOJI).sort();
+  row.style.display = 'block';
+  el.innerHTML = '<button class="cr-filter' + (activeCatFilter ? '' : ' active') + '" data-cat="" type="button">All</button>' +
+    cats.map(function(c) {
+      return '<button class="cr-filter' + (activeCatFilter === c ? ' active' : '') + '" data-cat="' +
+        c.replace(/"/g, '&quot;') + '" type="button">' + (CR_CAT_EMOJI[c] || '') + ' ' + c + '</button>';
+    }).join('');
+  el.onclick = function(e) {
+    var btn = e.target.closest('.cr-filter');
+    if (!btn) return;
+    el.querySelectorAll('.cr-filter').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    activeCatFilter = btn.dataset.cat || '';
+    activeSubFilter = '';
+    activeDivFilter = '';
+    buildCommunityTaxonomyFilters();
+    fetchCommunityRecipes(true);
+  };
+}
+
 function buildCommunityTaxonomyFilters() {
   var row = document.getElementById('cr-taxonomy-row');
   var subEl = document.getElementById('cr-sub-filters');
   if (!row || !subEl) return;
+  if (!activeCatFilter) { row.style.display = 'none'; buildCommunityDivisionFilters(); return; }
   var subs = {};
   var seen = {};
   browseTaxonomy.forEach(function(r) {
-    if (r.subcategory_name && !seen[r.subcategory_name]) {
+    if (r.subcategory_category !== activeCatFilter || !r.subcategory_name) return;
+    if (!seen[r.subcategory_name]) {
       seen[r.subcategory_name] = true;
       subs[r.subcategory_name] = true;
     }
   });
-  var names = Object.keys(subs).sort();
-  if (!names.length) { row.style.display = 'none'; return; }
+  var names = Object.keys(subs);
+  if (!names.length) { row.style.display = 'none'; buildCommunityDivisionFilters(); return; }
   row.style.display = 'block';
-  subEl.innerHTML = '<button class="cr-filter' + (activeSubFilter ? '' : ' active') + '" data-sub="" type="button">All</button>' +
-    names.map(function(s){
-      return '<button class="cr-filter' + (activeSubFilter === s ? ' active' : '') + '" data-sub="'+s.replace(/"/g,'&quot;')+'" type="button">'+s+'</button>';
-    }).join('');
+  var pillHtml = '<button class="cr-filter' + (activeSubFilter ? '' : ' active') + '" data-sub="" type="button">All</button>';
+  getSubsGroupedByPart(activeCatFilter).forEach(function(group) {
+    group.subs = group.subs.filter(function(s) { return subs[s.name]; });
+    if (!group.subs.length) return;
+    if (group.title) {
+      pillHtml += '<span class="browse-part-label">' + (group.emoji ? group.emoji + ' ' : '') + group.title + '</span>';
+    }
+    group.subs.forEach(function(s) {
+      pillHtml += '<button class="cr-filter' + (activeSubFilter === s.name ? ' active' : '') + '" data-sub="' +
+        s.name.replace(/"/g, '&quot;') + '" type="button">' + s.name + '</button>';
+    });
+  });
+  subEl.innerHTML = pillHtml;
   subEl.onclick = function(e) {
     var btn = e.target.closest('.cr-filter');
     if (!btn) return;
@@ -1130,8 +1230,10 @@ function buildCommunityDivisionFilters() {
   if (!divRow || !divEl) return;
   if (!activeSubFilter) { divRow.style.display = 'none'; return; }
   var divs = {};
-  browseTaxonomy.filter(function(r){ return r.subcategory_name === activeSubFilter && r.division_name; })
-    .forEach(function(r){ divs[r.division_name] = true; });
+  browseTaxonomy.filter(function(r) {
+    return r.subcategory_name === activeSubFilter && r.division_name &&
+      (!activeCatFilter || r.subcategory_category === activeCatFilter);
+  }).forEach(function(r) { divs[r.division_name] = true; });
   var names = Object.keys(divs).sort();
   if (!names.length) { divRow.style.display = 'none'; return; }
   divRow.style.display = 'block';
@@ -1163,6 +1265,7 @@ async function fetchCommunityRecipes(reset) {
   }
   try {
     var body = Object.assign({
+      p_category: activeCatFilter || null,
       p_dietary: activeDietFilter || null,
       p_spice: activeSpiceFilter || null,
       p_sub_category: activeSubFilter || null,
@@ -1205,6 +1308,7 @@ async function loadCommunityRecipes() {
   await loadBrowseFamilyProfiles();
   await loadBrowseTaxonomy();
   await loadChefDirectory();
+  buildCommunityCategoryFilters();
   buildCommunityTaxonomyFilters();
   await fetchCommunityRecipes(true);
   buildChefFilter();

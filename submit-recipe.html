@@ -26,6 +26,7 @@
   <script src="lib/recipe-hero-labels.js?v=20260629"></script>
   <script src="lib/ingredient-lookup.js?v=20260630"></script>
   <script src="lib/drink-taxonomy-infer.js?v=20260715"></script>
+  <script src="lib/food-taxonomy-infer.js?v=20260717"></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -4208,6 +4209,8 @@ function showMsg(msg, type) {
 var _taxonomyCache = null;
 
 var CATEGORY_TAXONOMY_HINTS = {
+  'Rise & Shine': 'Breakfast and brunch dishes — porridges, idlis, dosas, eggs, pancakes and more. Pick a PART (A–F) sub-category or search the list.',
+  'The Evening Table': 'Dinner mains, sides, soups and salads for the evening meal. Search sub-categories or type your own.',
   'Grains & Comfort': 'Biryanis, pilaf, pulao and layered rice dishes belong here. Search the list or type your own sub-category and division.',
   'Meat & Fire': 'Meat-forward mains and roasts. Mutton is goat meat; Lamb is sheep. Type a sub-category if yours is not listed yet.',
   'Ocean & River': 'Fish and shellfish mains. Search or suggest a sub-category and division.',
@@ -4215,7 +4218,11 @@ var CATEGORY_TAXONOMY_HINTS = {
   'Breads & Bakes': 'Breads, flatbreads, batters and baked goods.',
   'Sweet Serenades': 'Desserts, sweets and confections.',
   'Slow & Soulful': 'Soups, stews and slow-cooked comfort food.',
-  'Sips & Stories': 'All drinks under Sips & Stories. Non-alcoholic (A1–A8), with alcohol (B1–B4), foundations (C1–C5), or collections (D1–D4). Smoothies go under Juices, Smoothies & Blends — search or type your own.'
+  'Sips & Stories': 'All drinks under Sips & Stories. Non-alcoholic (A1–A8), with alcohol (B1–B4), foundations (C1–C5), or collections (D1–D4). Smoothies go under Juices, Smoothies & Blends — search or type your own.',
+  'Preserved & Cherished': 'Pickles, jams, chutneys, ferments and spice blends. Search or suggest a sub-category.',
+  'Feast Days': 'Holiday and celebration dishes — festive mains, sides and sweets. Search the list or type your own.',
+  'Little Ones': 'Baby food, toddler meals and kid-friendly family dishes. Search or suggest a sub-category.',
+  'Nourish & Heal': 'Health-focused and dietary-specific recipes. Search sub-categories (keto, gluten-free, gut health, etc.) or type your own.'
 };
 
 function escTaxOpt(s) {
@@ -4494,6 +4501,13 @@ function inferSubCategoryDivision(name, items, category) {
   var out = { sub: '', div: '' };
   if (!category || !blob) return out;
 
+  if (category === 'Sips & Stories' && typeof DrinkTaxonomyInfer !== 'undefined') {
+    return DrinkTaxonomyInfer.infer(blob);
+  }
+  if (typeof FoodTaxonomyInfer !== 'undefined') {
+    var food = FoodTaxonomyInfer.infer(category, blob);
+    if (food.sub) return food;
+  }
   if (category === 'Grains & Comfort' && /\b(biriyani|biryani|pilaf|pulao)\b/.test(blob)) {
     out.sub = 'Biryanis & Pilafs';
     if (/\bmutton\b|\bgoat\b/.test(blob)) out.div = 'Mutton Biryani';
@@ -4504,14 +4518,11 @@ function inferSubCategoryDivision(name, items, category) {
     return out;
   }
   if (category === 'Meat & Fire') {
-    if (/\bmutton\b|\bgoat\b/.test(blob)) out.sub = 'Mutton';
+    if (/\bmutton\b|\bgoat\b/.test(blob)) out.sub = 'Mutton & Goat';
     else if (/\blamb\b/.test(blob)) out.sub = 'Lamb';
     else if (/\bchicken\b|\bpoultry\b/.test(blob)) out.sub = 'Poultry';
     else if (/\bbeef\b/.test(blob)) out.sub = 'Beef';
     else if (/\bpork\b/.test(blob)) out.sub = 'Pork';
-  }
-  if (category === 'Sips & Stories' && typeof DrinkTaxonomyInfer !== 'undefined') {
-    return DrinkTaxonomyInfer.infer(blob);
   }
   return out;
 }

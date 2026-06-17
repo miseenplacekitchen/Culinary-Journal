@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parse book-taxonomy.md and generate fix-book-taxonomy.sql + lib/taxonomy-sub-codes.js."""
+"""Parse book-taxonomy.md and generate fix-book-taxonomy.sql + lib taxonomy JS."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 MD_PATH = Path(__file__).resolve().parent / "book-taxonomy.md"
 SQL_PATH = ROOT / "database" / "sql" / "fix-book-taxonomy.sql"
 JS_PATH = ROOT / "lib" / "taxonomy-sub-codes.js"
+PARTS_JS_PATH = ROOT / "lib" / "taxonomy-parts.js"
 
 CATEGORY_MAP: dict[int, str] = {
     1: "Rise & Shine",
@@ -58,7 +59,6 @@ SIPS_SUB_CODES: dict[str, str] = {
     "Mocktails & Zero-Proof": "D4",
 }
 
-# Phase-6 placeholder subcategories (deactivate explicitly; also deactivate any not in new taxonomy).
 PHASE6_PLACEHOLDERS: dict[str, list[str]] = {
     "Garden & Earth": ["Vegetables", "Fruits", "Herbs & Greens", "Legumes & Pulses"],
     "Rise & Shine": ["Breakfast", "Brunch"],
@@ -72,6 +72,67 @@ PHASE6_PLACEHOLDERS: dict[str, list[str]] = {
 RE_CATEGORY = re.compile(r"^(\d+)\.\s+(.+)$")
 RE_PART = re.compile(r"^PART\s+([A-Z])\s+[—\-]\s+(.+)$", re.IGNORECASE)
 RE_SUB = re.compile(r"^([A-Z])(\d+)\.\s+(.+)$")
+RE_SEE_REF = re.compile(r"\(see\s+[^)]+\)\s*$", re.IGNORECASE)
+
+PART_LETTER_EMOJI: dict[str, str] = {
+    "A": "🥣",
+    "B": "🍳",
+    "C": "🥗",
+    "D": "🌍",
+    "E": "🎉",
+    "F": "☕",
+    "G": "🫙",
+    "H": "💪",
+}
+
+SUB_EMOJI_RULES: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"porridge|oat|gruel|congee|kanji", re.I), "🥣"),
+    (re.compile(r"idli|dosa|appam|hopper|puttu|steamed batter", re.I), "🫓"),
+    (re.compile(r"egg|omelette|frittata|scramble", re.I), "🍳"),
+    (re.compile(r"pancake|waffle|crepe|french toast", re.I), "🥞"),
+    (re.compile(r"bread|toast|muffin|bagel|croissant", re.I), "🍞"),
+    (re.compile(r"soup|stew|broth|curry|dal|chowder", re.I), "🍲"),
+    (re.compile(r"rice|biryani|pilaf|pulao|risotto", re.I), "🍚"),
+    (re.compile(r"pasta|noodle|ramen|udon", re.I), "🍝"),
+    (re.compile(r"beef|steak|burger|meatball", re.I), "🥩"),
+    (re.compile(r"chicken|poultry|turkey|duck", re.I), "🍗"),
+    (re.compile(r"pork|bacon|ham|sausage", re.I), "🥓"),
+    (re.compile(r"lamb|mutton|goat", re.I), "🍖"),
+    (re.compile(r"fish|salmon|tuna|cod|trout", re.I), "🐟"),
+    (re.compile(r"shrimp|prawn|shellfish|crab|lobster|oyster", re.I), "🦐"),
+    (re.compile(r"cake|cupcake|brownie|cookie|biscuit", re.I), "🍰"),
+    (re.compile(r"pie|tart|pastry|danish", re.I), "🥧"),
+    (re.compile(r"pickle|chutney|jam|preserve|ferment", re.I), "🫙"),
+    (re.compile(r"salad|vegetable|greens|herb", re.I), "🥬"),
+    (re.compile(r"dessert|sweet|pudding|ice cream|gelato", re.I), "🍮"),
+    (re.compile(r"baby|toddler|kid|weaning", re.I), "👶"),
+    (re.compile(r"health|diet|heal|nourish|therapeutic", re.I), "💪"),
+    (re.compile(r"festive|feast|holiday|celebration", re.I), "🎉"),
+    (re.compile(r"tea|coffee|evening|supper|dinner", re.I), "🍽"),
+]
+
+DIV_EMOJI_RULES: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"chicken|poultry", re.I), "🍗"),
+    (re.compile(r"beef|steak", re.I), "🥩"),
+    (re.compile(r"pork|bacon|ham", re.I), "🥓"),
+    (re.compile(r"lamb|mutton|goat", re.I), "🍖"),
+    (re.compile(r"fish|salmon|tuna|cod", re.I), "🐟"),
+    (re.compile(r"shrimp|prawn|shellfish|crab|lobster", re.I), "🦐"),
+    (re.compile(r"vegetable|vegan|veggie|salad", re.I), "🥬"),
+    (re.compile(r"rice|biryani|pilaf|pulao", re.I), "🍚"),
+    (re.compile(r"soup|stew|broth", re.I), "🍲"),
+    (re.compile(r"bread|flatbread|naan|roti", re.I), "🫓"),
+    (re.compile(r"cake|cupcake|brownie", re.I), "🍰"),
+    (re.compile(r"cookie|biscuit", re.I), "🍪"),
+    (re.compile(r"pickle|chutney|jam", re.I), "🫙"),
+    (re.compile(r"egg|omelette", re.I), "🍳"),
+    (re.compile(r"pancake|waffle", re.I), "🥞"),
+    (re.compile(r"idli|dosa", re.I), "🫓"),
+    (re.compile(r"curry|masala", re.I), "🍛"),
+    (re.compile(r"pasta|noodle", re.I), "🍝"),
+    (re.compile(r"ice cream|sorbet|gelato", re.I), "🍨"),
+    (re.compile(r"pie|tart", re.I), "🥧"),
+]
 
 
 @dataclass
@@ -84,6 +145,8 @@ class Subcategory:
     code: str
     name: str
     sort_order: int
+    part_letter: str = ""
+    part_title: str = ""
     divisions: list[Division] = field(default_factory=list)
 
 
@@ -114,11 +177,29 @@ def is_skip_line(line: str) -> bool:
     return False
 
 
+def is_cross_reference_line(line: str) -> bool:
+    return bool(RE_SEE_REF.search(line.strip()))
+
+
 def division_subtitle(name: str) -> str:
     for sep in (" / ", " (", ", "):
         if sep in name:
             return name.split(sep, 1)[0].strip()
     return ""
+
+
+def emoji_for_sub(name: str, part_letter: str) -> str:
+    for pattern, emoji in SUB_EMOJI_RULES:
+        if pattern.search(name):
+            return emoji
+    return PART_LETTER_EMOJI.get(part_letter.upper(), "🍽")
+
+
+def emoji_for_div(name: str, sub_name: str, part_letter: str) -> str:
+    for pattern, emoji in DIV_EMOJI_RULES:
+        if pattern.search(name):
+            return emoji
+    return emoji_for_sub(sub_name, part_letter)
 
 
 def sql_str(value: str) -> str:
@@ -185,6 +266,8 @@ def parse_taxonomy(text: str) -> tuple[list[Category], list[str]]:
                 code=code,
                 name=sub_name,
                 sort_order=sort_order_for_sub(part_letter, sub_num),
+                part_letter=part_letter,
+                part_title=current_part_title or "",
             )
             current_cat.subs.append(current_sub)
             in_category_intro = False
@@ -193,8 +276,10 @@ def parse_taxonomy(text: str) -> tuple[list[Category], list[str]]:
         if is_skip_line(stripped):
             continue
 
+        if is_cross_reference_line(stripped):
+            continue
+
         if in_category_intro and not seen_part:
-            # Section headers like "All Breakfast Dishes" — not divisions.
             continue
 
         if current_sub is None:
@@ -203,13 +288,14 @@ def parse_taxonomy(text: str) -> tuple[list[Category], list[str]]:
                     f"{current_cat.db_name}: orphan line '{stripped[:60]}'"
                 )
                 continue
-            # PART without explicit A1 — synthesize sub from PART title (e.g. Tag System).
             sub_name = current_part_title or f"Part {current_part_letter}"
             code = f"{current_part_letter}1"
             current_sub = Subcategory(
                 code=code,
                 name=sub_name,
                 sort_order=sort_order_for_sub(current_part_letter, 1),
+                part_letter=current_part_letter,
+                part_title=current_part_title or "",
             )
             current_cat.subs.append(current_sub)
             warnings.append(
@@ -279,25 +365,48 @@ def generate_sql(categories: list[Category]) -> str:
     )
 
     div_rows: list[str] = []
+    active_div_pairs: dict[str, list[tuple[str, str]]] = {}
     for cat in active_categories:
+        pairs: list[tuple[str, str]] = []
         for sub in cat.subs:
             for idx, div in enumerate(sub.divisions, start=1):
                 subtitle = division_subtitle(div.name)
                 subtitle_sql = f"'{sql_str(subtitle)}'" if subtitle else "''"
+                emoji = emoji_for_div(div.name, sub.name, sub.part_letter)
                 div_rows.append(
                     f"  ('{sql_str(cat.db_name)}', '{sql_str(sub.name)}', "
-                    f"'{sql_str(div.name)}', '🍽', {subtitle_sql}, "
+                    f"'{sql_str(div.name)}', '{emoji}', {subtitle_sql}, "
                     f"'{sql_str(div.name)}', {idx}, true)"
                 )
+                pairs.append((sub.name, div.name))
+        active_div_pairs[cat.db_name] = pairs
 
     if div_rows:
         lines.append(",\n".join(div_rows))
     lines.append("ON CONFLICT (category, subcategory, name) DO UPDATE SET")
     lines.append("  sort_order = EXCLUDED.sort_order,")
     lines.append("  is_active = true,")
+    lines.append("  emoji = EXCLUDED.emoji,")
     lines.append("  subtitle = EXCLUDED.subtitle,")
     lines.append("  description = EXCLUDED.description;")
     lines.append("")
+
+    lines.append("-- ── Deactivate orphaned legacy divisions ───────────────────────────────────────")
+    lines.append("")
+    for cat in active_categories:
+        db = cat.db_name
+        pairs = active_div_pairs.get(db, [])
+        if not pairs:
+            continue
+        pair_sql = ", ".join(
+            f"('{sql_str(sub)}', '{sql_str(div)}')" for sub, div in pairs
+        )
+        lines.append(
+            f"UPDATE public.recipe_divisions SET is_active = false\n"
+            f"WHERE category = '{sql_str(db)}'\n"
+            f"  AND (subcategory, name) NOT IN ({pair_sql});"
+        )
+        lines.append("")
 
     lines.append("-- Verify")
     lines.append("SELECT category, count(*) FILTER (WHERE kind = 'sub') AS subs,")
@@ -327,6 +436,51 @@ def generate_js(categories: list[Category]) -> str:
     return f"window.TAXONOMY_SUB_CODES = {body};\n"
 
 
+def generate_parts_js(categories: list[Category]) -> str:
+    mapping: dict[str, dict[str, dict[str, object]]] = {}
+    for cat in categories:
+        if cat.num in SKIP_SQL_CATEGORY_NUMS:
+            continue
+        parts: dict[str, dict[str, object]] = {}
+        for sub in cat.subs:
+            letter = sub.part_letter or (sub.code[0] if sub.code else "A")
+            if letter not in parts:
+                parts[letter] = {
+                    "title": sub.part_title or f"Part {letter}",
+                    "emoji": PART_LETTER_EMOJI.get(letter, "🍽"),
+                    "subs": [],
+                }
+            subs_list = parts[letter]["subs"]
+            assert isinstance(subs_list, list)
+            if sub.name not in subs_list:
+                subs_list.append(sub.name)
+        mapping[cat.db_name] = parts
+
+    # Sips parts from SIPS_SUB_CODES letter prefixes
+    sips_parts: dict[str, dict[str, object]] = {}
+    sips_titles = {
+        "A": "Non-Alcoholic Drinks",
+        "B": "With Alcohol",
+        "C": "Foundations & Techniques",
+        "D": "Collections & Occasions",
+    }
+    for sub_name, code in SIPS_SUB_CODES.items():
+        letter = code[0]
+        if letter not in sips_parts:
+            sips_parts[letter] = {
+                "title": sips_titles.get(letter, f"Part {letter}"),
+                "emoji": PART_LETTER_EMOJI.get(letter, "🥂"),
+                "subs": [],
+            }
+        subs_list = sips_parts[letter]["subs"]
+        assert isinstance(subs_list, list)
+        subs_list.append(sub_name)
+    mapping["Sips & Stories"] = sips_parts
+
+    body = json.dumps(mapping, indent=2, ensure_ascii=False)
+    return f"window.TAXONOMY_PARTS = {body};\n"
+
+
 def main() -> int:
     text = MD_PATH.read_text(encoding="utf-8")
     categories, warnings = parse_taxonomy(text)
@@ -336,9 +490,11 @@ def main() -> int:
 
     SQL_PATH.write_text(generate_sql(categories), encoding="utf-8")
     JS_PATH.write_text(generate_js(categories), encoding="utf-8")
+    PARTS_JS_PATH.write_text(generate_parts_js(categories), encoding="utf-8")
 
     print(f"Wrote {SQL_PATH}")
     print(f"Wrote {JS_PATH}")
+    print(f"Wrote {PARTS_JS_PATH}")
     print()
     print("Counts per category (subs, divisions):")
     for cat in categories:
