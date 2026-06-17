@@ -384,6 +384,7 @@ document.addEventListener('click', function(e) {
 // ══════════════════════════════════════════════════════════
 let curCat=null, curCatName=null, curDish=null;
 let curSubFilter=null, curDivFilter=null;
+let curCatTaxonomyBrowse=false;
 let allRecipes = [];
 let browseTaxonomy = [];
 
@@ -447,10 +448,10 @@ async function loadCategories() {
   }
 }
 
-// Load dishes for a category
+// Load dishes for a category (or taxonomy divisions when no dishes exist)
 async function openCat(id, name) {
   curCat=id; curCatName=name;
-  curSubFilter=null; curDivFilter=null;
+  curSubFilter=null; curDivFilter=null; curCatTaxonomyBrowse=false;
   hide('cats-view'); hide('styles-view'); hide('search-view');
   document.getElementById('dishes-lbl').textContent = name + ' — Dishes';
   if (!browseTaxonomy.length) await loadBrowseTaxonomy();
@@ -467,6 +468,15 @@ async function openCat(id, name) {
     else if (fContinent) params += '&continent=eq.' + encodeURIComponent(fContinent);
 
     const dishes = await supaFetch('dishes', params);
+    var hasTaxonomy = browseTaxonomy.some(function(r) {
+      return r.subcategory_category === name && r.subcategory_name;
+    });
+
+    if (!dishes.length && hasTaxonomy) {
+      curCatTaxonomyBrowse = true;
+      renderBrowseDivisionCards(name, curSubFilter);
+      return;
+    }
 
     if (!dishes.length) {
       g.innerHTML = '<div class="empty-state"><div class="empty-icon">🍽</div>' +
@@ -492,6 +502,173 @@ async function openCat(id, name) {
     console.error(e);
     g.innerHTML = '<div class="loading">Could not load dishes. Please refresh.</div>';
   }
+}
+
+function renderBrowseDivisionCards(categoryName, subName) {
+  var g = document.getElementById('dish-grid');
+  document.getElementById('dishes-lbl').textContent = categoryName + ' — Divisions';
+  var rows = browseTaxonomy.filter(function(r) {
+    return r.subcategory_category === categoryName && r.division_name &&
+      (!subName || r.subcategory_name === subName);
+  });
+  var seen = {};
+  var divs = [];
+  rows.forEach(function(r) {
+    var key = (r.subcategory_name || '') + '\0' + r.division_name;
+    if (!seen[key]) { seen[key] = true; divs.push(r); }
+  });
+  divs.sort(function(a, b) {
+    var sa = (a.subcategory_name || '').localeCompare(b.subcategory_name || '');
+    return sa !== 0 ? sa : (a.division_name || '').localeCompare(b.division_name || '');
+  });
+  if (!divs.length) {
+    g.innerHTML = '<div class="empty-state"><div class="empty-icon">🍽</div>' +
+      '<div class="empty-title">No divisions found</div>' +
+      '<div class="empty-desc">Try a different sub-category filter</div></div>';
+    return;
+  }
+  g.innerHTML = divs.map(function(r, i) {
+    return '<div class="dish-card" data-tax-idx="' + i + '">' +
+      '<span class="dish-emoji">' + (r.division_emoji || '🍽') + '</span>' +
+      '<div class="dish-name">' + r.division_name + '</div>' +
+      '<div class="dish-aka">' + (r.division_subtitle || r.subcategory_name || '') + '</div>' +
+      '<div class="dish-desc">' + (r.division_description || '') + '</div>' +
+      '</div>';
+  }).join('');
+  g.querySelectorAll('.dish-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      var idx = parseInt(this.dataset.taxIdx, 10);
+      if (!isNaN(idx) && divs[idx]) openTaxonomyDivision(divs[idx]);
+    });
+  });
+}
+
+async function openTaxonomyDivision(row) {
+  if (!row) return;
+  curDish = null;
+  curSubFilter = row.subcategory_name || null;
+  curDivFilter = row.division_name || null;
+  hide('dishes-view');
+  document.getElementById('styles-lbl').textContent = row.division_name + ' — Recipes';
+  var g = document.getElementById('styles-grid');
+  g.innerHTML = '';
+  if (row.division_description) {
+    g.innerHTML =
+      '<div class="style-card">' +
+      '<div class="style-hdr"><span class="style-emoji">' + (row.division_emoji || '🍽') + '</span>' +
+      '<div><div class="style-name">' + row.division_name + '</div>' +
+      '<div class="style-origin">✦ ' + (row.division_subtitle || row.subcategory_name || '') + '</div></div></div>' +
+      '<div class="style-desc">' + row.division_description + '</div>' +
+      '</div>';
+  }
+  show('styles-view');
+  setBc(curCatName, row.division_name);
+  loadTaxonomyDivisionRecipes(curCatName, row.subcategory_name, row.division_name);
+}
+
+async function loadTaxonomyDivisionRecipes(categoryName, subName, divName) {
+  var wrap = document.getElementById('styles-view');
+  var prev = document.getElementById('dish-community-section');
+  if (prev) prev.remove();
+
+  var section = document.createElement('div');
+  section.id = 'dish-community-section';
+  section.style.marginTop = '28px';
+  var hdr = document.createElement('div');
+  hdr.style.cssText = 'font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);margin-bottom:12px';
+  hdr.textContent = 'Community Recipes';
+  section.appendChild(hdr);
+  var cardsGrid = document.createElement('div');
+  cardsGrid.id = 'dish-recipe-cards';
+  cardsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px';
+  cardsGrid.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading...</div>';
+  section.appendChild(cardsGrid);
+  if (wrap) wrap.appendChild(section);
+
+  try {
+    var res = await fetch(
+      SUPA_URL + '/rest/v1/rpc/get_approved_recipes',
+      { method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+        body: JSON.stringify({
+          p_category: categoryName,
+          p_sub_category: subName || null,
+          p_division: divName || null,
+          p_search: null,
+          p_limit: 48
+        }) }
+    );
+    var recipes = res.ok ? await res.json() : [];
+    if (!Array.isArray(recipes)) recipes = [];
+    renderCommunityRecipeCards(recipes, cardsGrid, categoryName);
+  } catch (e) {
+    var c = document.getElementById('dish-recipe-cards');
+    if (c) {
+      c.innerHTML = '';
+      var err = document.createElement('div');
+      err.style.cssText = 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)';
+      err.textContent = 'Could not load community recipes.';
+      c.appendChild(err);
+    }
+  }
+}
+
+function renderCommunityRecipeCards(recipes, cardsEl, categoryName) {
+  if (!cardsEl) return;
+  if (!recipes.length) {
+    cardsEl.innerHTML = '';
+    var empty = document.createElement('div');
+    empty.style.cssText = 'grid-column:1/-1;text-align:center;padding:24px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)';
+    empty.innerHTML = '🍳 No community recipes yet for this division.<br>';
+    var submitLink = document.createElement('a');
+    submitLink.href = 'submit-recipe.html';
+    submitLink.style.cssText = 'color:var(--accent);text-decoration:none;font-weight:600;margin-top:8px;display:inline-block';
+    submitLink.textContent = '+ Be the first to submit one →';
+    empty.appendChild(submitLink);
+    cardsEl.appendChild(empty);
+    return;
+  }
+  var CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
+  cardsEl.innerHTML = '';
+  recipes.forEach(function(r) {
+    var warns = browseAllergyWarnings(r);
+    var card = document.createElement('a');
+    card.href = 'recipe-page.html?id=' + r.id;
+    card.style.cssText = 'display:block;text-decoration:none;background:var(--text-ghost);border:1px solid ' +
+      (warns.length ? 'rgb(from var(--danger) r g b / 0.35)' : 'var(--border)') + ';border-radius:11px;overflow:hidden;transition:border-color .15s';
+    if (warns.length) card.title = warns.join('\n');
+    card.addEventListener('mouseover', function(){ this.style.borderColor='var(--accent)'; });
+    card.addEventListener('mouseout',  function(){ this.style.borderColor='var(--border)'; });
+    if (r.image_url) {
+      var img = document.createElement('img');
+      img.src = r.image_url; img.loading = 'lazy';
+      img.style.cssText = 'width:100%;height:110px;object-fit:cover;display:block';
+      card.appendChild(img);
+    } else {
+      var emoji = CAT_EMOJI[r.category] || '🍳';
+      var ph = document.createElement('div');
+      ph.style.cssText = 'height:110px;display:flex;align-items:center;justify-content:center;font-size:32px;background:var(--text-ghost)';
+      ph.textContent = emoji;
+      card.appendChild(ph);
+    }
+    var info = document.createElement('div');
+    info.style.cssText = 'padding:10px 12px';
+    var name = document.createElement('div');
+    name.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:.95rem;font-weight:700;color:var(--text-high);margin-bottom:2px';
+    name.textContent = r.recipe_name || '';
+    var meta = document.createElement('div');
+    meta.style.cssText = 'font-family:DM Sans,sans-serif;font-size:10px;color:var(--text-mid)';
+    meta.textContent = [r.sub_category, r.division, r.origin_country, r.spice_level].filter(Boolean).join(' · ');
+    info.appendChild(name); info.appendChild(meta);
+    if (warns.length) {
+      var badge = document.createElement('div');
+      badge.className = 'cr-warn-badge';
+      badge.style.marginTop = '6px';
+      badge.textContent = '⚠ ' + (warns[0].replace(/^⚠\s*/, '').slice(0, 42)) + (warns.length > 1 ? ' +' + (warns.length - 1) : '');
+      info.appendChild(badge);
+    }
+    card.appendChild(info);
+    cardsEl.appendChild(card);
+  });
 }
 
 // Load recipes for a dish
@@ -578,61 +755,7 @@ async function loadDishRecipes(dishName, categoryName) {
     var toShow = recipes;
     var cardsEl = document.getElementById('dish-recipe-cards');
     if (!cardsEl) return;
-    if (!toShow.length) {
-      cardsEl.innerHTML = '';
-      var empty = document.createElement('div');
-      empty.style.cssText = 'grid-column:1/-1;text-align:center;padding:24px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)';
-      empty.innerHTML = '🍳 No community recipes yet for this category.<br>';
-      var submitLink = document.createElement('a');
-      submitLink.href = 'submit-recipe.html';
-      submitLink.style.cssText = 'color:var(--accent);text-decoration:none;font-weight:600;margin-top:8px;display:inline-block';
-      submitLink.textContent = '+ Be the first to submit one →';
-      empty.appendChild(submitLink);
-      cardsEl.appendChild(empty);
-      return;
-    }
-    var CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
-    cardsEl.innerHTML = '';
-    toShow.forEach(function(r) {
-      var warns = browseAllergyWarnings(r);
-      var card = document.createElement('a');
-      card.href = 'recipe-page.html?id=' + r.id;
-      card.style.cssText = 'display:block;text-decoration:none;background:var(--text-ghost);border:1px solid ' +
-        (warns.length ? 'rgb(from var(--danger) r g b / 0.35)' : 'var(--border)') + ';border-radius:11px;overflow:hidden;transition:border-color .15s';
-      if (warns.length) card.title = warns.join('\n');
-      card.addEventListener('mouseover', function(){ this.style.borderColor='var(--accent)'; });
-      card.addEventListener('mouseout',  function(){ this.style.borderColor='var(--border)'; });
-      if (r.image_url) {
-        var img = document.createElement('img');
-        img.src = r.image_url; img.loading = 'lazy';
-        img.style.cssText = 'width:100%;height:110px;object-fit:cover;display:block';
-        card.appendChild(img);
-      } else {
-        var emoji = CAT_EMOJI[r.category] || '🍳';
-        var ph = document.createElement('div');
-        ph.style.cssText = 'height:110px;display:flex;align-items:center;justify-content:center;font-size:32px;background:var(--text-ghost)';
-        ph.textContent = emoji;
-        card.appendChild(ph);
-      }
-      var info = document.createElement('div');
-      info.style.cssText = 'padding:10px 12px';
-      var name = document.createElement('div');
-      name.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:.95rem;font-weight:700;color:var(--text-high);margin-bottom:2px';
-      name.textContent = r.recipe_name || '';
-      var meta = document.createElement('div');
-      meta.style.cssText = 'font-family:DM Sans,sans-serif;font-size:10px;color:var(--text-mid)';
-      meta.textContent = [r.sub_category, r.division, r.origin_country, r.spice_level].filter(Boolean).join(' · ');
-      info.appendChild(name); info.appendChild(meta);
-      if (warns.length) {
-        var badge = document.createElement('div');
-        badge.className = 'cr-warn-badge';
-        badge.style.marginTop = '6px';
-        badge.textContent = '⚠ ' + (warns[0].replace(/^⚠\s*/, '').slice(0, 42)) + (warns.length > 1 ? ' +' + (warns.length - 1) : '');
-        info.appendChild(badge);
-      }
-      card.appendChild(info);
-      cardsEl.appendChild(card);
-    });
+    renderCommunityRecipeCards(toShow, cardsEl, categoryName);
   } catch(e) {
     var c = document.getElementById('dish-recipe-cards');
     if (c) { c.innerHTML = ''; var err = document.createElement('div'); err.style.cssText='font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)'; err.textContent='Could not load community recipes.'; c.appendChild(err); }
@@ -702,7 +825,7 @@ function clearSearch() {
 //  NAVIGATION
 // ══════════════════════════════════════════════════════════
 function goHome() {
-  curCat=null; curCatName=null; curDish=null;
+  curCat=null; curCatName=null; curDish=null; curCatTaxonomyBrowse=false;
   show('cats-view'); hide('dishes-view'); hide('styles-view'); hide('search-view');
   var taxRow = document.getElementById('browse-taxonomy-row');
   if (taxRow) taxRow.style.display = 'none';
@@ -847,6 +970,12 @@ function buildBrowseTaxonomyFilters(categoryName) {
     btn.classList.add('active');
     curSubFilter = btn.dataset.sub || null;
     curDivFilter = null;
+    if (curCatTaxonomyBrowse) {
+      if (divRow) divRow.style.display = 'none';
+      if (divEl) divEl.innerHTML = '';
+      renderBrowseDivisionCards(categoryName, curSubFilter);
+      return;
+    }
     var divs = browseTaxonomy.filter(function(r){
       return r.subcategory_category === categoryName && r.subcategory_name === curSubFilter && r.division_name;
     });

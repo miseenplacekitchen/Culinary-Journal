@@ -892,6 +892,17 @@
       border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
       background: rgba(255,255,255,0.02); margin-bottom: 12px;
     }
+    /* Category panel holds taxonomy autocomplete — must not clip dropdowns */
+    #panel-category { overflow: visible; }
+    #panel-category > .sr-panel-body { overflow: visible; }
+    #sr-taxonomy-wrap .ing-name-wrap:focus-within { z-index: 40; }
+    #sr-taxonomy-wrap .ing-autocomplete {
+      z-index: 1000;
+      max-height: 280px;
+      border-width: 2px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+    }
+    #sr-taxonomy-wrap .ing-autocomplete-item { border-bottom: 1px solid var(--border); }
     .sr-panel-head {
       width: 100%; display: flex; align-items: center; gap: 10px; min-width: 0;
       padding: 10px 12px 10px 10px; background: rgba(255,255,255,0.04);
@@ -1479,7 +1490,7 @@
       </div>
 
       <div class="sr-subsection" id="subsection-levels-tags">
-        <div class="sr-subsection-title">Levels, times &amp; tags <span style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em">expand when ready</span></div>
+        <div class="sr-subsection-title">Levels, times &amp; tags</div>
 
         <!-- Recipe characteristics: Spice + Sweet + Difficulty -->
         <div class="sr-field sr-full levels-grid" data-sr-subpanel="levels" data-sr-subpanel-title="Spice, sweet &amp; difficulty" data-sr-subpanel-desc="Required level pickers">
@@ -6197,14 +6208,18 @@ function buildSrDetailPanels() {
   if (!grid.children.length) grid.remove();
 
   section.dataset.srPanelsBuilt = '1';
+  buildSrLevelsTagsPanel();
 }
 
 function buildSrLevelsTagsPanel() {
+  var section = document.getElementById('section-details');
+  var panelsHost = section && section.querySelector('.sr-detail-panels');
   var sub = document.getElementById('subsection-levels-tags');
   if (!sub || sub.dataset.srPanelConverted === '1') return;
+  if (!panelsHost) return;
 
   var titleEl = sub.querySelector('.sr-subsection-title');
-  var mainTitle = titleEl ? titleEl.textContent.replace(/expand when ready/i, '').trim() : 'Levels, times & tags';
+  var mainTitle = titleEl ? titleEl.textContent.trim() : 'Levels, times & tags';
   var bodyNodes = [];
   Array.from(sub.children).forEach(function(ch) {
     if (ch === titleEl) return;
@@ -6240,7 +6255,7 @@ function buildSrLevelsTagsPanel() {
 
   var panel = document.createElement('div');
   panel.className = 'sr-panel collapsed';
-  panel.id = 'subsection-levels-tags';
+  panel.id = 'panel-levels';
   panel.dataset.srPanel = '1';
   panel.dataset.srPanelConverted = '1';
 
@@ -6258,6 +6273,9 @@ function buildSrLevelsTagsPanel() {
   panel.appendChild(head);
   panel.appendChild(body);
   sub.replaceWith(panel);
+  panelsHost.appendChild(panel);
+  var grid = section.querySelector('.sr-grid');
+  if (grid && !grid.children.length) grid.remove();
 }
 
 function srExpandDetailPanels(expand) {
@@ -6298,7 +6316,6 @@ function initIngMethodCollapse() {
 
 function initSrSectionCollapse() {
   buildSrDetailPanels();
-  buildSrLevelsTagsPanel();
   initIngMethodCollapse();
 
   document.querySelectorAll('.sr-section > .sr-section-title').forEach(function(title) {
