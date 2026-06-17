@@ -154,6 +154,14 @@
 
   <div id="dishes-view" style="display:none">
     <p class="sec-label" id="dishes-lbl">Dishes</p>
+    <div id="browse-taxonomy-row" style="display:none;margin:0 0 16px">
+      <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px">Sub-category</div>
+      <div class="cr-filters" id="browse-sub-filters"></div>
+      <div id="browse-division-row" style="display:none;margin-top:8px">
+        <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px">Division</div>
+        <div class="cr-filters" id="browse-div-filters"></div>
+      </div>
+    </div>
     <div class="dish-grid" id="dish-grid"></div>
   </div>
 
@@ -696,6 +704,8 @@ function clearSearch() {
 function goHome() {
   curCat=null; curCatName=null; curDish=null;
   show('cats-view'); hide('dishes-view'); hide('styles-view'); hide('search-view');
+  var taxRow = document.getElementById('browse-taxonomy-row');
+  if (taxRow) taxRow.style.display = 'none';
   document.getElementById('bc').style.display='none';
 }
 
@@ -814,10 +824,10 @@ async function loadBrowseTaxonomy() {
 }
 
 function buildBrowseTaxonomyFilters(categoryName) {
-  var row = document.getElementById('cr-taxonomy-row');
-  var subEl = document.getElementById('cr-sub-filters');
-  var divRow = document.getElementById('cr-division-row');
-  var divEl = document.getElementById('cr-div-filters');
+  var row = document.getElementById('browse-taxonomy-row');
+  var subEl = document.getElementById('browse-sub-filters');
+  var divRow = document.getElementById('browse-division-row');
+  var divEl = document.getElementById('browse-div-filters');
   if (!row || !subEl) return;
   var subs = [];
   var seen = {};
