@@ -5,7 +5,7 @@
 #   SUPABASE_URL              — already filled below (your TCJ project)
 #   SUPABASE_SERVICE_ROLE_KEY — Supabase → Project Settings → API → service_role
 #   TCJ_INGEST_USER_ID        — Supabase → Authentication → Users → your UUID
-#   GROQ_API_KEY              — console.groq.com → API Keys (reels + Groq book polish)
+#   GROQ_API_KEY              — optional; Instagram/reels only (NOT needed for books)
 
 $env:SUPABASE_URL = "https://kzywmodvfbyexqgipcjt.supabase.co"
 $env:SUPABASE_SERVICE_ROLE_KEY = "PASTE_SERVICE_ROLE_KEY_HERE"

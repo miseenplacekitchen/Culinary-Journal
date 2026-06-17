@@ -2,12 +2,30 @@
 # Keep this file open. You only need these commands.
 
 ================================================================================
-THE THREE COMMANDS YOU ACTUALLY USE
+BOOKS ONLY (Lebanese deep dive — NO GROQ)
 ================================================================================
 
-  1. ADD RECIPES (after dropping files in inputs/)
-  2. CLEAN UP (Groq polish — do NOT skip)
-  3. APPROVE (Admin dashboard — you)
+  ONE TIME — extract all recipes from the PDF to local JSON:
+
+      python engines/extract_books.py --refresh "Lebanese Home Cooking - Kamal Mouzawak.pdf"
+
+  ONE BY ONE — upload next recipe to Admin Pending (run again for each recipe):
+
+      .\run_one_recipe.bat
+
+  ALL AT ONCE — extract + upload every book JSON (still no Groq):
+
+      .\run_books.bat
+
+  YOU approve each recipe in Admin → Pending → Edit all fields → Approve.
+  Optional: Bulk Autopilot on dashboard = mechanical cleanup only (not Groq).
+
+  GROQ is NOT used for books. Ignore polish_pending.py / Groq limits for this workflow.
+
+
+================================================================================
+OTHER SOURCES (websites, Instagram — may use Groq)
+================================================================================
 
 All commands run from this folder in PowerShell:
 
@@ -26,10 +44,11 @@ COMMAND 1 — Import new recipes
 
       .\run_pipeline.bat
 
-  What it does automatically:
-    • Extract new items only (skips already done)
+  What run_books.bat does:
+    • Clean stale JSON from other books
+    • Extract / refresh PDFs in inputs\books\
     • Upload to Admin inbox as Pending
-    • Run Groq polish on new pending recipes (Step 3 built in)
+    • NO Groq — you review in admin
 
   Safe to run again anytime — duplicates are skipped.
 

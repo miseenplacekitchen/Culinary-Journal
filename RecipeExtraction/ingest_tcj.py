@@ -119,6 +119,12 @@ def parse_args() -> argparse.Namespace:
         help="Which MyCookbook folder to ingest (default: websites).",
     )
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument(
+        "--until-ok",
+        type=int,
+        default=None,
+        help="Process files in order; stop after this many successful ingests (one-at-a-time upload).",
+    )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--allow-duplicates", action="store_true")
     parser.add_argument(
@@ -157,7 +163,7 @@ def main() -> int:
         print("Set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, TCJ_INGEST_USER_ID", file=sys.stderr)
         return 1
 
-    files = resolve_files(args.subdir, args.limit)
+    files = resolve_files(args.subdir, args.limit if not args.until_ok else None)
     if not files:
         print(f"No JSON files under MyCookbook/{args.subdir}/")
         return 0
@@ -226,6 +232,8 @@ def main() -> int:
                 }
                 print(json.dumps(preview, indent=2))
                 ok += 1
+                if args.until_ok and ok >= args.until_ok:
+                    break
                 continue
 
             assert supabase is not None
@@ -243,6 +251,8 @@ def main() -> int:
             )
             print(f"Ingested {slug} -> {inserted_id} ({row['recipe_name']})")
             ok += 1
+            if args.until_ok and ok >= args.until_ok:
+                break
         except Exception as exc:  # noqa: BLE001
             failed += 1
             log_line(

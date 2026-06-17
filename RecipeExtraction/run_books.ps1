@@ -1,4 +1,4 @@
-# Betty — run books: extract → upload → Groq polish (one command)
+# Betty — run books: extract → upload (NO Groq — you review in admin)
 
 Set-Location $PSScriptRoot
 
@@ -7,19 +7,20 @@ if (Test-Path "setup-env.ps1") {
 } else {
     Write-Host ""
     Write-Host "First time only: copy setup-env.example.ps1 to setup-env.ps1" -ForegroundColor Yellow
-    Write-Host "Open setup-env.ps1 in Notepad, paste your Supabase + Groq keys, save." -ForegroundColor Yellow
+    Write-Host "Open setup-env.ps1 in Notepad, paste Supabase keys + TCJ_INGEST_USER_ID, save." -ForegroundColor Yellow
+    Write-Host "(GROQ_API_KEY not needed for books.)" -ForegroundColor DarkGray
     Write-Host ""
     exit 1
 }
 
 Write-Host ""
 Write-Host "=== TCJ Books ===" -ForegroundColor Cyan
-Write-Host "Step 0/4: Clean stale book data (keep inputs\books\ only) ..." -ForegroundColor White
+Write-Host "Step 0/3: Clean stale book data (keep inputs\books\ only) ..." -ForegroundColor White
 python clean_book_workspace.py
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host ""
-Write-Host "Step 1/4: Extract books from inputs\books\ (always refresh) ..." -ForegroundColor White
+Write-Host "Step 1/3: Extract books from inputs\books\ (always refresh) ..." -ForegroundColor White
 $bookFiles = @(Get-ChildItem -Path "inputs\books\*" -File -Include *.pdf,*.docx,*.txt,*.md,*.text -ErrorAction SilentlyContinue)
 if (-not $bookFiles -or $bookFiles.Count -eq 0) {
     Write-Host "No book files in inputs\books\" -ForegroundColor Red
@@ -32,25 +33,13 @@ foreach ($book in $bookFiles) {
 }
 
 Write-Host ""
-Write-Host "Step 2/4: Upload verified recipes to Admin inbox ..." -ForegroundColor White
-Write-Host "(Only JSON for books in inputs\books\; skips junk and duplicates)" -ForegroundColor DarkGray
+Write-Host "Step 2/3: Upload verified recipes to Admin inbox ..." -ForegroundColor White
+Write-Host "(Only JSON for books in inputs\books\; no Groq — review in admin)" -ForegroundColor DarkGray
 python ingest_tcj.py --subdir books
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-Write-Host ""
-Write-Host "Step 3/4: Groq polish (titles, ingredients, procedure) ..." -ForegroundColor White
-Write-Host "(Skips already-polished. Re-run run_admin_routine.bat if Groq limit hits.)" -ForegroundColor DarkGray
-python polish_pending.py --import-path book-batch
-$polishExit = $LASTEXITCODE
 
 Write-Host ""
 Write-Host "--- Inbox summary ---" -ForegroundColor Cyan
 python admin_routine.py --skip-polish
 
-if ($polishExit -ne 0) {
-    Write-Host ""
-    Write-Host "Some recipes need another polish pass. Later run:" -ForegroundColor Yellow
-    Write-Host "  .\run_admin_routine.bat" -ForegroundColor Yellow
-}
-
-exit $polishExit
+exit 0
