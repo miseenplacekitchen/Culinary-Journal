@@ -27,7 +27,9 @@
   <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
   <style>
-    .page-bg { background-color: #0f0f0f; }
+    .recipes-shell { max-width: 1100px; margin: 0 auto; padding: 0 24px 48px; }
+    @media (max-width: 768px) { .recipes-shell { padding: 0 16px 40px; } }
+    .recipes-top { padding: 0 0 16px; background: none; border-bottom: none; }
     .xf{position:relative}
     .xf-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.15);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:12px;color: var(--text-mid);cursor:pointer;white-space:nowrap;transition:all 0.2s}
     .xf-btn:hover{background:rgba(255,255,255,0.1);color: var(--text-high)}
@@ -50,7 +52,7 @@
     @keyframes spin{to{transform:rotate(360deg)}}
 
     /* ── COMMUNITY RECIPES ────────────────── */
-    .cr-section { margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--border); }
+    .cr-section { margin-top:32px; padding-top:28px; border-top:1px solid var(--border); }
     .cr-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:10px; }
     .cr-title { font-family:'Cormorant Garamond',serif; font-size:1.5rem; font-weight:600; color:var(--text-high); }
     .cr-filters { display:flex; gap:6px; flex-wrap:wrap; }
@@ -59,50 +61,76 @@
     .cr-filter.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:500; }
     .browse-part-label { flex-basis:100%; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-mid); margin:8px 0 2px; padding-top:4px; }
     .browse-part-label:first-child { margin-top:0; }
+    .browse-head { margin: 8px 0 20px; }
     .browse-page-title {
-      font-family:'Cormorant Garamond',serif; font-size:1.65rem; font-weight:600;
-      color:var(--text-high); padding:16px 40px 4px; margin:0;
-      letter-spacing:normal; text-transform:none; line-height:1.25;
+      font-family:'Cormorant Garamond',serif; font-size:clamp(1.45rem,3vw,1.85rem); font-weight:700;
+      color:var(--text-high); margin:0 0 6px; letter-spacing:normal; text-transform:none; line-height:1.2;
     }
     .browse-page-sub {
-      font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid);
-      padding:0 40px 16px; margin:0; line-height:1.45;
+      font-family:'DM Sans',sans-serif; font-size:14px; color:var(--text-mid);
+      margin:0; line-height:1.5; max-width:640px;
     }
-    .tax-browse-root { display:block; padding:0 0 40px; }
-    .tax-part-block { margin-bottom:28px; padding:0 40px; }
+    .tax-browse-root { display:block; padding:0 0 8px; }
+    .tax-part-jump {
+      display:flex; gap:8px; overflow-x:auto; padding:0 0 14px; margin-bottom:8px;
+      scrollbar-width:thin; -webkit-overflow-scrolling:touch;
+    }
+    .tax-part-jump::-webkit-scrollbar { height:4px; }
+    .tax-part-jump-btn {
+      flex:0 0 auto; padding:7px 14px; border-radius:999px; border:1px solid var(--border);
+      background:var(--text-ghost); font-family:'DM Sans',sans-serif; font-size:11px;
+      font-weight:500; color:var(--text-mid); cursor:pointer; white-space:nowrap; transition:all .15s;
+    }
+    .tax-part-jump-btn:hover { border-color:var(--accent-border); color:var(--accent); }
+    .tax-part-block { margin-bottom:32px; scroll-margin-top:72px; }
     .tax-part-block:last-child { margin-bottom:0; }
     .tax-part-title {
-      font-family:'DM Sans',sans-serif; font-size:11px; font-weight:600;
-      letter-spacing:.04em; text-transform:uppercase; color:var(--accent);
-      margin:0 0 12px; padding-bottom:8px; border-bottom:1px solid var(--border);
+      font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700;
+      letter-spacing:.06em; text-transform:uppercase; color:var(--accent);
+      margin:0 0 14px; padding-bottom:10px; border-bottom:1px solid var(--border);
     }
     .tax-card-grid {
-      display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px;
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px;
     }
     .tax-card {
-      background:var(--card-bg); border:0.5px solid var(--border); border-radius:14px;
-      padding:18px 16px; cursor:pointer; transition:border-color .2s,transform .2s;
+      background:var(--card-bg); border:1px solid var(--border); border-radius:12px;
+      padding:16px; cursor:pointer; transition:border-color .15s,transform .15s;
+      min-height:108px; display:flex; flex-direction:column;
     }
     .tax-card:hover { border-color:var(--accent-border); transform:translateY(-2px); }
-    .tax-card-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-    .tax-card-emoji { font-size:26px; line-height:1; }
+    .tax-card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:8px; }
+    .tax-card-emoji { font-size:24px; line-height:1; }
     .tax-card-code {
-      font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600;
-      letter-spacing:.06em; color:var(--text-low); background:var(--text-ghost);
-      border:1px solid var(--border); border-radius:6px; padding:3px 8px;
+      font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700;
+      letter-spacing:.05em; color:var(--accent); background:rgb(from var(--accent) r g b / 0.1);
+      border:1px solid rgb(from var(--accent) r g b / 0.22); border-radius:6px; padding:2px 7px;
     }
     .tax-card-name {
       font-family:'Cormorant Garamond',serif; font-size:1.05rem; font-weight:600;
-      color:var(--text-high); margin-bottom:6px; line-height:1.3;
+      color:var(--text-high); margin-bottom:auto; line-height:1.25;
     }
-    .tax-card-preview {
-      font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid);
-      line-height:1.45; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+    .tax-card-meta {
+      font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-low); margin-top:8px;
+      line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
     }
-    @media (max-width:768px) {
-      .browse-page-title { padding:12px 20px 4px; font-size:1.4rem; }
-      .browse-page-sub { padding:0 20px 12px; }
-      .tax-part-block { padding:0 20px; }
+    .recipes-shell .dish-grid,
+    .recipes-shell .styles-grid,
+    .recipes-shell .cat-grid { padding-left:0; padding-right:0; }
+    .cr-filter-toggle {
+      margin:10px 0 0; padding:0; background:none; border:none; cursor:pointer;
+      font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; color:var(--accent);
+    }
+    .cr-filter-toggle:hover { text-decoration:underline; }
+    #cr-advanced-filters { margin-top:10px; }
+    .recipes-home-label {
+      font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:.1em;
+      text-transform:uppercase; color:var(--text-mid); margin:24px 0 14px;
+    }
+    .recipes-shell .breadcrumb {
+      padding:10px 0 6px; background:none; border-bottom:none; margin:0;
+    }
+    #community-grid {
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px;
     }
     .cr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
     .cr-card { background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; overflow:hidden; cursor:pointer; transition:transform 0.15s,border-color 0.15s; text-decoration:none; display:block; }
@@ -147,8 +175,15 @@
 
   <div class="tab-nav"></div>
 
-  <h1 class="recipes-page-h1" style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:700;color:var(--text-high);margin:0 0 16px;padding:24px 24px 0">📖 Recipes</h1>
-  <div class="recipes-top">
+  <div class="recipes-shell">
+  <div id="recipes-page-header">
+    <div class="cj-page-header" id="recipes-home-title" style="margin:24px 0 16px">
+      <div class="cj-page-header-text">
+        <h1 class="cj-page-title">📖 Recipes</h1>
+        <p class="cj-page-subtitle">Browse the book by category, filter by origin, or explore community contributions.</p>
+      </div>
+    </div>
+    <div class="recipes-top" id="recipes-search-bar">
     <div class="search-wrap" style="margin-bottom:14px">
       <i class="ti ti-search s-icon"></i>
       <input type="text" id="rsearch"
@@ -183,6 +218,7 @@
       <button class="xf-clear-btn" id="xf-clear" onclick="clearFilters()">✕ Clear</button>
     </div>
   </div>
+  </div>
 
   <div class="breadcrumb" id="bc">
     <span class="bc-item" onclick="goHome()">📖 Recipes</span>
@@ -193,16 +229,18 @@
   </div>
 
   <div id="cats-view">
-    <p class="sec-label">Browse by category</p>
-    <div class="cat-grid" id="cat-grid">
+    <p class="recipes-home-label">Browse by category</p>
+    <div class="cat-grid" id="cat-grid" style="padding:0 0 24px">
       <div class="loading"><div class="loading-spinner"></div><br>Loading categories...</div>
     </div>
   </div>
 
   <div id="dishes-view" style="display:none">
-    <h2 class="browse-page-title" id="dishes-lbl">Dishes</h2>
-    <p class="browse-page-sub" id="dishes-sub" style="display:none"></p>
-    <div id="browse-taxonomy-row" style="display:none;margin:0 0 16px;padding:0 40px">
+    <div class="browse-head">
+      <h2 class="browse-page-title" id="dishes-lbl">Dishes</h2>
+      <p class="browse-page-sub" id="dishes-sub" style="display:none"></p>
+    </div>
+    <div id="browse-taxonomy-row" style="display:none;margin:0 0 16px">
       <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px">Sub-category</div>
       <div class="cr-filters" id="browse-sub-filters"></div>
       <div id="browse-division-row" style="display:none;margin-top:8px">
@@ -214,14 +252,18 @@
   </div>
 
   <div id="styles-view" style="display:none">
-    <h2 class="browse-page-title" id="styles-lbl">Recipe styles</h2>
-    <p class="browse-page-sub" id="styles-sub" style="display:none"></p>
-    <div class="styles-grid" id="styles-grid"></div>
+    <div class="browse-head">
+      <h2 class="browse-page-title" id="styles-lbl">Recipe styles</h2>
+      <p class="browse-page-sub" id="styles-sub" style="display:none"></p>
+    </div>
+    <div class="styles-grid" id="styles-grid" style="padding:0"></div>
   </div>
 
   <div id="search-view" style="display:none">
-    <p class="sec-label" id="search-lbl">Search results</p>
-    <div class="styles-grid" id="search-grid"></div>
+    <div class="browse-head">
+      <h2 class="browse-page-title" id="search-lbl">Search results</h2>
+    </div>
+    <div class="styles-grid" id="search-grid" style="padding:0"></div>
   </div>
 
 
@@ -239,6 +281,8 @@
         <button class="cr-filter" onclick="filterCommunity('Dairy Free',this)">🥛 Dairy Free</button>
         <button class="cr-filter" onclick="filterCommunity('Under 30 Mins',this)">⚡ Quick</button>
       </div>
+      <button type="button" class="cr-filter-toggle" id="cr-toggle-filters" onclick="toggleCommunityFilters()">More filters ▾</button>
+      <div id="cr-advanced-filters" style="display:none">
       <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid);margin:10px 0 6px">Spice Level</div>
       <div class="cr-filters" id="cr-spice-filters">
         <button class="cr-filter active" data-spice="" onclick="filterSpice('',this)">All</button>
@@ -265,15 +309,16 @@
         <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px">Filter by Chef</div>
         <div class="cr-filters" id="cr-chef-filters"></div>
       </div>
+      </div>
     </div>
     <div id="cr-family-banner" class="cr-family-banner" style="display:none"></div>
-    <div class="cr-grid" id="cr-grid">
-      <div class="cr-grid" id="community-grid"><div class="cr-empty">Loading community recipes...</div></div>
+    <div id="community-grid"><div class="cr-empty">Loading community recipes...</div></div>
       <div id="cr-load-more-wrap" style="display:none;text-align:center;margin:20px 0 8px">
         <button type="button" id="cr-load-more-btn" class="cr-filter" onclick="loadMoreCommunityRecipes()">Load more recipes</button>
       </div>
-    </div>
   </div>
+
+  </div><!-- .recipes-shell -->
 
   <footer class="footer">
     <span class="footer-text">© 2025 The Culinary Journal. All rights reserved.</span>
@@ -514,7 +559,7 @@ async function openCat(id, name) {
   g.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Loading dishes...</div>';
   show('dishes-view');
   setBc(name, null);
-  syncCommunityVisibility();
+  syncBrowseChrome();
 
   try {
     let params = 'category_id=eq.' + encodeURIComponent(id) + '&order=name';
@@ -530,7 +575,7 @@ async function openCat(id, name) {
     if (!dishes.length && hasTaxonomy) {
       curCatTaxonomyBrowse = true;
       document.getElementById('browse-taxonomy-row').style.display = 'none';
-      syncCommunityVisibility();
+      syncBrowseChrome();
       renderBrowseTaxonomyGrid(name, curSubFilter);
       return;
     }
@@ -570,7 +615,40 @@ async function openCat(id, name) {
 function syncCommunityVisibility() {
   var sec = document.querySelector('.cr-section');
   if (!sec) return;
-  sec.style.display = curCatTaxonomyBrowse ? 'none' : '';
+  var catsVis = document.getElementById('cats-view') &&
+    document.getElementById('cats-view').style.display !== 'none';
+  var searchVis = document.getElementById('search-view') &&
+    document.getElementById('search-view').style.display !== 'none';
+  sec.style.display = (catsVis && !searchVis) ? '' : 'none';
+}
+
+function syncBrowseChrome() {
+  var catsVis = document.getElementById('cats-view') &&
+    document.getElementById('cats-view').style.display !== 'none';
+  var searchVis = document.getElementById('search-view') &&
+    document.getElementById('search-view').style.display !== 'none';
+  var titleEl = document.getElementById('recipes-home-title');
+  var searchEl = document.getElementById('recipes-search-bar');
+  if (searchVis) {
+    if (titleEl) titleEl.style.display = 'none';
+    if (searchEl) searchEl.style.display = '';
+  } else if (!catsVis) {
+    if (titleEl) titleEl.style.display = 'none';
+    if (searchEl) searchEl.style.display = 'none';
+  } else {
+    if (titleEl) titleEl.style.display = '';
+    if (searchEl) searchEl.style.display = '';
+  }
+  syncCommunityVisibility();
+}
+
+function toggleCommunityFilters() {
+  var panel = document.getElementById('cr-advanced-filters');
+  var btn = document.getElementById('cr-toggle-filters');
+  if (!panel || !btn) return;
+  var open = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : 'block';
+  btn.textContent = open ? 'More filters ▾' : 'Fewer filters ▴';
 }
 
 function setBrowseSubtitle(text) {
@@ -641,13 +719,12 @@ function getBrowseSubsForCategory(categoryName) {
     var entry = map[name];
     var divs = entry.divisions;
     var code = getSubCategoryCode(categoryName, name);
-    var preview = divs.slice(0, 4).map(function(d) { return d.division_name; }).join(' · ');
     return {
       name: name,
       code: code,
       emoji: (divs[0] && divs[0].division_emoji) || '🍽',
       divisionCount: divs.length,
-      preview: preview,
+      preview: divs.length + ' division' + (divs.length === 1 ? '' : 's'),
       aka: [code, name].filter(Boolean).join(' · ')
     };
   }).filter(function(s) { return s.divisionCount > 0; });
@@ -678,7 +755,7 @@ function renderBrowseSubCategoryCards(categoryName) {
   var g = document.getElementById('dish-grid');
   g.className = 'tax-browse-root';
   document.getElementById('dishes-lbl').textContent = categoryName;
-  setBrowseSubtitle('Browse by part — tap a sub-category to see its divisions.');
+  setBrowseSubtitle('Tap a sub-category to browse its divisions.');
   var subs = getBrowseSubsForCategory(categoryName);
   if (!subs.length) {
     g.innerHTML = '<div class="empty-state"><div class="empty-icon">🍽</div>' +
@@ -688,9 +765,14 @@ function renderBrowseSubCategoryCards(categoryName) {
   }
   var flatSubs = [];
   var groups = getSubsGroupedByPart(categoryName);
+  var jumpHtml = '';
   var html = '';
-  groups.forEach(function(group) {
-    html += '<div class="tax-part-block">';
+  groups.forEach(function(group, gi) {
+    if (group.title) {
+      jumpHtml += '<button type="button" class="tax-part-jump-btn" data-part="' + gi + '">' +
+        (group.emoji ? group.emoji + ' ' : '') + group.title + '</button>';
+    }
+    html += '<div class="tax-part-block" id="tax-part-' + gi + '">';
     if (group.title) {
       html += '<div class="tax-part-title">' +
         (group.emoji ? group.emoji + ' ' : '') + group.title + '</div>';
@@ -705,12 +787,18 @@ function renderBrowseSubCategoryCards(categoryName) {
         (s.code ? '<span class="tax-card-code">' + s.code + '</span>' : '') +
         '</div>' +
         '<div class="tax-card-name">' + s.name + '</div>' +
-        '<div class="tax-card-preview">' + (s.preview || (s.divisionCount + ' division' + (s.divisionCount === 1 ? '' : 's'))) + '</div>' +
+        '<div class="tax-card-meta">' + s.preview + '</div>' +
         '</div>';
     });
     html += '</div></div>';
   });
-  g.innerHTML = html;
+  g.innerHTML = (jumpHtml ? '<div class="tax-part-jump">' + jumpHtml + '</div>' : '') + html;
+  g.querySelectorAll('.tax-part-jump-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var el = document.getElementById('tax-part-' + this.dataset.part);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
   g.querySelectorAll('.tax-card').forEach(function(card) {
     card.addEventListener('click', function() {
       var idx = parseInt(this.dataset.subIdx, 10);
@@ -746,7 +834,7 @@ function renderBrowseDivisionCards(categoryName, subName) {
         '<span class="tax-card-emoji">' + (r.division_emoji || '🍽') + '</span>' +
         '</div>' +
         '<div class="tax-card-name">' + r.division_name + '</div>' +
-        '<div class="tax-card-preview">' + (r.division_description || r.division_subtitle || '') + '</div>' +
+        '<div class="tax-card-meta">' + (r.division_subtitle || r.division_description || 'Open recipes') + '</div>' +
         '</div>';
     }).join('') + '</div></div>';
   g.querySelectorAll('.tax-card').forEach(function(card) {
@@ -778,7 +866,7 @@ async function openTaxonomyDivision(row) {
   }
   show('styles-view');
   setBc(curCatName, row.subcategory_name + ' · ' + row.division_name);
-  syncCommunityVisibility();
+  syncBrowseChrome();
   loadTaxonomyDivisionRecipes(curCatName, row.subcategory_name, row.division_name);
 }
 
@@ -893,11 +981,13 @@ async function openDish(id, dishes) {
   if (!dish) return;
   curDish = dish;
   hide('dishes-view');
-  document.getElementById('styles-lbl').textContent = dish.name + ' — Regional Styles';
+  document.getElementById('styles-lbl').textContent = dish.name;
   const g = document.getElementById('styles-grid');
   g.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Loading recipes...</div>';
   show('styles-view');
   setBc(curCatName, dish.name);
+  setStylesSubtitle(curCatName + ' — regional styles and community recipes.');
+  syncBrowseChrome();
 
   try {
     let params = 'dish_id=eq.' + encodeURIComponent(id) + '&order=name';
@@ -997,6 +1087,7 @@ async function handleSearch(v) {
   const g = document.getElementById('search-grid');
   g.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Searching...</div>';
   show('search-view');
+  syncBrowseChrome();
 
   try {
     const q = encodeURIComponent('%' + v + '%');
@@ -1048,13 +1139,13 @@ function goHome() {
   setBrowseSubtitle('');
   setStylesSubtitle('');
   document.getElementById('bc').style.display='none';
-  syncCommunityVisibility();
+  syncBrowseChrome();
 }
 
 function goToDishes() {
   if (!curCat || !curCatName) return;
   hide('styles-view');
-  syncCommunityVisibility();
+  syncBrowseChrome();
   if (curCatTaxonomyBrowse) {
     show('dishes-view');
     syncBrowseSubPill(curSubFilter);
