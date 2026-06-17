@@ -445,6 +445,7 @@ async function openCat(id, name) {
   curSubFilter=null; curDivFilter=null;
   hide('cats-view'); hide('styles-view'); hide('search-view');
   document.getElementById('dishes-lbl').textContent = name + ' — Dishes';
+  if (!browseTaxonomy.length) await loadBrowseTaxonomy();
   buildBrowseTaxonomyFilters(name);
   const g = document.getElementById('dish-grid');
   g.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Loading dishes...</div>';
