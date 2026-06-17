@@ -161,7 +161,7 @@ def extract_document_folder(
                     "grains": "Garden & Earth",
                     "legumes": "Garden & Earth",
                     "vegetables": "Garden & Earth",
-                    "sauces": "Sips & Stories",
+                    "sauces": "Preserved & Cherished",
                 }
                 mapped = category_map.get(section)
                 if mapped:

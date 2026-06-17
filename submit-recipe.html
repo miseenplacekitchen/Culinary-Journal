@@ -1432,7 +1432,7 @@
             <input class="cat-opt" type="radio" name="category" id="cat-rise"      value="Rise & Shine">
             <label for="cat-rise"><span class="cat-emoji">&#127749;</span><span class="cat-name">Rise &amp; Shine</span></label>
             <input class="cat-opt" type="radio" name="category" id="cat-evening"   value="The Evening Table">
-            <label for="cat-evening"><span class="cat-emoji">🫖</span><span class="cat-name">The Evening Table</span></label>
+            <label for="cat-evening"><span class="cat-emoji">☕</span><span class="cat-name">The Evening Table</span></label>
             <input class="cat-opt" type="radio" name="category" id="cat-garden"    value="Garden & Earth">
             <label for="cat-garden"><span class="cat-emoji">&#129388;</span><span class="cat-name">Garden &amp; Earth</span></label>
             <input class="cat-opt" type="radio" name="category" id="cat-meat"      value="Meat & Fire">
@@ -4209,11 +4209,11 @@ function showMsg(msg, type) {
 var _taxonomyCache = null;
 
 var CATEGORY_TAXONOMY_HINTS = {
-  'Rise & Shine': 'Breakfast and brunch dishes — porridges, idlis, dosas, eggs, pancakes and more. Pick a PART (A–F) sub-category or search the list.',
+  'Rise & Shine': 'Breakfast and brunch dishes — porridges, idlis, dosas, eggs, pancakes and more. Pick a PART (A–G) sub-category or search the list.',
   'The Evening Table': 'Snacks and small plates for sharing — pakoras, dumplings, chaat, dips, high tea, and dry nibbles (Parts A–G). Search sub-categories or type your own.',
   'Grains & Comfort': 'Biryanis, pilaf, pulao and layered rice dishes belong here. Search the list or type your own sub-category and division.',
-  'Meat & Fire': 'Meat-forward mains and roasts. Mutton is goat meat; Lamb is sheep. Type a sub-category if yours is not listed yet.',
-  'Ocean & River': 'Fish and shellfish mains. Search or suggest a sub-category and division.',
+  'Meat & Fire': 'Fried, grilled, dry and roast meat dishes — chicken fry, kebabs, mutton sukka, steaks and more. Mutton is goat; lamb is sheep. Search sub-categories or type your own.',
+  'Ocean & River': 'Fish and shellfish — fry, grill, curry and cold dishes. Search sub-categories or type your own.',
   'Garden & Earth': 'Vegetable- and plant-forward dishes. Search or suggest a sub-category if needed.',
   'Breads & Bakes': 'Breads, flatbreads, batters and baked goods.',
   'Sweet Serenades': 'Desserts, sweets and confections.',
@@ -4222,7 +4222,7 @@ var CATEGORY_TAXONOMY_HINTS = {
   'Preserved & Cherished': 'Pickles, jams, chutneys, ferments and spice blends. Search or suggest a sub-category.',
   'Feast Days': 'Holiday and celebration dishes — festive mains, sides and sweets. Search the list or type your own.',
   'Little Ones': 'Baby food, toddler meals and kid-friendly family dishes. Search or suggest a sub-category.',
-  'Nourish & Heal': 'Health-focused and dietary-specific recipes. Search sub-categories (keto, gluten-free, gut health, etc.) or type your own.'
+  'Nourish & Heal': 'Health-focused and dietary-specific recipes — vegan, gluten-free, low-GI, gut health, allergen-safe and more. Search sub-categories or type your own.'
 };
 
 function escTaxOpt(s) {
@@ -4518,11 +4518,14 @@ function inferSubCategoryDivision(name, items, category) {
     return out;
   }
   if (category === 'Meat & Fire') {
-    if (/\bmutton\b|\bgoat\b/.test(blob)) out.sub = 'Mutton & Goat';
-    else if (/\blamb\b/.test(blob)) out.sub = 'Lamb';
-    else if (/\bchicken\b|\bpoultry\b/.test(blob)) out.sub = 'Poultry';
-    else if (/\bbeef\b/.test(blob)) out.sub = 'Beef';
-    else if (/\bpork\b/.test(blob)) out.sub = 'Pork';
+    if (/\bmutton\b|\bgoat\b/.test(blob)) out.sub = 'South Asian Dry Mutton & Goat';
+    else if (/\blamb\b/.test(blob)) out.sub = /\broast\b/.test(blob) ? 'Western & BBQ Roasts' : 'Lamb & Pork Chops';
+    else if (/\bchicken\b|\bpoultry\b/.test(blob)) out.sub = 'South Asian Fried Chicken';
+    else if (/\bbeef\b/.test(blob)) out.sub = /\bsteak\b/.test(blob) ? 'Beef Steaks' : 'Beef Dry Dishes';
+    else if (/\bpork\b/.test(blob)) out.sub = 'Pork Dry Dishes';
+    else if (/\bduck\b|\bquail\b|\bvenison\b|\bgame\b/.test(blob)) out.sub = 'Duck & Game';
+    else if (/\bliver\b|\boffal\b|\bkidney\b|\bgizzard\b/.test(blob)) out.sub = 'Liver Dishes';
+    else if (/\bkebab\b|\btikka\b|\bgrill\b/.test(blob)) out.sub = 'Tandoor & Indian Grill';
   }
   return out;
 }
@@ -6428,7 +6431,7 @@ async function cancelSubmission() {
 
 
 </script>
-<script src="lib/submit-recipe-auto-enrich.js?v=20260715"></script>
+<script src="lib/submit-recipe-auto-enrich.js?v=20260720"></script>
 <script src="lib/submit-recipe-parse.js?v=20260715"></script>
 </body>
 </html>

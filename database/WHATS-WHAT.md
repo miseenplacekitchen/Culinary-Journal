@@ -27,6 +27,22 @@ Built from the 25 **core** files in `sql/` (01-schema through fix_anon_grants).
 
 ---
 
+### 4. Taxonomy (book + Sips — run when structure changes)
+
+| File | When |
+|------|------|
+| `sql/fix-book-taxonomy.sql` | **Re-run** after book taxonomy updates — 12 food categories (not Garden, not Sips). Ends with verify query. |
+| `sql/fix-sips-drinks-taxonomy.sql` | **Re-run** after Sips Parts A–D updates — 21 subs, 92 divisions. Safe to re-run. |
+
+Source of truth: `taxonomy/book-taxonomy.md` (12 categories) + `sql/fix-sips-drinks-taxonomy.sql` (Sips).  
+Regenerate SQL/JS: `python database/taxonomy/generate_taxonomy_sql.py`  
+Validate infer rules: `python database/taxonomy/validate_food_infer.py` and `validate_drink_infer.py`  
+Audit site wiring: `python database/taxonomy/audit_taxonomy.py`
+
+**Garden & Earth** uses the dishes table in Supabase — do not seed from fix-book-taxonomy.sql unless explicitly planned.
+
+---
+
 ### 3. Live site bundles (already applied — do not re-run unless told)
 
 These were pasted into Supabase during build-out. **You do not hunt through 180 files anymore.**
