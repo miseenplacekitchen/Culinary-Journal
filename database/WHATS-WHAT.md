@@ -48,7 +48,8 @@ Audit site wiring: `python database/taxonomy/audit_taxonomy.py`
 | File | When |
 |------|------|
 | `sql/fix-security-rpcs.sql` | Once — harden `admin_get_submitter`, `send_notification`, `repair_orphan_recipe_ingredients` |
-| `security/SECURITY-AUDIT.md` | Full RLS/RPC audit findings |
+| `sql/fix-login-info-leak.sql` | Once — drop `is_admin` from `get_login_info` pre-auth response |
+| `security/SECURITY-AUDIT.md` | Full RLS/RPC audit findings + external audit crosswalk |
 | `security/audit_rls_rpcs.py` | Re-scan `full-setup.sql` for unguarded SECURITY DEFINER functions |
 
 ---

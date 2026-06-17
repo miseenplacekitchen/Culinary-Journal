@@ -578,9 +578,7 @@ async function doLogin() {
     // internally and returns only the three fields we need to sign in.
     const info = await supaRPC('get_login_info', { identifier: identifierRaw });
     if (!info || !info.length) {
-      throw new Error(identifierRaw.includes('@')
-        ? 'No account found with that email.'
-        : 'Username not found. Please check and try again.');
+      throw new Error('Invalid username or password. Please try again.');
     }
     const accountStatus = info[0].account_status || 'active';
     if (accountStatus === 'pending') {

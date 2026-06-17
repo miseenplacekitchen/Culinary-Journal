@@ -453,7 +453,6 @@ RETURNS TABLE (
   email          text,
   username       text,
   is_active      boolean,
-  is_admin       boolean,
   account_status text
 )
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
@@ -461,12 +460,12 @@ AS $$
 BEGIN
   -- Reads canonical email from auth.users so this works
   -- even if profiles.email is missing or stale.
+  -- is_admin is intentionally omitted — use is_admin() after sign-in only.
   RETURN QUERY
     SELECT
       u.email::text,
       p.username,
       p.is_active,
-      p.is_admin,
       CASE WHEN p.is_active = false THEN 'deactivated' ELSE 'active' END::text
     FROM public.profiles p
     JOIN auth.users u ON u.id = p.id
@@ -475,6 +474,7 @@ BEGIN
     LIMIT 1;
 END;
 $$;
+REVOKE ALL ON FUNCTION public.get_login_info(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_login_info(text) TO anon, authenticated;
 
 -- Get current user's full profile — includes all preference fields

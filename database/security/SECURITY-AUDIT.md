@@ -2,8 +2,29 @@
 
 **Date:** 2026-06-17  
 **Canonical deploy:** `database/full-setup.sql`  
-**Live patch:** `database/sql/fix-security-rpcs.sql`  
+**Live patches:** `database/sql/fix-security-rpcs.sql`, `database/sql/fix-login-info-leak.sql`  
 **Re-run audit:** `python database/security/audit_rls_rpcs.py`
+
+---
+
+## External audit crosswalk (2026-06-17)
+
+| # | Finding | Status | Action |
+|---|---------|--------|--------|
+| 1 | SSRF in `/api/fetch-recipe-url.js` | **Fixed (deploy)** | `lib/ssrf-guard.js`: DNS resolve, block private/metadata/loopback, manual redirect re-check; session required via `verifySupabaseSession`; client sends Bearer in `submit-recipe-url-import.js` |
+| 2 | `get_login_info` leaks `is_admin` to anon | **Fixed (run SQL)** | `is_admin` removed from return; `REVOKE PUBLIC`; canonical + `fix-login-info-leak.sql`; login uses generic “invalid credentials” message |
+| 3 | XSS — sparse `escapeHtml` vs innerHTML sinks | **Partial** | Hotspots fixed in `recipe-page.html` (collections, related recipes, error text); ~800+ sinks remain — DOMPurify sweep still recommended |
+| 4 | Client email admin fallback | **Fixed** | Removed in commit `33460cf`; `isTcjAdmin()` = DB flag only |
+| 5 | RLS + SECURITY DEFINER boundary | **Documented** | 78 admin RPCs checked; anon key by design; no service-role in repo |
+| 6 | Stripe webhook swallows RPC errors | **Fixed (deploy edge fn)** | `stripe-webhook/index.ts` returns 500 on RPC failure so Stripe retries; **`apply_stripe_subscription` is not idempotent** — duplicate webhook deliveries can insert multiple `member_subscriptions` rows (follow-up SQL needed) |
+| 7 | Function ownership drift (duplicate SQL defs) | **Open** | Ledger rule exists; dedupe `admin_edit_recipe`, garden RPCs across files |
+| 8 | Dropped “Admin can read all profiles” policy | **Clarified** | Comment in `01-schema.sql`: intentional; admin reads via SECURITY DEFINER RPCs |
+| 9 | Archive SQL footgun | **Open** | Move `database/sql/archive/` out of working tree or add CI guard |
+| 10 | Very large single files | **Open** | Review fatigue risk at approval gate |
+| 11 | Thin automated testing | **Open** | Only import-tests CI; add RLS/RPC regression harness |
+| 12 | Core journeys unverified on live | **Operational** | `Lane2_Verification_Log.txt` spot-checks still unchecked |
+| 13 | Monetisation half-built | **Operational** | Stripe code present; tier model / Print Studio checkout decision open |
+| 14 | Legal pages unreviewed | **Operational** | Drafts awaiting lawyer |
 
 ---
 
@@ -36,10 +57,10 @@
 ### 1. `get_login_info(text)` — anon granted, no session
 
 - **Grants:** `anon`, `authenticated`
-- **Returns:** email, username, `is_active`, **`is_admin`** for matching identifier
-- **Risk:** User enumeration + admin-flag leak
-- **Status:** Documented — needs product decision (CAPTCHA Edge Function, rate limit, or remove `is_admin` from response)
-- **Used by:** login flow
+- **Returns:** email, username, `is_active`, `account_status` ( **`is_admin` removed** )
+- **Risk:** User enumeration remains (email/username lookup) — mitigated with generic login error copy
+- **Status:** **Fixed in repo** — run `database/sql/fix-login-info-leak.sql` on production
+- **Used by:** login flow (email resolution before password sign-in)
 
 ### 2. `submit_guest_dietary(uuid, jsonb)` — anon write by UUID
 
@@ -118,12 +139,15 @@ Run in Supabase:
 
 ## Recommended next steps
 
-1. Run `fix-security-rpcs.sql` on production Supabase
-2. Compare live `pg_proc` list vs this doc (especially garden + archived admin RPCs)
-3. Decide on `get_login_info` response shape (drop `is_admin` from anon path)
-4. Harden guest dietary submit (expiry / one-time)
-5. Add `REVOKE ALL ON FUNCTION … FROM PUBLIC` sweep for all SECURITY DEFINER functions
-6. Fold live-only SQL into manifest or regenerate `full-setup.sql` after changes
+1. ~~Run `fix-security-rpcs.sql` on production Supabase~~ ✓ (Betty confirmed applied)
+2. **Run `fix-login-info-leak.sql` on production Supabase**
+3. **Deploy** `api/fetch-recipe-url.js` + `lib/ssrf-guard.js` (Vercel) and redeploy `stripe-webhook` edge function
+4. Compare live `pg_proc` list vs this doc (especially garden + archived admin RPCs)
+5. Harden guest dietary submit (expiry / one-time)
+6. Add `REVOKE ALL ON FUNCTION … FROM PUBLIC` sweep for all SECURITY DEFINER functions
+7. Make `apply_stripe_subscription` idempotent (skip if `stripe_session_id` already completed)
+8. XSS sweep — DOMPurify or systematic `escapeHtml` on remaining innerHTML sinks
+9. Fold live-only SQL into manifest or regenerate `full-setup.sql` after changes
 
 ---
 
@@ -131,13 +155,13 @@ Run in Supabase:
 
 | # | Item | Severity |
 |---|------|----------|
-| 1 | `get_login_info` anon + `is_admin` in response | CRITICAL |
+| 1 | `get_login_info` anon + `is_admin` in response | CRITICAL (**fixed — run SQL**) |
 | 2 | `submit_guest_dietary` anon write | CRITICAL |
-| 3 | `admin_get_submitter` caller check | HIGH (fixed) |
-| 4 | `send_notification` PUBLIC grant | HIGH (fixed) |
-| 5 | `repair_orphan_recipe_ingredients` no auth | HIGH (fixed) |
-| 6 | Ingredient admin RPCs outside full-setup | HIGH |
-| 7 | Garden RPCs outside full-setup | HIGH |
-| 8 | `get_collection_recipes` status leak | MEDIUM |
-| 9 | PUBLIC execute on authenticated RPCs | MEDIUM |
-| 10 | RLS policy drift across phase SQL files | LOW |
+| 3 | SSRF `/api/fetch-recipe-url` | CRITICAL (**fixed — deploy**) |
+| 4 | XSS innerHTML sinks | HIGH (**partial**) |
+| 5 | Stripe webhook silent RPC failure | HIGH (**fixed — deploy edge fn**) |
+| 6 | `admin_get_submitter` caller check | HIGH (fixed) |
+| 7 | `send_notification` PUBLIC grant | HIGH (fixed) |
+| 8 | `repair_orphan_recipe_ingredients` no auth | HIGH (fixed) |
+| 9 | Ingredient admin RPCs outside full-setup | HIGH |
+| 10 | Garden RPCs outside full-setup | HIGH |

@@ -32,6 +32,7 @@ GRANT SELECT, INSERT, UPDATE ON public.profiles TO authenticated;
 DROP POLICY IF EXISTS "Users can read own profile"    ON public.profiles;
 DROP POLICY IF EXISTS "Users can update own profile"  ON public.profiles;
 DROP POLICY IF EXISTS "Admin can read all profiles"   ON public.profiles;
+-- Intentionally not recreated: admin profile reads go through SECURITY DEFINER RPCs (get_my_profile, admin_*).
 
 CREATE POLICY "Users can read own profile"
   ON public.profiles FOR SELECT TO authenticated USING (auth.uid() = id);

@@ -755,11 +755,11 @@ async function openCollectionPicker() {
       var has = inCollMap[c.id] || false;
       var row = document.createElement('div');
       row.className = 'rp-coll-row';
-      row.innerHTML = '<div class="rp-coll-row-emoji">'+c.emoji+'</div><div class="rp-coll-row-name">'+c.name+'</div>'+(has?'<div class="rp-coll-check">✓</div>':'');
+      row.innerHTML = '<div class="rp-coll-row-emoji">'+escapeHtml(c.emoji||'')+'</div><div class="rp-coll-row-name">'+escapeHtml(c.name||'')+'</div>'+(has?'<div class="rp-coll-check">✓</div>':'');
       row.addEventListener('click', function() { toggleCollection(c.id, c.name, has, row); });
       list.appendChild(row);
     });
-  } catch(e) { list.innerHTML = '<div style="padding:16px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--danger)">Error: '+e.message+'</div>'; }
+  } catch(e) { list.innerHTML = '<div style="padding:16px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--danger)">Error loading collections.</div>'; }
 }
 
 async function toggleCollection(collectionId, collName, currentlyIn, rowEl) {
@@ -1017,9 +1017,9 @@ async function loadRelatedRecipes(currentId, category) {
       card.href = 'recipe-page.html?id=' + r.id;
       const emoji = CAT_EMOJI_RP[r.category] || '🍳';
       card.innerHTML =
-        '<div class="rp-related-img">' + (r.image_url?'<img src="'+r.image_url+'" loading="lazy">':emoji) + '</div>' +
-        '<div class="rp-related-body"><div class="rp-related-name">' + (r.recipe_name||'') + '</div>' +
-        '<div class="rp-related-cat">' + (r.origin_country||'') + '</div></div>';
+        '<div class="rp-related-img">' + (r.image_url?'<img src="'+escapeHtml(r.image_url)+'" loading="lazy">':emoji) + '</div>' +
+        '<div class="rp-related-body"><div class="rp-related-name">' + escapeHtml(r.recipe_name||'') + '</div>' +
+        '<div class="rp-related-cat">' + escapeHtml(r.origin_country||'') + '</div></div>';
       grid.appendChild(card);
     });
     section.style.display = 'block';

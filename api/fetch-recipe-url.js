@@ -4,6 +4,7 @@
  */
 const RecipeImportCore = require('../lib/recipe-import-core.js');
 const RecipeImportExtract = require('../lib/recipe-import-extract.js');
+const { safeFetch, verifySupabaseSession, assertPublicHttpUrl } = require('../lib/ssrf-guard.js');
 const MAX_BYTES = 1_500_000;
 const TIMEOUT_MS = 14000;
 const PASTE_HINT = 'Copy the recipe text from the site into the paste box, then click Parse Recipe. Photo scan also works.';
@@ -88,8 +89,17 @@ async function tryInstagramOembed(url) {
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(204).end();
+
+  const auth = await verifySupabaseSession(req);
+  if (!auth.ok) {
+    return jsonError(res, auth.status, {
+      error: auth.error,
+      fetchStatus: 'auth-required',
+      fallbackSuggested: false
+    });
+  }
 
   const url = (req.query && req.query.url) ? String(req.query.url).trim() : '';
   if (!url || !/^https?:\/\//i.test(url)) {
@@ -128,6 +138,16 @@ module.exports = async function handler(req, res) {
     });
   }
 
+  try {
+    await assertPublicHttpUrl(url);
+  } catch (e) {
+    return jsonError(res, 403, {
+      error: e.message || 'URL not allowed',
+      fetchStatus: 'blocked',
+      fallbackSuggested: false
+    });
+  }
+
   const hostInfo = RecipeImportExtract.resolveHostStrategy(host);
   const isSocial = hostInfo.strategy === 'social';
 
@@ -135,15 +155,14 @@ module.exports = async function handler(req, res) {
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const upstream = await fetch(url, {
+    const upstream = await safeFetch(url, {
       signal: controller.signal,
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; TheCulinaryJournalBot/1.0; +https://theculinaryjournal.site)',
         'Accept': 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.9'
-      },
-      redirect: 'follow'
-    });
+      }
+    }, 5);
     clearTimeout(timer);
 
     if (!upstream.ok) {
