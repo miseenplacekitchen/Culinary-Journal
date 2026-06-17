@@ -351,7 +351,7 @@ async function openRecipeModal(id) {
     var agentReviewBtn = mk('button','padding:10px 18px;background:#7c5cbf;border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer',
       '\uD83E\uDD16 Agent Review');
     agentReviewBtn.type = 'button';
-    agentReviewBtn.title = 'Groq clean this recipe, then open all fields in a popup';
+    agentReviewBtn.title = 'Rule-based cleanup, then open all fields in a popup if needed';
     agentReviewBtn.addEventListener('click', function(e) {
       e.stopPropagation();
       if (typeof runAgentReviewRecipe === 'function') runAgentReviewRecipe(r.id, r.recipe_name);
@@ -384,7 +384,7 @@ async function openRecipeModal(id) {
     if (introText && introText !== 'Imported from Personal book collection.') {
       introBlock.appendChild(mk('div',"font-size:13px;color:var(--text-high);line-height:1.65", introText));
     } else {
-      introBlock.appendChild(mk('div',"font-size:12px;color:var(--text-mid);font-style:italic",'No introduction yet — run Groq polish or edit below / full form.'));
+      introBlock.appendChild(mk('div',"font-size:12px;color:var(--text-mid);font-style:italic",'No introduction yet — run Agent Review or edit below / full form.'));
     }
     if (r.cooking_notes) {
       introBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin:14px 0 8px",'Cooking Notes'));

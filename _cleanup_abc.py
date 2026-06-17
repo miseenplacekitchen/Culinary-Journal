@@ -131,7 +131,7 @@ YOUR THREE COMMANDS (RecipeExtraction folder)
 ---------------------------------------------
   .\\run_books.bat           PDFs in inputs\\books\\
   .\\run_pipeline.bat        websites, Instagram, YouTube, videos, Word
-  .\\run_admin_routine.bat   catch-up Groq polish + inbox summary
+  .\\run_admin_routine.bat   mechanical polish + inbox summary
 
 Then: Admin dashboard → Recipes → Pending → approve in batches.
 
@@ -152,7 +152,7 @@ SEAMLESS FLOW (every batch)
 ---------------------------
   1. Drop files in RecipeExtraction\\inputs\\
   2. run_books.bat OR run_pipeline.bat  (upload + auto-polish)
-  3. run_admin_routine.bat if Groq limit hit
+  3. run_admin_routine.bat if polish needed
   4. Admin approve — never edit 10k recipes by hand in the form
 
 """,

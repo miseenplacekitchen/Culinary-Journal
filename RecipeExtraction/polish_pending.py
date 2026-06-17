@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-Groq cleanup for pending batch imports — fixes titles, splits ingredients, rewrites steps.
+DEPRECATED — do not use for books or admin review.
 
+Use polish_mechanical.py instead (rule-based, no Groq).
+
+Legacy Groq LLM cleanup for pending batch imports.
 Requires setup-env.ps1 (SUPABASE_*, GROQ_API_KEY).
 
 Usage:
@@ -256,6 +259,10 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     _configure_stdio_utf8()
+    print(
+        "WARNING: polish_pending.py is deprecated. Use polish_mechanical.py for books/admin (no Groq).\n",
+        file=sys.stderr,
+    )
     args = parse_args()
     if args.from_json:
         return polish_json_files(args)

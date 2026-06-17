@@ -1,5 +1,5 @@
 # Catch-up: polish anything still messy + inbox summary — Betty
-# Run weekly or when Groq limit stopped mid-batch.
+# Run weekly after imports. Uses polish_mechanical.py (NO Groq).
 
 param(
     [int]$Limit = 0,

@@ -56,7 +56,7 @@ COMMAND 1 — Import new recipes
 
 
 --------------------------------------------------------------------------------
-COMMAND 2 — Catch-up polish (if Groq ran out of tokens)
+COMMAND 2 — Catch-up polish (mechanical — NO Groq)
 --------------------------------------------------------------------------------
 
   Run this when Command 1 said some recipes failed, or once a week:
@@ -64,8 +64,8 @@ COMMAND 2 — Catch-up polish (if Groq ran out of tokens)
       .\run_admin_routine.bat
 
   What it does:
-    • Polishes any pending recipe not yet cleaned
-    • Fixes titles on anything Groq missed
+    • Polishes any pending recipe not yet cleaned (rule-based)
+    • Fixes titles on anything mechanical polish missed
     • Prints how many are waiting in your inbox
 
 
@@ -128,12 +128,9 @@ WHERE FILES GO (you never edit MyCookbook/)
 IF SOMETHING LOOKS WRONG
 ================================================================================
 
-  List still shows lowercase / broken words?
+  Polish incomplete after import?
     → Run:  .\run_admin_routine.bat
     → Hard-refresh Admin (Ctrl+F5)
-
-  Groq daily limit hit?
-    → Wait ~1 hour or next day, run run_admin_routine.bat again
     → Already-polished recipes are skipped
 
   Permission error on upload?

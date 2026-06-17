@@ -53,9 +53,9 @@ HOW IT WORKS
 
 COMMAND
   .\run_books.bat
-  (Extract → upload → Groq polish — all in one command)
+  (Extract → upload — NO Groq; review in admin)
 
-IF GROQ LIMIT HIT
+IF POLISH NEEDED
   .\run_admin_routine.bat
 
 OUTPUT
@@ -125,8 +125,8 @@ NOTES
 
 WHAT THIS IS
   When you save cooking reels on Instagram into a Collection, this export
-  file lists all those saved links. The pipeline downloads audio, transcribes
-  with Groq, and turns them into recipes.
+  file lists saved links. Optional video pipeline may transcribe reels (requires
+  GROQ_API_KEY — not used for books or admin review).
 
 WHERE TO PUT THE FILE
   Save/export AS exactly:
@@ -143,8 +143,8 @@ HOW TO GET saved_collections.json
   If you are unsure: keep your last working export file and copy it to:
     RecipeExtraction\inputs\instagram\saved_reels\saved_collections.json
 
-REQUIRES
-  GROQ_API_KEY in setup-env.ps1
+REQUIRES (optional reel import only)
+  GROQ_API_KEY in setup-env.ps1 — not needed for books
 
 COMMAND
   .\run_pipeline.ps1 --source reels

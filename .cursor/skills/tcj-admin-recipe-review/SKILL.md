@@ -2,38 +2,39 @@
 name: tcj-admin-recipe-review
 description: >-
   Clean and prepare TCJ pending recipes the way Betty (solo admin) would —
-  section-by-section Groq agent review, full-field editor popup, batch via dashboard.
-  Use when the user asks for admin review cleanup, pending recipe batches,
-  recipe inbox agent, Agent Review buttons, or deputized admin review at 10k scale.
+  section-by-section mechanical agent review (NO Groq), full-field editor popup,
+  batch via dashboard. Use when the user asks for admin review cleanup, pending
+  recipe batches, recipe inbox agent, Agent Review buttons, or deputized admin
+  review at 10k scale.
 ---
 
 # TCJ Admin Recipe Review Agent
 
 You are Betty's **deputy for recipe cleaning**, not a replacement for final approval.
-Walk the **review panel section-by-section** (see [REVIEW-PANEL.md](REVIEW-PANEL.md)), clean via Groq, open the **full-field editor** for her to tweak, then she approves.
+Walk the **review panel section-by-section** (see [REVIEW-PANEL.md](REVIEW-PANEL.md)), clean via **rule-based mechanical polish** (never Groq), open the **full-field editor** for her to tweak, then she approves.
 
 ## Hard rules
 
-1. **Never auto-approve** unless Betty explicitly says "approve this batch".
-2. **Never reject** without Betty confirming (set `reject_recommended` only).
-3. **Never set reviewer notes** or click Approve/Reject in the dashboard.
-4. **Recipes first** — ignore garden, SQL archive, unrelated cleanup.
-5. **Groq free tier** ~100k tokens/day — bulk max 25/run; stop on 429.
+1. **Never use Groq** for admin review, book imports, or batch polish. Betty has said this repeatedly.
+2. **Never auto-approve** unless Betty explicitly says "approve this batch".
+3. **Never reject** without Betty confirming (set `reject_recommended` only).
+4. **Never set reviewer notes** or click Approve/Reject in the dashboard.
+5. **Recipes first** — ignore garden, SQL archive, unrelated cleanup.
 6. **Secrets** only from env / `RecipeExtraction/setup-env.ps1` — never commit keys.
 
 ## Dashboard buttons (Betty's UI)
 
 | Button | Where | What happens |
 |--------|-------|----------------|
-| **Bulk Agent Review** | Recipe Management → Pending tab | Groq-cleans up to 10 oldest pending → summary → opens first success in full editor popup |
-| **Agent Review** | Inside Recipe Review popup | Groq-cleans this recipe → opens full editor popup with agent notes |
-| **Edit all fields** | Same popup | Opens full Submit a Recipe form in popup (no Groq) |
+| **Bulk Autopilot** | Recipe Management → Pending tab | Mechanical cleanup up to 25 oldest pending → summary → editor for yellows only |
+| **Agent Review** | Inside Recipe Review popup | Same mechanical cleanup for one recipe → editor if needed |
+| **Edit all fields** | Same popup | Opens full Submit a Recipe form in popup (no agent) |
 
-Both agent flows **save to DB** then open `submit-recipe.html?adminReview=<id>&embedded=1` in a center iframe.
+Agent flows **save to DB** then open `submit-recipe.html?adminReview=<id>&embedded=1` when Betty needs to fix something.
 
 ## Section-by-section duties
 
-Read **[REVIEW-PANEL.md](REVIEW-PANEL.md)** — maps every block in the review popup (title, intro, image flag, ingredients, procedure, source, audit, unknowns, quick edits, footer).
+Read **[REVIEW-PANEL.md](REVIEW-PANEL.md)** — maps every block in the review popup.
 
 ## Workflow (in order)
 
@@ -45,20 +46,22 @@ Read **[REVIEW-PANEL.md](REVIEW-PANEL.md)** — maps every block in the review p
 
 Report: pending count, awaiting polish, ready for review.
 
-### 2 — Pipeline polish (optional catch-up)
+### 2 — Mechanical polish (optional catch-up — NO Groq)
 
 ```powershell
 cd RecipeExtraction
-python polish_pending.py --limit 20
+python polish_mechanical.py --limit 50
 ```
+
+**Do not run** `polish_pending.py` (Groq) for books or admin batches.
 
 ### 3 — Agent review (dashboard or API)
 
-**Betty in browser:** Pending tab → **Bulk Agent Review**, or open a recipe → **Agent Review**.
+**Betty in browser:** Pending tab → **Bulk Autopilot**, or open a recipe → **Agent Review**.
 
-**You in Cursor:** POST `/api/admin-agent-review` with admin session token, or run the same Groq logic via `polish_pending.py` for batches when Vercel env is not set.
+**You in Cursor:** POST `/api/admin-agent-review` with admin session token — uses `lib/admin-mechanical-polish.js` only.
 
-Requires Vercel env: `GROQ_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (and anon key for admin check).
+Requires Vercel env: `SUPABASE_SERVICE_ROLE_KEY` (and anon key for admin check). **No GROQ_API_KEY.**
 
 ### 4 — Full edit popup
 
@@ -80,9 +83,10 @@ SELECT repair_orphan_recipe_ingredients();
 |------|-----|
 | [REVIEW-PANEL.md](REVIEW-PANEL.md) | Section-by-section agent checklist |
 | `lib/dashboard-agent-review.js` | Bulk + per-recipe buttons, editor popup |
-| `lib/admin-agent-review-core.js` | Groq prompt + save payload |
-| `api/admin-agent-review.js` | Serverless agent endpoint |
-| `RecipeExtraction/polish_pending.py` | CLI Groq polish (same intent) |
+| `lib/admin-mechanical-polish.js` | Rule-based cleanup (production path) |
+| `lib/admin-agent-review-core.js` | Save payload + quality gates |
+| `api/admin-agent-review.js` | Serverless agent endpoint (mechanical only) |
+| `RecipeExtraction/polish_mechanical.py` | CLI mechanical polish |
 | `submit-recipe.html?adminReview=<uuid>&embedded=1` | Full edit in iframe |
 | `database/sql/fix-admin-recipe-full-edit.sql` | RPC (run once in Supabase) |
 
@@ -90,12 +94,12 @@ SELECT repair_orphan_recipe_ingredients();
 
 ```
 You are my TCJ Admin Recipe Review agent. Use tcj-admin-recipe-review skill and REVIEW-PANEL.md.
-Walk pending recipes section-by-section: Groq clean, flag reject candidates, never approve.
-Report IDs ready vs needs_image vs flag_reject. Prefer dashboard Agent Review when env is set.
+Mechanical cleanup only — never Groq. Flag reject candidates; never approve without me.
+Report IDs ready vs needs_image vs flag_reject. Prefer dashboard Agent Review / Bulk Autopilot.
 ```
 
 ## Limits
 
 - No auto images (flag `needs_image` only)
-- No auto-approve / auto-reject
-- 10k backlog = many daily bulk runs (10–25 per day on free Groq)
+- No auto-approve / auto-reject unless Betty enables autopilot tiers in REVIEW-PANEL.md
+- 10k backlog = unlimited mechanical bulk runs (no token cap)

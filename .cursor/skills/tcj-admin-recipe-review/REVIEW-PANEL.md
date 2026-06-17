@@ -9,14 +9,14 @@ The agent does the work. Betty's job is **one button + fix yellows**.
 | Step | Who | Action |
 |------|-----|--------|
 | 1 | Betty | Pending tab → **Bulk Autopilot** (or **Agent Review** on one recipe) |
-| 2 | Agent | Groq clean → quality gates → **auto-approve green**, **auto-reject red** |
+| 2 | Agent | Mechanical cleanup → quality gates → **auto-reject red**; yellow opens editor |
 | 3 | Betty | **Only if yellow** — editor popup opens; fix, Save, Approve |
 
 No manual approve for clean recipes. No editor popup for greens. No review of junk — auto-rejected.
 
 ---
 
-## Outcome tiers (after Groq + code gates)
+## Outcome tiers (after mechanical polish + code gates)
 
 | Tier | Meaning | Betty |
 |------|---------|-------|
@@ -68,7 +68,7 @@ Agent **auto-clicks** via RPC for green/red. Betty **only** for yellow after edi
 
 | Item | Why |
 |------|-----|
-| Groq daily cap | ~25/batch, repeat daily for 10k |
+| Token / API limits | Not applicable — mechanical polish only |
 | Subjective “is this dish good enough?” | Yellow tier catches edge cases |
 | Adding new ingredients to master DB | Governance — agent flags, Betty adds if needed |
 | Recipe photos | No image generation |

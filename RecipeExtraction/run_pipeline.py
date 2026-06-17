@@ -73,7 +73,7 @@ def main() -> int:
     parser.add_argument("--source", action="append", help="Run one source (websites, reels, youtube, …)")
     parser.add_argument("--extract-only", action="store_true")
     parser.add_argument("--ingest-only", action="store_true")
-    parser.add_argument("--no-polish", action="store_true", help="Skip Groq polish step at end")
+    parser.add_argument("--no-polish", action="store_true", help="Skip mechanical polish step at end")
     parser.add_argument("--limit", type=int, default=None)
     args = parser.parse_args()
 
@@ -145,10 +145,8 @@ def main() -> int:
             continue
 
     if not args.extract_only and not args.ingest_only and not args.no_polish:
-        polish_cmd = [sys.executable, str(BASE_DIR / "polish_pending.py"), "--all-pending"]
-        if args.limit:
-            polish_cmd.extend(["--limit", str(args.limit)])
-        code = run_step("POLISH — Groq cleanup (all pending imports)", polish_cmd)
+        polish_cmd = [sys.executable, str(BASE_DIR / "polish_mechanical.py"), "--limit", str(args.limit or 50)]
+        code = run_step("POLISH — mechanical cleanup (pending imports)", polish_cmd)
         if code != 0:
             print("Polish incomplete — re-run: python admin_routine.py", file=sys.stderr)
             failures += code

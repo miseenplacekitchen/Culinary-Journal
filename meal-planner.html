@@ -359,7 +359,9 @@ async function buildHierarchyFilters() {
       (Array.isArray(rows) ? rows : []).forEach(function (r) {
         if (catFilter && r.subcategory_category && r.subcategory_category !== catFilter) return;
         if (r.subcategory_name) subs[r.subcategory_name] = 1;
-        if (r.division_name) divs[r.division_name] = 1;
+        if (r.division_name && (!subFilter || r.subcategory_name === subFilter)) {
+          divs[r.division_name] = 1;
+        }
       });
     }
   } catch(e) { console.warn('meal-planner', e); }
@@ -386,6 +388,7 @@ async function buildHierarchyFilters() {
 
 function setSubFilter(sub) {
   subFilter = sub || '';
+  divFilter = '';
   buildHierarchyFilters();
   applyRecipeFilters();
 }

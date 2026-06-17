@@ -17,7 +17,7 @@ $vercelUrls = @(
 )
 
 Write-Host ''
-Write-Host '=== TCJ — Vercel env vars (3 pastes) ===' -ForegroundColor Cyan
+Write-Host '=== TCJ — Vercel env vars (2 pastes — admin Agent Review) ===' -ForegroundColor Cyan
 Write-Host ''
 Write-Host 'Opening project Environment Variables in your browser...' -ForegroundColor Yellow
 Write-Host '(NOT the team page under the main sidebar — must be inside culinary-journal project.)'
@@ -41,10 +41,6 @@ if (Test-Path $supabaseJs) {
     }
 }
 
-if (-not $groq -or $groq -like '*PASTE*') {
-    Write-Host 'GROQ_API_KEY not set in setup-env.ps1' -ForegroundColor Red
-    exit 1
-}
 if (-not $service -or $service -like '*PASTE*') {
     Write-Host 'SUPABASE_SERVICE_ROLE_KEY not set in setup-env.ps1' -ForegroundColor Red
     exit 1
@@ -52,6 +48,9 @@ if (-not $service -or $service -like '*PASTE*') {
 if (-not $anon) {
     Write-Host 'Could not read anon key from supabase-config.js' -ForegroundColor Red
     exit 1
+}
+if (-not $groq -or $groq -like '*PASTE*') {
+    Write-Host 'Note: GROQ_API_KEY not set — OK for books/admin (only needed for optional video/reel import).' -ForegroundColor DarkYellow
 }
 
 function Copy-Step {
@@ -68,9 +67,13 @@ Write-Host 'In Vercel (culinary-journal project): Settings -> Environment Variab
 Write-Host 'Enable Production for each variable.'
 Write-Host ''
 
-Copy-Step 'GROQ_API_KEY' $groq 'Key name: GROQ_API_KEY'
 Copy-Step 'SUPABASE_SERVICE_ROLE_KEY' $service 'Key name: SUPABASE_SERVICE_ROLE_KEY'
 Copy-Step 'SUPABASE_ANON_KEY' $anon 'Key name: SUPABASE_ANON_KEY'
+
+if ($groq -and $groq -notlike '*PASTE*') {
+    Write-Host ''
+    Write-Host 'Optional (Instagram/video import only): add GROQ_API_KEY yourself in Vercel if needed.' -ForegroundColor DarkGray
+}
 
 Write-Host ''
 Write-Host 'Done. Redeploy: Deployments -> ... -> Redeploy' -ForegroundColor Cyan

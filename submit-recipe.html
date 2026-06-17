@@ -25,8 +25,8 @@
   <script src="lib/recipe-import-paths.js"></script>
   <script src="lib/recipe-hero-labels.js?v=20260629"></script>
   <script src="lib/ingredient-lookup.js?v=20260630"></script>
-  <script src="lib/drink-taxonomy-infer.js?v=20260719"></script>
-  <script src="lib/food-taxonomy-infer.js?v=20260718"></script>
+  <script src="lib/drink-taxonomy-infer.js?v=20260721"></script>
+  <script src="lib/food-taxonomy-infer.js?v=20260721"></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -4507,15 +4507,6 @@ function inferSubCategoryDivision(name, items, category) {
   if (typeof FoodTaxonomyInfer !== 'undefined') {
     var food = FoodTaxonomyInfer.infer(category, blob);
     if (food.sub) return food;
-  }
-  if (category === 'Grains & Comfort' && /\b(biriyani|biryani|pilaf|pulao)\b/.test(blob)) {
-    out.sub = 'Biryanis & Pilafs';
-    if (/\bmutton\b|\bgoat\b/.test(blob)) out.div = 'Mutton Biryani';
-    else if (/\blamb\b/.test(blob)) out.div = 'Lamb Biryani';
-    else if (/\bchicken\b|\bpoultry\b/.test(blob)) out.div = 'Chicken Biryani';
-    else if (/\b(prawn|shrimp|fish|seafood)\b/.test(blob)) out.div = 'Seafood Biryani';
-    else if (/\b(vegetable|veg|paneer|mushroom)\b/.test(blob)) out.div = 'Vegetable Biryani';
-    return out;
   }
   if (category === 'Meat & Fire') {
     if (/\bmutton\b|\bgoat\b/.test(blob)) out.sub = 'South Asian Dry Mutton & Goat';

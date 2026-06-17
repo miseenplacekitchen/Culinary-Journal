@@ -42,11 +42,11 @@ ING_LINE = re.compile(
 
 CATEGORY_RULES = [
     (re.compile(r"\b(biriyani|biryani|pilaf|pulao|fried rice)\b", re.I), "Grains & Comfort"),
-    (re.compile(r"\b(puttu|idiyappam|idli|roti|chapati|paratha|naan|dosa|appam)\b", re.I), "Breads & Bakes"),
+    (re.compile(r"\b(puttu|idiyappam|idli|dosa|appam|waffle|pancake|omelette|porridge|breakfast)\b", re.I), "Rise & Shine"),
+    (re.compile(r"\b(roti|chapati|paratha|naan|flatbread|bread|loaf|roll|pita|kulcha)\b", re.I), "Breads & Bakes"),
     (re.compile(r"\b(cake|cookie|brownie|muffin|halwa|ladoo|kheer|pudding|dessert|sweet)\b", re.I), "Sweet Serenades"),
     (re.compile(r"\b(soup|rasam|broth|stew)\b", re.I), "Slow & Soulful"),
     (re.compile(r"\b(pickle|chutney|jam|preserve)\b", re.I), "Preserved & Cherished"),
-    (re.compile(r"\b(salad|raita)\b", re.I), "Garden & Earth"),
     (
         re.compile(
             r"\b(mocktail|cocktail|martini|margarita|mojito|smoothie|juice|lassi|chai|tea|coffee|"
@@ -58,9 +58,10 @@ CATEGORY_RULES = [
         ),
         "Sips & Stories",
     ),
+    (re.compile(r"\b(salad|raita|vegetable|sabzi|thoran|aubergine|eggplant|potato)\b", re.I), "Garden & Earth"),
     (re.compile(r"\b(fish|prawn|shrimp|crab|seafood|meen)\b", re.I), "Ocean & River"),
-    (re.compile(r"\b(chicken|mutton|lamb|beef|pork|meat)\b", re.I), "Meat & Fire"),
-    (re.compile(r"\b(breakfast|pancake|waffle|omelette|porridge)\b", re.I), "Rise & Shine"),
+    (re.compile(r"\b(chicken|mutton|lamb|beef|pork|meat|steak|bacon|sausage)\b", re.I), "Meat & Fire"),
+    (re.compile(r"\b(rice|dal|lentil|grain|nasi)\b", re.I), "Grains & Comfort"),
 ]
 
 

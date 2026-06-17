@@ -73,10 +73,44 @@ checks = [
 for label, ok in checks:
     print(f"  {'OK' if ok else 'GAP'} — {label}")
 
-print("\n=== 6. KNOWN INTENTIONAL GAPS ===")
+print("\n=== 6. SUBMIT FALLBACKS & CACHE ===")
+bad_fallbacks = []
+if "Biryanis & Pilafs" in submit:
+    bad_fallbacks.append("Biryanis & Pilafs (deprecated sub)")
+if re.search(r"out\.div = 'Mutton Biryani'", submit):
+    bad_fallbacks.append("Mutton Biryani used as division (is a sub-category)")
+if bad_fallbacks:
+    for b in bad_fallbacks:
+        print(f"  GAP — {b}")
+else:
+    print("  OK — no deprecated biryani fallback names in submit-recipe.html")
+if "food-taxonomy-infer.js?v=20260721" in submit:
+    print("  OK — submit infer JS cache buster current")
+else:
+    print("  GAP — bump food/drink-taxonomy-infer.js ?v= on submit-recipe.html")
+
+print("\n=== 7. MEAL PLANNER ===")
+mp = (ROOT / "meal-planner.html").read_text(encoding="utf-8")
+mp_checks = [
+    ("Division chips scoped to selected sub", "subFilter || r.subcategory_name === subFilter" in mp),
+    ("Clears division when sub changes", "divFilter = ''" in mp and "setSubFilter" in mp),
+]
+for label, ok in mp_checks:
+    print(f"  {'OK' if ok else 'GAP'} — {label}")
+
+print("\n=== 8. INFER VALIDATORS ===")
+import subprocess
+for script in ("validate_food_infer.py", "validate_drink_infer.py"):
+    r = subprocess.run([sys.executable, str(Path(__file__).parent / script)], capture_output=True, text=True)
+    ok = r.returncode == 0
+    print(f"  {'OK' if ok else 'FAIL'} — {script}")
+    if not ok and r.stdout:
+        print(r.stdout[-400:])
+
+print("\n=== 9. KNOWN INTENTIONAL GAPS ===")
 print("  Garden & Earth: not in fix-book-taxonomy.sql or taxonomy-sub-codes.js (dish table browse).")
 print("  Import/admin pipeline: category-only except Sips sub/div in tcj_extract.py.")
-print("  meal-planner.html: flat taxonomy filters (no PART grouping).")
+print("  meal-planner.html: flat sub list (no PART grouping headers).")
 
 if warnings:
     print(f"\n=== PARSE WARNINGS ({len(warnings)}) ===")

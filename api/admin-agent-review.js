@@ -2,7 +2,7 @@
  * POST /api/admin-agent-review
  * Body: { recipe_id: "uuid" } OR { bulk: true, limit: 10 }
  * Auth: Bearer session token (admin only)
- * Env: SUPABASE_SERVICE_ROLE_KEY (Groq NOT used — reels/video only)
+ * Env: SUPABASE_SERVICE_ROLE_KEY (mechanical polish only — no Groq)
  */
 const {
   buildSavePayload,
