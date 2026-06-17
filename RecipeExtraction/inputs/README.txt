@@ -7,11 +7,12 @@ You do not edit files in MyCookbook/, engines/, or the root of RecipeExtraction.
 
 After you add files here, run ONE command from RecipeExtraction:
 
-  Books only:     .\run_books.bat          (extract + upload + polish)
-  All 7 sources:  .\run_pipeline.bat       (same, all sources)
-  Catch-up polish: .\run_admin_routine.bat (weekly or if Groq limit hit)
+  Books only:     .\run_books.bat          (extract + upload — NO Groq)
+  One recipe:     .\run_one_recipe.bat     (upload next recipe — NO Groq)
+  All 7 sources:  .\run_pipeline.bat       (websites, Instagram, etc.)
 
-  Full routine guide:  open ROUTINE.txt in RecipeExtraction
+  **Book workflow (read first):**  BOOK-PROCESS.md
+  Short commands:                  ROUTINE.txt
   SQL guide:           open database/WHATS-WHAT.md
 
 
