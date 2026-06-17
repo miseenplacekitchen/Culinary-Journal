@@ -39,7 +39,7 @@ Regenerate SQL/JS: `python database/taxonomy/generate_taxonomy_sql.py`
 Validate infer rules: `python database/taxonomy/validate_food_infer.py` and `validate_drink_infer.py`  
 Audit site wiring: `python database/taxonomy/audit_taxonomy.py`
 
-**Garden & Earth** uses the dishes table in Supabase — do not seed from fix-book-taxonomy.sql unless explicitly planned.
+**Garden & Earth** uses the dishes table for curated Thoran-style content *and* `fix-garden-taxonomy.sql` for the full PART A–F browse tree (run after `fix-book-taxonomy.sql`).
 
 ---
 
