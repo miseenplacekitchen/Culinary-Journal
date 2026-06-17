@@ -504,29 +504,10 @@ async function openCat(id, name) {
   }
 }
 
-var SIPS_SUB_CODES = {
-  'Water & Sparkling': 'A1',
-  'Coffee': 'A2',
-  'Tea & Infusions': 'A3',
-  'Hot Chocolate & Warm Comforts': 'A4',
-  'Juices, Smoothies & Blends': 'A5',
-  'Milk, Plant Milks & Cultured Drinks': 'A6',
-  'Sodas, Tonics & Fizz': 'A7',
-  'Functional & Fermented': 'A8',
-  'Beer & Brewing': 'B1',
-  'Wine, Cider & Fermented Fruit': 'B2',
-  'Spirits & Liqueurs': 'B3',
-  'Cocktails & Mixed Drinks': 'B4',
-  'Syrups & Sweeteners': 'C1',
-  'Cordials, Squash & Concentrates': 'C2',
-  'Shrubs, Bitters & Infusions': 'C3',
-  'Garnishes, Ice & Glassware': 'C4',
-  'Techniques & Reference': 'C5',
-  'World Drinks': 'D1',
-  'By Season & Occasion': 'D2',
-  'For Kids': 'D3',
-  'Mocktails & Zero-Proof': 'D4'
-};
+function getSubCategoryCode(categoryName, subName) {
+  var catMap = window.TAXONOMY_SUB_CODES && window.TAXONOMY_SUB_CODES[categoryName];
+  return (catMap && catMap[subName]) || '';
+}
 
 function getBrowseSubsForCategory(categoryName) {
   var order = [];
@@ -542,7 +523,7 @@ function getBrowseSubsForCategory(categoryName) {
   return order.map(function(name) {
     var entry = map[name];
     var divs = entry.divisions;
-    var code = SIPS_SUB_CODES[name] || '';
+    var code = getSubCategoryCode(categoryName, name);
     var preview = divs.slice(0, 4).map(function(d) { return d.division_name; }).join(' · ');
     return {
       name: name,
@@ -960,6 +941,7 @@ function hide(id) { document.getElementById(id).style.display='none'; }
 // ══════════════════════════════════════════════════════════
 loadCategories();
 </script>
+<script src="lib/taxonomy-sub-codes.js"></script>
 <script src="allergy-engine.js"></script>
 <script src="seo-schema.js"></script>
 <script src="nav-init.js"></script>
