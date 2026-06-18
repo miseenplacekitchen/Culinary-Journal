@@ -2032,6 +2032,52 @@ function rmTaxClearTaxonomyCaches() {
   } catch (e) { /* ignore */ }
 }
 
+function rmTaxExportTaxonomyJson(rows, catNames) {
+  var byCat = {};
+  (rows || []).forEach(function(r) {
+    var cat = r.subcategory_category;
+    if (!cat) return;
+    if (!byCat[cat]) byCat[cat] = { category: cat, subcategories: {} };
+    var scName = r.subcategory_name;
+    if (!scName) return;
+    if (!byCat[cat].subcategories[scName]) {
+      byCat[cat].subcategories[scName] = {
+        name: scName,
+        emoji: r.subcategory_emoji || '',
+        tagline: r.subcategory_tagline || '',
+        description: r.subcategory_description || '',
+        ingredient_hints: r.subcategory_ingredient_hints || [],
+        divisions: []
+      };
+    }
+    if (r.division_name) {
+      byCat[cat].subcategories[scName].divisions.push({
+        name: r.division_name,
+        emoji: r.division_emoji || '',
+        subtitle: r.division_subtitle || '',
+        description: r.division_description || ''
+      });
+    }
+  });
+  var out = (catNames || Object.keys(byCat)).map(function(cat) {
+    var node = byCat[cat] || { category: cat, subcategories: {} };
+    return {
+      category: cat,
+      subcategories: Object.values(node.subcategories || {})
+    };
+  });
+  var json = JSON.stringify(out, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var url = window.URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'taxonomy-' + new Date().toISOString().split('T')[0] + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
+
 function rmTaxMergeSubs(cat, subsMap, opts) {
   opts = opts || {};
   var bookFillMissing = opts.bookFillMissing !== false;
@@ -2092,9 +2138,18 @@ async function loadRMTaxonomy(container) {
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'Edit names, descriptions, and ingredient hints here — changes save to the database and appear on the public browse page. ' +
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260619a</span> — red <strong>Remove</strong> on each sub row. Bulk Editor tab is Phase 2 (not built yet). ' +
       '<br><br><strong>Paste book hints</strong> fills the ingredient box with the original list from the taxonomy book (you still click <em>Save sub-category</em> to store it). ' +
-      '<strong>Sync from book</strong> creates/updates every sub in that category from the code defaults.';
+      '<strong>Sync from book</strong> re-creates book subs (avoid after removing one you want gone).';
     container.appendChild(note);
+
+    var exportRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px');
+    var exportJsonBtn = mk('button', 'padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;cursor:pointer;font-weight:600', 'Export taxonomy (JSON)');
+    exportJsonBtn.addEventListener('click', function() {
+      rmTaxExportTaxonomyJson(rows, null);
+    });
+    exportRow.appendChild(exportJsonBtn);
+    container.appendChild(exportRow);
 
     if (taxonomyRpcError) {
       var errBox = mk('div', 'margin-bottom:16px;padding:12px 14px;background:rgba(220,80,80,0.12);border:1px solid #dc5050;border-radius:8px;font-size:12px;color:#f0a0a0;line-height:1.5');
@@ -2352,6 +2407,19 @@ async function loadRMTaxonomy(container) {
               .then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
           }));
           scHdr.appendChild(subMove);
+          if (sc.id) {
+            var delSubHdr = mk('button', 'padding:4px 10px;font-size:11px;border:1px solid #dc5050;border-radius:6px;background:none;color:#dc5050;cursor:pointer;flex-shrink:0', 'Remove');
+            delSubHdr.title = 'Deactivate this sub-category (stays out of browse after refresh)';
+            delSubHdr.addEventListener('click', function(ev) {
+              ev.stopPropagation();
+              if (!confirm('Deactivate sub-category "' + (sc.name || '') + '" and its divisions?')) return;
+              delSubHdr.disabled = true;
+              rpc('admin_delete_recipe_subcategory', { p_id: sc.id })
+                .then(function() { loadRMTaxonomy(container); })
+                .catch(function(e) { alert(e.message || e); delSubHdr.disabled = false; });
+            });
+            scHdr.appendChild(delSubHdr);
+          }
           scWrap.appendChild(scHdr);
 
           var scBody = mk('div', 'padding:10px 12px;display:' + (subOpen ? 'block' : 'none'));
@@ -2414,17 +2482,6 @@ async function loadRMTaxonomy(container) {
               .catch(function(e) { alert(e.message || e); saveSub.disabled = false; });
           });
           hintActs.appendChild(saveSub);
-          if (sc.id) {
-            var delSub = mk('button', 'padding:6px 14px;font-size:11px;border:1px solid #dc5050;border-radius:6px;background:none;color:#dc5050;cursor:pointer', 'Remove sub-category');
-            delSub.addEventListener('click', function() {
-              if (!confirm('Deactivate sub-category "' + (sc.name || '') + '" and its divisions? Recipes keep their text labels.')) return;
-              delSub.disabled = true;
-              rpc('admin_delete_recipe_subcategory', { p_id: sc.id })
-                .then(function() { loadRMTaxonomy(container); })
-                .catch(function(e) { alert(e.message || e); delSub.disabled = false; });
-            });
-            hintActs.appendChild(delSub);
-          }
           scBody.appendChild(hintActs);
 
           scBody.appendChild(rmTaxLabel('Divisions (techniques / styles)'));
