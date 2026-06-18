@@ -2022,7 +2022,19 @@ function rmTaxUpsertSubcategory(payload) {
   });
 }
 
-function rmTaxMergeSubs(cat, subsMap) {
+function rmTaxClearTaxonomyCaches() {
+  try {
+    localStorage.removeItem('tcj_taxonomy_cache');
+    sessionStorage.removeItem('tcj_taxonomy_session');
+    Object.keys(localStorage).forEach(function(k) {
+      if (k.indexOf('tcj_rm_taxonomy_') === 0) localStorage.removeItem(k);
+    });
+  } catch (e) { /* ignore */ }
+}
+
+function rmTaxMergeSubs(cat, subsMap, opts) {
+  opts = opts || {};
+  var bookFillMissing = opts.bookFillMissing !== false;
   var list = Object.values(subsMap).sort(function(a, b) {
     return (a.sort_order || 0) - (b.sort_order || 0) || String(a.name).localeCompare(String(b.name));
   });
@@ -2040,7 +2052,7 @@ function rmTaxMergeSubs(cat, subsMap) {
       if ((!s.ingredient_hints || !s.ingredient_hints.length) && sub.ingredients) {
         s.ingredient_hints = sub.ingredients.slice();
       }
-    } else {
+    } else if (bookFillMissing) {
       list.push({
         id: null,
         name: sub.name,
@@ -2059,6 +2071,7 @@ function rmTaxMergeSubs(cat, subsMap) {
 }
 
 async function loadRMTaxonomy(container) {
+  rmTaxClearTaxonomyCaches();
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
   var CATS = ['Garden & Earth','Feather & Flock','Pasture & Hoof','Ocean & River',
     'The Grain Field','Wrapped & Stuffed','Curds, Creams & Eggs','Breads & Bakery',
@@ -2219,7 +2232,7 @@ async function loadRMTaxonomy(container) {
           });
         }
       });
-      var subList = rmTaxMergeSubs(cat, subs);
+      var subList = rmTaxMergeSubs(cat, subs, { bookFillMissing: !taxonomyRpcError });
       subList.forEach(function(sc) {
         sc.divisions.sort(function(a, b) {
           return (a.division_sort_order || 0) - (b.division_sort_order || 0) ||
@@ -2401,6 +2414,17 @@ async function loadRMTaxonomy(container) {
               .catch(function(e) { alert(e.message || e); saveSub.disabled = false; });
           });
           hintActs.appendChild(saveSub);
+          if (sc.id) {
+            var delSub = mk('button', 'padding:6px 14px;font-size:11px;border:1px solid #dc5050;border-radius:6px;background:none;color:#dc5050;cursor:pointer', 'Remove sub-category');
+            delSub.addEventListener('click', function() {
+              if (!confirm('Deactivate sub-category "' + (sc.name || '') + '" and its divisions? Recipes keep their text labels.')) return;
+              delSub.disabled = true;
+              rpc('admin_delete_recipe_subcategory', { p_id: sc.id })
+                .then(function() { loadRMTaxonomy(container); })
+                .catch(function(e) { alert(e.message || e); delSub.disabled = false; });
+            });
+            hintActs.appendChild(delSub);
+          }
           scBody.appendChild(hintActs);
 
           scBody.appendChild(rmTaxLabel('Divisions (techniques / styles)'));
