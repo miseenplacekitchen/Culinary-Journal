@@ -638,10 +638,10 @@ def generate_js(categories: list[Category]) -> str:
     return f"window.TAXONOMY_SUB_CODES = {body};\n"
 
 
-def generate_parts_js(categories: list[Category]) -> str:
+function generate_parts_js(categories: list[Category]) -> str:
     mapping: dict[str, dict[str, dict[str, object]]] = {}
     for cat in categories:
-        if cat.num == 10:
+        if cat.num in BOOK_SQL_EXCLUDE_NUMS:
             continue
         parts: dict[str, dict[str, object]] = {}
         for sub in cat.subs:
@@ -657,27 +657,6 @@ def generate_parts_js(categories: list[Category]) -> str:
             if sub.name not in subs_list:
                 subs_list.append(sub.name)
         mapping[cat.db_name] = parts
-
-    # Sips parts from SIPS_SUB_CODES letter prefixes
-    sips_parts: dict[str, dict[str, object]] = {}
-    sips_titles = {
-        "A": "Non-Alcoholic Drinks",
-        "B": "With Alcohol",
-        "C": "Foundations & Techniques",
-        "D": "Collections & Occasions",
-    }
-    for sub_name, code in SIPS_SUB_CODES.items():
-        letter = code[0]
-        if letter not in sips_parts:
-            sips_parts[letter] = {
-                "title": sips_titles.get(letter, f"Part {letter}"),
-                "emoji": PART_LETTER_EMOJI.get(letter, "🥂"),
-                "subs": [],
-            }
-        subs_list = sips_parts[letter]["subs"]
-        assert isinstance(subs_list, list)
-        subs_list.append(sub_name)
-    mapping["Sips & Stories"] = sips_parts
 
     body = json.dumps(mapping, indent=2, ensure_ascii=False)
     return f"window.TAXONOMY_PARTS = {body};\n"

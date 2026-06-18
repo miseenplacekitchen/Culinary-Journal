@@ -200,15 +200,16 @@
     .cr-warn-badge { display:inline-block; margin-top:6px; padding:3px 8px; border-radius:6px; background:var(--danger-bg); border:1px solid rgb(from var(--danger) r g b / 0.25); font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; color:var(--danger); }
     .cr-card.has-warn { border-color:rgb(from var(--danger) r g b / 0.35); }
 </style>
-  <script src="lib/taxonomy-sub-codes.js?v=20260617e"></script>
-  <script src="lib/taxonomy-parts.js?v=20260617e"></script>
-  <script src="lib/tcj-garden-taxonomy.js?v=20260617b"></script>
-  <script src="lib/tcj-feather-flock-taxonomy.js"></script>
-  <script src="lib/tcj-pasture-hoof-taxonomy.js"></script>
-  <script src="lib/tcj-ocean-river-taxonomy.js"></script>
-  <script src="lib/tcj-grain-field-taxonomy.js"></script>
-  <script src="lib/tcj-sips-stories-taxonomy.js"></script>
-  <script src="lib/tcj-sub-taxonomy.js"></script>
+  <script src="lib/taxonomy-sub-codes.js?v=20260618a"></script>
+  <script src="lib/taxonomy-parts.js?v=20260618a"></script>
+  <script src="lib/tcj-garden-taxonomy.js?v=20260618a"></script>
+  <script src="lib/tcj-feather-flock-taxonomy.js?v=20260618a"></script>
+  <script src="lib/tcj-pasture-hoof-taxonomy.js?v=20260618a"></script>
+  <script src="lib/tcj-ocean-river-taxonomy.js?v=20260618a"></script>
+  <script src="lib/tcj-grain-field-taxonomy.js?v=20260618a"></script>
+  <script src="lib/tcj-sips-stories-taxonomy.js?v=20260618a"></script>
+  <script src="lib/tcj-migrated-taxonomy-parts.js?v=20260618a"></script>
+  <script src="lib/tcj-sub-taxonomy.js?v=20260618a"></script>
   <script src="page-guard.js"></script>
 </head>
 <body>
@@ -560,13 +561,32 @@ function taxonomyCategoryMatches(rowCategory, categoryName) {
   return false;
 }
 
+function normalizeBrowseTaxonomyRow(r) {
+  if (!r) return {};
+  return {
+    subcategory_category: r.subcategory_category || r.category || '',
+    subcategory_name: r.subcategory_name || r.name || '',
+    subcategory_tagline: r.subcategory_tagline || r.tagline || '',
+    subcategory_description: r.subcategory_description || r.description || '',
+    subcategory_emoji: r.subcategory_emoji || r.emoji || '',
+    subcategory_ingredient_hints: r.subcategory_ingredient_hints || r.ingredient_hints || [],
+    division_id: r.division_id || null,
+    division_name: r.division_name || '',
+    division_emoji: r.division_emoji || '',
+    division_subtitle: r.division_subtitle || r.subtitle || '',
+    division_description: r.division_description || ''
+  };
+}
+
 function categoryHasBrowseTaxonomy(categoryName) {
   if (typeof getCanonicalCategoryTaxonomy === 'function') {
     var canon = getCanonicalCategoryTaxonomy(categoryName);
     if (canon && canon.length) return true;
   }
+  if (getTaxonomyPartsForCategory(categoryName)) return true;
   return browseTaxonomy.some(function(r) {
-    return taxonomyCategoryMatches(r.subcategory_category, categoryName) && r.subcategory_name;
+    var row = normalizeBrowseTaxonomyRow(r);
+    return taxonomyCategoryMatches(row.subcategory_category, categoryName) && row.subcategory_name;
   });
 }
 
@@ -806,18 +826,24 @@ function setCategoryJumpVisible(visible) {
 }
 
 function getDivisionsForSub(categoryName, subName) {
-  var fromRpc = browseTaxonomy.filter(function(r) {
+  if (!subName) return [];
+  var fromRpc = browseTaxonomy.filter(function(raw) {
+    var r = normalizeBrowseTaxonomyRow(raw);
     return taxonomyCategoryMatches(r.subcategory_category, categoryName) &&
       r.subcategory_name === subName && r.division_name;
-  });
+  }).map(normalizeBrowseTaxonomyRow);
   if (fromRpc.length) return fromRpc;
   var hints = [];
-  var row = browseTaxonomy.find(function(r) {
+  var row = browseTaxonomy.find(function(raw) {
+    var r = normalizeBrowseTaxonomyRow(raw);
     return taxonomyCategoryMatches(r.subcategory_category, categoryName) &&
       r.subcategory_name === subName;
   });
-  if (row && row.subcategory_ingredient_hints && row.subcategory_ingredient_hints.length) {
-    hints = row.subcategory_ingredient_hints;
+  if (row) {
+    var nr = normalizeBrowseTaxonomyRow(row);
+    if (nr.subcategory_ingredient_hints && nr.subcategory_ingredient_hints.length) {
+      hints = nr.subcategory_ingredient_hints;
+    }
   }
   var subMeta = (typeof getCategorySubMeta === 'function') ? getCategorySubMeta(categoryName, subName) : null;
   if (!hints.length && subMeta && subMeta.ingredients) hints = subMeta.ingredients;
@@ -1021,7 +1047,23 @@ function categoryDefaultTags(categoryName) {
 function getBrowseSubsForCategory(categoryName) {
   var order = [];
   var map = {};
-  browseTaxonomy.forEach(function(r) {
+  var canon = (typeof getCanonicalCategoryTaxonomy === 'function')
+    ? getCanonicalCategoryTaxonomy(categoryName) : null;
+  if (canon && canon.length) {
+    canon.forEach(function(sub) {
+      map[sub.name] = {
+        name: sub.name,
+        divisions: [],
+        ingredient_hints: sub.ingredients ? sub.ingredients.slice() : [],
+        tagline: sub.tagline || '',
+        description: sub.description || '',
+        emoji: sub.emoji || ''
+      };
+      order.push(sub.name);
+    });
+  }
+  browseTaxonomy.forEach(function(raw) {
+    var r = normalizeBrowseTaxonomyRow(raw);
     if (!taxonomyCategoryMatches(r.subcategory_category, categoryName) || !r.subcategory_name) return;
     if (!map[r.subcategory_name]) {
       map[r.subcategory_name] = {
@@ -1042,19 +1084,20 @@ function getBrowseSubsForCategory(categoryName) {
     if (r.subcategory_emoji) map[r.subcategory_name].emoji = r.subcategory_emoji;
     if (r.division_name) map[r.subcategory_name].divisions.push(r);
   });
-  var canon = (typeof getCanonicalCategoryTaxonomy === 'function')
-    ? getCanonicalCategoryTaxonomy(categoryName) : null;
+  if (!order.length) {
+    var parts = getTaxonomyPartsForCategory(categoryName);
+    if (parts) {
+      Object.keys(parts).sort().forEach(function(letter) {
+        (parts[letter].subs || []).forEach(function(name) {
+          if (!map[name]) {
+            map[name] = { name: name, divisions: [], ingredient_hints: [], tagline: '', description: '', emoji: '' };
+            order.push(name);
+          }
+        });
+      });
+    }
+  }
   if (canon && canon.length) {
-    canon.forEach(function(sub) {
-      if (!map[sub.name]) {
-        map[sub.name] = {
-          name: sub.name,
-          divisions: [],
-          ingredient_hints: sub.ingredients ? sub.ingredients.slice() : []
-        };
-        order.push(sub.name);
-      }
-    });
     var canonOrder = {};
     canon.forEach(function(sub, idx) { canonOrder[sub.name] = idx; });
     order.sort(function(a, b) {
@@ -1063,6 +1106,8 @@ function getBrowseSubsForCategory(categoryName) {
       if (ai !== bi) return ai - bi;
       return a.localeCompare(b);
     });
+  } else {
+    order.sort(function(a, b) { return a.localeCompare(b); });
   }
   return order.map(function(name) {
     var entry = map[name];
