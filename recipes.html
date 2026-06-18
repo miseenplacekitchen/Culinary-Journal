@@ -544,6 +544,32 @@ let browseCatIdMap={};
 let allRecipes = [];
 let browseTaxonomy = [];
 
+/** Match browse RPC category column to canonical card name (e.g. Grains & Comfort ↔ The Grain Field). */
+function taxonomyCategoryMatches(rowCategory, categoryName) {
+  if (!rowCategory || !categoryName) return false;
+  if (rowCategory === categoryName) return true;
+  var legacy = (typeof TCJ_CATEGORY_LEGACY_DB_NAMES !== 'undefined')
+    ? TCJ_CATEGORY_LEGACY_DB_NAMES[categoryName] : [];
+  for (var i = 0; i < legacy.length; i++) {
+    if (rowCategory === legacy[i]) return true;
+  }
+  if (typeof normalizeRecipeCategory === 'function') {
+    if (normalizeRecipeCategory(rowCategory) === categoryName) return true;
+    if (normalizeRecipeCategory(categoryName) === rowCategory) return true;
+  }
+  return false;
+}
+
+function categoryHasBrowseTaxonomy(categoryName) {
+  if (typeof getCanonicalCategoryTaxonomy === 'function') {
+    var canon = getCanonicalCategoryTaxonomy(categoryName);
+    if (canon && canon.length) return true;
+  }
+  return browseTaxonomy.some(function(r) {
+    return taxonomyCategoryMatches(r.subcategory_category, categoryName) && r.subcategory_name;
+  });
+}
+
 // Load categories from Supabase
 // Categories ALWAYS show — filters only affect recipes inside them
 async function loadCategories() {
@@ -658,9 +684,7 @@ async function openCat(id, name) {
 
     const dishes = await supaFetch('dishes', params);
     curCatDbDishes = dishes || [];
-    var hasTaxonomy = browseTaxonomy.some(function(r) {
-      return r.subcategory_category === name && r.subcategory_name;
-    });
+    var hasTaxonomy = categoryHasBrowseTaxonomy(name);
 
     if (hasTaxonomy) {
       curCatTaxonomyBrowse = true;
@@ -808,7 +832,7 @@ function showBrowseTaxonomyFilters(categoryName, subName, divName) {
           return;
         }
         var row = browseTaxonomy.find(function(r) {
-          return r.subcategory_category === categoryName &&
+          return taxonomyCategoryMatches(r.subcategory_category, categoryName) &&
             r.subcategory_name === sub && r.division_name;
         });
         if (row) openTaxonomyDivision(row);
@@ -823,7 +847,7 @@ function buildBrowseDivisionFilters(categoryName, subName, activeDivName) {
   var divEl = document.getElementById('browse-div-filters');
   if (!divEl) return;
   var divs = browseTaxonomy.filter(function(r) {
-    return r.subcategory_category === categoryName &&
+    return taxonomyCategoryMatches(r.subcategory_category, categoryName) &&
       r.subcategory_name === subName && r.division_name;
   });
   if (!divs.length) {
@@ -842,7 +866,7 @@ function buildBrowseDivisionFilters(categoryName, subName, activeDivName) {
     var btn = e.target.closest('.cr-filter');
     if (!btn || !btn.dataset.div) return;
     var row = browseTaxonomy.find(function(r) {
-      return r.subcategory_category === categoryName &&
+      return taxonomyCategoryMatches(r.subcategory_category, categoryName) &&
         r.subcategory_name === subName && r.division_name === btn.dataset.div;
     });
     if (row) openTaxonomyDivision(row);
@@ -967,7 +991,7 @@ function getBrowseSubsForCategory(categoryName) {
   var order = [];
   var map = {};
   browseTaxonomy.forEach(function(r) {
-    if (r.subcategory_category !== categoryName || !r.subcategory_name) return;
+    if (!taxonomyCategoryMatches(r.subcategory_category, categoryName) || !r.subcategory_name) return;
     if (!map[r.subcategory_name]) {
       map[r.subcategory_name] = { name: r.subcategory_name, divisions: [], ingredient_hints: [] };
       order.push(r.subcategory_name);
@@ -977,6 +1001,28 @@ function getBrowseSubsForCategory(categoryName) {
     }
     if (r.division_name) map[r.subcategory_name].divisions.push(r);
   });
+  var canon = (typeof getCanonicalCategoryTaxonomy === 'function')
+    ? getCanonicalCategoryTaxonomy(categoryName) : null;
+  if (canon && canon.length) {
+    canon.forEach(function(sub) {
+      if (!map[sub.name]) {
+        map[sub.name] = {
+          name: sub.name,
+          divisions: [],
+          ingredient_hints: sub.ingredients ? sub.ingredients.slice() : []
+        };
+        order.push(sub.name);
+      }
+    });
+    var canonOrder = {};
+    canon.forEach(function(sub, idx) { canonOrder[sub.name] = idx; });
+    order.sort(function(a, b) {
+      var ai = Object.prototype.hasOwnProperty.call(canonOrder, a) ? canonOrder[a] : 9999;
+      var bi = Object.prototype.hasOwnProperty.call(canonOrder, b) ? canonOrder[b] : 9999;
+      if (ai !== bi) return ai - bi;
+      return a.localeCompare(b);
+    });
+  }
   return order.map(function(name) {
     var entry = map[name];
     var divs = entry.divisions;
@@ -1063,7 +1109,7 @@ function renderSubCategoryDivisionGrid(categoryName, subName) {
   var g = document.getElementById('dish-grid');
   g.className = 'tax-browse-root';
   var divs = browseTaxonomy.filter(function(r) {
-    return r.subcategory_category === categoryName &&
+    return taxonomyCategoryMatches(r.subcategory_category, categoryName) &&
       r.subcategory_name === subName && r.division_name;
   });
   if (!divs.length) {
@@ -1605,7 +1651,7 @@ function buildCommunityDivisionFilters() {
   var divs = {};
   browseTaxonomy.filter(function(r) {
     return r.subcategory_name === activeSubFilter && r.division_name &&
-      (!activeCatFilter || r.subcategory_category === activeCatFilter);
+      (!activeCatFilter || taxonomyCategoryMatches(r.subcategory_category, activeCatFilter));
   }).forEach(function(r) { divs[r.division_name] = true; });
   var names = Object.keys(divs).sort();
   if (!names.length) { divRow.style.display = 'none'; return; }
