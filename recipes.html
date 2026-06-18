@@ -74,7 +74,25 @@
     .cr-filter.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:500; }
     .browse-part-label { flex-basis:100%; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-mid); margin:8px 0 2px; padding-top:4px; }
     .browse-part-label:first-child { margin-top:0; }
-    .browse-head { margin: 8px 0 20px; }
+    #browse-cat-jump.cr-filters {
+      display:grid;
+      grid-template-columns:repeat(auto-fill, minmax(148px, 1fr));
+      gap:6px;
+    }
+    #browse-cat-jump .cr-filter {
+      width:100%; text-align:center; padding:6px 8px; font-size:10px;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    #browse-div-filters.cr-filters {
+      display:grid;
+      grid-template-columns:repeat(auto-fill, minmax(108px, 1fr));
+      gap:6px;
+    }
+    #browse-div-filters .cr-filter {
+      width:100%; text-align:center; padding:6px 8px; font-size:10px;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .browse-head { display:none; }
     .browse-page-title {
       font-family:'Cormorant Garamond',serif; font-size:clamp(1.45rem,3vw,1.85rem); font-weight:700;
       color:var(--text-high); margin:0 0 6px; letter-spacing:normal; text-transform:none; line-height:1.2;
@@ -266,10 +284,11 @@
   </div>
 
   <div id="dishes-view" style="display:none">
-    <div class="browse-head">
-      <h2 class="browse-page-title" id="dishes-lbl">Dishes</h2>
-      <p class="browse-page-sub" id="dishes-sub" style="display:none"></p>
+    <div id="browse-cat-jump-row" style="display:none;margin:0 0 14px">
+      <p class="recipes-home-label" style="margin-top:0">Category</p>
+      <div class="cr-filters" id="browse-cat-jump"></div>
     </div>
+    <p class="recipes-home-label" id="browse-section-label" style="display:none;margin-top:0"></p>
     <div id="browse-taxonomy-row" style="display:none;margin:0 0 16px">
       <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px">Sub-category</div>
       <div class="cr-filters" id="browse-sub-filters"></div>
@@ -514,6 +533,8 @@ let curCat=null, curCatName=null, curDish=null;
 let curSubFilter=null, curDivFilter=null;
 let curCatTaxonomyBrowse=false;
 let curCatDbDishes=[];
+let browseLevel='home';
+let browseCatIdMap={};
 let allRecipes = [];
 let browseTaxonomy = [];
 
@@ -538,6 +559,7 @@ async function loadCategories() {
   }
 
   function renderCategoryCards(cats) {
+    cats.forEach(function(cat) { browseCatIdMap[cat.name] = cat.id; });
     grid.innerHTML = cats.map(function(cat) {
       return '<div class="cat-card" data-id="' + cat.id + '" data-name="' + cat.name.replace(/"/g,'&quot;') + '">' +
         '<span class="cat-emoji">' + cat.emoji + '</span>' +
@@ -603,20 +625,24 @@ async function loadBrowseTaxonomy() {
   } catch (e) { console.warn('browse taxonomy', e); browseTaxonomy = []; }
 }
 
-// Load dishes for a category (or taxonomy divisions when no dishes exist)
+// Load category → sub-categories browse
 async function openCat(id, name) {
-  curCat=id; curCatName=name;
-  curSubFilter=null; curDivFilter=null; curCatTaxonomyBrowse=false;
+  curCat = id; curCatName = name;
+  curSubFilter = null; curDivFilter = null; curDish = null;
+  curCatTaxonomyBrowse = false;
+  browseLevel = 'category';
   hide('cats-view'); hide('styles-view'); hide('search-view');
-  document.getElementById('dishes-lbl').textContent = name;
-  setBrowseSubtitle('Pick a dish, then browse recipe styles.');
+  updatePageHeader(headerTitleForCategory(name), false);
   if (!browseTaxonomy.length) await loadBrowseTaxonomy();
   const g = document.getElementById('dish-grid');
-  g.className = 'dish-grid';
-  g.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Loading dishes...</div>';
+  g.className = 'tax-browse-root';
+  g.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Loading...</div>';
   show('dishes-view');
-  setBc(name, null);
+  setBc(name, null, null);
   syncBrowseChrome();
+  buildCategoryJumpTags(name);
+  hideBrowseTaxonomyFilters();
+  setBrowseSectionLabel('Sub-category');
 
   try {
     let params = 'category_id=eq.' + encodeURIComponent(id) + '&order=name';
@@ -632,27 +658,21 @@ async function openCat(id, name) {
 
     if (hasTaxonomy) {
       curCatTaxonomyBrowse = true;
-      buildBrowseTaxonomyFilters(name);
-      var taxRow = document.getElementById('browse-taxonomy-row');
-      if (taxRow) taxRow.style.display = 'block';
-      syncBrowseChrome();
-      renderBrowseCategoryHome(name, curCatDbDishes, curSubFilter);
+      renderCategorySubGrid(name, curCatDbDishes);
       return;
     }
 
     curCatTaxonomyBrowse = false;
-    document.getElementById('browse-taxonomy-row').style.display = 'none';
-    syncBrowseChrome();
+    setBrowseSectionLabel('Dishes');
+    buildCategoryJumpTags(name);
 
     if (!curCatDbDishes.length) {
-      setBrowseSubtitle('');
       g.innerHTML = '<div class="empty-state"><div class="empty-icon">🍽</div>' +
         '<div class="empty-title">No dishes found</div>' +
         '<div class="empty-desc">Try a different filter or check back soon</div></div>';
       return;
     }
 
-    setBrowseSubtitle('Pick a dish, then browse recipe styles.');
     g.innerHTML = curCatDbDishes.map(dish =>
       renderDishCardHtml({
         emoji: dish.emoji || '🍽',
@@ -669,7 +689,7 @@ async function openCat(id, name) {
 
   } catch(e) {
     console.error(e);
-    g.innerHTML = '<div class="loading">Could not load dishes. Please refresh.</div>';
+    g.innerHTML = '<div class="loading">Could not load. Please refresh.</div>';
   }
 }
 
@@ -688,19 +708,150 @@ function syncBrowseChrome() {
     document.getElementById('cats-view').style.display !== 'none';
   var searchVis = document.getElementById('search-view') &&
     document.getElementById('search-view').style.display !== 'none';
+  var browseVis = document.getElementById('dishes-view') &&
+    document.getElementById('dishes-view').style.display !== 'none';
   var titleEl = document.getElementById('recipes-home-title');
   var searchEl = document.getElementById('recipes-search-bar');
   if (searchVis) {
     if (titleEl) titleEl.style.display = 'none';
     if (searchEl) searchEl.style.display = '';
-  } else if (!catsVis) {
-    if (titleEl) titleEl.style.display = 'none';
-    if (searchEl) searchEl.style.display = 'none';
   } else {
-    if (titleEl) titleEl.style.display = '';
     if (searchEl) searchEl.style.display = '';
+    if (titleEl) titleEl.style.display = (catsVis || browseVis) ? '' : 'none';
   }
-  syncCommunityVisibility();
+  var sec = document.querySelector('.cr-section');
+  if (sec) sec.style.display = (catsVis && !searchVis) ? '' : 'none';
+}
+
+function updatePageHeader(title, showHomeSubtitle) {
+  var wrap = document.getElementById('recipes-home-title');
+  if (!wrap) return;
+  var h1 = wrap.querySelector('.cj-page-title');
+  var sub = wrap.querySelector('.cj-page-subtitle');
+  if (h1) h1.textContent = title;
+  if (sub) sub.style.display = showHomeSubtitle ? '' : 'none';
+}
+
+function setBrowseSectionLabel(text) {
+  var el = document.getElementById('browse-section-label');
+  if (!el) return;
+  if (text) { el.textContent = text; el.style.display = ''; }
+  else { el.textContent = ''; el.style.display = 'none'; }
+}
+
+function buildCategoryJumpTags(activeCategoryName) {
+  var row = document.getElementById('browse-cat-jump-row');
+  var el = document.getElementById('browse-cat-jump');
+  if (!row || !el) return;
+  var cats = (typeof TCJ_CATEGORY_NAMES !== 'undefined' && TCJ_CATEGORY_NAMES.length)
+    ? TCJ_CATEGORY_NAMES.slice()
+    : Object.keys(browseCatIdMap);
+  if (!cats.length) { row.style.display = 'none'; return; }
+  row.style.display = 'block';
+  var emojiMap = (typeof TCJ_CAT_EMOJI !== 'undefined') ? TCJ_CAT_EMOJI : {};
+  el.innerHTML = cats.map(function(name) {
+    var active = name === activeCategoryName ? ' active' : '';
+    var em = emojiMap[name] || '';
+    return '<button type="button" class="cr-filter' + active + '" data-cat="' +
+      name.replace(/"/g, '&quot;') + '">' + (em ? em + ' ' : '') + name + '</button>';
+  }).join('');
+  el.onclick = function(e) {
+    var btn = e.target.closest('.cr-filter');
+    if (!btn || !btn.dataset.cat) return;
+    var catName = btn.dataset.cat;
+    var catId = browseCatIdMap[catName];
+    if (catId) openCat(catId, catName);
+  };
+}
+
+function hideBrowseTaxonomyFilters() {
+  var taxRow = document.getElementById('browse-taxonomy-row');
+  if (taxRow) taxRow.style.display = 'none';
+}
+
+function renderBrowseSubFilterButtons(categoryName, activeSubName) {
+  var subs = getBrowseSubsForCategory(categoryName);
+  var html = '<button class="cr-filter' + (!activeSubName ? ' active' : '') + '" data-sub="" type="button">All</button>';
+  subs.forEach(function(s) {
+    var label = (typeof browseSubPillLabel === 'function') ? browseSubPillLabel(s.name) : s.name;
+    var titleAttr = label !== s.name ? ' title="' + s.name.replace(/"/g, '&quot;') + '"' : '';
+    html += '<button class="cr-filter' + (activeSubName === s.name ? ' active' : '') + '" data-sub="' +
+      s.name.replace(/"/g, '&quot;') + '" type="button"' + titleAttr + '>' + label + '</button>';
+  });
+  return html;
+}
+
+function showBrowseTaxonomyFilters(categoryName, subName, divName) {
+  var taxRow = document.getElementById('browse-taxonomy-row');
+  var divRow = document.getElementById('browse-division-row');
+  if (!taxRow) return;
+  taxRow.style.display = 'block';
+  var subEl = document.getElementById('browse-sub-filters');
+  if (subEl) subEl.innerHTML = renderBrowseSubFilterButtons(categoryName, subName || null);
+  if (subEl) {
+    subEl.onclick = function(e) {
+      var btn = e.target.closest('.cr-filter');
+      if (!btn) return;
+      var sub = btn.dataset.sub || '';
+      if (!sub) {
+        openCat(curCat, curCatName);
+        return;
+      }
+        if (!sub) {
+          openTaxonomySub(categoryName, sub);
+          return;
+        }
+        var row = browseTaxonomy.find(function(r) {
+          return r.subcategory_category === categoryName &&
+            r.subcategory_name === sub && r.division_name;
+        });
+        if (row) openTaxonomyDivision(row);
+        else openTaxonomySub(categoryName, sub);
+    };
+  }
+  if (divRow) divRow.style.display = 'block';
+  buildBrowseDivisionFilters(categoryName, subName, divName);
+}
+
+function buildBrowseDivisionFilters(categoryName, subName, activeDivName) {
+  var divEl = document.getElementById('browse-div-filters');
+  if (!divEl) return;
+  var divs = browseTaxonomy.filter(function(r) {
+    return r.subcategory_category === categoryName &&
+      r.subcategory_name === subName && r.division_name;
+  });
+  if (!divs.length) {
+    divEl.innerHTML = '';
+    return;
+  }
+  var html = '';
+  divs.forEach(function(r) {
+    var n = r.division_name;
+    html += '<button type="button" class="cr-filter' + (activeDivName === n ? ' active' : '') +
+      '" data-div="' + n.replace(/"/g, '&quot;') + '">' +
+      (r.division_emoji || '') + ' ' + n + '</button>';
+  });
+  divEl.innerHTML = html;
+  divEl.onclick = function(e) {
+    var btn = e.target.closest('.cr-filter');
+    if (!btn || !btn.dataset.div) return;
+    var row = browseTaxonomy.find(function(r) {
+      return r.subcategory_category === categoryName &&
+        r.subcategory_name === subName && r.division_name === btn.dataset.div;
+    });
+    if (row) openTaxonomyDivision(row);
+  };
+}
+
+function headerTitleForSub(categoryName, subName) {
+  var gardenMeta = (categoryName === 'Garden & Earth' && typeof getGardenSubMeta === 'function')
+    ? getGardenSubMeta(subName) : null;
+  return (gardenMeta && gardenMeta.emoji ? gardenMeta.emoji + ' ' : '') + subName;
+}
+
+function headerTitleForCategory(categoryName) {
+  var em = (typeof TCJ_CAT_EMOJI !== 'undefined' && TCJ_CAT_EMOJI[categoryName]) || '';
+  return (em ? em + ' ' : '') + categoryName;
 }
 
 function toggleCommunityFilters() {
@@ -845,49 +996,22 @@ function getBrowseSubsForCategory(categoryName) {
   });
 }
 
-function syncBrowseSubPill(subName) {
-  var subEl = document.getElementById('browse-sub-filters');
-  if (!subEl) return;
-  subEl.querySelectorAll('.cr-filter').forEach(function(b) {
-    b.classList.toggle('active', (b.dataset.sub || '') === (subName || ''));
-  });
-}
-
-function selectBrowseSubCategory(categoryName, subName) {
-  curSubFilter = subName || null;
-  curDivFilter = null;
-  syncBrowseSubPill(subName);
-  renderBrowseTaxonomyGrid(categoryName, curSubFilter);
-  setBc(categoryName, subName || null);
-}
-
-function renderBrowseTaxonomyGrid(categoryName, subName) {
-  renderBrowseCategoryHome(categoryName, curCatDbDishes || [], subName);
-}
-
-function renderBrowseCategoryHome(categoryName, dbDishes, subFilter) {
+function renderCategorySubGrid(categoryName, dbDishes) {
   var g = document.getElementById('dish-grid');
   g.className = 'tax-browse-root';
-  document.getElementById('dishes-lbl').textContent = categoryName;
-  setBrowseSubtitle('Pick a dish, then browse recipe styles.');
   show('dishes-view');
   hide('styles-view');
 
   var subs = getBrowseSubsForCategory(categoryName);
-  if (subFilter) {
-    subs = subs.filter(function(s) { return s.name === subFilter; });
-  }
   if (!subs.length && !(dbDishes && dbDishes.length)) {
     g.innerHTML = '<div class="empty-state"><div class="empty-icon">🍽</div>' +
-      '<div class="empty-title">No dishes found</div>' +
+      '<div class="empty-title">No sub-categories yet</div>' +
       '<div class="empty-desc">Check back soon</div></div>';
     return;
   }
 
-  var flatSubs = [];
   var html = '';
-
-  if (dbDishes && dbDishes.length && !subFilter) {
+  if (dbDishes && dbDishes.length) {
     html += '<div class="tax-part-block" id="tax-part-curated">';
     html += '<div class="tax-part-title tax-part-title--muted">🥬 Curated techniques</div>';
     html += '<div class="dish-grid">';
@@ -905,9 +1029,7 @@ function renderBrowseCategoryHome(categoryName, dbDishes, subFilter) {
 
   if (subs.length) {
     html += '<div class="tax-part-block"><div class="dish-grid">';
-    subs.forEach(function(s) {
-      var idx = flatSubs.length;
-      flatSubs.push(s);
+    subs.forEach(function(s, idx) {
       html += renderDishCardHtml({
         emoji: s.emoji,
         name: s.name,
@@ -920,44 +1042,24 @@ function renderBrowseCategoryHome(categoryName, dbDishes, subFilter) {
   }
 
   g.innerHTML = html;
-
   g.querySelectorAll('.dish-card[data-dish-id]').forEach(function(card) {
     card.addEventListener('click', function() { openDish(this.dataset.dishId, dbDishes); });
   });
   g.querySelectorAll('.dish-card[data-tax-sub-idx]').forEach(function(card) {
     card.addEventListener('click', function() {
       var idx = parseInt(this.dataset.taxSubIdx, 10);
-      if (!isNaN(idx) && flatSubs[idx]) openTaxonomySub(categoryName, flatSubs[idx].name);
+      if (!isNaN(idx) && subs[idx]) openTaxonomySub(categoryName, subs[idx].name);
     });
   });
 }
 
-function renderBrowseSubCategoryCards(categoryName) {
-  renderBrowseCategoryHome(categoryName, curCatDbDishes || [], curSubFilter);
-}
-
-function renderBrowseDivisionCards(categoryName, subName) {
-  openTaxonomySub(categoryName, subName);
-}
-
-function openTaxonomySub(categoryName, subName) {
-  if (!subName) {
-    renderBrowseCategoryHome(categoryName, curCatDbDishes || [], null);
-    return;
-  }
-  curDish = null;
-  curSubFilter = subName;
-  curDivFilter = null;
-  syncBrowseSubPill(subName);
-  hide('dishes-view');
-  document.getElementById('styles-lbl').textContent = subName;
-  setStylesSubtitle(categoryName + ' — regional styles and community recipes.');
+function renderSubCategoryDivisionGrid(categoryName, subName) {
+  var g = document.getElementById('dish-grid');
+  g.className = 'tax-browse-root';
   var divs = browseTaxonomy.filter(function(r) {
     return r.subcategory_category === categoryName &&
-      r.subcategory_name === subName &&
-      r.division_name;
+      r.subcategory_name === subName && r.division_name;
   });
-  var g = document.getElementById('styles-grid');
   if (!divs.length) {
     var gardenMeta = (categoryName === 'Garden & Earth' && typeof getGardenSubMeta === 'function')
       ? getGardenSubMeta(subName) : null;
@@ -965,90 +1067,64 @@ function openTaxonomySub(categoryName, subName) {
       ? gardenIngredientDisplay(gardenMeta) : '';
     g.innerHTML = '<div class="empty-state"><div class="empty-icon">' + (gardenMeta ? gardenMeta.emoji : '🍽') + '</div>' +
       '<div class="empty-title">' + subName + '</div>' +
-      '<div class="empty-desc">' + (gardenMeta ? (gardenMeta.tagline || '') : 'Styles and divisions coming soon.') +
+      '<div class="empty-desc">Divisions coming soon — recipes are organised by division.' +
       (hints ? '<br><br><span style="opacity:0.85">Ingredient focus: ' + hints + '</span>' : '') +
       '</div></div>';
-  } else {
-    g.innerHTML = divs.map(function(r) { return renderTaxonomyStyleCardHtml(r, true); }).join('');
-    g.querySelectorAll('.style-card[data-tax-div]').forEach(function(card, i) {
-      card.addEventListener('click', function() { openTaxonomyDivision(divs[i]); });
-    });
+    return;
   }
-  show('styles-view');
-  setBc(categoryName, subName);
-  syncBrowseChrome();
-  loadTaxonomySubCommunityRecipes(categoryName, subName);
+  g.innerHTML = '<div class="dish-grid">' +
+    divs.map(function(r) { return renderTaxonomyStyleCardHtml(r, true); }).join('') + '</div>';
+  g.querySelectorAll('.style-card[data-tax-div]').forEach(function(card, i) {
+    card.addEventListener('click', function() { openTaxonomyDivision(divs[i]); });
+  });
 }
 
-async function loadTaxonomySubCommunityRecipes(categoryName, subName) {
-  var wrap = document.getElementById('styles-view');
-  var prev = document.getElementById('dish-community-section');
-  if (prev) prev.remove();
-
-  var section = document.createElement('div');
-  section.id = 'dish-community-section';
-  section.style.marginTop = '28px';
-  var hdr = document.createElement('div');
-  hdr.style.cssText = 'font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);margin-bottom:12px';
-  hdr.textContent = 'Community Recipes';
-  section.appendChild(hdr);
-  var cardsGrid = document.createElement('div');
-  cardsGrid.id = 'dish-recipe-cards';
-  cardsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px';
-  cardsGrid.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading...</div>';
-  section.appendChild(cardsGrid);
-  if (wrap) wrap.appendChild(section);
-
-  try {
-    var res = await fetch(
-      SUPA_URL + '/rest/v1/rpc/get_approved_recipes',
-      { method:'POST', headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
-        body: JSON.stringify({
-          p_category: categoryName,
-          p_sub_category: subName || null,
-          p_division: null,
-          p_search: null,
-          p_limit: 48
-        }) }
-    );
-    var recipes = res.ok ? await res.json() : [];
-    if (!Array.isArray(recipes)) recipes = [];
-    renderCommunityRecipeCards(recipes, cardsGrid, categoryName);
-  } catch (e) {
-    var c = document.getElementById('dish-recipe-cards');
-    if (c) c.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)">Could not load community recipes.</div>';
+function openTaxonomySub(categoryName, subName) {
+  if (!subName) {
+    if (curCat && curCatName) openCat(curCat, curCatName);
+    return;
   }
+  curDish = null;
+  curSubFilter = subName;
+  curDivFilter = null;
+  browseLevel = 'subcategory';
+  hide('cats-view'); hide('styles-view'); hide('search-view');
+  show('dishes-view');
+  updatePageHeader(headerTitleForSub(categoryName, subName), false);
+  buildCategoryJumpTags(categoryName);
+  hideBrowseTaxonomyFilters();
+  setBrowseSectionLabel('Division');
+  setBc(categoryName, subName, null);
+  syncBrowseChrome();
+  renderSubCategoryDivisionGrid(categoryName, subName);
 }
 
 async function openTaxonomyDivision(row) {
   if (!row) return;
-  openTaxonomySub(row.subcategory_category || curCatName, row.subcategory_name || curSubFilter);
-  curDivFilter = row.division_name || null;
-  document.getElementById('styles-lbl').textContent = row.division_name;
-  setStylesSubtitle((row.subcategory_name || curCatName || '') +
-    (row.division_subtitle ? ' · ' + row.division_subtitle : ''));
-  setBc(curCatName, (row.subcategory_name || '') + ' · ' + row.division_name);
-  loadTaxonomyDivisionRecipes(curCatName, row.subcategory_name, row.division_name);
+  var categoryName = row.subcategory_category || curCatName;
+  var subName = row.subcategory_name || curSubFilter;
+  var divName = row.division_name;
+  curSubFilter = subName;
+  curDivFilter = divName;
+  browseLevel = 'division';
+  hide('cats-view'); hide('styles-view'); hide('search-view');
+  show('dishes-view');
+  updatePageHeader((row.division_emoji ? row.division_emoji + ' ' : '') + divName, false);
+  buildCategoryJumpTags(categoryName);
+  showBrowseTaxonomyFilters(categoryName, subName, divName);
+  setBrowseSectionLabel('Recipes');
+  setBc(categoryName, subName, divName);
+  syncBrowseChrome();
+  await loadTaxonomyDivisionRecipes(categoryName, subName, divName);
 }
 
 async function loadTaxonomyDivisionRecipes(categoryName, subName, divName) {
-  var wrap = document.getElementById('styles-view');
-  var prev = document.getElementById('dish-community-section');
-  if (prev) prev.remove();
-
-  var section = document.createElement('div');
-  section.id = 'dish-community-section';
-  section.style.marginTop = '28px';
-  var hdr = document.createElement('div');
-  hdr.style.cssText = 'font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-mid);margin-bottom:12px';
-  hdr.textContent = 'Community Recipes';
-  section.appendChild(hdr);
-  var cardsGrid = document.createElement('div');
-  cardsGrid.id = 'dish-recipe-cards';
-  cardsGrid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px';
-  cardsGrid.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading...</div>';
-  section.appendChild(cardsGrid);
-  if (wrap) wrap.appendChild(section);
+  var g = document.getElementById('dish-grid');
+  g.className = 'dish-grid';
+  g.style.display = 'grid';
+  g.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+  g.style.gap = '14px';
+  g.innerHTML = '<div class="loading" style="grid-column:1/-1"><div class="loading-spinner"></div><br>Loading recipes...</div>';
 
   try {
     var res = await fetch(
@@ -1064,16 +1140,9 @@ async function loadTaxonomyDivisionRecipes(categoryName, subName, divName) {
     );
     var recipes = res.ok ? await res.json() : [];
     if (!Array.isArray(recipes)) recipes = [];
-    renderCommunityRecipeCards(recipes, cardsGrid, categoryName);
+    renderCommunityRecipeCards(recipes, g, categoryName);
   } catch (e) {
-    var c = document.getElementById('dish-recipe-cards');
-    if (c) {
-      c.innerHTML = '';
-      var err = document.createElement('div');
-      err.style.cssText = 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)';
-      err.textContent = 'Could not load community recipes.';
-      c.appendChild(err);
-    }
+    g.innerHTML = '<div style="grid-column:1/-1;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)">Could not load recipes.</div>';
   }
 }
 
@@ -1145,13 +1214,17 @@ async function openDish(id, dishes) {
   const dish = dishes.find(d => d.id === id);
   if (!dish) return;
   curDish = dish;
+  browseLevel = 'division';
+  hide('cats-view');
   hide('dishes-view');
-  document.getElementById('styles-lbl').textContent = dish.name;
+  updatePageHeader((dish.emoji || '🍽') + ' ' + dish.name, false);
+  buildCategoryJumpTags(curCatName);
+  hideBrowseTaxonomyFilters();
+  setBrowseSectionLabel('Recipes');
   const g = document.getElementById('styles-grid');
   g.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Loading recipes...</div>';
   show('styles-view');
-  setBc(curCatName, dish.name);
-  setStylesSubtitle(curCatName + ' — regional styles and community recipes.');
+  setBc(curCatName, 'Curated techniques', dish.name);
   syncBrowseChrome();
 
   try {
@@ -1298,12 +1371,13 @@ function clearSearch() {
 // ══════════════════════════════════════════════════════════
 function goHome() {
   curCat=null; curCatName=null; curDish=null; curCatTaxonomyBrowse=false;
-  curCatDbDishes=[]; curSubFilter=null; curDivFilter=null;
+  curCatDbDishes=[]; curSubFilter=null; curDivFilter=null; browseLevel='home';
   show('cats-view'); hide('dishes-view'); hide('styles-view'); hide('search-view');
-  var taxRow = document.getElementById('browse-taxonomy-row');
-  if (taxRow) taxRow.style.display = 'none';
-  setBrowseSubtitle('');
-  setStylesSubtitle('');
+  hideBrowseTaxonomyFilters();
+  var catJump = document.getElementById('browse-cat-jump-row');
+  if (catJump) catJump.style.display = 'none';
+  setBrowseSectionLabel('');
+  updatePageHeader('📖 Recipes', true);
   document.getElementById('bc').style.display='none';
   syncBrowseChrome();
 }
@@ -1311,34 +1385,49 @@ function goHome() {
 function goToDishes() {
   if (!curCat || !curCatName) return;
   hide('styles-view');
-  syncBrowseChrome();
   if (curCatTaxonomyBrowse) {
-    if (curDivFilter && curSubFilter) {
-      curDivFilter = null;
+    if (browseLevel === 'division' && curSubFilter) {
       openTaxonomySub(curCatName, curSubFilter);
       return;
     }
-    show('dishes-view');
-    syncBrowseSubPill(curSubFilter);
-    renderBrowseTaxonomyGrid(curCatName, curSubFilter);
-    setBc(curCatName, curSubFilter || null);
+    if (curSubFilter) {
+      openTaxonomySub(curCatName, curSubFilter);
+      return;
+    }
+    openCat(curCat, curCatName);
     return;
   }
   openCat(curCat, curCatName);
 }
 
-function setBc(cat, dish) {
-  document.getElementById('bc').style.display='flex';
-  if (dish) {
-    document.getElementById('bccat').textContent=cat;
-    document.getElementById('bccat').style.display='inline';
-    document.getElementById('bcsep2').style.display='inline';
-    document.getElementById('bccur').textContent=dish;
-  } else {
-    document.getElementById('bccat').style.display='none';
-    document.getElementById('bcsep2').style.display='none';
-    document.getElementById('bccur').textContent=cat;
+function setBc(cat, sub, div) {
+  var bc = document.getElementById('bc');
+  if (!bc) return;
+  bc.style.display = 'flex';
+  bc.innerHTML = '';
+  function addSep() {
+    var s = document.createElement('span');
+    s.className = 'bc-sep';
+    s.textContent = '›';
+    bc.appendChild(s);
   }
+  function addItem(label, onClick, active) {
+    var span = document.createElement('span');
+    span.className = 'bc-item' + (active ? ' active' : '');
+    span.textContent = label;
+    if (onClick && !active) span.onclick = onClick;
+    bc.appendChild(span);
+  }
+  addItem('📖 Recipes', goHome, !cat);
+  if (!cat) return;
+  addSep();
+  addItem(cat, function() { openCat(browseCatIdMap[cat] || curCat, cat); }, !sub && !div);
+  if (!sub) return;
+  addSep();
+  addItem(sub, function() { openTaxonomySub(cat, sub); }, !div);
+  if (!div) return;
+  addSep();
+  addItem(div, null, true);
 }
 
 function show(id) { document.getElementById(id).style.display='block'; }
@@ -1436,71 +1525,6 @@ function browseAllergyWarnings(recipe) {
 async function loadBrowseTaxonomyCommunity() {
   if (browseTaxonomy.length) return;
   await loadBrowseTaxonomy();
-}
-
-function renderBrowseSubFilterButtons(categoryName, activeSubName) {
-  var subs = getBrowseSubsForCategory(categoryName);
-  var html = '<button class="cr-filter' + (!activeSubName ? ' active' : '') + '" data-sub="" type="button">All</button>';
-  subs.forEach(function(s) {
-    var label = (typeof browseSubPillLabel === 'function') ? browseSubPillLabel(s.name) : s.name;
-    var titleAttr = label !== s.name ? ' title="' + s.name.replace(/"/g, '&quot;') + '"' : '';
-    html += '<button class="cr-filter' + (activeSubName === s.name ? ' active' : '') + '" data-sub="' +
-      s.name.replace(/"/g, '&quot;') + '" type="button"' + titleAttr + '>' + label + '</button>';
-  });
-  return html;
-}
-
-function buildBrowseTaxonomyFilters(categoryName) {
-  var row = document.getElementById('browse-taxonomy-row');
-  var subEl = document.getElementById('browse-sub-filters');
-  var divRow = document.getElementById('browse-division-row');
-  var divEl = document.getElementById('browse-div-filters');
-  if (!row || !subEl) return;
-  var subs = [];
-  var seen = {};
-  browseTaxonomy.filter(function(r){ return r.subcategory_category === categoryName; }).forEach(function(r) {
-    if (r.subcategory_name && !seen[r.subcategory_name]) { seen[r.subcategory_name] = true; subs.push(r.subcategory_name); }
-  });
-  if (!subs.length) { row.style.display = 'none'; return; }
-  row.style.display = 'block';
-  subEl.innerHTML = renderBrowseSubFilterButtons(categoryName, curSubFilter || null);
-  if (divRow) divRow.style.display = 'none';
-  if (divEl) divEl.innerHTML = '';
-  subEl.onclick = function(e) {
-    var btn = e.target.closest('.cr-filter');
-    if (!btn) return;
-    subEl.querySelectorAll('.cr-filter').forEach(function(b){ b.classList.remove('active'); });
-    btn.classList.add('active');
-    curSubFilter = btn.dataset.sub || null;
-    curDivFilter = null;
-    if (curCatTaxonomyBrowse) {
-      if (divRow) divRow.style.display = 'none';
-      if (divEl) divEl.innerHTML = '';
-      renderBrowseTaxonomyGrid(categoryName, curSubFilter);
-      setBc(categoryName, curSubFilter || null);
-      return;
-    }
-    var divs = browseTaxonomy.filter(function(r){
-      return r.subcategory_category === categoryName && r.subcategory_name === curSubFilter && r.division_name;
-    });
-    if (divRow && divEl && divs.length) {
-      divRow.style.display = 'block';
-      divEl.innerHTML = '<button class="cr-filter active" data-div="" type="button">All</button>' +
-        divs.map(function(r){
-          var n = r.division_name;
-          return '<button class="cr-filter" data-div="'+n.replace(/"/g,'&quot;')+'" type="button">'+(r.division_emoji||'')+' '+n+'</button>';
-        }).join('');
-      divEl.onclick = function(ev) {
-        var db = ev.target.closest('.cr-filter');
-        if (!db) return;
-        divEl.querySelectorAll('.cr-filter').forEach(function(b){ b.classList.remove('active'); });
-        db.classList.add('active');
-        curDivFilter = db.dataset.div || null;
-        if (curDish) loadDishRecipes(curDish.name, curCatName);
-      };
-    } else if (divRow) divRow.style.display = 'none';
-    if (curDish) loadDishRecipes(curDish.name, curCatName);
-  };
 }
 
 function communityChefParams() {

@@ -1968,15 +1968,15 @@ async function loadRMTaxonomy(container) {
     container.innerHTML = '';
     function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
-    note.innerHTML = 'Manage sub-categories and divisions for recipe browse and submit. ' +
-      '<strong>Ingredient focus hints</strong> list what belongs in each sub when that ingredient is the star of the dish (not divisions). ' +
-      'Divisions are techniques/styles — Garden divisions coming soon.';
+    note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
+      'All approved recipes must have a sub-category <em>and</em> division. ' +
+      'Ingredient focus hints on subs guide classification — divisions hold the actual recipes.';
     container.appendChild(note);
 
     if (missing.length) {
       var bulk = mk('div', 'margin-bottom:24px;padding:16px;background:rgba(196,151,59,0.08);border:1px solid var(--accent);border-radius:12px');
       bulk.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:8px', 'Bulk backfill — missing taxonomy'));
-      bulk.appendChild(mk('div', 'font-size:12px;color:var(--text-mid);margin-bottom:12px;line-height:1.5', missing.length + ' approved recipe(s) lack sub-category or division. Select rows, pick taxonomy, then apply.'));
+      bulk.appendChild(mk('div', 'font-size:12px;color:var(--text-mid);margin-bottom:12px;line-height:1.5', missing.length + ' approved recipe(s) lack sub-category or division (recipes live in divisions). Select rows, pick both, then apply.'));
       var tbl = mk('table', 'width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px');
       tbl.innerHTML = '<thead><tr style="text-align:left;color:var(--text-mid)"><th style="padding:6px 8px;width:28px"></th><th style="padding:6px 8px">Recipe</th><th style="padding:6px 8px">Category</th><th style="padding:6px 8px">Current</th></tr></thead>';
       var tbody = mk('tbody');
@@ -2039,8 +2039,8 @@ async function loadRMTaxonomy(container) {
         if (!ids.length) { alert('Select at least one recipe.'); return; }
         var sub = subSel.value.trim();
         var div = divSel.value.trim();
-        if (!sub && !div) { alert('Choose a sub-category and/or division.'); return; }
-        rpc('admin_bulk_set_recipe_taxonomy', { p_recipe_ids: ids, p_sub_category: sub || null, p_division: div || null })
+        if (!sub || !div) { alert('Choose both sub-category and division — recipes are stored in divisions.'); return; }
+        rpc('admin_bulk_set_recipe_taxonomy', { p_recipe_ids: ids, p_sub_category: sub, p_division: div })
           .then(function(n) { alert('Updated ' + (n || 0) + ' recipe(s).'); loadRMTaxonomy(container); })
           .catch(function(e) { alert(e.message); });
       });
