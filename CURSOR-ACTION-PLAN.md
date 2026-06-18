@@ -25,9 +25,9 @@ Master checklist mapping Betty's external docs → **this repo's real schema**.
 | Item | Status |
 |------|--------|
 | Phase 1 SQL (`fix-taxonomy-archive-phase1.sql`) | Betty ran triggers ✅ |
-| Phase 1 JS (cache clear, merge fix, Remove) | **Live** on theculinaryjournal.site (`?v=20260619a` after next push) |
-| **Bulk Editor tab** | **Not built** — Phase 2 |
-| Export taxonomy JSON | Added in Taxonomy tab (v20260619a) |
+| Phase 1 JS (cache clear, merge fix, Remove) | **Live** — Taxonomy tab |
+| **Bulk Editor tab** | **Live after deploy** — run `fix-admin-bulk-recipes.sql` first |
+| Export taxonomy JSON + CSV | Taxonomy tab buttons |
 
 **How to confirm deploy:** Recipe Management → **⚙ RM Interface** → sidebar **Taxonomy** → intro line says **Taxonomy editor v20260619a** and gold **Export taxonomy (JSON)** button.
 

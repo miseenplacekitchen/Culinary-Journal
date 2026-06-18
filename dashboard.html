@@ -664,6 +664,7 @@
         <button class="ap-inner-tab"        data-tab="pending" onclick="switchRecipeTab('pending')">Pending <span class="ap-nav-badge" id="rtab-badge-pending" style="position:static;margin-left:4px">0</span></button>
         <button class="ap-inner-tab"        data-tab="approved" onclick="switchRecipeTab('approved')">Approved</button>
         <button class="ap-inner-tab"        data-tab="rejected" onclick="switchRecipeTab('rejected')">Rejected</button>
+        <button class="ap-inner-tab"        data-tab="bulkrecipes" onclick="switchRecipeTab('bulkrecipes')">Bulk Editor</button>
         <span class="rm-nav-sep" aria-hidden="true"></span>
         <button class="ap-inner-tab" data-tab="analytics" onclick="switchRecipeTab('analytics')">Analytics</button>
         <span class="rm-nav-sep" aria-hidden="true"></span>
@@ -701,6 +702,58 @@
           </table>
         </div>
         <div id="rmgmt-pagination" style="display:none;align-items:center;justify-content:center;gap:8px;margin-top:14px"></div>
+      </div>
+      <div id="rmgmt-bulkrecipes-panel" style="display:none;padding:4px 0 20px">
+        <p style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin:0 0 14px;line-height:1.55">
+          Full recipe management — taxonomy, cooking style, visibility, RM# codes. Click a cell to edit. Run <code>database/sql/fix-admin-bulk-recipes.sql</code> once if the table shows an RPC error.
+        </p>
+        <div class="rm-list-toolbar" style="margin-bottom:12px">
+          <input type="text" class="ap-search" id="bulk-recipe-search" placeholder="Search name or RM#…" style="flex:1;min-width:160px;max-width:280px">
+          <select id="bulk-category-filter" class="ing-cat-filter" title="Filter by category">
+            <option value="">All categories</option>
+          </select>
+          <select id="bulk-status-filter" class="ing-cat-filter" title="Filter by status">
+            <option value="">All statuses</option>
+            <option value="approved">Approved</option>
+            <option value="pending">Pending</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <button type="button" class="rm-agent-btn-bulk" onclick="exportBulkRecipes('csv')">Export CSV</button>
+          <button type="button" class="rm-bulk-approve-btn" onclick="generateRecipeCodes()">Generate RM#</button>
+        </div>
+        <div id="bulk-actions-bar" style="display:none;gap:8px;margin-bottom:12px;padding:12px;background:rgba(196,151,59,0.08);border:1px solid var(--accent);border-radius:8px;flex-wrap:wrap;align-items:center">
+          <span style="font-size:12px;font-weight:600;color:var(--accent)" id="bulk-selected-count">0 selected</span>
+          <select id="bulk-action-select" class="ing-cat-filter" style="min-width:160px">
+            <option value="">Bulk action…</option>
+            <option value="show">Show on website (Public)</option>
+            <option value="hide">Hide from website (Private)</option>
+            <option value="approved">Set status: Approved</option>
+            <option value="pending">Set status: Pending</option>
+            <option value="rejected">Set status: Rejected</option>
+          </select>
+          <button type="button" class="rm-bulk-approve-btn" onclick="executeBulkRecipeAction()">Apply</button>
+          <button type="button" class="rm-quick-btn reject" onclick="clearBulkRecipeSelection()">Clear</button>
+        </div>
+        <div class="ap-table-wrap">
+          <table class="ap-table" id="bulk-recipes-table">
+            <thead>
+              <tr>
+                <th style="width:36px"><input type="checkbox" id="bulk-select-all" onchange="toggleBulkSelectAll(this)"></th>
+                <th class="bulk-sort-th" data-sort="recipe_code" style="cursor:pointer">RM#</th>
+                <th class="bulk-sort-th" data-sort="recipe_name" style="cursor:pointer">Recipe</th>
+                <th class="bulk-sort-th" data-sort="category" style="cursor:pointer">Category</th>
+                <th class="bulk-sort-th" data-sort="sub_category" style="cursor:pointer">Sub-category</th>
+                <th class="bulk-sort-th" data-sort="division" style="cursor:pointer">Division</th>
+                <th class="bulk-sort-th" data-sort="cooking_style" style="cursor:pointer">Cooking</th>
+                <th>Tags</th>
+                <th class="bulk-sort-th" data-sort="visibility" style="cursor:pointer">Visible</th>
+                <th class="bulk-sort-th" data-sort="status" style="cursor:pointer">Status</th>
+              </tr>
+            </thead>
+            <tbody id="bulk-recipes-tbody"><tr><td colspan="10" class="ap-empty-row">Open this tab to load recipes…</td></tr></tbody>
+          </table>
+        </div>
+        <div id="bulk-pagination" style="display:none;align-items:center;justify-content:center;gap:8px;margin-top:14px"></div>
       </div>
       <div id="rmgmt-analytics-panel" style="display:none">
         <div class="ap-stats" style="margin-bottom:24px">
@@ -1362,7 +1415,7 @@
   <script src="lib/tcj-sub-taxonomy.js"></script>
   <script src="lib/admin-recipe-utils.js?v=20260705"></script>
   <script src="lib/dashboard-agent-review.js?v=20260623"></script>
-  <script src="dashboard-recipes.js?v=20260619a"></script>
+  <script src="dashboard-recipes.js?v=20260619b"></script>
   <script src="dashboard-users.js?v=20260616"></script>
   <script src="dashboard-ingredients.js?v=20260616"></script>
   <script src="lib/dashboard-im-interface.js?v=20260713"></script>

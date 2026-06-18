@@ -46,7 +46,9 @@ function switchRecipeTab(tab) {
   var opsPanel  = document.getElementById('rmgmt-ops-panel');
   var setPanel  = document.getElementById('rmgmt-rmsettings-panel');
   var extPanel  = document.getElementById('rmgmt-extra-panel');
+  var bulkPanel = document.getElementById('rmgmt-bulkrecipes-panel');
   if (listPanel) listPanel.style.display = _RM_LIST_TABS.indexOf(tab) !== -1 ? 'block' : 'none';
+  if (bulkPanel) bulkPanel.style.display = tab === 'bulkrecipes' ? 'block' : 'none';
   if (_RM_LIST_TABS.indexOf(tab) !== -1) ensureRmCatFilter();
   if (anaPanel)  anaPanel.style.display  = tab === 'analytics' ? 'block' : 'none';
   if (opsPanel)  opsPanel.style.display  = 'none';
@@ -68,6 +70,7 @@ function switchRecipeTab(tab) {
     return;
   }
   if (tab === 'notes') { loadRecipeNotes(); return; }
+  if (tab === 'bulkrecipes') { loadBulkRecipesTab(); return; }
   loadRecipeMgmt(tab);
 }
 
@@ -2078,6 +2081,31 @@ function rmTaxExportTaxonomyJson(rows, catNames) {
   window.URL.revokeObjectURL(url);
 }
 
+function rmTaxExportTaxonomyCsv(rows) {
+  var headers = ['Category', 'Sub-category', 'Division', 'Sub emoji', 'Sub tagline', 'Division subtitle'];
+  var lines = [headers.map(function(h) { return '"' + h + '"'; }).join(',')];
+  (rows || []).forEach(function(r) {
+    if (!r.subcategory_name) return;
+    lines.push([
+      r.subcategory_category || '',
+      r.subcategory_name || '',
+      r.division_name || '',
+      r.subcategory_emoji || '',
+      r.subcategory_tagline || '',
+      r.division_subtitle || ''
+    ].map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','));
+  });
+  var blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  var url = window.URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'taxonomy-' + new Date().toISOString().split('T')[0] + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
+
 function rmTaxMergeSubs(cat, subsMap, opts) {
   opts = opts || {};
   var bookFillMissing = opts.bookFillMissing !== false;
@@ -2138,7 +2166,7 @@ async function loadRMTaxonomy(container) {
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'Edit names, descriptions, and ingredient hints here — changes save to the database and appear on the public browse page. ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260619a</span> — red <strong>Remove</strong> on each sub row. Bulk Editor tab is Phase 2 (not built yet). ' +
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260619b</span> — red <strong>Remove</strong> on each sub row. Renaming a sub/division updates matching recipes automatically (after bulk SQL). ' +
       '<br><br><strong>Paste book hints</strong> fills the ingredient box with the original list from the taxonomy book (you still click <em>Save sub-category</em> to store it). ' +
       '<strong>Sync from book</strong> re-creates book subs (avoid after removing one you want gone).';
     container.appendChild(note);
@@ -2149,6 +2177,11 @@ async function loadRMTaxonomy(container) {
       rmTaxExportTaxonomyJson(rows, null);
     });
     exportRow.appendChild(exportJsonBtn);
+    var exportCsvBtn = mk('button', 'padding:8px 16px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Export taxonomy (CSV)');
+    exportCsvBtn.addEventListener('click', function() {
+      rmTaxExportTaxonomyCsv(rows);
+    });
+    exportRow.appendChild(exportCsvBtn);
     container.appendChild(exportRow);
 
     if (taxonomyRpcError) {
@@ -2577,4 +2610,357 @@ async function loadRMTaxonomy(container) {
   } catch (e) {
     container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
   }
+}
+
+// ── Recipe Bulk Editor (Phase 2) ─────────────────────────────────────────────
+var _bulkRecipes = [];
+var _bulkRecipesTotal = 0;
+var _bulkPage = 1;
+var _BULK_PAGE_SIZE = 50;
+var _bulkSort = { column: 'recipe_name', direction: 'asc' };
+var _bulkSelected = new Set();
+var _bulkEditorReady = false;
+var _RM_BULK_CATS = ['Garden & Earth','Feather & Flock','Pasture & Hoof','Ocean & River',
+  'The Grain Field','Wrapped & Stuffed','Curds, Creams & Eggs','Breads & Bakery',
+  'Sweet Serenades','Sips & Stories','Preserved & Pantry'];
+
+function bulkTagsLabel(r) {
+  var parts = [];
+  (r.dietary_tags || []).slice(0, 3).forEach(function(t) { parts.push(t); });
+  if ((r.dietary_tags || []).length > 3) parts.push('+' + ((r.dietary_tags || []).length - 3));
+  return parts.join(', ') || '—';
+}
+
+function initBulkEditorFilters() {
+  var catSel = document.getElementById('bulk-category-filter');
+  if (catSel && catSel.dataset.init !== '1') {
+    catSel.dataset.init = '1';
+    var cats = (typeof getRecipeCats === 'function') ? getRecipeCats() : _RM_BULK_CATS;
+    cats.forEach(function(c) {
+      var o = document.createElement('option');
+      o.value = c; o.textContent = c;
+      catSel.appendChild(o);
+    });
+  }
+  if (!_bulkEditorReady) {
+    _bulkEditorReady = true;
+    var search = document.getElementById('bulk-recipe-search');
+    if (search) {
+      var t;
+      search.addEventListener('input', function() {
+        clearTimeout(t);
+        t = setTimeout(function() { _bulkPage = 1; loadBulkRecipes(); }, 300);
+      });
+    }
+    ['bulk-category-filter', 'bulk-status-filter'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('change', function() { _bulkPage = 1; loadBulkRecipes(); });
+    });
+    document.querySelectorAll('.bulk-sort-th').forEach(function(th) {
+      th.addEventListener('click', function() {
+        var col = th.dataset.sort;
+        if (!col) return;
+        if (_bulkSort.column === col) {
+          _bulkSort.direction = _bulkSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+          _bulkSort.column = col;
+          _bulkSort.direction = 'asc';
+        }
+        sortBulkRecipesClient();
+        renderBulkRecipesTable();
+      });
+    });
+  }
+}
+
+function loadBulkRecipesTab() {
+  initBulkEditorFilters();
+  loadBulkRecipes();
+}
+
+async function loadBulkRecipes() {
+  var tbody = document.getElementById('bulk-recipes-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="10" class="ap-empty-row">Loading…</td></tr>';
+  try {
+    var search = (document.getElementById('bulk-recipe-search') || {}).value || '';
+    var cat = (document.getElementById('bulk-category-filter') || {}).value || '';
+    var status = (document.getElementById('bulk-status-filter') || {}).value || '';
+    var result = await rpc('admin_get_recipes_bulk', {
+      p_limit: _BULK_PAGE_SIZE,
+      p_offset: (_bulkPage - 1) * _BULK_PAGE_SIZE,
+      p_search: search.trim() || null,
+      p_category: cat || null,
+      p_status: status || null
+    });
+    if (!result || typeof result === 'string') {
+      try { result = JSON.parse(result); } catch (e) { /* keep */ }
+    }
+    _bulkRecipes = (result && result.rows) ? result.rows : [];
+    _bulkRecipesTotal = (result && result.total) ? parseInt(result.total, 10) : _bulkRecipes.length;
+    sortBulkRecipesClient();
+    renderBulkRecipesTable();
+    renderBulkRecipePagination();
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="10" class="ap-empty-row" style="color:#dc5050">Bulk editor RPC failed: ' +
+      esc(err.message || err) + '. Run database/sql/fix-admin-bulk-recipes.sql in Supabase.</td></tr>';
+  }
+}
+
+function sortBulkRecipesClient() {
+  var col = _bulkSort.column;
+  var dir = _bulkSort.direction === 'asc' ? 1 : -1;
+  _bulkRecipes.sort(function(a, b) {
+    var av = (a[col] == null ? '' : String(a[col])).toLowerCase();
+    var bv = (b[col] == null ? '' : String(b[col])).toLowerCase();
+    if (av < bv) return -1 * dir;
+    if (av > bv) return 1 * dir;
+    return 0;
+  });
+}
+
+function renderBulkRecipesTable() {
+  var tbody = document.getElementById('bulk-recipes-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  if (!_bulkRecipes.length) {
+    tbody.innerHTML = '<tr><td colspan="10" class="ap-empty-row">No recipes match your filters.</td></tr>';
+    return;
+  }
+  _bulkRecipes.forEach(function(r) {
+    var tr = document.createElement('tr');
+    tr.dataset.recipeId = r.id;
+    tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
+
+    var tdChk = document.createElement('td');
+    tdChk.className = 'ap-td';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = _bulkSelected.has(r.id);
+    cb.addEventListener('change', function() {
+      if (cb.checked) _bulkSelected.add(r.id); else _bulkSelected.delete(r.id);
+      updateBulkActionBar();
+    });
+    tdChk.appendChild(cb);
+    tr.appendChild(tdChk);
+
+    tr.appendChild(bulkMakeCell(r, 'recipe_code', r.recipe_code || '—', !r.recipe_code));
+    tr.appendChild(bulkMakeCell(r, 'recipe_name', r.recipe_name || '', false));
+    tr.appendChild(bulkMakeCell(r, 'category', r.category || '—', false, 'select', _RM_BULK_CATS));
+    tr.appendChild(bulkMakeCell(r, 'sub_category', r.sub_category || '—', false));
+    tr.appendChild(bulkMakeCell(r, 'division', r.division || '—', false));
+    tr.appendChild(bulkMakeCell(r, 'cooking_style', r.cooking_style || '—', false));
+
+    var tdTags = document.createElement('td');
+    tdTags.className = 'ap-td';
+    tdTags.style.fontSize = '11px';
+    tdTags.style.color = 'var(--text-mid)';
+    tdTags.textContent = bulkTagsLabel(r);
+    tr.appendChild(tdTags);
+
+    var tdVis = document.createElement('td');
+    tdVis.className = 'ap-td';
+    var visCb = document.createElement('input');
+    visCb.type = 'checkbox';
+    visCb.checked = (r.visibility || 'Public') === 'Public';
+    visCb.title = 'Public = visible on site when approved';
+    visCb.addEventListener('change', function() {
+      var vis = visCb.checked ? 'Public' : 'Private';
+      rpc('admin_update_recipe_field', { p_id: r.id, p_field: 'visibility', p_value: vis })
+        .then(function() { r.visibility = vis; })
+        .catch(function(e) { alert(e.message); visCb.checked = !visCb.checked; });
+    });
+    tdVis.appendChild(visCb);
+    tr.appendChild(tdVis);
+
+    tr.appendChild(bulkMakeCell(r, 'status', r.status || 'pending', false, 'select', ['pending', 'approved', 'rejected']));
+    tbody.appendChild(tr);
+  });
+  updateBulkActionBar();
+}
+
+function bulkMakeCell(recipe, field, display, warn, type, options) {
+  var td = document.createElement('td');
+  td.className = 'ap-td';
+  td.style.cursor = 'pointer';
+  td.style.fontSize = '12px';
+  if (warn) td.style.color = '#dc5050';
+  td.textContent = display;
+  td.addEventListener('click', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    e.stopPropagation();
+    bulkStartEdit(td, recipe, field, type || 'text', options);
+  });
+  return td;
+}
+
+function bulkStartEdit(td, recipe, field, type, options) {
+  var original = td.textContent;
+  var origVal = recipe[field] || '';
+  if (type === 'select') {
+    var sel = document.createElement('select');
+    sel.style.cssText = 'width:100%;padding:4px 6px;background:var(--bg);border:1px solid var(--accent);border-radius:4px;font-size:12px;color:var(--text-high)';
+    (options || []).forEach(function(opt) {
+      var o = document.createElement('option');
+      o.value = opt; o.textContent = opt;
+      o.selected = opt === origVal;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', function() { sel.blur(); });
+    sel.addEventListener('blur', function() {
+      var nv = sel.value;
+      if (nv === origVal) { td.textContent = original; return; }
+      rpc('admin_update_recipe_field', { p_id: recipe.id, p_field: field, p_value: nv })
+        .then(function() { recipe[field] = nv; td.textContent = nv || '—'; td.style.color = ''; })
+        .catch(function(e) { alert(e.message); td.textContent = original; });
+    });
+    td.textContent = '';
+    td.appendChild(sel);
+    sel.focus();
+    return;
+  }
+  var inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = origVal === '—' ? '' : origVal;
+  inp.style.cssText = 'width:100%;padding:4px 6px;background:var(--bg);border:1px solid var(--accent);border-radius:4px;font-size:12px;color:var(--text-high)';
+  inp.addEventListener('blur', function() {
+    var nv = inp.value.trim();
+    if (nv === (origVal || '') || (nv === '' && origVal === '—')) { td.textContent = original; return; }
+    rpc('admin_update_recipe_field', { p_id: recipe.id, p_field: field, p_value: nv })
+      .then(function() {
+        recipe[field] = nv;
+        td.textContent = nv || '—';
+        if (field === 'recipe_code' && nv) td.style.color = '';
+      })
+      .catch(function(e) { alert(e.message); td.textContent = original; });
+  });
+  inp.addEventListener('keydown', function(ev) {
+    if (ev.key === 'Enter') inp.blur();
+    if (ev.key === 'Escape') { td.textContent = original; }
+  });
+  td.textContent = '';
+  td.appendChild(inp);
+  inp.focus();
+  inp.select();
+}
+
+function updateBulkActionBar() {
+  var bar = document.getElementById('bulk-actions-bar');
+  var count = document.getElementById('bulk-selected-count');
+  if (!bar) return;
+  if (_bulkSelected.size > 0) {
+    bar.style.display = 'flex';
+    if (count) count.textContent = _bulkSelected.size + ' selected';
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function toggleBulkSelectAll(checkbox) {
+  var tbody = document.getElementById('bulk-recipes-tbody');
+  if (!tbody) return;
+  tbody.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+    if (cb.id === 'bulk-select-all') return;
+    cb.checked = checkbox.checked;
+    var tr = cb.closest('tr');
+    var id = tr && tr.dataset.recipeId;
+    if (!id) return;
+    if (checkbox.checked) _bulkSelected.add(id); else _bulkSelected.delete(id);
+  });
+  updateBulkActionBar();
+}
+
+function clearBulkRecipeSelection() {
+  _bulkSelected.clear();
+  var all = document.getElementById('bulk-select-all');
+  if (all) all.checked = false;
+  var tbody = document.getElementById('bulk-recipes-tbody');
+  if (tbody) tbody.querySelectorAll('input[type="checkbox"]').forEach(function(cb) { cb.checked = false; });
+  updateBulkActionBar();
+}
+
+async function executeBulkRecipeAction() {
+  var action = (document.getElementById('bulk-action-select') || {}).value;
+  if (!action || !_bulkSelected.size) return;
+  var ids = Array.from(_bulkSelected);
+  try {
+    if (action === 'show') {
+      await rpc('admin_bulk_update_recipe_visibility', { p_recipe_ids: ids, p_visibility: 'Public' });
+    } else if (action === 'hide') {
+      await rpc('admin_bulk_update_recipe_visibility', { p_recipe_ids: ids, p_visibility: 'Private' });
+    } else {
+      var chain = Promise.resolve();
+      ids.forEach(function(id) {
+        chain = chain.then(function() {
+          return rpc('admin_update_recipe_field', { p_id: id, p_field: 'status', p_value: action });
+        });
+      });
+      await chain;
+    }
+    alert('Updated ' + ids.length + ' recipe(s).');
+    clearBulkRecipeSelection();
+    loadBulkRecipes();
+  } catch (e) {
+    alert(e.message || e);
+  }
+}
+
+async function generateRecipeCodes() {
+  if (!confirm('Generate RM# codes for recipes missing them?')) return;
+  try {
+    var result = await rpc('admin_generate_recipe_codes', { p_batch_size: 500 });
+    if (typeof result === 'string') { try { result = JSON.parse(result); } catch (e) {} }
+    alert('Generated ' + ((result && result.generated_count) || 0) + ' code(s). ' +
+      ((result && result.total_missing) || 0) + ' still missing.');
+    loadBulkRecipes();
+  } catch (e) {
+    alert(e.message || e);
+  }
+}
+
+function exportBulkRecipes(format) {
+  if (format !== 'csv') return;
+  var headers = ['RM#', 'Recipe', 'Category', 'Sub-category', 'Division', 'Cooking', 'Visibility', 'Status', 'Dietary tags'];
+  var lines = [headers.map(function(h) { return '"' + h + '"'; }).join(',')];
+  _bulkRecipes.forEach(function(r) {
+    lines.push([
+      r.recipe_code || '',
+      r.recipe_name || '',
+      r.category || '',
+      r.sub_category || '',
+      r.division || '',
+      r.cooking_style || '',
+      r.visibility || '',
+      r.status || '',
+      (r.dietary_tags || []).join('; ')
+    ].map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','));
+  });
+  var blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  var url = window.URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'recipes-bulk-' + new Date().toISOString().split('T')[0] + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
+
+function renderBulkRecipePagination() {
+  var el = document.getElementById('bulk-pagination');
+  if (!el) return;
+  var totalPages = Math.max(1, Math.ceil(_bulkRecipesTotal / _BULK_PAGE_SIZE));
+  if (_bulkRecipesTotal <= _BULK_PAGE_SIZE) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.innerHTML =
+    '<button type="button" class="ap-pg-btn" ' + (_bulkPage <= 1 ? 'disabled' : '') + ' data-bulk-pg="prev">Prev</button>' +
+    '<span style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);padding:0 12px">Page ' +
+    _bulkPage + ' of ' + totalPages + ' (' + _bulkRecipesTotal + ' recipes)</span>' +
+    '<button type="button" class="ap-pg-btn" ' + (_bulkPage >= totalPages ? 'disabled' : '') + ' data-bulk-pg="next">Next</button>';
+  el.querySelectorAll('[data-bulk-pg]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (btn.dataset.bulkPg === 'prev' && _bulkPage > 1) { _bulkPage--; loadBulkRecipes(); }
+      if (btn.dataset.bulkPg === 'next' && _bulkPage < totalPages) { _bulkPage++; loadBulkRecipes(); }
+    });
+  });
 }

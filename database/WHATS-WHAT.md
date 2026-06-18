@@ -14,6 +14,7 @@ Run each file **once** in Supabase SQL Editor, in this order:
 | 2 | `sql/fix-category-cleanup-v3.sql` | Tags, baby browse, Stripe idempotency |
 | 3 | `sql/fix-admin-taxonomy-editor.sql` | **Browse + admin RPCs** (run before editing taxonomy in dashboard) |
 | 3b | `sql/fix-taxonomy-archive-phase1.sql` | **Phase 1 critical path** — indexes, delete guards, deactivate RPCs (see `CURSOR-ACTION-PLAN.md`) |
+| 3c | `sql/fix-admin-bulk-recipes.sql` | **Bulk Editor** — RM# codes, inline edit RPCs, cascade renames |
 | 4 | `sql/fix-garden-taxonomy-v2.sql` | Garden A1–A13 |
 | 5b | `sql/fix-feather-pasture-b8-c8.sql` | Once — Feather B8 + Pasture C8 offal subs (incremental; safe after you added subs in admin) |
 | 5 | `sql/fix-feather-pasture-taxonomy.sql` | Feather B + Pasture C (full seed — only on fresh DB) |
