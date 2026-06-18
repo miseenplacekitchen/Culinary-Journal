@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Health-focused and dietary-specific recipes — vegan, gluten-free, low-GI, recovery foods, and gentle flavours.">
+  <link rel="canonical" href="https://theculinaryjournal.site/nourish-heal.html">
+  <title>Nourish &amp; Heal — The Culinary Journal</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="lib/tcj-discovery-hubs.js"></script>
+  <script src="seo-schema.js"></script>
+  <style>
+    .page-bg { min-height:100vh; background:var(--bg); }
+    .nh-wrap { max-width:1040px; margin:0 auto; padding:32px 20px 80px; }
+    .nh-title { font-family:'Cormorant Garamond',serif; font-size:1.9rem; font-weight:700; color:var(--text-high); }
+    .nh-sub { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); margin:6px 0 20px; line-height:1.6; max-width:720px; }
+    .nh-filters { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:22px; }
+    .nh-filter {
+      font-family:'DM Sans',sans-serif; font-size:12px; padding:8px 14px; border-radius:20px;
+      border:1px solid var(--border); background:var(--text-ghost); color:var(--text-mid); cursor:pointer;
+    }
+    .nh-filter.active { border-color:var(--accent-border); color:var(--accent); background:rgb(from var(--accent) r g b / 0.08); }
+    .nh-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; }
+    .nh-card {
+      background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; overflow:hidden;
+      text-decoration:none; display:block; transition:transform .15s, border-color .15s;
+    }
+    .nh-card:hover { transform:translateY(-2px); border-color:var(--accent-border); }
+    .nh-img { height:110px; display:flex; align-items:center; justify-content:center; font-size:28px; border-bottom:1px solid var(--border); overflow:hidden; }
+    .nh-img img { width:100%; height:100%; object-fit:cover; }
+    .nh-body { padding:10px 12px; }
+    .nh-name { font-family:'Cormorant Garamond',serif; font-size:.95rem; font-weight:600; color:var(--text-high); margin-bottom:4px; }
+    .nh-meta { font-family:'DM Sans',sans-serif; font-size:10px; color:var(--text-mid); }
+    .nh-tags { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+    .nh-tag { font-size:9px; padding:2px 6px; border-radius:4px; border:1px solid var(--border); color:var(--text-mid); }
+    .nh-empty { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text-mid); padding:24px 0; }
+    .nh-note {
+      margin:0 0 18px; padding:12px 14px; border-radius:10px; border:1px solid rgb(from var(--accent) r g b / 0.25);
+      background:rgb(from var(--accent) r g b / 0.06); font-family:'DM Sans',sans-serif; font-size:12px; color:var(--text-mid); line-height:1.5;
+    }
+  </style>
+  <script src="page-guard.js"></script>
+</head>
+<body class="page-bg cj-body">
+<div data-nav-host></div>
+<div class="nh-wrap">
+  <h1 class="nh-title">💚 Nourish &amp; Heal</h1>
+  <p class="nh-sub">Health-focused and dietary-specific recipes — not a main book category, but a dedicated lane for vegan, gluten-free, low-GI, recovery foods, and gentle flavours. Pick a filter or browse everything tagged for wellness.</p>
+  <p class="nh-note">Recipes live under the 12 main categories (Garden &amp; Earth, Grains &amp; Comfort, etc.). This page gathers those with <strong>Health</strong> or <strong>Dietary</strong> tags from submit — open any recipe for full ingredient and allergen detail.</p>
+  <div class="nh-filters" id="nh-filters"></div>
+  <div class="nh-grid" id="nh-grid"><div class="nh-empty">Loading…</div></div>
+</div>
+<script src="nav-init.js"></script>
+<script>
+var activeTag = null;
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function loadRecipes(tag) {
+  var grid = document.getElementById('nh-grid');
+  grid.innerHTML = '<div class="nh-empty">Loading recipes…</div>';
+  try {
+    var res = await fetch(SUPA_URL + '/rest/v1/rpc/get_recipes_by_wellness', {
+      method: 'POST',
+      headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_tag: tag || null, p_limit: 48, p_offset: 0 })
+    });
+    if (!res.ok) throw new Error('RPC failed');
+    var rows = await res.json();
+    if (!rows || !rows.length) {
+      grid.innerHTML = '<div class="nh-empty">No wellness-tagged recipes yet. Submit a recipe with Health or Dietary tags, or ask admin to tag existing ones.</div>';
+      return;
+    }
+    grid.innerHTML = rows.map(function(r) {
+      var emoji = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Little Ones':'👶'}[r.category] || '🍳';
+      var tags = [].concat(r.health_tags || [], r.dietary_tags || []).slice(0, 3);
+      return '<a class="nh-card" href="recipe-page.html?id=' + r.id + '">' +
+        '<div class="nh-img">' + (r.image_url ? '<img src="' + esc(r.image_url) + '" loading="lazy" alt="">' : emoji) + '</div>' +
+        '<div class="nh-body"><div class="nh-name">' + esc(r.recipe_name) + '</div>' +
+        '<div class="nh-meta">' + esc(r.category || '') + (r.origin_country ? ' · ' + esc(r.origin_country) : '') + '</div>' +
+        (tags.length ? '<div class="nh-tags">' + tags.map(function(t){ return '<span class="nh-tag">' + esc(t) + '</span>'; }).join('') + '</div>' : '') +
+        '</div></a>';
+    }).join('');
+  } catch (e) {
+    console.warn('nourish-heal', e);
+    grid.innerHTML = '<div class="nh-empty">Could not load recipes. Run <code>fix-recipe-discovery-rpcs.sql</code> in Supabase if this is a new deploy.</div>';
+  }
+}
+
+function renderFilters() {
+  var box = document.getElementById('nh-filters');
+  var filters = typeof TCJ_WELLNESS_FILTERS !== 'undefined' ? TCJ_WELLNESS_FILTERS : [{ id: 'all', label: 'All wellness', emoji: '💚' }];
+  box.innerHTML = filters.map(function(f) {
+    var tag = f.id === 'all' ? null : f.id;
+    var on = (tag === activeTag) || (!tag && !activeTag);
+    return '<button type="button" class="nh-filter' + (on ? ' active' : '') + '" data-tag="' + esc(tag || '') + '">' +
+      (f.emoji ? f.emoji + ' ' : '') + esc(f.label) + '</button>';
+  }).join('');
+  box.querySelectorAll('.nh-filter').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      activeTag = btn.dataset.tag || null;
+      renderFilters();
+      loadRecipes(activeTag);
+    });
+  });
+}
+
+renderFilters();
+loadRecipes(null);
+if (typeof SeoSchema !== 'undefined') {
+  SeoSchema.webPage('Nourish & Heal', 'Health-focused and dietary-specific recipes.', 'https://www.theculinaryjournal.site/nourish-heal.html');
+}
+</script>
+</body>
+</html>

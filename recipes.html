@@ -26,6 +26,8 @@
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
+  <script src="lib/tcj-category-copy.js"></script>
+  <script src="lib/tcj-discovery-hubs.js"></script>
   <style>
     .recipes-shell { max-width: 1100px; margin: 0 auto; padding: 0 24px 48px; }
     @media (max-width: 768px) { .recipes-shell { padding: 0 16px 40px; } }
@@ -126,6 +128,15 @@
       font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700; letter-spacing:.1em;
       text-transform:uppercase; color:var(--text-mid); margin:24px 0 14px;
     }
+    .hub-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; padding:0 0 28px; }
+    .hub-card {
+      background:var(--text-ghost); border:1px solid var(--border); border-radius:12px; padding:18px;
+      text-decoration:none; display:block; transition:border-color .15s, transform .15s;
+    }
+    .hub-card:hover { border-color:var(--accent-border); transform:translateY(-2px); }
+    .hub-emoji { font-size:28px; margin-bottom:8px; }
+    .hub-name { font-family:'Cormorant Garamond',serif; font-size:1.05rem; font-weight:600; color:var(--text-high); }
+    .hub-desc { font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); margin-top:6px; line-height:1.45; }
     .recipes-shell .breadcrumb {
       padding:10px 0 6px; background:none; border-bottom:none; margin:0;
     }
@@ -232,9 +243,11 @@
 
   <div id="cats-view">
     <p class="recipes-home-label">Browse by category</p>
-    <div class="cat-grid" id="cat-grid" style="padding:0 0 24px">
+    <div class="cat-grid" id="cat-grid" style="padding:0 0 8px">
       <div class="loading"><div class="loading-spinner"></div><br>Loading categories...</div>
     </div>
+    <p class="recipes-home-label" style="margin-top:8px">Also explore</p>
+    <div class="hub-grid" id="hub-grid"></div>
   </div>
 
   <div id="dishes-view" style="display:none">
@@ -494,59 +507,64 @@ let browseTaxonomy = [];
 async function loadCategories() {
   const grid = document.getElementById('cat-grid');
   grid.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Loading categories...</div>';
+  const canonicalNames = (typeof TCJ_CATEGORY_COPY !== 'undefined' ? TCJ_CATEGORY_COPY : []).map(function(c) { return c.name; });
 
-  try {
-    const cats = await supaFetch('categories', 'order=sort_order');
-
-    if (!cats || !cats.length) {
-      grid.innerHTML = '<div class="loading">No categories found.</div>';
-      return;
-    }
-
-    grid.innerHTML = cats.map(cat =>
-      '<div class="cat-card" data-id="' + cat.id + '" data-name="' + cat.name.replace(/"/g,'&quot;') + '">' +
-      '<span class="cat-emoji">' + cat.emoji + '</span>' +
-      '<div class="cat-name">' + cat.name + '</div>' +
-      '<div class="cat-desc">' + cat.description + '</div>' +
-      '</div>'
-    ).join('');
-
-    grid.querySelectorAll('.cat-card').forEach(function(card) {
-      card.addEventListener('click', function() {
-        openCat(this.dataset.id, this.dataset.name);
-      });
-    });
-
-  } catch(e) {
-    console.error('loadCategories error:', e.message);
-    // Fallback to hardcoded categories if Supabase fails
-    const fallback = [
-      {id:'rise-shine',name:'Rise & Shine',emoji:'🌅',description:'All breakfast dishes'},
-      {id:'evening-table',name:'The Evening Table',emoji:'🕓',description:'Tea time snacks & bites'},
-      {id:'garden-earth',name:'Garden & Earth',emoji:'🥬',description:'Vegetarian stir fries & dry dishes'},
-      {id:'meat-fire',name:'Meat & Fire',emoji:'🍖',description:'Non-veg dry, fry & roasts'},
-      {id:'ocean-river',name:'Ocean & River',emoji:'🌊',description:'All seafood dishes'},
-      {id:'slow-soulful',name:'Slow & Soulful',emoji:'🥘',description:'All curries & stews'},
-      {id:'grains-comfort',name:'Grains & Comfort',emoji:'🍚',description:'Rice, biryani, pasta, noodles'},
-      {id:'breads-bakes',name:'Breads & Bakes',emoji:'🫓',description:'Breads, pastries, baked goods'},
-      {id:'sweet-serenades',name:'Sweet Serenades',emoji:'🍮',description:'Desserts & sweets'},
-      {id:'sips-stories',name:'Sips & Stories',emoji:'🥂',description:'All drinks & beverages'},
-      {id:'preserved-cherished',name:'Preserved & Cherished',emoji:'🫙',description:'Pickles, jams, chutneys, spice blends'},
-      {id:'feast-days',name:'Feast Days',emoji:'🎉',description:'Festive & special occasion dishes'},
-      {id:'little-ones',name:'Little Ones',emoji:'👶',description:'Baby food & toddler meals'},
-      {id:'nourish-heal',name:'Nourish & Heal',emoji:'💪',description:'Health focused & dietary specific'}
-    ];
-    grid.innerHTML = fallback.map(cat =>
-      '<div class="cat-card" data-id="' + cat.id + '" data-name="' + cat.name.replace(/"/g,'&quot;') + '">' +
-      '<span class="cat-emoji">' + cat.emoji + '</span>' +
-      '<div class="cat-name">' + cat.name + '</div>' +
-      '<div class="cat-desc">' + cat.description + '</div>' +
-      '</div>'
-    ).join('');
+  function renderCategoryCards(cats) {
+    grid.innerHTML = cats.map(function(cat) {
+      return '<div class="cat-card" data-id="' + cat.id + '" data-name="' + cat.name.replace(/"/g,'&quot;') + '">' +
+        '<span class="cat-emoji">' + cat.emoji + '</span>' +
+        '<div class="cat-name">' + cat.name + '</div>' +
+        '<div class="cat-desc">' + cat.description + '</div>' +
+        '</div>';
+    }).join('');
     grid.querySelectorAll('.cat-card').forEach(function(card) {
       card.addEventListener('click', function() { openCat(this.dataset.id, this.dataset.name); });
     });
   }
+
+  try {
+    const cats = await supaFetch('categories', 'order=sort_order');
+    if (cats && cats.length && canonicalNames.length) {
+      const copyByName = {};
+      TCJ_CATEGORY_COPY.forEach(function(c) { copyByName[c.name] = c; });
+      const filtered = cats
+        .filter(function(cat) { return copyByName[cat.name] && cat.is_active !== false; })
+        .map(function(cat) {
+          var copy = copyByName[cat.name];
+          return {
+            id: cat.id,
+            name: cat.name,
+            emoji: cat.emoji || copy.emoji,
+            description: copy.description
+          };
+        });
+      if (filtered.length) {
+        renderCategoryCards(filtered);
+        return;
+      }
+    }
+    if (!cats || !cats.length) throw new Error('No categories found');
+    renderCategoryCards(cats.filter(function(cat) { return canonicalNames.indexOf(cat.name) >= 0; }));
+  } catch(e) {
+    console.error('loadCategories error:', e.message);
+    renderCategoryCards(typeof TCJ_CATEGORY_COPY !== 'undefined' ? TCJ_CATEGORY_COPY : []);
+  }
+  renderDiscoveryHubs();
+}
+
+function renderDiscoveryHubs() {
+  var grid = document.getElementById('hub-grid');
+  if (!grid) return;
+  var hubs = typeof TCJ_DISCOVERY_HUBS !== 'undefined' ? TCJ_DISCOVERY_HUBS : [
+    { href: 'festival-planner.html', emoji: '🎉', name: 'Festival Planner', description: 'Occasion menus and festival-tagged recipes' },
+    { href: 'nourish-heal.html', emoji: '💚', name: 'Nourish & Heal', description: 'Health and dietary-specific recipes' }
+  ];
+  grid.innerHTML = hubs.map(function(h) {
+    return '<a class="hub-card" href="' + h.href + '">' +
+      '<div class="hub-emoji">' + h.emoji + '</div>' +
+      '<div class="hub-name">' + h.name + '</div>' +
+      '<div class="hub-desc">' + h.description + '</div></a>';
+  }).join('');
 }
 
 async function loadBrowseTaxonomy() {

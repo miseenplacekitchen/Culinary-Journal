@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
   <script src="supabase-config.js"></script>
+  <script src="lib/tcj-discovery-hubs.js"></script>
   <script src="seo-schema.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); }
@@ -68,6 +69,11 @@
     <p class="fp-sub" id="fp-detail-desc" style="margin:0 0 14px"></p>
     <div class="fp-links" id="fp-detail-links"></div>
     <div id="fp-dishes"></div>
+    <div id="fp-recipes-wrap" style="margin-top:24px;display:none">
+      <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px">Community recipes for this occasion</div>
+      <p class="fp-sub" style="margin:0 0 12px;font-size:12px">Tagged via <strong>Occasion</strong> on submit (Onam, Eid, Christmas, etc.) or linked to dish slots above — not a main book category.</p>
+      <div class="fp-grid" id="fp-recipes" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));margin-bottom:0"></div>
+    </div>
   </div>
 </div>
 <script src="nav-init.js"></script>
@@ -142,7 +148,8 @@ async function showFestival(slug){
   var dishes = detail.dishes || [];
   var box = document.getElementById('fp-dishes');
   if (!dishes.length) {
-    box.innerHTML = '<div class="fp-empty">Dish slots coming soon for this festival. Browse Feast Days recipes or submit occasion-tagged recipes.</div>';
+    box.innerHTML = '<div class="fp-empty">Dish slots coming soon for this festival. Tag recipes with the matching <strong>Occasion</strong> on submit — they appear below once approved.</div>';
+    loadFestivalRecipes(slug, fest);
     return;
   }
   var sections = {};
@@ -163,6 +170,38 @@ async function showFestival(slug){
     }).join('');
     return '<div style="margin-bottom:18px"><div style="font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:8px">'+esc(sec)+'</div>'+rows+'</div>';
   }).join('');
+  loadFestivalRecipes(slug, fest);
+}
+
+async function loadFestivalRecipes(slug, fest) {
+  var wrap = document.getElementById('fp-recipes-wrap');
+  var grid = document.getElementById('fp-recipes');
+  if (!wrap || !grid) return;
+  var occasion = (typeof TCJ_FESTIVAL_OCCASION !== 'undefined' && TCJ_FESTIVAL_OCCASION[slug]) ? TCJ_FESTIVAL_OCCASION[slug] : (fest.name || null);
+  wrap.style.display = 'block';
+  grid.innerHTML = '<div class="fp-empty">Loading recipes…</div>';
+  try {
+    var rows = await rpc('get_recipes_by_occasion', {
+      p_occasion: occasion,
+      p_festival_slug: slug,
+      p_limit: 24,
+      p_offset: 0
+    });
+    if (!rows || !rows.length) {
+      grid.innerHTML = '<div class="fp-empty">No community recipes tagged for this occasion yet. When submitting, pick the matching <strong>Occasion</strong> tag — not Feast Days as a category.</div>';
+      return;
+    }
+    grid.innerHTML = rows.map(function(r) {
+      var emoji = {'Rise & Shine':'🌅','Garden & Earth':'🥬','Slow & Soulful':'🥘','Sweet Serenades':'🍮','Grains & Comfort':'🍚'}[r.category] || '🍳';
+      return '<a class="fp-card" style="cursor:pointer;text-decoration:none;display:block" href="recipe-page.html?id='+r.id+'">' +
+        '<div class="fp-emoji">' + (r.image_url ? '<img src="'+esc(r.image_url)+'" style="width:100%;height:72px;object-fit:cover;border-radius:8px" alt="">' : emoji) + '</div>' +
+        '<div class="fp-name" style="font-size:.95rem">'+esc(r.recipe_name)+'</div>' +
+        '<div class="fp-when">'+esc(r.category||'')+'</div></a>';
+    }).join('');
+  } catch (e) {
+    console.warn('festival recipes', e);
+    grid.innerHTML = '<div class="fp-empty">Recipe browse unavailable — run fix-recipe-discovery-rpcs.sql in Supabase.</div>';
+  }
 }
 
 async function init(){

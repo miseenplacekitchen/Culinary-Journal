@@ -49,6 +49,9 @@ Audit site wiring: `python database/taxonomy/audit_taxonomy.py`
 |------|------|
 | `sql/fix-security-rpcs.sql` | Once — harden `admin_get_submitter`, `send_notification`, `repair_orphan_recipe_ingredients` |
 | `sql/fix-login-info-leak.sql` | Once — drop `is_admin` from `get_login_info` pre-auth response |
+| `sql/fix-category-copy.sql` | Once — update browse category taglines (A–L) on `categories` table |
+| `sql/fix-recipe-discovery-rpcs.sql` | Once — occasion + wellness recipe browse RPCs (Festival Planner, Nourish & Heal) |
+| `sql/migrate-feast-nourish-categories.sql` | Once — move legacy Feast Days / Nourish & Heal category values to tags + main category |
 | `security/SECURITY-AUDIT.md` | Full RLS/RPC audit findings + external audit crosswalk |
 | `security/audit_rls_rpcs.py` | Re-scan `full-setup.sql` for unguarded SECURITY DEFINER functions |
 
