@@ -189,24 +189,25 @@ CURATED_FOOD_RULES: dict[str, list[tuple[str, str, str]]] = {
 }
 
 CATEGORY_MAP: dict[int, str] = {
-    1: "Rise & Shine",
-    2: "The Evening Table",
+    1: "Curds, Creams & Eggs",
+    2: "Wrapped & Stuffed",
     3: "Garden & Earth",
-    4: "Meat & Fire",
+    4: "Feather & Flock",
     5: "Ocean & River",
-    6: "Slow & Soulful",
-    7: "Grains & Comfort",
-    8: "Breads & Bakes",
+    6: "Pasture & Hoof",
+    7: "The Grain Field",
+    8: "Breads & Bakery",
     9: "Sweet Serenades",
     10: "Sips & Stories",
-    11: "Preserved & Cherished",
+    11: "Preserved & Pantry",
     12: "Feast Days",
     13: "Little Ones",
     14: "Nourish & Heal",
 }
 
-# 10 = Sips & Stories (fix-sips-drinks-taxonomy.sql). 3 = Garden & Earth (fix-garden-taxonomy.sql).
-BOOK_SQL_EXCLUDE_NUMS = {3, 10}
+# A–K ingredient-led categories use per-category seed SQL + fix-seed-hint-divisions.sql.
+# Retired top-level categories (12–14) are not re-seeded from the book.
+BOOK_SQL_EXCLUDE_NUMS = {3, 4, 5, 6, 7, 10, 12, 13, 14}
 GARDEN_SQL_ONLY_NUMS = {3}
 
 SIPS_SUB_CODES: dict[str, str] = {

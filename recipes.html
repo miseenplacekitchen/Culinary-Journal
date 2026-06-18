@@ -672,7 +672,7 @@ async function openCat(id, name) {
   show('dishes-view');
   setBc(name, null, null);
   syncBrowseChrome();
-  buildCategoryJumpTags(name);
+  setCategoryJumpVisible(false);
   hideBrowseTaxonomyFilters();
   setBrowseSectionLabel('Sub-category');
 
@@ -689,6 +689,7 @@ async function openCat(id, name) {
     if (hasTaxonomy) {
       curCatTaxonomyBrowse = true;
       renderCategorySubGrid(name, curCatDbDishes);
+      showBrowseTaxonomyFilters(name, null, null);
       return;
     }
 
@@ -799,14 +800,55 @@ function hideBrowseTaxonomyFilters() {
   if (taxRow) taxRow.style.display = 'none';
 }
 
+function setCategoryJumpVisible(visible) {
+  var row = document.getElementById('browse-cat-jump-row');
+  if (row) row.style.display = visible ? 'block' : 'none';
+}
+
+function getDivisionsForSub(categoryName, subName) {
+  var fromRpc = browseTaxonomy.filter(function(r) {
+    return taxonomyCategoryMatches(r.subcategory_category, categoryName) &&
+      r.subcategory_name === subName && r.division_name;
+  });
+  if (fromRpc.length) return fromRpc;
+  var hints = [];
+  var row = browseTaxonomy.find(function(r) {
+    return taxonomyCategoryMatches(r.subcategory_category, categoryName) &&
+      r.subcategory_name === subName;
+  });
+  if (row && row.subcategory_ingredient_hints && row.subcategory_ingredient_hints.length) {
+    hints = row.subcategory_ingredient_hints;
+  }
+  var subMeta = (typeof getCategorySubMeta === 'function') ? getCategorySubMeta(categoryName, subName) : null;
+  if (!hints.length && subMeta && subMeta.ingredients) hints = subMeta.ingredients;
+  return hints.map(function(h, i) {
+    return {
+      subcategory_category: categoryName,
+      subcategory_name: subName,
+      division_name: h,
+      division_emoji: (subMeta && subMeta.emoji) || '🍽',
+      division_subtitle: 'Ingredient form',
+      division_description: '',
+      division_sort_order: (i + 1) * 10,
+      division_id: null
+    };
+  });
+}
+
 function renderBrowseSubFilterButtons(categoryName, activeSubName) {
-  var subs = getBrowseSubsForCategory(categoryName);
+  var groups = getSubsGroupedByPart(categoryName);
   var html = '<button class="cr-filter' + (!activeSubName ? ' active' : '') + '" data-sub="" type="button">All</button>';
-  subs.forEach(function(s) {
-    var label = (typeof browseSubPillLabel === 'function') ? browseSubPillLabel(s.name, categoryName) : s.name;
-    var titleAttr = label !== s.name ? ' title="' + s.name.replace(/"/g, '&quot;') + '"' : '';
-    html += '<button class="cr-filter' + (activeSubName === s.name ? ' active' : '') + '" data-sub="' +
-      s.name.replace(/"/g, '&quot;') + '" type="button"' + titleAttr + '>' + label + '</button>';
+  groups.forEach(function(grp) {
+    if (grp.letter && grp.title) {
+      html += '<span class="browse-part-label">' + (grp.emoji ? grp.emoji + ' ' : '') + grp.title + '</span>';
+    }
+    (grp.subs || []).forEach(function(s) {
+      var subName = s.name || s;
+      var label = (typeof browseSubPillLabel === 'function') ? browseSubPillLabel(subName, categoryName) : subName;
+      var titleAttr = label !== subName ? ' title="' + subName.replace(/"/g, '&quot;') + '"' : '';
+      html += '<button class="cr-filter' + (activeSubName === subName ? ' active' : '') + '" data-sub="' +
+        subName.replace(/"/g, '&quot;') + '" type="button"' + titleAttr + '>' + label + '</button>';
+    });
   });
   return html;
 }
@@ -827,16 +869,7 @@ function showBrowseTaxonomyFilters(categoryName, subName, divName) {
         openCat(curCat, curCatName);
         return;
       }
-        if (!sub) {
-          openTaxonomySub(categoryName, sub);
-          return;
-        }
-        var row = browseTaxonomy.find(function(r) {
-          return taxonomyCategoryMatches(r.subcategory_category, categoryName) &&
-            r.subcategory_name === sub && r.division_name;
-        });
-        if (row) openTaxonomyDivision(row);
-        else openTaxonomySub(categoryName, sub);
+      openTaxonomySub(categoryName, sub);
     };
   }
   if (divRow) divRow.style.display = 'block';
@@ -845,15 +878,15 @@ function showBrowseTaxonomyFilters(categoryName, subName, divName) {
 
 function buildBrowseDivisionFilters(categoryName, subName, activeDivName) {
   var divEl = document.getElementById('browse-div-filters');
+  var divRow = document.getElementById('browse-division-row');
   if (!divEl) return;
-  var divs = browseTaxonomy.filter(function(r) {
-    return taxonomyCategoryMatches(r.subcategory_category, categoryName) &&
-      r.subcategory_name === subName && r.division_name;
-  });
+  var divs = getDivisionsForSub(categoryName, subName);
   if (!divs.length) {
     divEl.innerHTML = '';
+    if (divRow) divRow.style.display = 'none';
     return;
   }
+  if (divRow) divRow.style.display = 'block';
   var html = '';
   divs.forEach(function(r) {
     var n = r.division_name;
@@ -865,10 +898,8 @@ function buildBrowseDivisionFilters(categoryName, subName, activeDivName) {
   divEl.onclick = function(e) {
     var btn = e.target.closest('.cr-filter');
     if (!btn || !btn.dataset.div) return;
-    var row = browseTaxonomy.find(function(r) {
-      return taxonomyCategoryMatches(r.subcategory_category, categoryName) &&
-        r.subcategory_name === subName && r.division_name === btn.dataset.div;
-    });
+    var divs = getDivisionsForSub(categoryName, subName);
+    var row = divs.find(function(r) { return r.division_name === btn.dataset.div; });
     if (row) openTaxonomyDivision(row);
   };
 }
@@ -1091,27 +1122,34 @@ function renderCategorySubGrid(categoryName, dbDishes) {
   }
 
   if (subs.length) {
-    html += '<div class="tax-part-block"><div class="dish-grid">';
-    subs.forEach(function(s, idx) {
-      html += renderDishCardHtml({
-        emoji: s.emoji,
-        name: s.name,
-        aka: s.aka,
-        desc: s.desc,
-        attrs: 'data-tax-sub-idx="' + idx + '"'
+    var groups = getSubsGroupedByPart(categoryName);
+    groups.forEach(function(grp) {
+      if (grp.letter && grp.title) {
+        html += '<div class="tax-part-block"><div class="tax-part-title">' +
+          (grp.emoji ? grp.emoji + ' ' : '') + grp.title + '</div><div class="dish-grid">';
+      } else {
+        html += '<div class="tax-part-block"><div class="dish-grid">';
+      }
+      grp.subs.forEach(function(s) {
+        html += renderDishCardHtml({
+          emoji: s.emoji,
+          name: s.name,
+          aka: s.aka,
+          desc: s.desc,
+          attrs: 'data-tax-sub="' + s.name.replace(/"/g, '&quot;') + '"'
+        });
       });
+      html += '</div></div>';
     });
-    html += '</div></div>';
   }
 
   g.innerHTML = html;
   g.querySelectorAll('.dish-card[data-dish-id]').forEach(function(card) {
     card.addEventListener('click', function() { openDish(this.dataset.dishId, dbDishes); });
   });
-  g.querySelectorAll('.dish-card[data-tax-sub-idx]').forEach(function(card) {
+  g.querySelectorAll('.dish-card[data-tax-sub]').forEach(function(card) {
     card.addEventListener('click', function() {
-      var idx = parseInt(this.dataset.taxSubIdx, 10);
-      if (!isNaN(idx) && subs[idx]) openTaxonomySub(categoryName, subs[idx].name);
+      if (this.dataset.taxSub) openTaxonomySub(categoryName, this.dataset.taxSub);
     });
   });
 }
@@ -1119,10 +1157,7 @@ function renderCategorySubGrid(categoryName, dbDishes) {
 function renderSubCategoryDivisionGrid(categoryName, subName) {
   var g = document.getElementById('dish-grid');
   g.className = 'tax-browse-root';
-  var divs = browseTaxonomy.filter(function(r) {
-    return taxonomyCategoryMatches(r.subcategory_category, categoryName) &&
-      r.subcategory_name === subName && r.division_name;
-  });
+  var divs = getDivisionsForSub(categoryName, subName);
   if (!divs.length) {
     var subMeta = (typeof getCategorySubMeta === 'function') ? getCategorySubMeta(categoryName, subName) : null;
     var hints = subMeta && typeof categoryIngredientDisplay === 'function'
@@ -1153,8 +1188,8 @@ function openTaxonomySub(categoryName, subName) {
   hide('cats-view'); hide('styles-view'); hide('search-view');
   show('dishes-view');
   updatePageHeader(headerTitleForSub(categoryName, subName), false);
-  buildCategoryJumpTags(categoryName);
-  hideBrowseTaxonomyFilters();
+  setCategoryJumpVisible(false);
+  showBrowseTaxonomyFilters(categoryName, subName, null);
   setBrowseSectionLabel('Division');
   setBc(categoryName, subName, null);
   syncBrowseChrome();
@@ -1172,7 +1207,7 @@ async function openTaxonomyDivision(row) {
   hide('cats-view'); hide('styles-view'); hide('search-view');
   show('dishes-view');
   updatePageHeader((row.division_emoji ? row.division_emoji + ' ' : '') + divName, false);
-  buildCategoryJumpTags(categoryName);
+  setCategoryJumpVisible(false);
   showBrowseTaxonomyFilters(categoryName, subName, divName);
   setBrowseSectionLabel('Recipes');
   setBc(categoryName, subName, divName);

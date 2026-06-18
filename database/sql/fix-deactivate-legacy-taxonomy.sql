@@ -1,0 +1,3 @@
+-- ⚠️ DO NOT RUN — superseded by fix-seed-hint-divisions.sql
+-- This file deactivated all divisions and caused "Divisions coming soon" / missing subs in browse.
+-- Betty: use fix-seed-hint-divisions.sql instead.

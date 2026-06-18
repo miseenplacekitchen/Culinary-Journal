@@ -19,6 +19,10 @@ Run each file **once** in Supabase SQL Editor, in this order:
 | 6 | `sql/fix-ocean-river-taxonomy.sql` | Ocean D |
 | 7 | `sql/fix-grain-field-taxonomy.sql` | Grain Field E |
 | 8 | `sql/fix-sips-stories-taxonomy.sql` | Sips J |
+| 9 | `sql/fix-seed-hint-divisions.sql` | **Required** — turns ingredient hints into browse divisions (Potatoes, Drumsticks, etc.) |
+| 10 | `sql/fix-book-taxonomy.sql` | Wrapped, Curds, Breads, Sweet, Preserved — full book subs + divisions |
+
+**Do not run** `sql/fix-deactivate-legacy-taxonomy.sql` (retired — it removed divisions).
 
 After step 3, edit subs/divisions in **Dashboard → Taxonomy**. JS book defaults (`lib/tcj-*-taxonomy.js`) are seed/reference only — the database is what the live site uses.
 
