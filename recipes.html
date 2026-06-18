@@ -203,6 +203,9 @@
   <script src="lib/taxonomy-sub-codes.js?v=20260617e"></script>
   <script src="lib/taxonomy-parts.js?v=20260617e"></script>
   <script src="lib/tcj-garden-taxonomy.js?v=20260617b"></script>
+  <script src="lib/tcj-feather-flock-taxonomy.js"></script>
+  <script src="lib/tcj-pasture-hoof-taxonomy.js"></script>
+  <script src="lib/tcj-sub-taxonomy.js"></script>
   <script src="page-guard.js"></script>
 </head>
 <body>
@@ -773,7 +776,7 @@ function renderBrowseSubFilterButtons(categoryName, activeSubName) {
   var subs = getBrowseSubsForCategory(categoryName);
   var html = '<button class="cr-filter' + (!activeSubName ? ' active' : '') + '" data-sub="" type="button">All</button>';
   subs.forEach(function(s) {
-    var label = (typeof browseSubPillLabel === 'function') ? browseSubPillLabel(s.name) : s.name;
+    var label = (typeof browseSubPillLabel === 'function') ? browseSubPillLabel(s.name, categoryName) : s.name;
     var titleAttr = label !== s.name ? ' title="' + s.name.replace(/"/g, '&quot;') + '"' : '';
     html += '<button class="cr-filter' + (activeSubName === s.name ? ' active' : '') + '" data-sub="' +
       s.name.replace(/"/g, '&quot;') + '" type="button"' + titleAttr + '>' + label + '</button>';
@@ -844,9 +847,8 @@ function buildBrowseDivisionFilters(categoryName, subName, activeDivName) {
 }
 
 function headerTitleForSub(categoryName, subName) {
-  var gardenMeta = (categoryName === 'Garden & Earth' && typeof getGardenSubMeta === 'function')
-    ? getGardenSubMeta(subName) : null;
-  return (gardenMeta && gardenMeta.emoji ? gardenMeta.emoji + ' ' : '') + subName;
+  var subMeta = (typeof getCategorySubMeta === 'function') ? getCategorySubMeta(categoryName, subName) : null;
+  return (subMeta && subMeta.emoji ? subMeta.emoji + ' ' : '') + subName;
 }
 
 function headerTitleForCategory(categoryName) {
@@ -976,22 +978,23 @@ function getBrowseSubsForCategory(categoryName) {
     var entry = map[name];
     var divs = entry.divisions;
     var code = getSubCategoryCode(categoryName, name);
-    var gardenMeta = (categoryName === 'Garden & Earth' && typeof getGardenSubMeta === 'function')
-      ? getGardenSubMeta(name) : null;
+    var subMeta = (typeof getCategorySubMeta === 'function')
+      ? getCategorySubMeta(categoryName, name) : null;
     var hintStr = (entry.ingredient_hints && entry.ingredient_hints.length)
       ? entry.ingredient_hints.join(', ')
-      : (gardenMeta && typeof gardenIngredientDisplay === 'function' ? gardenIngredientDisplay(gardenMeta) : '');
+      : (subMeta && typeof categoryIngredientDisplay === 'function'
+        ? categoryIngredientDisplay(categoryName, subMeta) : '');
     return {
       name: name,
-      code: gardenMeta ? gardenMeta.code : code,
-      emoji: gardenMeta ? gardenMeta.emoji : ((divs[0] && divs[0].division_emoji) || '🍽'),
+      code: subMeta ? subMeta.code : code,
+      emoji: subMeta ? subMeta.emoji : ((divs[0] && divs[0].division_emoji) || '🍽'),
       divisionCount: divs.length,
       aka: hintStr || formatDivisionsAka(divs),
-      desc: gardenMeta ? gardenMeta.description : ((divs[0] && divs[0].division_description) || (divs[0] && divs[0].division_subtitle) || name)
+      desc: subMeta ? subMeta.description : ((divs[0] && divs[0].division_description) || (divs[0] && divs[0].division_subtitle) || name)
     };
   }).filter(function(s) {
     if (s.divisionCount > 0) return true;
-    if (categoryName === 'Garden & Earth') return true;
+    if (typeof getCanonicalCategoryTaxonomy === 'function' && getCanonicalCategoryTaxonomy(categoryName)) return true;
     return !!(s.aka && s.aka.length);
   });
 }
@@ -1061,11 +1064,10 @@ function renderSubCategoryDivisionGrid(categoryName, subName) {
       r.subcategory_name === subName && r.division_name;
   });
   if (!divs.length) {
-    var gardenMeta = (categoryName === 'Garden & Earth' && typeof getGardenSubMeta === 'function')
-      ? getGardenSubMeta(subName) : null;
-    var hints = gardenMeta && typeof gardenIngredientDisplay === 'function'
-      ? gardenIngredientDisplay(gardenMeta) : '';
-    g.innerHTML = '<div class="empty-state"><div class="empty-icon">' + (gardenMeta ? gardenMeta.emoji : '🍽') + '</div>' +
+    var subMeta = (typeof getCategorySubMeta === 'function') ? getCategorySubMeta(categoryName, subName) : null;
+    var hints = subMeta && typeof categoryIngredientDisplay === 'function'
+      ? categoryIngredientDisplay(categoryName, subMeta) : '';
+    g.innerHTML = '<div class="empty-state"><div class="empty-icon">' + (subMeta ? subMeta.emoji : '🍽') + '</div>' +
       '<div class="empty-title">' + subName + '</div>' +
       '<div class="empty-desc">Divisions coming soon — recipes are organised by division.' +
       (hints ? '<br><br><span style="opacity:0.85">Ingredient focus: ' + hints + '</span>' : '') +

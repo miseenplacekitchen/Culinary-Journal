@@ -2073,15 +2073,17 @@ async function loadRMTaxonomy(container) {
       var box = mk('div', 'margin-bottom:20px;padding:16px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px');
       box.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px', cat));
 
-      if (cat === 'Garden & Earth' && typeof TCJ_GARDEN_TAXONOMY !== 'undefined') {
+      var canon = (typeof getCanonicalCategoryTaxonomy === 'function')
+        ? getCanonicalCategoryTaxonomy(cat) : null;
+      if (canon && canon.length) {
         var syncRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px');
-        syncRow.appendChild(mk('span', 'font-size:12px;color:var(--text-mid)', 'A1–A13 canonical list:'));
+        syncRow.appendChild(mk('span', 'font-size:12px;color:var(--text-mid)', 'Canonical sub-category list:'));
         var syncBtn = mk('button', 'padding:6px 12px;font-size:11px;border:1px solid var(--accent);border-radius:6px;background:none;color:var(--accent);cursor:pointer', 'Sync subs + ingredient hints');
         syncBtn.addEventListener('click', function() {
-          if (!confirm('Upsert all 13 Garden sub-categories and ingredient focus hints from the canonical list?')) return;
+          if (!confirm('Upsert all ' + canon.length + ' ' + cat + ' sub-categories and focus hints from the canonical list?')) return;
           syncBtn.disabled = true;
           var chain = Promise.resolve();
-          TCJ_GARDEN_TAXONOMY.forEach(function(sub, i) {
+          canon.forEach(function(sub, i) {
             chain = chain.then(function() {
               return rpc('admin_upsert_recipe_subcategory', {
                 p_id: null, p_category: cat, p_name: sub.name,
@@ -2101,19 +2103,19 @@ async function loadRMTaxonomy(container) {
         box.appendChild(mk('div', 'font-size:12px;color:var(--text-mid);margin-bottom:10px', 'No sub-categories yet.'));
       } else {
         subList.forEach(function(sc) {
-          var gardenMeta = (cat === 'Garden & Earth' && typeof getGardenSubMeta === 'function')
-            ? getGardenSubMeta(sc.name) : null;
+          var subMeta = (typeof getCategorySubMeta === 'function')
+            ? getCategorySubMeta(cat, sc.name) : null;
           var scRow = mk('div', 'margin-bottom:12px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px');
           var titleRow = mk('div', 'display:flex;align-items:baseline;gap:8px;margin-bottom:6px;flex-wrap:wrap');
-          titleRow.appendChild(mk('div', 'font-size:13px;font-weight:600;color:var(--text-high)', (gardenMeta ? gardenMeta.emoji + ' ' : '') + sc.name));
-          if (gardenMeta && gardenMeta.code) {
-            titleRow.appendChild(mk('span', 'font-size:10px;color:var(--text-mid);letter-spacing:0.08em', gardenMeta.code));
+          titleRow.appendChild(mk('div', 'font-size:13px;font-weight:600;color:var(--text-high)', (subMeta ? subMeta.emoji + ' ' : '') + sc.name));
+          if (subMeta && subMeta.code) {
+            titleRow.appendChild(mk('span', 'font-size:10px;color:var(--text-mid);letter-spacing:0.08em', subMeta.code));
           }
           scRow.appendChild(titleRow);
 
           var hints = sc.ingredient_hints && sc.ingredient_hints.length
             ? sc.ingredient_hints
-            : (gardenMeta && gardenMeta.ingredients ? gardenMeta.ingredients : []);
+            : (subMeta && subMeta.ingredients ? subMeta.ingredients : []);
           var hintLabel = mk('div', 'font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);margin:8px 0 4px', 'Ingredient focus hints');
           scRow.appendChild(hintLabel);
           var hintTa = mk('textarea', 'width:100%;min-height:52px;padding:8px 10px;background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-high);font-family:DM Sans,sans-serif;line-height:1.5;resize:vertical;box-sizing:border-box');
@@ -2135,17 +2137,17 @@ async function loadRMTaxonomy(container) {
               .catch(function(e) { alert(e.message || e); });
           });
           hintActs.appendChild(saveHints);
-          if (gardenMeta && gardenMeta.ingredients && gardenMeta.ingredients.length) {
+          if (subMeta && subMeta.ingredients && subMeta.ingredients.length) {
             var loadCanon = mk('button', 'padding:4px 10px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-mid);cursor:pointer', 'Load canonical list');
             loadCanon.addEventListener('click', function() {
-              hintTa.value = formatIngredientHints(gardenMeta.ingredients);
+              hintTa.value = formatIngredientHints(subMeta.ingredients);
             });
             hintActs.appendChild(loadCanon);
           }
           scRow.appendChild(hintActs);
 
-          if (gardenMeta && gardenMeta.tagline) {
-            scRow.appendChild(mk('div', 'font-size:11px;color:var(--text-mid);font-style:italic;margin-bottom:8px;line-height:1.4', gardenMeta.tagline));
+          if (subMeta && subMeta.tagline) {
+            scRow.appendChild(mk('div', 'font-size:11px;color:var(--text-mid);font-style:italic;margin-bottom:8px;line-height:1.4', subMeta.tagline));
           }
 
           var divHdr = mk('div', 'font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);margin:10px 0 4px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)', 'Divisions (techniques / styles)');
