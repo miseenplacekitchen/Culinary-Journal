@@ -1956,6 +1956,56 @@ async function reviewNote(id, status) {
 window.loadRecipeNotes = loadRecipeNotes;
 window.reviewNote = reviewNote;
 
+function rmTaxCollapsed(key, defOpen) {
+  try {
+    var raw = sessionStorage.getItem('rmTaxCollapsed');
+    var map = raw ? JSON.parse(raw) : {};
+    if (Object.prototype.hasOwnProperty.call(map, key)) return !map[key];
+    return !defOpen;
+  } catch (e) { return !defOpen; }
+}
+function rmTaxSetCollapsed(key, open) {
+  try {
+    var raw = sessionStorage.getItem('rmTaxCollapsed');
+    var map = raw ? JSON.parse(raw) : {};
+    map[key] = !!open;
+    sessionStorage.setItem('rmTaxCollapsed', JSON.stringify(map));
+  } catch (e) { /* ignore */ }
+}
+function rmTaxMoveBtn(label, title, disabled, onClick) {
+  var b = document.createElement('button');
+  b.type = 'button';
+  b.textContent = label;
+  b.title = title || '';
+  b.disabled = !!disabled;
+  b.style.cssText = 'padding:2px 8px;font-size:11px;border:1px solid var(--border);border-radius:5px;background:none;color:var(--text-mid);cursor:pointer;min-width:28px';
+  if (disabled) b.style.opacity = '0.35';
+  b.addEventListener('click', onClick);
+  return b;
+}
+function rmTaxLabel(text) {
+  var e = document.createElement('div');
+  e.style.cssText = 'font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);margin:10px 0 4px';
+  e.textContent = text;
+  return e;
+}
+function rmTaxInput(val, placeholder, flex) {
+  var e = document.createElement('input');
+  e.type = 'text';
+  e.value = val || '';
+  e.placeholder = placeholder || '';
+  e.style.cssText = 'padding:6px 10px;background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text-high);font-family:DM Sans,sans-serif;box-sizing:border-box' +
+    (flex ? ';flex:1;min-width:120px' : '');
+  return e;
+}
+function rmTaxTextarea(val, placeholder, minH) {
+  var e = document.createElement('textarea');
+  e.value = val || '';
+  e.placeholder = placeholder || '';
+  e.style.cssText = 'width:100%;min-height:' + (minH || 52) + 'px;padding:8px 10px;background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-high);font-family:DM Sans,sans-serif;line-height:1.5;resize:vertical;box-sizing:border-box';
+  return e;
+}
+
 async function loadRMTaxonomy(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
   var CATS = ['Garden & Earth','Feather & Flock','Pasture & Hoof','Ocean & River',
@@ -1969,8 +2019,9 @@ async function loadRMTaxonomy(container) {
     function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
-      'All approved recipes must have a sub-category <em>and</em> division. ' +
-      'Ingredient focus hints on subs guide classification — divisions hold the actual recipes.';
+      'Edit names, descriptions, and ingredient hints here — changes save to the database and appear on the public browse page. ' +
+      '<br><br><strong>Paste book hints</strong> fills the ingredient box with the original list from the taxonomy book (you still click <em>Save sub-category</em> to store it). ' +
+      '<strong>Sync from book</strong> creates/updates every sub in that category from the code defaults.';
     container.appendChild(note);
 
     if (missing.length) {
@@ -2052,7 +2103,23 @@ async function loadRMTaxonomy(container) {
       container.appendChild(bulk);
     }
 
-    CATS.forEach(function(cat) {
+    var catNames = CATS.slice();
+    try {
+      var catRes = await fetch(window.SUPA_URL + '/rest/v1/categories?is_active=eq.true&order=sort_order', {
+        headers: { apikey: window.SUPA_KEY, Authorization: 'Bearer ' + window.SUPA_KEY }
+      });
+      var catRows = catRes.ok ? await catRes.json() : [];
+      if (catRows.length) {
+        var ordered = [];
+        catRows.forEach(function(r) {
+          if (CATS.indexOf(r.name) >= 0 && ordered.indexOf(r.name) < 0) ordered.push(r.name);
+        });
+        CATS.forEach(function(c) { if (ordered.indexOf(c) < 0) ordered.push(c); });
+        catNames = ordered;
+      }
+    } catch (e) { console.warn('category order', e); }
+
+    catNames.forEach(function(cat, catIdx) {
       var subs = {};
       rows.filter(function(r) { return r.subcategory_category === cat; }).forEach(function(r) {
         if (!r.subcategory_id) return;
@@ -2060,6 +2127,10 @@ async function loadRMTaxonomy(container) {
           subs[r.subcategory_id] = {
             id: r.subcategory_id,
             name: r.subcategory_name,
+            sort_order: r.subcategory_sort_order || 0,
+            emoji: r.subcategory_emoji || '',
+            tagline: r.subcategory_tagline || '',
+            description: r.subcategory_description || '',
             ingredient_hints: r.subcategory_ingredient_hints || [],
             divisions: []
           };
@@ -2067,20 +2138,77 @@ async function loadRMTaxonomy(container) {
         if (r.subcategory_ingredient_hints && r.subcategory_ingredient_hints.length) {
           subs[r.subcategory_id].ingredient_hints = r.subcategory_ingredient_hints;
         }
-        if (r.division_id) subs[r.subcategory_id].divisions.push(r);
+        if (r.subcategory_tagline) subs[r.subcategory_id].tagline = r.subcategory_tagline;
+        if (r.subcategory_description) subs[r.subcategory_id].description = r.subcategory_description;
+        if (r.subcategory_emoji) subs[r.subcategory_id].emoji = r.subcategory_emoji;
+        if (r.division_id) {
+          subs[r.subcategory_id].divisions.push({
+            division_id: r.division_id,
+            division_name: r.division_name,
+            division_emoji: r.division_emoji,
+            division_subtitle: r.division_subtitle,
+            division_description: r.division_description,
+            division_sort_order: r.division_sort_order || 0
+          });
+        }
       });
-      var subList = Object.values(subs);
-      var box = mk('div', 'margin-bottom:20px;padding:16px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px');
-      box.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px', cat));
+      var subList = Object.values(subs).sort(function(a, b) {
+        return (a.sort_order || 0) - (b.sort_order || 0) || a.name.localeCompare(b.name);
+      });
+      subList.forEach(function(sc) {
+        sc.divisions.sort(function(a, b) {
+          return (a.division_sort_order || 0) - (b.division_sort_order || 0) ||
+            String(a.division_name || '').localeCompare(String(b.division_name || ''));
+        });
+      });
+
+      var catKey = 'cat:' + cat;
+      var catOpen = !rmTaxCollapsed(catKey, true);
+      var box = mk('div', 'margin-bottom:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden');
+      var catHdr = mk('div', 'display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(255,255,255,0.04);cursor:pointer;flex-wrap:wrap');
+      var catToggle = mk('span', 'font-size:12px;color:var(--text-mid);width:16px;flex-shrink:0', catOpen ? '▼' : '▶');
+      var catEmoji = (typeof TCJ_CAT_EMOJI !== 'undefined' && TCJ_CAT_EMOJI[cat]) ? TCJ_CAT_EMOJI[cat] : '🍽';
+      catHdr.appendChild(catToggle);
+      catHdr.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent);flex:1;min-width:160px', catEmoji + ' ' + cat));
+      var catMove = mk('span', 'display:flex;gap:4px;flex-shrink:0');
+      catMove.appendChild(rmTaxMoveBtn('↑', 'Move category up', catIdx === 0, function(ev) {
+        ev.stopPropagation();
+        if (catIdx === 0) return;
+        var prev = catNames[catIdx - 1];
+        Promise.all([
+          rpc('admin_update_category_sort_order', { p_name: cat, p_sort_order: catIdx * 10 }),
+          rpc('admin_update_category_sort_order', { p_name: prev, p_sort_order: (catIdx + 1) * 10 })
+        ]).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
+      }));
+      catMove.appendChild(rmTaxMoveBtn('↓', 'Move category down', catIdx === catNames.length - 1, function(ev) {
+        ev.stopPropagation();
+        if (catIdx >= catNames.length - 1) return;
+        var next = catNames[catIdx + 1];
+        Promise.all([
+          rpc('admin_update_category_sort_order', { p_name: cat, p_sort_order: (catIdx + 2) * 10 }),
+          rpc('admin_update_category_sort_order', { p_name: next, p_sort_order: (catIdx + 1) * 10 })
+        ]).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
+      }));
+      catHdr.appendChild(catMove);
+      catHdr.appendChild(mk('span', 'font-size:11px;color:var(--text-mid)', subList.length + ' subs'));
+      box.appendChild(catHdr);
+
+      var catBody = mk('div', 'padding:14px;display:' + (catOpen ? 'block' : 'none'));
+      catHdr.addEventListener('click', function() {
+        catOpen = !catOpen;
+        catBody.style.display = catOpen ? 'block' : 'none';
+        catToggle.textContent = catOpen ? '▼' : '▶';
+        rmTaxSetCollapsed(catKey, catOpen);
+      });
 
       var canon = (typeof getCanonicalCategoryTaxonomy === 'function')
         ? getCanonicalCategoryTaxonomy(cat) : null;
       if (canon && canon.length) {
         var syncRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px');
-        syncRow.appendChild(mk('span', 'font-size:12px;color:var(--text-mid)', 'Canonical sub-category list:'));
-        var syncBtn = mk('button', 'padding:6px 12px;font-size:11px;border:1px solid var(--accent);border-radius:6px;background:none;color:var(--accent);cursor:pointer', 'Sync subs + ingredient hints');
+        syncRow.appendChild(mk('span', 'font-size:12px;color:var(--text-mid)', 'Book defaults:'));
+        var syncBtn = mk('button', 'padding:6px 12px;font-size:11px;border:1px solid var(--accent);border-radius:6px;background:none;color:var(--accent);cursor:pointer', 'Sync subs from book');
         syncBtn.addEventListener('click', function() {
-          if (!confirm('Upsert all ' + canon.length + ' ' + cat + ' sub-categories and focus hints from the canonical list?')) return;
+          if (!confirm('Upsert all ' + canon.length + ' ' + cat + ' sub-categories from the book list (names + hints)? Existing edits to hints may be overwritten.')) return;
           syncBtn.disabled = true;
           var chain = Promise.resolve();
           canon.forEach(function(sub, i) {
@@ -2088,7 +2216,10 @@ async function loadRMTaxonomy(container) {
               return rpc('admin_upsert_recipe_subcategory', {
                 p_id: null, p_category: cat, p_name: sub.name,
                 p_sort_order: (i + 1) * 10,
-                p_ingredient_hints: sub.ingredients || []
+                p_ingredient_hints: sub.ingredients || [],
+                p_tagline: sub.tagline || null,
+                p_description: sub.description || null,
+                p_emoji: sub.emoji || null
               });
             });
           });
@@ -2096,128 +2227,203 @@ async function loadRMTaxonomy(container) {
             .catch(function(e) { alert(e.message || e); syncBtn.disabled = false; });
         });
         syncRow.appendChild(syncBtn);
-        box.appendChild(syncRow);
+        catBody.appendChild(syncRow);
       }
 
       if (!subList.length) {
-        box.appendChild(mk('div', 'font-size:12px;color:var(--text-mid);margin-bottom:10px', 'No sub-categories yet.'));
+        catBody.appendChild(mk('div', 'font-size:12px;color:var(--text-mid);margin-bottom:10px', 'No sub-categories yet.'));
       } else {
-        subList.forEach(function(sc) {
-          var subMeta = (typeof getCategorySubMeta === 'function')
-            ? getCategorySubMeta(cat, sc.name) : null;
-          var scRow = mk('div', 'margin-bottom:12px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px');
-          var titleRow = mk('div', 'display:flex;align-items:baseline;gap:8px;margin-bottom:6px;flex-wrap:wrap');
-          titleRow.appendChild(mk('div', 'font-size:13px;font-weight:600;color:var(--text-high)', (subMeta ? subMeta.emoji + ' ' : '') + sc.name));
-          if (subMeta && subMeta.code) {
-            titleRow.appendChild(mk('span', 'font-size:10px;color:var(--text-mid);letter-spacing:0.08em', subMeta.code));
-          }
-          scRow.appendChild(titleRow);
+        subList.forEach(function(sc, subIdx) {
+          var subMeta = (typeof getCategorySubMeta === 'function') ? getCategorySubMeta(cat, sc.name) : null;
+          var subKey = catKey + '|' + sc.id;
+          var subOpen = !rmTaxCollapsed(subKey, false);
+          var scWrap = mk('div', 'margin-bottom:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg)');
 
+          var scHdr = mk('div', 'display:flex;align-items:center;gap:6px;padding:8px 10px;background:rgba(0,0,0,0.15);flex-wrap:wrap');
+          var subToggle = mk('span', 'font-size:11px;color:var(--text-mid);cursor:pointer;width:14px', subOpen ? '▼' : '▶');
+          var emojiIn = rmTaxInput(sc.emoji || (subMeta ? subMeta.emoji : ''), '🍽', false);
+          emojiIn.style.width = '42px';
+          emojiIn.style.flex = 'none';
+          emojiIn.style.textAlign = 'center';
+          emojiIn.addEventListener('click', function(e) { e.stopPropagation(); });
+          var nameIn = rmTaxInput(sc.name, 'Sub-category name', true);
+          nameIn.addEventListener('click', function(e) { e.stopPropagation(); });
+          scHdr.appendChild(subToggle);
+          scHdr.appendChild(emojiIn);
+          scHdr.appendChild(nameIn);
+          if (subMeta && subMeta.code) {
+            scHdr.appendChild(mk('span', 'font-size:10px;color:var(--text-mid);letter-spacing:0.08em', subMeta.code));
+          }
+          var subMove = mk('span', 'display:flex;gap:4px;margin-left:auto');
+          subMove.appendChild(rmTaxMoveBtn('↑', 'Move sub up', subIdx === 0, function(ev) {
+            ev.stopPropagation();
+            if (subIdx === 0) return;
+            var ids = subList.map(function(s) { return s.id; });
+            var t = ids[subIdx]; ids[subIdx] = ids[subIdx - 1]; ids[subIdx - 1] = t;
+            rpc('admin_reorder_recipe_subcategories', { p_category: cat, p_ordered_ids: ids })
+              .then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
+          }));
+          subMove.appendChild(rmTaxMoveBtn('↓', 'Move sub down', subIdx === subList.length - 1, function(ev) {
+            ev.stopPropagation();
+            if (subIdx >= subList.length - 1) return;
+            var ids = subList.map(function(s) { return s.id; });
+            var t = ids[subIdx]; ids[subIdx] = ids[subIdx + 1]; ids[subIdx + 1] = t;
+            rpc('admin_reorder_recipe_subcategories', { p_category: cat, p_ordered_ids: ids })
+              .then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
+          }));
+          scHdr.appendChild(subMove);
+          scWrap.appendChild(scHdr);
+
+          var scBody = mk('div', 'padding:10px 12px;display:' + (subOpen ? 'block' : 'none'));
+          subToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            subOpen = !subOpen;
+            scBody.style.display = subOpen ? 'block' : 'none';
+            subToggle.textContent = subOpen ? '▼' : '▶';
+            rmTaxSetCollapsed(subKey, subOpen);
+          });
+          scHdr.addEventListener('click', function() {
+            subOpen = !subOpen;
+            scBody.style.display = subOpen ? 'block' : 'none';
+            subToggle.textContent = subOpen ? '▼' : '▶';
+            rmTaxSetCollapsed(subKey, subOpen);
+          });
+
+          scBody.appendChild(rmTaxLabel('Tagline (short line under the title)'));
+          var taglineTa = rmTaxTextarea(sc.tagline || (subMeta ? subMeta.tagline : ''), 'One-line summary for browse cards', 40);
+          scBody.appendChild(taglineTa);
+
+          scBody.appendChild(rmTaxLabel('Description'));
+          var descTa = rmTaxTextarea(sc.description || (subMeta ? subMeta.description : ''), 'Longer browse copy', 72);
+          scBody.appendChild(descTa);
+
+          scBody.appendChild(rmTaxLabel('Ingredient focus hints'));
           var hints = sc.ingredient_hints && sc.ingredient_hints.length
             ? sc.ingredient_hints
             : (subMeta && subMeta.ingredients ? subMeta.ingredients : []);
-          var hintLabel = mk('div', 'font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);margin:8px 0 4px', 'Ingredient focus hints');
-          scRow.appendChild(hintLabel);
-          var hintTa = mk('textarea', 'width:100%;min-height:52px;padding:8px 10px;background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-high);font-family:DM Sans,sans-serif;line-height:1.5;resize:vertical;box-sizing:border-box');
-          hintTa.placeholder = 'Comma-separated — when this ingredient is the main focus, use this sub-category';
-          hintTa.value = typeof formatIngredientHints === 'function'
-            ? formatIngredientHints(hints)
-            : (hints || []).join(', ');
-          scRow.appendChild(hintTa);
-          var hintActs = mk('div', 'display:flex;gap:6px;margin-top:6px;margin-bottom:8px');
-          var saveHints = mk('button', 'padding:4px 10px;font-size:11px;border:1px solid var(--accent);border-radius:6px;background:none;color:var(--accent);cursor:pointer', 'Save hints');
-          saveHints.addEventListener('click', function() {
+          var hintTa = rmTaxTextarea(
+            typeof formatIngredientHints === 'function' ? formatIngredientHints(hints) : (hints || []).join(', '),
+            'Comma-separated — when this ingredient is the main focus, use this sub-category', 52);
+          scBody.appendChild(hintTa);
+
+          var hintActs = mk('div', 'display:flex;gap:6px;margin-top:6px;margin-bottom:8px;flex-wrap:wrap');
+          if (subMeta && subMeta.ingredients && subMeta.ingredients.length) {
+            var pasteBook = mk('button', 'padding:4px 10px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-mid);cursor:pointer', 'Paste book hints');
+            pasteBook.title = 'Fills the box with the original book list — click Save sub-category to store';
+            pasteBook.addEventListener('click', function() {
+              hintTa.value = formatIngredientHints(subMeta.ingredients);
+            });
+            hintActs.appendChild(pasteBook);
+          }
+          var saveSub = mk('button', 'padding:6px 14px;font-size:11px;border:1px solid var(--accent);border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:600', 'Save sub-category');
+          saveSub.addEventListener('click', function() {
             var parsed = typeof parseIngredientHintText === 'function'
               ? parseIngredientHintText(hintTa.value)
               : hintTa.value.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+            var newName = nameIn.value.trim();
+            if (!newName) { alert('Sub-category name is required.'); return; }
+            saveSub.disabled = true;
             rpc('admin_upsert_recipe_subcategory', {
-              p_id: sc.id, p_category: cat, p_name: sc.name,
-              p_sort_order: null, p_ingredient_hints: parsed
+              p_id: sc.id, p_category: cat, p_name: newName,
+              p_sort_order: sc.sort_order,
+              p_ingredient_hints: parsed,
+              p_tagline: taglineTa.value.trim(),
+              p_description: descTa.value.trim(),
+              p_emoji: emojiIn.value.trim()
             }).then(function() { loadRMTaxonomy(container); })
-              .catch(function(e) { alert(e.message || e); });
+              .catch(function(e) { alert(e.message || e); saveSub.disabled = false; });
           });
-          hintActs.appendChild(saveHints);
-          if (subMeta && subMeta.ingredients && subMeta.ingredients.length) {
-            var loadCanon = mk('button', 'padding:4px 10px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-mid);cursor:pointer', 'Load canonical list');
-            loadCanon.addEventListener('click', function() {
-              hintTa.value = formatIngredientHints(subMeta.ingredients);
-            });
-            hintActs.appendChild(loadCanon);
-          }
-          scRow.appendChild(hintActs);
+          hintActs.appendChild(saveSub);
+          scBody.appendChild(hintActs);
 
-          if (subMeta && subMeta.tagline) {
-            scRow.appendChild(mk('div', 'font-size:11px;color:var(--text-mid);font-style:italic;margin-bottom:8px;line-height:1.4', subMeta.tagline));
-          }
-
-          var divHdr = mk('div', 'font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);margin:10px 0 4px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)', 'Divisions (techniques / styles)');
-          scRow.appendChild(divHdr);
-          (sc.divisions || []).forEach(function(d) {
-            var dRow = mk('div', 'display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--text-mid);padding:6px 0;border-top:1px solid rgba(255,255,255,0.04)');
-            var dLabel = mk('span', '', (d.division_emoji || '') + ' ' + (d.division_name || '') + (d.division_subtitle ? ' — ' + d.division_subtitle : ''));
-            dRow.appendChild(dLabel);
-            var dActs = mk('span', 'display:flex;gap:4px;flex-shrink:0');
-            var editD = mk('button', 'padding:2px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:none;color:var(--text-mid);cursor:pointer', 'Edit');
-            editD.addEventListener('click', function() {
-              var name = prompt('Division name:', d.division_name || '');
-              if (!name || !name.trim()) return;
-              var emoji = prompt('Emoji:', d.division_emoji || '🍽') || '🍽';
-              var subtitle = prompt('Subtitle:', d.division_subtitle || '') || '';
+          scBody.appendChild(rmTaxLabel('Divisions (techniques / styles)'));
+          (sc.divisions || []).forEach(function(d, divIdx) {
+            var dCard = mk('div', 'margin-bottom:8px;padding:8px 10px;border:1px solid rgba(255,255,255,0.06);border-radius:6px');
+            var dTop = mk('div', 'display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap');
+            var dEmoji = rmTaxInput(d.division_emoji || '🍽', '🍽', false);
+            dEmoji.style.width = '42px'; dEmoji.style.flex = 'none'; dEmoji.style.textAlign = 'center';
+            var dName = rmTaxInput(d.division_name || '', 'Division name', true);
+            dTop.appendChild(dEmoji);
+            dTop.appendChild(dName);
+            var dMove = mk('span', 'display:flex;gap:4px;margin-left:auto');
+            dMove.appendChild(rmTaxMoveBtn('↑', 'Move division up', divIdx === 0, function() {
+              if (divIdx === 0) return;
+              var ids = sc.divisions.map(function(x) { return x.division_id; });
+              var tmp = ids[divIdx]; ids[divIdx] = ids[divIdx - 1]; ids[divIdx - 1] = tmp;
+              rpc('admin_reorder_recipe_divisions', { p_category: cat, p_subcategory: sc.name, p_ordered_ids: ids })
+                .then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
+            }));
+            dMove.appendChild(rmTaxMoveBtn('↓', 'Move division down', divIdx === sc.divisions.length - 1, function() {
+              if (divIdx >= sc.divisions.length - 1) return;
+              var ids = sc.divisions.map(function(x) { return x.division_id; });
+              var tmp = ids[divIdx]; ids[divIdx] = ids[divIdx + 1]; ids[divIdx + 1] = tmp;
+              rpc('admin_reorder_recipe_divisions', { p_category: cat, p_subcategory: sc.name, p_ordered_ids: ids })
+                .then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
+            }));
+            dTop.appendChild(dMove);
+            dCard.appendChild(dTop);
+            dCard.appendChild(rmTaxLabel('Subtitle'));
+            var dSub = rmTaxInput(d.division_subtitle || '', 'Short subtitle', true);
+            dCard.appendChild(dSub);
+            dCard.appendChild(rmTaxLabel('Description'));
+            var dDesc = rmTaxTextarea(d.division_description || '', 'What recipes belong in this division?', 56);
+            dCard.appendChild(dDesc);
+            var dActs = mk('div', 'display:flex;gap:6px;margin-top:6px');
+            var saveDiv = mk('button', 'padding:4px 10px;font-size:11px;border:1px solid var(--accent);border-radius:6px;background:none;color:var(--accent);cursor:pointer', 'Save division');
+            saveDiv.addEventListener('click', function() {
+              var nm = dName.value.trim();
+              if (!nm) { alert('Division name is required.'); return; }
               rpc('admin_upsert_recipe_division', {
-                p_id: d.division_id, p_category: cat, p_subcategory: sc.name, p_name: name.trim(),
-                p_emoji: emoji, p_subtitle: subtitle, p_description: d.division_description || null,
-                p_tags: d.division_tags || [], p_sort_order: d.division_sort_order || 0
+                p_id: d.division_id, p_category: cat, p_subcategory: nameIn.value.trim() || sc.name,
+                p_name: nm, p_emoji: dEmoji.value.trim() || '🍽',
+                p_subtitle: dSub.value.trim(), p_description: dDesc.value.trim(),
+                p_tags: [], p_sort_order: d.division_sort_order || (divIdx + 1) * 10
               }).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
             });
-            var delD = mk('button', 'padding:2px 8px;font-size:10px;border:1px solid #dc5050;border-radius:5px;background:none;color:#dc5050;cursor:pointer', 'Remove');
+            var delD = mk('button', 'padding:4px 10px;font-size:11px;border:1px solid #dc5050;border-radius:6px;background:none;color:#dc5050;cursor:pointer', 'Remove');
             delD.addEventListener('click', function() {
               if (!confirm('Deactivate division "' + (d.division_name || '') + '"?')) return;
               rpc('admin_delete_recipe_division', { p_id: d.division_id })
-                .then(function() { loadRMTaxonomy(container); })
-                .catch(function(e) { alert(e.message); });
+                .then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
             });
-            dActs.appendChild(editD);
+            dActs.appendChild(saveDiv);
             dActs.appendChild(delD);
-            dRow.appendChild(dActs);
-            scRow.appendChild(dRow);
+            dCard.appendChild(dActs);
+            scBody.appendChild(dCard);
           });
-          var addDiv = mk('button', 'margin-top:6px;padding:4px 10px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-mid);cursor:pointer');
-          addDiv.textContent = '+ Division';
+
+          var addDiv = mk('button', 'margin-top:4px;padding:6px 12px;font-size:11px;border:1px dashed var(--border);border-radius:6px;background:none;color:var(--text-mid);cursor:pointer', '+ Add division');
           addDiv.addEventListener('click', function() {
-            var name = prompt('Division name for ' + sc.name + ':');
-            if (!name || !name.trim()) return;
-            var emoji = prompt('Emoji (optional):', '🍽') || '🍽';
-            var subtitle = prompt('Subtitle (optional):', '') || '';
+            var subNm = nameIn.value.trim() || sc.name;
             rpc('admin_upsert_recipe_division', {
-              p_id: null, p_category: cat, p_subcategory: sc.name, p_name: name.trim(),
-              p_emoji: emoji, p_subtitle: subtitle, p_description: null, p_tags: [], p_sort_order: (sc.divisions || []).length + 1
+              p_id: null, p_category: cat, p_subcategory: subNm,
+              p_name: 'New division', p_emoji: '🍽', p_subtitle: '', p_description: '',
+              p_tags: [], p_sort_order: ((sc.divisions || []).length + 1) * 10
             }).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
           });
-          scRow.appendChild(addDiv);
-          box.appendChild(scRow);
+          scBody.appendChild(addDiv);
+          scWrap.appendChild(scBody);
+          catBody.appendChild(scWrap);
         });
       }
 
       var addRow = mk('div', 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px');
       var inp = mk('input', 'flex:1;min-width:140px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-high)');
-      inp.placeholder = 'New sub-category…';
-      var btn = mk('button', 'padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;cursor:pointer', 'Add');
+      inp.placeholder = 'New sub-category name…';
+      var btn = mk('button', 'padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;cursor:pointer', 'Add sub-category');
       btn.addEventListener('click', function() {
         var v = inp.value.trim();
         if (!v) return;
-        var hintsRaw = prompt('Ingredient focus hints (comma-separated, optional):', '') || '';
-        var hintsArr = typeof parseIngredientHintText === 'function'
-          ? parseIngredientHintText(hintsRaw) : hintsRaw.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
         rpc('admin_upsert_recipe_subcategory', {
-          p_id: null, p_category: cat, p_name: v, p_sort_order: subList.length + 1,
-          p_ingredient_hints: hintsArr.length ? hintsArr : null
-        })
-          .then(function() { loadRMTaxonomy(container); })
-          .catch(function(e) { alert(e.message); });
+          p_id: null, p_category: cat, p_name: v,
+          p_sort_order: (subList.length + 1) * 10,
+          p_ingredient_hints: [], p_tagline: null, p_description: null, p_emoji: null
+        }).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
       });
       addRow.appendChild(inp);
       addRow.appendChild(btn);
-      box.appendChild(addRow);
+      catBody.appendChild(addRow);
+      box.appendChild(catBody);
       container.appendChild(box);
     });
   } catch (e) {

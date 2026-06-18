@@ -38,6 +38,7 @@ Built from the 25 **core** files in `sql/` (01-schema through fix_anon_grants).
 | `sql/fix-ocean-river-taxonomy.sql` | **Once** — Ocean & River D1–D8 subs + species/cut focus hints |
 | `sql/fix-feather-pasture-taxonomy.sql` | **Once** — Feather & Flock B1–B7 + Pasture & Hoof C1–C7 subs + cut/focus hints |
 | `sql/fix-garden-taxonomy-v2.sql` | **Once** — Garden A1–A13 subs + `ingredient_hints` (not divisions). Run **after** `fix-category-cleanup-v3.sql`. Admin: Taxonomy tab → “Sync subs + ingredient hints”. |
+| `sql/fix-admin-taxonomy-editor.sql` | **Once** — admin-editable sub tagline/description/emoji, reorder RPCs, extended browse RPC |
 | `sql/fix-garden-taxonomy.sql` | Superseded by `fix-garden-taxonomy-v2.sql` |
 
 Source of truth: `lib/tcj-category-copy.js` (A–K) + `lib/tcj-garden-taxonomy.js` (A) + `lib/tcj-feather-flock-taxonomy.js` (B) + `lib/tcj-pasture-hoof-taxonomy.js` (C) + `lib/tcj-ocean-river-taxonomy.js` (D) + `lib/tcj-grain-field-taxonomy.js` (E) + `lib/tcj-sips-stories-taxonomy.js` (J).
