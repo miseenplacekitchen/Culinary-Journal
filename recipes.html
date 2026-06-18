@@ -60,13 +60,14 @@
     .cr-filters { display:flex; gap:6px; flex-wrap:wrap; }
     #browse-sub-filters.cr-filters,
     #cr-sub-filters.cr-filters {
-      flex-wrap:nowrap; justify-content:space-between; align-items:stretch;
-      gap:6px; overflow-x:auto; scrollbar-width:thin; -webkit-overflow-scrolling:touch;
-      padding-bottom:2px;
+      display:grid;
+      grid-template-columns:repeat(auto-fill, minmax(108px, 1fr));
+      gap:6px;
     }
     #browse-sub-filters .cr-filter,
     #cr-sub-filters .cr-filter {
-      flex:1 1 0; min-width:max-content; text-align:center; padding:6px 10px; font-size:10px;
+      width:100%; text-align:center; padding:6px 8px; font-size:10px;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
     .cr-filter { padding:6px 14px; border-radius:20px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); cursor:pointer; transition:all 0.15s; white-space:nowrap; }
     .cr-filter:hover { border-color:var(--accent); color:var(--accent); }
@@ -183,7 +184,7 @@
 </style>
   <script src="lib/taxonomy-sub-codes.js?v=20260617e"></script>
   <script src="lib/taxonomy-parts.js?v=20260617e"></script>
-  <script src="lib/tcj-garden-taxonomy.js?v=20260617"></script>
+  <script src="lib/tcj-garden-taxonomy.js?v=20260617b"></script>
   <script src="page-guard.js"></script>
 </head>
 <body>
@@ -1441,8 +1442,10 @@ function renderBrowseSubFilterButtons(categoryName, activeSubName) {
   var subs = getBrowseSubsForCategory(categoryName);
   var html = '<button class="cr-filter' + (!activeSubName ? ' active' : '') + '" data-sub="" type="button">All</button>';
   subs.forEach(function(s) {
+    var label = (typeof browseSubPillLabel === 'function') ? browseSubPillLabel(s.name) : s.name;
+    var titleAttr = label !== s.name ? ' title="' + s.name.replace(/"/g, '&quot;') + '"' : '';
     html += '<button class="cr-filter' + (activeSubName === s.name ? ' active' : '') + '" data-sub="' +
-      s.name.replace(/"/g, '&quot;') + '" type="button">' + s.name + '</button>';
+      s.name.replace(/"/g, '&quot;') + '" type="button"' + titleAttr + '>' + label + '</button>';
   });
   return html;
 }
