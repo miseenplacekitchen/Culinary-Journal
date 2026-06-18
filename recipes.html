@@ -58,6 +58,16 @@
     .cr-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:10px; }
     .cr-title { font-family:'Cormorant Garamond',serif; font-size:1.5rem; font-weight:600; color:var(--text-high); }
     .cr-filters { display:flex; gap:6px; flex-wrap:wrap; }
+    #browse-sub-filters.cr-filters,
+    #cr-sub-filters.cr-filters {
+      flex-wrap:nowrap; justify-content:space-between; align-items:stretch;
+      gap:6px; overflow-x:auto; scrollbar-width:thin; -webkit-overflow-scrolling:touch;
+      padding-bottom:2px;
+    }
+    #browse-sub-filters .cr-filter,
+    #cr-sub-filters .cr-filter {
+      flex:1 1 0; min-width:max-content; text-align:center; padding:6px 10px; font-size:10px;
+    }
     .cr-filter { padding:6px 14px; border-radius:20px; border:1px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:11px; color:var(--text-mid); cursor:pointer; transition:all 0.15s; white-space:nowrap; }
     .cr-filter:hover { border-color:var(--accent); color:var(--accent); }
     .cr-filter.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:500; }
@@ -90,6 +100,9 @@
       font-family:'DM Sans',sans-serif; font-size:11px; font-weight:700;
       letter-spacing:.06em; text-transform:uppercase; color:var(--accent);
       margin:0 0 14px; padding-bottom:10px; border-bottom:1px solid var(--border);
+    }
+    .tax-part-title--muted {
+      color:var(--text-mid); font-weight:600; letter-spacing:.08em;
     }
     .tax-card-grid {
       display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px;
@@ -871,16 +884,11 @@ function renderBrowseCategoryHome(categoryName, dbDishes, subFilter) {
   }
 
   var flatSubs = [];
-  var groups = getSubsGroupedByPart(categoryName);
-  if (subFilter) {
-    groups = [{ letter: '', title: '', emoji: '', subs: subs }];
-  }
-  var jumpHtml = '';
   var html = '';
 
   if (dbDishes && dbDishes.length && !subFilter) {
     html += '<div class="tax-part-block" id="tax-part-curated">';
-    html += '<div class="tax-part-title">🥬 Curated techniques</div>';
+    html += '<div class="tax-part-title tax-part-title--muted">🥬 Curated techniques</div>';
     html += '<div class="dish-grid">';
     dbDishes.forEach(function(dish) {
       html += renderDishCardHtml({
@@ -894,19 +902,9 @@ function renderBrowseCategoryHome(categoryName, dbDishes, subFilter) {
     html += '</div></div>';
   }
 
-  groups.forEach(function(group, gi) {
-    if (!group.subs.length) return;
-    if (group.title) {
-      jumpHtml += '<button type="button" class="tax-part-jump-btn" data-part="' + gi + '">' +
-        (group.emoji ? group.emoji + ' ' : '') + group.title + '</button>';
-    }
-    html += '<div class="tax-part-block" id="tax-part-' + gi + '">';
-    if (group.title) {
-      html += '<div class="tax-part-title">' +
-        (group.emoji ? group.emoji + ' ' : '') + group.title + '</div>';
-    }
-    html += '<div class="dish-grid">';
-    group.subs.forEach(function(s) {
+  if (subs.length) {
+    html += '<div class="tax-part-block"><div class="dish-grid">';
+    subs.forEach(function(s) {
       var idx = flatSubs.length;
       flatSubs.push(s);
       html += renderDishCardHtml({
@@ -918,16 +916,10 @@ function renderBrowseCategoryHome(categoryName, dbDishes, subFilter) {
       });
     });
     html += '</div></div>';
-  });
+  }
 
-  g.innerHTML = (jumpHtml ? '<div class="tax-part-jump">' + jumpHtml + '</div>' : '') + html;
+  g.innerHTML = html;
 
-  g.querySelectorAll('.tax-part-jump-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var el = document.getElementById('tax-part-' + this.dataset.part);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  });
   g.querySelectorAll('.dish-card[data-dish-id]').forEach(function(card) {
     card.addEventListener('click', function() { openDish(this.dataset.dishId, dbDishes); });
   });
@@ -1445,6 +1437,16 @@ async function loadBrowseTaxonomyCommunity() {
   await loadBrowseTaxonomy();
 }
 
+function renderBrowseSubFilterButtons(categoryName, activeSubName) {
+  var subs = getBrowseSubsForCategory(categoryName);
+  var html = '<button class="cr-filter' + (!activeSubName ? ' active' : '') + '" data-sub="" type="button">All</button>';
+  subs.forEach(function(s) {
+    html += '<button class="cr-filter' + (activeSubName === s.name ? ' active' : '') + '" data-sub="' +
+      s.name.replace(/"/g, '&quot;') + '" type="button">' + s.name + '</button>';
+  });
+  return html;
+}
+
 function buildBrowseTaxonomyFilters(categoryName) {
   var row = document.getElementById('browse-taxonomy-row');
   var subEl = document.getElementById('browse-sub-filters');
@@ -1458,16 +1460,7 @@ function buildBrowseTaxonomyFilters(categoryName) {
   });
   if (!subs.length) { row.style.display = 'none'; return; }
   row.style.display = 'block';
-  var pillHtml = '<button class="cr-filter active" data-sub="" type="button">All</button>';
-  getSubsGroupedByPart(categoryName).forEach(function(group) {
-    if (group.title) {
-      pillHtml += '<span class="browse-part-label">' + (group.emoji ? group.emoji + ' ' : '') + group.title + '</span>';
-    }
-    group.subs.forEach(function(s) {
-      pillHtml += '<button class="cr-filter" data-sub="' + s.name.replace(/"/g, '&quot;') + '" type="button">' + s.name + '</button>';
-    });
-  });
-  subEl.innerHTML = pillHtml;
+  subEl.innerHTML = renderBrowseSubFilterButtons(categoryName, curSubFilter || null);
   if (divRow) divRow.style.display = 'none';
   if (divEl) divEl.innerHTML = '';
   subEl.onclick = function(e) {
@@ -1558,19 +1551,7 @@ function buildCommunityTaxonomyFilters() {
   var names = Object.keys(subs);
   if (!names.length) { row.style.display = 'none'; buildCommunityDivisionFilters(); return; }
   row.style.display = 'block';
-  var pillHtml = '<button class="cr-filter' + (activeSubFilter ? '' : ' active') + '" data-sub="" type="button">All</button>';
-  getSubsGroupedByPart(activeCatFilter).forEach(function(group) {
-    group.subs = group.subs.filter(function(s) { return subs[s.name]; });
-    if (!group.subs.length) return;
-    if (group.title) {
-      pillHtml += '<span class="browse-part-label">' + (group.emoji ? group.emoji + ' ' : '') + group.title + '</span>';
-    }
-    group.subs.forEach(function(s) {
-      pillHtml += '<button class="cr-filter' + (activeSubFilter === s.name ? ' active' : '') + '" data-sub="' +
-        s.name.replace(/"/g, '&quot;') + '" type="button">' + s.name + '</button>';
-    });
-  });
-  subEl.innerHTML = pillHtml;
+  subEl.innerHTML = renderBrowseSubFilterButtons(activeCatFilter, activeSubFilter || null);
   subEl.onclick = function(e) {
     var btn = e.target.closest('.cr-filter');
     if (!btn) return;
