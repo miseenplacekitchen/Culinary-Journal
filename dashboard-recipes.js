@@ -1,4 +1,4 @@
-// The Culinary Journal — Dashboard Module
+﻿// The Culinary Journal â€” Dashboard Module
 // This file is loaded by dashboard.html
 // Requires: supabase-config.js to be loaded first
 
@@ -360,10 +360,10 @@ async function openRecipeModal(id) {
     if (r.prep_time_minutes) metaRow.appendChild(mk('span',"font-size:11px;color:var(--text-mid)", 'Prep: ' + r.prep_time_minutes + 'm'));
     if (r.cook_time_minutes) metaRow.appendChild(mk('span',"font-size:11px;color:var(--text-mid)", 'Cook: ' + r.cook_time_minutes + 'm'));
     titleBlock.appendChild(metaRow);
-    // Agent + full editor — every Submit a Recipe field (ingredients, procedure, dropdowns)
+    // Agent + full editor â€” every Submit a Recipe field (ingredients, procedure, dropdowns)
     var editFullBar = mk('div','margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(91,143,212,0.12);border:1px solid rgba(91,143,212,0.35)');
     editFullBar.appendChild(mk('div',"font-size:12px;color:var(--text-high);line-height:1.55;margin-bottom:10px",
-      'Agent Review cleans all fields and saves — you approve when the content looks right. Junk is auto-rejected; gaps open the editor.'));
+      'Agent Review cleans all fields and saves â€” you approve when the content looks right. Junk is auto-rejected; gaps open the editor.'));
     var agentBtnRow = mk('div','display:flex;flex-wrap:wrap;gap:10px;align-items:center');
     var agentReviewBtn = mk('button','padding:10px 18px;background:#7c5cbf;border:none;border-radius:8px;color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer',
       '\uD83E\uDD16 Agent Review');
@@ -379,7 +379,7 @@ async function openRecipeModal(id) {
     editFullBtn.addEventListener('click', function(e) {
       e.stopPropagation();
       if (typeof openAdminFullEditorPopup === 'function') {
-        openAdminFullEditorPopup(r.id, { title: 'Edit all fields', subtitle: 'Same form as Submit a Recipe — save, then approve below.' });
+        openAdminFullEditorPopup(r.id, { title: 'Edit all fields', subtitle: 'Same form as Submit a Recipe â€” save, then approve below.' });
       } else {
         window.open('submit-recipe.html?adminReview=' + encodeURIComponent(r.id), '_blank', 'noopener');
       }
@@ -394,14 +394,14 @@ async function openRecipeModal(id) {
     panel.appendChild(bodyScroll);
     function bodyAppend(el) { bodyScroll.appendChild(el); }
 
-    // Introduction & notes (batch imports often have empty intro — show either way)
+    // Introduction & notes (batch imports often have empty intro â€” show either way)
     var introBlock = mk('div','padding:14px 20px;border-bottom:1px solid var(--border)');
     introBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:8px",'Introduction'));
     var introText = (r.introduction || '').trim();
     if (introText && introText !== 'Imported from Personal book collection.') {
       introBlock.appendChild(mk('div',"font-size:13px;color:var(--text-high);line-height:1.65", introText));
     } else {
-      introBlock.appendChild(mk('div',"font-size:12px;color:var(--text-mid);font-style:italic",'No introduction yet — run Agent Review or edit below / full form.'));
+      introBlock.appendChild(mk('div',"font-size:12px;color:var(--text-mid);font-style:italic",'No introduction yet â€” run Agent Review or edit below / full form.'));
     }
     if (r.cooking_notes) {
       introBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin:14px 0 8px",'Cooking Notes'));
@@ -412,7 +412,7 @@ async function openRecipeModal(id) {
     bodyAppend(mk('div','padding:8px 20px;border-bottom:1px solid var(--border);background:rgba(91,143,212,0.08);font-size:11px;color:#5B8FD4;line-height:1.5',
       'Quick edits below, or use Edit full recipe above for ingredients & procedure. Approve/Reject stays fixed at the bottom.'));
 
-    // Recipe image — admin can replace before approving
+    // Recipe image â€” admin can replace before approving
     var imgBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border)');
     imgBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:10px",'Recipe Image'));
     var imgPreview = document.createElement('img');
@@ -470,7 +470,7 @@ async function openRecipeModal(id) {
     if (r.ingredients) {
       var ingBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border)');
       ingBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:4px",'Ingredients'));
-      ingBlock.appendChild(mk('div',"font-size:11px;color:var(--text-mid);margin-bottom:8px;font-style:italic",'Preview only — use Edit full recipe above to change sections and rows.'));
+      ingBlock.appendChild(mk('div',"font-size:11px;color:var(--text-mid);margin-bottom:8px;font-style:italic",'Preview only â€” use Edit full recipe above to change sections and rows.'));
       try {
         var ings = typeof r.ingredients === 'string' ? JSON.parse(r.ingredients) : r.ingredients;
         if (Array.isArray(ings)) {
@@ -491,11 +491,11 @@ async function openRecipeModal(id) {
       bodyAppend(ingBlock);
     }
 
-    // Method — section blocks with steps (not raw JSON per section)
+    // Method â€” section blocks with steps (not raw JSON per section)
     if (r.method) {
       var methBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border)');
       methBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:4px",'Procedure'));
-      methBlock.appendChild(mk('div',"font-size:11px;color:var(--text-mid);margin-bottom:8px;font-style:italic",'Preview only — use Edit full recipe above to edit steps.'));
+      methBlock.appendChild(mk('div',"font-size:11px;color:var(--text-mid);margin-bottom:8px;font-style:italic",'Preview only â€” use Edit full recipe above to edit steps.'));
       var methScroll = mk('div','max-height:240px;overflow-y:auto');
       try {
         var blocks = (typeof RecipeProcedure !== 'undefined') ? RecipeProcedure.parseBlocks(r.method) : [];
@@ -553,7 +553,7 @@ async function openRecipeModal(id) {
       } catch(e) { console.warn('import warnings parse', e); }
       if (warns.length) {
         var wEl = mk('div',"font-size:12px;color:var(--text-mid);margin-top:8px;line-height:1.6");
-        wEl.textContent = 'Warnings: ' + warns.join(' · ');
+        wEl.textContent = 'Warnings: ' + warns.join(' Â· ');
         iaBlock.appendChild(wEl);
       }
       if (r.import_raw_article_text) {
@@ -575,7 +575,7 @@ async function openRecipeModal(id) {
       bodyAppend(iaBlock);
     }
 
-    // Unknown ingredients — ingredients submitted that aren't in the database yet
+    // Unknown ingredients â€” ingredients submitted that aren't in the database yet
     var unknowns = [];
     try {
       unknowns = Array.isArray(r.unknown_ingredients) ? r.unknown_ingredients
@@ -583,7 +583,7 @@ async function openRecipeModal(id) {
     } catch(e) { console.warn('unknown ingredients parse', e); }
     if (unknowns.length) {
       var uBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(212,160,23,0.05);border-left:3px solid #d4a017');
-      uBlock.appendChild(mk('div',"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#d4a017;margin-bottom:10px",'⚠ New Ingredients Not Yet in Database'));
+      uBlock.appendChild(mk('div',"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#d4a017;margin-bottom:10px",'âš  New Ingredients Not Yet in Database'));
       uBlock.appendChild(mk('p',"font-size:12px;color:var(--text-mid);margin:0 0 12px;line-height:1.6",'These ingredient names were flagged when the recipe was submitted. Review and add any that are legitimate.'));
       unknowns.forEach(function(name) {
         var row = mk('div','display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04)');
@@ -601,7 +601,7 @@ async function openRecipeModal(id) {
       bodyAppend(uBlock);
     }
 
-    // Unknown utensils — tools not yet in the Tools & Appliances library
+    // Unknown utensils â€” tools not yet in the Tools & Appliances library
     var unknownTools = [];
     try {
       unknownTools = Array.isArray(r.unknown_utensils) ? r.unknown_utensils
@@ -609,7 +609,7 @@ async function openRecipeModal(id) {
     } catch(e) { console.warn('unknown utensils parse', e); }
     if (unknownTools.length) {
       var tBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(212,160,23,0.05);border-left:3px solid #d4a017');
-      tBlock.appendChild(mk('div',"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#d4a017;margin-bottom:10px",'⚠ New Tools Not Yet in Library'));
+      tBlock.appendChild(mk('div',"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#d4a017;margin-bottom:10px",'âš  New Tools Not Yet in Library'));
       tBlock.appendChild(mk('p',"font-size:12px;color:var(--text-mid);margin:0 0 12px;line-height:1.6",'These utensil names were flagged because they are not published in Tools & Appliances yet. Review and publish a profile, or ask the contributor to submit one.'));
       unknownTools.forEach(function(name) {
         var row = mk('div','display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);flex-wrap:wrap');
@@ -634,7 +634,7 @@ async function openRecipeModal(id) {
       bodyAppend(tBlock);
     }
 
-    // Suggested taxonomy — sub-categories / divisions not yet in the database
+    // Suggested taxonomy â€” sub-categories / divisions not yet in the database
     var taxSug = [];
     try {
       taxSug = Array.isArray(r.taxonomy_suggestions) ? r.taxonomy_suggestions
@@ -642,19 +642,19 @@ async function openRecipeModal(id) {
     } catch(e) { console.warn('taxonomy suggestions parse', e); }
     if (taxSug.length) {
       var tBlock = mk('div','padding:16px 20px;border-bottom:1px solid var(--border);background:rgba(212,160,23,0.05);border-left:3px solid #d4a017');
-      tBlock.appendChild(mk('div',"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#d4a017;margin-bottom:10px",'⚠ Suggested Taxonomy Not Yet in Database'));
+      tBlock.appendChild(mk('div',"font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#d4a017;margin-bottom:10px",'âš  Suggested Taxonomy Not Yet in Database'));
       tBlock.appendChild(mk('p',"font-size:12px;color:var(--text-mid);margin:0 0 12px;line-height:1.6",'The contributor typed sub-categories or divisions that are not in the master list. Review and add any that should be available site-wide.'));
       taxSug.forEach(function(sug) {
         var label = sug.field === 'sub_category'
-          ? 'Sub-category: ' + (sug.value || '') + ' · ' + (sug.category || '')
-          : 'Division: ' + (sug.value || '') + ' · ' + (sug.sub_category || '—') + ' · ' + (sug.category || '');
+          ? 'Sub-category: ' + (sug.value || '') + ' Â· ' + (sug.category || '')
+          : 'Division: ' + (sug.value || '') + ' Â· ' + (sug.sub_category || 'â€”') + ' Â· ' + (sug.category || '');
         var row = mk('div','display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04)');
         row.appendChild(mk('span',"font-size:13px;color:var(--text-high);flex:1", label));
         var addBtn = mk('button',"padding:4px 14px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0",'+ Add to Taxonomy');
         addBtn.addEventListener('click', (function(s) { return function() {
           var btn = this;
           btn.disabled = true;
-          btn.textContent = 'Adding…';
+          btn.textContent = 'Addingâ€¦';
           var p;
           if (s.field === 'sub_category') {
             p = rpc('admin_upsert_recipe_subcategory', { p_id: null, p_category: s.category, p_name: s.value, p_sort_order: 99 });
@@ -667,7 +667,7 @@ async function openRecipeModal(id) {
             }
             p = rpc('admin_upsert_recipe_division', {
               p_id: null, p_category: s.category, p_subcategory: s.sub_category, p_name: s.value,
-              p_emoji: '🍽', p_subtitle: '', p_description: null, p_tags: [], p_sort_order: 99
+              p_emoji: 'ðŸ½', p_subtitle: '', p_description: null, p_tags: [], p_sort_order: 99
             });
           } else {
             btn.disabled = false;
@@ -675,7 +675,7 @@ async function openRecipeModal(id) {
             return;
           }
           p.then(function() {
-            btn.textContent = '✓ Added';
+            btn.textContent = 'âœ“ Added';
             btn.style.background = '#2d8a4e';
           }).catch(function(e) {
             alert(e.message || 'Could not add taxonomy entry');
@@ -686,7 +686,7 @@ async function openRecipeModal(id) {
         row.appendChild(addBtn);
         tBlock.appendChild(row);
       });
-      var manageBtn = mk('button',"margin-top:10px;padding:6px 14px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer",'Manage all taxonomy →');
+      var manageBtn = mk('button',"margin-top:10px;padding:6px 14px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer",'Manage all taxonomy â†’');
       manageBtn.addEventListener('click', function() {
         closeRecipeModal();
         switchRecipeTab('taxonomy');
@@ -718,7 +718,7 @@ async function openRecipeModal(id) {
     var catSel = document.createElement('select');
     catSel.id = 'rm-edit-cat';
     catSel.style.cssText = 'width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)';
-    var blankOpt = document.createElement('option'); blankOpt.value = ''; blankOpt.textContent = '— Select —'; catSel.appendChild(blankOpt);
+    var blankOpt = document.createElement('option'); blankOpt.value = ''; blankOpt.textContent = 'â€” Select â€”'; catSel.appendChild(blankOpt);
     getRecipeCats().forEach(function(c) { var o = document.createElement('option'); o.value = c; o.textContent = c; catSel.appendChild(o); });
     catWrap.appendChild(catSel);
     if (r.category) {
@@ -786,14 +786,14 @@ async function openRecipeModal(id) {
     editBlock.appendChild(saveEditBtn); editBlock.appendChild(editMsg);
     bodyAppend(editBlock);
 
-    // Sticky review footer — always visible
+    // Sticky review footer â€” always visible
     var reviewBlock = mk('div','padding:16px 20px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0;box-shadow:0 -8px 24px rgba(0,0,0,0.25)');
     reviewBlock.appendChild(mk('div',"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-mid);margin-bottom:12px",'Review'));
     // Rejection reason dropdown
     var rejectSel = document.createElement('select');
     rejectSel.id = 'rm-reject-reason';
     rejectSel.style.cssText = 'width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high);margin-bottom:8px';
-    var noReason = document.createElement('option'); noReason.value = ''; noReason.textContent = '— Rejection reason (optional) —'; rejectSel.appendChild(noReason);
+    var noReason = document.createElement('option'); noReason.value = ''; noReason.textContent = 'â€” Rejection reason (optional) â€”'; rejectSel.appendChild(noReason);
     ['Incomplete ingredients','Unclear method','Duplicate recipe','Inappropriate content','Missing source credit','Poor formatting','Other'].forEach(function(reason) {
       var o = document.createElement('option'); o.value = reason; o.textContent = reason; rejectSel.appendChild(o);
     });
@@ -1005,7 +1005,7 @@ function loadRMInterfaceSettings() {
   AdminTabNav.buildInterfaceShell(el, {
     storageKey: 'tcj_rm_interface_tab',
     defaultKey: 'hub',
-    banner: 'Recipe configuration — queues and spotlight stay in the tabs above.',
+    banner: 'Recipe configuration â€” queues and spotlight stay in the tabs above.',
     sections: [
       AdminTabNav.hubSection({
         subtitle: 'Jump to work or open an operations screen',
@@ -1013,7 +1013,7 @@ function loadRMInterfaceSettings() {
           return rpc('admin_get_stats', {}).then(function (stats) {
             stats = stats || {};
             return {
-              intro: 'Taxonomy, collections, nutrition, print queue, and audit — pick a section in the sidebar or use a shortcut below.',
+              intro: 'Taxonomy, collections, nutrition, print queue, and audit â€” pick a section in the sidebar or use a shortcut below.',
               stats: [
                 { num: stats.pending || 0, label: 'Pending' },
                 { num: stats.approved || 0, label: 'Approved' },
@@ -1107,7 +1107,7 @@ async function renderOwnerAnalyticsExtras(host, data) {
     var tc = mk('div', 'background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px');
     tc.appendChild(mk('div', "font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--text-high);margin-bottom:10px", 'Most saved recipes'));
     top.forEach(function(r) {
-      tc.appendChild(mk('div', "font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);padding:3px 0", (r.recipe_name || 'Recipe') + ' — ' + (r.save_count || 0) + ' saves'));
+      tc.appendChild(mk('div', "font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-mid);padding:3px 0", (r.recipe_name || 'Recipe') + ' â€” ' + (r.save_count || 0) + ' saves'));
     });
     host.appendChild(tc);
   }
@@ -1142,7 +1142,7 @@ async function loadRMAnalytics(container) {
       cards.appendChild(card);
     });
     container.appendChild(cards);
-    // By category — prefer server aggregates (no row cap)
+    // By category â€” prefer server aggregates (no row cap)
     var catCounts = {};
     if (owner && owner.recipes && Array.isArray(owner.recipes.by_category)) {
       owner.recipes.by_category.forEach(function(c) {
@@ -1194,7 +1194,7 @@ async function loadRMAnalytics(container) {
       var miss = owner.recipes && owner.recipes.missing_taxonomy;
       if (miss > 0) {
         container.appendChild(mk('div', 'margin-bottom:14px;padding:10px 14px;background:rgba(196,151,59,0.1);border:1px solid var(--accent);border-radius:10px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid)',
-          miss + ' approved recipe(s) missing taxonomy — open Taxonomy tab to backfill.'));
+          miss + ' approved recipe(s) missing taxonomy â€” open Taxonomy tab to backfill.'));
       }
       await renderOwnerAnalyticsExtras(container, owner);
     }
@@ -1350,7 +1350,7 @@ async function loadRMNutritionQueue(container) {
     container.innerHTML = '';
     function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
     container.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:14px;line-height:1.6',
-      'Approved recipes — open the Nutrition tab to run Open Food Facts lookup per recipe. Results are approximate and cached in the browser.'));
+      'Approved recipes â€” open the Nutrition tab to run Open Food Facts lookup per recipe. Results are approximate and cached in the browser.'));
     if (!rows.length) {
       container.appendChild(mk('div', 'font-size:13px;color:var(--text-mid)', 'No approved recipes yet.'));
       return;
@@ -1561,7 +1561,7 @@ async function loadRMDuplicates(host) {
       host.appendChild(box);
       return;
     }
-    box.appendChild(mk('div', 'font-size:12px;color:var(--text-mid);margin-bottom:12px', dupes.length + ' group' + (dupes.length === 1 ? '' : 's') + ' — review before approving similar submissions.'));
+    box.appendChild(mk('div', 'font-size:12px;color:var(--text-mid);margin-bottom:12px', dupes.length + ' group' + (dupes.length === 1 ? '' : 's') + ' â€” review before approving similar submissions.'));
     dupes.forEach(function(g) {
       var card = mk('div', 'margin-bottom:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px');
       card.appendChild(mk('div', 'font-size:12px;font-weight:600;color:var(--text-high);margin-bottom:6px', (g.recipe_names && g.recipe_names[0]) || g.group_key || 'Group'));
@@ -1570,7 +1570,7 @@ async function loadRMDuplicates(host) {
         var nm = (g.recipe_names || [])[i] || 'Recipe';
         var st = (g.statuses || [])[i] || '';
         var cr = (g.credit_names || [])[i] || '';
-        row.appendChild(mk('span', '', nm + (cr ? ' · ' + cr : '') + (st ? ' [' + st + ']' : '')));
+        row.appendChild(mk('span', '', nm + (cr ? ' Â· ' + cr : '') + (st ? ' [' + st + ']' : '')));
         var open = mk('button', 'padding:3px 8px;font-size:10px;border:1px solid var(--border);border-radius:5px;background:none;color:var(--accent);cursor:pointer', 'Review');
         open.addEventListener('click', function() { openRecipeModal(id); });
         row.appendChild(open);
@@ -1582,7 +1582,7 @@ async function loadRMDuplicates(host) {
   } catch (e) {
     var err = document.createElement('div');
     err.style.cssText = 'font-size:12px;color:var(--text-mid);margin-bottom:16px';
-    err.textContent = 'Duplicate scan unavailable — run fix-phase34-batch.sql';
+    err.textContent = 'Duplicate scan unavailable â€” run fix-phase34-batch.sql';
     host.appendChild(err);
   }
 }
@@ -1629,8 +1629,8 @@ async function loadRMAudit(container) {
 
 
 
-// ── USER MANAGEMENT ───────────────────────────────────────────────
-// ── USER MANAGEMENT ──────────────────────────────────────────────
+// â”€â”€ USER MANAGEMENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// â”€â”€ USER MANAGEMENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 var _userPage       = 1;
 var _userPageSize   = 50;
 var _userTotal      = 0;
@@ -1719,7 +1719,7 @@ function showImportPreview(title, summary, onMerge, onReplace){
   overlay.appendChild(modal);document.body.appendChild(overlay);
 }
 
-// ── Categories + Sub Categories Export ───────────────────────────
+// â”€â”€ Categories + Sub Categories Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function loadRecipeAnalytics() {
   try {
@@ -1762,7 +1762,7 @@ function showCsvPreview(data){
   const cols=Object.keys(data[0]),preview=data.slice(0,10);
   document.getElementById('csv-drop-zone').style.display='none';
   document.getElementById('csv-row-count').textContent=data.length+' row'+(data.length===1?'':'s')+' ready';
-  document.getElementById('csv-preview-label').textContent=' — showing first '+Math.min(10,data.length);
+  document.getElementById('csv-preview-label').textContent=' â€” showing first '+Math.min(10,data.length);
   document.getElementById('csv-preview-table').innerHTML='<thead><tr>'+cols.map(function(c){return '<th>'+c+'</th>';}).join('')+'</tr></thead><tbody>'+preview.map(function(row){return '<tr>'+cols.map(function(c){return '<td>'+(row[c]||'')+'</td>';}).join('')+'</tr>';}).join('')+'</tbody>';
   document.getElementById('csv-preview-section').style.display='block';
   document.getElementById('csv-import-btn').disabled=false;
@@ -1807,7 +1807,7 @@ async function approveAllPendingRecipes() {
 async function rejectAllPendingRecipes() {
   var pending = getRmStatNum('rmgmt-pending');
   if (!pending) return;
-  if (!confirm('Reject all ' + pending + ' pending recipe' + (pending === 1 ? '' : 's') + '?\n\nOne confirmation only — the list will clear without reloading each row.')) return;
+  if (!confirm('Reject all ' + pending + ' pending recipe' + (pending === 1 ? '' : 's') + '?\n\nOne confirmation only â€” the list will clear without reloading each row.')) return;
   var btn = document.getElementById('rm-bulk-reject-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Rejecting\u2026'; }
   try {
@@ -1828,23 +1828,23 @@ async function rejectAllPendingRecipes() {
 }
 
 
-// ═══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // FM INTERFACE (Finance Management > FM Interface tab)
-// ═══════════════════════════════════════════════════════════════
-// ══════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // Recipe of the Week + Cooking Notes Approval
-// ══════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 async function loadROTW() {
   var panel = document.getElementById('rm-panel');
   if (!panel) return;
-  panel.innerHTML = '<div class="ap-loading">Loading…</div>';
+  panel.innerHTML = '<div class="ap-loading">Loadingâ€¦</div>';
   try {
     var recipes = [];
     if (typeof TcjAdminRecipes !== 'undefined') {
       recipes = await TcjAdminRecipes.fetchAll({ p_status: 'approved', p_search: null, p_category: null });
     } else {
-      console.warn('loadROTW: TcjAdminRecipes missing — capped at 200 rows');
+      console.warn('loadROTW: TcjAdminRecipes missing â€” capped at 200 rows');
       var rows = await rpc('admin_get_recipes', { p_status: 'approved', p_limit: 200, p_offset: 0 });
       recipes = Array.isArray(rows) ? rows : [];
     }
@@ -1865,7 +1865,7 @@ async function loadROTW() {
     html += '</div>';
 
     html += '<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Select from approved recipes:</div>' +
-      '<input type="text" id="rotw-search" placeholder="Search recipes…" oninput="filterROTWList(this.value)" ' +
+      '<input type="text" id="rotw-search" placeholder="Search recipesâ€¦" oninput="filterROTWList(this.value)" ' +
       'style="width:100%;max-width:400px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-high);outline:none;margin-bottom:12px">' +
       '<div id="rotw-list">';
 
@@ -1881,7 +1881,7 @@ async function loadROTW() {
         (isRotw(r)?'var(--accent)':'var(--border)') + ';background:' +
         (isRotw(r)?'var(--accent)':'none') + ';color:' +
         (isRotw(r)?'#0C0702':'var(--text-mid)') + ';cursor:pointer">' +
-        (isRotw(r)?'⭐ Current':'Set as ROTW') + '</button>' +
+        (isRotw(r)?'â­ Current':'Set as ROTW') + '</button>' +
         '</div>';
     });
 
@@ -1906,11 +1906,11 @@ async function setROTW(id) {
   } catch(e) { alert('Error: ' + (e.message||e)); }
 }
 
-// ── Cooking Tips / Notes Approval ─────────────────────────────────────
+// â”€â”€ Cooking Tips / Notes Approval â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function loadRecipeNotes(container) {
   var panel = container || document.getElementById('rm-panel');
   if (!panel) return;
-  panel.innerHTML = '<div class="ap-loading">Loading…</div>';
+  panel.innerHTML = '<div class="ap-loading">Loadingâ€¦</div>';
   try {
     var notes = await rpc('admin_get_pending_notes', {});
     buildNotesPanel(panel, Array.isArray(notes) ? notes : []);
@@ -1935,7 +1935,7 @@ function buildNotesPanel(panel, notes) {
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">' +
       '<div>' +
       '<div style="font-size:13px;font-weight:600;color:var(--text-high);margin-bottom:3px">' + esc(n.recipe_name||'Recipe') + '</div>' +
-      '<div style="font-size:11px;color:var(--text-muted)">Submitted by @' + esc(n.submitted_by||'member') + ' · ' + (n.created_at ? new Date(n.created_at).toLocaleDateString() : '') + '</div>' +
+      '<div style="font-size:11px;color:var(--text-muted)">Submitted by @' + esc(n.submitted_by||'member') + ' Â· ' + (n.created_at ? new Date(n.created_at).toLocaleDateString() : '') + '</div>' +
       '</div>' +
       '<div style="display:flex;gap:8px">' +
       '<button onclick="reviewNote(' + n.id + ',\'approved\')" style="font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;padding:6px 14px;border-radius:6px;border:none;background:#6dc86d;color:#0C0702;cursor:pointer">Approve</button>' +
@@ -2161,12 +2161,13 @@ async function loadRMTaxonomy(container) {
     }
     var missing = [];
     try { missing = await rpc('admin_list_recipes_missing_taxonomy', { p_limit: 50 }) || []; } catch(e) { console.warn('missing taxonomy list', e); }
+    if (missing.length) { /* backfill lives in Bulk Editor tab */ }
     container.innerHTML = '';
     function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
-    note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
-      'Edit names, descriptions, and ingredient hints here — changes save to the database and appear on the public browse page. ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260619b</span> — red <strong>Remove</strong> on each sub row. Renaming a sub/division updates matching recipes automatically (after bulk SQL). ' +
+    note.innerHTML = 'Browse hierarchy: <strong>Category â†’ Sub-category â†’ Division â†’ Recipes</strong>. ' +
+      'Edit names, descriptions, and ingredient hints here â€” changes save to the database and appear on the public browse page. ' +
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260619c</span> â€” red <strong>Remove</strong> on each sub row. Renaming updates matching recipes (after bulk v2 SQL). ' +
       '<br><br><strong>Paste book hints</strong> fills the ingredient box with the original list from the taxonomy book (you still click <em>Save sub-category</em> to store it). ' +
       '<strong>Sync from book</strong> re-creates book subs (avoid after removing one you want gone).';
     container.appendChild(note);
@@ -2190,85 +2191,10 @@ async function loadRMTaxonomy(container) {
         '<br>Run <code>database/sql/fix-admin-taxonomy-editor.sql</code> once in Supabase, then refresh. ' +
         'Subs below show book defaults until the database responds.';
       container.appendChild(errBox);
-    }
-
-    if (missing.length) {
-      var bulk = mk('div', 'margin-bottom:24px;padding:16px;background:rgba(196,151,59,0.08);border:1px solid var(--accent);border-radius:12px');
-      bulk.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:8px', 'Bulk backfill — missing taxonomy'));
-      bulk.appendChild(mk('div', 'font-size:12px;color:var(--text-mid);margin-bottom:12px;line-height:1.5', missing.length + ' approved recipe(s) lack sub-category or division (recipes live in divisions). Select rows, pick both, then apply.'));
-      var tbl = mk('table', 'width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px');
-      tbl.innerHTML = '<thead><tr style="text-align:left;color:var(--text-mid)"><th style="padding:6px 8px;width:28px"></th><th style="padding:6px 8px">Recipe</th><th style="padding:6px 8px">Category</th><th style="padding:6px 8px">Current</th></tr></thead>';
-      var tbody = mk('tbody');
-      missing.forEach(function(m) {
-        var tr = mk('tr');
-        tr.style.borderTop = '1px solid rgba(255,255,255,0.06)';
-        var td0 = mk('td'); td0.style.padding = '6px 8px';
-        var cb = mk('input'); cb.type = 'checkbox'; cb.className = 'rm-tax-bulk-cb'; cb.value = m.id; cb.dataset.category = m.category || '';
-        td0.appendChild(cb);
-        tr.appendChild(td0);
-        tr.appendChild(mk('td', 'padding:6px 8px;color:var(--text-high)', m.recipe_name || ''));
-        tr.appendChild(mk('td', 'padding:6px 8px;color:var(--text-mid)', m.category || ''));
-        var cur = (m.sub_category || '—') + ' · ' + (m.division || '—');
-        tr.appendChild(mk('td', 'padding:6px 8px;color:var(--text-mid)', cur));
-        tbody.appendChild(tr);
-      });
-      tbl.appendChild(tbody);
-      bulk.appendChild(tbl);
-      var bulkRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;align-items:center');
-      var catSel = mk('select', 'padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-high)');
-      catSel.innerHTML = '<option value="">Category filter…</option>' + CATS.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('');
-      var subSel = mk('select', 'padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-high);min-width:140px');
-      subSel.innerHTML = '<option value="">Sub-category…</option>';
-      var divSel = mk('select', 'padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-high);min-width:140px');
-      divSel.innerHTML = '<option value="">Division…</option>';
-      function fillSubs(cat) {
-        subSel.innerHTML = '<option value="">Sub-category…</option>';
-        divSel.innerHTML = '<option value="">Division…</option>';
-        var subs = {};
-        rows.filter(function(r) { return !cat || r.subcategory_category === cat; }).forEach(function(r) {
-          if (!r.subcategory_id || !r.subcategory_name) return;
-          if (!subs[r.subcategory_name]) subs[r.subcategory_name] = [];
-          if (r.division_name) subs[r.subcategory_name].push(r.division_name);
-        });
-        Object.keys(subs).sort().forEach(function(name) {
-          var o = document.createElement('option');
-          o.value = name; o.textContent = name;
-          subSel.appendChild(o);
-        });
-      }
-      function fillDivs(sub) {
-        divSel.innerHTML = '<option value="">Division…</option>';
-        var cat = catSel.value;
-        rows.filter(function(r) {
-          return r.subcategory_name === sub && (!cat || r.subcategory_category === cat);
-        }).forEach(function(r) {
-          if (!r.division_name) return;
-          var o = document.createElement('option');
-          o.value = r.division_name;
-          o.textContent = (r.division_emoji || '') + ' ' + r.division_name;
-          divSel.appendChild(o);
-        });
-      }
-      catSel.addEventListener('change', function() { fillSubs(catSel.value); });
-      subSel.addEventListener('change', function() { fillDivs(subSel.value); });
-      fillSubs('');
-      var applyBtn = mk('button', 'padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;cursor:pointer', 'Apply to selected');
-      applyBtn.addEventListener('click', function() {
-        var ids = [].map.call(container.querySelectorAll('.rm-tax-bulk-cb:checked'), function(cb) { return cb.value; });
-        if (!ids.length) { alert('Select at least one recipe.'); return; }
-        var sub = subSel.value.trim();
-        var div = divSel.value.trim();
-        if (!sub || !div) { alert('Choose both sub-category and division — recipes are stored in divisions.'); return; }
-        rpc('admin_bulk_set_recipe_taxonomy', { p_recipe_ids: ids, p_sub_category: sub, p_division: div })
-          .then(function(n) { alert('Updated ' + (n || 0) + ' recipe(s).'); loadRMTaxonomy(container); })
-          .catch(function(e) { alert(e.message); });
-      });
-      bulkRow.appendChild(catSel);
-      bulkRow.appendChild(subSel);
-      bulkRow.appendChild(divSel);
-      bulkRow.appendChild(applyBtn);
-      bulk.appendChild(bulkRow);
-      container.appendChild(bulk);
+    } else {
+      var movedNote = mk('div', 'margin-bottom:16px;padding:10px 12px;background:rgba(196,151,59,0.06);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-mid)');
+      movedNote.innerHTML = 'Recipes missing sub-category or division â†’ use <strong>Recipe Management â†’ Bulk Editor</strong> (backfill section at top).';
+      container.appendChild(movedNote);
     }
 
     var catNames = CATS.slice();
@@ -2332,12 +2258,12 @@ async function loadRMTaxonomy(container) {
       var catOpen = !rmTaxCollapsed(catKey, true);
       var box = mk('div', 'margin-bottom:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden');
       var catHdr = mk('div', 'display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(255,255,255,0.04);cursor:pointer;flex-wrap:wrap');
-      var catToggle = mk('span', 'font-size:12px;color:var(--text-mid);width:16px;flex-shrink:0', catOpen ? '▼' : '▶');
-      var catEmoji = (typeof TCJ_CAT_EMOJI !== 'undefined' && TCJ_CAT_EMOJI[cat]) ? TCJ_CAT_EMOJI[cat] : '🍽';
+      var catToggle = mk('span', 'font-size:12px;color:var(--text-mid);width:16px;flex-shrink:0', catOpen ? 'â–¼' : 'â–¶');
+      var catEmoji = (typeof TCJ_CAT_EMOJI !== 'undefined' && TCJ_CAT_EMOJI[cat]) ? TCJ_CAT_EMOJI[cat] : 'ðŸ½';
       catHdr.appendChild(catToggle);
       catHdr.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent);flex:1;min-width:160px', catEmoji + ' ' + cat));
       var catMove = mk('span', 'display:flex;gap:4px;flex-shrink:0');
-      catMove.appendChild(rmTaxMoveBtn('↑', 'Move category up', catIdx === 0, function(ev) {
+      catMove.appendChild(rmTaxMoveBtn('â†‘', 'Move category up', catIdx === 0, function(ev) {
         ev.stopPropagation();
         if (catIdx === 0) return;
         var prev = catNames[catIdx - 1];
@@ -2346,7 +2272,7 @@ async function loadRMTaxonomy(container) {
           rpc('admin_update_category_sort_order', { p_name: prev, p_sort_order: (catIdx + 1) * 10 })
         ]).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
       }));
-      catMove.appendChild(rmTaxMoveBtn('↓', 'Move category down', catIdx === catNames.length - 1, function(ev) {
+      catMove.appendChild(rmTaxMoveBtn('â†“', 'Move category down', catIdx === catNames.length - 1, function(ev) {
         ev.stopPropagation();
         if (catIdx >= catNames.length - 1) return;
         var next = catNames[catIdx + 1];
@@ -2363,15 +2289,15 @@ async function loadRMTaxonomy(container) {
       catHdr.addEventListener('click', function() {
         catOpen = !catOpen;
         catBody.style.display = catOpen ? 'block' : 'none';
-        catToggle.textContent = catOpen ? '▼' : '▶';
+        catToggle.textContent = catOpen ? 'â–¼' : 'â–¶';
         rmTaxSetCollapsed(catKey, catOpen);
       });
 
       var canon = (typeof getCanonicalCategoryTaxonomy === 'function')
         ? getCanonicalCategoryTaxonomy(cat) : null;
-      if (canon && canon.length) {
+      if (canon && canon.length && taxonomyRpcError) {
         var syncRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px');
-        syncRow.appendChild(mk('span', 'font-size:12px;color:var(--text-mid)', 'Book defaults:'));
+        syncRow.appendChild(mk('span', 'font-size:12px;color:var(--text-mid)', 'Book defaults (RPC offline only):'));
         var syncBtn = mk('button', 'padding:6px 12px;font-size:11px;border:1px solid var(--accent);border-radius:6px;background:none;color:var(--accent);cursor:pointer', 'Sync subs from book');
         syncBtn.addEventListener('click', function() {
           if (!confirm('Upsert all ' + canon.length + ' ' + cat + ' sub-categories from the book list (names + hints)? Existing edits to hints may be overwritten.')) return;
@@ -2406,8 +2332,8 @@ async function loadRMTaxonomy(container) {
           var scWrap = mk('div', 'margin-bottom:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg)');
 
           var scHdr = mk('div', 'display:flex;align-items:center;gap:6px;padding:8px 10px;background:rgba(0,0,0,0.15);flex-wrap:wrap');
-          var subToggle = mk('span', 'font-size:11px;color:var(--text-mid);cursor:pointer;width:14px', subOpen ? '▼' : '▶');
-          var emojiIn = rmTaxInput(sc.emoji || (subMeta ? subMeta.emoji : ''), '🍽', false);
+          var subToggle = mk('span', 'font-size:11px;color:var(--text-mid);cursor:pointer;width:14px', subOpen ? 'â–¼' : 'â–¶');
+          var emojiIn = rmTaxInput(sc.emoji || (subMeta ? subMeta.emoji : ''), 'ðŸ½', false);
           emojiIn.style.width = '42px';
           emojiIn.style.flex = 'none';
           emojiIn.style.textAlign = 'center';
@@ -2421,7 +2347,7 @@ async function loadRMTaxonomy(container) {
             scHdr.appendChild(mk('span', 'font-size:10px;color:var(--text-mid);letter-spacing:0.08em', subMeta.code));
           }
           var subMove = mk('span', 'display:flex;gap:4px;margin-left:auto');
-          subMove.appendChild(rmTaxMoveBtn('↑', 'Move sub up', subIdx === 0, function(ev) {
+          subMove.appendChild(rmTaxMoveBtn('â†‘', 'Move sub up', subIdx === 0, function(ev) {
             ev.stopPropagation();
             if (subIdx === 0) return;
             var ids = subList.map(function(s) { return s.id; }).filter(Boolean);
@@ -2430,7 +2356,7 @@ async function loadRMTaxonomy(container) {
             rpc('admin_reorder_recipe_subcategories', { p_category: cat, p_ordered_ids: ids })
               .then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
           }));
-          subMove.appendChild(rmTaxMoveBtn('↓', 'Move sub down', subIdx === subList.length - 1, function(ev) {
+          subMove.appendChild(rmTaxMoveBtn('â†“', 'Move sub down', subIdx === subList.length - 1, function(ev) {
             ev.stopPropagation();
             if (subIdx >= subList.length - 1) return;
             var ids = subList.map(function(s) { return s.id; }).filter(Boolean);
@@ -2460,13 +2386,13 @@ async function loadRMTaxonomy(container) {
             e.stopPropagation();
             subOpen = !subOpen;
             scBody.style.display = subOpen ? 'block' : 'none';
-            subToggle.textContent = subOpen ? '▼' : '▶';
+            subToggle.textContent = subOpen ? 'â–¼' : 'â–¶';
             rmTaxSetCollapsed(subKey, subOpen);
           });
           scHdr.addEventListener('click', function() {
             subOpen = !subOpen;
             scBody.style.display = subOpen ? 'block' : 'none';
-            subToggle.textContent = subOpen ? '▼' : '▶';
+            subToggle.textContent = subOpen ? 'â–¼' : 'â–¶';
             rmTaxSetCollapsed(subKey, subOpen);
           });
 
@@ -2484,13 +2410,13 @@ async function loadRMTaxonomy(container) {
             : (subMeta && subMeta.ingredients ? subMeta.ingredients : []);
           var hintTa = rmTaxTextarea(
             typeof formatIngredientHints === 'function' ? formatIngredientHints(hints) : (hints || []).join(', '),
-            'Comma-separated — when this ingredient is the main focus, use this sub-category', 52);
+            'Comma-separated â€” when this ingredient is the main focus, use this sub-category', 52);
           scBody.appendChild(hintTa);
 
           var hintActs = mk('div', 'display:flex;gap:6px;margin-top:6px;margin-bottom:8px;flex-wrap:wrap');
           if (subMeta && subMeta.ingredients && subMeta.ingredients.length) {
             var pasteBook = mk('button', 'padding:4px 10px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-mid);cursor:pointer', 'Paste book hints');
-            pasteBook.title = 'Fills the box with the original book list — click Save sub-category to store';
+            pasteBook.title = 'Fills the box with the original book list â€” click Save sub-category to store';
             pasteBook.addEventListener('click', function() {
               hintTa.value = formatIngredientHints(subMeta.ingredients);
             });
@@ -2521,20 +2447,20 @@ async function loadRMTaxonomy(container) {
           (sc.divisions || []).forEach(function(d, divIdx) {
             var dCard = mk('div', 'margin-bottom:8px;padding:8px 10px;border:1px solid rgba(255,255,255,0.06);border-radius:6px');
             var dTop = mk('div', 'display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap');
-            var dEmoji = rmTaxInput(d.division_emoji || '🍽', '🍽', false);
+            var dEmoji = rmTaxInput(d.division_emoji || 'ðŸ½', 'ðŸ½', false);
             dEmoji.style.width = '42px'; dEmoji.style.flex = 'none'; dEmoji.style.textAlign = 'center';
             var dName = rmTaxInput(d.division_name || '', 'Division name', true);
             dTop.appendChild(dEmoji);
             dTop.appendChild(dName);
             var dMove = mk('span', 'display:flex;gap:4px;margin-left:auto');
-            dMove.appendChild(rmTaxMoveBtn('↑', 'Move division up', divIdx === 0, function() {
+            dMove.appendChild(rmTaxMoveBtn('â†‘', 'Move division up', divIdx === 0, function() {
               if (divIdx === 0) return;
               var ids = sc.divisions.map(function(x) { return x.division_id; });
               var tmp = ids[divIdx]; ids[divIdx] = ids[divIdx - 1]; ids[divIdx - 1] = tmp;
               rpc('admin_reorder_recipe_divisions', { p_category: cat, p_subcategory: sc.name, p_ordered_ids: ids })
                 .then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
             }));
-            dMove.appendChild(rmTaxMoveBtn('↓', 'Move division down', divIdx === sc.divisions.length - 1, function() {
+            dMove.appendChild(rmTaxMoveBtn('â†“', 'Move division down', divIdx === sc.divisions.length - 1, function() {
               if (divIdx >= sc.divisions.length - 1) return;
               var ids = sc.divisions.map(function(x) { return x.division_id; });
               var tmp = ids[divIdx]; ids[divIdx] = ids[divIdx + 1]; ids[divIdx + 1] = tmp;
@@ -2556,7 +2482,7 @@ async function loadRMTaxonomy(container) {
               if (!nm) { alert('Division name is required.'); return; }
               rpc('admin_upsert_recipe_division', {
                 p_id: d.division_id, p_category: cat, p_subcategory: nameIn.value.trim() || sc.name,
-                p_name: nm, p_emoji: dEmoji.value.trim() || '🍽',
+                p_name: nm, p_emoji: dEmoji.value.trim() || 'ðŸ½',
                 p_subtitle: dSub.value.trim(), p_description: dDesc.value.trim(),
                 p_tags: [], p_sort_order: d.division_sort_order || (divIdx + 1) * 10
               }).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
@@ -2578,7 +2504,7 @@ async function loadRMTaxonomy(container) {
             var subNm = nameIn.value.trim() || sc.name;
             rpc('admin_upsert_recipe_division', {
               p_id: null, p_category: cat, p_subcategory: subNm,
-              p_name: 'New division', p_emoji: '🍽', p_subtitle: '', p_description: '',
+              p_name: 'New division', p_emoji: 'ðŸ½', p_subtitle: '', p_description: '',
               p_tags: [], p_sort_order: ((sc.divisions || []).length + 1) * 10
             }).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
           });
@@ -2590,7 +2516,7 @@ async function loadRMTaxonomy(container) {
 
       var addRow = mk('div', 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px');
       var inp = mk('input', 'flex:1;min-width:140px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-high)');
-      inp.placeholder = 'New sub-category name…';
+      inp.placeholder = 'New sub-category nameâ€¦';
       var btn = mk('button', 'padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;cursor:pointer', 'Add sub-category');
       btn.addEventListener('click', function() {
         var v = inp.value.trim();
@@ -2610,357 +2536,4 @@ async function loadRMTaxonomy(container) {
   } catch (e) {
     container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
   }
-}
-
-// ── Recipe Bulk Editor (Phase 2) ─────────────────────────────────────────────
-var _bulkRecipes = [];
-var _bulkRecipesTotal = 0;
-var _bulkPage = 1;
-var _BULK_PAGE_SIZE = 50;
-var _bulkSort = { column: 'recipe_name', direction: 'asc' };
-var _bulkSelected = new Set();
-var _bulkEditorReady = false;
-var _RM_BULK_CATS = ['Garden & Earth','Feather & Flock','Pasture & Hoof','Ocean & River',
-  'The Grain Field','Wrapped & Stuffed','Curds, Creams & Eggs','Breads & Bakery',
-  'Sweet Serenades','Sips & Stories','Preserved & Pantry'];
-
-function bulkTagsLabel(r) {
-  var parts = [];
-  (r.dietary_tags || []).slice(0, 3).forEach(function(t) { parts.push(t); });
-  if ((r.dietary_tags || []).length > 3) parts.push('+' + ((r.dietary_tags || []).length - 3));
-  return parts.join(', ') || '—';
-}
-
-function initBulkEditorFilters() {
-  var catSel = document.getElementById('bulk-category-filter');
-  if (catSel && catSel.dataset.init !== '1') {
-    catSel.dataset.init = '1';
-    var cats = (typeof getRecipeCats === 'function') ? getRecipeCats() : _RM_BULK_CATS;
-    cats.forEach(function(c) {
-      var o = document.createElement('option');
-      o.value = c; o.textContent = c;
-      catSel.appendChild(o);
-    });
-  }
-  if (!_bulkEditorReady) {
-    _bulkEditorReady = true;
-    var search = document.getElementById('bulk-recipe-search');
-    if (search) {
-      var t;
-      search.addEventListener('input', function() {
-        clearTimeout(t);
-        t = setTimeout(function() { _bulkPage = 1; loadBulkRecipes(); }, 300);
-      });
-    }
-    ['bulk-category-filter', 'bulk-status-filter'].forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) el.addEventListener('change', function() { _bulkPage = 1; loadBulkRecipes(); });
-    });
-    document.querySelectorAll('.bulk-sort-th').forEach(function(th) {
-      th.addEventListener('click', function() {
-        var col = th.dataset.sort;
-        if (!col) return;
-        if (_bulkSort.column === col) {
-          _bulkSort.direction = _bulkSort.direction === 'asc' ? 'desc' : 'asc';
-        } else {
-          _bulkSort.column = col;
-          _bulkSort.direction = 'asc';
-        }
-        sortBulkRecipesClient();
-        renderBulkRecipesTable();
-      });
-    });
-  }
-}
-
-function loadBulkRecipesTab() {
-  initBulkEditorFilters();
-  loadBulkRecipes();
-}
-
-async function loadBulkRecipes() {
-  var tbody = document.getElementById('bulk-recipes-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="10" class="ap-empty-row">Loading…</td></tr>';
-  try {
-    var search = (document.getElementById('bulk-recipe-search') || {}).value || '';
-    var cat = (document.getElementById('bulk-category-filter') || {}).value || '';
-    var status = (document.getElementById('bulk-status-filter') || {}).value || '';
-    var result = await rpc('admin_get_recipes_bulk', {
-      p_limit: _BULK_PAGE_SIZE,
-      p_offset: (_bulkPage - 1) * _BULK_PAGE_SIZE,
-      p_search: search.trim() || null,
-      p_category: cat || null,
-      p_status: status || null
-    });
-    if (!result || typeof result === 'string') {
-      try { result = JSON.parse(result); } catch (e) { /* keep */ }
-    }
-    _bulkRecipes = (result && result.rows) ? result.rows : [];
-    _bulkRecipesTotal = (result && result.total) ? parseInt(result.total, 10) : _bulkRecipes.length;
-    sortBulkRecipesClient();
-    renderBulkRecipesTable();
-    renderBulkRecipePagination();
-  } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="10" class="ap-empty-row" style="color:#dc5050">Bulk editor RPC failed: ' +
-      esc(err.message || err) + '. Run database/sql/fix-admin-bulk-recipes.sql in Supabase.</td></tr>';
-  }
-}
-
-function sortBulkRecipesClient() {
-  var col = _bulkSort.column;
-  var dir = _bulkSort.direction === 'asc' ? 1 : -1;
-  _bulkRecipes.sort(function(a, b) {
-    var av = (a[col] == null ? '' : String(a[col])).toLowerCase();
-    var bv = (b[col] == null ? '' : String(b[col])).toLowerCase();
-    if (av < bv) return -1 * dir;
-    if (av > bv) return 1 * dir;
-    return 0;
-  });
-}
-
-function renderBulkRecipesTable() {
-  var tbody = document.getElementById('bulk-recipes-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-  if (!_bulkRecipes.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="ap-empty-row">No recipes match your filters.</td></tr>';
-    return;
-  }
-  _bulkRecipes.forEach(function(r) {
-    var tr = document.createElement('tr');
-    tr.dataset.recipeId = r.id;
-    tr.style.borderBottom = '1px solid rgba(255,255,255,0.04)';
-
-    var tdChk = document.createElement('td');
-    tdChk.className = 'ap-td';
-    var cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = _bulkSelected.has(r.id);
-    cb.addEventListener('change', function() {
-      if (cb.checked) _bulkSelected.add(r.id); else _bulkSelected.delete(r.id);
-      updateBulkActionBar();
-    });
-    tdChk.appendChild(cb);
-    tr.appendChild(tdChk);
-
-    tr.appendChild(bulkMakeCell(r, 'recipe_code', r.recipe_code || '—', !r.recipe_code));
-    tr.appendChild(bulkMakeCell(r, 'recipe_name', r.recipe_name || '', false));
-    tr.appendChild(bulkMakeCell(r, 'category', r.category || '—', false, 'select', _RM_BULK_CATS));
-    tr.appendChild(bulkMakeCell(r, 'sub_category', r.sub_category || '—', false));
-    tr.appendChild(bulkMakeCell(r, 'division', r.division || '—', false));
-    tr.appendChild(bulkMakeCell(r, 'cooking_style', r.cooking_style || '—', false));
-
-    var tdTags = document.createElement('td');
-    tdTags.className = 'ap-td';
-    tdTags.style.fontSize = '11px';
-    tdTags.style.color = 'var(--text-mid)';
-    tdTags.textContent = bulkTagsLabel(r);
-    tr.appendChild(tdTags);
-
-    var tdVis = document.createElement('td');
-    tdVis.className = 'ap-td';
-    var visCb = document.createElement('input');
-    visCb.type = 'checkbox';
-    visCb.checked = (r.visibility || 'Public') === 'Public';
-    visCb.title = 'Public = visible on site when approved';
-    visCb.addEventListener('change', function() {
-      var vis = visCb.checked ? 'Public' : 'Private';
-      rpc('admin_update_recipe_field', { p_id: r.id, p_field: 'visibility', p_value: vis })
-        .then(function() { r.visibility = vis; })
-        .catch(function(e) { alert(e.message); visCb.checked = !visCb.checked; });
-    });
-    tdVis.appendChild(visCb);
-    tr.appendChild(tdVis);
-
-    tr.appendChild(bulkMakeCell(r, 'status', r.status || 'pending', false, 'select', ['pending', 'approved', 'rejected']));
-    tbody.appendChild(tr);
-  });
-  updateBulkActionBar();
-}
-
-function bulkMakeCell(recipe, field, display, warn, type, options) {
-  var td = document.createElement('td');
-  td.className = 'ap-td';
-  td.style.cursor = 'pointer';
-  td.style.fontSize = '12px';
-  if (warn) td.style.color = '#dc5050';
-  td.textContent = display;
-  td.addEventListener('click', function(e) {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-    e.stopPropagation();
-    bulkStartEdit(td, recipe, field, type || 'text', options);
-  });
-  return td;
-}
-
-function bulkStartEdit(td, recipe, field, type, options) {
-  var original = td.textContent;
-  var origVal = recipe[field] || '';
-  if (type === 'select') {
-    var sel = document.createElement('select');
-    sel.style.cssText = 'width:100%;padding:4px 6px;background:var(--bg);border:1px solid var(--accent);border-radius:4px;font-size:12px;color:var(--text-high)';
-    (options || []).forEach(function(opt) {
-      var o = document.createElement('option');
-      o.value = opt; o.textContent = opt;
-      o.selected = opt === origVal;
-      sel.appendChild(o);
-    });
-    sel.addEventListener('change', function() { sel.blur(); });
-    sel.addEventListener('blur', function() {
-      var nv = sel.value;
-      if (nv === origVal) { td.textContent = original; return; }
-      rpc('admin_update_recipe_field', { p_id: recipe.id, p_field: field, p_value: nv })
-        .then(function() { recipe[field] = nv; td.textContent = nv || '—'; td.style.color = ''; })
-        .catch(function(e) { alert(e.message); td.textContent = original; });
-    });
-    td.textContent = '';
-    td.appendChild(sel);
-    sel.focus();
-    return;
-  }
-  var inp = document.createElement('input');
-  inp.type = 'text';
-  inp.value = origVal === '—' ? '' : origVal;
-  inp.style.cssText = 'width:100%;padding:4px 6px;background:var(--bg);border:1px solid var(--accent);border-radius:4px;font-size:12px;color:var(--text-high)';
-  inp.addEventListener('blur', function() {
-    var nv = inp.value.trim();
-    if (nv === (origVal || '') || (nv === '' && origVal === '—')) { td.textContent = original; return; }
-    rpc('admin_update_recipe_field', { p_id: recipe.id, p_field: field, p_value: nv })
-      .then(function() {
-        recipe[field] = nv;
-        td.textContent = nv || '—';
-        if (field === 'recipe_code' && nv) td.style.color = '';
-      })
-      .catch(function(e) { alert(e.message); td.textContent = original; });
-  });
-  inp.addEventListener('keydown', function(ev) {
-    if (ev.key === 'Enter') inp.blur();
-    if (ev.key === 'Escape') { td.textContent = original; }
-  });
-  td.textContent = '';
-  td.appendChild(inp);
-  inp.focus();
-  inp.select();
-}
-
-function updateBulkActionBar() {
-  var bar = document.getElementById('bulk-actions-bar');
-  var count = document.getElementById('bulk-selected-count');
-  if (!bar) return;
-  if (_bulkSelected.size > 0) {
-    bar.style.display = 'flex';
-    if (count) count.textContent = _bulkSelected.size + ' selected';
-  } else {
-    bar.style.display = 'none';
-  }
-}
-
-function toggleBulkSelectAll(checkbox) {
-  var tbody = document.getElementById('bulk-recipes-tbody');
-  if (!tbody) return;
-  tbody.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
-    if (cb.id === 'bulk-select-all') return;
-    cb.checked = checkbox.checked;
-    var tr = cb.closest('tr');
-    var id = tr && tr.dataset.recipeId;
-    if (!id) return;
-    if (checkbox.checked) _bulkSelected.add(id); else _bulkSelected.delete(id);
-  });
-  updateBulkActionBar();
-}
-
-function clearBulkRecipeSelection() {
-  _bulkSelected.clear();
-  var all = document.getElementById('bulk-select-all');
-  if (all) all.checked = false;
-  var tbody = document.getElementById('bulk-recipes-tbody');
-  if (tbody) tbody.querySelectorAll('input[type="checkbox"]').forEach(function(cb) { cb.checked = false; });
-  updateBulkActionBar();
-}
-
-async function executeBulkRecipeAction() {
-  var action = (document.getElementById('bulk-action-select') || {}).value;
-  if (!action || !_bulkSelected.size) return;
-  var ids = Array.from(_bulkSelected);
-  try {
-    if (action === 'show') {
-      await rpc('admin_bulk_update_recipe_visibility', { p_recipe_ids: ids, p_visibility: 'Public' });
-    } else if (action === 'hide') {
-      await rpc('admin_bulk_update_recipe_visibility', { p_recipe_ids: ids, p_visibility: 'Private' });
-    } else {
-      var chain = Promise.resolve();
-      ids.forEach(function(id) {
-        chain = chain.then(function() {
-          return rpc('admin_update_recipe_field', { p_id: id, p_field: 'status', p_value: action });
-        });
-      });
-      await chain;
-    }
-    alert('Updated ' + ids.length + ' recipe(s).');
-    clearBulkRecipeSelection();
-    loadBulkRecipes();
-  } catch (e) {
-    alert(e.message || e);
-  }
-}
-
-async function generateRecipeCodes() {
-  if (!confirm('Generate RM# codes for recipes missing them?')) return;
-  try {
-    var result = await rpc('admin_generate_recipe_codes', { p_batch_size: 500 });
-    if (typeof result === 'string') { try { result = JSON.parse(result); } catch (e) {} }
-    alert('Generated ' + ((result && result.generated_count) || 0) + ' code(s). ' +
-      ((result && result.total_missing) || 0) + ' still missing.');
-    loadBulkRecipes();
-  } catch (e) {
-    alert(e.message || e);
-  }
-}
-
-function exportBulkRecipes(format) {
-  if (format !== 'csv') return;
-  var headers = ['RM#', 'Recipe', 'Category', 'Sub-category', 'Division', 'Cooking', 'Visibility', 'Status', 'Dietary tags'];
-  var lines = [headers.map(function(h) { return '"' + h + '"'; }).join(',')];
-  _bulkRecipes.forEach(function(r) {
-    lines.push([
-      r.recipe_code || '',
-      r.recipe_name || '',
-      r.category || '',
-      r.sub_category || '',
-      r.division || '',
-      r.cooking_style || '',
-      r.visibility || '',
-      r.status || '',
-      (r.dietary_tags || []).join('; ')
-    ].map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','));
-  });
-  var blob = new Blob([lines.join('\n')], { type: 'text/csv' });
-  var url = window.URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = 'recipes-bulk-' + new Date().toISOString().split('T')[0] + '.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  window.URL.revokeObjectURL(url);
-}
-
-function renderBulkRecipePagination() {
-  var el = document.getElementById('bulk-pagination');
-  if (!el) return;
-  var totalPages = Math.max(1, Math.ceil(_bulkRecipesTotal / _BULK_PAGE_SIZE));
-  if (_bulkRecipesTotal <= _BULK_PAGE_SIZE) { el.style.display = 'none'; return; }
-  el.style.display = 'flex';
-  el.innerHTML =
-    '<button type="button" class="ap-pg-btn" ' + (_bulkPage <= 1 ? 'disabled' : '') + ' data-bulk-pg="prev">Prev</button>' +
-    '<span style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);padding:0 12px">Page ' +
-    _bulkPage + ' of ' + totalPages + ' (' + _bulkRecipesTotal + ' recipes)</span>' +
-    '<button type="button" class="ap-pg-btn" ' + (_bulkPage >= totalPages ? 'disabled' : '') + ' data-bulk-pg="next">Next</button>';
-  el.querySelectorAll('[data-bulk-pg]').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      if (btn.dataset.bulkPg === 'prev' && _bulkPage > 1) { _bulkPage--; loadBulkRecipes(); }
-      if (btn.dataset.bulkPg === 'next' && _bulkPage < totalPages) { _bulkPage++; loadBulkRecipes(); }
-    });
-  });
 }

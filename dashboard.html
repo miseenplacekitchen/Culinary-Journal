@@ -704,15 +704,14 @@
         <div id="rmgmt-pagination" style="display:none;align-items:center;justify-content:center;gap:8px;margin-top:14px"></div>
       </div>
       <div id="rmgmt-bulkrecipes-panel" style="display:none;padding:4px 0 20px">
-        <p style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin:0 0 14px;line-height:1.55">
-          Full recipe management — taxonomy, cooking style, visibility, RM# codes. Click a cell to edit. Run <code>database/sql/fix-admin-bulk-recipes.sql</code> once if the table shows an RPC error.
+        <p style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin:0 0 12px;line-height:1.55">
+          <strong>Bulk Editor v20260619c</strong> — click a cell to edit; double-click recipe name to open full editor. Column filters below headers. Run <code>fix-admin-bulk-recipes.sql</code> + <code>fix-admin-bulk-recipes-v2.sql</code> in Supabase.
         </p>
-        <div class="rm-list-toolbar" style="margin-bottom:12px">
-          <input type="text" class="ap-search" id="bulk-recipe-search" placeholder="Search name or RM#…" style="flex:1;min-width:160px;max-width:280px">
-          <select id="bulk-category-filter" class="ing-cat-filter" title="Filter by category">
-            <option value="">All categories</option>
-          </select>
-          <select id="bulk-status-filter" class="ing-cat-filter" title="Filter by status">
+        <div id="bulk-taxonomy-backfill" style="margin-bottom:16px;padding:14px;background:rgba(196,151,59,0.06);border:1px solid var(--border);border-radius:10px"></div>
+        <div class="rm-list-toolbar" style="margin-bottom:12px;flex-wrap:wrap">
+          <input type="text" class="ap-search" id="bulk-recipe-search" placeholder="Search name or RM#…" style="flex:1;min-width:160px;max-width:240px">
+          <select id="bulk-category-filter" class="ing-cat-filter"><option value="">All categories</option></select>
+          <select id="bulk-status-filter" class="ing-cat-filter">
             <option value="">All statuses</option>
             <option value="approved">Approved</option>
             <option value="pending">Pending</option>
@@ -731,26 +730,55 @@
             <option value="pending">Set status: Pending</option>
             <option value="rejected">Set status: Rejected</option>
           </select>
-          <button type="button" class="rm-bulk-approve-btn" onclick="executeBulkRecipeAction()">Apply</button>
+          <button type="button" class="rm-bulk-approve-btn" onclick="executeBulkRecipeAction()">Apply action</button>
+          <span style="font-size:11px;color:var(--text-mid);margin:0 4px">| Assign taxonomy:</span>
+          <select id="bulk-assign-category" class="ing-cat-filter"><option value="">Category…</option></select>
+          <select id="bulk-assign-sub" class="ing-cat-filter"><option value="">Sub…</option></select>
+          <select id="bulk-assign-division" class="ing-cat-filter"><option value="">Division…</option></select>
+          <button type="button" class="rm-bulk-approve-btn" id="bulk-assign-taxonomy-btn">Apply taxonomy</button>
           <button type="button" class="rm-quick-btn reject" onclick="clearBulkRecipeSelection()">Clear</button>
         </div>
-        <div class="ap-table-wrap">
-          <table class="ap-table" id="bulk-recipes-table">
+        <div class="ap-table-wrap" style="overflow-x:auto">
+          <table class="ap-table" id="bulk-recipes-table" style="min-width:1400px">
             <thead>
               <tr>
-                <th style="width:36px"><input type="checkbox" id="bulk-select-all" onchange="toggleBulkSelectAll(this)"></th>
+                <th style="width:32px"><input type="checkbox" id="bulk-select-all" onchange="toggleBulkSelectAll(this)"></th>
                 <th class="bulk-sort-th" data-sort="recipe_code" style="cursor:pointer">RM#</th>
                 <th class="bulk-sort-th" data-sort="recipe_name" style="cursor:pointer">Recipe</th>
                 <th class="bulk-sort-th" data-sort="category" style="cursor:pointer">Category</th>
-                <th class="bulk-sort-th" data-sort="sub_category" style="cursor:pointer">Sub-category</th>
+                <th class="bulk-sort-th" data-sort="sub_category" style="cursor:pointer">Sub</th>
                 <th class="bulk-sort-th" data-sort="division" style="cursor:pointer">Division</th>
                 <th class="bulk-sort-th" data-sort="cooking_style" style="cursor:pointer">Cooking</th>
-                <th>Tags</th>
-                <th class="bulk-sort-th" data-sort="visibility" style="cursor:pointer">Visible</th>
+                <th class="bulk-sort-th" data-sort="spice_level" style="cursor:pointer">Spice</th>
+                <th class="bulk-sort-th" data-sort="sweet_level" style="cursor:pointer">Sweet</th>
+                <th class="bulk-sort-th" data-sort="difficulty" style="cursor:pointer">Diff</th>
+                <th>Dietary</th>
+                <th>Style</th>
+                <th>Health</th>
+                <th>Occasion</th>
+                <th class="bulk-sort-th" data-sort="visibility" style="cursor:pointer">Visibility</th>
                 <th class="bulk-sort-th" data-sort="status" style="cursor:pointer">Status</th>
               </tr>
+              <tr style="background:rgba(0,0,0,0.12)">
+                <th></th>
+                <th><input class="bulk-col-filter ap-search" data-col="recipe_code" placeholder="Filter" style="width:100%;padding:4px 6px;font-size:10px"></th>
+                <th><input class="bulk-col-filter ap-search" data-col="recipe_name" placeholder="Filter" style="width:100%;padding:4px 6px;font-size:10px"></th>
+                <th><input class="bulk-col-filter ap-search" data-col="category" placeholder="Filter" style="width:100%;padding:4px 6px;font-size:10px"></th>
+                <th><input class="bulk-col-filter ap-search" data-col="sub_category" placeholder="Filter" style="width:100%;padding:4px 6px;font-size:10px"></th>
+                <th><input class="bulk-col-filter ap-search" data-col="division" placeholder="Filter" style="width:100%;padding:4px 6px;font-size:10px"></th>
+                <th><input class="bulk-col-filter ap-search" data-col="cooking_style" placeholder="Filter" style="width:100%;padding:4px 6px;font-size:10px"></th>
+                <th><input class="bulk-col-filter ap-search" data-col="spice_level" placeholder="Filter" style="width:100%;padding:4px 6px;font-size:10px"></th>
+                <th><input class="bulk-col-filter ap-search" data-col="sweet_level" placeholder="Filter" style="width:100%;padding:4px 6px;font-size:10px"></th>
+                <th><input class="bulk-col-filter ap-search" data-col="difficulty" placeholder="Filter" style="width:100%;padding:4px 6px;font-size:10px"></th>
+                <th><input class="bulk-col-filter ap-search" data-col="dietary_tags" placeholder="Filter" style="width:100%;padding:4px 6px;font-size:10px"></th>
+                <th><input class="bulk-col-filter ap-search" data-col="style_tags" placeholder="Filter" style="width:100%;padding:4px 6px;font-size:10px"></th>
+                <th><input class="bulk-col-filter ap-search" data-col="health_tags" placeholder="Filter" style="width:100%;padding:4px 6px;font-size:10px"></th>
+                <th><input class="bulk-col-filter ap-search" data-col="occasion_tags" placeholder="Filter" style="width:100%;padding:4px 6px;font-size:10px"></th>
+                <th><input class="bulk-col-filter ap-search" data-col="visibility" placeholder="Filter" style="width:100%;padding:4px 6px;font-size:10px"></th>
+                <th><input class="bulk-col-filter ap-search" data-col="status" placeholder="Filter" style="width:100%;padding:4px 6px;font-size:10px"></th>
+              </tr>
             </thead>
-            <tbody id="bulk-recipes-tbody"><tr><td colspan="10" class="ap-empty-row">Open this tab to load recipes…</td></tr></tbody>
+            <tbody id="bulk-recipes-tbody"><tr><td colspan="16" class="ap-empty-row">Open this tab to load recipes…</td></tr></tbody>
           </table>
         </div>
         <div id="bulk-pagination" style="display:none;align-items:center;justify-content:center;gap:8px;margin-top:14px"></div>
@@ -1415,7 +1443,8 @@
   <script src="lib/tcj-sub-taxonomy.js"></script>
   <script src="lib/admin-recipe-utils.js?v=20260705"></script>
   <script src="lib/dashboard-agent-review.js?v=20260623"></script>
-  <script src="dashboard-recipes.js?v=20260619b"></script>
+  <script src="dashboard-recipes.js?v=20260619c"></script>
+  <script src="lib/dashboard-bulk-recipes.js?v=20260619c"></script>
   <script src="dashboard-users.js?v=20260616"></script>
   <script src="dashboard-ingredients.js?v=20260616"></script>
   <script src="lib/dashboard-im-interface.js?v=20260713"></script>

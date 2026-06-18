@@ -209,7 +209,7 @@
   <script src="lib/tcj-grain-field-taxonomy.js?v=20260618a"></script>
   <script src="lib/tcj-sips-stories-taxonomy.js?v=20260618a"></script>
   <script src="lib/tcj-migrated-taxonomy-parts.js?v=20260618a"></script>
-  <script src="lib/tcj-sub-taxonomy.js?v=20260618a"></script>
+  <script src="lib/tcj-sub-taxonomy.js?v=20260619c"></script>
   <script src="page-guard.js"></script>
 </head>
 <body>
@@ -1047,21 +1047,6 @@ function categoryDefaultTags(categoryName) {
 function getBrowseSubsForCategory(categoryName) {
   var order = [];
   var map = {};
-  var canon = (typeof getCanonicalCategoryTaxonomy === 'function')
-    ? getCanonicalCategoryTaxonomy(categoryName) : null;
-  if (canon && canon.length) {
-    canon.forEach(function(sub) {
-      map[sub.name] = {
-        name: sub.name,
-        divisions: [],
-        ingredient_hints: sub.ingredients ? sub.ingredients.slice() : [],
-        tagline: sub.tagline || '',
-        description: sub.description || '',
-        emoji: sub.emoji || ''
-      };
-      order.push(sub.name);
-    });
-  }
   browseTaxonomy.forEach(function(raw) {
     var r = normalizeBrowseTaxonomyRow(raw);
     if (!taxonomyCategoryMatches(r.subcategory_category, categoryName) || !r.subcategory_name) return;
@@ -1085,6 +1070,23 @@ function getBrowseSubsForCategory(categoryName) {
     if (r.division_name) map[r.subcategory_name].divisions.push(r);
   });
   if (!order.length) {
+    var canon = (typeof getCanonicalCategoryTaxonomy === 'function')
+      ? getCanonicalCategoryTaxonomy(categoryName) : null;
+    if (canon && canon.length) {
+      canon.forEach(function(sub) {
+        map[sub.name] = {
+          name: sub.name,
+          divisions: [],
+          ingredient_hints: sub.ingredients ? sub.ingredients.slice() : [],
+          tagline: sub.tagline || '',
+          description: sub.description || '',
+          emoji: sub.emoji || ''
+        };
+        order.push(sub.name);
+      });
+    }
+  }
+  if (!order.length) {
     var parts = getTaxonomyPartsForCategory(categoryName);
     if (parts) {
       Object.keys(parts).sort().forEach(function(letter) {
@@ -1097,6 +1099,8 @@ function getBrowseSubsForCategory(categoryName) {
       });
     }
   }
+  var canon = (typeof getCanonicalCategoryTaxonomy === 'function')
+    ? getCanonicalCategoryTaxonomy(categoryName) : null;
   if (canon && canon.length) {
     var canonOrder = {};
     canon.forEach(function(sub, idx) { canonOrder[sub.name] = idx; });
