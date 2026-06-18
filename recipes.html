@@ -168,8 +168,9 @@
     .cr-warn-badge { display:inline-block; margin-top:6px; padding:3px 8px; border-radius:6px; background:var(--danger-bg); border:1px solid rgb(from var(--danger) r g b / 0.25); font-family:'DM Sans',sans-serif; font-size:10px; font-weight:600; color:var(--danger); }
     .cr-card.has-warn { border-color:rgb(from var(--danger) r g b / 0.35); }
 </style>
-  <script src="lib/taxonomy-sub-codes.js?v=20260617c"></script>
-  <script src="lib/taxonomy-parts.js?v=20260617c"></script>
+  <script src="lib/taxonomy-sub-codes.js?v=20260617e"></script>
+  <script src="lib/taxonomy-parts.js?v=20260617e"></script>
+  <script src="lib/tcj-garden-taxonomy.js?v=20260617"></script>
   <script src="page-guard.js"></script>
 </head>
 <body>
@@ -798,8 +799,11 @@ function getBrowseSubsForCategory(categoryName) {
   browseTaxonomy.forEach(function(r) {
     if (r.subcategory_category !== categoryName || !r.subcategory_name) return;
     if (!map[r.subcategory_name]) {
-      map[r.subcategory_name] = { name: r.subcategory_name, divisions: [] };
+      map[r.subcategory_name] = { name: r.subcategory_name, divisions: [], ingredient_hints: [] };
       order.push(r.subcategory_name);
+    }
+    if (r.subcategory_ingredient_hints && r.subcategory_ingredient_hints.length) {
+      map[r.subcategory_name].ingredient_hints = r.subcategory_ingredient_hints;
     }
     if (r.division_name) map[r.subcategory_name].divisions.push(r);
   });
@@ -807,15 +811,24 @@ function getBrowseSubsForCategory(categoryName) {
     var entry = map[name];
     var divs = entry.divisions;
     var code = getSubCategoryCode(categoryName, name);
+    var gardenMeta = (categoryName === 'Garden & Earth' && typeof getGardenSubMeta === 'function')
+      ? getGardenSubMeta(name) : null;
+    var hintStr = (entry.ingredient_hints && entry.ingredient_hints.length)
+      ? entry.ingredient_hints.join(', ')
+      : (gardenMeta && typeof gardenIngredientDisplay === 'function' ? gardenIngredientDisplay(gardenMeta) : '');
     return {
       name: name,
-      code: code,
-      emoji: (divs[0] && divs[0].division_emoji) || '🍽',
+      code: gardenMeta ? gardenMeta.code : code,
+      emoji: gardenMeta ? gardenMeta.emoji : ((divs[0] && divs[0].division_emoji) || '🍽'),
       divisionCount: divs.length,
-      aka: formatDivisionsAka(divs),
-      desc: (divs[0] && divs[0].division_description) || name
+      aka: hintStr || formatDivisionsAka(divs),
+      desc: gardenMeta ? gardenMeta.description : ((divs[0] && divs[0].division_description) || (divs[0] && divs[0].division_subtitle) || name)
     };
-  }).filter(function(s) { return s.divisionCount > 0; });
+  }).filter(function(s) {
+    if (s.divisionCount > 0) return true;
+    if (categoryName === 'Garden & Earth') return true;
+    return !!(s.aka && s.aka.length);
+  });
 }
 
 function syncBrowseSubPill(subName) {
@@ -867,7 +880,7 @@ function renderBrowseCategoryHome(categoryName, dbDishes, subFilter) {
 
   if (dbDishes && dbDishes.length && !subFilter) {
     html += '<div class="tax-part-block" id="tax-part-curated">';
-    html += '<div class="tax-part-title">🥬 Curated dishes</div>';
+    html += '<div class="tax-part-title">🥬 Curated techniques</div>';
     html += '<div class="dish-grid">';
     dbDishes.forEach(function(dish) {
       html += renderDishCardHtml({
@@ -953,8 +966,15 @@ function openTaxonomySub(categoryName, subName) {
   });
   var g = document.getElementById('styles-grid');
   if (!divs.length) {
-    g.innerHTML = '<div class="empty-state"><div class="empty-icon">🍽</div>' +
-      '<div class="empty-title">No styles found</div></div>';
+    var gardenMeta = (categoryName === 'Garden & Earth' && typeof getGardenSubMeta === 'function')
+      ? getGardenSubMeta(subName) : null;
+    var hints = gardenMeta && typeof gardenIngredientDisplay === 'function'
+      ? gardenIngredientDisplay(gardenMeta) : '';
+    g.innerHTML = '<div class="empty-state"><div class="empty-icon">' + (gardenMeta ? gardenMeta.emoji : '🍽') + '</div>' +
+      '<div class="empty-title">' + subName + '</div>' +
+      '<div class="empty-desc">' + (gardenMeta ? (gardenMeta.tagline || '') : 'Styles and divisions coming soon.') +
+      (hints ? '<br><br><span style="opacity:0.85">Ingredient focus: ' + hints + '</span>' : '') +
+      '</div></div>';
   } else {
     g.innerHTML = divs.map(function(r) { return renderTaxonomyStyleCardHtml(r, true); }).join('');
     g.querySelectorAll('.style-card[data-tax-div]').forEach(function(card, i) {

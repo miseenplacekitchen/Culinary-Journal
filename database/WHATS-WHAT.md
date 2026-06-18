@@ -33,13 +33,10 @@ Built from the 25 **core** files in `sql/` (01-schema through fix_anon_grants).
 |------|------|
 | `sql/fix-book-taxonomy.sql` | **Do not re-run** until regenerated for A–K — legacy 12-category tree (see header warning). |
 | `sql/fix-sips-drinks-taxonomy.sql` | **Re-run** after Sips Parts A–D updates — 21 subs, 92 divisions. Safe to re-run. |
+| `sql/fix-garden-taxonomy-v2.sql` | **Once** — Garden A1–A13 subs + `ingredient_hints` (not divisions). Run **after** `fix-category-cleanup-v3.sql`. Admin: Taxonomy tab → “Sync subs + ingredient hints”. |
+| `sql/fix-garden-taxonomy.sql` | Superseded by `fix-garden-taxonomy-v2.sql` |
 
-Source of truth: `lib/tcj-category-copy.js` (A–K) + `taxonomy/book-taxonomy.md` (subs — **stale until regen**) + `sql/fix-sips-drinks-taxonomy.sql` (Sips).  
-Regenerate SQL/JS: `python database/taxonomy/generate_taxonomy_sql.py`  
-Validate infer rules: `python database/taxonomy/validate_food_infer.py` and `validate_drink_infer.py`  
-Audit site wiring: `python database/taxonomy/audit_taxonomy.py`
-
-**Garden & Earth** uses the dishes table for curated Thoran-style content *and* `fix-garden-taxonomy.sql` for the full PART A–F browse tree (run after `fix-book-taxonomy.sql`).
+Source of truth: `lib/tcj-category-copy.js` (A–K) + `lib/tcj-garden-taxonomy.js` (Garden A1–A13) + `sql/fix-sips-drinks-taxonomy.sql` (Sips).
 
 ---
 

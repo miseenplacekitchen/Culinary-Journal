@@ -1968,7 +1968,9 @@ async function loadRMTaxonomy(container) {
     container.innerHTML = '';
     function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
-    note.textContent = 'Manage sub-categories and divisions for recipe browse and submit. Divisions support emoji, subtitle, description and tags.';
+    note.innerHTML = 'Manage sub-categories and divisions for recipe browse and submit. ' +
+      '<strong>Ingredient focus hints</strong> list what belongs in each sub when that ingredient is the star of the dish (not divisions). ' +
+      'Divisions are techniques/styles — Garden divisions coming soon.';
     container.appendChild(note);
 
     if (missing.length) {
@@ -2054,19 +2056,100 @@ async function loadRMTaxonomy(container) {
       var subs = {};
       rows.filter(function(r) { return r.subcategory_category === cat; }).forEach(function(r) {
         if (!r.subcategory_id) return;
-        if (!subs[r.subcategory_id]) subs[r.subcategory_id] = { id: r.subcategory_id, name: r.subcategory_name, divisions: [] };
+        if (!subs[r.subcategory_id]) {
+          subs[r.subcategory_id] = {
+            id: r.subcategory_id,
+            name: r.subcategory_name,
+            ingredient_hints: r.subcategory_ingredient_hints || [],
+            divisions: []
+          };
+        }
+        if (r.subcategory_ingredient_hints && r.subcategory_ingredient_hints.length) {
+          subs[r.subcategory_id].ingredient_hints = r.subcategory_ingredient_hints;
+        }
         if (r.division_id) subs[r.subcategory_id].divisions.push(r);
       });
       var subList = Object.values(subs);
       var box = mk('div', 'margin-bottom:20px;padding:16px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px');
       box.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px', cat));
 
+      if (cat === 'Garden & Earth' && typeof TCJ_GARDEN_TAXONOMY !== 'undefined') {
+        var syncRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px');
+        syncRow.appendChild(mk('span', 'font-size:12px;color:var(--text-mid)', 'A1–A13 canonical list:'));
+        var syncBtn = mk('button', 'padding:6px 12px;font-size:11px;border:1px solid var(--accent);border-radius:6px;background:none;color:var(--accent);cursor:pointer', 'Sync subs + ingredient hints');
+        syncBtn.addEventListener('click', function() {
+          if (!confirm('Upsert all 13 Garden sub-categories and ingredient focus hints from the canonical list?')) return;
+          syncBtn.disabled = true;
+          var chain = Promise.resolve();
+          TCJ_GARDEN_TAXONOMY.forEach(function(sub, i) {
+            chain = chain.then(function() {
+              return rpc('admin_upsert_recipe_subcategory', {
+                p_id: null, p_category: cat, p_name: sub.name,
+                p_sort_order: (i + 1) * 10,
+                p_ingredient_hints: sub.ingredients || []
+              });
+            });
+          });
+          chain.then(function() { loadRMTaxonomy(container); })
+            .catch(function(e) { alert(e.message || e); syncBtn.disabled = false; });
+        });
+        syncRow.appendChild(syncBtn);
+        box.appendChild(syncRow);
+      }
+
       if (!subList.length) {
         box.appendChild(mk('div', 'font-size:12px;color:var(--text-mid);margin-bottom:10px', 'No sub-categories yet.'));
       } else {
         subList.forEach(function(sc) {
+          var gardenMeta = (cat === 'Garden & Earth' && typeof getGardenSubMeta === 'function')
+            ? getGardenSubMeta(sc.name) : null;
           var scRow = mk('div', 'margin-bottom:12px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px');
-          scRow.appendChild(mk('div', 'font-size:13px;font-weight:600;color:var(--text-high);margin-bottom:6px', sc.name));
+          var titleRow = mk('div', 'display:flex;align-items:baseline;gap:8px;margin-bottom:6px;flex-wrap:wrap');
+          titleRow.appendChild(mk('div', 'font-size:13px;font-weight:600;color:var(--text-high)', (gardenMeta ? gardenMeta.emoji + ' ' : '') + sc.name));
+          if (gardenMeta && gardenMeta.code) {
+            titleRow.appendChild(mk('span', 'font-size:10px;color:var(--text-mid);letter-spacing:0.08em', gardenMeta.code));
+          }
+          scRow.appendChild(titleRow);
+
+          var hints = sc.ingredient_hints && sc.ingredient_hints.length
+            ? sc.ingredient_hints
+            : (gardenMeta && gardenMeta.ingredients ? gardenMeta.ingredients : []);
+          var hintLabel = mk('div', 'font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);margin:8px 0 4px', 'Ingredient focus hints');
+          scRow.appendChild(hintLabel);
+          var hintTa = mk('textarea', 'width:100%;min-height:52px;padding:8px 10px;background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--text-high);font-family:DM Sans,sans-serif;line-height:1.5;resize:vertical;box-sizing:border-box');
+          hintTa.placeholder = 'Comma-separated — when this ingredient is the main focus, use this sub-category';
+          hintTa.value = typeof formatIngredientHints === 'function'
+            ? formatIngredientHints(hints)
+            : (hints || []).join(', ');
+          scRow.appendChild(hintTa);
+          var hintActs = mk('div', 'display:flex;gap:6px;margin-top:6px;margin-bottom:8px');
+          var saveHints = mk('button', 'padding:4px 10px;font-size:11px;border:1px solid var(--accent);border-radius:6px;background:none;color:var(--accent);cursor:pointer', 'Save hints');
+          saveHints.addEventListener('click', function() {
+            var parsed = typeof parseIngredientHintText === 'function'
+              ? parseIngredientHintText(hintTa.value)
+              : hintTa.value.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+            rpc('admin_upsert_recipe_subcategory', {
+              p_id: sc.id, p_category: cat, p_name: sc.name,
+              p_sort_order: null, p_ingredient_hints: parsed
+            }).then(function() { loadRMTaxonomy(container); })
+              .catch(function(e) { alert(e.message || e); });
+          });
+          hintActs.appendChild(saveHints);
+          if (gardenMeta && gardenMeta.ingredients && gardenMeta.ingredients.length) {
+            var loadCanon = mk('button', 'padding:4px 10px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-mid);cursor:pointer', 'Load canonical list');
+            loadCanon.addEventListener('click', function() {
+              hintTa.value = formatIngredientHints(gardenMeta.ingredients);
+            });
+            hintActs.appendChild(loadCanon);
+          }
+          scRow.appendChild(hintActs);
+
+          if (gardenMeta && gardenMeta.tagline) {
+            scRow.appendChild(mk('div', 'font-size:11px;color:var(--text-mid);font-style:italic;margin-bottom:8px;line-height:1.4', gardenMeta.tagline));
+          }
+
+          var divHdr = mk('div', 'font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-mid);margin:10px 0 4px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)', 'Divisions (techniques / styles)');
+          scRow.appendChild(divHdr);
           (sc.divisions || []).forEach(function(d) {
             var dRow = mk('div', 'display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--text-mid);padding:6px 0;border-top:1px solid rgba(255,255,255,0.04)');
             var dLabel = mk('span', '', (d.division_emoji || '') + ' ' + (d.division_name || '') + (d.division_subtitle ? ' — ' + d.division_subtitle : ''));
@@ -2120,7 +2203,13 @@ async function loadRMTaxonomy(container) {
       btn.addEventListener('click', function() {
         var v = inp.value.trim();
         if (!v) return;
-        rpc('admin_upsert_recipe_subcategory', { p_id: null, p_category: cat, p_name: v, p_sort_order: subList.length + 1 })
+        var hintsRaw = prompt('Ingredient focus hints (comma-separated, optional):', '') || '';
+        var hintsArr = typeof parseIngredientHintText === 'function'
+          ? parseIngredientHintText(hintsRaw) : hintsRaw.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+        rpc('admin_upsert_recipe_subcategory', {
+          p_id: null, p_category: cat, p_name: v, p_sort_order: subList.length + 1,
+          p_ingredient_hints: hintsArr.length ? hintsArr : null
+        })
           .then(function() { loadRMTaxonomy(container); })
           .catch(function(e) { alert(e.message); });
       });
