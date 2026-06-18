@@ -44,7 +44,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS submitted_recipes_import_source_url_uidx
   ON public.submitted_recipes (import_source_url)
   WHERE import_source_url IS NOT NULL AND btrim(import_source_url) <> '';
 
--- Drink taxonomy: use fix-sips-drinks-taxonomy.sql (Parts A–D, 21 subs). Do not seed old placeholder subs here.
+-- Drink taxonomy: fix-sips-stories-taxonomy.sql (J1–J9). Do not seed legacy drink subs here.
 
 -- ── Helpers ─────────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION public.normalize_website_host(p_url text)

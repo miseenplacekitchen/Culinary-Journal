@@ -7,7 +7,7 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SQL = ROOT / "database" / "sql" / "fix-sips-drinks-taxonomy.sql"
+SQL = ROOT / "database" / "sql" / "fix-sips-stories-taxonomy.sql"
 INFER = ROOT / "lib" / "drink-taxonomy-infer.js"
 
 sql = SQL.read_text(encoding="utf-8")

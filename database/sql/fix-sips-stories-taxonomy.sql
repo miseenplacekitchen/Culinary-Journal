@@ -1,5 +1,6 @@
 -- fix-sips-stories-taxonomy.sql — Sips & Stories J1–J9 (2026).
--- Run once in Supabase SQL Editor after fix-grain-field-taxonomy.sql. Safe to re-run.
+-- Run once after fix-grain-field-taxonomy.sql. Safe to re-run.
+-- RPCs: fix-admin-taxonomy-editor.sql (run that first).
 -- Supersedes fix-sips-drinks-taxonomy.sql (legacy 21-sub / division tree).
 -- Base-ingredient focus hints on recipe_subcategories.ingredient_hints (not divisions).
 

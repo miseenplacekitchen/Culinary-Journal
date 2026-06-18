@@ -100,68 +100,7 @@ UPDATE public.recipe_subcategories SET ingredient_hints = ARRAY[
   'Chanterelle','Morel','Lion''s Mane','Maitake','Nameko','Shimeji','Straw Mushrooms','Hedgehog','Truffles'
 ] WHERE category = 'Garden & Earth' AND name = 'Mushrooms & Fungi';
 
--- ── RPC: taxonomy + admin upsert with ingredient_hints ───────────────────────
-DROP FUNCTION IF EXISTS public.get_recipe_taxonomy(text);
-CREATE OR REPLACE FUNCTION public.get_recipe_taxonomy(p_category text DEFAULT NULL)
-RETURNS TABLE (
-  subcategory_id uuid, subcategory_name text, subcategory_category text,
-  subcategory_ingredient_hints text[],
-  division_id uuid, division_name text, division_emoji text,
-  division_subtitle text, division_description text
-)
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $$
-  SELECT sc.id, sc.name, sc.category, sc.ingredient_hints,
-         d.id, d.name, d.emoji, d.subtitle, d.description
-    FROM public.recipe_subcategories sc
-    LEFT JOIN public.recipe_divisions d
-      ON d.category = sc.category AND d.subcategory = sc.name AND d.is_active = true
-   WHERE sc.is_active = true
-     AND (p_category IS NULL OR sc.category = p_category)
-   ORDER BY sc.category, sc.sort_order, sc.name, d.sort_order, d.name;
-$$;
-REVOKE ALL ON FUNCTION public.get_recipe_taxonomy(text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_recipe_taxonomy(text) TO anon, authenticated;
-
-DROP FUNCTION IF EXISTS public.admin_upsert_recipe_subcategory(uuid, text, text, int);
-DROP FUNCTION IF EXISTS public.admin_upsert_recipe_subcategory(uuid, text, text, int, text[]);
-CREATE OR REPLACE FUNCTION public.admin_upsert_recipe_subcategory(
-  p_id uuid, p_category text, p_name text,
-  p_sort_order int DEFAULT 0, p_ingredient_hints text[] DEFAULT NULL
-)
-RETURNS uuid
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
-AS $$
-DECLARE v_id uuid;
-BEGIN
-  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
-  IF p_id IS NULL THEN
-    INSERT INTO public.recipe_subcategories (category, name, sort_order, ingredient_hints)
-    VALUES (p_category, p_name, COALESCE(p_sort_order, 0), COALESCE(p_ingredient_hints, '{}'))
-    ON CONFLICT (category, name) DO UPDATE SET
-      sort_order = EXCLUDED.sort_order,
-      is_active = true,
-      ingredient_hints = CASE
-        WHEN p_ingredient_hints IS NULL THEN recipe_subcategories.ingredient_hints
-        ELSE EXCLUDED.ingredient_hints
-      END
-    RETURNING id INTO v_id;
-  ELSE
-    UPDATE public.recipe_subcategories SET
-      category = p_category,
-      name = p_name,
-      sort_order = COALESCE(p_sort_order, sort_order),
-      ingredient_hints = CASE
-        WHEN p_ingredient_hints IS NULL THEN ingredient_hints
-        ELSE p_ingredient_hints
-      END
-    WHERE id = p_id RETURNING id INTO v_id;
-  END IF;
-  RETURN v_id;
-END;
-$$;
-REVOKE ALL ON FUNCTION public.admin_upsert_recipe_subcategory(uuid, text, text, int, text[]) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.admin_upsert_recipe_subcategory(uuid, text, text, int, text[]) TO authenticated;
+-- RPCs (get_recipe_taxonomy, admin upsert, reorder): run fix-admin-taxonomy-editor.sql once.
 
 SELECT name, sort_order, array_length(ingredient_hints, 1) AS hint_count, is_active
 FROM public.recipe_subcategories

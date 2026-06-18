@@ -4299,7 +4299,7 @@ function updateCategoryTaxonomyTip(category) {
   if (!tip) return;
   var msg = CATEGORY_TAXONOMY_HINTS[category] || '';
   if (/\b(biriyani|biryani|pilaf|pulao)\b/i.test((document.getElementById('recipe-name') || {}).value || '')) {
-    msg = 'This looks like a biryani or pilaf — category Grains & Comfort is usually right (not Meat & Fire). ' + (msg || '');
+    msg = 'This looks like a biryani or pilaf — category The Grain Field is usually right (not Meat & Fire). ' + (msg || '');
   }
   if (msg) {
     tip.innerHTML = '<span class="sr-i">i</span> ' + msg;

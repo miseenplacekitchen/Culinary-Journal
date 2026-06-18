@@ -1,6 +1,6 @@
 -- fix-category-cleanup-v3.sql — Post A–K category migration cleanup.
 -- Run once in Supabase SQL Editor after fix-categories-v2.sql.
--- Safe to re-run.
+-- Safe to re-run (taxonomy RPCs live in fix-admin-taxonomy-editor.sql only).
 
 -- ── 1. Baby browse — tags, not retired Little Ones category ───────────────
 DROP FUNCTION IF EXISTS public.get_baby_browse_recipes(int, int);
@@ -45,28 +45,7 @@ $$;
 REVOKE ALL ON FUNCTION public.get_baby_browse_recipes(int, int) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_baby_browse_recipes(int, int) TO anon, authenticated;
 
--- ── 2. Canonical get_recipe_taxonomy (fold from phase-6 deploy) ───────────
-DROP FUNCTION IF EXISTS public.get_recipe_taxonomy(text);
-CREATE OR REPLACE FUNCTION public.get_recipe_taxonomy(p_category text DEFAULT NULL)
-RETURNS TABLE (
-  subcategory_id uuid, subcategory_name text, subcategory_category text,
-  subcategory_ingredient_hints text[],
-  division_id uuid, division_name text, division_emoji text,
-  division_subtitle text, division_description text
-)
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $$
-  SELECT sc.id, sc.name, sc.category, sc.ingredient_hints,
-         d.id, d.name, d.emoji, d.subtitle, d.description
-    FROM public.recipe_subcategories sc
-    LEFT JOIN public.recipe_divisions d
-      ON d.category = sc.category AND d.subcategory = sc.name AND d.is_active = true
-   WHERE sc.is_active = true
-     AND (p_category IS NULL OR sc.category = p_category)
-   ORDER BY sc.category, sc.sort_order, sc.name, d.sort_order, d.name;
-$$;
-REVOKE ALL ON FUNCTION public.get_recipe_taxonomy(text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_recipe_taxonomy(text) TO anon, authenticated;
+-- ── 2. get_recipe_taxonomy — moved to fix-admin-taxonomy-editor.sql (do not redefine here) ──
 
 -- ── 3. Stripe subscription apply — idempotent on session id ─────────────────
 DROP FUNCTION IF EXISTS public.apply_stripe_subscription(uuid, text, text, text);
