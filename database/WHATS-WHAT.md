@@ -32,14 +32,15 @@ Built from the 25 **core** files in `sql/` (01-schema through fix_anon_grants).
 | File | When |
 |------|------|
 | `sql/fix-book-taxonomy.sql` | **Do not re-run** until regenerated for A–K — legacy 12-category tree (see header warning). |
-| `sql/fix-sips-drinks-taxonomy.sql` | **Re-run** after Sips Parts A–D updates — 21 subs, 92 divisions. Safe to re-run. |
+| `sql/fix-sips-drinks-taxonomy.sql` | **Superseded** by `fix-sips-stories-taxonomy.sql` — do not re-run |
+| `sql/fix-sips-stories-taxonomy.sql` | **Once** — Sips & Stories J1–J9 subs + base-ingredient focus hints |
 | `sql/fix-grain-field-taxonomy.sql` | **Once** — The Grain Field E1–E8 subs + grain/starch focus hints |
 | `sql/fix-ocean-river-taxonomy.sql` | **Once** — Ocean & River D1–D8 subs + species/cut focus hints |
 | `sql/fix-feather-pasture-taxonomy.sql` | **Once** — Feather & Flock B1–B7 + Pasture & Hoof C1–C7 subs + cut/focus hints |
 | `sql/fix-garden-taxonomy-v2.sql` | **Once** — Garden A1–A13 subs + `ingredient_hints` (not divisions). Run **after** `fix-category-cleanup-v3.sql`. Admin: Taxonomy tab → “Sync subs + ingredient hints”. |
 | `sql/fix-garden-taxonomy.sql` | Superseded by `fix-garden-taxonomy-v2.sql` |
 
-Source of truth: `lib/tcj-category-copy.js` (A–K) + `lib/tcj-garden-taxonomy.js` (A) + `lib/tcj-feather-flock-taxonomy.js` (B) + `lib/tcj-pasture-hoof-taxonomy.js` (C) + `lib/tcj-ocean-river-taxonomy.js` (D) + `lib/tcj-grain-field-taxonomy.js` (E) + `sql/fix-sips-drinks-taxonomy.sql` (Sips).
+Source of truth: `lib/tcj-category-copy.js` (A–K) + `lib/tcj-garden-taxonomy.js` (A) + `lib/tcj-feather-flock-taxonomy.js` (B) + `lib/tcj-pasture-hoof-taxonomy.js` (C) + `lib/tcj-ocean-river-taxonomy.js` (D) + `lib/tcj-grain-field-taxonomy.js` (E) + `lib/tcj-sips-stories-taxonomy.js` (J).
 
 ---
 
