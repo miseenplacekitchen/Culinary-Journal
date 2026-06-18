@@ -507,7 +507,20 @@ let browseTaxonomy = [];
 async function loadCategories() {
   const grid = document.getElementById('cat-grid');
   grid.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Loading categories...</div>';
-  const canonicalNames = (typeof TCJ_CATEGORY_COPY !== 'undefined' ? TCJ_CATEGORY_COPY : []).map(function(c) { return c.name; });
+  const canonical = (typeof TCJ_CATEGORY_COPY !== 'undefined' ? TCJ_CATEGORY_COPY : []);
+  const legacy = (typeof TCJ_CATEGORY_LEGACY_DB_NAMES !== 'undefined' ? TCJ_CATEGORY_LEGACY_DB_NAMES : {});
+
+  function resolveDbRow(dbCats, canonicalName) {
+    if (!dbCats || !dbCats.length) return null;
+    var direct = dbCats.find(function(c) { return c.name === canonicalName && c.is_active !== false; });
+    if (direct) return direct;
+    var aliases = legacy[canonicalName] || [];
+    for (var i = 0; i < aliases.length; i++) {
+      var row = dbCats.find(function(c) { return c.name === aliases[i] && c.is_active !== false; });
+      if (row) return row;
+    }
+    return null;
+  }
 
   function renderCategoryCards(cats) {
     grid.innerHTML = cats.map(function(cat) {
@@ -522,32 +535,30 @@ async function loadCategories() {
     });
   }
 
+  function buildCanonicalCards(dbCats) {
+    return canonical.map(function(copy) {
+      var row = resolveDbRow(dbCats, copy.name);
+      return {
+        id: row ? row.id : copy.id,
+        name: copy.name,
+        emoji: (row && row.emoji) || copy.emoji,
+        description: copy.description
+      };
+    });
+  }
+
   try {
-    const cats = await supaFetch('categories', 'order=sort_order');
-    if (cats && cats.length && canonicalNames.length) {
-      const copyByName = {};
-      TCJ_CATEGORY_COPY.forEach(function(c) { copyByName[c.name] = c; });
-      const filtered = cats
-        .filter(function(cat) { return copyByName[cat.name] && cat.is_active !== false; })
-        .map(function(cat) {
-          var copy = copyByName[cat.name];
-          return {
-            id: cat.id,
-            name: cat.name,
-            emoji: cat.emoji || copy.emoji,
-            description: copy.description
-          };
-        });
-      if (filtered.length) {
-        renderCategoryCards(filtered);
-        return;
-      }
+    const dbCats = await supaFetch('categories', 'order=sort_order');
+    if (canonical.length) {
+      renderCategoryCards(buildCanonicalCards(dbCats || []));
+    } else if (dbCats && dbCats.length) {
+      renderCategoryCards(dbCats.filter(function(c) { return c.is_active !== false; }));
+    } else {
+      throw new Error('No categories found');
     }
-    if (!cats || !cats.length) throw new Error('No categories found');
-    renderCategoryCards(cats.filter(function(cat) { return canonicalNames.indexOf(cat.name) >= 0; }));
-  } catch(e) {
+  } catch (e) {
     console.error('loadCategories error:', e.message);
-    renderCategoryCards(typeof TCJ_CATEGORY_COPY !== 'undefined' ? TCJ_CATEGORY_COPY : []);
+    renderCategoryCards(canonical.length ? canonical : []);
   }
   renderDiscoveryHubs();
 }
