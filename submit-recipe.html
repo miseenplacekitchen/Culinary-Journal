@@ -1429,30 +1429,28 @@
         <div class="sr-field sr-full" data-sr-group="category">
           <label class="sr-label">Category <span class="req">*</span></label>
           <div class="cat-grid" id="cat-grid">
-            <input class="cat-opt" type="radio" name="category" id="cat-rise"      value="Rise & Shine">
-            <label for="cat-rise"><span class="cat-emoji">&#127749;</span><span class="cat-name">Rise &amp; Shine</span></label>
-            <input class="cat-opt" type="radio" name="category" id="cat-evening"   value="The Evening Table">
-            <label for="cat-evening"><span class="cat-emoji">☕</span><span class="cat-name">The Evening Table</span></label>
-            <input class="cat-opt" type="radio" name="category" id="cat-garden"    value="Garden & Earth">
-            <label for="cat-garden"><span class="cat-emoji">&#129388;</span><span class="cat-name">Garden &amp; Earth</span></label>
-            <input class="cat-opt" type="radio" name="category" id="cat-meat"      value="Meat & Fire">
-            <label for="cat-meat"><span class="cat-emoji">&#127830;</span><span class="cat-name">Meat &amp; Fire</span></label>
-            <input class="cat-opt" type="radio" name="category" id="cat-ocean"     value="Ocean & River">
-            <label for="cat-ocean"><span class="cat-emoji">&#127754;</span><span class="cat-name">Ocean &amp; River</span></label>
-            <input class="cat-opt" type="radio" name="category" id="cat-slow"      value="Slow & Soulful">
-            <label for="cat-slow"><span class="cat-emoji">🍲</span><span class="cat-name">Slow &amp; Soulful</span></label>
-            <input class="cat-opt" type="radio" name="category" id="cat-grains"    value="Grains & Comfort">
-            <label for="cat-grains"><span class="cat-emoji">&#127834;</span><span class="cat-name">Grains &amp; Comfort</span></label>
-            <input class="cat-opt" type="radio" name="category" id="cat-breads"    value="Breads & Bakes">
-            <label for="cat-breads"><span class="cat-emoji">🍞</span><span class="cat-name">Breads &amp; Bakes</span></label>
-            <input class="cat-opt" type="radio" name="category" id="cat-sweet"     value="Sweet Serenades">
-            <label for="cat-sweet"><span class="cat-emoji">&#127854;</span><span class="cat-name">Sweet Serenades</span></label>
-            <input class="cat-opt" type="radio" name="category" id="cat-sips"      value="Sips & Stories">
-            <label for="cat-sips"><span class="cat-emoji">&#129346;</span><span class="cat-name">Sips &amp; Stories</span></label>
-            <input class="cat-opt" type="radio" name="category" id="cat-preserved" value="Preserved & Cherished">
-            <label for="cat-preserved"><span class="cat-emoji">🫙</span><span class="cat-name">Preserved &amp; Cherished</span></label>
-            <input class="cat-opt" type="radio" name="category" id="cat-little"    value="Little Ones">
-            <label for="cat-little"><span class="cat-emoji">&#128118;</span><span class="cat-name">Little Ones</span></label>
+            <input class="cat-opt" type="radio" name="category" id="cat-garden" value="Garden & Earth">
+            <label for="cat-garden"><span class="cat-emoji">🥬</span><span class="cat-name">Garden &amp; Earth</span></label>
+            <input class="cat-opt" type="radio" name="category" id="cat-feather" value="Feather & Flock">
+            <label for="cat-feather"><span class="cat-emoji">🐓</span><span class="cat-name">Feather &amp; Flock</span></label>
+            <input class="cat-opt" type="radio" name="category" id="cat-pasture" value="Pasture & Hoof">
+            <label for="cat-pasture"><span class="cat-emoji">🍖</span><span class="cat-name">Pasture &amp; Hoof</span></label>
+            <input class="cat-opt" type="radio" name="category" id="cat-ocean" value="Ocean & River">
+            <label for="cat-ocean"><span class="cat-emoji">🌊</span><span class="cat-name">Ocean &amp; River</span></label>
+            <input class="cat-opt" type="radio" name="category" id="cat-grain" value="The Grain Field">
+            <label for="cat-grain"><span class="cat-emoji">🌾</span><span class="cat-name">The Grain Field</span></label>
+            <input class="cat-opt" type="radio" name="category" id="cat-wrapped" value="Wrapped & Stuffed">
+            <label for="cat-wrapped"><span class="cat-emoji">🥟</span><span class="cat-name">Wrapped &amp; Stuffed</span></label>
+            <input class="cat-opt" type="radio" name="category" id="cat-curds" value="Curds, Creams & Eggs">
+            <label for="cat-curds"><span class="cat-emoji">🥛</span><span class="cat-name">Curds, Creams &amp; Eggs</span></label>
+            <input class="cat-opt" type="radio" name="category" id="cat-breads" value="Breads & Bakery">
+            <label for="cat-breads"><span class="cat-emoji">🫓</span><span class="cat-name">Breads &amp; Bakery</span></label>
+            <input class="cat-opt" type="radio" name="category" id="cat-sweet" value="Sweet Serenades">
+            <label for="cat-sweet"><span class="cat-emoji">🍮</span><span class="cat-name">Sweet Serenades</span></label>
+            <input class="cat-opt" type="radio" name="category" id="cat-sips" value="Sips & Stories">
+            <label for="cat-sips"><span class="cat-emoji">🥂</span><span class="cat-name">Sips &amp; Stories</span></label>
+            <input class="cat-opt" type="radio" name="category" id="cat-preserved" value="Preserved & Pantry">
+            <label for="cat-preserved"><span class="cat-emoji">🏺</span><span class="cat-name">Preserved &amp; Pantry</span></label>
           </div>
         </div>
 
@@ -4207,18 +4205,17 @@ function showMsg(msg, type) {
 var _taxonomyCache = null;
 
 var CATEGORY_TAXONOMY_HINTS = {
-  'Rise & Shine': 'Breakfasts, morning rituals, and early-day nourishment — porridges, idlis, dosas, eggs, pancakes and more. Pick a PART sub-category or search the list.',
-  'The Evening Table': 'Snacks, small plates, street bites, tea-time, and social evening foods — pakoras, dumplings, chaat, dips, and dry nibbles. Search sub-categories or type your own.',
-  'Garden & Earth': 'Vegetables, plant-based dishes, legumes, roots, greens, and foraged foods. Search or suggest a sub-category if needed.',
-  'Meat & Fire': 'Meat dishes across grilling, roasting, braising, frying, and smoking — chicken fry, kebabs, mutton sukka, steaks and more. Mutton is goat; lamb is sheep.',
-  'Ocean & River': 'Fish, shellfish, crustaceans, freshwater species, and coastal traditions — fry, grill, curry and cold dishes.',
-  'Slow & Soulful': 'Stews, braises, slow cooking, comfort pots, heritage dishes, and winter warmers.',
-  'Grains & Comfort': 'Rice, noodles, pasta, porridges, pilafs, dumplings, and grain-based comfort foods — biryanis, pulao, and layered rice dishes belong here.',
-  'Breads & Bakes': 'Flatbreads, leavened breads, pastries, savoury bakes, and global bakery traditions.',
-  'Sweet Serenades': 'Desserts, sweets, puddings, confections, and global sweet traditions.',
-  'Sips & Stories': 'Teas, coffees, broths, juices, cocktails, and cultural beverages. Non-alcoholic, with alcohol, foundations, or collections — search or type your own.',
-  'Preserved & Cherished': 'Pickles, ferments, chutneys, jams, curing, drying, and pantry staples.',
-  'Little Ones': 'Children\u2019s meals, toddler foods, school snacks, and gentle flavours.'
+  'Garden & Earth': 'Fresh vegetables, legumes, roots, greens, and foraged foods. Search or suggest a sub-category.',
+  'Feather & Flock': 'Chicken, duck, turkey, and other poultry — fry, roast, grill, braise, or curry.',
+  'Pasture & Hoof': 'Beef, lamb, mutton, pork, and goat — grills, roasts, braises, and slow cooks. Mutton is goat; lamb is sheep.',
+  'Ocean & River': 'Finfish, shellfish, and crustaceans — fry, grill, curry, and coastal traditions.',
+  'The Grain Field': 'Rice, noodles, pasta, pilafs, porridges, and grain bowls — biryanis and layered rice dishes belong here.',
+  'Wrapped & Stuffed': 'Dumplings, samosas, empanadas, and filled doughs. Search or type your own sub-category.',
+  'Curds, Creams & Eggs': 'Eggs, cheese, yogurt, paneer, and dairy-rich dishes.',
+  'Breads & Bakery': 'Flatbreads, yeasted loaves, pastries, and savoury bakes.',
+  'Sweet Serenades': 'Desserts, cakes, puddings, and confections.',
+  'Sips & Stories': 'Teas, coffees, broths, juices, and cocktails.',
+  'Preserved & Pantry': 'Pickles, chutneys, spice blends, sauces, and pantry staples.'
 };
 
 function escTaxOpt(s) {

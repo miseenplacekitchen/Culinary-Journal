@@ -1068,7 +1068,11 @@ function renderCommunityRecipeCards(recipes, cardsEl, categoryName) {
     cardsEl.appendChild(empty);
     return;
   }
-  var CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
+  var CAT_EMOJI = (typeof TCJ_CAT_EMOJI !== 'undefined') ? TCJ_CAT_EMOJI : {
+    'Garden & Earth':'🥬','Feather & Flock':'🐓','Pasture & Hoof':'🍖','Ocean & River':'🌊',
+    'The Grain Field':'🌾','Wrapped & Stuffed':'🥟','Curds, Creams & Eggs':'🥛',
+    'Breads & Bakery':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Pantry':'🏺'
+  };
   cardsEl.innerHTML = '';
   recipes.forEach(function(r) {
     var warns = browseAllergyWarnings(r);
@@ -1345,7 +1349,11 @@ var activeSubFilter = '';
 var activeDivFilter = '';
 var SUPA_URL_CR = window.SUPA_URL;
 var SUPA_KEY_CR = window.SUPA_KEY;
-var CR_CAT_EMOJI = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
+var CR_CAT_EMOJI = (typeof TCJ_CAT_EMOJI !== 'undefined') ? TCJ_CAT_EMOJI : {
+  'Garden & Earth':'🥬','Feather & Flock':'🐓','Pasture & Hoof':'🍖','Ocean & River':'🌊',
+  'The Grain Field':'🌾','Wrapped & Stuffed':'🥟','Curds, Creams & Eggs':'🥛',
+  'Breads & Bakery':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Pantry':'🏺'
+};
 
 async function loadBrowseFamilyProfiles() {
   browseFamilyProfiles = [];
@@ -1480,7 +1488,9 @@ function buildCommunityCategoryFilters() {
   var row = document.getElementById('cr-category-row');
   var el = document.getElementById('cr-category-filters');
   if (!row || !el) return;
-  var cats = Object.keys(CR_CAT_EMOJI).sort();
+  var cats = (typeof TCJ_CATEGORY_NAMES !== 'undefined' && TCJ_CATEGORY_NAMES.length)
+    ? TCJ_CATEGORY_NAMES.slice()
+    : Object.keys(CR_CAT_EMOJI).sort();
   row.style.display = 'block';
   el.innerHTML = '<button class="cr-filter' + (activeCatFilter ? '' : ' active') + '" data-cat="" type="button">All</button>' +
     cats.map(function(c) {

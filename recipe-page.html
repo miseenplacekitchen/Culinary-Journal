@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="style.css?v=20260609">
   <script src="theme-init.js"></script>
   <script src="supabase-config.js"></script>
+  <script src="lib/tcj-category-copy.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
@@ -990,7 +991,11 @@ function renderUtensils(r) {
 
 
 // ── RELATED RECIPES ───────────────────────────────────────────────
-const CAT_EMOJI_RP = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Feast Days':'🎉','Little Ones':'👶','Nourish & Heal':'💪'};
+const CAT_EMOJI_RP = (typeof TCJ_CAT_EMOJI !== 'undefined') ? TCJ_CAT_EMOJI : {
+  'Garden & Earth':'🥬','Feather & Flock':'🐓','Pasture & Hoof':'🍖','Ocean & River':'🌊',
+  'The Grain Field':'🌾','Wrapped & Stuffed':'🥟','Curds, Creams & Eggs':'🥛',
+  'Breads & Bakery':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Pantry':'🏺'
+};
 
 async function loadRelatedRecipes(currentId, category) {
   if (!category) return;

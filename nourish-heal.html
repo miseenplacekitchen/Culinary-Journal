@@ -75,7 +75,7 @@ async function loadRecipes(tag) {
       return;
     }
     grid.innerHTML = rows.map(function(r) {
-      var emoji = {'Rise & Shine':'🌅','The Evening Table':'☕','Garden & Earth':'🥬','Meat & Fire':'🍖','Ocean & River':'🌊','Slow & Soulful':'🥘','Grains & Comfort':'🍚','Breads & Bakes':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Cherished':'🫙','Little Ones':'👶'}[r.category] || '🍳';
+      var emoji = {'Garden & Earth':'🥬','Feather & Flock':'🐓','Pasture & Hoof':'🍖','Ocean & River':'🌊','The Grain Field':'🌾','Wrapped & Stuffed':'🥟','Sweet Serenades':'🍮','Curds, Creams & Eggs':'🥛'}[r.category] || '🍳';
       var tags = [].concat(r.health_tags || [], r.dietary_tags || []).slice(0, 3);
       return '<a class="nh-card" href="recipe-page.html?id=' + r.id + '">' +
         '<div class="nh-img">' + (r.image_url ? '<img src="' + esc(r.image_url) + '" loading="lazy" alt="">' : emoji) + '</div>' +

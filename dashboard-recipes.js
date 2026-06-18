@@ -1944,9 +1944,9 @@ window.reviewNote = reviewNote;
 
 async function loadRMTaxonomy(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
-  var CATS = ['Rise & Shine','The Evening Table','Garden & Earth','Meat & Fire','Ocean & River',
-    'Slow & Soulful','Grains & Comfort','Breads & Bakes','Sweet Serenades','Sips & Stories',
-    'Preserved & Cherished','Feast Days','Little Ones','Nourish & Heal'];
+  var CATS = ['Garden & Earth','Feather & Flock','Pasture & Hoof','Ocean & River',
+    'The Grain Field','Wrapped & Stuffed','Curds, Creams & Eggs','Breads & Bakery',
+    'Sweet Serenades','Sips & Stories','Preserved & Pantry'];
   try {
     var rows = await rpc('get_recipe_taxonomy', { p_category: null }) || [];
     var missing = [];
