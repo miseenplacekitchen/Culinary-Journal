@@ -687,7 +687,11 @@ async function buildSMContent(container) {
     });
     container.appendChild(sec);
 
-    var _SM_DEFAULT_CATS = ['Main Courses','Appetizers','Desserts','Soups','Salads','Breads','Beverages','Sides','Snacks','Little Ones'];
+    var _SM_DEFAULT_CATS = [
+      'Garden & Earth', 'Feather & Flock', 'Pasture & Hoof', 'Ocean & River',
+      'The Grain Field', 'Wrapped & Stuffed', 'Curds, Creams & Eggs', 'Breads & Bakery',
+      'Sweet Serenades', 'Sips & Stories', 'Preserved & Pantry'
+    ];
     var cats = [];
     try { cats = JSON.parse(S.homepage_categories_order || '[]'); } catch (e) { console.warn('homepage categories parse', e); }
     if (!cats.length) cats = _SM_DEFAULT_CATS.slice();

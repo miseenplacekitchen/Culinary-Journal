@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
   <script src="supabase-config.js"></script>
+  <script src="lib/tcj-category-copy.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); }
     .ch-wrap  { max-width:1000px; margin:0 auto; padding:32px 20px 80px; }
@@ -130,7 +131,7 @@
 <script>
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
-const CAT_EMOJI = {'Garden & Earth':'🥬','Feather & Flock':'🐓','Pasture & Hoof':'🍖','Ocean & River':'🌊','The Grain Field':'🌾','Wrapped & Stuffed':'🥟','Curds, Creams & Eggs':'🥛','Breads & Bakery':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Pantry':'🏺','Rise & Shine':'🌅','The Evening Table':'☕','Meat & Fire':'🍖','Slow & Soulful':'🥘','Grains & Comfort':'🌾','Breads & Bakes':'🫓','Preserved & Cherished':'🏺','Little Ones':'👶','Feast Days':'🎉','Nourish & Heal':'💚'};
+const CAT_EMOJI = (typeof TCJ_CAT_EMOJI !== 'undefined') ? TCJ_CAT_EMOJI : {};
 
 let allChefs = [], allRecipes = [], mostSavedRecipes = [], saveCountByRecipe = {};
 

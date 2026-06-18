@@ -31,10 +31,10 @@ Built from the 25 **core** files in `sql/` (01-schema through fix_anon_grants).
 
 | File | When |
 |------|------|
-| `sql/fix-book-taxonomy.sql` | **Re-run** after book taxonomy updates — 12 food categories (not Garden, not Sips). Ends with verify query. |
+| `sql/fix-book-taxonomy.sql` | **Do not re-run** until regenerated for A–K — legacy 12-category tree (see header warning). |
 | `sql/fix-sips-drinks-taxonomy.sql` | **Re-run** after Sips Parts A–D updates — 21 subs, 92 divisions. Safe to re-run. |
 
-Source of truth: `taxonomy/book-taxonomy.md` (12 categories) + `sql/fix-sips-drinks-taxonomy.sql` (Sips).  
+Source of truth: `lib/tcj-category-copy.js` (A–K) + `taxonomy/book-taxonomy.md` (subs — **stale until regen**) + `sql/fix-sips-drinks-taxonomy.sql` (Sips).  
 Regenerate SQL/JS: `python database/taxonomy/generate_taxonomy_sql.py`  
 Validate infer rules: `python database/taxonomy/validate_food_infer.py` and `validate_drink_infer.py`  
 Audit site wiring: `python database/taxonomy/audit_taxonomy.py`
@@ -50,7 +50,8 @@ Audit site wiring: `python database/taxonomy/audit_taxonomy.py`
 | `sql/fix-security-rpcs.sql` | Once — harden `admin_get_submitter`, `send_notification`, `repair_orphan_recipe_ingredients` |
 | `sql/fix-login-info-leak.sql` | Once — drop `is_admin` from `get_login_info` pre-auth response |
 | `sql/fix-categories-v2.sql` | **Once** — eleven categories A–K (2026 book taxonomy v2) + recipe/taxonomy remaps |
-| `sql/fix-category-copy.sql` | Superseded by `fix-categories-v2.sql` |
+| `sql/fix-category-cleanup-v3.sql` | **Once** — baby browse by tags, canonical `get_recipe_taxonomy`, Stripe idempotency, tag backfill |
+| `sql/archive/fix-category-copy.sql` | Superseded by `fix-categories-v2.sql` |
 | `sql/fix-recipe-discovery-rpcs.sql` | Once — occasion + wellness recipe browse RPCs (Festival Planner, Nourish & Heal) |
 | `sql/migrate-feast-nourish-categories.sql` | Once — move legacy Feast Days / Nourish & Heal category values to tags + main category |
 | `security/SECURITY-AUDIT.md` | Full RLS/RPC audit findings + external audit crosswalk |

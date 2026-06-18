@@ -14,21 +14,40 @@ def normalize_host(url: str) -> str:
     return host
 
 TCJ_CATEGORIES = (
-    "Rise & Shine",
-    "The Evening Table",
     "Garden & Earth",
-    "Meat & Fire",
+    "Feather & Flock",
+    "Pasture & Hoof",
     "Ocean & River",
-    "Slow & Soulful",
-    "Grains & Comfort",
-    "Breads & Bakes",
+    "The Grain Field",
+    "Wrapped & Stuffed",
+    "Curds, Creams & Eggs",
+    "Breads & Bakery",
     "Sweet Serenades",
     "Sips & Stories",
-    "Preserved & Cherished",
-    "Feast Days",
-    "Little Ones",
-    "Nourish & Heal",
+    "Preserved & Pantry",
 )
+
+LEGACY_CATEGORY_MAP = {
+    "Rise & Shine": "Curds, Creams & Eggs",
+    "The Evening Table": "Wrapped & Stuffed",
+    "Meat & Fire": "Feather & Flock",
+    "Slow & Soulful": "Pasture & Hoof",
+    "Grains & Comfort": "The Grain Field",
+    "Breads & Bakes": "Breads & Bakery",
+    "Preserved & Cherished": "Preserved & Pantry",
+    "Little Ones": "Garden & Earth",
+    "Feast Days": "Pasture & Hoof",
+    "Nourish & Heal": "Garden & Earth",
+}
+
+
+def normalize_tcj_category(raw: str | None) -> str:
+    if not raw:
+        return "The Grain Field"
+    c = str(raw).strip()
+    if c in TCJ_CATEGORIES:
+        return c
+    return LEGACY_CATEGORY_MAP.get(c, "The Grain Field")
 
 SPICE_LEVELS = (
     "Not Applicable",
@@ -133,7 +152,9 @@ def normalize_structured(raw: dict[str, Any]) -> dict[str, Any]:
     recipe_name = str(raw.get("recipe_name") or "").strip() or "Untitled Recipe"
     return {
         "recipe_name": recipe_name,
-        "category": normalize_choice(raw.get("category"), TCJ_CATEGORIES, "Grains & Comfort"),
+        "category": normalize_tcj_category(
+            normalize_choice(raw.get("category"), TCJ_CATEGORIES, "The Grain Field")
+        ),
         "sub_category": str(raw.get("sub_category") or "").strip(),
         "introduction": str(raw.get("introduction") or "").strip(),
         "prep_time_minutes": coerce_int(raw.get("prep_time_minutes")),

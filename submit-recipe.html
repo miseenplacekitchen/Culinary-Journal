@@ -26,6 +26,8 @@
   <script src="lib/recipe-hero-labels.js?v=20260629"></script>
   <script src="lib/ingredient-lookup.js?v=20260630"></script>
   <script src="lib/drink-taxonomy-infer.js?v=20260721"></script>
+  <script src="lib/tcj-category-copy.js"></script>
+  <script src="lib/tcj-category-infer.js"></script>
   <script src="lib/food-taxonomy-infer.js?v=20260721"></script>
   <script src="nav-init.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1428,6 +1430,7 @@
         <!-- Category — pill grid -->
         <div class="sr-field sr-full" data-sr-group="category">
           <label class="sr-label">Category <span class="req">*</span></label>
+          <div class="sr-hint" style="margin:-4px 0 12px"><span class="sr-i">i</span> Pick <em>what kind of dish</em> this is (A–K). For <strong>breakfast</strong>, <strong>baby food</strong>, or <strong>nourishing / recovery</strong> dishes, also use the <strong>tags</strong> below — Meal Type → Breakfast; Health → Baby Friendly or Recovery Food; see <a href="baby.html" style="color:var(--accent)">Baby &amp; Toddler</a> and <a href="nourish-heal.html" style="color:var(--accent)">Nourish &amp; Heal</a>.</div>
           <div class="cat-grid" id="cat-grid">
             <input class="cat-opt" type="radio" name="category" id="cat-garden" value="Garden & Earth">
             <label for="cat-garden"><span class="cat-emoji">🥬</span><span class="cat-name">Garden &amp; Earth</span></label>
@@ -1792,6 +1795,7 @@
           <input class="tag-cb" type="checkbox" id="tag-diab" value="Diabetic Friendly"><label for="tag-diab">🩺 Diabetic Friendly</label>
           <input class="tag-cb" type="checkbox" id="tag-bf" value="Baby Friendly"><label for="tag-bf">👶 Baby Friendly</label>
           <input class="tag-cb" type="checkbox" id="tag-kf" value="Kid Friendly"><label for="tag-kf">🧒 Kid Friendly</label>
+          <input class="tag-cb" type="checkbox" id="tag-recovery" value="Recovery Food"><label for="tag-recovery">💚 Recovery &amp; nourishing</label>
         </div>
       </div>
 
@@ -4501,7 +4505,7 @@ function inferSubCategoryDivision(name, items, category) {
     var food = FoodTaxonomyInfer.infer(category, blob);
     if (food.sub) return food;
   }
-  if (category === 'Meat & Fire') {
+  if (category === 'Feather & Flock' || category === 'Meat & Fire') {
     if (/\bmutton\b|\bgoat\b/.test(blob)) out.sub = 'South Asian Dry Mutton & Goat';
     else if (/\blamb\b/.test(blob)) out.sub = /\broast\b/.test(blob) ? 'Western & BBQ Roasts' : 'Lamb & Pork Chops';
     else if (/\bchicken\b|\bpoultry\b/.test(blob)) out.sub = 'South Asian Fried Chicken';

@@ -681,6 +681,9 @@
             <span class="rm-stat-chip rejected">Rejected <strong id="rmgmt-rejected">&#8212;</strong></span>
           </div>
           <input type="text" class="ap-search" id="rmgmt-search" placeholder="Search recipes&#8230;" oninput="_rmPage=1;loadRecipeMgmt(_currentRecipeTab)" style="flex:1;min-width:160px;max-width:280px">
+          <select id="rmgmt-cat-filter" class="ing-cat-filter" title="Filter by A–K category" onchange="_rmPage=1;loadRecipeMgmt(_currentRecipeTab)">
+            <option value="">All categories</option>
+          </select>
           <button type="button" class="rm-agent-btn-bulk" id="rm-bulk-agent-btn" onclick="runBulkAgentReview(10)" title="Mechanical polish: saves cleanup, auto-rejects junk only, editor for gaps — you approve">
             &#129302; Bulk Autopilot
           </button>
@@ -1348,6 +1351,8 @@
   <script src="dashboard-shared.js?v=20260616"></script>
   <script src="lib/dashboard-um-ops.js?v=20260714"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
+  <script src="lib/tcj-category-copy.js"></script>
+  <script src="lib/tcj-category-infer.js"></script>
   <script src="lib/admin-recipe-utils.js?v=20260705"></script>
   <script src="lib/dashboard-agent-review.js?v=20260623"></script>
   <script src="dashboard-recipes.js?v=20260624"></script>

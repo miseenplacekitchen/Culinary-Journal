@@ -153,15 +153,15 @@ def extract_document_folder(
                 category_map = {
                     "vegetarian": "Garden & Earth",
                     "seafood": "Ocean & River",
-                    "poultry": "Meat & Fire",
-                    "meat": "Meat & Fire",
+                    "poultry": "Feather & Flock",
+                    "meat": "Pasture & Hoof",
                     "desserts": "Sweet Serenades",
                     "sweets": "Sweet Serenades",
                     "kibbeh": "Garden & Earth",
-                    "grains": "Garden & Earth",
+                    "grains": "The Grain Field",
                     "legumes": "Garden & Earth",
                     "vegetables": "Garden & Earth",
-                    "sauces": "Preserved & Cherished",
+                    "sauces": "Preserved & Pantry",
                 }
                 mapped = category_map.get(section)
                 if mapped:

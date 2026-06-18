@@ -38,22 +38,7 @@ STRUCTURE_MODEL = "llama-3.3-70b-versatile"
 PARSER_VERSION = "ingest-recipes-v1"
 EXTRACTOR_VERSION = "groq-llama-3.3-70b-json"
 
-TCJ_CATEGORIES = (
-    "Rise & Shine",
-    "The Evening Table",
-    "Garden & Earth",
-    "Meat & Fire",
-    "Ocean & River",
-    "Slow & Soulful",
-    "Grains & Comfort",
-    "Breads & Bakes",
-    "Sweet Serenades",
-    "Sips & Stories",
-    "Preserved & Cherished",
-    "Feast Days",
-    "Little Ones",
-    "Nourish & Heal",
-)
+from tcj_ingest import TCJ_CATEGORIES, normalize_choice, normalize_structured, normalize_tcj_category
 
 SPICE_LEVELS = (
     "Not Applicable",
@@ -233,7 +218,9 @@ def normalize_structured(raw: dict[str, Any]) -> dict[str, Any]:
     recipe_name = str(raw.get("recipe_name") or "").strip() or "Untitled Recipe"
     return {
         "recipe_name": recipe_name,
-        "category": normalize_choice(raw.get("category"), TCJ_CATEGORIES, "Grains & Comfort"),
+        "category": normalize_tcj_category(
+            normalize_choice(raw.get("category"), TCJ_CATEGORIES, "The Grain Field")
+        ),
         "introduction": str(raw.get("introduction") or "").strip(),
         "prep_time_minutes": coerce_int(raw.get("prep_time_minutes")),
         "cook_time_minutes": coerce_int(raw.get("cook_time_minutes")),

@@ -16,7 +16,7 @@
 | 3 | XSS — sparse `escapeHtml` vs innerHTML sinks | **Partial** | Hotspots fixed in `recipe-page.html` (collections, related recipes, error text); ~800+ sinks remain — DOMPurify sweep still recommended |
 | 4 | Client email admin fallback | **Fixed** | Removed in commit `33460cf`; `isTcjAdmin()` = DB flag only |
 | 5 | RLS + SECURITY DEFINER boundary | **Documented** | 78 admin RPCs checked; anon key by design; no service-role in repo |
-| 6 | Stripe webhook swallows RPC errors | **Fixed (deploy edge fn)** | `stripe-webhook/index.ts` returns 500 on RPC failure so Stripe retries; **`apply_stripe_subscription` is not idempotent** — duplicate webhook deliveries can insert multiple `member_subscriptions` rows (follow-up SQL needed) |
+| 6 | Stripe webhook swallows RPC errors | **Fixed (deploy edge fn)** | `stripe-webhook/index.ts` returns 500 on RPC failure so Stripe retries; **`apply_stripe_subscription` idempotency** — run `fix-category-cleanup-v3.sql` on production |
 | 7 | Function ownership drift (duplicate SQL defs) | **Open** | Ledger rule exists; dedupe `admin_edit_recipe`, garden RPCs across files |
 | 8 | Dropped “Admin can read all profiles” policy | **Clarified** | Comment in `01-schema.sql`: intentional; admin reads via SECURITY DEFINER RPCs |
 | 9 | Archive SQL footgun | **Open** | Move `database/sql/archive/` out of working tree or add CI guard |

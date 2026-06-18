@@ -61,7 +61,7 @@ Rules:
 - Rewrite procedure steps in clear, formal English (complete sentences, active voice). Keep the same cooking logic.
 - Remove PDF artefacts: "POUL TRY 81", page numbers, run-on titles, InDesign junk.
 - Infer origin_country from cuisine when obvious (e.g. Nasi Lemak → Malaysia, Paella → Spain).
-- Pick the single best TCJ category. Desserts/puddings → Sweet Serenades; soups → Slow & Soulful or Rise & Shine.
+- Pick the single best TCJ category (A–K). Desserts/puddings → Sweet Serenades; soups → Pasture & Hoof; breakfast dishes → Curds, Creams & Eggs or Breads & Bakery plus meal_type Breakfast tag.
 - Use servings/times from source when stated; otherwise keep sensible defaults from Serves line.
 - Do not invent ingredients or steps not supported by the source.
 - Preserve sub-sections (e.g. "Spice Paste", "Garnishing") as separate ingredient sections when present.

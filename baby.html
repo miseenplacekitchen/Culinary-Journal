@@ -341,7 +341,7 @@ function renderBabyRecipes(recipes) {
   const grid = document.getElementById('bt-recipe-grid');
   const count = document.getElementById('bt-recipe-count');
   if (!recipes.length) {
-    grid.innerHTML = '<div class="bt-empty"><div class="bt-empty-icon">👶</div><div class="bt-empty-title">No recipes yet</div><div class="bt-empty-sub">Be the first to <a href="submit-recipe.html" style="color:var(--accent)">submit a baby recipe</a> in the Little Ones category.</div></div>';
+    grid.innerHTML = '<div class="bt-empty"><div class="bt-empty-icon">👶</div><div class="bt-empty-title">No recipes yet</div><div class="bt-empty-sub">Be the first to <a href="submit-recipe.html" style="color:var(--accent)">submit a baby-friendly recipe</a> — pick any A–K category and tag <strong>Baby Friendly</strong> or <strong>Kid Friendly</strong> under Health.</div></div>';
     if (count) count.textContent = '';
     return;
   }

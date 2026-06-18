@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
   <script src="supabase-config.js"></script>
+  <script src="lib/tcj-category-copy.js"></script>
   <script src="seo-schema.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); }
@@ -102,7 +103,7 @@
 <script src="nav-init.js"></script>
 <script>
 var state = { level:'continent', continent:'', country:'', state:'', counts:[], useRpc:true };
-var CAT_EMOJI = {'Garden & Earth':'🥬','Feather & Flock':'🐓','Pasture & Hoof':'🍖','Ocean & River':'🌊','The Grain Field':'🌾','Wrapped & Stuffed':'🥟','Curds, Creams & Eggs':'🥛','Breads & Bakery':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Pantry':'🏺','Rise & Shine':'🌅','The Evening Table':'☕','Meat & Fire':'🍖','Slow & Soulful':'🥘','Grains & Comfort':'🌾','Breads & Bakes':'🫓','Preserved & Cherished':'🏺','Little Ones':'👶','Feast Days':'🎉','Nourish & Heal':'💚'};
+var CAT_EMOJI = (typeof TCJ_CAT_EMOJI !== 'undefined') ? TCJ_CAT_EMOJI : {};
 var fallbackRecipes = [];
 
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }

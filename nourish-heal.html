@@ -11,6 +11,7 @@
   <script src="theme-init.js"></script>
   <script src="supabase-config.js"></script>
   <script src="lib/tcj-discovery-hubs.js"></script>
+  <script src="lib/tcj-category-copy.js"></script>
   <script src="seo-schema.js"></script>
   <style>
     .page-bg { min-height:100vh; background:var(--bg); }
@@ -49,7 +50,7 @@
 <div class="nh-wrap">
   <h1 class="nh-title">💚 Nourish &amp; Heal</h1>
   <p class="nh-sub">Health-focused and dietary-specific recipes — not a main book category, but a dedicated lane for vegan, gluten-free, low-GI, recovery foods, and gentle flavours. Pick a filter or browse everything tagged for wellness.</p>
-  <p class="nh-note">Recipes live under the 12 main categories (Garden &amp; Earth, Grains &amp; Comfort, etc.). This page gathers those with <strong>Health</strong> or <strong>Dietary</strong> tags from submit — open any recipe for full ingredient and allergen detail.</p>
+  <p class="nh-note">Recipes live under the eleven main categories (Garden &amp; Earth through Preserved &amp; Pantry). This page gathers those with <strong>Health</strong> or <strong>Dietary</strong> tags from submit — breakfast, baby-friendly, and recovery foods use tags too, not separate categories.</p>
   <div class="nh-filters" id="nh-filters"></div>
   <div class="nh-grid" id="nh-grid"><div class="nh-empty">Loading…</div></div>
 </div>
@@ -75,7 +76,7 @@ async function loadRecipes(tag) {
       return;
     }
     grid.innerHTML = rows.map(function(r) {
-      var emoji = {'Garden & Earth':'🥬','Feather & Flock':'🐓','Pasture & Hoof':'🍖','Ocean & River':'🌊','The Grain Field':'🌾','Wrapped & Stuffed':'🥟','Sweet Serenades':'🍮','Curds, Creams & Eggs':'🥛'}[r.category] || '🍳';
+      var emoji = (typeof TCJ_CAT_EMOJI !== 'undefined' && TCJ_CAT_EMOJI[r.category]) ? TCJ_CAT_EMOJI[r.category] : '🍳';
       var tags = [].concat(r.health_tags || [], r.dietary_tags || []).slice(0, 3);
       return '<a class="nh-card" href="recipe-page.html?id=' + r.id + '">' +
         '<div class="nh-img">' + (r.image_url ? '<img src="' + esc(r.image_url) + '" loading="lazy" alt="">' : emoji) + '</div>' +

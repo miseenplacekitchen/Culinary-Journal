@@ -17,6 +17,19 @@ function getRejectReasons() {
   return ['Incomplete ingredients','Unclear method','Duplicate recipe','Inappropriate content','Missing source credit','Poor formatting','Other'];
 }
 
+function ensureRmCatFilter() {
+  var sel = document.getElementById('rmgmt-cat-filter');
+  if (!sel || sel.dataset.init === '1') return;
+  sel.dataset.init = '1';
+  if (typeof getRecipeCats !== 'function') return;
+  getRecipeCats().forEach(function(c) {
+    var o = document.createElement('option');
+    o.value = c;
+    o.textContent = c;
+    sel.appendChild(o);
+  });
+}
+
 function switchRecipeTab(tab) {
   if (_RM_OPS_TABS.indexOf(tab) !== -1) {
     localStorage.setItem('tcj_rm_interface_tab', tab);
@@ -34,6 +47,7 @@ function switchRecipeTab(tab) {
   var setPanel  = document.getElementById('rmgmt-rmsettings-panel');
   var extPanel  = document.getElementById('rmgmt-extra-panel');
   if (listPanel) listPanel.style.display = _RM_LIST_TABS.indexOf(tab) !== -1 ? 'block' : 'none';
+  if (_RM_LIST_TABS.indexOf(tab) !== -1) ensureRmCatFilter();
   if (anaPanel)  anaPanel.style.display  = tab === 'analytics' ? 'block' : 'none';
   if (opsPanel)  opsPanel.style.display  = 'none';
   if (setPanel)  setPanel.style.display  = tab === 'rmsettings' ? 'block' : 'none';
@@ -702,11 +716,11 @@ async function openRecipeModal(id) {
     catSel.id = 'rm-edit-cat';
     catSel.style.cssText = 'width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)';
     var blankOpt = document.createElement('option'); blankOpt.value = ''; blankOpt.textContent = '— Select —'; catSel.appendChild(blankOpt);
-    getCats().forEach(function(c) { var o = document.createElement('option'); o.value = c; o.textContent = c; catSel.appendChild(o); });
+    getRecipeCats().forEach(function(c) { var o = document.createElement('option'); o.value = c; o.textContent = c; catSel.appendChild(o); });
     catWrap.appendChild(catSel);
     if (r.category) {
       catSel.value = String(r.category).trim();
-      if (!catSel.value && getCats().indexOf(r.category) < 0) {
+      if (!catSel.value && getRecipeCats().indexOf(r.category) < 0) {
         var extra = document.createElement('option');
         extra.value = r.category;
         extra.textContent = r.category;
