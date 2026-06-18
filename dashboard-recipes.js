@@ -2006,13 +2006,72 @@ function rmTaxTextarea(val, placeholder, minH) {
   return e;
 }
 
+function rmTaxUpsertSubcategory(payload) {
+  return rpc('admin_upsert_recipe_subcategory', payload).catch(function(e) {
+    var msg = String(e.message || e);
+    if (/function|argument|column|tagline|emoji|does not exist/i.test(msg)) {
+      return rpc('admin_upsert_recipe_subcategory', {
+        p_id: payload.p_id,
+        p_category: payload.p_category,
+        p_name: payload.p_name,
+        p_sort_order: payload.p_sort_order,
+        p_ingredient_hints: payload.p_ingredient_hints
+      });
+    }
+    throw e;
+  });
+}
+
+function rmTaxMergeSubs(cat, subsMap) {
+  var list = Object.values(subsMap).sort(function(a, b) {
+    return (a.sort_order || 0) - (b.sort_order || 0) || String(a.name).localeCompare(String(b.name));
+  });
+  var canon = (typeof getCanonicalCategoryTaxonomy === 'function')
+    ? getCanonicalCategoryTaxonomy(cat) : null;
+  if (!canon || !canon.length) return list;
+  var byName = {};
+  list.forEach(function(s) { byName[s.name] = s; });
+  canon.forEach(function(sub, i) {
+    if (byName[sub.name]) {
+      var s = byName[sub.name];
+      if (!s.emoji && sub.emoji) s.emoji = sub.emoji;
+      if (!s.tagline && sub.tagline) s.tagline = sub.tagline;
+      if (!s.description && sub.description) s.description = sub.description;
+      if ((!s.ingredient_hints || !s.ingredient_hints.length) && sub.ingredients) {
+        s.ingredient_hints = sub.ingredients.slice();
+      }
+    } else {
+      list.push({
+        id: null,
+        name: sub.name,
+        sort_order: (i + 1) * 10,
+        emoji: sub.emoji || '',
+        tagline: sub.tagline || '',
+        description: sub.description || '',
+        ingredient_hints: sub.ingredients ? sub.ingredients.slice() : [],
+        divisions: []
+      });
+    }
+  });
+  return list.sort(function(a, b) {
+    return (a.sort_order || 0) - (b.sort_order || 0) || String(a.name).localeCompare(String(b.name));
+  });
+}
+
 async function loadRMTaxonomy(container) {
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
   var CATS = ['Garden & Earth','Feather & Flock','Pasture & Hoof','Ocean & River',
     'The Grain Field','Wrapped & Stuffed','Curds, Creams & Eggs','Breads & Bakery',
     'Sweet Serenades','Sips & Stories','Preserved & Pantry'];
   try {
-    var rows = await rpc('get_recipe_taxonomy', { p_category: null }) || [];
+    var rows = [];
+    var taxonomyRpcError = '';
+    try {
+      rows = await rpc('get_recipe_taxonomy', { p_category: null }) || [];
+    } catch (rpcErr) {
+      taxonomyRpcError = String(rpcErr.message || rpcErr);
+      console.warn('get_recipe_taxonomy', rpcErr);
+    }
     var missing = [];
     try { missing = await rpc('admin_list_recipes_missing_taxonomy', { p_limit: 50 }) || []; } catch(e) { console.warn('missing taxonomy list', e); }
     container.innerHTML = '';
@@ -2023,6 +2082,14 @@ async function loadRMTaxonomy(container) {
       '<br><br><strong>Paste book hints</strong> fills the ingredient box with the original list from the taxonomy book (you still click <em>Save sub-category</em> to store it). ' +
       '<strong>Sync from book</strong> creates/updates every sub in that category from the code defaults.';
     container.appendChild(note);
+
+    if (taxonomyRpcError) {
+      var errBox = mk('div', 'margin-bottom:16px;padding:12px 14px;background:rgba(220,80,80,0.12);border:1px solid #dc5050;border-radius:8px;font-size:12px;color:#f0a0a0;line-height:1.5');
+      errBox.innerHTML = '<strong>Database taxonomy RPC failed.</strong> ' + esc(taxonomyRpcError) +
+        '<br>Run <code>database/sql/fix-admin-taxonomy-editor.sql</code> once in Supabase, then refresh. ' +
+        'Subs below show book defaults until the database responds.';
+      container.appendChild(errBox);
+    }
 
     if (missing.length) {
       var bulk = mk('div', 'margin-bottom:24px;padding:16px;background:rgba(196,151,59,0.08);border:1px solid var(--accent);border-radius:12px');
@@ -2152,9 +2219,7 @@ async function loadRMTaxonomy(container) {
           });
         }
       });
-      var subList = Object.values(subs).sort(function(a, b) {
-        return (a.sort_order || 0) - (b.sort_order || 0) || a.name.localeCompare(b.name);
-      });
+      var subList = rmTaxMergeSubs(cat, subs);
       subList.forEach(function(sc) {
         sc.divisions.sort(function(a, b) {
           return (a.division_sort_order || 0) - (b.division_sort_order || 0) ||
@@ -2213,7 +2278,7 @@ async function loadRMTaxonomy(container) {
           var chain = Promise.resolve();
           canon.forEach(function(sub, i) {
             chain = chain.then(function() {
-              return rpc('admin_upsert_recipe_subcategory', {
+              return rmTaxUpsertSubcategory({
                 p_id: null, p_category: cat, p_name: sub.name,
                 p_sort_order: (i + 1) * 10,
                 p_ingredient_hints: sub.ingredients || [],
@@ -2258,7 +2323,8 @@ async function loadRMTaxonomy(container) {
           subMove.appendChild(rmTaxMoveBtn('↑', 'Move sub up', subIdx === 0, function(ev) {
             ev.stopPropagation();
             if (subIdx === 0) return;
-            var ids = subList.map(function(s) { return s.id; });
+            var ids = subList.map(function(s) { return s.id; }).filter(Boolean);
+            if (ids.length !== subList.length) { alert('Save all subs to the database before reordering.'); return; }
             var t = ids[subIdx]; ids[subIdx] = ids[subIdx - 1]; ids[subIdx - 1] = t;
             rpc('admin_reorder_recipe_subcategories', { p_category: cat, p_ordered_ids: ids })
               .then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
@@ -2266,7 +2332,8 @@ async function loadRMTaxonomy(container) {
           subMove.appendChild(rmTaxMoveBtn('↓', 'Move sub down', subIdx === subList.length - 1, function(ev) {
             ev.stopPropagation();
             if (subIdx >= subList.length - 1) return;
-            var ids = subList.map(function(s) { return s.id; });
+            var ids = subList.map(function(s) { return s.id; }).filter(Boolean);
+            if (ids.length !== subList.length) { alert('Save all subs to the database before reordering.'); return; }
             var t = ids[subIdx]; ids[subIdx] = ids[subIdx + 1]; ids[subIdx + 1] = t;
             rpc('admin_reorder_recipe_subcategories', { p_category: cat, p_ordered_ids: ids })
               .then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
@@ -2323,7 +2390,7 @@ async function loadRMTaxonomy(container) {
             var newName = nameIn.value.trim();
             if (!newName) { alert('Sub-category name is required.'); return; }
             saveSub.disabled = true;
-            rpc('admin_upsert_recipe_subcategory', {
+            rmTaxUpsertSubcategory({
               p_id: sc.id, p_category: cat, p_name: newName,
               p_sort_order: sc.sort_order,
               p_ingredient_hints: parsed,
@@ -2414,7 +2481,7 @@ async function loadRMTaxonomy(container) {
       btn.addEventListener('click', function() {
         var v = inp.value.trim();
         if (!v) return;
-        rpc('admin_upsert_recipe_subcategory', {
+        rmTaxUpsertSubcategory({
           p_id: null, p_category: cat, p_name: v,
           p_sort_order: (subList.length + 1) * 10,
           p_ingredient_hints: [], p_tagline: null, p_description: null, p_emoji: null

@@ -14,7 +14,8 @@ Run each file **once** in Supabase SQL Editor, in this order:
 | 2 | `sql/fix-category-cleanup-v3.sql` | Tags, baby browse, Stripe idempotency |
 | 3 | `sql/fix-admin-taxonomy-editor.sql` | **Browse + admin RPCs** (run before editing taxonomy in dashboard) |
 | 4 | `sql/fix-garden-taxonomy-v2.sql` | Garden A1–A13 |
-| 5 | `sql/fix-feather-pasture-taxonomy.sql` | Feather B + Pasture C |
+| 5b | `sql/fix-feather-pasture-b8-c8.sql` | Once — Feather B8 + Pasture C8 offal subs (incremental; safe after you added subs in admin) |
+| 5 | `sql/fix-feather-pasture-taxonomy.sql` | Feather B + Pasture C (full seed — only on fresh DB) |
 | 6 | `sql/fix-ocean-river-taxonomy.sql` | Ocean D |
 | 7 | `sql/fix-grain-field-taxonomy.sql` | Grain Field E |
 | 8 | `sql/fix-sips-stories-taxonomy.sql` | Sips J |

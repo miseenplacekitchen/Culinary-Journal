@@ -1,6 +1,6 @@
--- fix-feather-pasture-taxonomy.sql — Feather & Flock B1–B7 + Pasture & Hoof C1–C7 (2026).
--- Run once in Supabase SQL Editor after fix-garden-taxonomy-v2.sql. Safe to re-run.
--- Ingredient/cut hints on recipe_subcategories.ingredient_hints (not divisions).
+-- fix-feather-pasture-taxonomy.sql — Feather B1–B8 + Pasture C1–C8 (2026).
+-- Full seed for a fresh DB. On a live DB with edits, prefer fix-feather-pasture-b8-c8.sql for new subs only.
+-- WARNING: re-running this deactivates subs not in the list below, then re-seeds B1–B8 / C1–C8.
 
 ALTER TABLE public.recipe_subcategories
   ADD COLUMN IF NOT EXISTS ingredient_hints text[] DEFAULT '{}';
@@ -16,7 +16,8 @@ INSERT INTO public.recipe_subcategories (category, name, sort_order, is_active) 
   ('Feather & Flock', 'Quail & Small Bush Fowl', 40, true),
   ('Feather & Flock', 'Pigeon & Squab', 50, true),
   ('Feather & Flock', 'Wild Game Birds', 60, true),
-  ('Feather & Flock', 'Giant Flightless Birds', 70, true)
+  ('Feather & Flock', 'Giant Flightless Birds', 70, true),
+  ('Feather & Flock', 'Poultry Offal & Internal Treasures', 80, true)
 ON CONFLICT (category, name) DO UPDATE SET sort_order = EXCLUDED.sort_order, is_active = EXCLUDED.is_active;
 
 UPDATE public.recipe_subcategories SET ingredient_hints = ARRAY[
@@ -47,7 +48,11 @@ UPDATE public.recipe_subcategories SET ingredient_hints = ARRAY[
   'Ostrich Fan Steaks','Emu Fillets','Ostrich Kebabs','Lean Strips'
 ] WHERE category = 'Feather & Flock' AND name = 'Giant Flightless Birds';
 
--- ── Pasture & Hoof C1–C7 ─────────────────────────────────────────────────────
+UPDATE public.recipe_subcategories SET ingredient_hints = ARRAY[
+  'Chicken Livers','Duck Gizzards','Turkey Hearts','Poultry Necks','Cockscombs','Chicken Feet','Giblets','Foie Gras'
+] WHERE category = 'Feather & Flock' AND name = 'Poultry Offal & Internal Treasures';
+
+-- ── Pasture & Hoof C1–C8 ─────────────────────────────────────────────────────
 UPDATE public.recipe_divisions SET is_active = false WHERE category = 'Pasture & Hoof';
 UPDATE public.recipe_subcategories SET is_active = false WHERE category = 'Pasture & Hoof';
 
@@ -58,11 +63,12 @@ INSERT INTO public.recipe_subcategories (category, name, sort_order, is_active) 
   ('Pasture & Hoof', 'Heavy Herd Animals', 40, true),
   ('Pasture & Hoof', 'Wild Deer & Antelope', 50, true),
   ('Pasture & Hoof', 'Leporidae & Small Game', 60, true),
-  ('Pasture & Hoof', 'Steppe & Arctic Mammals', 70, true)
+  ('Pasture & Hoof', 'Steppe & Arctic Mammals', 70, true),
+  ('Pasture & Hoof', 'Variety Meats, Blood & Land Offal', 80, true)
 ON CONFLICT (category, name) DO UPDATE SET sort_order = EXCLUDED.sort_order, is_active = EXCLUDED.is_active;
 
 UPDATE public.recipe_subcategories SET ingredient_hints = ARRAY[
-  'Bone-In Ribs','Shanks','Brisket','Steaks','Oxtail','Minced Beef','Veal Cutlets'
+  'Bone-In Ribs','Shanks','Brisket','Steaks','Minced Beef','Veal Cutlets'
 ] WHERE category = 'Pasture & Hoof' AND name = 'Bovine & Cattle';
 
 UPDATE public.recipe_subcategories SET ingredient_hints = ARRAY[
@@ -88,6 +94,10 @@ UPDATE public.recipe_subcategories SET ingredient_hints = ARRAY[
 UPDATE public.recipe_subcategories SET ingredient_hints = ARRAY[
   'Horse Fillets','Reindeer Haunch','Horse Sausages','Arctic Land Mammal Cuts'
 ] WHERE category = 'Pasture & Hoof' AND name = 'Steppe & Arctic Mammals';
+
+UPDATE public.recipe_subcategories SET ingredient_hints = ARRAY[
+  'Beef Liver','Pork Tripe','Oxtail','Sweetbreads','Kidneys','Pork Blood','Lamb Tongue','Bone Marrow','Pig Trotters'
+] WHERE category = 'Pasture & Hoof' AND name = 'Variety Meats, Blood & Land Offal';
 
 SELECT category, name, sort_order, array_length(ingredient_hints, 1) AS hint_count, is_active
 FROM public.recipe_subcategories
