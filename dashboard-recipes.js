@@ -2122,9 +2122,9 @@ function rmTaxSortSubs(subsMap) {
   });
 }
 
-function adminTaxonomyRowBelongsToCategory(row, categoryName) {
-  if (!row || !categoryName || !row.subcategory_name) return false;
-  return String(row.subcategory_category || '').trim() === categoryName;
+function adminTaxonomyRowBelongsToCategory(row, expandedCategoryName) {
+  if (!row || !expandedCategoryName || !row.subcategory_name) return false;
+  return String(row.subcategory_category || '').trim() === String(expandedCategoryName).trim();
 }
 
 async function loadRMTaxonomy(container) {
@@ -2153,7 +2153,7 @@ async function loadRMTaxonomy(container) {
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260620c</span> — red <strong>Remove</strong> deactivates a sub or division.';
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260620d</span> — red <strong>Remove</strong> deactivates a sub or division.';
     container.appendChild(note);
 
     var exportRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px');
@@ -2174,32 +2174,70 @@ async function loadRMTaxonomy(container) {
     container.appendChild(movedNote);
 
     var catNames = [];
+    var catFetchError = '';
     try {
-      var catHeaders = (typeof getAuthHeaders === 'function')
-        ? getAuthHeaders()
-        : { apikey: window.SUPA_KEY, Accept: 'application/json' };
-      var catRes = await fetch(window.SUPA_URL + '/rest/v1/categories?is_active=eq.true&order=sort_order', {
-        headers: catHeaders
-      });
-      var catRows = catRes.ok ? await catRes.json() : [];
-      if (catRows.length) {
-        catNames = catRows.map(function(r) { return r.name; }).filter(Boolean);
+      var catUrl = window.SUPA_URL + '/rest/v1/categories?is_active=eq.true&select=name,sort_order,is_active&order=sort_order';
+      var catRes = (typeof apiFetch === 'function')
+        ? await apiFetch(catUrl)
+        : await fetch(catUrl, {
+          headers: (typeof getAuthHeaders === 'function')
+            ? getAuthHeaders()
+            : { apikey: window.SUPA_KEY, Accept: 'application/json' }
+        });
+      if (!catRes) {
+        catFetchError = 'categories fetch returned no response (session expired?)';
+      } else if (!catRes.ok) {
+        catFetchError = 'categories ' + catRes.status + ': ' + (await catRes.text().catch(function() { return ''; }));
+      } else {
+        var catRows = await catRes.json();
+        catNames = (catRows || [])
+          .filter(function(r) { return r && r.is_active !== false && r.name; })
+          .map(function(r) { return String(r.name).trim(); });
       }
-    } catch (e) { console.warn('category order', e); }
+    } catch (e) {
+      catFetchError = String(e.message || e);
+      console.warn('[TCJ Taxonomy] categories fetch failed', e);
+    }
     if (!catNames.length) {
-      var seenCat = {};
-      (rows || []).forEach(function(r) {
-        var c = r.subcategory_category;
-        if (c && !seenCat[c]) { seenCat[c] = true; catNames.push(c); }
-      });
-      catNames.sort(function(a, b) { return a.localeCompare(b); });
+      if (typeof getRecipeCats === 'function') {
+        catNames = getRecipeCats().slice();
+        console.warn('[TCJ Taxonomy] Using canonical category list fallback — active categories query returned none.', catFetchError || '');
+      }
+    }
+    console.log('[TCJ Taxonomy] Active categories fetched (' + catNames.length + '):', catNames.slice());
+    if (catFetchError) {
+      console.warn('[TCJ Taxonomy] categories fetch note:', catFetchError);
+    }
+
+    var activeCatSet = {};
+    catNames.forEach(function(c) { activeCatSet[c] = true; });
+    var orphanCats = {};
+    (rows || []).forEach(function(r) {
+      var c = String(r.subcategory_category || '').trim();
+      if (c && !activeCatSet[c]) orphanCats[c] = (orphanCats[c] || 0) + 1;
+    });
+    if (Object.keys(orphanCats).length) {
+      console.warn('[TCJ Taxonomy] Sub-categories on inactive/unknown categories (not shown):', orphanCats);
     }
 
     catNames.forEach(function(cat, catIdx) {
+      var expandedCategoryName = cat;
+      var matchedRows = rows.filter(function(r) {
+        return adminTaxonomyRowBelongsToCategory(r, expandedCategoryName);
+      });
+      var matchedSubNames = [];
+      var seenSubNames = {};
+      matchedRows.forEach(function(r) {
+        var sn = r.subcategory_name;
+        if (sn && !seenSubNames[sn]) {
+          seenSubNames[sn] = true;
+          matchedSubNames.push(sn);
+        }
+      });
+      console.log('[TCJ Taxonomy]', expandedCategoryName, '→', matchedRows.length, 'row(s),', matchedSubNames.length, 'sub(s):', matchedSubNames);
+
       var subs = {};
-      rows.filter(function(r) {
-        return adminTaxonomyRowBelongsToCategory(r, cat);
-      }).forEach(function(r) {
+      matchedRows.forEach(function(r) {
         if (!r.subcategory_id) return;
         if (!subs[r.subcategory_id]) {
           subs[r.subcategory_id] = {
