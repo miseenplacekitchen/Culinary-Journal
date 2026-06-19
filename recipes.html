@@ -26,8 +26,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
-  <script src="lib/tcj-category-copy.js?v=20260619d"></script>
-  <script src="lib/tcj-discovery-hubs.js"></script>
+  <script src="lib/tcj-discovery-hubs.js?v=20260621"></script>
   <style>
     .recipes-shell { max-width: 1100px; margin: 0 auto; padding: 0 24px 48px; }
     @media (max-width: 768px) { .recipes-shell { padding: 0 16px 40px; } }
@@ -532,6 +531,7 @@ let curCatTaxonomyBrowse=false;
 let curCatDbDishes=[];
 let browseLevel='home';
 let browseCatIdMap={};
+let browseCatMeta={};
 let allRecipes = [];
 let browseTaxonomy = [];
 
@@ -559,14 +559,32 @@ function browseTaxonomyRowMatchesCategory(row, categoryName) {
   return String(row.subcategory_category || '').trim() === String(categoryName).trim();
 }
 
-// Load categories from Supabase (active only)
+function getBrowseCatEmoji(categoryName) {
+  var meta = browseCatMeta[categoryName];
+  return (meta && meta.emoji) ? meta.emoji : '🍽';
+}
+
+function syncBrowseCatMetaFromRows(cats) {
+  browseCatIdMap = {};
+  browseCatMeta = {};
+  (cats || []).forEach(function(cat) {
+    if (!cat || !cat.name) return;
+    browseCatIdMap[cat.name] = cat.id;
+    browseCatMeta[cat.name] = {
+      id: cat.id,
+      emoji: cat.emoji || '🍽',
+      description: cat.description || ''
+    };
+  });
+}
+
+// Load categories from Supabase (active only — no hardcoded category list)
 async function loadCategories() {
   const grid = document.getElementById('cat-grid');
   grid.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Loading categories...</div>';
 
   function renderCategoryCards(cats) {
-    browseCatIdMap = {};
-    cats.forEach(function(cat) { browseCatIdMap[cat.name] = cat.id; });
+    syncBrowseCatMetaFromRows(cats);
     grid.innerHTML = cats.map(function(cat) {
       return '<div class="cat-card" data-id="' + cat.id + '" data-name="' + cat.name.replace(/"/g,'&quot;') + '">' +
         '<span class="cat-emoji">' + (cat.emoji || '🍽') + '</span>' +
@@ -599,10 +617,9 @@ async function loadCategories() {
 function renderDiscoveryHubs() {
   var grid = document.getElementById('hub-grid');
   if (!grid) return;
-  var hubs = typeof TCJ_DISCOVERY_HUBS !== 'undefined' ? TCJ_DISCOVERY_HUBS : [
-    { href: 'festival-planner.html', emoji: '🎉', name: 'Festival Planner', description: 'Occasion menus and festival-tagged recipes' },
-    { href: 'nourish-heal.html', emoji: '💚', name: 'Nourish & Heal', description: 'Health and dietary-specific recipes' }
-  ];
+  var hubs = (typeof TCJ_DISCOVERY_HUBS !== 'undefined' && TCJ_DISCOVERY_HUBS.length)
+    ? TCJ_DISCOVERY_HUBS : [];
+  if (!hubs.length) { grid.innerHTML = ''; return; }
   grid.innerHTML = hubs.map(function(h) {
     return '<a class="hub-card" href="' + h.href + '">' +
       '<div class="hub-emoji">' + h.emoji + '</div>' +
@@ -612,23 +629,27 @@ function renderDiscoveryHubs() {
 }
 
 async function loadBrowseTaxonomy() {
+  browseTaxonomy = [];
   try {
     var res = await fetch(window.SUPA_URL + '/rest/v1/rpc/get_recipe_taxonomy', {
       method:'POST', headers:{'apikey':window.SUPA_KEY,'Content-Type':'application/json'},
       body:JSON.stringify({p_category:null})
     });
-    browseTaxonomy = res.ok ? await res.json() : [];
-    if (!Array.isArray(browseTaxonomy)) browseTaxonomy = [];
+    if (res.ok) {
+      var data = await res.json();
+      browseTaxonomy = Array.isArray(data) ? data : [];
+    }
     var uniqueSubs = {};
     browseTaxonomy.forEach(function(r) {
       if (r.subcategory_id) uniqueSubs[r.subcategory_id] = true;
     });
-    console.log('[Browse] get_recipe_taxonomy:', browseTaxonomy.length, 'row(s),',
-      Object.keys(uniqueSubs).length, 'unique sub(s)');
+    console.log('[Browse] taxonomy RPC only — get_recipe_taxonomy:',
+      browseTaxonomy.length, 'row(s),', Object.keys(uniqueSubs).length, 'unique sub(s)');
   } catch (e) {
-    console.warn('browse taxonomy', e);
+    console.warn('[Browse] get_recipe_taxonomy failed', e);
     browseTaxonomy = [];
   }
+  return browseTaxonomy;
 }
 
 // Load category → sub-categories browse
@@ -639,7 +660,7 @@ async function openCat(id, name) {
   browseLevel = 'category';
   hide('cats-view'); hide('styles-view'); hide('search-view');
   updatePageHeader(headerTitleForCategory(name), false);
-  if (!browseTaxonomy.length) await loadBrowseTaxonomy();
+  await loadBrowseTaxonomy();
   const g = document.getElementById('dish-grid');
   g.className = 'tax-browse-root';
   g.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Loading...</div>';
@@ -719,12 +740,11 @@ function buildCategoryJumpTags(activeCategoryName, otherOnly) {
   }
   if (!cats.length) { row.style.display = 'none'; return; }
   row.style.display = 'block';
-  var emojiMap = (typeof TCJ_CAT_EMOJI !== 'undefined') ? TCJ_CAT_EMOJI : {};
   el.innerHTML = cats.map(function(name) {
     var active = !otherOnly && name === activeCategoryName ? ' active' : '';
-    var em = emojiMap[name] || '';
+    var em = getBrowseCatEmoji(name);
     return '<button type="button" class="cr-filter' + active + '" data-cat="' +
-      name.replace(/"/g, '&quot;') + '">' + (em ? em + ' ' : '') + name + '</button>';
+      name.replace(/"/g, '&quot;') + '">' + (em !== '🍽' ? em + ' ' : '') + name + '</button>';
   }).join('');
   el.onclick = function(e) {
     var btn = e.target.closest('.cr-filter');
@@ -828,8 +848,8 @@ function headerTitleForSub(categoryName, subName) {
 }
 
 function headerTitleForCategory(categoryName) {
-  var em = (typeof TCJ_CAT_EMOJI !== 'undefined' && TCJ_CAT_EMOJI[categoryName]) || '';
-  return (em ? em + ' ' : '') + categoryName;
+  var em = getBrowseCatEmoji(categoryName);
+  return (em !== '🍽' ? em + ' ' : '') + categoryName;
 }
 
 function toggleCommunityFilters() {
@@ -956,6 +976,7 @@ function renderCategorySubGrid(categoryName) {
   hide('styles-view');
 
   var subs = getBrowseSubsForCategory(categoryName);
+  console.log('[Browse]', categoryName, '→', subs.length, 'sub(s) from RPC');
   if (!subs.length) {
     g.innerHTML = '<div class="empty-state"><div class="empty-icon">🍽</div>' +
       '<div class="empty-title">No sub-categories yet</div>' +
@@ -1082,11 +1103,6 @@ function renderCommunityRecipeCards(recipes, cardsEl, categoryName) {
     cardsEl.appendChild(empty);
     return;
   }
-  var CAT_EMOJI = (typeof TCJ_CAT_EMOJI !== 'undefined') ? TCJ_CAT_EMOJI : {
-    'Garden & Earth':'🥬','Feather & Flock':'🐓','Pasture & Hoof':'🍖','Ocean & River':'🌊',
-    'The Grain Field':'🌾','Wrapped & Stuffed':'🥟','Curds, Creams & Eggs':'🥛',
-    'Breads & Bakery':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Pantry':'🏺'
-  };
   cardsEl.innerHTML = '';
   recipes.forEach(function(r) {
     var warns = browseAllergyWarnings(r);
@@ -1103,7 +1119,7 @@ function renderCommunityRecipeCards(recipes, cardsEl, categoryName) {
       img.style.cssText = 'width:100%;height:110px;object-fit:cover;display:block';
       card.appendChild(img);
     } else {
-      var emoji = CAT_EMOJI[r.category] || '🍳';
+      var emoji = getBrowseCatEmoji(r.category);
       var ph = document.createElement('div');
       ph.style.cssText = 'height:110px;display:flex;align-items:center;justify-content:center;font-size:32px;background:var(--text-ghost)';
       ph.textContent = emoji;
@@ -1385,11 +1401,6 @@ var activeSubFilter = '';
 var activeDivFilter = '';
 var SUPA_URL_CR = window.SUPA_URL;
 var SUPA_KEY_CR = window.SUPA_KEY;
-var CR_CAT_EMOJI = (typeof TCJ_CAT_EMOJI !== 'undefined') ? TCJ_CAT_EMOJI : {
-  'Garden & Earth':'🥬','Feather & Flock':'🐓','Pasture & Hoof':'🍖','Ocean & River':'🌊',
-  'The Grain Field':'🌾','Wrapped & Stuffed':'🥟','Curds, Creams & Eggs':'🥛',
-  'Breads & Bakery':'🫓','Sweet Serenades':'🍮','Sips & Stories':'🥂','Preserved & Pantry':'🏺'
-};
 
 async function loadBrowseFamilyProfiles() {
   browseFamilyProfiles = [];
@@ -1446,7 +1457,6 @@ function browseAllergyWarnings(recipe) {
 }
 
 async function loadBrowseTaxonomyCommunity() {
-  if (browseTaxonomy.length) return;
   await loadBrowseTaxonomy();
 }
 
@@ -1468,7 +1478,7 @@ function buildCommunityCategoryFilters() {
   el.innerHTML = '<button class="cr-filter' + (activeCatFilter ? '' : ' active') + '" data-cat="" type="button">All</button>' +
     cats.map(function(c) {
       return '<button class="cr-filter' + (activeCatFilter === c ? ' active' : '') + '" data-cat="' +
-        c.replace(/"/g, '&quot;') + '" type="button">' + (CR_CAT_EMOJI[c] || '') + ' ' + c + '</button>';
+        c.replace(/"/g, '&quot;') + '" type="button">' + getBrowseCatEmoji(c) + ' ' + c + '</button>';
     }).join('');
   el.onclick = function(e) {
     var btn = e.target.closest('.cr-filter');
@@ -1598,8 +1608,9 @@ async function ensureBrowseCatIdMap() {
   if (Object.keys(browseCatIdMap).length) return;
   try {
     var dbCats = await supaFetch('categories', 'is_active=eq.true&order=sort_order');
-    (dbCats || []).filter(function(c) { return c && c.name && c.is_active !== false; })
-      .forEach(function(c) { browseCatIdMap[c.name] = c.id; });
+    syncBrowseCatMetaFromRows((dbCats || []).filter(function(c) {
+      return c && c.name && c.is_active !== false;
+    }));
   } catch (e) { console.warn('ensureBrowseCatIdMap', e); }
 }
 
