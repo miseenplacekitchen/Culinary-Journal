@@ -2033,6 +2033,13 @@ function rmTaxTextarea(val, placeholder, minH) {
 function rmTaxUpsertSubcategory(payload) {
   return rpc('admin_upsert_recipe_subcategory', payload).catch(function(e) {
     var msg = String(e.message || e);
+    if (/23505|duplicate key|already exists/i.test(msg)) {
+      throw new Error(
+        'A sub-category named "' + (payload.p_name || '') + '" already exists under "' +
+        (payload.p_category || '') + '" (it may be archived). Run ' +
+        'database/sql/fix-admin-taxonomy-editor.sql in Supabase, or reactivate the row in SQL.'
+      );
+    }
     if (/function|argument|column|tagline|emoji|does not exist/i.test(msg)) {
       return rpc('admin_upsert_recipe_subcategory', {
         p_id: payload.p_id,
@@ -2192,7 +2199,7 @@ async function loadRMTaxonomy(container) {
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260621a</span> — red <strong>Remove</strong> deactivates a sub or division.';
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260621b</span> — red <strong>Remove</strong> deactivates a sub or division.';
     container.appendChild(note);
 
     var exportRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px');
@@ -2526,9 +2533,13 @@ async function loadRMTaxonomy(container) {
           var addDiv = mk('button', 'margin-top:4px;padding:6px 12px;font-size:11px;border:1px dashed var(--border);border-radius:6px;background:none;color:var(--text-mid);cursor:pointer', '+ Add division');
           addDiv.addEventListener('click', function() {
             var subNm = nameIn.value.trim() || sc.name;
+            var divName = window.prompt('Division name:', '');
+            if (divName === null) return;
+            divName = divName.trim();
+            if (!divName) { alert('Division name is required.'); return; }
             rpc('admin_upsert_recipe_division', {
               p_id: null, p_category: cat, p_subcategory: subNm,
-              p_name: 'New division', p_emoji: '🍽', p_subtitle: '', p_description: '',
+              p_name: divName, p_emoji: '🍽', p_subtitle: '', p_description: '',
               p_tags: [], p_sort_order: ((sc.divisions || []).length + 1) * 10
             }).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
           });
