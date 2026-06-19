@@ -578,7 +578,7 @@ function syncBrowseCatMetaFromRows(cats) {
   });
 }
 
-// Load categories from Supabase (active only — no hardcoded category list)
+// Load categories from Supabase (database only — no is_active filter on categories table)
 async function loadCategories() {
   const grid = document.getElementById('cat-grid');
   grid.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Loading categories...</div>';
@@ -598,8 +598,8 @@ async function loadCategories() {
   }
 
   try {
-    const dbCats = await supaFetch('categories', 'is_active=eq.true&order=sort_order');
-    var cats = (dbCats || []).filter(function(c) { return c && c.is_active !== false && c.name; });
+    const dbCats = await supaFetch('categories', 'order=sort_order');
+    var cats = (dbCats || []).filter(function(c) { return c && c.name; });
     if (!cats.length) {
       grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🍽</div>' +
         '<div class="empty-title">No categories yet</div></div>';
@@ -638,6 +638,8 @@ async function loadBrowseTaxonomy() {
     if (res.ok) {
       var data = await res.json();
       browseTaxonomy = Array.isArray(data) ? data : [];
+    } else {
+      console.warn('[Browse] get_recipe_taxonomy HTTP', res.status, '— showing empty subcategories');
     }
     var uniqueSubs = {};
     browseTaxonomy.forEach(function(r) {
@@ -646,7 +648,7 @@ async function loadBrowseTaxonomy() {
     console.log('[Browse] taxonomy RPC only — get_recipe_taxonomy:',
       browseTaxonomy.length, 'row(s),', Object.keys(uniqueSubs).length, 'unique sub(s)');
   } catch (e) {
-    console.warn('[Browse] get_recipe_taxonomy failed', e);
+    console.warn('[Browse] get_recipe_taxonomy failed — showing empty subcategories', e);
     browseTaxonomy = [];
   }
   return browseTaxonomy;
@@ -679,8 +681,8 @@ async function openCat(id, name) {
     setCategoryJumpVisible(true);
     buildCategoryJumpTags(name, true);
   } catch(e) {
-    console.error(e);
-    g.innerHTML = '<div class="loading">Could not load. Please refresh.</div>';
+    console.error('[Browse] openCat render failed', e);
+    renderCategorySubGrid(name);
   }
 }
 
@@ -979,8 +981,7 @@ function renderCategorySubGrid(categoryName) {
   console.log('[Browse]', categoryName, '→', subs.length, 'sub(s) from RPC');
   if (!subs.length) {
     g.innerHTML = '<div class="empty-state"><div class="empty-icon">🍽</div>' +
-      '<div class="empty-title">No sub-categories yet</div>' +
-      '<div class="empty-desc">Check back soon</div></div>';
+      '<div class="empty-title">No subcategories yet for this category</div></div>';
     return;
   }
 
@@ -1607,9 +1608,9 @@ async function loadChefDirectory() {
 async function ensureBrowseCatIdMap() {
   if (Object.keys(browseCatIdMap).length) return;
   try {
-    var dbCats = await supaFetch('categories', 'is_active=eq.true&order=sort_order');
+    var dbCats = await supaFetch('categories', 'order=sort_order');
     syncBrowseCatMetaFromRows((dbCats || []).filter(function(c) {
-      return c && c.name && c.is_active !== false;
+      return c && c.name;
     }));
   } catch (e) { console.warn('ensureBrowseCatIdMap', e); }
 }
