@@ -62,6 +62,17 @@ function switchRecipeTab(tab) {
   if (bulkRejectBtn) bulkRejectBtn.style.display = tab === 'pending' ? 'inline-flex' : 'none';
   if (tab === 'analytics')  { loadRecipeAnalytics(); return; }
   if (tab === 'rmsettings') { loadRMInterfaceSettings(); return; }
+  if (tab === 'bulkrecipes') {
+    var bulkPanel = document.getElementById('rmgmt-bulkrecipes-panel');
+    if (bulkPanel) bulkPanel.style.display = 'block';
+    if (typeof window.bulkRecipeEditor !== 'undefined' &&
+        window.bulkRecipeEditor.loadBulkRecipesTab) {
+      window.bulkRecipeEditor.loadBulkRecipesTab();
+    } else {
+      console.warn('Bulk Recipe Editor not loaded');
+    }
+    return;
+  }
   if (tab === 'rotw')  { loadROTW(); return; }
   if (tab === 'featured') {
     if (opsPanel) opsPanel.style.display = 'block';
@@ -70,7 +81,6 @@ function switchRecipeTab(tab) {
     return;
   }
   if (tab === 'notes') { loadRecipeNotes(); return; }
-  if (tab === 'bulkrecipes') { loadBulkRecipesTab(); return; }
   loadRecipeMgmt(tab);
 }
 
