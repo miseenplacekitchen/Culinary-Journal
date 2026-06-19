@@ -578,7 +578,21 @@ function syncBrowseCatMetaFromRows(cats) {
   });
 }
 
-// Load categories from Supabase (database only — no is_active filter on categories table)
+async function fetchActiveBrowseCategories() {
+  try {
+    var rows = await supaFetch(
+      'categories',
+      'select=id,name,emoji,description,sort_order,is_active&is_active=eq.true&order=sort_order'
+    );
+    return (rows || []).filter(function(c) { return c && c.name; });
+  } catch (e) {
+    console.warn('[Browse] is_active categories filter failed — loading all DB categories', e.message);
+    var rows = await supaFetch('categories', 'select=id,name,emoji,description,sort_order&order=sort_order');
+    return (rows || []).filter(function(c) { return c && c.name && c.is_active !== false; });
+  }
+}
+
+// Load categories from Supabase — active rows only, database only, no hardcoded fallback
 async function loadCategories() {
   const grid = document.getElementById('cat-grid');
   grid.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>Loading categories...</div>';
@@ -598,8 +612,7 @@ async function loadCategories() {
   }
 
   try {
-    const dbCats = await supaFetch('categories', 'order=sort_order');
-    var cats = (dbCats || []).filter(function(c) { return c && c.name; });
+    var cats = await fetchActiveBrowseCategories();
     if (!cats.length) {
       grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🍽</div>' +
         '<div class="empty-title">No categories yet</div></div>';
@@ -1613,10 +1626,7 @@ async function loadChefDirectory() {
 async function ensureBrowseCatIdMap() {
   if (Object.keys(browseCatIdMap).length) return;
   try {
-    var dbCats = await supaFetch('categories', 'order=sort_order');
-    syncBrowseCatMetaFromRows((dbCats || []).filter(function(c) {
-      return c && c.name;
-    }));
+    syncBrowseCatMetaFromRows(await fetchActiveBrowseCategories());
   } catch (e) { console.warn('ensureBrowseCatIdMap', e); }
 }
 
