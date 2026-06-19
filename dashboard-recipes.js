@@ -2192,7 +2192,7 @@ async function loadRMTaxonomy(container) {
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260620f</span> — red <strong>Remove</strong> deactivates a sub or division.';
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260621a</span> — red <strong>Remove</strong> deactivates a sub or division.';
     container.appendChild(note);
 
     var exportRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px');
@@ -2216,27 +2216,32 @@ async function loadRMTaxonomy(container) {
     var catEmojiMap = {};
     var catFetchError = '';
     try {
-      var catUrl = window.SUPA_URL + '/rest/v1/categories?select=name,emoji,sort_order&order=sort_order';
-      var catRes = (typeof apiFetch === 'function')
-        ? await apiFetch(catUrl)
-        : await fetch(catUrl, {
-          headers: (typeof getAuthHeaders === 'function')
-            ? getAuthHeaders()
-            : { apikey: window.SUPA_KEY, Accept: 'application/json' }
-        });
-      if (!catRes) {
-        catFetchError = 'categories fetch returned no response (session expired?)';
-      } else if (!catRes.ok) {
-        catFetchError = 'categories ' + catRes.status + ': ' + (await catRes.text().catch(function() { return ''; }));
+      var catRows = [];
+      if (typeof tcjFetchCategories === 'function') {
+        catRows = await tcjFetchCategories();
       } else {
-        var catRows = await catRes.json();
-        (catRows || []).forEach(function(r) {
-          if (!r || !r.name) return;
-          var n = String(r.name).trim();
-          catNames.push(n);
-          catEmojiMap[n] = r.emoji || '🍽';
-        });
+        var catUrl = window.SUPA_URL + '/rest/v1/categories?select=name,emoji,sort_order,is_active&is_active=eq.true&order=sort_order';
+        var catRes = (typeof apiFetch === 'function')
+          ? await apiFetch(catUrl)
+          : await fetch(catUrl, {
+            headers: (typeof getAuthHeaders === 'function')
+              ? getAuthHeaders()
+              : { apikey: window.SUPA_KEY, Accept: 'application/json' }
+          });
+        if (!catRes) {
+          catFetchError = 'categories fetch returned no response (session expired?)';
+        } else if (!catRes.ok) {
+          catFetchError = 'categories ' + catRes.status + ': ' + (await catRes.text().catch(function() { return ''; }));
+        } else {
+          catRows = await catRes.json();
+        }
       }
+      (catRows || []).forEach(function(r) {
+        if (!r || !r.name || r.is_active === false) return;
+        var n = String(r.name).trim();
+        catNames.push(n);
+        catEmojiMap[n] = r.emoji || '🍽';
+      });
     } catch (e) {
       catFetchError = String(e.message || e);
       console.warn('[TCJ Taxonomy] categories fetch failed', e);
