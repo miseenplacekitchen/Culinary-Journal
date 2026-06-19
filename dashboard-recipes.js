@@ -2116,6 +2116,36 @@ function rmTaxExportTaxonomyCsv(rows) {
   window.URL.revokeObjectURL(url);
 }
 
+/** Which canonical category owns a book sub name (e.g. Bovine → Pasture & Hoof). */
+function adminTaxonomyOwnerCategory(subName) {
+  if (!subName) return null;
+  var registry = (typeof TCJ_CATEGORY_SUB_TAXONOMY !== 'undefined')
+    ? TCJ_CATEGORY_SUB_TAXONOMY
+    : null;
+  if (!registry) return null;
+  var cats = Object.keys(registry);
+  for (var i = 0; i < cats.length; i++) {
+    var list = registry[cats[i]] || [];
+    for (var j = 0; j < list.length; j++) {
+      if (list[j].name === subName) return cats[i];
+    }
+  }
+  return null;
+}
+
+/** Admin taxonomy panels: group subs by book ownership, not legacy DB category buckets. */
+function adminTaxonomyRowBelongsToCategory(row, categoryName) {
+  if (!row || !categoryName || !row.subcategory_name) return false;
+  var owner = adminTaxonomyOwnerCategory(row.subcategory_name);
+  if (owner) return owner === categoryName;
+  var rowCat = String(row.subcategory_category || '').trim();
+  if (rowCat === categoryName) return true;
+  if (typeof normalizeRecipeCategory === 'function') {
+    return normalizeRecipeCategory(rowCat) === categoryName;
+  }
+  return false;
+}
+
 function rmTaxMergeSubs(cat, subsMap, opts) {
   opts = opts || {};
   var bookFillMissing = opts.bookFillMissing !== false;
@@ -2177,7 +2207,7 @@ async function loadRMTaxonomy(container) {
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'Edit names, descriptions, and ingredient hints here — changes save to the database and appear on the public browse page. ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260619d</span> — red <strong>Remove</strong> on each sub row. Renaming updates matching recipes (after bulk v2 SQL). ' +
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260620a</span> — red <strong>Remove</strong> on each sub row. Renaming updates matching recipes (after bulk v2 SQL). ' +
       '<br><br><strong>Paste book hints</strong> fills the ingredient box with the original list from the taxonomy book (you still click <em>Save sub-category</em> to store it). ' +
       '<strong>Sync from book</strong> re-creates book subs (avoid after removing one you want gone).';
     container.appendChild(note);
@@ -2226,9 +2256,7 @@ async function loadRMTaxonomy(container) {
     catNames.forEach(function(cat, catIdx) {
       var subs = {};
       rows.filter(function(r) {
-        return typeof taxonomyCategoryMatches === 'function'
-          ? taxonomyCategoryMatches(r.subcategory_category, cat)
-          : r.subcategory_category === cat;
+        return adminTaxonomyRowBelongsToCategory(r, cat);
       }).forEach(function(r) {
         if (!r.subcategory_id) return;
         if (!subs[r.subcategory_id]) {
