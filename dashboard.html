@@ -705,7 +705,7 @@
       </div>
       <div id="rmgmt-bulkrecipes-panel" style="display:none;padding:4px 0 20px">
         <p style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin:0 0 12px;line-height:1.55">
-          <strong>Bulk Editor v20260619c</strong> — click a cell to edit; double-click recipe name to open full editor. Column filters below headers. Run <code>fix-admin-bulk-recipes.sql</code> + <code>fix-admin-bulk-recipes-v2.sql</code> in Supabase.
+          <strong>Bulk Editor v20260619d</strong> — click a cell to edit; double-click recipe name to open full editor. Column filters apply to the current page only.
         </p>
         <div id="bulk-taxonomy-backfill" style="margin-bottom:16px;padding:14px;background:rgba(196,151,59,0.06);border:1px solid var(--border);border-radius:10px"></div>
         <div class="rm-list-toolbar" style="margin-bottom:12px;flex-wrap:wrap">
@@ -720,6 +720,13 @@
           <button type="button" class="rm-agent-btn-bulk" onclick="exportBulkRecipes('csv')">Export CSV</button>
           <button type="button" class="rm-bulk-approve-btn" onclick="generateRecipeCodes()">Generate RM#</button>
         </div>
+        <div id="bulk-taxonomy-toolbar" style="display:flex;gap:8px;margin-bottom:12px;padding:12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;flex-wrap:wrap;align-items:center">
+          <span style="font-size:11px;font-weight:600;color:var(--text-mid)">Assign taxonomy (select rows first):</span>
+          <select id="bulk-assign-category" class="ing-cat-filter"><option value="">Category…</option></select>
+          <select id="bulk-assign-sub" class="ing-cat-filter"><option value="">Sub…</option></select>
+          <select id="bulk-assign-division" class="ing-cat-filter"><option value="">Division…</option></select>
+          <button type="button" class="rm-bulk-approve-btn" id="bulk-assign-taxonomy-btn">Apply taxonomy</button>
+        </div>
         <div id="bulk-actions-bar" style="display:none;gap:8px;margin-bottom:12px;padding:12px;background:rgba(196,151,59,0.08);border:1px solid var(--accent);border-radius:8px;flex-wrap:wrap;align-items:center">
           <span style="font-size:12px;font-weight:600;color:var(--accent)" id="bulk-selected-count">0 selected</span>
           <select id="bulk-action-select" class="ing-cat-filter" style="min-width:160px">
@@ -731,12 +738,7 @@
             <option value="rejected">Set status: Rejected</option>
           </select>
           <button type="button" class="rm-bulk-approve-btn" onclick="executeBulkRecipeAction()">Apply action</button>
-          <span style="font-size:11px;color:var(--text-mid);margin:0 4px">| Assign taxonomy:</span>
-          <select id="bulk-assign-category" class="ing-cat-filter"><option value="">Category…</option></select>
-          <select id="bulk-assign-sub" class="ing-cat-filter"><option value="">Sub…</option></select>
-          <select id="bulk-assign-division" class="ing-cat-filter"><option value="">Division…</option></select>
-          <button type="button" class="rm-bulk-approve-btn" id="bulk-assign-taxonomy-btn">Apply taxonomy</button>
-          <button type="button" class="rm-quick-btn reject" onclick="clearBulkRecipeSelection()">Clear</button>
+          <button type="button" class="rm-quick-btn reject" onclick="clearBulkRecipeSelection()">Clear selection</button>
         </div>
         <div class="ap-table-wrap" style="overflow-x:auto">
           <table class="ap-table" id="bulk-recipes-table" style="min-width:1400px">
@@ -1432,7 +1434,7 @@
   <script src="dashboard-shared.js?v=20260616"></script>
   <script src="lib/dashboard-um-ops.js?v=20260714"></script>
   <script src="recipe-procedure.js?v=20260609"></script>
-  <script src="lib/tcj-category-copy.js"></script>
+  <script src="lib/tcj-category-copy.js?v=20260619d"></script>
   <script src="lib/tcj-category-infer.js"></script>
   <script src="lib/tcj-garden-taxonomy.js?v=20260617"></script>
   <script src="lib/tcj-feather-flock-taxonomy.js"></script>
@@ -1443,8 +1445,8 @@
   <script src="lib/tcj-sub-taxonomy.js"></script>
   <script src="lib/admin-recipe-utils.js?v=20260705"></script>
   <script src="lib/dashboard-agent-review.js?v=20260623"></script>
-  <script src="dashboard-recipes.js?v=20260619c"></script>
-  <script src="lib/dashboard-bulk-recipes.js?v=20260619c"></script>
+  <script src="dashboard-recipes.js?v=20260619d"></script>
+  <script src="lib/dashboard-bulk-recipes.js?v=20260619d"></script>
   <script src="dashboard-users.js?v=20260616"></script>
   <script src="dashboard-ingredients.js?v=20260616"></script>
   <script src="lib/dashboard-im-interface.js?v=20260713"></script>

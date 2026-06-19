@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="theme-init.js"></script>
 <script src="supabase-config.js"></script>
-  <script src="lib/tcj-category-copy.js"></script>
+  <script src="lib/tcj-category-copy.js?v=20260619d"></script>
   <script src="lib/tcj-discovery-hubs.js"></script>
   <style>
     .recipes-shell { max-width: 1100px; margin: 0 auto; padding: 0 24px 48px; }
@@ -545,22 +545,6 @@ let browseCatIdMap={};
 let allRecipes = [];
 let browseTaxonomy = [];
 
-/** Match browse RPC category column to canonical card name (e.g. Grains & Comfort ↔ The Grain Field). */
-function taxonomyCategoryMatches(rowCategory, categoryName) {
-  if (!rowCategory || !categoryName) return false;
-  if (rowCategory === categoryName) return true;
-  var legacy = (typeof TCJ_CATEGORY_LEGACY_DB_NAMES !== 'undefined')
-    ? TCJ_CATEGORY_LEGACY_DB_NAMES[categoryName] : [];
-  for (var i = 0; i < legacy.length; i++) {
-    if (rowCategory === legacy[i]) return true;
-  }
-  if (typeof normalizeRecipeCategory === 'function') {
-    if (normalizeRecipeCategory(rowCategory) === categoryName) return true;
-    if (normalizeRecipeCategory(categoryName) === rowCategory) return true;
-  }
-  return false;
-}
-
 function normalizeBrowseTaxonomyRow(r) {
   if (!r) return {};
   return {
@@ -1057,7 +1041,8 @@ function getBrowseSubsForCategory(categoryName) {
         ingredient_hints: [],
         tagline: r.subcategory_tagline || '',
         description: r.subcategory_description || '',
-        emoji: r.subcategory_emoji || ''
+        emoji: r.subcategory_emoji || '',
+        fromRpc: true
       };
       order.push(r.subcategory_name);
     }
@@ -1080,7 +1065,8 @@ function getBrowseSubsForCategory(categoryName) {
           ingredient_hints: sub.ingredients ? sub.ingredients.slice() : [],
           tagline: sub.tagline || '',
           description: sub.description || '',
-          emoji: sub.emoji || ''
+          emoji: sub.emoji || '',
+          fromRpc: false
         };
         order.push(sub.name);
       });
@@ -1092,7 +1078,7 @@ function getBrowseSubsForCategory(categoryName) {
       Object.keys(parts).sort().forEach(function(letter) {
         (parts[letter].subs || []).forEach(function(name) {
           if (!map[name]) {
-            map[name] = { name: name, divisions: [], ingredient_hints: [], tagline: '', description: '', emoji: '' };
+            map[name] = { name: name, divisions: [], ingredient_hints: [], tagline: '', description: '', emoji: '', fromRpc: false };
             order.push(name);
           }
         });
@@ -1130,12 +1116,13 @@ function getBrowseSubsForCategory(categoryName) {
       divisionCount: divs.length,
       aka: hintStr || formatDivisionsAka(divs),
       desc: entry.description || (subMeta ? subMeta.description : ((divs[0] && divs[0].division_description) || (divs[0] && divs[0].division_subtitle) || name)),
-      tagline: entry.tagline || (subMeta ? subMeta.tagline : '')
+      tagline: entry.tagline || (subMeta ? subMeta.tagline : ''),
+      fromRpc: !!entry.fromRpc
     };
   }).filter(function(s) {
     if (s.divisionCount > 0) return true;
-    if (typeof getCanonicalCategoryTaxonomy === 'function' && getCanonicalCategoryTaxonomy(categoryName)) return true;
-    return !!(s.aka && s.aka.length);
+    if (!s.fromRpc) return !!(s.aka && s.aka.length);
+    return false;
   });
 }
 

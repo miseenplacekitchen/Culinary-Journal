@@ -2167,7 +2167,7 @@ async function loadRMTaxonomy(container) {
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category â†’ Sub-category â†’ Division â†’ Recipes</strong>. ' +
       'Edit names, descriptions, and ingredient hints here â€” changes save to the database and appear on the public browse page. ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260619c</span> â€” red <strong>Remove</strong> on each sub row. Renaming updates matching recipes (after bulk v2 SQL). ' +
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260619d</span> — red <strong>Remove</strong> on each sub row. Renaming updates matching recipes (after bulk v2 SQL). ' +
       '<br><br><strong>Paste book hints</strong> fills the ingredient box with the original list from the taxonomy book (you still click <em>Save sub-category</em> to store it). ' +
       '<strong>Sync from book</strong> re-creates book subs (avoid after removing one you want gone).';
     container.appendChild(note);
@@ -2215,7 +2215,11 @@ async function loadRMTaxonomy(container) {
 
     catNames.forEach(function(cat, catIdx) {
       var subs = {};
-      rows.filter(function(r) { return r.subcategory_category === cat; }).forEach(function(r) {
+      rows.filter(function(r) {
+        return typeof taxonomyCategoryMatches === 'function'
+          ? taxonomyCategoryMatches(r.subcategory_category, cat)
+          : r.subcategory_category === cat;
+      }).forEach(function(r) {
         if (!r.subcategory_id) return;
         if (!subs[r.subcategory_id]) {
           subs[r.subcategory_id] = {
