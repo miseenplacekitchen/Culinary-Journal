@@ -19,15 +19,20 @@ function getRejectReasons() {
 
 function ensureRmCatFilter() {
   var sel = document.getElementById('rmgmt-cat-filter');
-  if (!sel || sel.dataset.init === '1') return;
-  sel.dataset.init = '1';
-  if (typeof getRecipeCats !== 'function') return;
-  getRecipeCats().forEach(function(c) {
-    var o = document.createElement('option');
-    o.value = c;
-    o.textContent = c;
-    sel.appendChild(o);
-  });
+  if (!sel || sel.dataset.init === '1') return Promise.resolve();
+  return (typeof tcjFetchCategories === 'function' ? tcjFetchCategories() : Promise.resolve([]))
+    .then(function(rows) {
+      if (sel.dataset.init === '1') return;
+      sel.dataset.init = '1';
+      (rows || []).forEach(function(c) {
+        var name = c.name || c;
+        if (!name) return;
+        var o = document.createElement('option');
+        o.value = name;
+        o.textContent = name;
+        sel.appendChild(o);
+      });
+    });
 }
 
 function switchRecipeTab(tab) {
@@ -729,11 +734,17 @@ async function openRecipeModal(id) {
     catSel.id = 'rm-edit-cat';
     catSel.style.cssText = 'width:100%;box-sizing:border-box;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-high)';
     var blankOpt = document.createElement('option'); blankOpt.value = ''; blankOpt.textContent = '— Select —'; catSel.appendChild(blankOpt);
-    getRecipeCats().forEach(function(c) { var o = document.createElement('option'); o.value = c; o.textContent = c; catSel.appendChild(o); });
+    var rmCatRows = (typeof tcjFetchCategories === 'function') ? await tcjFetchCategories() : [];
+    rmCatRows.forEach(function(c) {
+      var o = document.createElement('option');
+      o.value = c.name;
+      o.textContent = c.name;
+      catSel.appendChild(o);
+    });
     catWrap.appendChild(catSel);
     if (r.category) {
       catSel.value = String(r.category).trim();
-      if (!catSel.value && getRecipeCats().indexOf(r.category) < 0) {
+      if (!catSel.value) {
         var extra = document.createElement('option');
         extra.value = r.category;
         extra.textContent = r.category;
@@ -2181,7 +2192,7 @@ async function loadRMTaxonomy(container) {
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260620e</span> — red <strong>Remove</strong> deactivates a sub or division.';
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260620f</span> — red <strong>Remove</strong> deactivates a sub or division.';
     container.appendChild(note);
 
     var exportRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px');
@@ -2202,9 +2213,10 @@ async function loadRMTaxonomy(container) {
     container.appendChild(movedNote);
 
     var catNames = [];
+    var catEmojiMap = {};
     var catFetchError = '';
     try {
-      var catUrl = window.SUPA_URL + '/rest/v1/categories?is_active=eq.true&select=name,sort_order,is_active&order=sort_order';
+      var catUrl = window.SUPA_URL + '/rest/v1/categories?select=name,emoji,sort_order&order=sort_order';
       var catRes = (typeof apiFetch === 'function')
         ? await apiFetch(catUrl)
         : await fetch(catUrl, {
@@ -2218,19 +2230,19 @@ async function loadRMTaxonomy(container) {
         catFetchError = 'categories ' + catRes.status + ': ' + (await catRes.text().catch(function() { return ''; }));
       } else {
         var catRows = await catRes.json();
-        catNames = (catRows || [])
-          .filter(function(r) { return r && r.is_active !== false && r.name; })
-          .map(function(r) { return String(r.name).trim(); });
+        (catRows || []).forEach(function(r) {
+          if (!r || !r.name) return;
+          var n = String(r.name).trim();
+          catNames.push(n);
+          catEmojiMap[n] = r.emoji || '🍽';
+        });
       }
     } catch (e) {
       catFetchError = String(e.message || e);
       console.warn('[TCJ Taxonomy] categories fetch failed', e);
     }
-    if (!catNames.length) {
-      if (typeof getRecipeCats === 'function') {
-        catNames = getRecipeCats().slice();
-        console.warn('[TCJ Taxonomy] Using canonical category list fallback — active categories query returned none.', catFetchError || '');
-      }
+    if (!catNames.length && catFetchError) {
+      console.warn('[TCJ Taxonomy] No categories loaded:', catFetchError);
     }
     console.log('[TCJ Taxonomy] Active categories fetched (' + catNames.length + '):', catNames.slice());
     if (catFetchError) {
@@ -2309,7 +2321,7 @@ async function loadRMTaxonomy(container) {
       var box = mk('div', 'margin-bottom:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden');
       var catHdr = mk('div', 'display:flex;align-items:center;gap:8px;padding:12px 14px;background:rgba(255,255,255,0.04);cursor:pointer;flex-wrap:wrap');
       var catToggle = mk('span', 'font-size:12px;color:var(--text-mid);width:16px;flex-shrink:0', catOpen ? '▼' : '▶');
-      var catEmoji = (typeof TCJ_CAT_EMOJI !== 'undefined' && TCJ_CAT_EMOJI[cat]) ? TCJ_CAT_EMOJI[cat] : '🍽';
+      var catEmoji = catEmojiMap[cat] || '🍽';
       catHdr.appendChild(catToggle);
       catHdr.appendChild(mk('div', 'font-family:DM Sans,sans-serif;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--accent);flex:1;min-width:160px', catEmoji + ' ' + cat));
       var catMove = mk('span', 'display:flex;gap:4px;flex-shrink:0');
