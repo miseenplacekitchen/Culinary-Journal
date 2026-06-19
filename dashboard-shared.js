@@ -6,6 +6,40 @@
 // SUPABASE_URL and SUPABASE_KEY are provided by supabase-config.js
 let session = null;
 
+function syncSessionFromStorage() {
+  try {
+    var raw = localStorage.getItem('tcj_session');
+    if (raw) {
+      var s = JSON.parse(raw);
+      if (s && s.access_token) {
+        session = s;
+        return s;
+      }
+    }
+  } catch (e) { console.warn('syncSessionFromStorage', e); }
+  return session;
+}
+
+function tcjJwtExpMs(token) {
+  try {
+    var p = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    while (p.length % 4) p += '=';
+    return (JSON.parse(atob(p)).exp || 0) * 1000;
+  } catch (e) { return 0; }
+}
+
+function startAdminSessionKeepAlive() {
+  async function tick() {
+    var s = syncSessionFromStorage();
+    if (!s || !s.access_token) return;
+    if (tcjJwtExpMs(s.access_token) - Date.now() < 10 * 60 * 1000) {
+      try { await tryRefreshToken(); } catch (e) { console.warn('admin keep-alive', e); }
+    }
+  }
+  tick();
+  setInterval(tick, 5 * 60 * 1000);
+}
+
 function showSessionExpired() {
   var existing = document.getElementById('session-expired-banner');
   if (existing) return;
@@ -17,6 +51,11 @@ function showSessionExpired() {
 }
 
 async function rpc(fn, params) {
+  var sess = syncSessionFromStorage();
+  if (!sess || !sess.access_token) {
+    showSessionExpired();
+    throw new Error('Session expired. Please sign in again.');
+  }
   async function attempt(token) {
     const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, {
       method: 'POST',
@@ -25,12 +64,13 @@ async function rpc(fn, params) {
     });
     return res;
   }
-  var res = await attempt(session.access_token);
+  var res = await attempt(sess.access_token);
   if (res.status === 401) {
     var refreshed = false;
     try { refreshed = await tryRefreshToken(); } catch(e) { console.warn('apiFetch token refresh', e); }
     if (refreshed) {
-      res = await attempt(session.access_token);
+      sess = syncSessionFromStorage();
+      res = await attempt(sess.access_token);
     } else {
       showSessionExpired();
       throw new Error('Session expired. Please sign in again.');
@@ -43,14 +83,20 @@ async function rpc(fn, params) {
 window.tcjAdminRpc = rpc;
 
 async function apiFetch(url, opts) {
+  var sess = syncSessionFromStorage();
+  if (!sess || !sess.access_token) {
+    showSessionExpired();
+    return null;
+  }
   opts = opts || {};
-  opts.headers = Object.assign({}, { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + session.access_token, 'Accept': 'application/json' }, opts.headers || {});
+  opts.headers = Object.assign({}, { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + sess.access_token, 'Accept': 'application/json' }, opts.headers || {});
   var res = await fetch(url, opts);
   if (res.status === 401) {
     var refreshed = false;
     try { refreshed = await tryRefreshToken(); } catch(e) { console.warn('apiFetch token refresh', e); }
     if (refreshed) {
-      opts.headers['Authorization'] = 'Bearer ' + session.access_token;
+      sess = syncSessionFromStorage();
+      opts.headers['Authorization'] = 'Bearer ' + sess.access_token;
       res = await fetch(url, opts);
     } else {
       showSessionExpired();
@@ -331,6 +377,7 @@ async function init() {
       return;
     }
     session = sess;
+    startAdminSessionKeepAlive();
     // Try to refresh token silently — don't block if it fails
     try { await tryRefreshToken(); } catch(e) { console.warn('init token refresh', e); }
     var isAdmin = false;

@@ -2239,8 +2239,11 @@ async function loadRMTaxonomy(container) {
 
     var catNames = CATS.slice();
     try {
+      var catHeaders = (typeof getAuthHeaders === 'function')
+        ? getAuthHeaders()
+        : { apikey: window.SUPA_KEY, Accept: 'application/json' };
       var catRes = await fetch(window.SUPA_URL + '/rest/v1/categories?is_active=eq.true&order=sort_order', {
-        headers: { apikey: window.SUPA_KEY, Authorization: 'Bearer ' + window.SUPA_KEY }
+        headers: catHeaders
       });
       var catRows = catRes.ok ? await catRes.json() : [];
       if (catRows.length) {

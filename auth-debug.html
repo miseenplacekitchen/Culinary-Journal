@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Auth Debug — The Culinary Journal</title>
+  <script src="theme-init.js"></script>
+  <script src="supabase-config.js"></script>
+  <style>
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: #0f1011; color: #e8e4dc; margin: 0; padding: 24px; line-height: 1.5; }
+    h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; margin: 0 0 8px; }
+    .sub { color: #9a9590; font-size: 13px; margin-bottom: 24px; }
+    section { background: #171819; border: 1px solid #2a2b2e; border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; }
+    h2 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #C4973B; margin: 0 0 12px; }
+    pre { background: #0a0b0c; border: 1px solid #2a2b2e; border-radius: 8px; padding: 12px; overflow: auto; font-size: 11px; white-space: pre-wrap; word-break: break-all; margin: 0; }
+    .ok { color: #4caf76; }
+    .bad { color: #dc5050; }
+    .warn { color: #d4a017; }
+    button { padding: 10px 18px; background: #C4973B; border: none; border-radius: 8px; color: #fff; font-weight: 600; cursor: pointer; margin-right: 8px; margin-bottom: 8px; }
+    button.secondary { background: transparent; border: 1px solid #2a2b2e; color: #e8e4dc; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    td, th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #2a2b2e; vertical-align: top; }
+    th { color: #9a9590; font-weight: 600; width: 180px; }
+    a { color: #C4973B; }
+  </style>
+</head>
+<body>
+  <h1>Authentication diagnostic</h1>
+  <p class="sub">Checks <code>tcj_session</code>, JWT payload, and Supabase API responses. Admin-only helper — do not link publicly.</p>
+  <button type="button" id="run-btn">Run all tests</button>
+  <button type="button" class="secondary" id="refresh-btn">Refresh token</button>
+  <button type="button" class="secondary" onclick="location.href='dashboard.html'">Open admin panel</button>
+  <button type="button" class="secondary" onclick="location.href='login.html'">Login</button>
+
+  <section><h2>1. localStorage — tcj_session</h2><div id="out-session">Waiting…</div></section>
+  <section><h2>2. JWT payload (access_token)</h2><div id="out-jwt"><pre>—</pre></div></section>
+  <section><h2>3. GET /rest/v1/categories (user token)</h2><div id="out-categories-user">Waiting…</div></section>
+  <section><h2>4. GET /rest/v1/categories (anon key as Bearer — wrong pattern)</h2><div id="out-categories-anon">Waiting…</div></section>
+  <section><h2>5. RPC get_my_profile (auth.uid proxy)</h2><div id="out-profile">Waiting…</div></section>
+  <section><h2>6. RPC is_admin</h2><div id="out-is-admin">Waiting…</div></section>
+  <section><h2>7. RPC get_recipe_taxonomy (admin browse RPC)</h2><div id="out-taxonomy">Waiting…</div></section>
+  <section><h2>8. Summary</h2><div id="out-summary">Run tests to see summary.</div></section>
+
+<script>
+(function () {
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function decodeJwt(token) {
+    if (!token || token.split('.').length < 2) return { error: 'Not a JWT' };
+    try {
+      var payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      while (payload.length % 4) payload += '=';
+      return JSON.parse(atob(payload));
+    } catch (e) {
+      return { error: String(e.message || e) };
+    }
+  }
+
+  function jwtStatus(payload) {
+    if (payload.error) return { cls: 'bad', text: payload.error };
+    var exp = payload.exp ? payload.exp * 1000 : 0;
+    var now = Date.now();
+    if (!exp) return { cls: 'warn', text: 'No exp claim' };
+    if (exp < now) return { cls: 'bad', text: 'EXPIRED ' + new Date(exp).toISOString() };
+    var mins = Math.round((exp - now) / 60000);
+    return { cls: 'ok', text: 'Valid — expires in ~' + mins + ' min (' + new Date(exp).toISOString() + ')' };
+  }
+
+  function readSession() {
+    try { return JSON.parse(localStorage.getItem('tcj_session') || 'null'); }
+    catch (e) { return { _parseError: String(e.message || e) }; }
+  }
+
+  function maskToken(token) {
+    if (!token) return '(none)';
+    if (token.length <= 24) return token;
+    return token.slice(0, 12) + '…' + token.slice(-8) + ' (' + token.length + ' chars)';
+  }
+
+  function renderSession(sess) {
+    if (!sess || sess._parseError) {
+      return '<p class="bad">tcj_session missing or invalid JSON: ' + esc(sess && sess._parseError) + '</p>';
+    }
+    var rows = [
+      ['Present', sess.access_token ? '<span class="ok">yes</span>' : '<span class="bad">no access_token</span>'],
+      ['access_token', '<code>' + esc(maskToken(sess.access_token)) + '</code>'],
+      ['refresh_token', sess.refresh_token ? '<span class="ok">yes (' + sess.refresh_token.length + ' chars)</span>' : '<span class="warn">missing</span>'],
+      ['user_id', esc(sess.user_id || (sess.user && sess.user.id) || '(none)')],
+      ['username', esc(sess.username || '(none)')],
+      ['user.email', esc((sess.user && sess.user.email) || '(none)')]
+    ];
+    var prof = null;
+    try { prof = JSON.parse(localStorage.getItem('tcj_profile') || 'null'); } catch (_) {}
+    if (prof) {
+      rows.push(['tcj_profile.is_admin', prof.is_admin === true ? '<span class="ok">true</span>' : '<span class="warn">' + esc(prof.is_admin) + '</span>']);
+    }
+    return '<table>' + rows.map(function (r) {
+      return '<tr><th>' + r[0] + '</th><td>' + r[1] + '</td></tr>';
+    }).join('') + '</table>';
+  }
+
+  async function apiTest(label, url, headers, body) {
+    var sent = Object.assign({}, headers);
+    if (sent.Authorization && sent.Authorization.length > 40) {
+      sent.Authorization = 'Bearer ' + maskToken(sent.Authorization.replace(/^Bearer\s+/i, ''));
+    }
+    var opts = { method: body != null ? 'POST' : 'GET', headers: headers };
+    if (body != null) opts.body = JSON.stringify(body);
+    var res, text, json;
+    try {
+      res = await fetch(url, opts);
+      text = await res.text();
+      try { json = text ? JSON.parse(text) : null; } catch (_) { json = null; }
+    } catch (e) {
+      return {
+        ok: false,
+        html: '<p class="bad">Network error: ' + esc(e.message) + '</p>' +
+          '<p><strong>Request headers sent:</strong></p><pre>' + esc(JSON.stringify(sent, null, 2)) + '</pre>'
+      };
+    }
+    var cls = res.ok ? 'ok' : 'bad';
+    var preview = json != null ? JSON.stringify(json, null, 2) : text;
+    if (preview.length > 4000) preview = preview.slice(0, 4000) + '\n… (truncated)';
+    return {
+      ok: res.ok,
+      status: res.status,
+      html: '<p class="' + cls + '"><strong>' + esc(label) + ':</strong> HTTP ' + res.status + ' ' + esc(res.statusText) + '</p>' +
+        '<p><strong>Request headers sent:</strong></p><pre>' + esc(JSON.stringify(sent, null, 2)) + '</pre>' +
+        '<p><strong>Response body:</strong></p><pre>' + esc(preview || '(empty)') + '</pre>'
+    };
+  }
+
+  async function refreshToken() {
+    var sess = readSession();
+    if (!sess || !sess.refresh_token) throw new Error('No refresh_token in tcj_session');
+    var res = await fetch(SUPA_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: sess.refresh_token })
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error_description || data.msg || res.status + ' refresh failed');
+    var updated = Object.assign({}, sess, {
+      access_token: data.access_token,
+      refresh_token: data.refresh_token || sess.refresh_token
+    });
+    localStorage.setItem('tcj_session', JSON.stringify(updated));
+    return updated;
+  }
+
+  async function runAll() {
+    var summary = [];
+    var sess = readSession();
+
+    document.getElementById('out-session').innerHTML = renderSession(sess);
+    summary.push(sess && sess.access_token ? 'tcj_session read OK' : 'tcj_session MISSING or no access_token');
+
+    var payload = sess && sess.access_token ? decodeJwt(sess.access_token) : { error: 'no token' };
+    var st = jwtStatus(payload);
+    document.getElementById('out-jwt').innerHTML = '<p class="' + st.cls + '">' + esc(st.text) + '</p><pre>' + esc(JSON.stringify(payload, null, 2)) + '</pre>';
+    summary.push(st.cls === 'ok' ? 'JWT valid' : 'JWT problem: ' + st.text);
+
+    var token = sess && sess.access_token;
+    var base = SUPA_URL + '/rest/v1/categories?is_active=eq.true&select=id,name&limit=3';
+
+    var userHeaders = { apikey: SUPA_KEY, Accept: 'application/json' };
+    if (token) userHeaders.Authorization = 'Bearer ' + token;
+    var catUser = await apiTest('Categories with user JWT', base, userHeaders);
+    document.getElementById('out-categories-user').innerHTML = catUser.html;
+    summary.push(catUser.ok ? 'Categories + user JWT: OK' : 'Categories + user JWT: HTTP ' + catUser.status);
+
+    var anonHeaders = { apikey: SUPA_KEY, Authorization: 'Bearer ' + SUPA_KEY, Accept: 'application/json' };
+    var catAnon = await apiTest('Categories with anon key as Bearer (legacy bug)', base, anonHeaders);
+    document.getElementById('out-categories-anon').innerHTML = catAnon.html;
+
+    var profileHeaders = { apikey: SUPA_KEY, 'Content-Type': 'application/json' };
+    if (token) profileHeaders.Authorization = 'Bearer ' + token;
+    var prof = await apiTest('get_my_profile', SUPA_URL + '/rest/v1/rpc/get_my_profile', profileHeaders, {});
+    document.getElementById('out-profile').innerHTML = prof.html;
+    if (prof.ok) {
+      summary.push('get_my_profile OK — auth.uid() ≈ profile id in response');
+    } else {
+      summary.push('get_my_profile FAILED HTTP ' + prof.status + ' (auth.uid() likely null server-side)');
+    }
+
+    var adminHeaders = { apikey: SUPA_KEY, 'Content-Type': 'application/json' };
+    if (token) adminHeaders.Authorization = 'Bearer ' + token;
+    var admin = await apiTest('is_admin', SUPA_URL + '/rest/v1/rpc/is_admin', adminHeaders, {});
+    document.getElementById('out-is-admin').innerHTML = admin.html;
+    summary.push(admin.ok ? 'is_admin RPC reachable' : 'is_admin RPC HTTP ' + admin.status);
+
+    var tax = await apiTest('get_recipe_taxonomy', SUPA_URL + '/rest/v1/rpc/get_recipe_taxonomy', adminHeaders, { p_category: null });
+    document.getElementById('out-taxonomy').innerHTML = tax.html;
+    summary.push(tax.ok ? 'get_recipe_taxonomy OK' : 'get_recipe_taxonomy HTTP ' + tax.status);
+
+    document.getElementById('out-summary').innerHTML = '<ul>' + summary.map(function (s) {
+      var c = s.indexOf('OK') >= 0 || s.indexOf('valid') >= 0 ? 'ok' : (s.indexOf('MISSING') >= 0 || s.indexOf('FAILED') >= 0 || s.indexOf('problem') >= 0 ? 'bad' : 'warn');
+      return '<li class="' + c + '">' + esc(s) + '</li>';
+    }).join('') + '</ul>';
+  }
+
+  document.getElementById('run-btn').addEventListener('click', function () {
+    document.getElementById('run-btn').disabled = true;
+    runAll().catch(function (e) {
+      document.getElementById('out-summary').innerHTML = '<p class="bad">' + esc(e.message) + '</p>';
+    }).finally(function () {
+      document.getElementById('run-btn').disabled = false;
+    });
+  });
+
+  document.getElementById('refresh-btn').addEventListener('click', function () {
+    refreshToken().then(function () { runAll(); alert('Token refreshed — tests re-run.'); })
+      .catch(function (e) { alert('Refresh failed: ' + e.message); });
+  });
+
+  runAll();
+})();
+</script>
+</body>
+</html>
