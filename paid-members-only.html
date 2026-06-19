@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
   <meta name="description" content="Upgrade to Premium to access this feature on The Culinary Journal.">
   <link rel="canonical" href="https://theculinaryjournal.site/paid-members-only.html">
   <meta name="robots" content="noindex, nofollow">
@@ -140,7 +141,7 @@
       var cur  = S.currency_symbol || '$';
       var daily = parseFloat(S.price_daily || '0.99');
       var week  = parseFloat(S.price_weekly || '2.99');
-      var mon   = parseFloat(S.price_premium_monthly || S.price_premium_monthly || '4');
+      var mon   = parseFloat(S.price_premium_monthly || '4');
       var year  = parseFloat(S.price_yearly || S.price_premium_annual || '40');
       var save  = mon > 0 ? Math.round((mon * 12 - year) / (mon * 12) * 100) : 0;
 
