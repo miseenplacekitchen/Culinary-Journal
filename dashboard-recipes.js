@@ -2139,10 +2139,38 @@ async function loadRMTaxonomy(container) {
       taxonomyRpcError = String(rpcErr.message || rpcErr);
       console.warn('get_recipe_taxonomy', rpcErr);
     }
+    if (!taxonomyRpcError && rows.length) {
+      try {
+        var activeSubRes = await apiFetch(
+          window.SUPA_URL + '/rest/v1/recipe_subcategories?is_active=eq.true&select=id'
+        );
+        if (activeSubRes && activeSubRes.ok) {
+          var activeSubRows = await activeSubRes.json();
+          var activeSubIds = {};
+          (activeSubRows || []).forEach(function(r) { if (r.id) activeSubIds[r.id] = true; });
+          if (Object.keys(activeSubIds).length) {
+            var rpcBefore = rows.length;
+            rows = rows.filter(function(r) {
+              return !r.subcategory_id || activeSubIds[r.subcategory_id];
+            });
+            if (rpcBefore !== rows.length) {
+              console.warn('[TCJ Taxonomy] Dropped', rpcBefore - rows.length,
+                'RPC row(s) whose subcategory_id is not is_active=true in table');
+            }
+          }
+        }
+      } catch (verifyErr) {
+        console.warn('[TCJ Taxonomy] active sub verify skipped', verifyErr);
+      }
+    }
+    var rpcUniqueSubs = {};
+    (rows || []).forEach(function(r) { if (r.subcategory_id) rpcUniqueSubs[r.subcategory_id] = true; });
+    console.log('[TCJ Taxonomy] get_recipe_taxonomy:',
+      (rows || []).length, 'row(s),', Object.keys(rpcUniqueSubs).length, 'unique sub(s)');
     if (taxonomyRpcError) {
       container.innerHTML = '<div style="padding:16px;background:rgba(220,80,80,0.12);border:1px solid #dc5050;border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;color:#f0a0a0;line-height:1.6">' +
         '<strong>Cannot load taxonomy.</strong> ' + esc(taxonomyRpcError) +
-        '<br>Run <code>database/sql/fix-admin-taxonomy-editor.sql</code> in Supabase, then hard-refresh.</div>';
+        '<br>Run <code>database/sql/fix-get-recipe-taxonomy-active-only.sql</code> in Supabase, then hard-refresh.</div>';
       return;
     }
     var missing = [];
@@ -2153,7 +2181,7 @@ async function loadRMTaxonomy(container) {
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260620d</span> — red <strong>Remove</strong> deactivates a sub or division.';
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260620e</span> — red <strong>Remove</strong> deactivates a sub or division.';
     container.appendChild(note);
 
     var exportRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px');

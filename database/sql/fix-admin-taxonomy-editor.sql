@@ -31,8 +31,8 @@ AS $$
          d.id, d.name, d.emoji, d.subtitle, d.description, d.sort_order
     FROM public.recipe_subcategories sc
     LEFT JOIN public.recipe_divisions d
-      ON d.category = sc.category AND d.subcategory = sc.name AND d.is_active = true
-   WHERE sc.is_active = true
+      ON d.category = sc.category AND d.subcategory = sc.name AND COALESCE(d.is_active, false) = true
+   WHERE COALESCE(sc.is_active, false) = true
      AND (p_category IS NULL OR sc.category = p_category)
    ORDER BY sc.category, sc.sort_order, sc.name, d.sort_order, d.name;
 $$;
