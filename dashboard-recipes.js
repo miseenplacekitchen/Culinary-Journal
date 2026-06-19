@@ -2116,80 +2116,20 @@ function rmTaxExportTaxonomyCsv(rows) {
   window.URL.revokeObjectURL(url);
 }
 
-/** Which canonical category owns a book sub name (e.g. Bovine → Pasture & Hoof). */
-function adminTaxonomyOwnerCategory(subName) {
-  if (!subName) return null;
-  var registry = (typeof TCJ_CATEGORY_SUB_TAXONOMY !== 'undefined')
-    ? TCJ_CATEGORY_SUB_TAXONOMY
-    : null;
-  if (!registry) return null;
-  var cats = Object.keys(registry);
-  for (var i = 0; i < cats.length; i++) {
-    var list = registry[cats[i]] || [];
-    for (var j = 0; j < list.length; j++) {
-      if (list[j].name === subName) return cats[i];
-    }
-  }
-  return null;
+function rmTaxSortSubs(subsMap) {
+  return Object.values(subsMap || {}).sort(function(a, b) {
+    return (a.sort_order || 0) - (b.sort_order || 0) || String(a.name).localeCompare(String(b.name));
+  });
 }
 
-/** Admin taxonomy panels: group subs by book ownership, not legacy DB category buckets. */
 function adminTaxonomyRowBelongsToCategory(row, categoryName) {
   if (!row || !categoryName || !row.subcategory_name) return false;
-  var owner = adminTaxonomyOwnerCategory(row.subcategory_name);
-  if (owner) return owner === categoryName;
-  var rowCat = String(row.subcategory_category || '').trim();
-  if (rowCat === categoryName) return true;
-  if (typeof normalizeRecipeCategory === 'function') {
-    return normalizeRecipeCategory(rowCat) === categoryName;
-  }
-  return false;
-}
-
-function rmTaxMergeSubs(cat, subsMap, opts) {
-  opts = opts || {};
-  var bookFillMissing = opts.bookFillMissing !== false;
-  var list = Object.values(subsMap).sort(function(a, b) {
-    return (a.sort_order || 0) - (b.sort_order || 0) || String(a.name).localeCompare(String(b.name));
-  });
-  var canon = (typeof getCanonicalCategoryTaxonomy === 'function')
-    ? getCanonicalCategoryTaxonomy(cat) : null;
-  if (!canon || !canon.length) return list;
-  var byName = {};
-  list.forEach(function(s) { byName[s.name] = s; });
-  canon.forEach(function(sub, i) {
-    if (byName[sub.name]) {
-      var s = byName[sub.name];
-      if (!s.emoji && sub.emoji) s.emoji = sub.emoji;
-      if (!s.tagline && sub.tagline) s.tagline = sub.tagline;
-      if (!s.description && sub.description) s.description = sub.description;
-      if ((!s.ingredient_hints || !s.ingredient_hints.length) && sub.ingredients) {
-        s.ingredient_hints = sub.ingredients.slice();
-      }
-    } else if (bookFillMissing) {
-      list.push({
-        id: null,
-        name: sub.name,
-        sort_order: (i + 1) * 10,
-        emoji: sub.emoji || '',
-        tagline: sub.tagline || '',
-        description: sub.description || '',
-        ingredient_hints: sub.ingredients ? sub.ingredients.slice() : [],
-        divisions: []
-      });
-    }
-  });
-  return list.sort(function(a, b) {
-    return (a.sort_order || 0) - (b.sort_order || 0) || String(a.name).localeCompare(String(b.name));
-  });
+  return String(row.subcategory_category || '').trim() === categoryName;
 }
 
 async function loadRMTaxonomy(container) {
   rmTaxClearTaxonomyCaches();
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
-  var CATS = ['Garden & Earth','Feather & Flock','Pasture & Hoof','Ocean & River',
-    'The Grain Field','Wrapped & Stuffed','Curds, Creams & Eggs','Breads & Bakery',
-    'Sweet Serenades','Sips & Stories','Preserved & Pantry'];
   try {
     var rows = [];
     var taxonomyRpcError = '';
@@ -2199,6 +2139,12 @@ async function loadRMTaxonomy(container) {
       taxonomyRpcError = String(rpcErr.message || rpcErr);
       console.warn('get_recipe_taxonomy', rpcErr);
     }
+    if (taxonomyRpcError) {
+      container.innerHTML = '<div style="padding:16px;background:rgba(220,80,80,0.12);border:1px solid #dc5050;border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;color:#f0a0a0;line-height:1.6">' +
+        '<strong>Cannot load taxonomy.</strong> ' + esc(taxonomyRpcError) +
+        '<br>Run <code>database/sql/fix-admin-taxonomy-editor.sql</code> in Supabase, then hard-refresh.</div>';
+      return;
+    }
     var missing = [];
     try { missing = await rpc('admin_list_recipes_missing_taxonomy', { p_limit: 50 }) || []; } catch(e) { console.warn('missing taxonomy list', e); }
     if (missing.length) { /* backfill lives in Bulk Editor tab */ }
@@ -2206,10 +2152,8 @@ async function loadRMTaxonomy(container) {
     function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
-      'Edit names, descriptions, and ingredient hints here — changes save to the database and appear on the public browse page. ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260620a</span> — red <strong>Remove</strong> on each sub row. Renaming updates matching recipes (after bulk v2 SQL). ' +
-      '<br><br><strong>Paste book hints</strong> fills the ingredient box with the original list from the taxonomy book (you still click <em>Save sub-category</em> to store it). ' +
-      '<strong>Sync from book</strong> re-creates book subs (avoid after removing one you want gone).';
+      'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260620c</span> — red <strong>Remove</strong> deactivates a sub or division.';
     container.appendChild(note);
 
     var exportRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px');
@@ -2225,19 +2169,11 @@ async function loadRMTaxonomy(container) {
     exportRow.appendChild(exportCsvBtn);
     container.appendChild(exportRow);
 
-    if (taxonomyRpcError) {
-      var errBox = mk('div', 'margin-bottom:16px;padding:12px 14px;background:rgba(220,80,80,0.12);border:1px solid #dc5050;border-radius:8px;font-size:12px;color:#f0a0a0;line-height:1.5');
-      errBox.innerHTML = '<strong>Database taxonomy RPC failed.</strong> ' + esc(taxonomyRpcError) +
-        '<br>Run <code>database/sql/fix-admin-taxonomy-editor.sql</code> once in Supabase, then refresh. ' +
-        'Subs below show book defaults until the database responds.';
-      container.appendChild(errBox);
-    } else {
-      var movedNote = mk('div', 'margin-bottom:16px;padding:10px 12px;background:rgba(196,151,59,0.06);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-mid)');
-      movedNote.innerHTML = 'Recipes missing sub-category or division → use <strong>Recipe Management → Bulk Editor</strong> (backfill section at top).';
-      container.appendChild(movedNote);
-    }
+    var movedNote = mk('div', 'margin-bottom:16px;padding:10px 12px;background:rgba(196,151,59,0.06);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-mid)');
+    movedNote.innerHTML = 'Recipes missing sub-category or division → use <strong>Recipe Management → Bulk Editor</strong> (backfill section at top).';
+    container.appendChild(movedNote);
 
-    var catNames = CATS.slice();
+    var catNames = [];
     try {
       var catHeaders = (typeof getAuthHeaders === 'function')
         ? getAuthHeaders()
@@ -2247,14 +2183,17 @@ async function loadRMTaxonomy(container) {
       });
       var catRows = catRes.ok ? await catRes.json() : [];
       if (catRows.length) {
-        var ordered = [];
-        catRows.forEach(function(r) {
-          if (CATS.indexOf(r.name) >= 0 && ordered.indexOf(r.name) < 0) ordered.push(r.name);
-        });
-        CATS.forEach(function(c) { if (ordered.indexOf(c) < 0) ordered.push(c); });
-        catNames = ordered;
+        catNames = catRows.map(function(r) { return r.name; }).filter(Boolean);
       }
     } catch (e) { console.warn('category order', e); }
+    if (!catNames.length) {
+      var seenCat = {};
+      (rows || []).forEach(function(r) {
+        var c = r.subcategory_category;
+        if (c && !seenCat[c]) { seenCat[c] = true; catNames.push(c); }
+      });
+      catNames.sort(function(a, b) { return a.localeCompare(b); });
+    }
 
     catNames.forEach(function(cat, catIdx) {
       var subs = {};
@@ -2291,7 +2230,7 @@ async function loadRMTaxonomy(container) {
           });
         }
       });
-      var subList = rmTaxMergeSubs(cat, subs, { bookFillMissing: !taxonomyRpcError });
+      var subList = rmTaxSortSubs(subs);
       subList.forEach(function(sc) {
         sc.divisions.sort(function(a, b) {
           return (a.division_sort_order || 0) - (b.division_sort_order || 0) ||
@@ -2338,47 +2277,17 @@ async function loadRMTaxonomy(container) {
         rmTaxSetCollapsed(catKey, catOpen);
       });
 
-      var canon = (typeof getCanonicalCategoryTaxonomy === 'function')
-        ? getCanonicalCategoryTaxonomy(cat) : null;
-      if (canon && canon.length && taxonomyRpcError) {
-        var syncRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px');
-        syncRow.appendChild(mk('span', 'font-size:12px;color:var(--text-mid)', 'Book defaults (RPC offline only):'));
-        var syncBtn = mk('button', 'padding:6px 12px;font-size:11px;border:1px solid var(--accent);border-radius:6px;background:none;color:var(--accent);cursor:pointer', 'Sync subs from book');
-        syncBtn.addEventListener('click', function() {
-          if (!confirm('Upsert all ' + canon.length + ' ' + cat + ' sub-categories from the book list (names + hints)? Existing edits to hints may be overwritten.')) return;
-          syncBtn.disabled = true;
-          var chain = Promise.resolve();
-          canon.forEach(function(sub, i) {
-            chain = chain.then(function() {
-              return rmTaxUpsertSubcategory({
-                p_id: null, p_category: cat, p_name: sub.name,
-                p_sort_order: (i + 1) * 10,
-                p_ingredient_hints: sub.ingredients || [],
-                p_tagline: sub.tagline || null,
-                p_description: sub.description || null,
-                p_emoji: sub.emoji || null
-              });
-            });
-          });
-          chain.then(function() { loadRMTaxonomy(container); })
-            .catch(function(e) { alert(e.message || e); syncBtn.disabled = false; });
-        });
-        syncRow.appendChild(syncBtn);
-        catBody.appendChild(syncRow);
-      }
-
       if (!subList.length) {
         catBody.appendChild(mk('div', 'font-size:12px;color:var(--text-mid);margin-bottom:10px', 'No sub-categories yet.'));
       } else {
         subList.forEach(function(sc, subIdx) {
-          var subMeta = (typeof getCategorySubMeta === 'function') ? getCategorySubMeta(cat, sc.name) : null;
           var subKey = catKey + '|' + sc.id;
           var subOpen = !rmTaxCollapsed(subKey, false);
           var scWrap = mk('div', 'margin-bottom:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg)');
 
           var scHdr = mk('div', 'display:flex;align-items:center;gap:6px;padding:8px 10px;background:rgba(0,0,0,0.15);flex-wrap:wrap');
           var subToggle = mk('span', 'font-size:11px;color:var(--text-mid);cursor:pointer;width:14px', subOpen ? '▼' : '▶');
-          var emojiIn = rmTaxInput(sc.emoji || (subMeta ? subMeta.emoji : ''), '🍽', false);
+          var emojiIn = rmTaxInput(sc.emoji || '', '🍽', false);
           emojiIn.style.width = '42px';
           emojiIn.style.flex = 'none';
           emojiIn.style.textAlign = 'center';
@@ -2388,9 +2297,6 @@ async function loadRMTaxonomy(container) {
           scHdr.appendChild(subToggle);
           scHdr.appendChild(emojiIn);
           scHdr.appendChild(nameIn);
-          if (subMeta && subMeta.code) {
-            scHdr.appendChild(mk('span', 'font-size:10px;color:var(--text-mid);letter-spacing:0.08em', subMeta.code));
-          }
           var subMove = mk('span', 'display:flex;gap:4px;margin-left:auto');
           subMove.appendChild(rmTaxMoveBtn('↑', 'Move sub up', subIdx === 0, function(ev) {
             ev.stopPropagation();
@@ -2442,31 +2348,21 @@ async function loadRMTaxonomy(container) {
           });
 
           scBody.appendChild(rmTaxLabel('Tagline (short line under the title)'));
-          var taglineTa = rmTaxTextarea(sc.tagline || (subMeta ? subMeta.tagline : ''), 'One-line summary for browse cards', 40);
+          var taglineTa = rmTaxTextarea(sc.tagline || '', 'One-line summary for browse cards', 40);
           scBody.appendChild(taglineTa);
 
           scBody.appendChild(rmTaxLabel('Description'));
-          var descTa = rmTaxTextarea(sc.description || (subMeta ? subMeta.description : ''), 'Longer browse copy', 72);
+          var descTa = rmTaxTextarea(sc.description || '', 'Longer browse copy', 72);
           scBody.appendChild(descTa);
 
           scBody.appendChild(rmTaxLabel('Ingredient focus hints'));
-          var hints = sc.ingredient_hints && sc.ingredient_hints.length
-            ? sc.ingredient_hints
-            : (subMeta && subMeta.ingredients ? subMeta.ingredients : []);
+          var hints = sc.ingredient_hints && sc.ingredient_hints.length ? sc.ingredient_hints : [];
           var hintTa = rmTaxTextarea(
             typeof formatIngredientHints === 'function' ? formatIngredientHints(hints) : (hints || []).join(', '),
             'Comma-separated — when this ingredient is the main focus, use this sub-category', 52);
           scBody.appendChild(hintTa);
 
           var hintActs = mk('div', 'display:flex;gap:6px;margin-top:6px;margin-bottom:8px;flex-wrap:wrap');
-          if (subMeta && subMeta.ingredients && subMeta.ingredients.length) {
-            var pasteBook = mk('button', 'padding:4px 10px;font-size:11px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-mid);cursor:pointer', 'Paste book hints');
-            pasteBook.title = 'Fills the box with the original book list — click Save sub-category to store';
-            pasteBook.addEventListener('click', function() {
-              hintTa.value = formatIngredientHints(subMeta.ingredients);
-            });
-            hintActs.appendChild(pasteBook);
-          }
           var saveSub = mk('button', 'padding:6px 14px;font-size:11px;border:1px solid var(--accent);border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:600', 'Save sub-category');
           saveSub.addEventListener('click', function() {
             var parsed = typeof parseIngredientHintText === 'function'

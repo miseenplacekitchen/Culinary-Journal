@@ -40,7 +40,8 @@
   <section><h2>5. RPC get_my_profile (auth.uid proxy)</h2><div id="out-profile">Waiting…</div></section>
   <section><h2>6. RPC is_admin</h2><div id="out-is-admin">Waiting…</div></section>
   <section><h2>7. RPC get_recipe_taxonomy (admin browse RPC)</h2><div id="out-taxonomy">Waiting…</div></section>
-  <section><h2>8. Summary</h2><div id="out-summary">Run tests to see summary.</div></section>
+  <section><h2>8. recipe_subcategories (name → category, active only)</h2><div id="out-subs">Waiting…</div></section>
+  <section><h2>9. Summary</h2><div id="out-summary">Run tests to see summary.</div></section>
 
 <script>
 (function () {
@@ -196,6 +197,34 @@
     var tax = await apiTest('get_recipe_taxonomy', SUPA_URL + '/rest/v1/rpc/get_recipe_taxonomy', adminHeaders, { p_category: null });
     document.getElementById('out-taxonomy').innerHTML = tax.html;
     summary.push(tax.ok ? 'get_recipe_taxonomy OK' : 'get_recipe_taxonomy HTTP ' + tax.status);
+
+    var subsUrl = SUPA_URL + '/rest/v1/recipe_subcategories?is_active=eq.true&select=name,category&order=category.asc,name.asc';
+    var subs = await apiTest('recipe_subcategories', subsUrl, Object.assign({ Accept: 'application/json' }, adminHeaders));
+    if (subs.ok && subs.status === 200) {
+      try {
+        var bodyEl = document.createElement('div');
+        bodyEl.innerHTML = subs.html;
+        var pre = bodyEl.querySelector('pre');
+        var rows = pre ? JSON.parse(pre.textContent) : [];
+        if (Array.isArray(rows) && rows.length) {
+          var table = '<p class="ok">' + rows.length + ' active subcategories</p><table><tr><th>name</th><th>category</th></tr>';
+          rows.forEach(function (r) {
+            table += '<tr><td>' + esc(r.name) + '</td><td>' + esc(r.category) + '</td></tr>';
+          });
+          table += '</table><pre style="margin-top:12px">' + esc(rows.map(function (r) { return r.name + '\t' + r.category; }).join('\n')) + '</pre>';
+          document.getElementById('out-subs').innerHTML = table;
+          summary.push('recipe_subcategories: ' + rows.length + ' rows');
+        } else {
+          document.getElementById('out-subs').innerHTML = subs.html + '<p class="warn">No active rows (table may be empty after reset).</p>';
+          summary.push('recipe_subcategories: 0 rows');
+        }
+      } catch (e) {
+        document.getElementById('out-subs').innerHTML = subs.html;
+      }
+    } else {
+      document.getElementById('out-subs').innerHTML = subs.html;
+      summary.push('recipe_subcategories HTTP ' + (subs.status || 'error'));
+    }
 
     document.getElementById('out-summary').innerHTML = '<ul>' + summary.map(function (s) {
       var c = s.indexOf('OK') >= 0 || s.indexOf('valid') >= 0 ? 'ok' : (s.indexOf('MISSING') >= 0 || s.indexOf('FAILED') >= 0 || s.indexOf('problem') >= 0 ? 'bad' : 'warn');
