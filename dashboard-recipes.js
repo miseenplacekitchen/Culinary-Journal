@@ -2357,17 +2357,23 @@ async function loadRMTaxonomy(container) {
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260629c</span> — edit freely across cards, then use <strong>Save all changes</strong>. Saving one card no longer wipes the others. Every save is logged to Audit Trail.';
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260629d</span> — edit freely across cards, then use <strong>Save all changes</strong>. Saving one card no longer wipes the others. Every save is logged to Audit Trail.';
     container.appendChild(note);
 
-    // Bulk save: collect every editable card's save closure; one click persists all without losing edits.
+    // Single right-aligned action toolbar (Save all + exports) under the Taxonomy heading.
     var savers = [];
-    var saveAllRow = mk('div', 'display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap');
-    var saveAllBtn = mk('button', 'padding:9px 20px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer', 'Save all changes');
-    var saveAllStatus = mk('span', 'font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid)', 'Edit any fields below, then save them all at once.');
-    saveAllRow.appendChild(saveAllBtn);
-    saveAllRow.appendChild(saveAllStatus);
-    container.appendChild(saveAllRow);
+    var toolbar = mk('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px');
+    var saveAllStatus = mk('span', 'font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid);margin-right:auto', 'Edit any fields below, then save them all at once.');
+    var saveAllBtn = mk('button', 'padding:8px 18px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer', 'Save all changes');
+    var exportJsonBtn = mk('button', 'padding:8px 16px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Export taxonomy (JSON)');
+    var exportCsvBtn = mk('button', 'padding:8px 16px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Export taxonomy (CSV)');
+    toolbar.appendChild(saveAllStatus);
+    toolbar.appendChild(saveAllBtn);
+    toolbar.appendChild(exportJsonBtn);
+    toolbar.appendChild(exportCsvBtn);
+    container.appendChild(toolbar);
+    exportJsonBtn.addEventListener('click', function() { rmTaxExportTaxonomyJson(rows, null); });
+    exportCsvBtn.addEventListener('click', function() { rmTaxExportTaxonomyCsv(rows); });
     saveAllBtn.addEventListener('click', async function() {
       if (!savers.length) { saveAllStatus.textContent = 'Nothing to save.'; return; }
       saveAllBtn.disabled = true;
@@ -2382,19 +2388,6 @@ async function loadRMTaxonomy(container) {
       if (fail && firstErr) alert(fail + ' item(s) failed to save. First error: ' + firstErr);
       loadRMTaxonomy(container);
     });
-
-    var exportRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px');
-    var exportJsonBtn = mk('button', 'padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;cursor:pointer;font-weight:600', 'Export taxonomy (JSON)');
-    exportJsonBtn.addEventListener('click', function() {
-      rmTaxExportTaxonomyJson(rows, null);
-    });
-    exportRow.appendChild(exportJsonBtn);
-    var exportCsvBtn = mk('button', 'padding:8px 16px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Export taxonomy (CSV)');
-    exportCsvBtn.addEventListener('click', function() {
-      rmTaxExportTaxonomyCsv(rows);
-    });
-    exportRow.appendChild(exportCsvBtn);
-    container.appendChild(exportRow);
 
     var movedNote = mk('div', 'margin-bottom:16px;padding:10px 12px;background:rgba(196,151,59,0.06);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-mid)');
     movedNote.innerHTML = 'Recipes missing sub-category or division → use <strong>Recipe Management → Bulk Editor</strong> (backfill section at top).';
