@@ -2354,15 +2354,9 @@ async function loadRMTaxonomy(container) {
     if (missing.length) { /* backfill lives in Bulk Editor tab */ }
     container.innerHTML = '';
     function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
-    var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
-    note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
-      'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260629d</span> — edit freely across cards, then use <strong>Save all changes</strong>. Saving one card no longer wipes the others. Every save is logged to Audit Trail.';
-    container.appendChild(note);
-
-    // Single right-aligned action toolbar (Save all + exports) under the Taxonomy heading.
+    // Sticky action toolbar (Save all + exports) — stays pinned to the top of the panel while scrolling.
     var savers = [];
-    var toolbar = mk('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px');
+    var toolbar = mk('div', 'position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0;margin:0 0 12px;background:var(--bg);border-bottom:1px solid var(--border);box-shadow:0 6px 10px -8px rgba(0,0,0,0.45)');
     var saveAllStatus = mk('span', 'font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid);margin-right:auto', 'Edit any fields below, then save them all at once.');
     var saveAllBtn = mk('button', 'padding:8px 18px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer', 'Save all changes');
     var exportJsonBtn = mk('button', 'padding:8px 16px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Export taxonomy (JSON)');
@@ -2388,6 +2382,12 @@ async function loadRMTaxonomy(container) {
       if (fail && firstErr) alert(fail + ' item(s) failed to save. First error: ' + firstErr);
       loadRMTaxonomy(container);
     });
+
+    var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
+    note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
+      'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260629e</span> — edit freely across cards, then use <strong>Save all changes</strong>. Saving one card no longer wipes the others. Every save is logged to Audit Trail.';
+    container.appendChild(note);
 
     var movedNote = mk('div', 'margin-bottom:16px;padding:10px 12px;background:rgba(196,151,59,0.06);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-mid)');
     movedNote.innerHTML = 'Recipes missing sub-category or division → use <strong>Recipe Management → Bulk Editor</strong> (backfill section at top).';
