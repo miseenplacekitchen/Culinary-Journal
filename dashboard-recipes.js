@@ -2060,6 +2060,20 @@ function rmTaxAudit(action, target, oldVal, newVal, details) {
   }
 }
 
+function rmTaxFlashSaved(btn, normalText) {
+  if (!btn) return;
+  var prevBg = btn.style.background;
+  var prevColor = btn.style.color;
+  btn.textContent = 'Saved \u2713';
+  btn.style.background = '#4caf76';
+  btn.style.color = '#fff';
+  setTimeout(function() {
+    btn.textContent = normalText;
+    btn.style.background = prevBg;
+    btn.style.color = prevColor;
+  }, 1400);
+}
+
 function rmTaxNormalizeLabel(value) {
   return String(value || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -2343,8 +2357,31 @@ async function loadRMTaxonomy(container) {
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260629b</span> — red <strong>Remove</strong> deactivates a sub or division. Every save is logged to Audit Trail.';
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260629c</span> — edit freely across cards, then use <strong>Save all changes</strong>. Saving one card no longer wipes the others. Every save is logged to Audit Trail.';
     container.appendChild(note);
+
+    // Bulk save: collect every editable card's save closure; one click persists all without losing edits.
+    var savers = [];
+    var saveAllRow = mk('div', 'display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap');
+    var saveAllBtn = mk('button', 'padding:9px 20px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer', 'Save all changes');
+    var saveAllStatus = mk('span', 'font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid)', 'Edit any fields below, then save them all at once.');
+    saveAllRow.appendChild(saveAllBtn);
+    saveAllRow.appendChild(saveAllStatus);
+    container.appendChild(saveAllRow);
+    saveAllBtn.addEventListener('click', async function() {
+      if (!savers.length) { saveAllStatus.textContent = 'Nothing to save.'; return; }
+      saveAllBtn.disabled = true;
+      var ok = 0, fail = 0, firstErr = '';
+      saveAllStatus.textContent = 'Saving ' + savers.length + ' item(s)\u2026';
+      for (var i = 0; i < savers.length; i++) {
+        try { await savers[i](); ok++; }
+        catch (e) { fail++; if (!firstErr) firstErr = String(e.message || e); }
+      }
+      saveAllStatus.textContent = 'Saved ' + ok + (fail ? (' \u2022 ' + fail + ' failed') : ' \u2022 no errors');
+      rmTaxAudit('Bulk Save', 'Taxonomy editor', null, null, ok + ' saved, ' + fail + ' failed');
+      if (fail && firstErr) alert(fail + ' item(s) failed to save. First error: ' + firstErr);
+      loadRMTaxonomy(container);
+    });
 
     var exportRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px');
     var exportJsonBtn = mk('button', 'padding:8px 16px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;cursor:pointer;font-weight:600', 'Export taxonomy (JSON)');
@@ -2601,26 +2638,23 @@ async function loadRMTaxonomy(container) {
 
           var hintActs = mk('div', 'display:flex;gap:6px;margin-top:6px;margin-bottom:8px;flex-wrap:wrap');
           var saveSub = mk('button', 'padding:6px 14px;font-size:11px;border:1px solid var(--accent);border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:600', 'Save sub-category');
-          saveSub.addEventListener('click', function() {
+          // Persist this sub-category and update in-memory state WITHOUT reloading the panel,
+          // so edits in other cards are never wiped. Returns a promise (used by Save all).
+          function saveSubInPlace() {
             var parsed = typeof parseIngredientHintText === 'function'
               ? parseIngredientHintText(hintTa.value)
               : hintTa.value.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
             var newName = nameIn.value.trim();
-            if (!newName) { alert('Sub-category name is required.'); return; }
-            saveSub.disabled = true;
+            if (!newName) { return Promise.reject(new Error('Sub-category name is required.')); }
             var beforeSnap = rmTaxSnapshotSub({
-              emoji: sc.emoji,
-              tagline: sc.tagline,
-              description: sc.description,
-              ingredient_hints: sc.ingredient_hints
+              emoji: sc.emoji, tagline: sc.tagline, description: sc.description, ingredient_hints: sc.ingredient_hints
             });
             var afterSnap = rmTaxSnapshotSub({
-              emoji: emojiIn.value.trim(),
-              tagline: taglineTa.value.trim(),
-              description: descTa.value.trim(),
-              ingredient_hints: parsed
+              emoji: emojiIn.value.trim(), tagline: taglineTa.value.trim(),
+              description: descTa.value.trim(), ingredient_hints: parsed
             });
-            rmTaxUpsertSubcategory({
+            var prevName = sc.name;
+            return rmTaxUpsertSubcategory({
               p_id: sc.id, p_category: cat, p_name: newName,
               p_sort_order: sc.sort_order,
               p_ingredient_hints: parsed,
@@ -2628,13 +2662,28 @@ async function loadRMTaxonomy(container) {
               p_description: descTa.value.trim(),
               p_emoji: emojiIn.value.trim()
             }, {
-              action: sc.name !== newName ? 'Sub-category Renamed' : 'Sub-category Saved',
+              action: prevName !== newName ? 'Sub-category Renamed' : 'Sub-category Saved',
               target: cat + ' > ' + newName,
-              oldVal: cat + ' > ' + sc.name,
+              oldVal: cat + ' > ' + prevName,
               newVal: cat + ' > ' + newName,
               details: 'Before: ' + beforeSnap + ' | After: ' + afterSnap
-            }).then(function() { loadRMTaxonomy(container); })
-              .catch(function(e) { alert(e.message || e); saveSub.disabled = false; });
+            }).then(function(newId) {
+              if (newId) sc.id = newId;
+              sc.name = newName;
+              sc.emoji = emojiIn.value.trim();
+              sc.tagline = taglineTa.value.trim();
+              sc.description = descTa.value.trim();
+              sc.ingredient_hints = parsed;
+              return newId;
+            });
+          }
+          savers.push(saveSubInPlace);
+          saveSub.addEventListener('click', function() {
+            saveSub.disabled = true;
+            saveSubInPlace()
+              .then(function() { rmTaxFlashSaved(saveSub, 'Save sub-category'); })
+              .catch(function(e) { alert(e.message || e); })
+              .then(function() { saveSub.disabled = false; });
           });
           hintActs.appendChild(saveSub);
           scBody.appendChild(hintActs);
@@ -2673,9 +2722,9 @@ async function loadRMTaxonomy(container) {
             dCard.appendChild(dDesc);
             var dActs = mk('div', 'display:flex;gap:6px;margin-top:6px');
             var saveDiv = mk('button', 'padding:4px 10px;font-size:11px;border:1px solid var(--accent);border-radius:6px;background:none;color:var(--accent);cursor:pointer', 'Save division');
-            saveDiv.addEventListener('click', function() {
+            function saveDivInPlace() {
               var nm = dName.value.trim();
-              if (!nm) { alert('Division name is required.'); return; }
+              if (!nm) { return Promise.reject(new Error('Division name is required.')); }
               var subNm = nameIn.value.trim() || sc.name;
               var beforeDiv = JSON.stringify({
                 emoji: d.division_emoji || '',
@@ -2687,18 +2736,34 @@ async function loadRMTaxonomy(container) {
                 subtitle: dSub.value.trim(),
                 description: dDesc.value.trim()
               });
-              rmTaxUpsertDivision({
+              var prevDivName = d.division_name;
+              return rmTaxUpsertDivision({
                 p_id: d.division_id, p_category: cat, p_subcategory: subNm,
                 p_name: nm, p_emoji: dEmoji.value.trim() || '🍽',
                 p_subtitle: dSub.value.trim(), p_description: dDesc.value.trim(),
                 p_tags: [], p_sort_order: d.division_sort_order || (divIdx + 1) * 10
               }, {
-                action: d.division_name !== nm ? 'Division Renamed' : 'Division Saved',
+                action: prevDivName !== nm ? 'Division Renamed' : 'Division Saved',
                 target: cat + ' > ' + subNm + ' > ' + nm,
-                oldVal: cat + ' > ' + subNm + ' > ' + (d.division_name || ''),
+                oldVal: cat + ' > ' + subNm + ' > ' + (prevDivName || ''),
                 newVal: cat + ' > ' + subNm + ' > ' + nm,
                 details: 'Before: ' + beforeDiv + ' | After: ' + afterDiv
-              }).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
+              }).then(function(newId) {
+                if (newId) d.division_id = newId;
+                d.division_name = nm;
+                d.division_emoji = dEmoji.value.trim() || '🍽';
+                d.division_subtitle = dSub.value.trim();
+                d.division_description = dDesc.value.trim();
+                return newId;
+              });
+            }
+            savers.push(saveDivInPlace);
+            saveDiv.addEventListener('click', function() {
+              saveDiv.disabled = true;
+              saveDivInPlace()
+                .then(function() { rmTaxFlashSaved(saveDiv, 'Save division'); })
+                .catch(function(e) { alert(e.message || e); })
+                .then(function() { saveDiv.disabled = false; });
             });
             var delD = mk('button', 'padding:4px 10px;font-size:11px;border:1px solid #dc5050;border-radius:6px;background:none;color:#dc5050;cursor:pointer', 'Remove');
             delD.addEventListener('click', function() {
