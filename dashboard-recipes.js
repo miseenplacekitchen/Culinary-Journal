@@ -2277,7 +2277,29 @@ function rmTaxClearTaxonomyCaches() {
   } catch (e) { /* ignore */ }
 }
 
-function rmTaxExportTaxonomyJson(rows, catNames) {
+function rmTaxIngredientHintsToText(hints) {
+  if (!hints) return '';
+  if (Array.isArray(hints)) {
+    if (typeof formatIngredientHints === 'function') return formatIngredientHints(hints);
+    return hints.join(', ');
+  }
+  return String(hints);
+}
+
+function rmTaxDownloadFile(content, filename, mime) {
+  var blob = new Blob([content], { type: mime });
+  var url = window.URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
+
+function rmTaxExportTaxonomyJson(rows, catNames, catMeta) {
+  catMeta = catMeta || {};
   var byCat = {};
   (rows || []).forEach(function(r) {
     var cat = r.subcategory_category;
@@ -2292,60 +2314,93 @@ function rmTaxExportTaxonomyJson(rows, catNames) {
         tagline: r.subcategory_tagline || '',
         description: r.subcategory_description || '',
         ingredient_hints: r.subcategory_ingredient_hints || [],
-        divisions: []
+        sort_order: (r.subcategory_sort_order != null ? r.subcategory_sort_order : null),
+        divisions: {}
       };
     }
     if (r.division_name) {
-      byCat[cat].subcategories[scName].divisions.push({
-        name: r.division_name,
-        emoji: r.division_emoji || '',
-        subtitle: r.division_subtitle || '',
-        description: r.division_description || ''
-      });
+      var subNode = byCat[cat].subcategories[scName];
+      if (!subNode.divisions[r.division_name]) {
+        subNode.divisions[r.division_name] = {
+          name: r.division_name,
+          emoji: r.division_emoji || '',
+          subtitle: r.division_subtitle || '',
+          description: r.division_description || '',
+          sort_order: (r.division_sort_order != null ? r.division_sort_order : null)
+        };
+      }
     }
   });
   var out = (catNames || Object.keys(byCat)).map(function(cat) {
     var node = byCat[cat] || { category: cat, subcategories: {} };
+    var meta = catMeta[cat] || {};
     return {
       category: cat,
-      subcategories: Object.values(node.subcategories || {})
+      emoji: meta.emoji || '',
+      sort_order: (meta.sort_order != null ? meta.sort_order : null),
+      subcategories: Object.keys(node.subcategories || {}).map(function(scName) {
+        var sc = node.subcategories[scName];
+        return {
+          name: sc.name,
+          emoji: sc.emoji,
+          tagline: sc.tagline,
+          description: sc.description,
+          ingredient_hints: sc.ingredient_hints,
+          sort_order: sc.sort_order,
+          divisions: Object.keys(sc.divisions || {}).map(function(dn) { return sc.divisions[dn]; })
+        };
+      })
     };
   });
-  var json = JSON.stringify(out, null, 2);
-  var blob = new Blob([json], { type: 'application/json' });
-  var url = window.URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = 'taxonomy-' + new Date().toISOString().split('T')[0] + '.json';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  window.URL.revokeObjectURL(url);
+  var json = JSON.stringify({ exported_at: new Date().toISOString(), categories: out }, null, 2);
+  rmTaxDownloadFile('\ufeff' + json, 'taxonomy-' + new Date().toISOString().split('T')[0] + '.json', 'application/json;charset=utf-8');
 }
 
-function rmTaxExportTaxonomyCsv(rows) {
-  var headers = ['Category', 'Sub-category', 'Division', 'Sub emoji', 'Sub tagline', 'Division subtitle'];
-  var lines = [headers.map(function(h) { return '"' + h + '"'; }).join(',')];
+function rmTaxExportTaxonomyCsv(rows, catMeta) {
+  catMeta = catMeta || {};
+  var headers = [
+    'Category', 'Category emoji', 'Category sort',
+    'Sub-category', 'Sub emoji', 'Sub tagline', 'Sub description', 'Sub ingredient hints', 'Sub sort',
+    'Division', 'Division emoji', 'Division subtitle', 'Division description', 'Division sort'
+  ];
+  function cell(v) {
+    // RFC 4180 quoting; quotes doubled and any embedded newlines preserved inside quotes.
+    return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  }
+  var lines = [headers.map(cell).join(',')];
+  var subCount = 0, divCount = 0;
+  var seenSub = {};
   (rows || []).forEach(function(r) {
     if (!r.subcategory_name) return;
+    var cat = r.subcategory_category || '';
+    var meta = catMeta[cat] || {};
+    var subKey = cat + '||' + r.subcategory_name;
+    if (!seenSub[subKey]) { seenSub[subKey] = true; subCount++; }
+    if (r.division_name) divCount++;
     lines.push([
-      r.subcategory_category || '',
+      cat,
+      meta.emoji || '',
+      (meta.sort_order != null ? meta.sort_order : ''),
       r.subcategory_name || '',
-      r.division_name || '',
       r.subcategory_emoji || '',
       r.subcategory_tagline || '',
-      r.division_subtitle || ''
-    ].map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','));
+      r.subcategory_description || '',
+      rmTaxIngredientHintsToText(r.subcategory_ingredient_hints),
+      (r.subcategory_sort_order != null ? r.subcategory_sort_order : ''),
+      r.division_name || '',
+      r.division_emoji || '',
+      r.division_subtitle || '',
+      r.division_description || '',
+      (r.division_sort_order != null ? r.division_sort_order : '')
+    ].map(cell).join(','));
   });
-  var blob = new Blob([lines.join('\n')], { type: 'text/csv' });
-  var url = window.URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = 'taxonomy-' + new Date().toISOString().split('T')[0] + '.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  window.URL.revokeObjectURL(url);
+  // UTF-8 BOM so Excel renders emojis/smart punctuation correctly; CRLF line endings.
+  var csv = '\ufeff' + lines.join('\r\n');
+  rmTaxDownloadFile(csv, 'taxonomy-' + new Date().toISOString().split('T')[0] + '.csv', 'text/csv;charset=utf-8');
+  var msg = 'Exported ' + subCount + ' sub-categor' + (subCount === 1 ? 'y' : 'ies') +
+    ' and ' + divCount + ' division row' + (divCount === 1 ? '' : 's') + '.';
+  if (!divCount) msg += '\n\nNote: no divisions exist yet, so the Division columns are empty.';
+  setTimeout(function() { alert(msg); }, 100);
 }
 
 function rmTaxSortSubs(subsMap) {
@@ -2408,8 +2463,18 @@ function rmTaxMountHeadingToolbar(container, mk) {
     container.insertBefore(toolbar, container.firstChild);
   }
 
-  exportJsonBtn.addEventListener('click', function() { rmTaxExportTaxonomyJson(rows, null); });
-  exportCsvBtn.addEventListener('click', function() { rmTaxExportTaxonomyCsv(rows); });
+  function rmTaxConfirmIfDirty() {
+    if (!container._rmTaxDirty) return true;
+    return confirm('You have unsaved edits on screen. Exports use the last saved database state, so unsaved changes will NOT be included.\n\nUse "Save all changes" first if you want them in the file.\n\nExport saved data anyway?');
+  }
+  exportJsonBtn.addEventListener('click', function() {
+    if (!rmTaxConfirmIfDirty()) return;
+    rmTaxExportTaxonomyJson(container._rmTaxExportRows || rows, null, container._rmTaxExportCatMeta || {});
+  });
+  exportCsvBtn.addEventListener('click', function() {
+    if (!rmTaxConfirmIfDirty()) return;
+    rmTaxExportTaxonomyCsv(container._rmTaxExportRows || rows, container._rmTaxExportCatMeta || {});
+  });
   saveAllBtn.addEventListener('click', async function() {
     var pending = container._rmTaxSavers || [];
     if (!pending.length) { alert('Nothing to save yet — edit a field first.'); return; }
@@ -2487,7 +2552,7 @@ async function loadRMTaxonomy(container) {
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260630a</span> — <strong>Save sub-category</strong> writes only that card; other cards keep your unsaved edits. Use <strong>Save all changes</strong> (top-right) when you want to commit everything at once.';
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260630b</span> — <strong>Save sub-category</strong> writes only that card; other cards keep your unsaved edits. Use <strong>Save all changes</strong> (top-right) when you want to commit everything at once. Exports are full (all fields), UTF-8 (Excel-safe), and warn about unsaved edits.';
     container.appendChild(note);
 
     var movedNote = mk('div', 'margin-bottom:16px;padding:10px 12px;background:rgba(196,151,59,0.06);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-mid)');
@@ -2496,6 +2561,7 @@ async function loadRMTaxonomy(container) {
 
     var catNames = [];
     var catEmojiMap = {};
+    var catMetaMap = {};
     var catFetchError = '';
     try {
       var catRows = [];
@@ -2523,6 +2589,7 @@ async function loadRMTaxonomy(container) {
         var n = String(r.name).trim();
         catNames.push(n);
         catEmojiMap[n] = r.emoji || '🍽';
+        catMetaMap[n] = { emoji: r.emoji || '🍽', sort_order: (r.sort_order != null ? r.sort_order : null) };
       });
     } catch (e) {
       catFetchError = String(e.message || e);
@@ -2938,6 +3005,12 @@ async function loadRMTaxonomy(container) {
 
     container._rmTaxSavers = savers;
     container._rmTaxExportRows = rows;
+    container._rmTaxExportCatMeta = catMetaMap;
+    container._rmTaxDirty = false;
+    if (!container._rmTaxDirtyBound) {
+      container._rmTaxDirtyBound = true;
+      container.addEventListener('input', function() { container._rmTaxDirty = true; });
+    }
     container._rmTaxToolbarAttach = function() { rmTaxMountHeadingToolbar(container, mk); };
     container._rmTaxToolbarAttach();
   } catch (e) {
