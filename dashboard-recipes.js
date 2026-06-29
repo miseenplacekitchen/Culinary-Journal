@@ -1099,7 +1099,7 @@ function loadRMInterfaceSettings() {
           panel.appendChild(btn);
         }
       },
-      { key: 'taxonomy', label: 'Taxonomy', group: 'Operations', subtitle: 'Sub-categories and divisions', refreshOnShow: true, render: function (p) { loadRMTab('taxonomy', p); } },
+      { key: 'taxonomy', label: 'Taxonomy', group: 'Operations', subtitle: 'Sub-categories and divisions', render: function (p) { loadRMTab('taxonomy', p); }, onShow: function (p) { if (p && typeof p._rmTaxToolbarAttach === 'function') p._rmTaxToolbarAttach(); } },
       { key: 'sourcelinks', label: 'Source links', group: 'Operations', subtitle: 'Recipe attribution URLs', render: function (p) { loadRMTab('sourcelinks', p); } },
       { key: 'websitesources', label: 'Website sources', group: 'Operations', subtitle: 'Import on/off + chef credits', render: function (p) { loadRMTab('websitesources', p); } },
       { key: 'nutrition', label: 'Nutrition queue', group: 'Operations', subtitle: 'Pending nutrition entries', render: function (p) { loadRMTab('nutrition', p); } },
@@ -2359,6 +2359,76 @@ function adminTaxonomyRowBelongsToCategory(row, expandedCategoryName) {
   return String(row.subcategory_category || '').trim() === String(expandedCategoryName).trim();
 }
 
+// Pin Save all / Export into the non-scrolling panel heading. Safe to call again on tab return.
+function rmTaxMountHeadingToolbar(container, mk) {
+  if (!container || document.getElementById('rm-tax-head-actions')) return;
+  mk = mk || function(tag, s, t) {
+    var e = document.createElement(tag);
+    if (s) e.style.cssText = s;
+    if (t !== undefined) e.textContent = t;
+    return e;
+  };
+  var savers = container._rmTaxSavers || [];
+  var rows = container._rmTaxExportRows || [];
+
+  var saveAllBtn = mk('button', 'padding:7px 16px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer', 'Save all changes');
+  var exportJsonBtn = mk('button', 'padding:7px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Export JSON');
+  var exportCsvBtn = mk('button', 'padding:7px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Export CSV');
+  var toolbar = mk('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap');
+  toolbar.id = 'rm-tax-head-actions';
+  toolbar.appendChild(saveAllBtn);
+  toolbar.appendChild(exportJsonBtn);
+  toolbar.appendChild(exportCsvBtn);
+
+  var taxMain = (container.closest && container.closest('.admin-if-main')) || null;
+  var taxHead = taxMain ? taxMain.querySelector('.admin-if-main-head') : null;
+  if (window._rmTaxHeadObs) { try { window._rmTaxHeadObs.disconnect(); } catch (e) {} window._rmTaxHeadObs = null; }
+  if (taxHead) {
+    taxHead.style.position = 'relative';
+    taxHead.style.minHeight = '52px';
+    toolbar.style.position = 'absolute';
+    toolbar.style.right = '18px';
+    toolbar.style.top = '12px';
+    taxHead.appendChild(toolbar);
+    var taxTitleEl = taxHead.querySelector('.admin-if-main-title');
+    if (taxTitleEl && typeof MutationObserver !== 'undefined') {
+      var obs = new MutationObserver(function() {
+        if ((taxTitleEl.textContent || '').trim() !== 'Taxonomy') {
+          var t = document.getElementById('rm-tax-head-actions');
+          if (t) t.remove();
+          obs.disconnect();
+          if (window._rmTaxHeadObs === obs) window._rmTaxHeadObs = null;
+        }
+      });
+      obs.observe(taxTitleEl, { childList: true, characterData: true, subtree: true });
+      window._rmTaxHeadObs = obs;
+    }
+  } else {
+    toolbar.style.cssText += ';margin-bottom:14px';
+    container.insertBefore(toolbar, container.firstChild);
+  }
+
+  exportJsonBtn.addEventListener('click', function() { rmTaxExportTaxonomyJson(rows, null); });
+  exportCsvBtn.addEventListener('click', function() { rmTaxExportTaxonomyCsv(rows); });
+  saveAllBtn.addEventListener('click', async function() {
+    var pending = container._rmTaxSavers || [];
+    if (!pending.length) { alert('Nothing to save yet — edit a field first.'); return; }
+    saveAllBtn.disabled = true;
+    var normalText = 'Save all changes';
+    saveAllBtn.textContent = 'Saving ' + pending.length + '\u2026';
+    var ok = 0, fail = 0, firstErr = '';
+    for (var i = 0; i < pending.length; i++) {
+      try { await pending[i](); ok++; }
+      catch (e) { fail++; if (!firstErr) firstErr = String(e.message || e); }
+    }
+    rmTaxAudit('Bulk Save', 'Taxonomy editor', null, null, ok + ' saved, ' + fail + ' failed');
+    if (fail && firstErr) alert(fail + ' item(s) failed to save. First error: ' + firstErr);
+    saveAllBtn.textContent = 'Saved ' + ok + (fail ? (' \u2022 ' + fail + ' failed') : '');
+    setTimeout(function() { saveAllBtn.textContent = normalText; saveAllBtn.disabled = false; }, 1200);
+    loadRMTaxonomy(container);
+  });
+}
+
 async function loadRMTaxonomy(container) {
   rmTaxClearTaxonomyCaches();
   container.innerHTML = '<div style="font-family:DM Sans,sans-serif;font-size:13px;color:var(--text-mid)">Loading\u2026</div>';
@@ -2413,73 +2483,11 @@ async function loadRMTaxonomy(container) {
     // Action buttons live in the panel heading (outside the scroll area), aligned right —
     // always visible on the "Taxonomy" line without floating over the list.
     var savers = [];
-    // Track each rendered sub-category card so we can remove a stale duplicate card
-    // in place (without reloading the whole panel, which would wipe other unsaved edits).
-    var renderedSubCards = [];
-    var renderedDivCards = [];
-    var saveAllBtn = mk('button', 'padding:7px 16px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer', 'Save all changes');
-    var exportJsonBtn = mk('button', 'padding:7px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Export JSON');
-    var exportCsvBtn = mk('button', 'padding:7px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Export CSV');
-    var toolbar = mk('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap');
-    toolbar.id = 'rm-tax-head-actions';
-    toolbar.appendChild(saveAllBtn);
-    toolbar.appendChild(exportJsonBtn);
-    toolbar.appendChild(exportCsvBtn);
-
-    var taxMain = (container.closest && container.closest('.admin-if-main')) || null;
-    var taxHead = taxMain ? taxMain.querySelector('.admin-if-main-head') : null;
-    var existingActions = document.getElementById('rm-tax-head-actions');
-    if (existingActions) existingActions.remove();
-    if (window._rmTaxHeadObs) { try { window._rmTaxHeadObs.disconnect(); } catch (e) {} window._rmTaxHeadObs = null; }
-    if (taxHead) {
-      taxHead.style.position = 'relative';
-      taxHead.style.minHeight = '52px';
-      toolbar.style.position = 'absolute';
-      toolbar.style.right = '18px';
-      toolbar.style.top = '12px';
-      taxHead.appendChild(toolbar);
-      var taxTitleEl = taxHead.querySelector('.admin-if-main-title');
-      if (taxTitleEl && typeof MutationObserver !== 'undefined') {
-        var obs = new MutationObserver(function() {
-          if ((taxTitleEl.textContent || '').trim() !== 'Taxonomy') {
-            var t = document.getElementById('rm-tax-head-actions');
-            if (t) t.remove();
-            obs.disconnect();
-            if (window._rmTaxHeadObs === obs) window._rmTaxHeadObs = null;
-          }
-        });
-        obs.observe(taxTitleEl, { childList: true, characterData: true, subtree: true });
-        window._rmTaxHeadObs = obs;
-      }
-    } else {
-      // Fallback: keep buttons at the top of the panel if the heading isn't found.
-      toolbar.style.cssText += ';margin-bottom:14px';
-      container.appendChild(toolbar);
-    }
-
-    exportJsonBtn.addEventListener('click', function() { rmTaxExportTaxonomyJson(rows, null); });
-    exportCsvBtn.addEventListener('click', function() { rmTaxExportTaxonomyCsv(rows); });
-    saveAllBtn.addEventListener('click', async function() {
-      if (!savers.length) { alert('Nothing to save yet — edit a field first.'); return; }
-      saveAllBtn.disabled = true;
-      var normalText = 'Save all changes';
-      saveAllBtn.textContent = 'Saving ' + savers.length + '\u2026';
-      var ok = 0, fail = 0, firstErr = '';
-      for (var i = 0; i < savers.length; i++) {
-        try { await savers[i](); ok++; }
-        catch (e) { fail++; if (!firstErr) firstErr = String(e.message || e); }
-      }
-      rmTaxAudit('Bulk Save', 'Taxonomy editor', null, null, ok + ' saved, ' + fail + ' failed');
-      if (fail && firstErr) alert(fail + ' item(s) failed to save. First error: ' + firstErr);
-      saveAllBtn.textContent = 'Saved ' + ok + (fail ? (' \u2022 ' + fail + ' failed') : '');
-      setTimeout(function() { saveAllBtn.textContent = normalText; saveAllBtn.disabled = false; }, 1200);
-      loadRMTaxonomy(container);
-    });
 
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260629i</span> — edit freely across cards, then use <strong>Save all changes</strong> (top-right). Saving one card never reloads or reverts the others. Renames overwrite in place and remove the old/duplicate card (logged to Audit Trail).';
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260630a</span> — <strong>Save sub-category</strong> writes only that card; other cards keep your unsaved edits. Use <strong>Save all changes</strong> (top-right) when you want to commit everything at once.';
     container.appendChild(note);
 
     var movedNote = mk('div', 'margin-bottom:16px;padding:10px 12px;background:rgba(196,151,59,0.06);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-mid)');
@@ -2641,9 +2649,6 @@ async function loadRMTaxonomy(container) {
           var subKey = catKey + '|' + sc.id;
           var subOpen = !rmTaxCollapsed(subKey, false);
           var scWrap = mk('div', 'margin-bottom:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg)');
-          scWrap._rmSc = sc;
-          scWrap._rmCat = cat;
-          renderedSubCards.push(scWrap);
 
           var scHdr = mk('div', 'display:flex;align-items:center;gap:6px;padding:8px 10px;background:rgba(0,0,0,0.15);flex-wrap:wrap');
           var subToggle = mk('span', 'font-size:11px;color:var(--text-mid);cursor:pointer;width:14px', subOpen ? '▼' : '▶');
@@ -2767,34 +2772,15 @@ async function loadRMTaxonomy(container) {
               // On rename, also retire any leftover row still carrying the OLD name
               // (handles old server versions that insert instead of updating in place).
               if (renamed && newId) {
-                return rmTaxDedupeSubcategory(cat, prevName, newId).then(function() {
-                  return { id: newId, renamed: true, name: newName, prevName: prevName };
-                });
+                return rmTaxDedupeSubcategory(cat, prevName, newId);
               }
-              return { id: newId, renamed: false, name: newName, prevName: prevName };
             });
           }
           savers.push(saveSubInPlace);
           saveSub.addEventListener('click', function() {
             saveSub.disabled = true;
             saveSubInPlace()
-              .then(function(res) {
-                rmTaxFlashSaved(saveSub, 'Save sub-category');
-                // Remove any OTHER stale duplicate card for this name (or the old name on
-                // a rename) from the DOM in place — never reload, so other cards keep edits.
-                if (res) {
-                  var targets = [rmTaxNormalizeLabel(res.name)];
-                  if (res.renamed) targets.push(rmTaxNormalizeLabel(res.prevName));
-                  renderedSubCards.slice().forEach(function(otherEl) {
-                    if (otherEl === scWrap || !otherEl._rmSc) return;
-                    if (rmTaxNormalizeLabel(otherEl._rmCat) !== rmTaxNormalizeLabel(cat)) return;
-                    if (targets.indexOf(rmTaxNormalizeLabel(otherEl._rmSc.name)) === -1) return;
-                    if (otherEl.parentNode) otherEl.parentNode.removeChild(otherEl);
-                    var i = renderedSubCards.indexOf(otherEl);
-                    if (i !== -1) renderedSubCards.splice(i, 1);
-                  });
-                }
-              })
+              .then(function() { rmTaxFlashSaved(saveSub, 'Save sub-category'); })
               .catch(function(e) { alert(e.message || e); })
               .then(function() { saveSub.disabled = false; });
           });
@@ -2804,8 +2790,6 @@ async function loadRMTaxonomy(container) {
           scBody.appendChild(rmTaxLabel('Divisions (techniques / styles)'));
           (sc.divisions || []).forEach(function(d, divIdx) {
             var dCard = mk('div', 'margin-bottom:8px;padding:8px 10px;border:1px solid rgba(255,255,255,0.06);border-radius:6px');
-            dCard._rmDiv = d;
-            renderedDivCards.push({ el: dCard, d: d, cat: cat, scWrap: scWrap });
             var dTop = mk('div', 'display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap');
             var dEmoji = rmTaxInput(d.division_emoji || '🍽', '🍽', false);
             dEmoji.style.width = '42px'; dEmoji.style.flex = 'none'; dEmoji.style.textAlign = 'center';
@@ -2871,32 +2855,15 @@ async function loadRMTaxonomy(container) {
                 d.division_subtitle = dSub.value.trim();
                 d.division_description = dDesc.value.trim();
                 if (divRenamed && newId) {
-                  return rmTaxDedupeDivision(cat, subNm, prevDivName, newId).then(function() {
-                    return { id: newId, renamed: true, name: nm, prevName: prevDivName, sub: subNm };
-                  });
+                  return rmTaxDedupeDivision(cat, subNm, prevDivName, newId);
                 }
-                return { id: newId, renamed: false, name: nm, prevName: prevDivName, sub: subNm };
               });
             }
             savers.push(saveDivInPlace);
             saveDiv.addEventListener('click', function() {
               saveDiv.disabled = true;
               saveDivInPlace()
-                .then(function(res) {
-                  rmTaxFlashSaved(saveDiv, 'Save division');
-                  // Remove any OTHER stale duplicate division card (same sub-category) in place.
-                  if (res) {
-                    var targets = [rmTaxNormalizeLabel(res.name)];
-                    if (res.renamed) targets.push(rmTaxNormalizeLabel(res.prevName));
-                    renderedDivCards.slice().forEach(function(rec) {
-                      if (rec.el === dCard || rec.scWrap !== scWrap || !rec.d) return;
-                      if (targets.indexOf(rmTaxNormalizeLabel(rec.d.division_name)) === -1) return;
-                      if (rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
-                      var i = renderedDivCards.indexOf(rec);
-                      if (i !== -1) renderedDivCards.splice(i, 1);
-                    });
-                  }
-                })
+                .then(function() { rmTaxFlashSaved(saveDiv, 'Save division'); })
                 .catch(function(e) { alert(e.message || e); })
                 .then(function() { saveDiv.disabled = false; });
             });
@@ -2968,6 +2935,11 @@ async function loadRMTaxonomy(container) {
       box.appendChild(catBody);
       container.appendChild(box);
     });
+
+    container._rmTaxSavers = savers;
+    container._rmTaxExportRows = rows;
+    container._rmTaxToolbarAttach = function() { rmTaxMountHeadingToolbar(container, mk); };
+    container._rmTaxToolbarAttach();
   } catch (e) {
     container.innerHTML = '<div style="color:#dc5050;font-family:DM Sans,sans-serif;font-size:13px">Error: ' + esc(e.message) + '</div>';
   }
