@@ -1099,7 +1099,7 @@ function loadRMInterfaceSettings() {
           panel.appendChild(btn);
         }
       },
-      { key: 'taxonomy', label: 'Taxonomy', group: 'Operations', subtitle: 'Sub-categories and divisions', render: function (p) { loadRMTab('taxonomy', p); } },
+      { key: 'taxonomy', label: 'Taxonomy', group: 'Operations', subtitle: 'Sub-categories and divisions', refreshOnShow: true, render: function (p) { loadRMTab('taxonomy', p); } },
       { key: 'sourcelinks', label: 'Source links', group: 'Operations', subtitle: 'Recipe attribution URLs', render: function (p) { loadRMTab('sourcelinks', p); } },
       { key: 'websitesources', label: 'Website sources', group: 'Operations', subtitle: 'Import on/off + chef credits', render: function (p) { loadRMTab('websitesources', p); } },
       { key: 'nutrition', label: 'Nutrition queue', group: 'Operations', subtitle: 'Pending nutrition entries', render: function (p) { loadRMTab('nutrition', p); } },
@@ -2104,6 +2104,57 @@ async function rmTaxFindDivisionId(category, subcategory, name) {
   return rows && rows[0] && rows[0].id ? rows[0].id : null;
 }
 
+// After any save, force a single active row per normalized (category, name).
+// This is the belt-and-suspenders guard against rename/edit duplicates even if the
+// deployed upsert RPC is an older version that inserts instead of overwriting.
+async function rmTaxDedupeSubcategory(category, name, keepId) {
+  try {
+    var nCat = rmTaxNormalizeLabel(category);
+    var nName = rmTaxNormalizeLabel(name);
+    if (!nCat || !nName || !keepId || typeof apiFetch !== 'function') return;
+    var url = window.SUPA_URL + '/rest/v1/recipe_subcategories?select=id,name,category&is_active=eq.true';
+    var res = await apiFetch(url);
+    if (!res || !res.ok) return;
+    var rows = await res.json();
+    var dupes = (rows || []).filter(function(r) {
+      return r.id !== keepId &&
+        rmTaxNormalizeLabel(r.category) === nCat &&
+        rmTaxNormalizeLabel(r.name) === nName;
+    });
+    for (var i = 0; i < dupes.length; i++) {
+      try {
+        await rpc('admin_delete_recipe_subcategory', { p_id: dupes[i].id });
+        rmTaxAudit('Sub-category Duplicate Removed', nCat + ' > ' + nName, dupes[i].id, keepId, 'Auto-deactivated duplicate after save');
+      } catch (e) { /* best effort */ }
+    }
+  } catch (e) { /* best effort */ }
+}
+
+async function rmTaxDedupeDivision(category, subcategory, name, keepId) {
+  try {
+    var nCat = rmTaxNormalizeLabel(category);
+    var nSub = rmTaxNormalizeLabel(subcategory);
+    var nName = rmTaxNormalizeLabel(name);
+    if (!nCat || !nSub || !nName || !keepId || typeof apiFetch !== 'function') return;
+    var url = window.SUPA_URL + '/rest/v1/recipe_divisions?select=id,name,category,subcategory&is_active=eq.true';
+    var res = await apiFetch(url);
+    if (!res || !res.ok) return;
+    var rows = await res.json();
+    var dupes = (rows || []).filter(function(r) {
+      return r.id !== keepId &&
+        rmTaxNormalizeLabel(r.category) === nCat &&
+        rmTaxNormalizeLabel(r.subcategory) === nSub &&
+        rmTaxNormalizeLabel(r.name) === nName;
+    });
+    for (var i = 0; i < dupes.length; i++) {
+      try {
+        await rpc('admin_delete_recipe_division', { p_id: dupes[i].id });
+        rmTaxAudit('Division Duplicate Removed', nCat + ' > ' + nSub + ' > ' + nName, dupes[i].id, keepId, 'Auto-deactivated duplicate after save');
+      } catch (e) { /* best effort */ }
+    }
+  } catch (e) { /* best effort */ }
+}
+
 async function rmTaxUpsertSubcategory(payload, auditCtx) {
   var p = Object.assign({}, payload);
   p.p_category = rmTaxNormalizeLabel(p.p_category);
@@ -2117,6 +2168,7 @@ async function rmTaxUpsertSubcategory(payload, auditCtx) {
   }
   try {
     var id = await callRpc(p);
+    await rmTaxDedupeSubcategory(p.p_category, p.p_name, id);
     if (auditCtx) {
       rmTaxAudit(
         auditCtx.action || 'Sub-category Saved',
@@ -2134,6 +2186,7 @@ async function rmTaxUpsertSubcategory(payload, auditCtx) {
       if (!retryId) throw e;
       p.p_id = retryId;
       var id2 = await callRpc(p);
+      await rmTaxDedupeSubcategory(p.p_category, p.p_name, id2);
       if (auditCtx) {
         rmTaxAudit(
           auditCtx.action || 'Sub-category Saved',
@@ -2153,6 +2206,7 @@ async function rmTaxUpsertSubcategory(payload, auditCtx) {
         p_sort_order: p.p_sort_order,
         p_ingredient_hints: p.p_ingredient_hints
       });
+      await rmTaxDedupeSubcategory(p.p_category, p.p_name, id3);
       if (auditCtx) {
         rmTaxAudit(
           auditCtx.action || 'Sub-category Saved',
@@ -2179,6 +2233,7 @@ async function rmTaxUpsertDivision(payload, auditCtx) {
   }
   try {
     var id = await rpc('admin_upsert_recipe_division', p);
+    await rmTaxDedupeDivision(p.p_category, p.p_subcategory, p.p_name, id);
     if (auditCtx) {
       rmTaxAudit(
         auditCtx.action || 'Division Saved',
@@ -2196,6 +2251,7 @@ async function rmTaxUpsertDivision(payload, auditCtx) {
       if (!retryId) throw e;
       p.p_id = retryId;
       var id2 = await rpc('admin_upsert_recipe_division', p);
+      await rmTaxDedupeDivision(p.p_category, p.p_subcategory, p.p_name, id2);
       if (auditCtx) {
         rmTaxAudit(
           auditCtx.action || 'Division Saved',
@@ -2354,39 +2410,72 @@ async function loadRMTaxonomy(container) {
     if (missing.length) { /* backfill lives in Bulk Editor tab */ }
     container.innerHTML = '';
     function mk(tag, s, t) { var e = document.createElement(tag); if (s) e.style.cssText = s; if (t !== undefined) e.textContent = t; return e; }
-    // Sticky action toolbar (Save all + exports) — stays pinned to the top of the panel while scrolling.
+    // Action buttons live in the panel heading (outside the scroll area), aligned right —
+    // always visible on the "Taxonomy" line without floating over the list.
     var savers = [];
-    var toolbar = mk('div', 'position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0;margin:0 0 12px;background:var(--bg);border-bottom:1px solid var(--border);box-shadow:0 6px 10px -8px rgba(0,0,0,0.45)');
-    var saveAllStatus = mk('span', 'font-family:DM Sans,sans-serif;font-size:11px;color:var(--text-mid);margin-right:auto', 'Edit any fields below, then save them all at once.');
-    var saveAllBtn = mk('button', 'padding:8px 18px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer', 'Save all changes');
-    var exportJsonBtn = mk('button', 'padding:8px 16px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Export taxonomy (JSON)');
-    var exportCsvBtn = mk('button', 'padding:8px 16px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Export taxonomy (CSV)');
-    toolbar.appendChild(saveAllStatus);
+    var saveAllBtn = mk('button', 'padding:7px 16px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer', 'Save all changes');
+    var exportJsonBtn = mk('button', 'padding:7px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Export JSON');
+    var exportCsvBtn = mk('button', 'padding:7px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Export CSV');
+    var toolbar = mk('div', 'display:flex;align-items:center;gap:8px;flex-wrap:wrap');
+    toolbar.id = 'rm-tax-head-actions';
     toolbar.appendChild(saveAllBtn);
     toolbar.appendChild(exportJsonBtn);
     toolbar.appendChild(exportCsvBtn);
-    container.appendChild(toolbar);
+
+    var taxMain = (container.closest && container.closest('.admin-if-main')) || null;
+    var taxHead = taxMain ? taxMain.querySelector('.admin-if-main-head') : null;
+    var existingActions = document.getElementById('rm-tax-head-actions');
+    if (existingActions) existingActions.remove();
+    if (window._rmTaxHeadObs) { try { window._rmTaxHeadObs.disconnect(); } catch (e) {} window._rmTaxHeadObs = null; }
+    if (taxHead) {
+      taxHead.style.position = 'relative';
+      taxHead.style.minHeight = '52px';
+      toolbar.style.position = 'absolute';
+      toolbar.style.right = '18px';
+      toolbar.style.top = '12px';
+      taxHead.appendChild(toolbar);
+      var taxTitleEl = taxHead.querySelector('.admin-if-main-title');
+      if (taxTitleEl && typeof MutationObserver !== 'undefined') {
+        var obs = new MutationObserver(function() {
+          if ((taxTitleEl.textContent || '').trim() !== 'Taxonomy') {
+            var t = document.getElementById('rm-tax-head-actions');
+            if (t) t.remove();
+            obs.disconnect();
+            if (window._rmTaxHeadObs === obs) window._rmTaxHeadObs = null;
+          }
+        });
+        obs.observe(taxTitleEl, { childList: true, characterData: true, subtree: true });
+        window._rmTaxHeadObs = obs;
+      }
+    } else {
+      // Fallback: keep buttons at the top of the panel if the heading isn't found.
+      toolbar.style.cssText += ';margin-bottom:14px';
+      container.appendChild(toolbar);
+    }
+
     exportJsonBtn.addEventListener('click', function() { rmTaxExportTaxonomyJson(rows, null); });
     exportCsvBtn.addEventListener('click', function() { rmTaxExportTaxonomyCsv(rows); });
     saveAllBtn.addEventListener('click', async function() {
-      if (!savers.length) { saveAllStatus.textContent = 'Nothing to save.'; return; }
+      if (!savers.length) { alert('Nothing to save yet — edit a field first.'); return; }
       saveAllBtn.disabled = true;
+      var normalText = 'Save all changes';
+      saveAllBtn.textContent = 'Saving ' + savers.length + '\u2026';
       var ok = 0, fail = 0, firstErr = '';
-      saveAllStatus.textContent = 'Saving ' + savers.length + ' item(s)\u2026';
       for (var i = 0; i < savers.length; i++) {
         try { await savers[i](); ok++; }
         catch (e) { fail++; if (!firstErr) firstErr = String(e.message || e); }
       }
-      saveAllStatus.textContent = 'Saved ' + ok + (fail ? (' \u2022 ' + fail + ' failed') : ' \u2022 no errors');
       rmTaxAudit('Bulk Save', 'Taxonomy editor', null, null, ok + ' saved, ' + fail + ' failed');
       if (fail && firstErr) alert(fail + ' item(s) failed to save. First error: ' + firstErr);
+      saveAllBtn.textContent = 'Saved ' + ok + (fail ? (' \u2022 ' + fail + ' failed') : '');
+      setTimeout(function() { saveAllBtn.textContent = normalText; saveAllBtn.disabled = false; }, 1200);
       loadRMTaxonomy(container);
     });
 
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260629e</span> — edit freely across cards, then use <strong>Save all changes</strong>. Saving one card no longer wipes the others. Every save is logged to Audit Trail.';
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260629g</span> — edit freely across cards, then use <strong>Save all changes</strong> (top-right). Saving one card no longer wipes the others. Renames auto-remove duplicate rows. Every save is logged to Audit Trail.';
     container.appendChild(note);
 
     var movedNote = mk('div', 'margin-bottom:16px;padding:10px 12px;background:rgba(196,151,59,0.06);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-mid)');
