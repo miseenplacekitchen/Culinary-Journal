@@ -2413,6 +2413,10 @@ async function loadRMTaxonomy(container) {
     // Action buttons live in the panel heading (outside the scroll area), aligned right —
     // always visible on the "Taxonomy" line without floating over the list.
     var savers = [];
+    // Track each rendered sub-category card so we can remove a stale duplicate card
+    // in place (without reloading the whole panel, which would wipe other unsaved edits).
+    var renderedSubCards = [];
+    var renderedDivCards = [];
     var saveAllBtn = mk('button', 'padding:7px 16px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer', 'Save all changes');
     var exportJsonBtn = mk('button', 'padding:7px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Export JSON');
     var exportCsvBtn = mk('button', 'padding:7px 14px;background:none;border:1px solid var(--border);border-radius:7px;color:var(--text-mid);font-size:12px;cursor:pointer', 'Export CSV');
@@ -2475,7 +2479,7 @@ async function loadRMTaxonomy(container) {
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260629h</span> — edit freely across cards, then use <strong>Save all changes</strong> (top-right). Saving one card no longer wipes the others. Renames overwrite in place and auto-remove the old/duplicate row (logged to Audit Trail).';
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260629i</span> — edit freely across cards, then use <strong>Save all changes</strong> (top-right). Saving one card never reloads or reverts the others. Renames overwrite in place and remove the old/duplicate card (logged to Audit Trail).';
     container.appendChild(note);
 
     var movedNote = mk('div', 'margin-bottom:16px;padding:10px 12px;background:rgba(196,151,59,0.06);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-mid)');
@@ -2637,6 +2641,9 @@ async function loadRMTaxonomy(container) {
           var subKey = catKey + '|' + sc.id;
           var subOpen = !rmTaxCollapsed(subKey, false);
           var scWrap = mk('div', 'margin-bottom:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg)');
+          scWrap._rmSc = sc;
+          scWrap._rmCat = cat;
+          renderedSubCards.push(scWrap);
 
           var scHdr = mk('div', 'display:flex;align-items:center;gap:6px;padding:8px 10px;background:rgba(0,0,0,0.15);flex-wrap:wrap');
           var subToggle = mk('span', 'font-size:11px;color:var(--text-mid);cursor:pointer;width:14px', subOpen ? '▼' : '▶');
@@ -2761,10 +2768,10 @@ async function loadRMTaxonomy(container) {
               // (handles old server versions that insert instead of updating in place).
               if (renamed && newId) {
                 return rmTaxDedupeSubcategory(cat, prevName, newId).then(function() {
-                  return { id: newId, renamed: true };
+                  return { id: newId, renamed: true, name: newName, prevName: prevName };
                 });
               }
-              return { id: newId, renamed: false };
+              return { id: newId, renamed: false, name: newName, prevName: prevName };
             });
           }
           savers.push(saveSubInPlace);
@@ -2773,8 +2780,20 @@ async function loadRMTaxonomy(container) {
             saveSubInPlace()
               .then(function(res) {
                 rmTaxFlashSaved(saveSub, 'Save sub-category');
-                // A rename can restructure rows, so refresh to show the true DB state.
-                if (res && res.renamed) setTimeout(function() { loadRMTaxonomy(container); }, 350);
+                // Remove any OTHER stale duplicate card for this name (or the old name on
+                // a rename) from the DOM in place — never reload, so other cards keep edits.
+                if (res) {
+                  var targets = [rmTaxNormalizeLabel(res.name)];
+                  if (res.renamed) targets.push(rmTaxNormalizeLabel(res.prevName));
+                  renderedSubCards.slice().forEach(function(otherEl) {
+                    if (otherEl === scWrap || !otherEl._rmSc) return;
+                    if (rmTaxNormalizeLabel(otherEl._rmCat) !== rmTaxNormalizeLabel(cat)) return;
+                    if (targets.indexOf(rmTaxNormalizeLabel(otherEl._rmSc.name)) === -1) return;
+                    if (otherEl.parentNode) otherEl.parentNode.removeChild(otherEl);
+                    var i = renderedSubCards.indexOf(otherEl);
+                    if (i !== -1) renderedSubCards.splice(i, 1);
+                  });
+                }
               })
               .catch(function(e) { alert(e.message || e); })
               .then(function() { saveSub.disabled = false; });
@@ -2785,6 +2804,8 @@ async function loadRMTaxonomy(container) {
           scBody.appendChild(rmTaxLabel('Divisions (techniques / styles)'));
           (sc.divisions || []).forEach(function(d, divIdx) {
             var dCard = mk('div', 'margin-bottom:8px;padding:8px 10px;border:1px solid rgba(255,255,255,0.06);border-radius:6px');
+            dCard._rmDiv = d;
+            renderedDivCards.push({ el: dCard, d: d, cat: cat, scWrap: scWrap });
             var dTop = mk('div', 'display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap');
             var dEmoji = rmTaxInput(d.division_emoji || '🍽', '🍽', false);
             dEmoji.style.width = '42px'; dEmoji.style.flex = 'none'; dEmoji.style.textAlign = 'center';
@@ -2851,10 +2872,10 @@ async function loadRMTaxonomy(container) {
                 d.division_description = dDesc.value.trim();
                 if (divRenamed && newId) {
                   return rmTaxDedupeDivision(cat, subNm, prevDivName, newId).then(function() {
-                    return { id: newId, renamed: true };
+                    return { id: newId, renamed: true, name: nm, prevName: prevDivName, sub: subNm };
                   });
                 }
-                return { id: newId, renamed: false };
+                return { id: newId, renamed: false, name: nm, prevName: prevDivName, sub: subNm };
               });
             }
             savers.push(saveDivInPlace);
@@ -2863,7 +2884,18 @@ async function loadRMTaxonomy(container) {
               saveDivInPlace()
                 .then(function(res) {
                   rmTaxFlashSaved(saveDiv, 'Save division');
-                  if (res && res.renamed) setTimeout(function() { loadRMTaxonomy(container); }, 350);
+                  // Remove any OTHER stale duplicate division card (same sub-category) in place.
+                  if (res) {
+                    var targets = [rmTaxNormalizeLabel(res.name)];
+                    if (res.renamed) targets.push(rmTaxNormalizeLabel(res.prevName));
+                    renderedDivCards.slice().forEach(function(rec) {
+                      if (rec.el === dCard || rec.scWrap !== scWrap || !rec.d) return;
+                      if (targets.indexOf(rmTaxNormalizeLabel(rec.d.division_name)) === -1) return;
+                      if (rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
+                      var i = renderedDivCards.indexOf(rec);
+                      if (i !== -1) renderedDivCards.splice(i, 1);
+                    });
+                  }
                 })
                 .catch(function(e) { alert(e.message || e); })
                 .then(function() { saveDiv.disabled = false; });
