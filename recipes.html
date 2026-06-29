@@ -315,7 +315,7 @@
   <div id="dishes-view" style="display:none">
     <p class="recipes-home-label" id="browse-section-label" style="display:none;margin-top:0"></p>
     <div id="browse-taxonomy-row" style="display:none;margin:0 0 16px">
-      <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px">Sub-category</div>
+      <div id="browse-sub-filters-label" style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px">Sub-category</div>
       <div class="cr-filters" id="browse-sub-filters"></div>
       <div id="browse-division-row" style="display:none;margin-top:8px">
         <div style="font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-mid);margin-bottom:6px">Division</div>
@@ -726,14 +726,12 @@ async function openCat(id, name) {
   try {
     curCatTaxonomyBrowse = true;
     renderCategorySubGrid(name);
-    var subs = getBrowseSubsForCategory(name);
-    if (subs.length > 1) {
-      showBrowseTaxonomyFilters(name, null, null, false);
-    } else {
-      hideBrowseTaxonomyFilters();
-    }
-    setCategoryJumpVisible(true);
-    buildCategoryJumpTags(name, true);
+    // Tab row shows the CURRENT level's siblings: at category level that is the
+    // list of categories (so you can switch categories), while the cards below
+    // show this category's sub-categories. Showing sub-category tabs here would
+    // just duplicate the cards, so we render category tabs instead.
+    showBrowseCategoryFilters(name);
+    setCategoryJumpVisible(false);
   } catch(e) {
     console.error('[Browse] openCat render failed', e);
     renderCategorySubGrid(name);
@@ -821,6 +819,43 @@ function hideBrowseTaxonomyFilters() {
   if (taxRow) taxRow.style.display = 'none';
 }
 
+function setBrowseFiltersLabel(text) {
+  var el = document.getElementById('browse-sub-filters-label');
+  if (el) el.textContent = text;
+}
+
+// Category-level tab row: lists all categories (current one active) so you can
+// switch categories. The cards below show the active category's sub-categories.
+function showBrowseCategoryFilters(activeCategoryName) {
+  var taxRow = document.getElementById('browse-taxonomy-row');
+  var subEl = document.getElementById('browse-sub-filters');
+  var divRow = document.getElementById('browse-division-row');
+  if (!taxRow || !subEl) return;
+  if (divRow) divRow.style.display = 'none';
+  setBrowseFiltersLabel('Category');
+  var cats = Object.keys(browseCatIdMap).sort(function(a, b) {
+    var sa = (browseCatMeta[a] && browseCatMeta[a].sort_order) || 0;
+    var sb = (browseCatMeta[b] && browseCatMeta[b].sort_order) || 0;
+    if (sa !== sb) return sa - sb;
+    return a.localeCompare(b);
+  });
+  if (!cats.length) { taxRow.style.display = 'none'; return; }
+  taxRow.style.display = 'block';
+  subEl.innerHTML = cats.map(function(name) {
+    var active = name === activeCategoryName ? ' active' : '';
+    var em = getBrowseCatEmoji(name);
+    return '<button type="button" class="cr-filter' + active + '" data-cat="' +
+      name.replace(/"/g, '&quot;') + '">' + (em !== '🍽' ? em + ' ' : '') + name + '</button>';
+  }).join('');
+  subEl.onclick = function(e) {
+    var btn = e.target.closest('.cr-filter');
+    if (!btn || !btn.dataset.cat) return;
+    var catName = btn.dataset.cat;
+    var catId = browseCatIdMap[catName];
+    if (catId) openCat(catId, catName);
+  };
+}
+
 function setCategoryJumpVisible(visible) {
   var row = document.getElementById('browse-cat-jump-row');
   if (row) row.style.display = visible ? 'block' : 'none';
@@ -855,6 +890,7 @@ function showBrowseTaxonomyFilters(categoryName, subName, divName, otherSubsOnly
   var divRow = document.getElementById('browse-division-row');
   if (!taxRow) return;
   taxRow.style.display = 'block';
+  setBrowseFiltersLabel('Sub-category');
   var subEl = document.getElementById('browse-sub-filters');
   if (subEl) subEl.innerHTML = renderBrowseSubFilterButtons(categoryName, subName || null, !!otherSubsOnly);
   if (subEl) {
@@ -1106,7 +1142,12 @@ function openTaxonomySub(categoryName, subName) {
   show('dishes-view');
   updatePageHeader(headerTitleForSub(categoryName, subName), false);
   setCategoryJumpVisible(false);
+  // Sub-category level: tab row lists sibling sub-categories (current active);
+  // cards below show this sub-category's divisions. Hide the division tab row so
+  // it does not duplicate the division cards.
   showBrowseTaxonomyFilters(categoryName, subName, null, false);
+  var subDivRow = document.getElementById('browse-division-row');
+  if (subDivRow) subDivRow.style.display = 'none';
   setBrowseSectionLabel('Divisions');
   setBc(categoryName, subName, null);
   document.getElementById('bc').style.display = '';
