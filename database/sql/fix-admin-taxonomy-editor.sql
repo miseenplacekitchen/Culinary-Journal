@@ -42,6 +42,7 @@ GRANT EXECUTE ON FUNCTION public.get_recipe_taxonomy(text) TO anon, authenticate
 -- ── Upsert sub-category (name, hints, tagline, description, emoji, sort) ─────
 -- Always saves on top: normalizes visible names, reactivates archived rows,
 -- resolves same-looking duplicates by normalized (category, name), logs in client auditLog.
+-- Renames/moves cascade to submitted_recipes.sub_category and recipe_divisions.subcategory.
 DROP FUNCTION IF EXISTS public.admin_upsert_recipe_subcategory(uuid, text, text, int);
 DROP FUNCTION IF EXISTS public.admin_upsert_recipe_subcategory(uuid, text, text, int, text[]);
 DROP FUNCTION IF EXISTS public.admin_upsert_recipe_subcategory(uuid, text, text, int, text[], text, text, text);
@@ -63,6 +64,8 @@ DECLARE
   v_match_id uuid;
   v_category text;
   v_name text;
+  v_old_name text;
+  v_old_cat text;
 BEGIN
   IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
 
@@ -70,6 +73,11 @@ BEGIN
   v_name := regexp_replace(btrim(replace(COALESCE(p_name, ''), chr(160), ' ')), '[[:space:]]+', ' ', 'g');
   IF v_category = '' OR v_name = '' THEN
     RAISE EXCEPTION 'Category and sub-category name are required';
+  END IF;
+
+  IF p_id IS NOT NULL THEN
+    SELECT name, category INTO v_old_name, v_old_cat
+      FROM public.recipe_subcategories WHERE id = p_id;
   END IF;
 
   v_id := p_id;
@@ -160,11 +168,149 @@ BEGIN
      AND regexp_replace(btrim(replace(category, chr(160), ' ')), '[[:space:]]+', ' ', 'g') = v_category
      AND regexp_replace(btrim(replace(name, chr(160), ' ')), '[[:space:]]+', ' ', 'g') = v_name;
 
+  -- Cascade recipe + division text when a sub-category is renamed or moved.
+  IF v_old_name IS NOT NULL AND (v_old_name IS DISTINCT FROM v_name OR v_old_cat IS DISTINCT FROM v_category) THEN
+    UPDATE public.submitted_recipes SET
+      category = CASE WHEN category = v_old_cat THEN v_category ELSE category END,
+      sub_category = v_name
+    WHERE category = v_old_cat AND sub_category = v_old_name;
+
+    UPDATE public.recipe_divisions SET
+      category = v_category,
+      subcategory = v_name
+    WHERE category = v_old_cat AND subcategory = v_old_name;
+  END IF;
+
   RETURN v_id;
 END;
 $$;
 REVOKE ALL ON FUNCTION public.admin_upsert_recipe_subcategory(uuid, text, text, int, text[], text, text, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.admin_upsert_recipe_subcategory(uuid, text, text, int, text[], text, text, text) TO authenticated;
+
+-- ── Upsert division (cascade recipe text on rename/move) ─────────────────────
+DROP FUNCTION IF EXISTS public.admin_upsert_recipe_division(uuid, text, text, text, text, text, text, text[], int);
+CREATE OR REPLACE FUNCTION public.admin_upsert_recipe_division(
+  p_id uuid,
+  p_category text,
+  p_subcategory text,
+  p_name text,
+  p_emoji text DEFAULT '🍽',
+  p_subtitle text DEFAULT NULL,
+  p_description text DEFAULT NULL,
+  p_tags text[] DEFAULT '{}',
+  p_sort_order int DEFAULT 0
+)
+RETURNS uuid
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_id uuid;
+  v_old_name text;
+  v_old_cat text;
+  v_old_sub text;
+  v_category text;
+  v_subcategory text;
+  v_name text;
+BEGIN
+  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
+
+  v_category := regexp_replace(btrim(replace(COALESCE(p_category, ''), chr(160), ' ')), '[[:space:]]+', ' ', 'g');
+  v_subcategory := regexp_replace(btrim(replace(COALESCE(p_subcategory, ''), chr(160), ' ')), '[[:space:]]+', ' ', 'g');
+  v_name := regexp_replace(btrim(replace(COALESCE(p_name, ''), chr(160), ' ')), '[[:space:]]+', ' ', 'g');
+  IF v_category = '' OR v_subcategory = '' OR v_name = '' THEN
+    RAISE EXCEPTION 'Category, sub-category, and division name are required';
+  END IF;
+
+  IF p_id IS NOT NULL THEN
+    SELECT name, category, subcategory INTO v_old_name, v_old_cat, v_old_sub
+      FROM public.recipe_divisions WHERE id = p_id;
+  END IF;
+
+  IF p_id IS NULL THEN
+    INSERT INTO public.recipe_divisions (category, subcategory, name, emoji, subtitle, description, tags, sort_order, is_active)
+    VALUES (
+      v_category, v_subcategory, v_name,
+      COALESCE(NULLIF(TRIM(p_emoji), ''), '🍽'),
+      NULLIF(TRIM(p_subtitle), ''), NULLIF(TRIM(p_description), ''),
+      COALESCE(p_tags, '{}'), COALESCE(p_sort_order, 0), true
+    )
+    ON CONFLICT (category, subcategory, name) DO UPDATE SET
+      emoji = COALESCE(NULLIF(TRIM(EXCLUDED.emoji), ''), recipe_divisions.emoji),
+      subtitle = COALESCE(NULLIF(TRIM(EXCLUDED.subtitle), ''), recipe_divisions.subtitle),
+      description = COALESCE(NULLIF(TRIM(EXCLUDED.description), ''), recipe_divisions.description),
+      tags = COALESCE(EXCLUDED.tags, recipe_divisions.tags),
+      sort_order = COALESCE(EXCLUDED.sort_order, recipe_divisions.sort_order),
+      is_active = true
+    RETURNING id INTO v_id;
+  ELSE
+    UPDATE public.recipe_divisions SET
+      category = v_category,
+      subcategory = v_subcategory,
+      name = v_name,
+      emoji = COALESCE(NULLIF(TRIM(p_emoji), ''), emoji),
+      subtitle = CASE WHEN p_subtitle IS NULL THEN subtitle ELSE NULLIF(TRIM(p_subtitle), '') END,
+      description = CASE WHEN p_description IS NULL THEN description ELSE NULLIF(TRIM(p_description), '') END,
+      tags = COALESCE(p_tags, tags),
+      sort_order = COALESCE(p_sort_order, sort_order),
+      is_active = true
+    WHERE id = p_id
+    RETURNING id INTO v_id;
+  END IF;
+
+  IF v_old_name IS NOT NULL AND (
+    v_old_name IS DISTINCT FROM v_name OR
+    v_old_cat IS DISTINCT FROM v_category OR
+    v_old_sub IS DISTINCT FROM v_subcategory
+  ) THEN
+    UPDATE public.submitted_recipes SET
+      category = v_category,
+      sub_category = v_subcategory,
+      division = v_name
+    WHERE category = v_old_cat
+      AND sub_category = v_old_sub
+      AND division = v_old_name;
+  END IF;
+
+  RETURN v_id;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.admin_upsert_recipe_division(uuid, text, text, text, text, text, text, text[], int) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_upsert_recipe_division(uuid, text, text, text, text, text, text, text[], int) TO authenticated;
+
+-- ── Rename top-level browse category (cascade all recipe taxonomy text) ────────
+DROP FUNCTION IF EXISTS public.admin_rename_recipe_category(text, text);
+CREATE OR REPLACE FUNCTION public.admin_rename_recipe_category(
+  p_old_name text,
+  p_new_name text
+)
+RETURNS int
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_old text;
+  v_new text;
+  v_recipes int;
+BEGIN
+  IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
+
+  v_old := regexp_replace(btrim(replace(COALESCE(p_old_name, ''), chr(160), ' ')), '[[:space:]]+', ' ', 'g');
+  v_new := regexp_replace(btrim(replace(COALESCE(p_new_name, ''), chr(160), ' ')), '[[:space:]]+', ' ', 'g');
+  IF v_old = '' OR v_new = '' THEN
+    RAISE EXCEPTION 'Old and new category names are required';
+  END IF;
+  IF v_old = v_new THEN RETURN 0; END IF;
+
+  UPDATE public.categories SET name = v_new WHERE name = v_old;
+  UPDATE public.submitted_recipes SET category = v_new WHERE category = v_old;
+  UPDATE public.recipe_subcategories SET category = v_new WHERE category = v_old;
+  UPDATE public.recipe_divisions SET category = v_new WHERE category = v_old;
+
+  SELECT count(*)::int INTO v_recipes FROM public.submitted_recipes WHERE category = v_new;
+  RETURN v_recipes;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.admin_rename_recipe_category(text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_rename_recipe_category(text, text) TO authenticated;
 
 -- ── Reorder subs / divisions within a category ───────────────────────────────
 DROP FUNCTION IF EXISTS public.admin_reorder_recipe_subcategories(text, uuid[]);

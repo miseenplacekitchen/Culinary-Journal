@@ -1,0 +1,17 @@
+---
+description: Cascade taxonomy renames to submitted_recipes
+globs: database/sql/fix-admin-taxonomy-editor.sql,dashboard-recipes.js
+alwaysApply: false
+---
+
+# Taxonomy Rename → Recipe Cascade
+
+Recipes store `category`, `sub_category`, and `division` as **text labels** on `submitted_recipes`. When taxonomy labels change, recipes must follow automatically.
+
+Do not remove or skip these cascades when editing taxonomy RPCs:
+
+- `admin_upsert_recipe_subcategory` must update `submitted_recipes` and `recipe_divisions` when a sub-category name or parent category changes.
+- `admin_upsert_recipe_division` must update `submitted_recipes` when a division name, sub-category, or category changes.
+- `admin_rename_recipe_category` must update `categories`, `submitted_recipes`, `recipe_subcategories`, and `recipe_divisions` when a top-level category is renamed.
+
+If you replace an upsert RPC, preserve the rename/move cascade blocks. Renaming taxonomy labels must never orphan recipes.
