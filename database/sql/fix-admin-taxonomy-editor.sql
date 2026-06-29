@@ -40,7 +40,8 @@ REVOKE ALL ON FUNCTION public.get_recipe_taxonomy(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_recipe_taxonomy(text) TO anon, authenticated;
 
 -- ── Upsert sub-category (name, hints, tagline, description, emoji, sort) ─────
--- Always saves on top: reactivates archived rows, resolves by (category, name), logs nothing here (client auditLog).
+-- Always saves on top: normalizes visible names, reactivates archived rows,
+-- resolves same-looking duplicates by normalized (category, name), logs in client auditLog.
 DROP FUNCTION IF EXISTS public.admin_upsert_recipe_subcategory(uuid, text, text, int);
 DROP FUNCTION IF EXISTS public.admin_upsert_recipe_subcategory(uuid, text, text, int, text[]);
 DROP FUNCTION IF EXISTS public.admin_upsert_recipe_subcategory(uuid, text, text, int, text[], text, text, text);
@@ -57,17 +58,42 @@ CREATE OR REPLACE FUNCTION public.admin_upsert_recipe_subcategory(
 RETURNS uuid
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
-DECLARE v_id uuid;
+DECLARE
+  v_id uuid;
+  v_match_id uuid;
+  v_category text;
+  v_name text;
 BEGIN
   IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
 
+  v_category := regexp_replace(btrim(replace(COALESCE(p_category, ''), chr(160), ' ')), '[[:space:]]+', ' ', 'g');
+  v_name := regexp_replace(btrim(replace(COALESCE(p_name, ''), chr(160), ' ')), '[[:space:]]+', ' ', 'g');
+  IF v_category = '' OR v_name = '' THEN
+    RAISE EXCEPTION 'Category and sub-category name are required';
+  END IF;
+
   v_id := p_id;
+
+  -- Prefer the canonical normalized row if one already exists. This lets saving
+  -- from a duplicate/dirty row overwrite the canonical row instead of colliding.
+  SELECT id INTO v_match_id
+    FROM public.recipe_subcategories
+   WHERE regexp_replace(btrim(replace(category, chr(160), ' ')), '[[:space:]]+', ' ', 'g') = v_category
+     AND regexp_replace(btrim(replace(name, chr(160), ' ')), '[[:space:]]+', ' ', 'g') = v_name
+   ORDER BY
+     CASE WHEN category = v_category AND name = v_name THEN 0 ELSE 1 END,
+     COALESCE(is_active, false) DESC,
+     created_at DESC
+   LIMIT 1;
+  IF v_match_id IS NOT NULL THEN
+    v_id := v_match_id;
+  END IF;
 
   -- 1) Update by explicit id (rename + overwrite fields; reactivate if archived)
   IF v_id IS NOT NULL THEN
     UPDATE public.recipe_subcategories SET
-      category = p_category,
-      name = p_name,
+      category = v_category,
+      name = v_name,
       sort_order = COALESCE(p_sort_order, sort_order),
       ingredient_hints = CASE WHEN p_ingredient_hints IS NULL THEN ingredient_hints ELSE p_ingredient_hints END,
       tagline = CASE WHEN p_tagline IS NULL THEN tagline ELSE NULLIF(TRIM(p_tagline), '') END,
@@ -78,16 +104,21 @@ BEGIN
     RETURNING id INTO v_id;
   END IF;
 
-  -- 2) Resolve archived / hidden row by (category, name) and overwrite
+  -- 2) Resolve archived / hidden / same-looking row by normalized (category, name) and overwrite
   IF v_id IS NULL THEN
     SELECT id INTO v_id
       FROM public.recipe_subcategories
-     WHERE category = p_category AND name = p_name
+     WHERE regexp_replace(btrim(replace(category, chr(160), ' ')), '[[:space:]]+', ' ', 'g') = v_category
+       AND regexp_replace(btrim(replace(name, chr(160), ' ')), '[[:space:]]+', ' ', 'g') = v_name
+     ORDER BY
+       CASE WHEN category = v_category AND name = v_name THEN 0 ELSE 1 END,
+       COALESCE(is_active, false) DESC,
+       created_at DESC
      LIMIT 1;
     IF v_id IS NOT NULL THEN
       UPDATE public.recipe_subcategories SET
-        category = p_category,
-        name = p_name,
+        category = v_category,
+        name = v_name,
         sort_order = COALESCE(p_sort_order, sort_order),
         ingredient_hints = CASE WHEN p_ingredient_hints IS NULL THEN ingredient_hints ELSE p_ingredient_hints END,
         tagline = CASE WHEN p_tagline IS NULL THEN tagline ELSE NULLIF(TRIM(p_tagline), '') END,
@@ -103,7 +134,7 @@ BEGIN
   IF v_id IS NULL THEN
     INSERT INTO public.recipe_subcategories (category, name, sort_order, ingredient_hints, tagline, description, emoji, is_active)
     VALUES (
-      p_category, p_name, COALESCE(p_sort_order, 0),
+      v_category, v_name, COALESCE(p_sort_order, 0),
       COALESCE(p_ingredient_hints, '{}'),
       NULLIF(TRIM(p_tagline), ''), NULLIF(TRIM(p_description), ''), NULLIF(TRIM(p_emoji), ''),
       true
@@ -119,8 +150,16 @@ BEGIN
   END IF;
 
   IF v_id IS NULL THEN
-    RAISE EXCEPTION 'Sub-category upsert failed for % > %', p_category, p_name;
+    RAISE EXCEPTION 'Sub-category upsert failed for % > %', v_category, v_name;
   END IF;
+
+  -- Only one same-looking sub-category should remain visible after every save.
+  UPDATE public.recipe_subcategories
+     SET is_active = false
+   WHERE id <> v_id
+     AND regexp_replace(btrim(replace(category, chr(160), ' ')), '[[:space:]]+', ' ', 'g') = v_category
+     AND regexp_replace(btrim(replace(name, chr(160), ' ')), '[[:space:]]+', ' ', 'g') = v_name;
+
   RETURN v_id;
 END;
 $$;

@@ -2060,7 +2060,13 @@ function rmTaxAudit(action, target, oldVal, newVal, details) {
   }
 }
 
+function rmTaxNormalizeLabel(value) {
+  return String(value || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 async function rmTaxFindSubcategoryId(category, name) {
+  category = rmTaxNormalizeLabel(category);
+  name = rmTaxNormalizeLabel(name);
   if (!category || !name || typeof apiFetch !== 'function') return null;
   var url = window.SUPA_URL + '/rest/v1/recipe_subcategories?category=eq.' +
     encodeURIComponent(category) + '&name=eq.' + encodeURIComponent(name) + '&select=id&limit=1';
@@ -2071,6 +2077,9 @@ async function rmTaxFindSubcategoryId(category, name) {
 }
 
 async function rmTaxFindDivisionId(category, subcategory, name) {
+  category = rmTaxNormalizeLabel(category);
+  subcategory = rmTaxNormalizeLabel(subcategory);
+  name = rmTaxNormalizeLabel(name);
   if (!category || !subcategory || !name || typeof apiFetch !== 'function') return null;
   var url = window.SUPA_URL + '/rest/v1/recipe_divisions?category=eq.' +
     encodeURIComponent(category) + '&subcategory=eq.' + encodeURIComponent(subcategory) +
@@ -2083,6 +2092,8 @@ async function rmTaxFindDivisionId(category, subcategory, name) {
 
 async function rmTaxUpsertSubcategory(payload, auditCtx) {
   var p = Object.assign({}, payload);
+  p.p_category = rmTaxNormalizeLabel(p.p_category);
+  p.p_name = rmTaxNormalizeLabel(p.p_name);
   if (!p.p_id && p.p_category && p.p_name) {
     var existingId = await rmTaxFindSubcategoryId(p.p_category, p.p_name);
     if (existingId) p.p_id = existingId;
@@ -2145,6 +2156,9 @@ async function rmTaxUpsertSubcategory(payload, auditCtx) {
 
 async function rmTaxUpsertDivision(payload, auditCtx) {
   var p = Object.assign({}, payload);
+  p.p_category = rmTaxNormalizeLabel(p.p_category);
+  p.p_subcategory = rmTaxNormalizeLabel(p.p_subcategory);
+  p.p_name = rmTaxNormalizeLabel(p.p_name);
   if (!p.p_id && p.p_category && p.p_subcategory && p.p_name) {
     var existingId = await rmTaxFindDivisionId(p.p_category, p.p_subcategory, p.p_name);
     if (existingId) p.p_id = existingId;
@@ -2329,7 +2343,7 @@ async function loadRMTaxonomy(container) {
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260629a</span> — red <strong>Remove</strong> deactivates a sub or division. Every save is logged to Audit Trail.';
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260629b</span> — red <strong>Remove</strong> deactivates a sub or division. Every save is logged to Audit Trail.';
     container.appendChild(note);
 
     var exportRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px');
