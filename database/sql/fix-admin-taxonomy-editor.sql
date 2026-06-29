@@ -40,6 +40,7 @@ REVOKE ALL ON FUNCTION public.get_recipe_taxonomy(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_recipe_taxonomy(text) TO anon, authenticated;
 
 -- ── Upsert sub-category (name, hints, tagline, description, emoji, sort) ─────
+-- Always saves on top: reactivates archived rows, resolves by (category, name), logs nothing here (client auditLog).
 DROP FUNCTION IF EXISTS public.admin_upsert_recipe_subcategory(uuid, text, text, int);
 DROP FUNCTION IF EXISTS public.admin_upsert_recipe_subcategory(uuid, text, text, int, text[]);
 DROP FUNCTION IF EXISTS public.admin_upsert_recipe_subcategory(uuid, text, text, int, text[], text, text, text);
@@ -59,22 +60,11 @@ AS $$
 DECLARE v_id uuid;
 BEGIN
   IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
-  IF p_id IS NULL THEN
-    INSERT INTO public.recipe_subcategories (category, name, sort_order, ingredient_hints, tagline, description, emoji)
-    VALUES (
-      p_category, p_name, COALESCE(p_sort_order, 0),
-      COALESCE(p_ingredient_hints, '{}'),
-      NULLIF(TRIM(p_tagline), ''), NULLIF(TRIM(p_description), ''), NULLIF(TRIM(p_emoji), '')
-    )
-    ON CONFLICT (category, name) DO UPDATE SET
-      sort_order = COALESCE(EXCLUDED.sort_order, recipe_subcategories.sort_order),
-      is_active = true,
-      ingredient_hints = CASE WHEN p_ingredient_hints IS NULL THEN recipe_subcategories.ingredient_hints ELSE EXCLUDED.ingredient_hints END,
-      tagline = COALESCE(NULLIF(TRIM(EXCLUDED.tagline), ''), recipe_subcategories.tagline),
-      description = COALESCE(NULLIF(TRIM(EXCLUDED.description), ''), recipe_subcategories.description),
-      emoji = COALESCE(NULLIF(TRIM(EXCLUDED.emoji), ''), recipe_subcategories.emoji)
-    RETURNING id INTO v_id;
-  ELSE
+
+  v_id := p_id;
+
+  -- 1) Update by explicit id (rename + overwrite fields; reactivate if archived)
+  IF v_id IS NOT NULL THEN
     UPDATE public.recipe_subcategories SET
       category = p_category,
       name = p_name,
@@ -82,8 +72,54 @@ BEGIN
       ingredient_hints = CASE WHEN p_ingredient_hints IS NULL THEN ingredient_hints ELSE p_ingredient_hints END,
       tagline = CASE WHEN p_tagline IS NULL THEN tagline ELSE NULLIF(TRIM(p_tagline), '') END,
       description = CASE WHEN p_description IS NULL THEN description ELSE NULLIF(TRIM(p_description), '') END,
-      emoji = CASE WHEN p_emoji IS NULL THEN emoji ELSE NULLIF(TRIM(p_emoji), '') END
-    WHERE id = p_id RETURNING id INTO v_id;
+      emoji = CASE WHEN p_emoji IS NULL THEN emoji ELSE NULLIF(TRIM(p_emoji), '') END,
+      is_active = true
+    WHERE id = v_id
+    RETURNING id INTO v_id;
+  END IF;
+
+  -- 2) Resolve archived / hidden row by (category, name) and overwrite
+  IF v_id IS NULL THEN
+    SELECT id INTO v_id
+      FROM public.recipe_subcategories
+     WHERE category = p_category AND name = p_name
+     LIMIT 1;
+    IF v_id IS NOT NULL THEN
+      UPDATE public.recipe_subcategories SET
+        category = p_category,
+        name = p_name,
+        sort_order = COALESCE(p_sort_order, sort_order),
+        ingredient_hints = CASE WHEN p_ingredient_hints IS NULL THEN ingredient_hints ELSE p_ingredient_hints END,
+        tagline = CASE WHEN p_tagline IS NULL THEN tagline ELSE NULLIF(TRIM(p_tagline), '') END,
+        description = CASE WHEN p_description IS NULL THEN description ELSE NULLIF(TRIM(p_description), '') END,
+        emoji = CASE WHEN p_emoji IS NULL THEN emoji ELSE NULLIF(TRIM(p_emoji), '') END,
+        is_active = true
+      WHERE id = v_id
+      RETURNING id INTO v_id;
+    END IF;
+  END IF;
+
+  -- 3) Insert new row, or on name collision overwrite + reactivate
+  IF v_id IS NULL THEN
+    INSERT INTO public.recipe_subcategories (category, name, sort_order, ingredient_hints, tagline, description, emoji, is_active)
+    VALUES (
+      p_category, p_name, COALESCE(p_sort_order, 0),
+      COALESCE(p_ingredient_hints, '{}'),
+      NULLIF(TRIM(p_tagline), ''), NULLIF(TRIM(p_description), ''), NULLIF(TRIM(p_emoji), ''),
+      true
+    )
+    ON CONFLICT (category, name) DO UPDATE SET
+      sort_order = COALESCE(EXCLUDED.sort_order, recipe_subcategories.sort_order),
+      is_active = true,
+      ingredient_hints = CASE WHEN p_ingredient_hints IS NULL THEN recipe_subcategories.ingredient_hints ELSE EXCLUDED.ingredient_hints END,
+      tagline = CASE WHEN p_tagline IS NULL THEN recipe_subcategories.tagline ELSE NULLIF(TRIM(EXCLUDED.tagline), '') END,
+      description = CASE WHEN p_description IS NULL THEN recipe_subcategories.description ELSE NULLIF(TRIM(EXCLUDED.description), '') END,
+      emoji = CASE WHEN p_emoji IS NULL THEN recipe_subcategories.emoji ELSE NULLIF(TRIM(EXCLUDED.emoji), '') END
+    RETURNING id INTO v_id;
+  END IF;
+
+  IF v_id IS NULL THEN
+    RAISE EXCEPTION 'Sub-category upsert failed for % > %', p_category, p_name;
   END IF;
   RETURN v_id;
 END;

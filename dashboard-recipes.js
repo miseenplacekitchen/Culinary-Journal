@@ -672,7 +672,16 @@ async function openRecipeModal(id) {
           btn.textContent = 'Adding…';
           var p;
           if (s.field === 'sub_category') {
-            p = rpc('admin_upsert_recipe_subcategory', { p_id: null, p_category: s.category, p_name: s.value, p_sort_order: 99 });
+            p = rmTaxUpsertSubcategory(
+              { p_id: null, p_category: s.category, p_name: s.value, p_sort_order: 99 },
+              {
+                action: 'Sub-category Created',
+                target: s.category + ' > ' + s.value,
+                oldVal: null,
+                newVal: s.category + ' > ' + s.value,
+                details: 'Added from missing-taxonomy backfill'
+              }
+            );
           } else if (s.field === 'division') {
             if (!s.sub_category) {
               alert('Add the sub-category first (or use Sub-cats & Divisions tab), then add this division.');
@@ -680,9 +689,15 @@ async function openRecipeModal(id) {
               btn.textContent = '+ Add to Taxonomy';
               return;
             }
-            p = rpc('admin_upsert_recipe_division', {
+            p = rmTaxUpsertDivision({
               p_id: null, p_category: s.category, p_subcategory: s.sub_category, p_name: s.value,
               p_emoji: '🍽', p_subtitle: '', p_description: null, p_tags: [], p_sort_order: 99
+            }, {
+              action: 'Division Created',
+              target: s.category + ' > ' + s.sub_category + ' > ' + s.value,
+              oldVal: null,
+              newVal: s.category + ' > ' + s.sub_category + ' > ' + s.value,
+              details: 'Added from missing-taxonomy backfill'
             });
           } else {
             btn.disabled = false;
@@ -2030,27 +2045,142 @@ function rmTaxTextarea(val, placeholder, minH) {
   return e;
 }
 
-function rmTaxUpsertSubcategory(payload) {
-  return rpc('admin_upsert_recipe_subcategory', payload).catch(function(e) {
-    var msg = String(e.message || e);
-    if (/23505|duplicate key|already exists/i.test(msg)) {
-      throw new Error(
-        'A sub-category named "' + (payload.p_name || '') + '" already exists under "' +
-        (payload.p_category || '') + '" (it may be archived). Run ' +
-        'database/sql/fix-admin-taxonomy-editor.sql in Supabase, or reactivate the row in SQL.'
+function rmTaxSnapshotSub(fields) {
+  return JSON.stringify({
+    emoji: (fields && fields.emoji) || '',
+    tagline: (fields && fields.tagline) || '',
+    description: (fields && fields.description) || '',
+    ingredient_hints: (fields && fields.ingredient_hints) || []
+  });
+}
+
+function rmTaxAudit(action, target, oldVal, newVal, details) {
+  if (typeof auditLog === 'function') {
+    auditLog('Recipe Management > Taxonomy', action, target, oldVal, newVal, details);
+  }
+}
+
+async function rmTaxFindSubcategoryId(category, name) {
+  if (!category || !name || typeof apiFetch !== 'function') return null;
+  var url = window.SUPA_URL + '/rest/v1/recipe_subcategories?category=eq.' +
+    encodeURIComponent(category) + '&name=eq.' + encodeURIComponent(name) + '&select=id&limit=1';
+  var res = await apiFetch(url);
+  if (!res || !res.ok) return null;
+  var rows = await res.json();
+  return rows && rows[0] && rows[0].id ? rows[0].id : null;
+}
+
+async function rmTaxFindDivisionId(category, subcategory, name) {
+  if (!category || !subcategory || !name || typeof apiFetch !== 'function') return null;
+  var url = window.SUPA_URL + '/rest/v1/recipe_divisions?category=eq.' +
+    encodeURIComponent(category) + '&subcategory=eq.' + encodeURIComponent(subcategory) +
+    '&name=eq.' + encodeURIComponent(name) + '&select=id&limit=1';
+  var res = await apiFetch(url);
+  if (!res || !res.ok) return null;
+  var rows = await res.json();
+  return rows && rows[0] && rows[0].id ? rows[0].id : null;
+}
+
+async function rmTaxUpsertSubcategory(payload, auditCtx) {
+  var p = Object.assign({}, payload);
+  if (!p.p_id && p.p_category && p.p_name) {
+    var existingId = await rmTaxFindSubcategoryId(p.p_category, p.p_name);
+    if (existingId) p.p_id = existingId;
+  }
+  function callRpc(body) {
+    return rpc('admin_upsert_recipe_subcategory', body);
+  }
+  try {
+    var id = await callRpc(p);
+    if (auditCtx) {
+      rmTaxAudit(
+        auditCtx.action || 'Sub-category Saved',
+        auditCtx.target || ((p.p_category || '') + ' > ' + (p.p_name || '')),
+        auditCtx.oldVal || null,
+        auditCtx.newVal || null,
+        auditCtx.details || null
       );
     }
+    return id;
+  } catch (e) {
+    var msg = String(e.message || e);
+    if (/23505|duplicate key|already exists/i.test(msg) && p.p_category && p.p_name) {
+      var retryId = await rmTaxFindSubcategoryId(p.p_category, p.p_name);
+      if (!retryId) throw e;
+      p.p_id = retryId;
+      var id2 = await callRpc(p);
+      if (auditCtx) {
+        rmTaxAudit(
+          auditCtx.action || 'Sub-category Saved',
+          auditCtx.target || ((p.p_category || '') + ' > ' + (p.p_name || '')),
+          auditCtx.oldVal || null,
+          auditCtx.newVal || null,
+          (auditCtx.details || '') + (auditCtx.details ? ' | ' : '') + 'Reactivated archived row'
+        );
+      }
+      return id2;
+    }
     if (/function|argument|column|tagline|emoji|does not exist/i.test(msg)) {
-      return rpc('admin_upsert_recipe_subcategory', {
-        p_id: payload.p_id,
-        p_category: payload.p_category,
-        p_name: payload.p_name,
-        p_sort_order: payload.p_sort_order,
-        p_ingredient_hints: payload.p_ingredient_hints
+      var id3 = await callRpc({
+        p_id: p.p_id,
+        p_category: p.p_category,
+        p_name: p.p_name,
+        p_sort_order: p.p_sort_order,
+        p_ingredient_hints: p.p_ingredient_hints
       });
+      if (auditCtx) {
+        rmTaxAudit(
+          auditCtx.action || 'Sub-category Saved',
+          auditCtx.target || ((p.p_category || '') + ' > ' + (p.p_name || '')),
+          auditCtx.oldVal || null,
+          auditCtx.newVal || null,
+          (auditCtx.details || '') + (auditCtx.details ? ' | ' : '') + 'Legacy RPC (no copy fields)'
+        );
+      }
+      return id3;
     }
     throw e;
-  });
+  }
+}
+
+async function rmTaxUpsertDivision(payload, auditCtx) {
+  var p = Object.assign({}, payload);
+  if (!p.p_id && p.p_category && p.p_subcategory && p.p_name) {
+    var existingId = await rmTaxFindDivisionId(p.p_category, p.p_subcategory, p.p_name);
+    if (existingId) p.p_id = existingId;
+  }
+  try {
+    var id = await rpc('admin_upsert_recipe_division', p);
+    if (auditCtx) {
+      rmTaxAudit(
+        auditCtx.action || 'Division Saved',
+        auditCtx.target || ((p.p_category || '') + ' > ' + (p.p_subcategory || '') + ' > ' + (p.p_name || '')),
+        auditCtx.oldVal || null,
+        auditCtx.newVal || null,
+        auditCtx.details || null
+      );
+    }
+    return id;
+  } catch (e) {
+    var msg = String(e.message || e);
+    if (/23505|duplicate key|already exists/i.test(msg) && p.p_category && p.p_subcategory && p.p_name) {
+      var retryId = await rmTaxFindDivisionId(p.p_category, p.p_subcategory, p.p_name);
+      if (!retryId) throw e;
+      p.p_id = retryId;
+      var id2 = await rpc('admin_upsert_recipe_division', p);
+      if (auditCtx) {
+        rmTaxAudit(
+          auditCtx.action || 'Division Saved',
+          auditCtx.target || ((p.p_category || '') + ' > ' + (p.p_subcategory || '') + ' > ' + (p.p_name || '')),
+          auditCtx.oldVal || null,
+          auditCtx.newVal || null,
+          (auditCtx.details || '') + (auditCtx.details ? ' | ' : '') + 'Reactivated archived row'
+        );
+      }
+      return id2;
+    }
+    throw e;
+  }
 }
 
 function rmTaxClearTaxonomyCaches() {
@@ -2199,7 +2329,7 @@ async function loadRMTaxonomy(container) {
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260621b</span> — red <strong>Remove</strong> deactivates a sub or division.';
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260629a</span> — red <strong>Remove</strong> deactivates a sub or division. Every save is logged to Audit Trail.';
     container.appendChild(note);
 
     var exportRow = mk('div', 'display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px');
@@ -2415,7 +2545,10 @@ async function loadRMTaxonomy(container) {
               if (!confirm('Deactivate sub-category "' + (sc.name || '') + '" and its divisions?')) return;
               delSubHdr.disabled = true;
               rpc('admin_delete_recipe_subcategory', { p_id: sc.id })
-                .then(function() { loadRMTaxonomy(container); })
+                .then(function() {
+                  rmTaxAudit('Sub-category Deactivated', cat + ' > ' + sc.name, cat + ' > ' + sc.name, null, 'Deactivated via taxonomy editor');
+                  loadRMTaxonomy(container);
+                })
                 .catch(function(e) { alert(e.message || e); delSubHdr.disabled = false; });
             });
             scHdr.appendChild(delSubHdr);
@@ -2461,6 +2594,18 @@ async function loadRMTaxonomy(container) {
             var newName = nameIn.value.trim();
             if (!newName) { alert('Sub-category name is required.'); return; }
             saveSub.disabled = true;
+            var beforeSnap = rmTaxSnapshotSub({
+              emoji: sc.emoji,
+              tagline: sc.tagline,
+              description: sc.description,
+              ingredient_hints: sc.ingredient_hints
+            });
+            var afterSnap = rmTaxSnapshotSub({
+              emoji: emojiIn.value.trim(),
+              tagline: taglineTa.value.trim(),
+              description: descTa.value.trim(),
+              ingredient_hints: parsed
+            });
             rmTaxUpsertSubcategory({
               p_id: sc.id, p_category: cat, p_name: newName,
               p_sort_order: sc.sort_order,
@@ -2468,6 +2613,12 @@ async function loadRMTaxonomy(container) {
               p_tagline: taglineTa.value.trim(),
               p_description: descTa.value.trim(),
               p_emoji: emojiIn.value.trim()
+            }, {
+              action: sc.name !== newName ? 'Sub-category Renamed' : 'Sub-category Saved',
+              target: cat + ' > ' + newName,
+              oldVal: cat + ' > ' + sc.name,
+              newVal: cat + ' > ' + newName,
+              details: 'Before: ' + beforeSnap + ' | After: ' + afterSnap
             }).then(function() { loadRMTaxonomy(container); })
               .catch(function(e) { alert(e.message || e); saveSub.disabled = false; });
           });
@@ -2511,18 +2662,41 @@ async function loadRMTaxonomy(container) {
             saveDiv.addEventListener('click', function() {
               var nm = dName.value.trim();
               if (!nm) { alert('Division name is required.'); return; }
-              rpc('admin_upsert_recipe_division', {
-                p_id: d.division_id, p_category: cat, p_subcategory: nameIn.value.trim() || sc.name,
+              var subNm = nameIn.value.trim() || sc.name;
+              var beforeDiv = JSON.stringify({
+                emoji: d.division_emoji || '',
+                subtitle: d.division_subtitle || '',
+                description: d.division_description || ''
+              });
+              var afterDiv = JSON.stringify({
+                emoji: dEmoji.value.trim() || '🍽',
+                subtitle: dSub.value.trim(),
+                description: dDesc.value.trim()
+              });
+              rmTaxUpsertDivision({
+                p_id: d.division_id, p_category: cat, p_subcategory: subNm,
                 p_name: nm, p_emoji: dEmoji.value.trim() || '🍽',
                 p_subtitle: dSub.value.trim(), p_description: dDesc.value.trim(),
                 p_tags: [], p_sort_order: d.division_sort_order || (divIdx + 1) * 10
+              }, {
+                action: d.division_name !== nm ? 'Division Renamed' : 'Division Saved',
+                target: cat + ' > ' + subNm + ' > ' + nm,
+                oldVal: cat + ' > ' + subNm + ' > ' + (d.division_name || ''),
+                newVal: cat + ' > ' + subNm + ' > ' + nm,
+                details: 'Before: ' + beforeDiv + ' | After: ' + afterDiv
               }).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
             });
             var delD = mk('button', 'padding:4px 10px;font-size:11px;border:1px solid #dc5050;border-radius:6px;background:none;color:#dc5050;cursor:pointer', 'Remove');
             delD.addEventListener('click', function() {
               if (!confirm('Deactivate division "' + (d.division_name || '') + '"?')) return;
               rpc('admin_delete_recipe_division', { p_id: d.division_id })
-                .then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
+                .then(function() {
+                  rmTaxAudit('Division Deactivated',
+                    cat + ' > ' + (nameIn.value.trim() || sc.name) + ' > ' + (d.division_name || ''),
+                    cat + ' > ' + (nameIn.value.trim() || sc.name) + ' > ' + (d.division_name || ''),
+                    null, 'Deactivated via taxonomy editor');
+                  loadRMTaxonomy(container);
+                }).catch(function(e) { alert(e.message); });
             });
             dActs.appendChild(saveDiv);
             dActs.appendChild(delD);
@@ -2537,10 +2711,16 @@ async function loadRMTaxonomy(container) {
             if (divName === null) return;
             divName = divName.trim();
             if (!divName) { alert('Division name is required.'); return; }
-            rpc('admin_upsert_recipe_division', {
+            rmTaxUpsertDivision({
               p_id: null, p_category: cat, p_subcategory: subNm,
               p_name: divName, p_emoji: '🍽', p_subtitle: '', p_description: '',
               p_tags: [], p_sort_order: ((sc.divisions || []).length + 1) * 10
+            }, {
+              action: 'Division Created',
+              target: cat + ' > ' + subNm + ' > ' + divName,
+              oldVal: null,
+              newVal: cat + ' > ' + subNm + ' > ' + divName,
+              details: 'New division'
             }).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
           });
           scBody.appendChild(addDiv);
@@ -2560,6 +2740,12 @@ async function loadRMTaxonomy(container) {
           p_id: null, p_category: cat, p_name: v,
           p_sort_order: (subList.length + 1) * 10,
           p_ingredient_hints: [], p_tagline: null, p_description: null, p_emoji: null
+        }, {
+          action: 'Sub-category Created',
+          target: cat + ' > ' + v,
+          oldVal: null,
+          newVal: cat + ' > ' + v,
+          details: 'New sub-category'
         }).then(function() { loadRMTaxonomy(container); }).catch(function(e) { alert(e.message); });
       });
       addRow.appendChild(inp);
