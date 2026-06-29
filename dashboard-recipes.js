@@ -2475,7 +2475,7 @@ async function loadRMTaxonomy(container) {
     var note = mk('div', 'font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin-bottom:16px;line-height:1.6');
     note.innerHTML = 'Browse hierarchy: <strong>Category → Sub-category → Division → Recipes</strong>. ' +
       'All rows load from <code>get_recipe_taxonomy</code> (database only). ' +
-      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260629g</span> — edit freely across cards, then use <strong>Save all changes</strong> (top-right). Saving one card no longer wipes the others. Renames auto-remove duplicate rows. Every save is logged to Audit Trail.';
+      '<br><span style="font-size:11px;color:var(--accent)">Taxonomy editor v20260629h</span> — edit freely across cards, then use <strong>Save all changes</strong> (top-right). Saving one card no longer wipes the others. Renames overwrite in place and auto-remove the old/duplicate row (logged to Audit Trail).';
     container.appendChild(note);
 
     var movedNote = mk('div', 'margin-bottom:16px;padding:10px 12px;background:rgba(196,151,59,0.06);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text-mid)');
@@ -2736,6 +2736,7 @@ async function loadRMTaxonomy(container) {
               description: descTa.value.trim(), ingredient_hints: parsed
             });
             var prevName = sc.name;
+            var renamed = rmTaxNormalizeLabel(prevName) !== rmTaxNormalizeLabel(newName);
             return rmTaxUpsertSubcategory({
               p_id: sc.id, p_category: cat, p_name: newName,
               p_sort_order: sc.sort_order,
@@ -2744,7 +2745,7 @@ async function loadRMTaxonomy(container) {
               p_description: descTa.value.trim(),
               p_emoji: emojiIn.value.trim()
             }, {
-              action: prevName !== newName ? 'Sub-category Renamed' : 'Sub-category Saved',
+              action: renamed ? 'Sub-category Renamed' : 'Sub-category Saved',
               target: cat + ' > ' + newName,
               oldVal: cat + ' > ' + prevName,
               newVal: cat + ' > ' + newName,
@@ -2756,14 +2757,25 @@ async function loadRMTaxonomy(container) {
               sc.tagline = taglineTa.value.trim();
               sc.description = descTa.value.trim();
               sc.ingredient_hints = parsed;
-              return newId;
+              // On rename, also retire any leftover row still carrying the OLD name
+              // (handles old server versions that insert instead of updating in place).
+              if (renamed && newId) {
+                return rmTaxDedupeSubcategory(cat, prevName, newId).then(function() {
+                  return { id: newId, renamed: true };
+                });
+              }
+              return { id: newId, renamed: false };
             });
           }
           savers.push(saveSubInPlace);
           saveSub.addEventListener('click', function() {
             saveSub.disabled = true;
             saveSubInPlace()
-              .then(function() { rmTaxFlashSaved(saveSub, 'Save sub-category'); })
+              .then(function(res) {
+                rmTaxFlashSaved(saveSub, 'Save sub-category');
+                // A rename can restructure rows, so refresh to show the true DB state.
+                if (res && res.renamed) setTimeout(function() { loadRMTaxonomy(container); }, 350);
+              })
               .catch(function(e) { alert(e.message || e); })
               .then(function() { saveSub.disabled = false; });
           });
@@ -2819,13 +2831,14 @@ async function loadRMTaxonomy(container) {
                 description: dDesc.value.trim()
               });
               var prevDivName = d.division_name;
+              var divRenamed = rmTaxNormalizeLabel(prevDivName) !== rmTaxNormalizeLabel(nm);
               return rmTaxUpsertDivision({
                 p_id: d.division_id, p_category: cat, p_subcategory: subNm,
                 p_name: nm, p_emoji: dEmoji.value.trim() || '🍽',
                 p_subtitle: dSub.value.trim(), p_description: dDesc.value.trim(),
                 p_tags: [], p_sort_order: d.division_sort_order || (divIdx + 1) * 10
               }, {
-                action: prevDivName !== nm ? 'Division Renamed' : 'Division Saved',
+                action: divRenamed ? 'Division Renamed' : 'Division Saved',
                 target: cat + ' > ' + subNm + ' > ' + nm,
                 oldVal: cat + ' > ' + subNm + ' > ' + (prevDivName || ''),
                 newVal: cat + ' > ' + subNm + ' > ' + nm,
@@ -2836,14 +2849,22 @@ async function loadRMTaxonomy(container) {
                 d.division_emoji = dEmoji.value.trim() || '🍽';
                 d.division_subtitle = dSub.value.trim();
                 d.division_description = dDesc.value.trim();
-                return newId;
+                if (divRenamed && newId) {
+                  return rmTaxDedupeDivision(cat, subNm, prevDivName, newId).then(function() {
+                    return { id: newId, renamed: true };
+                  });
+                }
+                return { id: newId, renamed: false };
               });
             }
             savers.push(saveDivInPlace);
             saveDiv.addEventListener('click', function() {
               saveDiv.disabled = true;
               saveDivInPlace()
-                .then(function() { rmTaxFlashSaved(saveDiv, 'Save division'); })
+                .then(function(res) {
+                  rmTaxFlashSaved(saveDiv, 'Save division');
+                  if (res && res.renamed) setTimeout(function() { loadRMTaxonomy(container); }, 350);
+                })
                 .catch(function(e) { alert(e.message || e); })
                 .then(function() { saveDiv.disabled = false; });
             });
