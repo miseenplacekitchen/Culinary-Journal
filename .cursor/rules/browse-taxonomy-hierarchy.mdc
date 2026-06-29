@@ -1,0 +1,20 @@
+---
+description: Preserve the Recipes browse taxonomy hierarchy
+globs: recipes.html
+alwaysApply: false
+---
+
+# Recipes Browse Taxonomy Hierarchy
+
+When editing `recipes.html`, do not change the browse hierarchy behavior:
+
+- Opening a **category** shows category tabs in the top filter row and sub-category cards below.
+- Opening a **sub-category** shows sibling sub-category tabs in the top filter row and division cards below.
+- Opening a **division** shows recipes.
+- Never render tabs that duplicate the cards shown immediately below them.
+- Do not reintroduce hardcoded taxonomy fallbacks. Category, sub-category, and division data must come from the database/RPC flow.
+
+Concrete guardrail:
+
+- `openCat()` must call `showBrowseCategoryFilters(name)` and must not call `showBrowseTaxonomyFilters(name, null, null, false)`.
+- `openTaxonomySub()` may call `showBrowseTaxonomyFilters(categoryName, subName, null, false)` for sibling sub-category navigation, but the division filter row should stay hidden because the division cards are already shown below.

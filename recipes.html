@@ -702,6 +702,11 @@ async function loadBrowseTaxonomy(categoryName) {
   return browseTaxonomy;
 }
 
+// Browse taxonomy invariant:
+// - Category view: category tabs + sub-category cards.
+// - Sub-category view: sibling sub-category tabs + division cards.
+// - Division view: recipes.
+// Do not render a tab row that duplicates the cards directly below it.
 // Load category → sub-categories browse
 async function openCat(id, name) {
   curCat = id; curCatName = name;
