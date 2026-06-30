@@ -495,7 +495,7 @@ function switchView(view, ingTab) {
   if (mobileTitle) mobileTitle.textContent = titles[view] || 'Admin Panel';
   if (view === 'dashboard')   loadDashboard();
   if (view === 'recipe-mgmt') {
-    var _srt = localStorage.getItem('tcj_active_recipe_tab') || 'all';
+    var _srt = localStorage.getItem('tcj_active_recipe_tab') || 'namelibrary';
     switchRecipeTab(_srt);
   }
   var _savedUserTab=localStorage.getItem('tcj_active_user_tab')||'members';

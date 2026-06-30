@@ -660,7 +660,8 @@
 
     <div id="v-recipe-mgmt" style="display:none">
       <div class="ap-inner-tabs rm-nav-tabs">
-        <button class="ap-inner-tab active" data-tab="all"     onclick="switchRecipeTab('all')">All</button>
+        <button class="ap-inner-tab active" data-tab="namelibrary" onclick="switchRecipeTab('namelibrary')">Recipe Name Library</button>
+        <button class="ap-inner-tab"        data-tab="all"     onclick="switchRecipeTab('all')">All</button>
         <button class="ap-inner-tab"        data-tab="pending" onclick="switchRecipeTab('pending')">Pending <span class="ap-nav-badge" id="rtab-badge-pending" style="position:static;margin-left:4px">0</span></button>
         <button class="ap-inner-tab"        data-tab="approved" onclick="switchRecipeTab('approved')">Approved</button>
         <button class="ap-inner-tab"        data-tab="rejected" onclick="switchRecipeTab('rejected')">Rejected</button>
@@ -672,6 +673,11 @@
         <button class="ap-inner-tab" data-tab="featured" onclick="switchRecipeTab('featured')">Featured</button>
         <button class="ap-inner-tab" data-tab="notes"    onclick="switchRecipeTab('notes')">Cooking Tips <span class="ap-nav-badge" id="rtab-badge-notes" style="position:static;margin-left:4px">0</span></button>
         <button class="ap-inner-tab tab-interface rm-nav-settings" data-tab="rmsettings" onclick="switchRecipeTab('rmsettings')">&#9881; RM Interface</button>
+      </div>
+      <div id="rmgmt-namelibrary-panel" style="display:none;padding:4px 0 20px">
+        <div id="recipe-name-library-root">
+          <div class="ap-empty-row">Loading Recipe Name Library&#8230;</div>
+        </div>
       </div>
       <div id="rmgmt-list-panel">
         <div class="rm-list-toolbar">
@@ -1440,6 +1446,7 @@
   <script src="lib/admin-recipe-utils.js?v=20260705"></script>
   <script src="lib/dashboard-agent-review.js?v=20260623"></script>
   <script src="dashboard-recipes.js?v=20260630b"></script>
+  <script src="lib/dashboard-recipe-name-library.js?v=20260630a"></script>
   <script src="lib/dashboard-bulk-recipes.js?v=20260620f"></script>
   <script src="dashboard-users.js?v=20260616"></script>
   <script src="dashboard-ingredients.js?v=20260616"></script>

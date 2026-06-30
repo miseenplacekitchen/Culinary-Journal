@@ -52,8 +52,10 @@ function switchRecipeTab(tab) {
   var setPanel  = document.getElementById('rmgmt-rmsettings-panel');
   var extPanel  = document.getElementById('rmgmt-extra-panel');
   var bulkPanel = document.getElementById('rmgmt-bulkrecipes-panel');
+  var namePanel = document.getElementById('rmgmt-namelibrary-panel');
   if (listPanel) listPanel.style.display = _RM_LIST_TABS.indexOf(tab) !== -1 ? 'block' : 'none';
   if (bulkPanel) bulkPanel.style.display = tab === 'bulkrecipes' ? 'block' : 'none';
+  if (namePanel) namePanel.style.display = tab === 'namelibrary' ? 'block' : 'none';
   if (_RM_LIST_TABS.indexOf(tab) !== -1) ensureRmCatFilter();
   if (anaPanel)  anaPanel.style.display  = tab === 'analytics' ? 'block' : 'none';
   if (opsPanel)  opsPanel.style.display  = 'none';
@@ -75,6 +77,15 @@ function switchRecipeTab(tab) {
       window.bulkRecipeEditor.loadBulkRecipesTab();
     } else {
       console.warn('Bulk Recipe Editor not loaded');
+    }
+    return;
+  }
+  if (tab === 'namelibrary') {
+    if (typeof window.recipeNameLibrary !== 'undefined' &&
+        window.recipeNameLibrary.loadRecipeNameLibraryTab) {
+      window.recipeNameLibrary.loadRecipeNameLibraryTab();
+    } else {
+      console.warn('Recipe Name Library module not loaded');
     }
     return;
   }
