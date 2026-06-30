@@ -1368,12 +1368,16 @@ async function psLoadFamilyProfiles() {
 async function psFetchRecipesByIds(ids) {
   if (!ids.length) return [];
   var KEY = window.SUPA_KEY;
-  var res = await fetch(window.SUPA_URL + '/rest/v1/submitted_recipes?id=in.(' + ids.join(',') + ')&select=*', { headers: { apikey: KEY } });
+  var headers = (typeof window.getAuthHeaders === 'function')
+    ? window.getAuthHeaders()
+    : { apikey: KEY };
+  var cleanIds = ids.map(function(id) { return String(id || '').trim(); }).filter(Boolean);
+  var res = await fetch(window.SUPA_URL + '/rest/v1/submitted_recipes?id=in.(' + cleanIds.map(encodeURIComponent).join(',') + ')&select=*', { headers: headers });
   if (!res.ok) return [];
   var rows = await res.json();
   var byId = {};
   rows.forEach(function(r){ byId[r.id] = r; });
-  return ids.map(function(id){ return byId[id]; }).filter(Boolean);
+  return cleanIds.map(function(id){ return byId[id]; }).filter(Boolean);
 }
 
 function restorePrintPrefs() {
@@ -1417,9 +1421,39 @@ document.addEventListener('DOMContentLoaded', function() {
   psLoadFamilyProfiles().then(function() {
     if (currentRecipe || currentRecipes.length) buildCards();
   });
+  document.addEventListener('keydown', function(e) {
+    if (currentCardView !== 'swipe') return;
+    if (e.key === 'ArrowRight') swipeToCard(psSwipeIndex + 1);
+    if (e.key === 'ArrowLeft') swipeToCard(psSwipeIndex - 1);
+  });
   var params = new URLSearchParams(window.location.search);
   var batch = params.get('ids') || params.get('batch');
   var id = params.get('id');
+  // Explicit URL params always win. This prevents a stale session print recipe
+  // from overriding Recipe Name Library bulk-print links.
+  if (batch) {
+    var ids = batch.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    sessionStorage.removeItem('tcj_print_batch');
+    sessionStorage.removeItem('tcj_print_recipe');
+    psFetchRecipesByIds(ids).then(function(rows) {
+      if (rows.length) loadRecipeBatch(rows);
+      else alert('No linked recipes could be loaded for this print batch.');
+    });
+    return;
+  }
+  if (id) {
+    sessionStorage.removeItem('tcj_print_batch');
+    sessionStorage.removeItem('tcj_print_recipe');
+    var KEY = window.SUPA_KEY;
+    var headers = (typeof window.getAuthHeaders === 'function')
+      ? window.getAuthHeaders()
+      : { apikey: KEY };
+    fetch(window.SUPA_URL + '/rest/v1/submitted_recipes?id=eq.'+encodeURIComponent(id)+'&select=*',
+      {headers: headers})
+      .then(r=>r.json()).then(data=>{ if(data[0]) loadRecipe(data[0]); })
+      .catch(()=>{});
+    return;
+  }
   var storedBatch = sessionStorage.getItem('tcj_print_batch');
   if (storedBatch) {
     try {
@@ -1431,23 +1465,6 @@ document.addEventListener('DOMContentLoaded', function() {
   if (stored) {
     try { loadRecipe(JSON.parse(stored)); return; } catch(_){}
   }
-  if (batch) {
-    var ids = batch.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
-    psFetchRecipesByIds(ids).then(function(rows) { if (rows.length) loadRecipeBatch(rows); });
-    return;
-  }
-  if (id) {
-    var KEY = window.SUPA_KEY;
-    fetch(window.SUPA_URL + '/rest/v1/submitted_recipes?id=eq.'+id+'&select=*',
-      {headers:{'apikey':KEY}})
-      .then(r=>r.json()).then(data=>{ if(data[0]) loadRecipe(data[0]); })
-      .catch(()=>{});
-  }
-  document.addEventListener('keydown', function(e) {
-    if (currentCardView !== 'swipe') return;
-    if (e.key === 'ArrowRight') swipeToCard(psSwipeIndex + 1);
-    if (e.key === 'ArrowLeft') swipeToCard(psSwipeIndex - 1);
-  });
 });
 
 function downloadPDF() {
@@ -1457,7 +1474,7 @@ function downloadPDF() {
   if (btn) { btn.textContent = '⏳ Generating PDF...'; btn.disabled = true; }
   var opt = {
     margin:       [4, 4, 4, 4],
-    filename:     'culinary-journal-recipe-cards.pdf',
+    filename:     (currentRecipes.length > 1 ? 'culinary-journal-recipe-batch-' : 'culinary-journal-recipe-cards-') + new Date().toISOString().split('T')[0] + '.pdf',
     image:        {type:'jpeg', quality:0.95},
     html2canvas:  {scale:2, useCORS:true, backgroundColor:'#ffffff'},
     jsPDF:        {unit:'mm', format:'a4', orientation:'portrait'},
