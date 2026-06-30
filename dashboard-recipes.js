@@ -85,7 +85,7 @@ function switchRecipeTab(tab) {
         window.recipeNameLibrary.loadRecipeNameLibraryTab) {
       window.recipeNameLibrary.loadRecipeNameLibraryTab();
     } else {
-      console.warn('Recipe Name Library module not loaded');
+      console.warn('Dish Index module not loaded');
     }
     return;
   }
