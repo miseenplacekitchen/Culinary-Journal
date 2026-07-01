@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Administrator panel for The Culinary Journal.">
   <link rel="canonical" href="https://theculinaryjournal.site/dashboard.html">
-  <meta name="tcj-build" content="dish-index-20260705a">
+  <meta name="tcj-build" content="dish-index-20260705b">
   <meta name="robots" content="noindex, nofollow">
 <title>Admin Panel — The Culinary Journal</title>
 <script src="theme-init.js"></script>
@@ -442,7 +442,7 @@
     }
     .di-combo-clear:hover { color: var(--text-high); }
     .di-combo-menu {
-      display: none; position: absolute; left: 0; right: 0; top: calc(100% + 2px); z-index: 50;
+      display: none; position: fixed; left: 0; top: 0; z-index: 10050;
       max-height: 200px; overflow: auto; background: var(--bg); border: 1px solid var(--border);
       border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); padding: 4px;
     }
@@ -469,7 +469,7 @@
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .di-tag-pop {
-      display: none; position: absolute; left: 0; top: calc(100% + 2px); z-index: 60;
+      display: none; position: fixed; left: 0; top: 0; z-index: 10050;
       min-width: 220px; max-height: 240px; overflow: auto; background: var(--bg); border: 1px solid var(--border);
       border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); padding: 8px;
     }
@@ -1612,8 +1612,8 @@
   <script src="lib/tcj-origin-helpers.js"></script>
   <script src="lib/tcj-recipe-photo-upload.js"></script>
   <script src="lib/tcj-recipe-field-options.js?v=20260705a"></script>
-  <script src="lib/di-inline-editors.js?v=20260705a"></script>
-  <script src="lib/dashboard-recipe-name-library.js?v=20260705a"></script>
+  <script src="lib/di-inline-editors.js?v=20260705b"></script>
+  <script src="lib/dashboard-recipe-name-library.js?v=20260705b"></script>
   <script src="lib/dashboard-bulk-recipes.js?v=20260703b"></script>
   <script src="dashboard-users.js?v=20260616"></script>
   <script src="dashboard-ingredients.js?v=20260616"></script>
