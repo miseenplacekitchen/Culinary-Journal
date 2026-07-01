@@ -934,6 +934,17 @@
     .sr-panel-nested .sr-panel-head { padding: 8px 10px; background: rgba(255,255,255,0.03); }
     .sr-panel-nested .sr-panel-title { font-size: 0.95rem; }
     .sr-panel-nested .sr-panel-body { padding: 12px 14px 14px; }
+    /* Levels / times / tags — always visible; not a collapsible accordion */
+    #panel-levels.sr-panel-always-open > .sr-panel-head {
+      cursor: default; pointer-events: none;
+    }
+    #panel-levels.sr-panel-always-open > .sr-panel-head .sr-panel-chevron { display: none; }
+    #panel-levels.sr-panel-always-open > .sr-panel-body { display: block !important; }
+    #panel-levels .sr-levels-section-title {
+      font-family: "Cormorant Garamond", serif; font-size: 1.05rem; font-weight: 700;
+      color: var(--text-high); margin: 18px 0 10px;
+    }
+    #panel-levels .sr-levels-section-title:first-child { margin-top: 0; }
     .ing-section.collapsed .ing-col-headers,
     .ing-section.collapsed .ing-rows,
     .ing-section.collapsed .btn-add-ing { display: none !important; }
@@ -2161,6 +2172,7 @@ async function loadAdminRecipeForReview(recipeId) {
     window._adminReviewRecipeId = recipeId;
     window._editRecipeId = recipeId;
     restoreDraft(JSON.stringify(r));
+    ensureLevelsTagsVisible();
     applyAdminReviewUi(r.recipe_name);
     await setupDishIndexAdminBar(recipeId);
     if (r.status === 'pending') {
@@ -6258,6 +6270,21 @@ function buildSrDetailPanels() {
   buildSrLevelsTagsPanel();
 }
 
+function ensureLevelsTagsVisible() {
+  var panel = document.getElementById('panel-levels') || document.getElementById('subsection-levels-tags');
+  if (!panel) return;
+  panel.classList.remove('collapsed');
+  var head = panel.querySelector(':scope > .sr-panel-head, :scope > .sr-subsection-title');
+  if (head && head.classList.contains('sr-panel-head')) head.setAttribute('aria-expanded', 'true');
+  panel.querySelectorAll('.sr-panel-nested').forEach(function(n) {
+    n.classList.remove('collapsed');
+    var nh = n.querySelector(':scope > .sr-panel-head');
+    if (nh) nh.setAttribute('aria-expanded', 'true');
+  });
+  var details = document.getElementById('section-details');
+  if (details) details.classList.remove('collapsed');
+}
+
 function buildSrLevelsTagsPanel() {
   var section = document.getElementById('section-details');
   var panelsHost = section && section.querySelector('.sr-detail-panels');
@@ -6277,45 +6304,35 @@ function buildSrLevelsTagsPanel() {
   body.className = 'sr-panel-body';
   bodyNodes.forEach(function(n) { body.appendChild(n); });
 
+  /* Flat layout — no nested collapsible sub-panels (user must always see levels, times, tags). */
   var levelsEl = body.querySelector('[data-sr-subpanel="levels"]');
-  if (levelsEl) {
-    var levelsNext = levelsEl.nextSibling;
-    var levelsPanel = makeSrPanel('', 'Spice, sweet & difficulty', 'Required level pickers', [levelsEl], true, true);
-    body.insertBefore(levelsPanel, levelsNext);
+  if (levelsEl && !body.querySelector('.sr-levels-section-title')) {
+    var levelsTitle = document.createElement('div');
+    levelsTitle.className = 'sr-levels-section-title';
+    levelsTitle.textContent = 'Spice, sweet & difficulty';
+    body.insertBefore(levelsTitle, levelsEl);
   }
 
-  var timesNodes = Array.from(body.querySelectorAll('[data-sr-subpanel="times"], [data-sr-subpanel-part="times"]'));
-  if (timesNodes.length) {
-    var timesNext = timesNodes[0].nextSibling;
-    var timesPanel = makeSrPanel('', 'Times & servings', 'Cooking style, prep, cook, passive time, shelf life', timesNodes, true, true);
-    body.insertBefore(timesPanel, timesNext);
+  var timesIntro = body.querySelector('[data-sr-subpanel="times"]');
+  if (timesIntro && !body.querySelector('[data-sr-levels-times-title]')) {
+    var timesTitle = document.createElement('div');
+    timesTitle.className = 'sr-levels-section-title sr-levels-times-title';
+    timesTitle.setAttribute('data-sr-levels-times-title', '1');
+    timesTitle.textContent = 'Times & servings';
+    body.insertBefore(timesTitle, timesIntro);
   }
-
-  body.querySelectorAll('[data-sr-tag-panel]').forEach(function(field) {
-    var label = field.querySelector('.sr-label');
-    var title = label ? label.textContent.trim() : 'Tags';
-    var count = field.querySelectorAll('.tag-cb').length;
-    var tagNext = field.nextSibling;
-    var tagPanel = makeSrPanel('', title, count + ' option' + (count === 1 ? '' : 's'), [field], true, true);
-    body.insertBefore(tagPanel, tagNext);
-  });
 
   var panel = document.createElement('div');
-  panel.className = 'sr-panel';
+  panel.className = 'sr-panel sr-panel-always-open';
   panel.id = 'panel-levels';
   panel.dataset.srPanel = '1';
   panel.dataset.srPanelConverted = '1';
 
-  var head = document.createElement('button');
-  head.type = 'button';
+  var head = document.createElement('div');
   head.className = 'sr-panel-head';
   head.setAttribute('aria-expanded', 'true');
-  head.innerHTML = '<span class="sr-panel-chevron" aria-hidden="true">\u25BE</span><span class="sr-panel-titles"><span class="sr-panel-title"></span><span class="sr-panel-desc">Levels, times, and discovery tags</span></span>';
+  head.innerHTML = '<span class="sr-panel-chevron" aria-hidden="true">\u25BE</span><span class="sr-panel-titles"><span class="sr-panel-title"></span><span class="sr-panel-desc">Spice, sweet, difficulty, times, and discovery tags</span></span>';
   head.querySelector('.sr-panel-title').textContent = mainTitle;
-  head.addEventListener('click', function() {
-    var collapsed = panel.classList.toggle('collapsed');
-    head.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-  });
 
   panel.appendChild(head);
   panel.appendChild(body);
@@ -6327,6 +6344,7 @@ function buildSrLevelsTagsPanel() {
 
 function srExpandDetailPanels(expand) {
   document.querySelectorAll('#section-details .sr-panel').forEach(function(p) {
+    if (!expand && p.id === 'panel-levels') return;
     p.classList.toggle('collapsed', !expand);
     var head = p.querySelector(':scope > .sr-panel-head');
     if (head) head.setAttribute('aria-expanded', expand ? 'true' : 'false');
@@ -6363,6 +6381,8 @@ function initIngMethodCollapse() {
 
 function initSrSectionCollapse() {
   buildSrDetailPanels();
+  buildSrLevelsTagsPanel();
+  ensureLevelsTagsVisible();
   initIngMethodCollapse();
 
   document.querySelectorAll('.sr-section > .sr-section-title').forEach(function(title) {
@@ -6392,6 +6412,7 @@ function toggleAllSections() {
   });
   document.querySelectorAll('#section-details .sr-panel').forEach(function(p) {
     if (_allCollapsed) {
+      if (p.id === 'panel-levels') return;
       p.classList.add('collapsed');
     } else if (p.id === 'panel-identity' || p.id === 'panel-levels') {
       p.classList.remove('collapsed');
@@ -6467,7 +6488,7 @@ async function cancelSubmission() {
 
 
 </script>
-<script src="lib/submit-recipe-auto-enrich.js?v=20260720"></script>
-<script src="lib/submit-recipe-parse.js?v=20260715"></script>
+<script src="lib/submit-recipe-auto-enrich.js?v=20260704b"></script>
+<script src="lib/submit-recipe-parse.js?v=20260704b"></script>
 </body>
 </html>
