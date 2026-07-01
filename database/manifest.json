@@ -128,5 +128,14 @@
     { "file": "RUN-PHASE59-IMPORT-QUEUE-PAYLOADS.txt", "note": "Paste order — 14 batches (fix-phase59-garden-import-queue-payloads-01..14.sql)" },
     { "file": "RUN-LIVE-FOLLOWUP.sql", "note": "Phases 49–51 + health (incremental live run)" }
   ],
-  "live_cleanup_order_note": "After RUN-LIVE-CLEANUP, run RUN-ALL-REMAINING.sql or RUN-LIVE-FOLLOWUP.sql for latest content"
+  "live_cleanup_order_note": "After RUN-LIVE-CLEANUP, run RUN-ALL-REMAINING.sql or RUN-LIVE-FOLLOWUP.sql for latest content",
+  "dish_index_order": [
+    { "step": 1, "file": "fix-recipe-name-library.sql", "note": "Base table + RPCs" },
+    { "step": 2, "file": "fix-dish-index-columns.sql", "note": "Metadata columns (Submit a Recipe fields except ingredients/method)" },
+    { "step": 3, "file": "fix-dish-index-ops.sql", "note": "DI codes, bulk ops, import preview, sync" },
+    { "step": 4, "file": "fix-dish-index-list-filter.sql", "note": "Archived filter — p_active_filter on list RPC" },
+    { "step": 5, "file": "fix-dish-index-list-filter-csv.sql", "note": "Hero Ingredient CSV header alias" },
+    { "step": 6, "file": "fix-dish-index-phase-abc.sql", "note": "Full drift/sync, restore, queue counts, extended sort" }
+  ],
+  "dish_index_runner": "database/sql/run-dish-index-migrations.ps1"
 }

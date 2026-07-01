@@ -1,9 +1,6 @@
--- fix-dish-index-phase-abc.sql — Full drift/sync, image_source_url, unarchive, queue counts.
--- Run once in Supabase SQL Editor after fix-dish-index-ops.sql. Safe to re-run.
--- REPLACES fix-dish-index-list-filter.sql (skip list-filter if you run this file).
--- If "Failed to fetch (api.supabase.com)": dashboard network error — run the 3 smaller files instead:
---   fix-dish-index-phase-abc-a.sql  then  -b.sql  then  -c.sql
-
+-- fix-dish-index-phase-abc.sql — Step 5: Full drift/sync, image_source_url, unarchive, queue counts.
+-- Run once after fix-dish-index-list-filter.sql AND fix-dish-index-list-filter-csv.sql. Safe to re-run.
+-- Or run all steps: database/sql/run-dish-index-migrations.ps1
 ALTER TABLE public.submitted_recipes
   ADD COLUMN IF NOT EXISTS image_source_url text DEFAULT '';
 
@@ -469,9 +466,21 @@ $$;
 REVOKE ALL ON FUNCTION public.admin_dish_index_queue_counts() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.admin_dish_index_queue_counts() TO authenticated;
 
--- Extend list sort columns
-DROP FUNCTION IF EXISTS public.admin_list_recipe_name_library(int, int, text, text, text, text, text, text, text, text, text, boolean, text);
-DROP FUNCTION IF EXISTS public.admin_list_recipe_name_library(int, int, text, text, text, text, text, text, text, text, text, text, text);
+-- Extend list sort columns (requires step 4 list-filter first)
+DO $$
+DECLARE
+  r record;
+BEGIN
+  FOR r IN
+    SELECT pg_get_function_identity_arguments(p.oid) AS args
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname = 'admin_list_recipe_name_library'
+  LOOP
+    EXECUTE format('DROP FUNCTION IF EXISTS public.admin_list_recipe_name_library(%s)', r.args);
+  END LOOP;
+END $$;
 
 CREATE OR REPLACE FUNCTION public.admin_list_recipe_name_library(
   p_limit int DEFAULT 50,
@@ -600,3 +609,6 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.admin_list_recipe_name_library(int, int, text, text, text, text, text, text, text, text, text, text, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.admin_list_recipe_name_library(int, int, text, text, text, text, text, text, text, text, text, text, text) TO authenticated;
+
+SELECT pg_notify('pgrst', 'reload schema');
+SELECT 'fix-dish-index-phase-abc complete' AS status;
