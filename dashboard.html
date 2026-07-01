@@ -768,7 +768,7 @@
       </div>
       <div id="rmgmt-bulkrecipes-panel" style="display:none;padding:4px 0 20px">
         <p style="font-family:DM Sans,sans-serif;font-size:12px;color:var(--text-mid);margin:0 0 12px;line-height:1.55">
-          <strong>Bulk Editor v20260619d</strong> — click a cell to edit; double-click recipe name to open full editor. Column filters apply to the current page only.
+          <strong>Bulk Editor v20260703b</strong> — click a cell to edit; double-click recipe name to open full editor. Column filters apply to the current page only.
         </p>
         <div id="bulk-taxonomy-backfill" style="margin-bottom:16px;padding:14px;background:rgba(196,151,59,0.06);border:1px solid var(--border);border-radius:10px"></div>
         <div class="rm-list-toolbar" style="margin-bottom:12px;flex-wrap:wrap">
@@ -801,6 +801,9 @@
             <option value="rejected">Set status: Rejected</option>
           </select>
           <button type="button" class="rm-bulk-approve-btn" onclick="executeBulkRecipeAction()">Apply action</button>
+          <button type="button" class="rm-agent-btn-bulk" id="bulk-print-preview-btn" onclick="exportBulkPrintStudio('preview')">Print Studio</button>
+          <button type="button" class="rm-agent-btn-bulk" id="bulk-print-pdf-btn" onclick="exportBulkPrintStudio('pdf')">Download PDF</button>
+          <button type="button" class="rm-agent-btn-bulk" id="bulk-print-pptx-btn" onclick="exportBulkPrintStudio('pptx')">Download PPTX</button>
           <button type="button" class="rm-quick-btn reject" onclick="clearBulkRecipeSelection()">Clear selection</button>
         </div>
         <div class="ap-table-wrap" style="overflow-x:auto">
@@ -1503,8 +1506,8 @@
   <script src="lib/admin-recipe-utils.js?v=20260705"></script>
   <script src="lib/dashboard-agent-review.js?v=20260623"></script>
   <script src="dashboard-recipes.js?v=20260630b"></script>
-  <script src="lib/dashboard-recipe-name-library.js?v=20260703a"></script>
-  <script src="lib/dashboard-bulk-recipes.js?v=20260620f"></script>
+  <script src="lib/dashboard-recipe-name-library.js?v=20260703b"></script>
+  <script src="lib/dashboard-bulk-recipes.js?v=20260703b"></script>
   <script src="dashboard-users.js?v=20260616"></script>
   <script src="dashboard-ingredients.js?v=20260616"></script>
   <script src="lib/dashboard-im-interface.js?v=20260713"></script>

@@ -555,6 +555,27 @@ const PS_PREMIUM_LAYOUTS = { botanical:1, candlelit:1, wedding:1, 'dark-moody':1
 let PS_PREMIUM_FREE = true;
 let PS_USER_TIER = 'free';
 let psCustomBg = '';
+let psPendingExport = null;
+let psSilentMode = false;
+let psExportTriggered = false;
+
+function psNotifyExportDone() {
+  if (!psSilentMode) return;
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'tcj-print-export-done' }, '*');
+    }
+  } catch (_) {}
+}
+
+function psMaybeAutoExport() {
+  if (!psPendingExport || psExportTriggered) return;
+  psExportTriggered = true;
+  setTimeout(function() {
+    if (psPendingExport === 'pdf') downloadPDF();
+    else if (psPendingExport === 'pptx') downloadPPTX();
+  }, psSilentMode ? 900 : 400);
+}
 let psMiseLinks = {};
 
 async function psLoadPremiumGate() {
@@ -1163,6 +1184,7 @@ async function buildCards() {
     if (pptxBtn) pptxBtn.style.display = 'none';
     document.getElementById('ps-card-count').textContent = '';
     updateSwipeBar();
+    if (psSilentMode && psPendingExport) psNotifyExportDone();
     return;
   }
 
@@ -1192,6 +1214,7 @@ async function buildCards() {
   psSwipeIndex = 0;
   updateSwipeBar();
   applyPsCustomBg();
+  psMaybeAutoExport();
 }
 
 function applyPsCustomBg() {
@@ -1420,6 +1443,9 @@ function restorePrintPrefs() {
 document.addEventListener('DOMContentLoaded', function() {
   restorePrintPrefs();
   psCustomBg = localStorage.getItem('tcj_print_custom_bg') || '';
+  var params = new URLSearchParams(window.location.search);
+  psPendingExport = params.get('export');
+  psSilentMode = params.get('silent') === '1';
   var bgFile = document.getElementById('ps-custom-bg-file');
   if (bgFile) bgFile.addEventListener('change', function() { onPsCustomBgFile(bgFile); });
   psLoadPremiumGate();
@@ -1431,7 +1457,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.key === 'ArrowRight') swipeToCard(psSwipeIndex + 1);
     if (e.key === 'ArrowLeft') swipeToCard(psSwipeIndex - 1);
   });
-  var params = new URLSearchParams(window.location.search);
   var batch = params.get('ids') || params.get('batch');
   var id = params.get('id');
   // Explicit URL params always win. This prevents a stale session print recipe
@@ -1442,7 +1467,10 @@ document.addEventListener('DOMContentLoaded', function() {
     sessionStorage.removeItem('tcj_print_recipe');
     psFetchRecipesByIds(ids).then(function(rows) {
       if (rows.length) loadRecipeBatch(rows);
-      else alert('No linked recipes could be loaded for this print batch.');
+      else {
+        if (psSilentMode) psNotifyExportDone();
+        else alert('No linked recipes could be loaded for this print batch.');
+      }
     });
     return;
   }
@@ -1620,13 +1648,16 @@ function downloadPPTX() {
     var fname = (recipes.length > 1 ? 'culinary-journal-recipe-batch-' : 'culinary-journal-recipe-') + new Date().toISOString().slice(0, 10) + '.pptx';
     pptx.writeFile({ fileName: fname }).then(function() {
       if (btn) { btn.textContent = '⬇ Download PPTX'; btn.disabled = false; }
+      psNotifyExportDone();
     }).catch(function(e) {
       if (btn) { btn.textContent = '⬇ Download PPTX'; btn.disabled = false; }
-      alert('PPTX generation failed: ' + (e.message || e));
+      psNotifyExportDone();
+      if (!psSilentMode) alert('PPTX generation failed: ' + (e.message || e));
     });
   } catch (e) {
     if (btn) { btn.textContent = '⬇ Download PPTX'; btn.disabled = false; }
-    alert('PPTX generation failed: ' + (e.message || e));
+    psNotifyExportDone();
+    if (!psSilentMode) alert('PPTX generation failed: ' + (e.message || e));
   }
 }
 
@@ -1645,9 +1676,11 @@ function downloadPDF() {
   };
   html2pdf().set(opt).from(container).save().then(function() {
     if (btn) { btn.textContent = '⬇ Download PDF'; btn.disabled = false; }
+    psNotifyExportDone();
   }).catch(function(e) {
     if (btn) { btn.textContent = '⬇ Download PDF'; btn.disabled = false; }
-    alert('PDF generation failed: ' + e.message);
+    psNotifyExportDone();
+    if (!psSilentMode) alert('PDF generation failed: ' + e.message);
   });
 }
 
