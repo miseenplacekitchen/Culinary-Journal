@@ -178,109 +178,8 @@ BEGIN
 END;
 $$;
 
--- Persist visibility through row upsert (editor + inline table saves)
-CREATE OR REPLACE FUNCTION public.rnl_apply_row_fields(p_row jsonb)
-RETURNS TABLE (
-  recipe_name text,
-  native_name text,
-  alternate_names text[],
-  category text,
-  sub_category text,
-  division text,
-  origin_continent text,
-  origin_country text,
-  origin_state text,
-  origin_locality text,
-  primary_ingredients text[],
-  dietary_tags text[],
-  meal_type_tags text[],
-  occasion_tags text[],
-  style_tags text[],
-  health_tags text[],
-  flavor_profile_tags text[],
-  equipment text[],
-  introduction text,
-  description text,
-  image_url text,
-  image_source_url text,
-  prep_time_minutes integer,
-  cook_time_minutes integer,
-  additional_time_minutes integer,
-  servings integer,
-  servings_unit text,
-  difficulty text,
-  spice_level text,
-  sweet_level text,
-  cooking_style text,
-  cooking_notes text,
-  shelf_life_value text,
-  shelf_life_unit text,
-  shelf_life_storage text,
-  after_open_value text,
-  after_open_unit text,
-  source_type text,
-  credit_name text,
-  credit_handle text,
-  credit_url text,
-  source_url text,
-  source_notes text,
-  research_status text,
-  content_status text,
-  notes text,
-  visibility text
-)
-LANGUAGE sql IMMUTABLE SET search_path = public
-AS $$
-  SELECT
-    btrim(p_row->>'recipe_name') AS recipe_name,
-    COALESCE(NULLIF(btrim(p_row->>'native_name'), ''), '') AS native_name,
-    public.rnl_text_array(p_row->'alternate_names') AS alternate_names,
-    COALESCE(NULLIF(btrim(p_row->>'category'), ''), '') AS category,
-    COALESCE(NULLIF(btrim(p_row->>'sub_category'), ''), '') AS sub_category,
-    COALESCE(NULLIF(btrim(p_row->>'division'), ''), '') AS division,
-    COALESCE(NULLIF(btrim(p_row->>'origin_continent'), ''), '') AS origin_continent,
-    COALESCE(NULLIF(btrim(p_row->>'origin_country'), ''), '') AS origin_country,
-    COALESCE(NULLIF(btrim(p_row->>'origin_state'), ''), '') AS origin_state,
-    COALESCE(NULLIF(btrim(p_row->>'origin_locality'), ''), '') AS origin_locality,
-    public.rnl_text_array(p_row->'primary_ingredients') AS primary_ingredients,
-    public.rnl_text_array(p_row->'dietary_tags') AS dietary_tags,
-    public.rnl_text_array(p_row->'meal_type_tags') AS meal_type_tags,
-    public.rnl_text_array(p_row->'occasion_tags') AS occasion_tags,
-    public.rnl_text_array(p_row->'style_tags') AS style_tags,
-    public.rnl_text_array(p_row->'health_tags') AS health_tags,
-    public.rnl_text_array(p_row->'flavor_profile_tags') AS flavor_profile_tags,
-    public.rnl_text_array(p_row->'equipment') AS equipment,
-    COALESCE(NULLIF(btrim(p_row->>'introduction'), ''), '') AS introduction,
-    COALESCE(NULLIF(btrim(p_row->>'description'), ''), '') AS description,
-    COALESCE(NULLIF(btrim(p_row->>'image_url'), ''), '') AS image_url,
-    COALESCE(NULLIF(btrim(p_row->>'image_source_url'), ''), '') AS image_source_url,
-    public.rnl_coalesce_int(p_row, 'prep_time_minutes', 0) AS prep_time_minutes,
-    public.rnl_coalesce_int(p_row, 'cook_time_minutes', 0) AS cook_time_minutes,
-    public.rnl_coalesce_int(p_row, 'additional_time_minutes', 0) AS additional_time_minutes,
-    public.rnl_coalesce_int(p_row, 'servings', 0) AS servings,
-    COALESCE(NULLIF(btrim(p_row->>'servings_unit'), ''), 'people') AS servings_unit,
-    COALESCE(NULLIF(btrim(p_row->>'difficulty'), ''), '') AS difficulty,
-    COALESCE(NULLIF(btrim(p_row->>'spice_level'), ''), 'Not Applicable') AS spice_level,
-    COALESCE(NULLIF(btrim(p_row->>'sweet_level'), ''), 'Not Applicable') AS sweet_level,
-    COALESCE(NULLIF(btrim(p_row->>'cooking_style'), ''), '') AS cooking_style,
-    COALESCE(NULLIF(btrim(p_row->>'cooking_notes'), ''), '') AS cooking_notes,
-    COALESCE(NULLIF(btrim(p_row->>'shelf_life_value'), ''), '') AS shelf_life_value,
-    COALESCE(NULLIF(btrim(p_row->>'shelf_life_unit'), ''), 'months') AS shelf_life_unit,
-    COALESCE(NULLIF(btrim(p_row->>'shelf_life_storage'), ''), '') AS shelf_life_storage,
-    COALESCE(NULLIF(btrim(p_row->>'after_open_value'), ''), '') AS after_open_value,
-    COALESCE(NULLIF(btrim(p_row->>'after_open_unit'), ''), 'weeks') AS after_open_unit,
-    COALESCE(NULLIF(btrim(p_row->>'source_type'), ''), 'Original') AS source_type,
-    COALESCE(NULLIF(btrim(p_row->>'credit_name'), ''), '') AS credit_name,
-    COALESCE(NULLIF(btrim(p_row->>'credit_handle'), ''), '') AS credit_handle,
-    COALESCE(NULLIF(btrim(p_row->>'credit_url'), ''), '') AS credit_url,
-    COALESCE(NULLIF(btrim(p_row->>'source_url'), ''), '') AS source_url,
-    COALESCE(NULLIF(btrim(p_row->>'source_notes'), ''), '') AS source_notes,
-    COALESCE(NULLIF(btrim(p_row->>'research_status'), ''), 'idea_only') AS research_status,
-    COALESCE(NULLIF(btrim(p_row->>'content_status'), ''), 'not_started') AS content_status,
-    COALESCE(NULLIF(btrim(p_row->>'notes'), ''), '') AS notes,
-    COALESCE(NULLIF(btrim(p_row->>'visibility'), ''), 'Private') AS visibility
-$$;
-
+-- Persist visibility through row upsert (editor + inline table saves).
+-- Read visibility from p_row directly — avoids changing rnl_apply_row_fields return type.
 CREATE OR REPLACE FUNCTION public.admin_upsert_recipe_name_library(p_row jsonb)
 RETURNS uuid
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
@@ -292,12 +191,14 @@ DECLARE
   v_warnings text[];
   v_strict boolean;
   v_dish_code text;
+  v_visibility text;
 BEGIN
   IF NOT is_admin() THEN RAISE EXCEPTION 'Not authorized'; END IF;
   IF NULLIF(btrim(p_row->>'recipe_name'), '') IS NULL THEN
     RAISE EXCEPTION 'Recipe name is required';
   END IF;
 
+  v_visibility := COALESCE(NULLIF(btrim(p_row->>'visibility'), ''), 'Private');
   v_strict := COALESCE((p_row->>'strict_taxonomy')::boolean, false);
   SELECT * INTO v FROM public.rnl_apply_row_fields(p_row);
 
@@ -359,7 +260,7 @@ BEGIN
       v.cooking_notes, v.shelf_life_value, v.shelf_life_unit, v.shelf_life_storage,
       v.after_open_value, v.after_open_unit,
       v.source_type, v.credit_name, v.credit_handle, v.credit_url, v.source_url, v.source_notes,
-      v.research_status, v.content_status, v_recipe_id, v.notes, v.visibility,
+      v.research_status, v.content_status, v_recipe_id, v.notes, v_visibility,
       COALESCE((p_row->>'is_active')::boolean, true), COALESCE(NULLIF(btrim(p_row->>'schema_version'), ''), '20260702')
     )
     RETURNING id INTO v_id;
@@ -413,7 +314,7 @@ BEGIN
       content_status = v.content_status,
       linked_recipe_id = COALESCE(v_recipe_id, linked_recipe_id),
       notes = v.notes,
-      visibility = v.visibility,
+      visibility = CASE WHEN p_row ? 'visibility' THEN v_visibility ELSE visibility END,
       is_active = COALESCE((p_row->>'is_active')::boolean, is_active),
       schema_version = COALESCE(NULLIF(btrim(p_row->>'schema_version'), ''), schema_version)
     WHERE id = v_id
