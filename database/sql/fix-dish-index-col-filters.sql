@@ -229,8 +229,8 @@ BEGIN
   RETURN json_build_object('total', v_total, 'rows', COALESCE(v_rows, '[]'::json));
 END;
 $$;
-REVOKE ALL ON FUNCTION public.admin_list_recipe_name_library(int, int, text, text, text, text, text, text, text, text, text, text, jsonb) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.admin_list_recipe_name_library(int, int, text, text, text, text, text, text, text, text, text, text, jsonb) TO authenticated;
+REVOKE ALL ON FUNCTION public.admin_list_recipe_name_library(int, int, text, text, text, text, text, text, text, text, text, text, text, jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_list_recipe_name_library(int, int, text, text, text, text, text, text, text, text, text, text, text, jsonb) TO authenticated;
 
 SELECT pg_notify('pgrst', 'reload schema');
 SELECT 'fix-dish-index-col-filters complete' AS status;
