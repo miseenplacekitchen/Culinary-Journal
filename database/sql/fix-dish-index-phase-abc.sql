@@ -1,5 +1,8 @@
 -- fix-dish-index-phase-abc.sql — Full drift/sync, image_source_url, unarchive, queue counts.
--- Run once in Supabase SQL Editor after fix-dish-index-list-filter.sql. Safe to re-run.
+-- Run once in Supabase SQL Editor after fix-dish-index-ops.sql. Safe to re-run.
+-- REPLACES fix-dish-index-list-filter.sql (skip list-filter if you run this file).
+-- If "Failed to fetch (api.supabase.com)": dashboard network error — run the 3 smaller files instead:
+--   fix-dish-index-phase-abc-a.sql  then  -b.sql  then  -c.sql
 
 ALTER TABLE public.submitted_recipes
   ADD COLUMN IF NOT EXISTS image_source_url text DEFAULT '';
@@ -467,6 +470,7 @@ REVOKE ALL ON FUNCTION public.admin_dish_index_queue_counts() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.admin_dish_index_queue_counts() TO authenticated;
 
 -- Extend list sort columns
+DROP FUNCTION IF EXISTS public.admin_list_recipe_name_library(int, int, text, text, text, text, text, text, text, text, text, boolean, text);
 DROP FUNCTION IF EXISTS public.admin_list_recipe_name_library(int, int, text, text, text, text, text, text, text, text, text, text, text);
 
 CREATE OR REPLACE FUNCTION public.admin_list_recipe_name_library(
