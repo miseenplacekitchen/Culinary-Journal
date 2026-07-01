@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Administrator panel for The Culinary Journal.">
   <link rel="canonical" href="https://theculinaryjournal.site/dashboard.html">
-  <meta name="tcj-build" content="dish-index-20260703a">
+  <meta name="tcj-build" content="dish-index-20260703c">
   <meta name="robots" content="noindex, nofollow">
 <title>Admin Panel — The Culinary Journal</title>
 <script src="theme-init.js"></script>
@@ -348,16 +348,44 @@
     }
     .di-count { font-size: 12px; color: var(--text-mid); margin: 0 0 8px; }
     #rnl-bulk-bar.bulk-toolbar { margin-bottom: 10px; margin-top: 0; }
-    .di-table-wrap { overflow: auto; max-width: 100%; }
+    .di-table-wrap {
+      overflow: auto; max-width: 100%;
+      --di-sticky-w0: 36px;
+      --di-sticky-w1: 92px;
+      --di-sticky-w2: 200px;
+      --di-sticky-left0: 0px;
+      --di-sticky-left1: var(--di-sticky-w0);
+      --di-sticky-left2: calc(var(--di-sticky-w0) + var(--di-sticky-w1));
+    }
     .di-table-wrap .ap-table { border-collapse: separate; border-spacing: 0; }
-    .di-sticky-0 { position: sticky; left: 0; z-index: 2; background: var(--card-bg); box-shadow: 1px 0 0 var(--border); }
-    .di-sticky-1 { position: sticky; left: 28px; z-index: 2; background: var(--card-bg); box-shadow: 1px 0 0 var(--border); }
-    .di-sticky-2 { position: sticky; left: 96px; z-index: 2; background: var(--card-bg); box-shadow: 1px 0 0 var(--border); min-width: 160px; }
-    #rnl-table thead th.di-sticky-0, #rnl-table thead th.di-sticky-1, #rnl-table thead th.di-sticky-2 { z-index: 3; background: var(--bg); }
-    #rnl-table tbody tr.rnl-archived { opacity: 0.78; }
+    .di-sticky-0 {
+      position: sticky; left: var(--di-sticky-left0); z-index: 2;
+      width: var(--di-sticky-w0); min-width: var(--di-sticky-w0); max-width: var(--di-sticky-w0);
+      background: var(--bg); box-shadow: 1px 0 0 var(--border);
+    }
+    .di-sticky-1 {
+      position: sticky; left: var(--di-sticky-left1); z-index: 3;
+      width: var(--di-sticky-w1); min-width: var(--di-sticky-w1); max-width: var(--di-sticky-w1);
+      background: var(--bg); box-shadow: 1px 0 0 var(--border);
+    }
+    .di-sticky-2 {
+      position: sticky; left: var(--di-sticky-left2); z-index: 4;
+      width: var(--di-sticky-w2); min-width: var(--di-sticky-w2); max-width: var(--di-sticky-w2);
+      background: var(--bg); box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.18);
+      overflow: hidden;
+    }
+    #rnl-table thead th.di-sticky-0, #rnl-table thead th.di-sticky-1, #rnl-table thead th.di-sticky-2 {
+      z-index: 5; background: var(--bg);
+    }
+    #rnl-table tbody tr.rnl-archived td { color: var(--text-mid); }
     #rnl-table tbody tr.rnl-archived td.di-sticky-0,
     #rnl-table tbody tr.rnl-archived td.di-sticky-1,
-    #rnl-table tbody tr.rnl-archived td.di-sticky-2 { background: var(--card-bg); }
+    #rnl-table tbody tr.rnl-archived td.di-sticky-2 { background: var(--bg); }
+    .di-table-wrap .ap-table tr:hover td.di-sticky-0,
+    .di-table-wrap .ap-table tr:hover td.di-sticky-1,
+    .di-table-wrap .ap-table tr:hover td.di-sticky-2 { background: var(--bg); }
+    .di-table-wrap .ap-table td.di-sticky-2 .rnl-edit { max-width: 100%; min-width: 0; flex: 1 1 auto; }
+    .di-table-wrap .ap-table td.di-sticky-2 > div { max-width: 100%; overflow: hidden; }
     .di-complete-chip {
       font-size: 10px; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap;
       padding: 2px 6px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg);
@@ -1506,7 +1534,7 @@
   <script src="lib/admin-recipe-utils.js?v=20260705"></script>
   <script src="lib/dashboard-agent-review.js?v=20260623"></script>
   <script src="dashboard-recipes.js?v=20260630b"></script>
-  <script src="lib/dashboard-recipe-name-library.js?v=20260703b"></script>
+  <script src="lib/dashboard-recipe-name-library.js?v=20260703c"></script>
   <script src="lib/dashboard-bulk-recipes.js?v=20260703b"></script>
   <script src="dashboard-users.js?v=20260616"></script>
   <script src="dashboard-ingredients.js?v=20260616"></script>
