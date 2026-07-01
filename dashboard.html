@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Administrator panel for The Culinary Journal.">
   <link rel="canonical" href="https://theculinaryjournal.site/dashboard.html">
-  <meta name="tcj-build" content="dish-index-20260703d">
+  <meta name="tcj-build" content="dish-index-20260705a">
   <meta name="robots" content="noindex, nofollow">
 <title>Admin Panel — The Culinary Journal</title>
 <script src="theme-init.js"></script>
@@ -16,6 +16,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="lib/di-level-icons.css?v=20260705a">
   <style>
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -429,6 +430,52 @@
     .di-act-item:hover { background: rgb(from var(--accent) r g b / 0.08); }
     .di-act-item.di-act-danger { color: #dc5050; }
     .di-act-item.di-act-good { color: #4caf76; }
+    .di-queue-row { flex-wrap: wrap; }
+    .di-combo { position: relative; min-width: 118px; }
+    .di-combo-input {
+      width: 100%; padding: 5px 24px 5px 7px; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text-high); font-size: 12px; font-family: "DM Sans", sans-serif;
+    }
+    .di-combo-clear {
+      position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+      border: none; background: none; color: var(--text-mid); cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 5px;
+    }
+    .di-combo-clear:hover { color: var(--text-high); }
+    .di-combo-menu {
+      display: none; position: absolute; left: 0; right: 0; top: calc(100% + 2px); z-index: 50;
+      max-height: 200px; overflow: auto; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); padding: 4px;
+    }
+    .di-combo.open .di-combo-menu { display: block; }
+    .di-combo-opt {
+      display: block; width: 100%; text-align: left; padding: 6px 8px; border: none; border-radius: 6px;
+      background: none; cursor: pointer; font-size: 12px; color: var(--text-high); font-family: "DM Sans", sans-serif;
+    }
+    .di-combo-opt:hover { background: rgb(from var(--accent) r g b / 0.08); }
+    .di-combo-disabled .di-combo-input { opacity: 0.55; cursor: not-allowed; }
+    .di-level-picker { display: flex; gap: 3px; align-items: center; flex-wrap: nowrap; }
+    .di-level-btn {
+      padding: 3px 5px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg);
+      cursor: pointer; line-height: 1; min-height: 28px;
+    }
+    .di-level-btn.di-level-on { border-color: var(--accent); background: rgb(from var(--accent) r g b / 0.1); }
+    .di-level-btn .level-symbols { display: inline-flex; gap: 1px; align-items: center; }
+    .di-level-btn .level-na { font-size: 10px; font-weight: 600; color: var(--text-mid); }
+    .di-level-td { vertical-align: middle; }
+    .di-tag-cell { position: relative; min-width: 110px; }
+    .di-tag-trigger {
+      width: 100%; text-align: left; padding: 5px 7px; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text-high); font-size: 11px; cursor: pointer; font-family: "DM Sans", sans-serif;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .di-tag-pop {
+      display: none; position: absolute; left: 0; top: calc(100% + 2px); z-index: 60;
+      min-width: 220px; max-height: 240px; overflow: auto; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); padding: 8px;
+    }
+    .di-tag-cell.open .di-tag-pop { display: block; }
+    .di-tag-opt { display: block; padding: 4px 2px; font-size: 12px; color: var(--text-high); cursor: pointer; }
+    .di-tag-opt input { margin-right: 6px; accent-color: var(--accent); }
     .rm-quick-btn {
       padding: 4px 8px; border-radius: 5px; font-family: "DM Sans", sans-serif;
       font-size: 11px; font-weight: 600; cursor: pointer; background: none; line-height: 1.2;
@@ -1564,7 +1611,9 @@
   <script src="lib/tcj-origin-data.js"></script>
   <script src="lib/tcj-origin-helpers.js"></script>
   <script src="lib/tcj-recipe-photo-upload.js"></script>
-  <script src="lib/dashboard-recipe-name-library.js?v=20260704a"></script>
+  <script src="lib/tcj-recipe-field-options.js?v=20260705a"></script>
+  <script src="lib/di-inline-editors.js?v=20260705a"></script>
+  <script src="lib/dashboard-recipe-name-library.js?v=20260705a"></script>
   <script src="lib/dashboard-bulk-recipes.js?v=20260703b"></script>
   <script src="dashboard-users.js?v=20260616"></script>
   <script src="dashboard-ingredients.js?v=20260616"></script>
