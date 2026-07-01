@@ -138,7 +138,8 @@
     { "step": 6, "file": "fix-dish-index-phase-abc.sql", "note": "Full drift/sync, restore, queue counts, extended sort" },
     { "step": 7, "file": "fix-dish-index-intelligence.sql", "note": "Duplicate clusters + coverage gap reports" },
     { "step": 8, "file": "fix-dish-index-table-ux.sql", "note": "Visibility column, source/visibility sync, upsert patch" },
-    { "step": 9, "file": "fix-dish-index-table-controls.sql", "note": "Searchable dropdowns support: queue partition counts + extended list sort" }
+    { "step": 9, "file": "fix-dish-index-table-controls.sql", "note": "Searchable dropdowns support: queue partition counts + extended list sort" },
+    { "step": 10, "file": "fix-dish-index-col-filters.sql", "note": "Per-column header text filters on list RPC" }
   ],
   "dish_index_runner": "database/sql/run-dish-index-migrations.ps1"
 }
