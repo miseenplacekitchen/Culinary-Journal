@@ -56,7 +56,8 @@ AS $$
     'source_notes', COALESCE(r->>'source_notes', r->>'Source Notes'),
     'research_status', COALESCE(r->>'research_status', r->>'Research Status'),
     'content_status', COALESCE(r->>'content_status', r->>'Content Status'),
-    'linked_recipe_id', COALESCE(r->>'linked_recipe_id', r->>'Linked Recipe ID'),
+    'linked_recipe_id', COALESCE(r->>'linked_recipe_id', r->>'Linked Recipe ID')
+  ) || jsonb_build_object(
     'visibility', COALESCE(NULLIF(btrim(COALESCE(r->>'visibility', r->>'Visibility')), ''), 'Private'),
     'notes', COALESCE(r->>'notes', r->>'Notes'),
     'is_active', COALESCE(r->>'is_active', r->>'Active', 'true')
