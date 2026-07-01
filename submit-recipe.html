@@ -2106,6 +2106,44 @@ function applyAdminReviewUi(recipeName) {
   }
 }
 
+async function setupDishIndexAdminBar(recipeId) {
+  var bar = document.getElementById('sr-dish-index-bar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'sr-dish-index-bar';
+    bar.style.cssText = 'margin:16px 0;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:rgba(196,151,59,0.06);font-family:DM Sans,sans-serif;font-size:12px;line-height:1.55';
+    var header = document.querySelector('.sr-header');
+    if (header) header.appendChild(bar);
+  }
+  bar.innerHTML = 'Checking Dish Index link…';
+  try {
+    var indexRow = await adminRpc('admin_get_name_library_for_recipe', { p_recipe_id: recipeId });
+    if (!indexRow || !indexRow.id) {
+      bar.innerHTML = '<span style="color:var(--text-mid)">No linked Dish Index row — link this recipe from Recipe Management → Dish Index.</span>';
+      window._dishIndexRowId = null;
+      return;
+    }
+    window._dishIndexRowId = indexRow.id;
+    var code = indexRow.dish_code || '';
+    var name = indexRow.recipe_name || '';
+    bar.innerHTML =
+      '<strong style="color:var(--accent)">Dish Index</strong> ' + (typeof esc === 'function' ? esc(code) : code) + ' — ' + (typeof esc === 'function' ? esc(name) : name) +
+      ' <button type="button" id="sr-pull-dish-index" style="margin-left:10px;padding:6px 12px;border-radius:7px;border:1px solid var(--accent);background:none;color:var(--accent);cursor:pointer;font-size:12px;font-weight:600">↻ Pull metadata from Dish Index</button>' +
+      '<label style="margin-left:12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="sr-push-dish-index"> Update Dish Index when saving recipe</label>';
+    document.getElementById('sr-pull-dish-index').onclick = async function() {
+      if (!confirm('Replace recipe metadata (not ingredients or method) from Dish Index ' + code + '?')) return;
+      try {
+        await adminRpc('admin_sync_recipe_from_name_library', { p_id: indexRow.id, p_overwrite: true });
+        await loadAdminRecipeForReview(recipeId);
+        showMsg('Metadata pulled from Dish Index.', 'success');
+      } catch (err) { showMsg(err.message || err, 'error'); }
+    };
+  } catch (e) {
+    bar.innerHTML = '<span style="color:var(--text-mid)">Dish Index unavailable — run database/sql/fix-dish-index-ops.sql in Supabase.</span>';
+    window._dishIndexRowId = null;
+  }
+}
+
 async function loadAdminRecipeForReview(recipeId) {
   try {
     const raw = await adminRpc('admin_get_recipe_detail', { p_id: recipeId });
@@ -2124,6 +2162,7 @@ async function loadAdminRecipeForReview(recipeId) {
     window._editRecipeId = recipeId;
     restoreDraft(JSON.stringify(r));
     applyAdminReviewUi(r.recipe_name);
+    await setupDishIndexAdminBar(recipeId);
     if (r.status === 'pending') {
       showMsg('Loaded for admin review — edit any field, then Save recipe changes.', 'success');
     }
@@ -2166,6 +2205,11 @@ async function saveAdminRecipeReview() {
       p_id: window._adminReviewRecipeId,
       p_data: data
     });
+    if (window._dishIndexRowId && document.getElementById('sr-push-dish-index') && document.getElementById('sr-push-dish-index').checked) {
+      try {
+        await adminRpc('admin_sync_name_library_from_recipe', { p_id: window._dishIndexRowId });
+      } catch (pushErr) { console.warn('Dish Index push:', pushErr); }
+    }
     var embedded = new URLSearchParams(window.location.search).get('embedded') === '1';
     if (embedded) {
       showMsg('Recipe saved. Close this panel and approve in the review popup.', 'success');

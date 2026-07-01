@@ -1,6 +1,6 @@
 -- fix-recipe-name-library.sql — Recipe Management → Dish Index (Phase 1 base install).
 -- Run once in Supabase SQL Editor. Safe to re-run.
--- After this, run fix-dish-index-columns.sql for full Submit-a-Recipe metadata columns.
+-- After this, run fix-dish-index-columns.sql then fix-dish-index-ops.sql for full metadata and long-term ops.
 
 CREATE TABLE IF NOT EXISTS public.recipe_name_library (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
