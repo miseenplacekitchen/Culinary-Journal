@@ -17,7 +17,7 @@
 
 param(
     [int]$FromStep = 1,
-    [int]$ToStep = 7
+    [int]$ToStep = 8
 )
 
 $ErrorActionPreference = "Stop"
@@ -30,7 +30,8 @@ $Steps = @(
     @{ N = 4; File = "fix-dish-index-list-filter.sql";    Label = "Archived filter (list RPC)" },
     @{ N = 5; File = "fix-dish-index-list-filter-csv.sql"; Label = "Hero Ingredient CSV alias" },
     @{ N = 6; File = "fix-dish-index-phase-abc.sql";      Label = "Drift, restore, queue counts" },
-    @{ N = 7; File = "fix-dish-index-intelligence.sql";   Label = "Duplicate clusters + coverage gaps" }
+    @{ N = 7; File = "fix-dish-index-intelligence.sql";   Label = "Duplicate clusters + coverage gaps" },
+    @{ N = 8; File = "fix-dish-index-table-ux.sql";       Label = "Visibility + table UX SQL" }
 )
 
 if (-not $env:DATABASE_URL) {

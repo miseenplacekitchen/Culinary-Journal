@@ -6164,7 +6164,7 @@ function scrollToFlowSection(sectionId) {
   sec.classList.remove('collapsed');
   if (sectionId === 'section-details') {
     document.querySelectorAll('#section-details .sr-panel').forEach(function(p) {
-      if (p.id === 'panel-identity') p.classList.remove('collapsed');
+      if (p.id === 'panel-identity' || p.id === 'panel-levels') p.classList.remove('collapsed');
     });
   }
   sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -6280,14 +6280,14 @@ function buildSrLevelsTagsPanel() {
   var levelsEl = body.querySelector('[data-sr-subpanel="levels"]');
   if (levelsEl) {
     var levelsNext = levelsEl.nextSibling;
-    var levelsPanel = makeSrPanel('', 'Spice, sweet & difficulty', 'Required level pickers', [levelsEl], false, true);
+    var levelsPanel = makeSrPanel('', 'Spice, sweet & difficulty', 'Required level pickers', [levelsEl], true, true);
     body.insertBefore(levelsPanel, levelsNext);
   }
 
   var timesNodes = Array.from(body.querySelectorAll('[data-sr-subpanel="times"], [data-sr-subpanel-part="times"]'));
   if (timesNodes.length) {
     var timesNext = timesNodes[0].nextSibling;
-    var timesPanel = makeSrPanel('', 'Times & servings', 'Cooking style, prep, cook, passive time, shelf life', timesNodes, false, true);
+    var timesPanel = makeSrPanel('', 'Times & servings', 'Cooking style, prep, cook, passive time, shelf life', timesNodes, true, true);
     body.insertBefore(timesPanel, timesNext);
   }
 
@@ -6296,12 +6296,12 @@ function buildSrLevelsTagsPanel() {
     var title = label ? label.textContent.trim() : 'Tags';
     var count = field.querySelectorAll('.tag-cb').length;
     var tagNext = field.nextSibling;
-    var tagPanel = makeSrPanel('', title, count + ' option' + (count === 1 ? '' : 's'), [field], false, true);
+    var tagPanel = makeSrPanel('', title, count + ' option' + (count === 1 ? '' : 's'), [field], true, true);
     body.insertBefore(tagPanel, tagNext);
   });
 
   var panel = document.createElement('div');
-  panel.className = 'sr-panel collapsed';
+  panel.className = 'sr-panel';
   panel.id = 'panel-levels';
   panel.dataset.srPanel = '1';
   panel.dataset.srPanelConverted = '1';
@@ -6309,7 +6309,7 @@ function buildSrLevelsTagsPanel() {
   var head = document.createElement('button');
   head.type = 'button';
   head.className = 'sr-panel-head';
-  head.setAttribute('aria-expanded', 'false');
+  head.setAttribute('aria-expanded', 'true');
   head.innerHTML = '<span class="sr-panel-chevron" aria-hidden="true">\u25BE</span><span class="sr-panel-titles"><span class="sr-panel-title"></span><span class="sr-panel-desc">Levels, times, and discovery tags</span></span>';
   head.querySelector('.sr-panel-title').textContent = mainTitle;
   head.addEventListener('click', function() {
@@ -6393,8 +6393,11 @@ function toggleAllSections() {
   document.querySelectorAll('#section-details .sr-panel').forEach(function(p) {
     if (_allCollapsed) {
       p.classList.add('collapsed');
-    } else if (p.id === 'panel-identity') {
+    } else if (p.id === 'panel-identity' || p.id === 'panel-levels') {
       p.classList.remove('collapsed');
+      p.querySelectorAll(':scope > .sr-panel-body > .sr-panel-nested').forEach(function(n) {
+        n.classList.remove('collapsed');
+      });
     }
     var head = p.querySelector(':scope > .sr-panel-head');
     if (head) head.setAttribute('aria-expanded', p.classList.contains('collapsed') ? 'false' : 'true');

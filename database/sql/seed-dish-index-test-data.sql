@@ -1,7 +1,9 @@
--- seed-dish-index-test-data.sql — Sample Dish Index rows for Betty admin testing.
--- Safe to re-run. Removes prior seed rows tagged [TCJ_TEST_SEED] then re-inserts.
--- Does NOT touch DI000001 (Appam) or other production rows.
--- Run in Supabase SQL Editor, then run verify-dish-index-test-data.sql
+-- seed-dish-index-test-data.sql — Starter Dish Index sample rows (Betty keeps these live).
+-- FIRST RUN ONLY: inserts 10 sample dishes (DI900001–DI900010). Does not touch DI000001 (Appam).
+-- WARNING: Re-running this file DELETES rows whose notes contain [TCJ_TEST_SEED] and re-inserts
+--          defaults — you will lose any renames/edits on those DI9* rows. Do not re-run after customizing.
+-- To add fresh samples on a new environment, run once in Supabase SQL Editor.
+-- Optional verify: verify-dish-index-test-data.sql
 
 DELETE FROM public.recipe_name_library
  WHERE notes LIKE '%[TCJ_TEST_SEED]%';
