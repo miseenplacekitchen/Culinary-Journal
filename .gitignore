@@ -19,3 +19,7 @@ RecipeExtraction/inputs/instagram/saved_reels/*.json
 _excel_*.txt
 __pycache__/
 *.pyc
+
+# Agent / local scratch (see scratch/README.md)
+scratch/**
+!scratch/README.md
