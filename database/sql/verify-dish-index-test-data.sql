@@ -64,6 +64,12 @@ checks AS (
             WHERE n.nspname = 'public' AND p.proname = 'rnl_normalize_name'
          ),
          'fn'
+  UNION ALL
+  SELECT 13, 'archived_retired_row',
+         (SELECT count(*)::int FROM seed
+           WHERE dish_code = 'DI900008' AND is_active = false AND content_status = 'retired') >= 1,
+         (SELECT coalesce(is_active::text, '?') || ' / ' || coalesce(content_status, '?')
+            FROM seed WHERE dish_code = 'DI900008' LIMIT 1)
 )
 SELECT
   CASE WHEN ok THEN 'PASS' ELSE 'FAIL' END AS status,
